@@ -32,10 +32,14 @@ __attribute__((noinline,noclone)) void commonWriter(float* target,const float* s
 __attribute__((noinline,noclone)) void otherWriter(float* target){
  _mm_storeu_ps(target+4,_mm_set_ps(0,0,1,0));__asm__ volatile("" ::: "memory");
 }
+__attribute__((noinline,noclone)) void sequentialWriter(float* target){
+ auto* up=static_cast<volatile float*>(target+4);up[0]=0;__asm__ volatile("" ::: "memory");up[1]=1;__asm__ volatile("" ::: "memory");up[2]=0;__asm__ volatile("" ::: "memory");
+}
 DWORD WINAPI writerThread(void*){
  while(WaitForSingleObject(go,INFINITE)==WAIT_OBJECT_0){if(finish.load())break;
   if(prearmTest&&mode.load()==2){LARGE_INTEGER q{};QueryPerformanceCounter(&q);auto r=testRequest;r.commitQpc=q.QuadPart;r.overrideBeginQpc=q.QuadPart;msm2::reset_trace::committed(r);commonWriter(reinterpret_cast<float*>(hero.transform),tilted,0x1234,0x5678);}
   else if(prearmTest&&mode.load()==0){LARGE_INTEGER q{};QueryPerformanceCounter(&q);auto r=testRequest;r.resetCopy=true;r.commitQpc=r.overrideBeginQpc=q.QuadPart;msm2::reset_trace::committed(r);commonWriter(reinterpret_cast<float*>(hero.transform),world,0x1234,0x5678);}
+  else if(prearmTest&&mode.load()==1){LARGE_INTEGER q{};QueryPerformanceCounter(&q);auto r=testRequest;r.resetCopy=true;r.commitQpc=r.overrideBeginQpc=q.QuadPart;msm2::reset_trace::committed(r);sequentialWriter(reinterpret_cast<float*>(hero.transform));}
   else if(mode.load()==1)otherWriter(reinterpret_cast<float*>(hero.transform));
   else commonWriter(reinterpret_cast<float*>(hero.transform),world,0x1234,0x5678);
   SetEvent(done);
@@ -43,6 +47,7 @@ DWORD WINAPI writerThread(void*){
 }
 static CONTEXT debug(HANDLE thread){assert(SuspendThread(thread)!=DWORD(-1));CONTEXT c{};c.ContextFlags=CONTEXT_DEBUG_REGISTERS;assert(GetThreadContext(thread,&c));assert(ResumeThread(thread)!=DWORD(-1));return c;}
 int main(int argc,char** argv){
+ bool sequence=argc>1&&std::strcmp(argv[1],"--sequence")==0;
  auto* memory=static_cast<float*>(VirtualAlloc(nullptr,4096,MEM_COMMIT|MEM_RESERVE,PAGE_READWRITE));assert(memory);
  world[0]=world[5]=world[10]=world[15]=1;tilted[0]=tilted[6]=tilted[15]=1;tilted[9]=-1;
  hero.hero=reinterpret_cast<std::uintptr_t>(memory+64);hero.transform=reinterpret_cast<std::uintptr_t>(memory);
@@ -50,12 +55,13 @@ int main(int argc,char** argv){
  assert(MH_Initialize()==MH_OK);assert(MH_CreateHook(reinterpret_cast<void*>(&commonWriter),reinterpret_cast<void*>(&ws_source_thunk),&ws_source_original)==MH_OK);assert(MH_EnableHook(reinterpret_cast<void*>(&commonWriter))==MH_OK);
  go=CreateEventW(nullptr,FALSE,FALSE,nullptr);done=CreateEventW(nullptr,FALSE,FALSE,nullptr);DWORD tid=0;auto thread=CreateThread(nullptr,0,writerThread,nullptr,0,&tid);assert(thread);
  auto original=debug(thread);
- if(argc>1&&std::strcmp(argv[1],"--prearm")==0){
+ if(argc>1&&(std::strcmp(argv[1],"--prearm")==0||sequence)){
+  if(sequence){float e[16]={.70710678f,0,.70710678f,0,-.70710678f,0,.70710678f,0,0,-1,0,0,0,0,0,1};std::memcpy(tilted,e,64);}
   prearmTest=true;std::memcpy(memory,world,64);fakeToken.phase=3;fakeToken.generation=1;fakeToken.owner=hero.hero;fakeToken.updates=77;fakeToken.thread=tid;
   armedSignal=CreateEventW(nullptr,FALSE,FALSE,nullptr);
   msm2::reset_trace::configure(true,base,nt->OptionalHeader.SizeOfImage);
   assert(output.find("RESET_TRACE_SELF_CHECK exact_build=1 common_writer_hook=1 reset_trace_enabled=1 reset_trace_admitted=1 primary_thread_prearm_supported=1")!=std::string::npos);
-  testRequest.prearmed=true;testRequest.verifyDual=true;testRequest.initMs=GetTickCount64()-600;testRequest.session=1;testRequest.generation=1;testRequest.nativeUpdate=77;testRequest.hero=hero.hero;testRequest.transform=hero.transform;testRequest.owner=hero.hero;testRequest.thread=tid;testRequest.normal={0,0,1};
+  testRequest.prearmed=true;testRequest.verifyDual=true;testRequest.initMs=GetTickCount64()-600;testRequest.session=1;testRequest.generation=1;testRequest.nativeUpdate=77;testRequest.hero=hero.hero;testRequest.transform=hero.transform;testRequest.owner=hero.hero;testRequest.thread=tid;testRequest.normal=sequence?ws::Vec3{-.70710678f,0,.70710678f}:ws::Vec3{0,0,1};
   msm2::reset_trace::request(testRequest);assert(WaitForSingleObject(armedSignal,1000)==WAIT_OBJECT_0);
   assert(windows[0].state==4&&windows[0].primaryInstalled&&windows[0].end-windows[0].start>350);
   assert(usedLeases==1&&leases[0].tid==tid);
@@ -64,13 +70,14 @@ int main(int argc,char** argv){
   msm2::trace::resetEntry(hero.transform,1,0,0,base+11,false,77,1,hero.hero);
   Sleep(110);mode=2;SetEvent(go);assert(WaitForSingleObject(done,1000)==WAIT_OBJECT_0);
   SetEvent(go);assert(WaitForSingleObject(done,1000)==WAIT_OBJECT_0);assert(windows[0].hits==1);
-  mode=0;SetEvent(go);assert(WaitForSingleObject(done,1000)==WAIT_OBJECT_0);Sleep(10);
-  msm2::trace::drainLogs();{auto f=std::fopen("logs/windows_prearmed_reset_synthetic.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);}
+  mode=sequence?1:0;SetEvent(go);assert(WaitForSingleObject(done,1000)==WAIT_OBJECT_0);Sleep(10);
+  msm2::trace::drainLogs();{auto f=std::fopen(sequence?"logs/windows_dual_reset_sequence_synthetic.log":"logs/windows_prearmed_reset_synthetic.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);}
   assert(output.find("trace_already_armed_before_override=1")!=std::string::npos);
   assert(output.find("COMMON_WRITER_TRACE session=1")!=std::string::npos&&output.find("source_valid=0")!=std::string::npos);
   assert(output.find("source_overridden_this_entry=1")!=std::string::npos);
   assert(output.find("RESET_WRITER_CANDIDATE=1 session=1 common_writer_reset=0 RESET_PATH_CORRELATED=0")!=std::string::npos);
   assert(output.find("NEW_RESET_AFTER_DUAL_OVERRIDE")!=std::string::npos);
+  if(sequence)assert(output.find("RESET_SEQUENCE_CANDIDATE")!=std::string::npos);
   assert(!activeLeases());auto restored=debug(thread);assert(restored.Dr0==original.Dr0&&restored.Dr1==original.Dr1&&(restored.Dr7&ownMask)==(original.Dr7&ownMask));
   // Absolute deadline and occupied primary slot are failures, not fake prearm.
   testRequest.verifyDual=false;testRequest.session=2;testRequest.initMs=GetTickCount64()-1000;std::memcpy(memory,world,64);
@@ -90,7 +97,8 @@ int main(int argc,char** argv){
   auto deinit=fakeToken;deinit.phase=0;assert(lifecycleObserver);lifecycleObserver(deinit);assert(!windows[3].capture);
   fakeGuard=false;Sleep(10);msm2::reset_trace::stop();msm2::trace::stop();assert(!activeLeases());
   finish=true;SetEvent(go);assert(WaitForSingleObject(thread,1000)==WAIT_OBJECT_0);CloseHandle(thread);CloseHandle(go);CloseHandle(done);CloseHandle(armedSignal);MH_Uninitialize();VirtualFree(memory,0,MEM_RELEASE);
-  auto f=std::fopen("logs/windows_prearmed_reset_synthetic.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);
+  auto f=std::fopen(sequence?"logs/windows_dual_reset_sequence_synthetic.log":"logs/windows_prearmed_reset_synthetic.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);
+  if(sequence)puts("PASS: real hardware diagonal E sequential dword reset after dual commits; previous surface anchor captures final WorldUp despite non-surface intermediate row; synthetic only");
   puts("PASS: b7 .60 prearm primary-only before .70 source commit, all-caller/invalid-source trace, surface/reset hardware events, positive PREARM_STATUS, unknown-writer non-correlation, Deinit cancellation and DR cleanup; synthetic NOT game evidence");return 0;
  }
  if(argc>1){

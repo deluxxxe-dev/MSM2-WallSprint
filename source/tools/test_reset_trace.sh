@@ -8,3 +8,5 @@ WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/w
 /workspace/toolchains/analysis-python/bin/python tools/test_reset_writer_review.py | tee logs/reset_writer_review_tests.log
 
 WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/build/windows/immediate_reset_smoke.exe" --prearm | tee logs/windows_prearmed_reset_smoke.log
+
+WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/build/windows/immediate_reset_smoke.exe" --sequence | tee logs/windows_dual_reset_sequence_smoke.log
