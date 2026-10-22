@@ -41,96 +41,147 @@ Verified on cardinal and diagonal planar vertical walls:
 - `P320 - P338 ≈ 0.5 * N398`.
 - `dot(HeroPosition - P338, N398) ≈ 0.5 m`.
 
-Face E diagonal wall has repeatedly produced approximately:
+Face E diagonal wall repeatedly produces approximately:
 
 `N398 = (-0.707107, 0, +0.707107)`.
 
-## Orientation writer discovery
+## Orientation source path 1 — common writer
 
-A common native orientation/transform writer was independently discovered:
+Known writer:
 
 - function RVA `0x2CFC580`
-- function size 584 bytes on the accepted build.
+- accepted-build function size 584 bytes.
 
-It is common infrastructure and must not be globally patched.
+Important caller paths:
 
-Important caller paths observed:
-
-- WallRun common caller return RVA `0x2CFC8F3`
-- Crawl surface-relative caller return RVA `0x1021C9E`
+- WallRun caller return RVA `0x2CFC8F3`
+- Crawl surface caller return RVA `0x1021C9E`
 - secondary Crawl candidate `0x1022C15`
 
-## Source transform layout
-
-At the common writer, the relevant RDX source block is verified for the observed Hero Transform calls as an affine transform-like layout:
+Observed RDX source layout for the relevant Hero calls:
 
 - `RDX + 0x00` Right
 - `RDX + 0x10` Up
 - `RDX + 0x20` Forward
 - `RDX + 0x30` Position
 
-WallRun supplies World Up. Crawl supplies surface-relative Up matching N398 on A and E.
+WallRun normally supplies World Up. Crawl supplies surface-relative Up matching N398.
 
-## v0.1b5 result
+The WallRun caller-local source override is valid: modifying this source before `0x2CFC580` briefly changes the real Hero Actor Transform toward Surface Up.
 
-WallRun caller-local source override works far enough to change the actual Actor Transform.
+## v0.1b5 / b6
 
-Verified behavior:
+v0.1b5 established that source injection reaches the Actor but is later reset to World Up.
 
-- modify the WallRun stack-local source orientation before the common writer;
-- Actor Up briefly moves toward the requested surface-relative Up;
-- roughly 10–20 ms later Actor Up returns to World Up.
+v0.1b6 failed only as a diagnostic: its hardware watch was disabled/late. This did not invalidate source injection.
 
-Therefore the source injection path is valid. The remaining orientation blocker is a later reset/write path.
+## v0.1b7 result — reset ownership discovered
 
-Do not discard the source-override architecture.
+v0.1b7 successfully pre-armed the primary WallRun thread before source override and captured the real reset path on both A and E.
 
-## v0.1b6 result
+### Immediate reset path
 
-v0.1b6 attempted to capture the immediate reset writer but the diagnostic trace was not actually admitted/armed in time.
+Strong A/E repeated evidence:
 
-Observed startup/runtime failure:
+- writer function RVA `0x2CFC3C0`
+- runtime range `0x2CFC3C0..0x2CFC57C`
+- size 444 bytes
+- captured runtime SHA256 `ee33ad96fb1834f9977621ea988f7667f0eb3e47166a7115ba262072ebc50196`
+- caller return RVA `0x2CFC84B`
+- caller2 RVA `0x35184A5`
+- same primary native WallRun thread.
 
-- `orientation_trace_config enabled=0 admitted=0`
-- attempted windows reported `installed=0`
-- `armed=0`
-- `captured=0`
-- arm delay was roughly 68–88 ms after the relevant commit, later than the reset itself.
+Timing:
 
-The Actor still briefly became surface-relative, confirming the b5 result.
+- commonly about 0.8–1.0 ms after the WallSprint source commit.
 
-Conclusion:
+Static/runtime interpretation:
 
-**v0.1b6 did not disprove the reset-writer hypothesis. Its watch was late/inactive.**
+- the beginning of `0x2CFC3C0` directly copies transform dwords from RDX to RCX;
+- this includes Up components at `+0x10`, `+0x14`, `+0x18`;
+- RCX is the current Hero Transform in the captured reset events;
+- RDX is a nearby thread-stack address in the captured events (approximately post-prologue `RSP + 0x60` in representative samples).
 
-## Current blocker
+On E, a Surface-like Up such as approximately `(-0.5, 0.707, +0.5)` is observed being driven toward `(0,1,0)` through sequential writes from this function.
 
-Identify the native write/caller that resets Hero Actor Up from surface-relative orientation back to World Up immediately after the successful WallRun source override.
+This is the immediate visible orientation blocker.
 
-Current stage:
+### Later common-writer reset
+
+A second path also exists:
+
+- writer `0x2CFC580`
+- caller return `0x2CFC8F3`
+- current Hero target
+- source Up = World Up
+- some such calls report `source_overridden_this_entry=0` even after WallSprint source injection has begun.
+
+A strong A sample reset Surface Up back to World Up about 14.9 ms after the preceding source commit.
+
+Therefore the current `0x2CFC580` override admission does not cover every relevant WallRun invocation.
+
+## Current architecture hypothesis
+
+```text
+WallRun builds World-relative native sources
+        ↓
+WallSprint currently overrides one 0x2CFC8F3 / 0x2CFC580 source
+        ↓
+Hero briefly becomes Surface-relative
+        ↓ ~0.8–1.0 ms
+0x2CFC84B → 0x2CFC3C0 copies another World-relative source into Hero
+        ↓
+Hero returns toward World-relative orientation
+        ↓ later
+0x2CFC8F3 → 0x2CFC580 may also write another unmodified World-Up source
+```
+
+Do not globally patch either writer. The preferred architecture remains upstream/source ownership: feed the same SurfaceFrame orientation into each exact verified WallRun source path that owns Hero orientation.
+
+## Current blocker / stage
 
 1. WallRun detection ✅
 2. Actor position/orientation ✅
 3. surface normal ✅
 4. planar surface point / standoff data ✅
 5. SurfaceFrame basis ✅
-6. native orientation source injection ✅ briefly reaches Actor
-7. immediate reset writer/caller ▶ CURRENT
-8. retained WallSprint orientation ⬜
-9. adhesion ⬜
-10. surface-relative movement ⬜
-11. animation integration ⬜
-12. camera and later roadmap ⬜
+6. first native orientation source injection ✅
+7. reset writer discovery ✅
+8. dual-source orientation ownership ▶ CURRENT
+9. retained WallSprint orientation ⬜
+10. adhesion ⬜
+11. surface-relative movement ⬜
+12. animation integration ⬜
+13. camera and later roadmap ⬜
+
+## Current implementation objective
+
+v0.1b8 should:
+
+- preserve the existing `0x2CFC580` source-injection architecture;
+- cover the late unmodified `0x2CFC8F3` World-Up calls during active WallSprint;
+- independently authenticate `0x2CFC3C0` + caller `0x2CFC84B`;
+- inspect its actual RDX source at entry;
+- only if exact guards pass, replace orientation rows of that caller-local source with the same interpolated SurfaceFrame basis;
+- never modify Position;
+- keep direct Actor write, adhesion, movement, animation, camera and physics disabled;
+- require retained `dot(ActorUp,N398) >= 0.98` for >=0.30 s or 20 distinct updates before moving to adhesion.
+
+## Repository continuity warning
+
+The GitHub `main` branch may not contain the previous Codex cloud task's v0.1b7 implementation because that task produced/tested a package without committing its working-tree changes back to this repository.
+
+Any new isolated Codex task must first inspect the repo and, if b7 changes are absent, reconstruct the required pre-arm/trace support from `docs/CODEX_NEXT.md`, `analysis/V01B7_RUNTIME_RESULT.md`, and existing b6 code. Do not assume a previous cloud working tree persists.
 
 ## Human test locations
 
 A Control:
 
-- use the current flat unobstructed vertical control wall near Face E;
-- do not assume +Z in code; use measured N398.
+- current flat unobstructed vertical control wall near Face E;
+- do not hard-code +Z; use measured N398.
 
 E:
 
-- use the same known physical diagonal wall used in previous tests.
+- same known physical diagonal wall used in previous tests.
 
-For the next diagnostic, one left-to-right WallRun on A and one on E are sufficient. Crawl is not required.
+For the next orientation ownership test, one left-to-right WallRun on A and one on E are sufficient. Crawl is not required.
