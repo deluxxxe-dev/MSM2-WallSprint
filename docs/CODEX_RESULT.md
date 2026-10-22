@@ -4,7 +4,7 @@
 
 Branch: **codex/v01b8-dual-source**.
 
-Implementation commit: **HANDOFF_IMPLEMENTATION_SHA** (filled after committing the implementation; the following handoff commit records this exact ancestor). Preserved b7 implementation baseline: **f26fe5a**. Base task instructions/runtime summary: **dd87768**. No main history rewrite or force push. GitHub publication is confirmed only after the final push/ref check, reported in chat.
+Implementation commit: **b562f2a4df79acb108871989c4e3a06747413b29** (includes core implementation a2662bd plus the sequential-reset regression; the following handoff commit preserves final archives). Preserved b7 implementation baseline: **f26fe5a**. Base task instructions/runtime summary: **dd87768**. No main history rewrite or force push. GitHub publication is confirmed only after the final push/ref check, reported in chat.
 
 ## Changes
 
@@ -37,12 +37,14 @@ Final build and suites completed with exit **0**:
 - `bash tools/build_windows.sh`: pinned GCC/Clang Windows x64 DLL, warnings as errors.
 - `bash tools/test.sh`: ASan/UBSan portable checks,11 PASS reports.
 - `bash tools/smoke_windows.sh`:4 PASS reports, DLL lifecycle/formatter/bounded reader and explicit wrong-build refusal. Copy/dual admission correctly remain0 on the non-game host.
-- `timeout 150s bash tools/test_hooks_windows.sh`: complete existing ABI/20k-call, observer/lifecycle/source/stack/Position/negative/legacy reset/prearm regressions plus new dual-source tests;24 PASS reports. Four unavailable private original-game replays are explicit SKIPs, not passes.
+- `timeout 150s bash tools/test_hooks_windows.sh`: complete existing ABI/20k-call, observer/lifecycle/source/stack/Position/negative/legacy reset/prearm regressions plus new dual-source tests;26 PASS reports. Four unavailable private original-game replays are explicit SKIPs, not passes.
 - Independent real MinHook sources on A/E normals share transition and preserve parent input/Position/returns; cover same-update late calls and both >=20-update and real >=300 ms retention alternatives. Injected same-update reset prevents a false retention PASS. Heap, bad caller/stack band/layout, copy patch ownership loss, Deinit and existing wrong-thread/F8/stale/native gates refuse modification.
 - Real second-thunk probe deliberately clobbers YMM/FPU state: original GPR/flags/stack/nonvolatiles/YMM0..15/returns/x87/MXCSR are preserved. SHA256 known vector and correct-unwind/wrong-original-body refusal pass. No captured game instructions are executed by these tests.
 - Hardware fixture exercises dual-commit reset classification, unchanged-store suppression, primary prearm, absolute deadlines, occupied DR preservation, rejected late request and cleanup. Legacy private-game replay remains optional SKIP.
 - Offline negative tests reject bad original hash, admission, caller, layout, stack, target, Position, insufficient retention, duplicate A/E mapping, synthetic headers, new resets and later retention loss.
 - Package validation checks version/INI/DLL, PE32+/exports/system-only imports/no WriteProcessMemory, source/licenses, CRC/hashes and private-capture exclusions. Only selected independent cloud summaries are packaged; raw user logs/full game functions/reference MOD payloads are excluded.
+
+The core implementation commit a2662bd was also extracted using git archive into an empty directory, with no untracked build/helper files. Portable tests, Windows build, smoke and complete hook regression all passed there using the existing pinned /workspace/toolchains. This validates committed-source completeness; it does not claim a separate new cloud machine was tested. The subsequent focused regression adds actual diagonal E three-dword reset stores and verifies the bounded surface-anchor classification; its isolated reset suite also passed.
 
 Development fixes included keeping capture alive across transient partially written target bases and ensuring bad same-update observations reset retention. Initial compiler indentation warnings were fixed; no warning/assertion/checksum verification was disabled.
 
