@@ -35,6 +35,7 @@ __attribute__((noinline,noclone)) void otherWriter(float* target){
 DWORD WINAPI writerThread(void*){
  while(WaitForSingleObject(go,INFINITE)==WAIT_OBJECT_0){if(finish.load())break;
   if(prearmTest&&mode.load()==2){LARGE_INTEGER q{};QueryPerformanceCounter(&q);auto r=testRequest;r.commitQpc=q.QuadPart;r.overrideBeginQpc=q.QuadPart;msm2::reset_trace::committed(r);commonWriter(reinterpret_cast<float*>(hero.transform),tilted,0x1234,0x5678);}
+  else if(prearmTest&&mode.load()==0){LARGE_INTEGER q{};QueryPerformanceCounter(&q);auto r=testRequest;r.resetCopy=true;r.commitQpc=r.overrideBeginQpc=q.QuadPart;msm2::reset_trace::committed(r);commonWriter(reinterpret_cast<float*>(hero.transform),world,0x1234,0x5678);}
   else if(mode.load()==1)otherWriter(reinterpret_cast<float*>(hero.transform));
   else commonWriter(reinterpret_cast<float*>(hero.transform),world,0x1234,0x5678);
   SetEvent(done);
@@ -54,7 +55,7 @@ int main(int argc,char** argv){
   armedSignal=CreateEventW(nullptr,FALSE,FALSE,nullptr);
   msm2::reset_trace::configure(true,base,nt->OptionalHeader.SizeOfImage);
   assert(output.find("RESET_TRACE_SELF_CHECK exact_build=1 common_writer_hook=1 reset_trace_enabled=1 reset_trace_admitted=1 primary_thread_prearm_supported=1")!=std::string::npos);
-  testRequest.prearmed=true;testRequest.initMs=GetTickCount64()-600;testRequest.session=1;testRequest.generation=1;testRequest.nativeUpdate=77;testRequest.hero=hero.hero;testRequest.transform=hero.transform;testRequest.owner=hero.hero;testRequest.thread=tid;testRequest.normal={0,0,1};
+  testRequest.prearmed=true;testRequest.verifyDual=true;testRequest.initMs=GetTickCount64()-600;testRequest.session=1;testRequest.generation=1;testRequest.nativeUpdate=77;testRequest.hero=hero.hero;testRequest.transform=hero.transform;testRequest.owner=hero.hero;testRequest.thread=tid;testRequest.normal={0,0,1};
   msm2::reset_trace::request(testRequest);assert(WaitForSingleObject(armedSignal,1000)==WAIT_OBJECT_0);
   assert(windows[0].state==4&&windows[0].primaryInstalled&&windows[0].end-windows[0].start>350);
   assert(usedLeases==1&&leases[0].tid==tid);
@@ -62,15 +63,17 @@ int main(int argc,char** argv){
   msm2::trace::resetEntry(hero.transform+64,reinterpret_cast<std::uintptr_t>(world),0,0,base+10,false,77,1,hero.hero);
   msm2::trace::resetEntry(hero.transform,1,0,0,base+11,false,77,1,hero.hero);
   Sleep(110);mode=2;SetEvent(go);assert(WaitForSingleObject(done,1000)==WAIT_OBJECT_0);
+  SetEvent(go);assert(WaitForSingleObject(done,1000)==WAIT_OBJECT_0);assert(windows[0].hits==1);
   mode=0;SetEvent(go);assert(WaitForSingleObject(done,1000)==WAIT_OBJECT_0);Sleep(10);
   msm2::trace::drainLogs();{auto f=std::fopen("logs/windows_prearmed_reset_synthetic.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);}
   assert(output.find("trace_already_armed_before_override=1")!=std::string::npos);
   assert(output.find("COMMON_WRITER_TRACE session=1")!=std::string::npos&&output.find("source_valid=0")!=std::string::npos);
   assert(output.find("source_overridden_this_entry=1")!=std::string::npos);
   assert(output.find("RESET_WRITER_CANDIDATE=1 session=1 common_writer_reset=0 RESET_PATH_CORRELATED=0")!=std::string::npos);
+  assert(output.find("NEW_RESET_AFTER_DUAL_OVERRIDE")!=std::string::npos);
   assert(!activeLeases());auto restored=debug(thread);assert(restored.Dr0==original.Dr0&&restored.Dr1==original.Dr1&&(restored.Dr7&ownMask)==(original.Dr7&ownMask));
   // Absolute deadline and occupied primary slot are failures, not fake prearm.
-  testRequest.session=2;testRequest.initMs=GetTickCount64()-1000;std::memcpy(memory,world,64);
+  testRequest.verifyDual=false;testRequest.session=2;testRequest.initMs=GetTickCount64()-1000;std::memcpy(memory,world,64);
   msm2::reset_trace::request(testRequest);assert(WaitForSingleObject(armedSignal,1000)==WAIT_OBJECT_0);
   Sleep(120);assert(!windows[1].capture);assert(!activeLeases());
   auto occupied=original;occupied.Dr0=base;occupied.Dr7=(occupied.Dr7&~ownMask)|0x90001;

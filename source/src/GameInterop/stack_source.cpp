@@ -20,6 +20,12 @@ bool stackMatrix(std::uintptr_t p,std::uintptr_t rsp,StackRange range,source_mat
  if(p%16||!p||p>UINTPTR_MAX-64||rsp>UINTPTR_MAX-0x28||p!=rsp+0x28||range.limit>=range.base||rsp<range.limit||p<range.limit||p+64>range.base||!writable(p))return false;
  return msm2::readMemory(p,&out,64)&&source_math::valid(out);
 }
+bool callerStackMatrix(std::uintptr_t p,std::uintptr_t rsp,StackRange range,source_math::Matrix& out) noexcept {
+ // Authenticated exact direct caller + above entry return/shadow space, within
+ // a narrow caller-local stack band. No guessed post-prologue RSP+0x60 rule.
+ if(!p||p%16||p>UINTPTR_MAX-64||rsp>UINTPTR_MAX-0x400||p<rsp+0x28||p+64>rsp+0x400||range.limit>=range.base||rsp<range.limit||p<range.limit||p+64>range.base||!writable(p))return false;
+ return msm2::readMemory(p,&out,64)&&source_math::valid(out);
+}
 WriteResult writeStackOrientation(std::uintptr_t p,const source_math::Matrix& expected,const source_math::Matrix& replacement) noexcept {
  WriteResult r{};auto range=currentStack();if(!p||p%16||p>UINTPTR_MAX-64||p<range.limit||p+64>range.base)return r;
  if(std::memcmp(expected.v+12,replacement.v+12,16)||!source_math::valid(replacement))return r;

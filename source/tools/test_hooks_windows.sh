@@ -31,3 +31,5 @@ bash tools/test_native_source.sh
 /workspace/toolchains/analysis-python/bin/python tools/test_native_source_review.py | tee logs/native_source_review_tests.log
 
 bash tools/test_reset_trace.sh
+
+bash tools/test_dual_source.sh

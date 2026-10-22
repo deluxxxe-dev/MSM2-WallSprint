@@ -5,7 +5,7 @@
 namespace msm2::reset_trace {
 struct Request {
  std::uint64_t session{},generation{},nativeUpdate{},commitQpc{},initMs{},overrideBeginQpc{};
- bool prearmed{};
+ bool prearmed{},resetCopy{},verifyDual{};
  std::uintptr_t hero{},transform{},owner{};unsigned thread{};
  ws::Vec3 normal{},appliedUp{};
 };

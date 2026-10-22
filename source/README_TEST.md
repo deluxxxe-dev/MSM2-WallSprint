@@ -1,32 +1,29 @@
-# WallSprint v0.1b7 — Pre-Armed Reset Writer Capture
+# WallSprint v0.1b8 — Dual-Source Orientation Ownership
 
-Package **0.1.16**。姿勢を戻す writer/caller を特定する診断版です。見た目の保持はまだ完成条件ではありません。**RESET_WRITER_VERIFIED=0、実機 A/E 未確認**。
+Package **0.1.17**。二つの確認済み WallRun source 経路へ同じ補間姿勢を渡す、orientation-only 版です。**b8 の実機保持は未確認**。adhesion / movement / animation / camera / physics は追加しません。
 
 ## 導入
 
-1. ゲームを完全に終了し、古い WallSprint を無効にする。
-2. **WallSprint_v0.1b7_prearmed_reset_capture.zip** を展開する。
-3. 中の **WallSprint.script は解凍せず** Overstrike に追加し、Install mods。
-4. これまでと同じ Script support と `-scripts` で起動する。別 SDK・参考 MOD は不要。
+ゲームを完全に終了し、古い WallSprint を無効化。**WallSprint_v0.1b8_dual_source_ownership.zip** を展開し、中の **WallSprint.script は解凍せず** Overstrike へ追加、Install mods。従来の Script support と `-scripts` で起動します。別 SDK・参考 MOD は不要です。
 
-対象は Spider-Man2.exe **2.810.0.0**、SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`。別 build は fail closed。配布 INI の変更は不要。
+対象は Spider-Man2.exe **2.810.0.0**、SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`。別 build、未認証 writer/caller、未知 source layout は fail closed。配布 INI の変更は不要。
 
-## 操作・提出
+## A / E テスト
 
-録画を開始し、地上で約2秒静止。Control A で左→右の横 WallRun を1回、約1.5秒。離脱して地上で約2秒静止し、同じ既知の斜め Face E で左→右を1回、約2秒。その後ゲームを終了する。Crawl・マーカーキー・繰り返し操作は不要。A/E 間の Fast Travel は可。
+地上で約2秒静止後、現在の Control A の平らな壁で左→右の横 WallRun を1回、約1.5秒。離脱して地上で約2秒静止し、同じ既知の斜め Face E で左→右を1回、約2秒。その後ゲームを終了。壁の長さに合わせて構いません。Crawl・マーカーキーは不要です。
 
-`logs/WallSprint.log` と録画、A/E に対応する session 番号、見た目・クラッシュ・Position の異常有無を提出してください。失敗や0件でもログを加工しないでください。実機ログは公開 ZIP に含めません。
+録画は可能なら添付し、**未加工の logs/WallSprint.log と明示した A/E の session 対応**を提出してください。runtime log が保持判定の基準です。クラッシュ、Position 異常、姿勢が戻るタイミングも報告してください。
 
-F8 は診断と source 変更を停止し再起動まで OFF、F9 は script 停止。再採取はゲームを完全に再起動してください。
+成功すれば壁に対して姿勢が保持され、world-up のカメラに対して横向きに見える可能性があります。Animation が不自然でもこの段階では許容します。見た目だけで保持成功と判断しません。
 
-## 確認するログ
+## ログと停止
 
-起動時の `RESET_TRACE_SELF_CHECK` で `exact_build=1 common_writer_hook=1 reset_trace_enabled=1 reset_trace_admitted=1 primary_thread_prearm_supported=1` が必要です。`V01B7_DIAGNOSTIC_NOT_ADMITTED` があれば診断未成立です。
+起動時に `RESET_COPY_HOOK admitted=1 installed=1` と `DUAL_SOURCE_ADMISSION admitted=1 dual_source_required=1 copy_hook_authenticated=1` が必要です。第二 writer は元444bytesの SHA / runtime boundary / exact caller を認証してから hook します。
 
-native Init から0.60秒以降の最初の verified Update（common-writer entry も fallback）で既知 primary native thread のみを先に監視します。source 変更開始は従来どおり0.70秒以降。監視は1.10秒まで、または reset 候補・Deinit・identity/guard loss・F8・予算上限で終了します。helper の scheduling で間に合わない場合も source 開始を遅らせず、`PREARM_STATUS first_override=1` の `trace_already_armed_before_override=0` で失敗を明示します。成功条件は同フィールドが1、かつ `RESET_TRACE_EVENT` が1件以上。
+`COMMON_SOURCE_OVERRIDE`、`LATE_COMMON_WORLDUP_OVERRIDE=1`、`RESET_COPY_SOURCE_ENTRY`、`RESET_COPY_SOURCE_OVERRIDE` を確認。第二 source はその関数自身の raw entry と stack/layout を検証し、orientation48bytesだけ変更します。`position_unchanged=1` が必要です。拒否された entry は raw args / stack bounds と理由を残し、書き込みません。
 
-`COMMON_WRITER_TRACE` は current Hero Transform 宛ての全 caller を記録し、`source_valid=0` の RDX を transform と解釈しません。記録予算・競合による欠落は dropped として報告し、capture を停止します。
+補間完了後の `ORIENTATION_RETENTION_PASS=1`（held_ms>=300 または held_updates>=20）が主ゲートです。同一 update の複数呼び出しを20回と数えません。A/E 両方で保持し、未知 reset・クラッシュ・Position 異常がないことを確認します。後の `NEW_RESET_AFTER_DUAL_OVERRIDE` や sampled retention loss は未解決として提出してください。
 
-`RESET_WRITER_CANDIDATE=1` は候補、`RESET_PATH_CORRELATED=1` は既知 common writer の thread/entry time/target/caller/post-RSI/source の照合です。実際の post-store RIP、命令の書込先と関数 SHA は private log の offline decode で確認します。watch address は実効書込命令の先頭アドレスとは限りません。A/E 両方で同じ writer/caller が再現するまで VERIFIED にしません。
+primary thread の監視は約0.60〜1.50秒で、同じ Up の繰り返しを省略します。`PREARM_STATUS first_override=1` の prearm=0、dropped、0件も加工せず提出。watch の期限/coverage外を「未知 writer なし」とは判断しません。
 
-source48byte の既存変更だけを維持し、Position・direct Actor・reset patch/skip・adhesion/movement/camera/animation/physics は追加しません。
+**F8 は source と診断を再起動まで OFF、F9 は script 停止**。再試験はゲームを完全に再起動してください。reset writer の NOP/skip、direct Actor/Position 書き込み、吸着・移動の修正は行いません。

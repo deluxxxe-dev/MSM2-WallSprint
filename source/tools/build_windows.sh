@@ -18,6 +18,8 @@ done
 "$gpp" "${common[@]}" -c src/msm2/update_bridge.cpp -o build/windows/update_bridge.o
 "$gcc" -c -g src/msm2/orientation_source_thunk.S -o build/windows/orientation_source_thunk.o
 "$gpp" "${common[@]}" -Ivendor/minhook/include -c src/msm2/orientation_source.cpp -o build/windows/orientation_source.o
+"$gcc" -c -g src/NativeHooks/reset_copy_thunk.S -o build/windows/reset_copy_thunk.o
+"$gpp" "${common[@]}" -Ivendor/minhook/include -c src/NativeHooks/reset_copy_source.cpp -o build/windows/reset_copy_source.o
 "$gpp" "${common[@]}" -c src/msm2/orientation_trace.cpp -o build/windows/orientation_trace.o
 "$gpp" "${common[@]}" -c src/NativeHooks/source_lifecycle.cpp -o build/windows/source_lifecycle.o
 "$gpp" "${common[@]}" -c src/NativeHooks/immediate_reset_trace.cpp -o build/windows/immediate_reset_trace.o
@@ -29,4 +31,4 @@ done
 "$gpp" "${common[@]}" -c src/msm2/orientation_log.cpp -o build/windows/orientation_log.o
 "$gpp" "${common[@]}" -c src/msm2/telemetry.cpp -o build/windows/telemetry.o
 "$clang_bin" --target=x86_64-w64-windows-gnu --sysroot="$toolchain_root/usr/x86_64-w64-mingw32" -O2 -g -fms-extensions -Wall -Wextra -Werror -c src/msm2/guard.c -o build/windows/guard.o
-"$gpp" -shared -static -static-libgcc -static-libstdc++ -o build/windows/WallSprint.dll build/windows/sdk_bridge.o build/windows/telemetry.o build/windows/guard.o build/windows/public_transform.o build/windows/orientation_log.o build/windows/hook_capture.o build/windows/hook_thunks.o build/windows/wallrun_hooks.o build/windows/actor_writer.o build/windows/orientation_trace.o build/windows/orientation_source.o build/windows/orientation_source_thunk.o build/windows/source_lifecycle.o build/windows/native_source_override.o build/windows/immediate_reset_trace.o build/windows/stack_source.o build/windows/update_bridge.o build/windows/minhook_buffer.o build/windows/minhook_hook.o build/windows/minhook_trampoline.o build/windows/minhook_hde64.o -lbcrypt -lversion -luser32 -Wl,--exclude-all-symbols,--gc-sections,--dynamicbase,--nxcompat
+"$gpp" -shared -static -static-libgcc -static-libstdc++ -o build/windows/WallSprint.dll build/windows/sdk_bridge.o build/windows/telemetry.o build/windows/guard.o build/windows/public_transform.o build/windows/orientation_log.o build/windows/hook_capture.o build/windows/hook_thunks.o build/windows/wallrun_hooks.o build/windows/actor_writer.o build/windows/orientation_trace.o build/windows/orientation_source.o build/windows/orientation_source_thunk.o build/windows/reset_copy_source.o build/windows/reset_copy_thunk.o build/windows/source_lifecycle.o build/windows/native_source_override.o build/windows/immediate_reset_trace.o build/windows/stack_source.o build/windows/update_bridge.o build/windows/minhook_buffer.o build/windows/minhook_hook.o build/windows/minhook_trampoline.o build/windows/minhook_hde64.o -lbcrypt -lversion -luser32 -Wl,--exclude-all-symbols,--gc-sections,--dynamicbase,--nxcompat

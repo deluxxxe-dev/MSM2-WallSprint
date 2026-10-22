@@ -18,6 +18,7 @@
 #include "msm2/orientation_source.hpp"
 #include "NativeHooks/native_source_override.hpp"
 #include "NativeHooks/immediate_reset_trace.hpp"
+#include "NativeHooks/reset_copy_source.hpp"
 #include <cstdlib>
 #include <limits>
 #include <algorithm>
@@ -113,7 +114,7 @@ unsigned markerEvents(ws::diag::MarkerKeys& keys){
  return keys.update(foreground(),numbers);
 }
 void run(){
- openLog();msm2::writeLog("WallSprint %s package_version=%s Immediate Reset Writer Trace; scope=verified_WallRun_source_and_bounded_30ms_Up_watch hook_mode=build_scoped_verified_lifecycle",ws::versionLabel,ws::packageVersion);
+ openLog();msm2::writeLog("WallSprint %s package_version=%s Dual-Source Orientation Ownership; scope=two_exact_caller_local_sources_and_bounded_primary_Up_verification hook_mode=build_scoped_verified_lifecycle",ws::versionLabel,ws::packageVersion);
  msm2::writeLog("marker_keys=1,2,3,4,5,6 modifier=NONE top_row_digits=true edge_triggered=true");
  bool targetConfirmed=buildIdentity();auto config=settings();bool ready=msm2::initialize(targetConfirmed,config.audit,config.hooks.enabled);
  msm2::writer::configure(config.planar,targetConfirmed&&ready);
@@ -121,6 +122,7 @@ void run(){
  auto image=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));IMAGE_DOS_HEADER traceDos{};IMAGE_NT_HEADERS64 traceNt{};bool traceImage=msm2::readMemory(image,&traceDos,sizeof(traceDos))&&traceDos.e_magic==IMAGE_DOS_SIGNATURE&&traceDos.e_lfanew>0&&traceDos.e_lfanew<0x100000&&msm2::readMemory(image+traceDos.e_lfanew,&traceNt,sizeof(traceNt))&&traceNt.Signature==IMAGE_NT_SIGNATURE;
  msm2::trace::configure(config.trace,targetConfirmed&&ready&&traceImage&&msm2::hooks::observationPlanAuthenticated(),image,traceImage?traceNt.OptionalHeader.SizeOfImage:0);
  msm2::input::configure(config.input,targetConfirmed&&ready&&traceImage&&msm2::hooks::observationPlanAuthenticated(),image,traceImage?traceNt.OptionalHeader.SizeOfImage:0);
+ msm2::reset_copy::configure(targetConfirmed&&ready&&msm2::input::authenticated()&&msm2::hooks::observationPlanAuthenticated(),image,traceImage?traceNt.OptionalHeader.SizeOfImage:0);
  msm2::native_source::configure(config.source,targetConfirmed&&ready&&msm2::input::authenticated()&&msm2::hooks::observationPlanAuthenticated(),image,traceImage?traceNt.OptionalHeader.SizeOfImage:0,msm2::hooks::patchSnapshot());
  msm2::reset_trace::configure(targetConfirmed&&ready&&msm2::native_source::observationGuardsAuthenticated(),image,traceImage?traceNt.OptionalHeader.SizeOfImage:0);
  msm2::writeLog("surface_axis_verified=1 surface_sign_verified=1 plane_reference_verified=1 diagonal_surface_verified=1 source=prior_read_only_v01a9_A_E_validation scope=exact_build_planar_vertical NOT_formal_engine_field_names legacy_crawl_calibration_disabled=1");
@@ -169,13 +171,13 @@ void run(){
    lastOrientation=now;
   }
  }
- msm2::reset_trace::stop();msm2::native_source::stop();msm2::input::stop();msm2::trace::stop();
+ msm2::reset_trace::stop();msm2::native_source::stop();msm2::reset_copy::stop();msm2::input::stop();msm2::trace::stop();
  msm2::hooks::stop();
  msm2::writeLog("WallSprint exited reason=TelemetryStopped future_writes_disabled=1 no_forced_ground_restore=1");
  closeLog();
 }
 DWORD WINAPI worker(void*){
- try{run();}catch(const std::exception& e){msm2::reset_trace::stop();msm2::native_source::stop();msm2::input::stop();msm2::trace::stop();msm2::hooks::stop();msm2::writeLog("exception=%s; telemetry stopped; game overrides=none",e.what());closeLog();}catch(...){msm2::reset_trace::stop();msm2::native_source::stop();msm2::input::stop();msm2::trace::stop();msm2::hooks::stop();msm2::writeLog("exception=unknown; telemetry stopped; game overrides=none");closeLog();}
+ try{run();}catch(const std::exception& e){msm2::reset_trace::stop();msm2::native_source::stop();msm2::reset_copy::stop();msm2::input::stop();msm2::trace::stop();msm2::hooks::stop();msm2::writeLog("exception=%s; telemetry stopped; game overrides=none",e.what());closeLog();}catch(...){msm2::reset_trace::stop();msm2::native_source::stop();msm2::reset_copy::stop();msm2::input::stop();msm2::trace::stop();msm2::hooks::stop();msm2::writeLog("exception=unknown; telemetry stopped; game overrides=none");closeLog();}
  auto self=instance;FreeLibraryAndExitThread(self,0);
 }
 }

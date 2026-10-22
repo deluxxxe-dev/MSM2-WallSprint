@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.16",
-  "description": "WallSprint v0.1b7 Pre-Armed Reset Writer Capture. Preserve verified caller-local source override; primary native thread watch from .60 to 1.10 seconds and all-caller common-writer diagnostics. No reset patch, direct Actor/Position/Camera/Physics/Animation writes.",
+  "version": "0.1.17",
+  "description": "WallSprint v0.1b8 Dual-Source Orientation Ownership. Two exact authenticated caller-local orientation sources share one per-session SurfaceFrame transition. No direct Actor/Position/adhesion/movement/camera/animation/physics writes.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

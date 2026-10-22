@@ -1,13 +1,10 @@
-# WallSprint v0.1b7 build — package 0.1.16
+# WallSprint v0.1b8 build — package0.1.17
 
-Linux cloud workflow: cross-build the Windows x64 DLL and run independent Wine/native hardware/ABI tests. Spider-Man2.exe is unavailable here; actual A/E reset-path verification remains pending.
-
-From `/workspace/WallSprint/source`:
+Use the existing checkout; isolated cloud tasks do not need an extra worktree. From `/workspace/WallSprint/source`:
 
 ```bash
 WALLSPRINT_WITH_WINE=1 bash tools/setup_cloud.sh
 bash tools/setup_analysis.sh
-# Relocated Wine data directory: create only when missing.
 [[ -e /workspace/toolchains/wine/usr/share/wine/wine ]] || ln -s . /workspace/toolchains/wine/usr/share/wine/wine
 bash tools/test.sh
 bash tools/build_windows.sh
@@ -16,16 +13,16 @@ bash tools/test_hooks_windows.sh
 python tools/release.py
 ```
 
-The repository-pinned GCC14 POSIX, Clang19 SEH leaf, MinHook1.3.4, Wine10 and hash-pinned Capstone5.0.6 are retained. `smoke_windows.sh` restores the local Wine server wrapper after package extraction. Do not re-extract toolchain packages while Wine tests run. CMake intentionally directs users to the cross-build script.
+Pinned GCC14 POSIX, Clang19 SEH, MinHook1.3.4, Wine10 and hash-pinned Capstone5.0.6 remain. `smoke_windows.sh` restores the relocated Wine server wrapper after extraction. Never re-extract packages concurrently with Wine tests. CMake intentionally directs users to this cross-build path.
 
-Outputs: `../WallSprint_v0.1b7_prearmed_reset_capture.zip` and `../WallSprint_v0.1b7_source.zip`; generated script/manifest under `output/WallSprint_v0.1b7/`. Do not confuse earlier b6 archives with these outputs.
+The hooks suite includes b7 prearm, original source/ABI/20k-call/stack/Position tests, dual native source transitions/retention/late same-update calls, real second-thunk MinHook vector/return/FPU preservation, exact-hash denial and offline gate negatives. No real game instructions are executed in synthetic fixtures. Private original-game replay is optional SKIP if unavailable, never a fake PASS.
 
-`test_hooks_windows.sh` includes original ABI/20k-call, lifecycle/negative source/position/stack tests, legacy reset tests and new prearm tests. The b7 fixture verifies native Update prearm before source delay, primary-first actual DR setup/readback, source/reset events, all-caller and invalid-source records, absolute deadline, occupied DR refusal, late request rejection, Deinit and cleanup. Optional private original-game replay skips when captures are absent. A Wine timing failure must be investigated/reported; it is never a passing zero-test run.
+Outputs: `../WallSprint_v0.1b8_dual_source_ownership.zip`, `../WallSprint_v0.1b8_source.zip`; generated script/manifest in `output/WallSprint_v0.1b8/`. Archive names distinguish previous b7 packages. GitHub branch/implementation commit are in `docs/CODEX_RESULT.md`; the public source includes all build/test instructions and known files needed to reproduce the implementation, without private game captures.
 
-Offline private-log review:
+Offline real-log review:
 
 ```bash
-/workspace/toolchains/analysis-python/bin/python tools/review_reset_writers.py /path/to/WallSprint.log --a-session 1 --e-session 2 --output /path/to/RESET_REVIEW.json
+python tools/review_dual_source.py /path/to/WallSprint.log --a-session 1 --e-session 2 --output /path/to/DUAL_SOURCE_REVIEW.json
 ```
 
-Confirm A/E mapping from the real recording/log; numbers above are examples. No raw private logs or captured game functions belong in release ZIPs. See `analysis/PREARMED_RESET_TRACE.md`, `analysis/RESET_WRITER_VERIFICATION.md`, and repository `docs/CODEX_RESULT.md` for gates and current validation. No reset writer/caller patch or next-milestone changes are authorized.
+A/E numbers are examples; confirm actual sessions from the user. For unknown reset stores, use the existing Capstone writer decoder with private bounded complete function captures. Native data-breakpoint RIP is post-store; do not guess its write address, function hash or source ABI. No real b8 ownership is verified until the accepted game supplies the entry/retention evidence. No adhesion is implemented.

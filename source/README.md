@@ -1,5 +1,5 @@
-# WallSprint v0.1b7 — Pre-Armed Reset Writer Capture
+# WallSprint v0.1b8 — Dual-Source Orientation Ownership
 
-Package 0.1.16。既存 source override を保持し、native WallRun の0.60秒で primary thread の Up write-watch を準備、0.70秒の source 変更より前に監視が入ったかを記録します。current Hero common writer の全 caller を bounded read-only 記録し、reset 候補と照合します。**RESET_WRITER_VERIFIED=0、実機 A/E 待ち**。
+Package0.1.17。既存 common-writer と、b7 で確認された reset-copy writer の exact caller-local source へ、単一の SurfaceFrame 補間姿勢を供給します。Position は変更せず、direct Actor / reset patch / adhesion / movement / animation / camera / physics は追加しません。**実機 b8 保持は未確認**。
 
-導入・操作は [README_TEST.md](README_TEST.md)、ビルドは [BUILD.md](BUILD.md)。診断は1.10秒または候補/Deinit/F8/identity loss/予算終了まで。reset patch・direct Actor・Position・adhesion/movement/camera/animation/physics は追加しません。非公開実機ログ・game capture・参考 MOD の payload は配布しません。
+導入・A/E 操作は [README_TEST.md](README_TEST.md)、再現手順は [BUILD.md](BUILD.md)。設計は `analysis/DUAL_SOURCE_OWNERSHIP.md`、認証は `analysis/RESET_COPY_WRITER_ANALYSIS.md`、gate は `analysis/V01B8_GATE.md`。GitHub 保存先と検証結果は `docs/CODEX_RESULT.md`。非公開実機ログ・full game functions・参考 MOD payload は配布しません。

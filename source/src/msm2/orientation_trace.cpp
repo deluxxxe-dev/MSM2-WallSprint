@@ -20,8 +20,8 @@ struct Entry {
 struct Window {
  std::atomic<bool> capture{false};unsigned id{},state{};std::uint64_t session{};
  std::uintptr_t hero{},transform{},owner{};ws::Vec3 normal{},startUp{},oldObserved{};
- msm2::reset_trace::Request reset{};double firstSurface{};
- std::atomic<std::uint64_t> lastOverride{0};std::atomic<bool> primaryInstalled{false};double primaryArmedAt{};
+ msm2::reset_trace::Request reset{};double firstSurface{},surfaceAnchorTime{};ws::Vec3 surfaceAnchor{};
+ std::atomic<std::uint64_t> lastOverride{0},commonCommit{0},copyCommit{0};std::atomic<bool> primaryInstalled{false};double primaryArmedAt{};
  double start{},end{};std::atomic<unsigned> hits{0},drops{0};std::atomic_flag cache=ATOMIC_FLAG_INIT;
 };
 struct Lease {
@@ -30,7 +30,7 @@ struct Lease {
 };
 struct Event {
  unsigned window{},slotMask{};DWORD thread{};double timestamp{};DWORD64 ripAfter{},rsp{},callers[2]{},gpr[16]{};
- Entry entry{};double firstSurface{};bool resetCandidate{};std::uint64_t commitQpc{};
+ Entry entry{};double firstSurface{};bool resetCandidate{},dualCommitted{},sequenceCandidate{};double surfaceAnchorTime{};ws::Vec3 surfaceAnchor{};std::uint64_t commitQpc{};
  float oldUp[3]{},newUp[3]{};unsigned char xmm[256]{};bool read{},callerValid{},xmmValid{};
 };
 struct CommonRecord {unsigned window{};Entry entry{};bool status{},armed{};double elapsed{};};
@@ -77,7 +77,7 @@ LONG CALLBACK handler(EXCEPTION_POINTERS* e){
  auto& w=windows[lease->window];double time=now();
  if(mixed){killed=true;for(unsigned i=leasesCap;i>0;--i){auto& l=leases[i-1];if(l.tid.load()==tid&&own(c,l))restore(c,l);}}
  else if(own(c,*lease)!=3||killed.load()||!w.capture.load(std::memory_order_acquire)||(time<=0||time>w.end)){w.capture=false;restore(c,*lease);}
- else if(w.hits.fetch_add(1)>=config.maxEvents){w.capture=false;restore(c,*lease);}
+ else if(w.hits.load()>=config.maxEvents){w.capture=false;restore(c,*lease);}
  else if(eventLock.test_and_set(std::memory_order_acquire)){++w.drops;w.capture=false;restore(c,*lease);}
  else {
   auto h=head.load(std::memory_order_relaxed);auto t=tail.load(std::memory_order_acquire);
@@ -91,14 +91,20 @@ LONG CALLBACK handler(EXCEPTION_POINTERS* e){
     if(w.state>=3){
      ws::Vec3 before{r.oldUp[0],r.oldUp[1],r.oldUp[2]},after{r.newUp[0],r.newUp[1],r.newUp[2]},b{},a{};
      bool valid=ws::unit(before,b)&&ws::unit(after,a);
-     if(valid&&ws::dot(a,w.normal)>=.5f&&!w.firstSurface)w.firstSurface=time;
+     if(valid&&ws::dot(a,w.normal)>=.5f){if(!w.firstSurface)w.firstSurface=time;w.surfaceAnchor=after;w.surfaceAnchorTime=time;}
      r.resetCandidate=valid&&(w.state!=4||w.lastOverride.load()!=0)&&ws::dot(b,w.normal)>=.5f&&a.y>=.98f;
-     r.firstSurface=w.firstSurface;r.entry=lease->entry;r.commitQpc=w.lastOverride.load();
+     r.sequenceCandidate=w.reset.verifyDual&&valid&&a.y>=.98f&&w.surfaceAnchorTime>0&&time-w.surfaceAnchorTime<=5.&&w.lastOverride.load()!=0;
+     r.resetCandidate|=r.sequenceCandidate;r.surfaceAnchor=w.surfaceAnchor;r.surfaceAnchorTime=w.surfaceAnchorTime;
+     r.firstSurface=w.firstSurface;r.entry=lease->entry;r.commitQpc=w.lastOverride.load();r.dualCommitted=w.commonCommit.load()&&w.copyCommit.load();
     }
    }
+   bool unchanged=w.reset.verifyDual&&r.read&&!std::memcmp(r.oldUp,r.newUp,12);
+   if(!unchanged){
+   ++w.hits;
    Unwind u{};u.c=c;if(ws_guarded_call(unwind,&u)&&u.count){r.callerValid=true;std::memcpy(r.callers,u.callers,sizeof(r.callers));}
    events[h%ringCap]=r;head.store(h+1,std::memory_order_release);
    if(r.resetCandidate){w.capture=false;restore(c,*lease);}
+   }
   }
   eventLock.clear(std::memory_order_release);
  }
@@ -141,7 +147,7 @@ bool begin(const Snapshot& s,unsigned state,std::uint64_t session,std::uintptr_t
  THREADENTRY32 te{};te.dwSize=sizeof(te);if(Thread32First(snap,&te))do{if(te.th32OwnerProcessID!=GetCurrentProcessId()||te.th32ThreadID==self)continue;++enumerated;if(count<config.maxThreads&&std::find(candidates,candidates+count,te.th32ThreadID)==candidates+count)candidates[count++]=te.th32ThreadID;}while(Thread32Next(snap,&te));CloseHandle(snap);
  }
  auto index=usedWindows++;auto& w=windows[index];w.id=index+1;w.state=state;w.session=session;w.hero=s.hero;w.transform=s.transform;w.owner=owner;w.normal=normal;auto axes=ws::diag::actorAxes(s.prefix);w.startUp=w.oldObserved=axes.up;w.start=now();w.end=w.start+config.windowMs;
- if(state>=3){w.reset=nextReset;w.lastOverride=w.reset.commitQpc;double commit=1000.*double(w.reset.commitQpc)/double(frequency.QuadPart);w.end=state==4?w.start+std::max(0.,1100.-double(GetTickCount64()-w.reset.initMs)):commit+30.;ws::Vec3 u{};if(ws::unit(axes.up,u)&&ws::dot(u,normal)>=.5f)w.firstSurface=w.start;}
+ if(state>=3){w.reset=nextReset;w.lastOverride=w.reset.commitQpc;double commit=1000.*double(w.reset.commitQpc)/double(frequency.QuadPart);w.end=state==4?w.start+std::max(0.,(w.reset.verifyDual?1500.:1100.)-double(GetTickCount64()-w.reset.initMs)):commit+30.;ws::Vec3 u{};if(ws::unit(axes.up,u)&&ws::dot(u,normal)>=.5f)w.firstSurface=w.start;}
  w.capture=w.start<w.end;
  if(state==4)publishedReset.store(int(index),std::memory_order_release);
  unsigned installed=0,busy=0,failed=0;
@@ -239,6 +245,8 @@ void drainLogs(){
     writeLog("RESET_ENTRY_SOURCE session=%llu entry_id=%llu thread_id=%lu qpc_ms=%.6f RCX=0x%llx RDX=0x%llx R8=0x%llx R9=0x%llx caller_rva=0x%llx source_up=(%.9g,%.9g,%.9g) source_0x40=%s readable=%u source_overridden_this_entry=%u snapshot_phase=AFTER_override_BEFORE_original entry_correlated=%u post_RSI_matches_entry_RDX=%u",(unsigned long long)w.session,(unsigned long long)entry.id,entry.tid,entry.qpc,(unsigned long long)entry.args[0],(unsigned long long)entry.args[1],(unsigned long long)entry.args[2],(unsigned long long)entry.args[3],(unsigned long long)(entry.caller>=gameBase?entry.caller-gameBase:0),up[0],up[1],up[2],raw,unsigned(entry.readable),unsigned(entry.overridden),unsigned(correlated),unsigned(r.gpr[6]==entry.args[1]));
    }
    writeLog("RESET_TRACE_EVENT_ADDRESS session=%llu qpc_ms=%.6f RIP=0x%llx writer_rva=0x%x return_address=0x%llx watched_address=0x%llx write_address=UNKNOWN_requires_anchored_offline_decode relative_us_from_last_override=%.3f last_override_known=%u",(unsigned long long)w.session,r.timestamp,(unsigned long long)r.ripAfter,functionRva,(unsigned long long)r.callers[0],(unsigned long long)(w.transform+0x10),(r.commitQpc?(r.timestamp-commit)*1000.:-1.),unsigned(r.commitQpc!=0));
+   if(r.sequenceCandidate)writeLog("RESET_SEQUENCE_CANDIDATE session=%llu surface_anchor=(%.9g,%.9g,%.9g) surface_anchor_qpc_ms=%.6f final_world_qpc_ms=%.6f caveat=previous_observation_across_sequential_dword_stores_NOT_atomic_before",(unsigned long long)w.session,r.surfaceAnchor.x,r.surfaceAnchor.y,r.surfaceAnchor.z,r.surfaceAnchorTime,r.timestamp);
+   if(r.resetCandidate&&r.dualCommitted)writeLog("NEW_RESET_AFTER_DUAL_OVERRIDE session=%llu writer_rva=0x%x caller_rva=0x%llx latency_ms=%.6f up_before=(%.9g,%.9g,%.9g) up_after=(%.9g,%.9g,%.9g)",(unsigned long long)w.session,functionRva,(unsigned long long)(r.callers[0]>=gameBase?r.callers[0]-gameBase:0),r.timestamp-commit,before.x,before.y,before.z,after.x,after.y,after.z);
    if(r.resetCandidate){
     float sourceUp[3]{};if(correlated&&entry.readable)std::memcpy(sourceUp,entry.source+16,12);
     writeLog("RESET_WRITER_CANDIDATE=1 session=%llu common_writer_reset=%u RESET_PATH_CORRELATED=%u reset_caller_rva=0x%llx reset_source_valid=%u reset_source_up=(%.9g,%.9g,%.9g) RESET_WRITER_VERIFIED=0",(unsigned long long)w.session,unsigned(functionRva==0x2cfc580),unsigned(correlated&&entry.readable),(unsigned long long)(r.callers[0]>=gameBase?r.callers[0]-gameBase:0),unsigned(correlated&&entry.readable),sourceUp[0],sourceUp[1],sourceUp[2]);
@@ -271,10 +279,10 @@ bool configureReset(bool verified,std::uintptr_t base,std::size_t size,bool prea
 }
 bool beginReset(const reset_trace::Request& r,const Snapshot& s){
  double commit=frequency.QuadPart?1000.*double(r.commitQpc)/double(frequency.QuadPart):0;
- bool deadline=r.prearmed?(GetTickCount64()<r.initMs||GetTickCount64()-r.initMs>=1100):now()>=commit+30.;
+ bool deadline=r.prearmed?(GetTickCount64()<r.initMs||GetTickCount64()-r.initMs>=(r.verifyDual?1500u:1100u)):now()>=commit+30.;
  if(!externalReset||!admitted||killed.load()||now()<=0||deadline||!ws::diag::actorAxes(s.prefix).valid||r.hero!=s.hero||r.transform!=s.transform){writeLog("RESET_TRACE_SKIPPED session=%llu reason=gate_or_identity_or_arm_deadline arm_delay_us=%.3f",(unsigned long long)r.session,(now()-commit)*1000.);return false;}
  nextReset=r;bool ok=begin(s,r.prearmed?4:3,r.session,r.owner,r.normal,r.thread);
- if(r.prearmed)writeLog("RESET_TRACE_WINDOW session=%llu prearmed=1 elapsed=%.6f deadline_elapsed=1.10 primary_thread=%u armed=%u primary_only=1",(unsigned long long)r.session,double(GetTickCount64()-r.initMs)/1000.,r.thread,unsigned(ok));
+ if(r.prearmed)writeLog("RESET_TRACE_WINDOW session=%llu prearmed=1 elapsed=%.6f deadline_elapsed=%.2f primary_thread=%u armed=%u primary_only=1 unchanged_writes_suppressed=%u",(unsigned long long)r.session,double(GetTickCount64()-r.initMs)/1000.,r.verifyDual?1.50:1.10,r.thread,unsigned(ok),unsigned(r.verifyDual));
  else writeLog("RESET_TRACE_WINDOW session=%llu override_commit_qpc=%llu qpc_frequency=%llu arm_delay_us=%.3f deadline_from_commit_ms=30 armed=%u initial_applied_up=(%.9g,%.9g,%.9g) coverage=bounded_current_threads_NOT_complete_initial_write_may_precede_arm",(unsigned long long)r.session,(unsigned long long)r.commitQpc,(unsigned long long)frequency.QuadPart,(now()-commit)*1000.,unsigned(ok),r.appliedUp.x,r.appliedUp.y,r.appliedUp.z);
  if(ok)publishedReset.store(current,std::memory_order_release);
  if(!ok)pollReset(false);
@@ -294,6 +302,7 @@ bool resetCommitted(const reset_trace::Request& r) noexcept {
  if(eventLock.test_and_set(std::memory_order_acquire)){++w.drops;w.capture=false;return false;}
  bool armed=w.capture.load()&&!killed.load()&&w.primaryInstalled.load()&&w.reset.thread==GetCurrentThreadId()&&now()<w.end&&r.overrideBeginQpc&&w.primaryArmedAt<1000.*double(r.overrideBeginQpc)/double(frequency.QuadPart);
  w.lastOverride=r.commitQpc;
+ if(r.resetCopy)w.copyCommit=r.commitQpc;else w.commonCommit=r.commitQpc;
  auto h=commonHead.load();if(h-commonTail.load()<commonRecords.size()){CommonRecord record{};record.window=unsigned(index);record.status=true;record.armed=armed;record.elapsed=double(GetTickCount64()-w.reset.initMs)/1000.;commonRecords[h%commonRecords.size()]=record;commonHead.store(h+1,std::memory_order_release);}else{++w.drops;w.capture=false;}
  eventLock.clear(std::memory_order_release);return armed;
 }
