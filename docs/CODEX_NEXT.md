@@ -1,252 +1,418 @@
-# Next task — WallSprint v0.1b7 Pre-Armed Reset Writer Capture
+# Next task — WallSprint v0.1b8 Dual-Source Orientation Ownership
 
 ## Objective
 
-Do not redesign the successful native source override.
+v0.1b7 identified the immediate reset path on both A and E.
 
-The current blocker is that Actor Up briefly becomes surface-relative, then returns to World Up about 10–20 ms later.
+Do not abandon the successful source-injection architecture and do not globally patch transform writers.
 
-v0.1b6 failed to identify the reset writer because its diagnostic trace was disabled/not admitted and attempted to arm roughly 68–88 ms after the relevant source commit.
+The next goal is to make both verified WallRun orientation source paths feed the same SurfaceFrame orientation so the Hero Actor remains surface-relative long enough to pass the orientation-retention gate.
 
-Implement v0.1b7 so the reset path is already being watched **before** the 0.70 s source override begins.
+This task is still orientation-only. Do not add adhesion, movement, animation, camera, parkour, swing, combat, or physics fixes.
 
-## Required behavior
+## Important repository continuity note
 
-### 1. Keep existing source override
+A previous Codex cloud task produced the tested v0.1b7 package, but those working-tree changes may not have been committed to GitHub `main`.
 
-Retain the v0.1b5/v0.1b6 source override path:
+Before implementing b8:
 
-- exact accepted build only;
-- verified WallRun lifecycle active;
-- source override starts at elapsed >= 0.70 s;
-- caller return RVA `0x2CFC8F3`;
-- same current Hero Transform;
-- verified caller-local stack source matrix;
-- orientation rows only;
-- no Position modification;
-- direct Actor Transform write remains disabled;
-- adhesion/movement/camera/animation remain disabled.
+1. inspect the current repository;
+2. determine whether v0.1b7 pre-arm/common-writer trace support is present;
+3. if absent, reconstruct the required b7 support from the existing b6 source plus:
+   - `analysis/V01B7_RUNTIME_RESULT.md`
+   - `docs/PROJECT_STATE.md`
+   - the previous b7 requirements in git history if useful.
 
-### 2. Pre-arm at 0.60 s
+Do not assume an isolated cloud task inherits an earlier cloud working tree.
 
-For each verified WallRun session:
+## v0.1b7 runtime facts to treat as ground truth
 
-- at elapsed >= 0.60 s, arm reset diagnostics;
-- source override still begins at 0.70 s;
-- diagnostics remain active through approximately 1.10 s or until reset candidate is captured;
-- disarm immediately on WallRun Deinit, kill switch, identity loss, or diagnostic completion.
+### Source path A — existing common writer
 
-Do not wait for worker polling to observe a surface-like Actor Up before arming.
-
-### 3. Fix admission
-
-The v0.1b7 package is not valid if reset tracing silently remains disabled.
-
-Add startup/self-check logs equivalent to:
-
-```text
-RESET_TRACE_SELF_CHECK
-exact_build=1
-common_writer_hook=1
-reset_trace_enabled=1
-reset_trace_admitted=1
-primary_thread_prearm_supported=1
-```
-
-If any required field is false, clearly log:
-
-```text
-V01B7_DIAGNOSTIC_NOT_ADMITTED
-```
-
-and do not call the diagnostic package successful.
-
-### 4. Trace all common-writer calls to current Hero Transform
-
-The known common writer is:
+Writer:
 
 `RVA 0x2CFC580`
 
-Between roughly 0.60–1.10 s of the verified WallRun session, record **all calls targeting the current Hero Transform**, not only caller `0x2CFC8F3`.
+WallRun caller return:
 
-For each matching invocation, capture read-only:
+`RVA 0x2CFC8F3`
+
+The known RDX source transform layout for relevant Hero calls is:
 
 ```text
-COMMON_WRITER_TRACE
++0x00 Right
++0x10 Up
++0x20 Forward
++0x30 Position
+```
+
+The current stack-local source override reaches the actual Hero Transform and produces Surface-relative Actor Up briefly.
+
+However, v0.1b7 also captured later `0x2CFC580 / 0x2CFC8F3` calls with:
+
+```text
+source Up = WorldUp
+source_overridden_this_entry = 0
+```
+
+One strong A sample changed full Surface Up back to World Up about 14.9 ms after the prior override.
+
+Therefore b8 must make the admission logic cover every exact valid Hero/WallRun call from this caller during active WallSprint, including the late World-Up invocation, not only the currently admitted subset.
+
+### Source path B — immediate reset writer
+
+Repeated on both A and E:
+
+```text
+writer function RVA 0x2CFC3C0
+function range 0x2CFC3C0..0x2CFC57C
+size 444 bytes
+captured runtime SHA256 ee33ad96fb1834f9977621ea988f7667f0eb3e47166a7115ba262072ebc50196
+caller return RVA 0x2CFC84B
+caller2 RVA 0x35184A5
+```
+
+This path acts roughly 0.8–1.0 ms after the WallSprint source commit in representative samples.
+
+Captured function bytes show direct dword copies from RDX to RCX across the basis, including Up at:
+
+```text
+RCX + 0x10 <- RDX + 0x10
+RCX + 0x14 <- RDX + 0x14
+RCX + 0x18 <- RDX + 0x18
+```
+
+In captured events:
+
+- RCX = current Hero Transform;
+- RDX = nearby stack-local address;
+- representative post-prologue relation was approximately RDX = RSP + 0x60;
+- E shows this writer sequentially driving a Surface-like Up toward `(0,1,0)`.
+
+Do not use the stale `RESET_ENTRY_SOURCE` from the common-writer hook as the source for this second writer. Its `entry_correlated=0` was explicit. b8 must capture the actual entry arguments of `0x2CFC3C0` itself.
+
+## Required implementation
+
+### 1. Preserve exact safety gates
+
+All native modification remains accepted-build-only and fail-closed.
+
+Required minimum checks before any source modification:
+
+- exact executable version/hash gate passes;
+- verified WallRun lifecycle active;
+- current Hero and current Hero Transform are known and stable;
+- elapsed WallRun >= 0.70 s;
+- Surface N398 finite, normalized and valid for current planar vertical-wall test;
+- kill switch inactive;
+- target pointer and source pointer readable;
+- target exactly matches current Hero Transform;
+- caller identity exactly matches the authenticated path being handled.
+
+Direct Actor Transform writes remain disabled.
+
+### 2. One shared WallSprint orientation state
+
+Do not calculate two independent transitions that can drift.
+
+Create/retain one per-WallRun-session orientation state containing at least:
+
+```text
+entryTime
+entryBasis / entryQuaternion
+entryForward
+target SurfaceFrame basis
+current interpolated basis
+```
+
+Entry delay remains about 0.70 s.
+
+Rotate time remains about 0.25 s.
+
+The same interpolated Right/Up/Forward at a given session time must be supplied to both native source paths.
+
+### 3. Fix common-writer path coverage
+
+For `0x2CFC580`:
+
+Only alter a source when all exact guards pass, including:
+
+```text
+caller return RVA == 0x2CFC8F3
+RCX == current Hero Transform
+RDX is the expected readable caller-local source matrix
+verified WallRun active
+elapsed >= 0.70
+```
+
+But do not artificially restrict this to only one invocation per native update if that causes the later World-Up call to pass through unmodified.
+
+Every qualifying current-Hero call from `0x2CFC8F3` during active WallSprint should receive the current interpolated SurfaceFrame orientation.
+
+Keep Position unchanged.
+
+Add diagnostics:
+
+```text
+COMMON_SOURCE_OVERRIDE
 session=
 elapsed=
-thread_id=
 caller_rva=
+source_ptr=
+source_up_before=
+source_up_after=
+late_worldup_source_detected=
+position_unchanged=1
+```
+
+If an invocation would previously have had `source_overridden_this_entry=0` but now qualifies and is converted from World Up, log:
+
+```text
+LATE_COMMON_WORLDUP_OVERRIDE=1
+```
+
+### 4. Authenticate and instrument `0x2CFC3C0`
+
+Resolve the accepted-build runtime function boundary and exact bytes/hash before installing anything.
+
+Target:
+
+```text
+begin RVA 0x2CFC3C0
+end RVA 0x2CFC57C
+size 444
+expected captured SHA256 ee33ad96fb1834f9977621ea988f7667f0eb3e47166a7115ba262072ebc50196
+```
+
+Be careful if a local hook changes the runtime prefix: authenticate original bytes before patching, as done for existing hooks.
+
+Use an ABI-neutral raw-entry hook/thunk. Do not invent a C++ typed game signature.
+
+At entry capture raw:
+
+```text
+RCX
+RDX
+R8
+R9
+caller return RVA
+thread id
+RSP / stack bounds
+```
+
+### 5. Exact admission for the second path
+
+Only consider modifying `0x2CFC3C0` source when:
+
+```text
+caller return RVA == 0x2CFC84B
+RCX == current Hero Transform
+verified WallRun active
+elapsed >= 0.70
+same expected primary/native WallRun ownership context
+RDX readable
+RDX source matrix sane
+RDX lies inside the current thread stack or otherwise passes an equally strong caller-local provenance check
+```
+
+Log the actual source layout before changing it.
+
+Do not assume `RDX+0x10` is Up solely from the old common-writer layout; verify the matrix values at this function's own entry. The static copy instructions strongly suggest the same transform basis layout, but b8 should record the proof.
+
+Expected diagnostic:
+
+```text
+RESET_COPY_SOURCE_ENTRY
+session=
+elapsed=
+caller_rva=0x2cfc84b
 RCX=
 RDX=
-R8=
-R9=
+RSP=
+source_is_stack_local=
 source_right=
 source_up=
 source_forward=
+source_position=
 source_up_dot_world=
 source_up_dot_surface=
-actor_up_before=
-N398=
-source_overridden_this_entry=
 ```
 
-Only interpret RDX as the known source transform when pointer/readability/sanity checks pass.
+### 6. Modify only the second caller-local source
 
-The purpose is to see whether a second caller invokes the same writer with World Up immediately after the WallSprint surface-relative call.
-
-### 5. Pre-armed hardware Up write watch
-
-Also use the existing hardware watch mechanism on current Hero Transform Up `[+0x10,+0x1C)`.
-
-Important change from b6:
-
-- install on the known primary native WallRun thread first;
-- do not enumerate/suspend a large thread set before securing the primary thread;
-- at source override time, log that the watch was already armed.
-
-Required status log:
+If all guards pass and the entry source proves to be the expected transform layout, replace only orientation rows:
 
 ```text
-PREARM_STATUS
+RDX + [0x00, 0x30)
+```
+
+with the shared current WallSprint Right/Up/Forward basis.
+
+Do not modify Position at `+0x30`.
+
+Do not NOP or skip `0x2CFC3C0`.
+
+Do not globally modify calls to this writer.
+
+Do not directly overwrite RCX/Hero Transform.
+
+Diagnostic:
+
+```text
+RESET_COPY_SOURCE_OVERRIDE
 session=
 elapsed=
-primary_thread=
-DR0_installed=
-DR1_installed=
-trace_already_armed_before_override=
+source_ptr=
+original_up=
+applied_up=
+applied_up_dot_surface=
+position_unchanged=1
+caller_verified=1
+target_verified=1
+source_stack_verified=1
 ```
 
-`trace_already_armed_before_override=1` is required for a successful diagnostic session.
+### 7. Keep a bounded write-watch for verification
 
-Additional bounded thread coverage may be added after the primary thread, but full-process coverage is less important than being armed in time.
+Retain the pre-armed primary-thread Hero Up hardware watch in a reduced verification role.
 
-### 6. Hardware write event
+The purpose now is to answer:
 
-For a write to the watched Hero Up region, log:
+- did `0x2CFC3C0` still write World Up after source override?
+- did any other writer appear?
+- did the late `0x2CFC580` call still write World Up?
+- how long did Surface Up survive?
+
+Do not let heavy tracing create large event/drop storms. Reduce diagnostic volume where possible now that the two known paths are identified.
+
+### 8. Retention metric
+
+After transition completion (roughly elapsed >= 0.95 s), continuously compute:
 
 ```text
-RESET_TRACE_EVENT
-session=
-relative_us_from_last_override=
-thread_id=
-RIP=
-writer_rva=
-return_address=
-caller_rva=
-write_address=
-up_before=
-up_after=
-dot_before_surface=
-dot_after_surface=
-dot_before_world=
-dot_after_world=
-N398=
+actor_up_dot_surface
+actor_up_dot_world
 ```
 
-Use the actual observed data and keep caveats about breakpoint RIP being post-store where applicable.
-
-### 7. Candidate classification
-
-Classify a reset candidate when the observed transition is genuinely surface-like to world-up, approximately:
+PASS orientation ownership when:
 
 ```text
-dot(before, N398) >= 0.50
-dot(after, WorldUp) >= 0.98
+dot(ActorUp, N398) >= 0.98
 ```
+
+for either:
+
+```text
+>= 0.30 seconds
+```
+
+or
+
+```text
+>= 20 distinct native updates
+```
+
+while WallRun lifecycle remains active.
 
 Log:
 
 ```text
-RESET_WRITER_CANDIDATE=1
+ORIENTATION_RETENTION_PASS=1
+held_ms=
+held_updates=
 ```
 
-Resolve native function boundary, begin/end RVA, size, hash, and caller where safe and evidence-backed.
+### 9. Failure classification
 
-### 8. Correlate with common writer
-
-If a hardware reset event occurs inside `0x2CFC580`, correlate it to the matching `COMMON_WRITER_TRACE` entry using thread/timing/target/caller evidence.
-
-If correlated, report:
+If orientation still resets, classify the first actual reset after both source overrides:
 
 ```text
-RESET_PATH_CORRELATED=1
-common_writer_reset=1
-reset_caller_rva=...
-reset_source_up=...
+NEW_RESET_AFTER_DUAL_OVERRIDE
+writer_rva=
+caller_rva=
+latency_ms=
+up_before=
+up_after=
 ```
 
-If the reset RIP belongs to another writer, report `common_writer_reset=0` and preserve that function as the new reset-writer candidate for offline analysis.
+Do not respond by adding direct Actor spam writes.
 
-### 9. Do not patch the reset yet
+### 10. No adhesion yet
 
-This version is diagnostic-first.
+Even if orientation retention succeeds, do not add the 0.5 m wall standoff controller in this package.
 
-Do not:
+b8 success only authorizes the next milestone to begin adhesion.
 
-- NOP the reset writer;
-- skip an unknown caller;
-- globally force Surface Up;
-- spam direct Actor writes;
-- add adhesion/movement/animation/camera/physics fixes.
+## Expected visible behavior
 
-First identify the actual reset path.
+If b8 succeeds, the user should finally be able to see Spider-Man rotate relative to the wall because the orientation should survive across frames.
+
+Camera remains world-up, so a successful full Surface Up transition will look visually like Spider-Man has rotated sideways relative to the screen/world.
+
+Animation may look wrong. That is acceptable for this milestone.
 
 ## Human test
 
 A Control:
 
+- current known flat wall near E;
 - one left-to-right WallRun;
-- approximately 1.5 s is enough;
-- no Crawl required.
+- use whatever wall length is available; about 1.5 s is enough if transition/retention is reached.
 
-Face E:
+E:
 
-- same known diagonal wall;
+- exact same known diagonal face;
 - one left-to-right WallRun;
-- approximately 2 s is enough;
-- no Crawl required.
+- about 2 s is enough.
 
-Visible behavior may still appear unchanged. This task is successful based on the diagnostic capture, not visible rotation.
+Crawl is not required.
 
-## PASS criteria
-
-Minimum useful session:
-
-```text
-trace_already_armed_before_override=1
-RESET_TRACE_EVENT captured >= 1
-```
-
-Primary success:
-
-- actual surface-like → WorldUp reset write identified, or
-- a second current-Hero common-writer invocation with WorldUp source is identified immediately after the surface-relative source invocation.
-
-Strong verification requires the same reset writer/caller path to reproduce on explicitly confirmed A and E sessions.
+Record video if convenient, but the runtime log remains authoritative for the retention gate.
 
 ## Required outputs
 
 Update/create:
 
 ```text
-analysis/V01B6_RESULT.md
-analysis/PREARMED_RESET_TRACE.md
-analysis/COMMON_WRITER_RESET_CALLS.md
-analysis/RESET_WRITER_VERIFICATION.md
-analysis/V01B7_GATE.md
+analysis/V01B7_RESULT.md
+analysis/RESET_COPY_WRITER_ANALYSIS.md
+analysis/DUAL_SOURCE_OWNERSHIP.md
+analysis/V01B8_GATE.md
 README_TEST.md
 docs/CODEX_RESULT.md
 ```
 
-Build/package name:
+Package:
 
 ```text
-WallSprint_v0.1b7_prearmed_reset_capture.zip
+WallSprint_v0.1b8_dual_source_ownership.zip
 ```
 
-## Provenance / distribution constraints
+## PASS criteria
+
+Minimum:
+
+- actual entry args for `0x2CFC3C0 / caller 0x2CFC84B` captured and source layout proven;
+- exact current-Hero + WallRun guards pass;
+- its caller-local source orientation is replaced without Position modification;
+- every qualifying late `0x2CFC8F3 / 0x2CFC580` World-Up source is also overridden.
+
+Primary success:
+
+```text
+ORIENTATION_RETENTION_PASS=1
+```
+
+on at least one test wall.
+
+Strong success:
+
+- retention passes on A and E;
+- no unknown reset path remains during the observed WallRun window;
+- no crash / transform corruption / position corruption.
+
+## Distribution/provenance
 
 Follow `docs/DEV_RULES.md`.
 
-This task must remain based on WallSprint runtime instrumentation and independent Spider-Man2.exe analysis. Do not copy code, assets, binaries, or proprietary payloads from reference mods.
+Use only WallSprint-owned source plus independent runtime/static analysis of Spider-Man2.exe. Reference mods remain research hints only. Do not copy their code, binaries, or assets.
