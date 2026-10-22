@@ -1,0 +1,1 @@
+PASS: b6 real hardware short watch + real MinHook raw entry; surface-to-world reset, independent second writer, raw RCX/RDX/R8/R9 and exactly64 source bytes, QPC, stop-on-reset, 30ms timeout, cancellation/F8/debug-register restoration; synthetic NEVER game verified

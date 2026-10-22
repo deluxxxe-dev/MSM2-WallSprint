@@ -1,0 +1,12 @@
+{
+  "cardinal_evidence_pass": true,
+  "gate": {
+    "surface_axis_verified": false
+  },
+  "provenance": {
+    "kind": "sanitized_v01a8_analysis_summary_for_offline_regression",
+    "input_sha256": "a23194d7276bd1001a0fa92a363584967d1b876d363658bcfc460464ed9ac6b8",
+    "raw_game_code_included": false,
+    "write_permission": false
+  }
+}

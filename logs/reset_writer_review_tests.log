@@ -1,0 +1,2 @@
+PASS: anchored hardware store decode, raw source association, explicit A/E mapping, timing/drop/target/source negative gates; synthetic cannot promote reset writer
+PASS: optional private known-writer owned-prefix restoration only after full584byte original SHA; tamper rejected

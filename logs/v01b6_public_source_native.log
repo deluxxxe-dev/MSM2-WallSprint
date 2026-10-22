@@ -1,0 +1,10 @@
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+PASS: SEH guarded read, DLL load, repeated enable/disable, restart, clean unload (synthetic host only)
+PASS: production Windows diagnostic formatter, six marker records, row/column metrics, signs, unavailable snapshot
+PASS: synthetic-host log confirms zero-match/build-gate refusal, executable hashing, 100ms diagnostic intervals, clean stop
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+PASS: production bounded object reader: readable/read-only pages, guard/noaccess/cross-page/unmapped/null/overflow refusal; no game function calls

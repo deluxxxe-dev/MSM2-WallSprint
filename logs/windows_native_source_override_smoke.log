@@ -1,0 +1,1 @@
+PASS: independent actual MinHook native caller stack+0x28 input -> native writer, A/E transition/20distinctUpdates ownership, Position/metadata/parent input unchanged, original return; native Deinit/ABA/R8/wrongtarget/heap/stale/normal/identity/patch/F8/SDK gates, overwrite abort no retry, direct-Actor writes absent; synthetic NOT game evidence

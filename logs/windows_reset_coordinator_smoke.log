@@ -1,0 +1,1 @@
+PASS: production async reset coordinator wake/identity/native gate + actual hardware event + stop/join/DR cleanup on owned synthetic memory; no game verification

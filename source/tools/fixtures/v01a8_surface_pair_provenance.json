@@ -1,0 +1,8 @@
+{
+  "source_log_sha256": "a23194d7276bd1001a0fa92a363584967d1b876d363658bcfc460464ed9ac6b8",
+  "source": "user v0.1a8 WallSprint.log",
+  "columns": "session sample_ms P320xyz P338xyz N398_normalized_xyz Hero_xyz position_difference_velocity_xyz velocity_available",
+  "samples": 431,
+  "physics_velocity": false,
+  "synthetic": false
+}

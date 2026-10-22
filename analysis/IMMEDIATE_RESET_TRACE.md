@@ -1,0 +1,29 @@
+# v0.1b6 immediate reset instrumentation
+
+Package0.1.15. Original v0.1b5 source admission/math/abort policy remains. Only the authenticated WallRun caller return RVA0x2CFC8F3, live native lifecycle, elapsed>=.70, same Hero/Transform/native thread, R8null, verified current-thread caller-local stack matrix can supply the existing48-byte orientation source change. No direct Actor, Position, Camera, Physics or Animation writes; no reset writer/caller patch or skip.
+
+## Trigger and ownership
+
+`appliedUp.y <= .85 || dot(appliedUp,N398) >= .50`, first successful qualifying source commit per native WallRun session. QPC is stamped immediately after the guarded48-byte memcpy; write readback must still succeed. Every source override logs its commit QPC. Source callback posts a single preallocated request and SetEvent; it does not wait for the helper or suspend itself. Maximum8 trace windows per game process; full restart needed to repeat.
+
+A dedicated helper checks the existing authenticated patches, fresh native token<=100ms, phase/generation/owner and a fresh known read-only Hero snapshot. It arms the reused b3 hardware engine, primary native thread first, then bounded existing threads (max32). DR0 covers Up+0x10..17 (8bytes), DR1 covers+0x18..1B (4bytes), data-write only. Occupied slots/debugger are refused; unrelated exception/debug slots remain untouched. Original caller/stack orientation behavior uses the same ABI-neutral assembly tailjump; no new native target or typed writer ABI.
+
+Deadline is **source commit QPC +30ms**, below the50ms ceiling; arming never starts after that deadline. A handler checks the deadline independently; events after it are ignored and that thread's owned slots cleared. Helper polls at1ms only during this short window. Scheduler/OS delays can postpone physical DR restoration on an idle/suspended thread: this is not a real-time guarantee. It never authorizes an extended capture window. Capture stops at the first surface-to-world candidate, any guard/lifecycle/identity loss, event/drop budget, F8, script stop, or deadline. Remaining owned thread contexts are restored by the helper. Existing VEH/immutable retirement records stay resident for delayed owned exceptions. Cleanup failures are logged and retried, not hidden.
+
+Window logs report setup/arm delay and incomplete coverage. Initial Up is refreshed immediately before the first watched thread resumes. No SDK call/allocation/user lock while a thread is suspended. Threads created after enumeration and the helper itself are not covered. Zero events do not prove no reset write. Entry or VEH record-lock contention stops capture and counts a drop.
+
+## Timing and source association
+
+RESET_TRACE_EVENT records commit-relative QPC microseconds (VEH entry after store, including exception dispatch/instrumentation overhead; not hardware retirement-cycle timing), data-breakpoint RIP **after** the store, current-thread registers, AMD64 unwind callers, target Hero Transform Up, previous observed Up/new Up, normalized dot products to N398/WorldUp, first surface observation timestamp. That first observation can be the pre-resume arm snapshot; it is not necessarily the first surface write. Old Up is a previous observation, not an atomic instruction-before value; concurrent threads/intermediate stores can be missed.
+
+A reset candidate requires valid normalized before dotN>=.50, after dotWorld>=.98. It disarms immediately but stays a candidate pending anchored offline store verification. Each watched thread's latest raw known-writer entry is recorded after the existing source override and before original execution: RCX/RDX/R8/R9, caller, QPC, native update, and exactly64bytes at RDX (one level; no pointers followed). Other targets are ignored. Data is copied into the event under a nonblocking fixed-record lock; no allocation/logging/TLS access in VEH.
+
+`entry_correlated=1` requires common writer runtime boundary RVA0x2CFC580, same live native generation/owner and nonzero update, same thread, entry time<=event, RCX==watched Transform, unwind caller==entry caller, and post-store RSI==entry RDX (verified native provenance at this writer). Post-store RDX alone is not treated as entry RDX. For an uncorrelated/different writer native_update=0 means unknown; the trigger update is not misrepresented as that write's update. `source_overridden_this_entry=0` may reveal an unmodified same-caller invocation; this is not automatically a different system.
+
+## Offline review
+
+`tools/review_reset_writers.py` combines RESET events with the existing Capstone decoder, AMD64-boundary anchored complete private function capture, effective watched address and GPRs. It records begin/size/SHA256 and a small store context, not a full decompilation. For the owned-hook common writer, it restores only the known32-byte original prefix **if full584-byte original SHA matches**; both captured and normalized SHA are reported. Unrecognized/incomplete captures stay unresolved. Source Up must independently agree with the64-byte snapshot.
+
+Run with explicitly confirmed A/E session numbers. A/E must both have a resolved actual reset store, same function and caller, corresponding surface axes, readable correlated WorldUp source, correct target, valid QPC order and zero observed drops. Synthetic tests never produce game verification. Unknown writers are logged with function boundary/bytes for offline decoding, but their entry ABI/source remains unverified; do not infer a source from unrelated stale entry data.
+
+Private user logs may contain bounded captured function bytes, as in b3. Release ZIPs include only analyses/sanitized results and independent tests, not raw user logs, full game functions or private capture fixtures. Game queries: no unknown getters/raycast/collision calls. Existing generic surface probe remains game_call=0.

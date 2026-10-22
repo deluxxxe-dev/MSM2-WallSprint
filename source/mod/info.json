@@ -1,0 +1,10 @@
+{
+  "name": "WallSprint",
+  "type": "script",
+  "author": "WallSprint project",
+  "version": "0.1.15",
+  "description": "WallSprint v0.1b6 Immediate Reset Writer Trace. Preserve verified caller-local source override; one targeted 30ms hardware Up watch per tilted WallRun session. No reset patch, direct Actor/Position/Camera/Physics/Animation writes.",
+  "dependencies": [],
+  "game": "MSM2",
+  "format_version": 1
+}

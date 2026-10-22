@@ -1,0 +1,6 @@
+Fontconfig error: No writable cache directories
+Fontconfig error: No writable cache directories
+PASS: b6 real hardware short watch + real MinHook raw entry; surface-to-world reset, independent second writer, raw RCX/RDX/R8/R9 and exactly64 source bytes, QPC, stop-on-reset, 30ms timeout, cancellation/F8/debug-register restoration; synthetic NEVER game verified
+PASS: production async reset coordinator wake/identity/native gate + actual hardware event + stop/join/DR cleanup on owned synthetic memory; no game verification
+PASS: anchored hardware store decode, raw source association, explicit A/E mapping, timing/drop/target/source negative gates; synthetic cannot promote reset writer
+PASS: optional private known-writer owned-prefix restoration only after full584byte original SHA; tamper rejected

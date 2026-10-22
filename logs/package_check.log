@@ -1,0 +1,1 @@
+PASS: v0.1b6/0.1.15 DLL/version/README/INI; native-source-only ON, all direct/position/other writes OFF; PE32+/2exports/systemimports/noWPM; CRC/hash/source/licenses; no private game captures/reference binaries/full dumps; real b5 source-to-Actor verified/retention failed; b6 reset writer pending

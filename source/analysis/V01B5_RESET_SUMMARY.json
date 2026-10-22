@@ -1,0 +1,146 @@
+{
+  "log_sha256": "b4cf534572e01d6369db6e9f950137d42061c0016ceb1195441b7f966786f4ab",
+  "sessions": {
+    "1": {
+      "surface_snapshots": 1,
+      "source_writes": 20,
+      "world_snapshots": 44,
+      "examples": [
+        {
+          "UTC": "2026-10-22T17:28:02.065Z",
+          "native_ms": "434934781",
+          "actor_up": "(-2.98023259e-08,0.556875646,0.83059597)",
+          "applied_up": "(-2.98023224e-08,0.556875587,0.830595851)"
+        }
+      ],
+      "observed_returns": [
+        {
+          "surface_UTC": "2026-10-22T17:28:02.065Z",
+          "world_UTC": "2026-10-22T17:28:02.076Z",
+          "log_delivery_delta_ms": 11.0,
+          "GetTickCount64_delta_ms": 15
+        }
+      ]
+    },
+    "2": {
+      "surface_snapshots": 1,
+      "source_writes": 15,
+      "world_snapshots": 38,
+      "examples": [
+        {
+          "UTC": "2026-10-22T17:28:40.262Z",
+          "native_ms": "434972984",
+          "actor_up": "(-0.447294623,0.774503112,0.447294593)",
+          "applied_up": "(-0.447294623,0.774503112,0.447294593)"
+        }
+      ],
+      "observed_returns": [
+        {
+          "surface_UTC": "2026-10-22T17:28:40.262Z",
+          "world_UTC": "2026-10-22T17:28:40.273Z",
+          "log_delivery_delta_ms": 11.0,
+          "GetTickCount64_delta_ms": 16
+        }
+      ]
+    },
+    "3": {
+      "surface_snapshots": 0,
+      "source_writes": 16,
+      "world_snapshots": 40,
+      "examples": []
+    }
+  },
+  "exits": [
+    {
+      "session": "1",
+      "reason": "A_or_B_source_applied_but_not_retained",
+      "duration_since_source_entry": "0.265000",
+      "applied_writes": "20",
+      "held_updates": "0",
+      "held_ms": "0",
+      "stability_observed": "0",
+      "direct_actor_transform_write": "0"
+    },
+    {
+      "session": "2",
+      "reason": "A_or_B_source_applied_but_not_retained",
+      "duration_since_source_entry": "0.265000",
+      "applied_writes": "15",
+      "held_updates": "0",
+      "held_ms": "0",
+      "stability_observed": "0",
+      "direct_actor_transform_write": "0"
+    },
+    {
+      "session": "3",
+      "reason": "A_or_B_source_applied_but_not_retained",
+      "duration_since_source_entry": "0.265000",
+      "applied_writes": "16",
+      "held_updates": "0",
+      "held_ms": "0",
+      "stability_observed": "0",
+      "direct_actor_transform_write": "0"
+    }
+  ],
+  "session_timelines": [
+    {
+      "session_id": "1",
+      "start_utc": "2026-10-22T17:28:01.193Z",
+      "end_utc": "2026-10-22T17:28:02.970Z",
+      "duration": "1.776652",
+      "owner": "0x183347c8eb0",
+      "candidate": "WallRunSide",
+      "heuristic_sample_counts_Up_Side_Mixed_Unavailable": "(0,18,0,0)",
+      "start_position": "(2372.581055,29.496729,3313.203369)",
+      "mean_position": "(2383.237264,27.899021,3313.237454)",
+      "end_position": "(2398.549072,24.814117,3313.239258)",
+      "worker_samples": "18",
+      "start_snapshot_ms": "434933828",
+      "end_snapshot_ms": "434935687",
+      "end_reason": "verified_deinit",
+      "event_UTC": "estimated_from_TSC_and_worker_clock",
+      "positions": "worker_samples_NOT_exact_hook_frame",
+      "source": "position_difference_heuristic"
+    },
+    {
+      "session_id": "2",
+      "start_utc": "2026-10-22T17:28:39.425Z",
+      "end_utc": "2026-10-22T17:28:41.740Z",
+      "duration": "2.314481",
+      "owner": "0x183347c8eb0",
+      "candidate": "WallRunSide",
+      "heuristic_sample_counts_Up_Side_Mixed_Unavailable": "(0,22,0,0)",
+      "start_position": "(2382.211182,24.797056,3684.906250)",
+      "mean_position": "(2392.845492,22.776416,3695.494418)",
+      "end_position": "(2407.144531,18.760141,3709.791260)",
+      "worker_samples": "22",
+      "start_snapshot_ms": "434972125",
+      "end_snapshot_ms": "434974421",
+      "end_reason": "verified_deinit",
+      "event_UTC": "estimated_from_TSC_and_worker_clock",
+      "positions": "worker_samples_NOT_exact_hook_frame",
+      "source": "position_difference_heuristic"
+    },
+    {
+      "session_id": "3",
+      "start_utc": "2026-10-22T17:28:54.528Z",
+      "end_utc": "2026-10-22T17:28:56.483Z",
+      "duration": "1.955925",
+      "owner": "0x183347c8eb0",
+      "candidate": "WallRunSide",
+      "heuristic_sample_counts_Up_Side_Mixed_Unavailable": "(0,19,0,0)",
+      "start_position": "(2381.212158,20.555088,3683.700195)",
+      "mean_position": "(2389.652395,19.784389,3692.288176)",
+      "end_position": "(2401.677490,16.843796,3704.324219)",
+      "worker_samples": "19",
+      "start_snapshot_ms": "434987218",
+      "end_snapshot_ms": "434989187",
+      "end_reason": "verified_deinit",
+      "event_UTC": "estimated_from_TSC_and_worker_clock",
+      "positions": "worker_samples_NOT_exact_hook_frame",
+      "source": "position_difference_heuristic"
+    }
+  ],
+  "timestamp_limit": "UTC=worker log delivery, native_ms=coarse GetTickCount64; no instruction-level QPC in b5",
+  "reset_writer_verified": false
+}

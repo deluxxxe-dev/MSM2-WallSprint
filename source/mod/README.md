@@ -1,0 +1,1 @@
+WallSprint v0.1b5 / package0.1.14. Verified WallRun caller stack source orientation only, no direct Actor/Position/Camera/Physics/Animation write. Outer ZIP extracted, inner WallSprint.script unopened via Overstrike; old version disabled, Script support/-scripts required. A/E one horizontal WallRun each, no Crawl. See README_TEST.md.

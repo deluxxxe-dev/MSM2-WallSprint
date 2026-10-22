@@ -1,0 +1,1 @@
+PASS: pre-b6 backup preserved; source orientation math/native lifecycle/all ABI thunks/SDK/direct writer unchanged; 27 vendor files unchanged and none added; new coordinator has no Actor write, page protection, new game hook, unknown typed game call; private captures excluded by package; game reset pending
