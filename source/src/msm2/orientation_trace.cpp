@@ -8,18 +8,20 @@
 #include <cmath>
 #include "msm2/orientation_trace.hpp"
 #include "diagnostics.hpp"
+#include "Math/source_orientation.hpp"
 extern "C" bool ws_guarded_call(void (*)(void*),void*);
 namespace {
 using namespace msm2;
 constexpr unsigned windowsCap=8,threadsCap=32,leasesCap=windowsCap*threadsCap,ringCap=512;
 constexpr DWORD64 ownMask=0xff000full,watchBits=0xd90005ull;
 struct Entry {
- std::uint64_t id{},nativeUpdate{},generation{};std::uintptr_t owner{};DWORD tid{};double qpc{};std::uintptr_t args[4]{},caller{};unsigned char source[64]{};bool readable{},overridden{};
+ std::uint64_t id{},nativeUpdate{},generation{};std::uintptr_t owner{};DWORD tid{};double qpc{};std::uintptr_t args[4]{},caller{};unsigned char source[64]{};bool readable{},overridden{};ws::Vec3 actorUp{};
 };
 struct Window {
  std::atomic<bool> capture{false};unsigned id{},state{};std::uint64_t session{};
  std::uintptr_t hero{},transform{},owner{};ws::Vec3 normal{},startUp{},oldObserved{};
  msm2::reset_trace::Request reset{};double firstSurface{};
+ std::atomic<std::uint64_t> lastOverride{0};std::atomic<bool> primaryInstalled{false};double primaryArmedAt{};
  double start{},end{};std::atomic<unsigned> hits{0},drops{0};std::atomic_flag cache=ATOMIC_FLAG_INIT;
 };
 struct Lease {
@@ -28,9 +30,12 @@ struct Lease {
 };
 struct Event {
  unsigned window{},slotMask{};DWORD thread{};double timestamp{};DWORD64 ripAfter{},rsp{},callers[2]{},gpr[16]{};
- Entry entry{};double firstSurface{};bool resetCandidate{};
+ Entry entry{};double firstSurface{};bool resetCandidate{};std::uint64_t commitQpc{};
  float oldUp[3]{},newUp[3]{};unsigned char xmm[256]{};bool read{},callerValid{},xmmValid{};
 };
+struct CommonRecord {unsigned window{};Entry entry{};bool status{},armed{};double elapsed{};};
+std::array<CommonRecord,1024> commonRecords;std::atomic<unsigned> commonHead{0},commonTail{0};
+std::atomic<int> publishedReset{-1};
 bool externalReset{};msm2::reset_trace::Request nextReset{};std::uint64_t entrySerial{};
 trace::Config config;bool admitted{},haveDeinit{},wasActive{};std::atomic<bool> killed{true};
 std::uintptr_t gameBase{};std::size_t gameSize{};LARGE_INTEGER frequency{};
@@ -83,12 +88,12 @@ LONG CALLBACK handler(EXCEPTION_POINTERS* e){
    SIZE_T done=0;std::memcpy(r.oldUp,&w.oldObserved,12);r.read=ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void*>(lease->up),r.newUp,12,&done)&&done==12;
    if(r.read){
     std::memcpy(&w.oldObserved,r.newUp,12);
-    if(w.state==3){
+    if(w.state>=3){
      ws::Vec3 before{r.oldUp[0],r.oldUp[1],r.oldUp[2]},after{r.newUp[0],r.newUp[1],r.newUp[2]},b{},a{};
      bool valid=ws::unit(before,b)&&ws::unit(after,a);
      if(valid&&ws::dot(a,w.normal)>=.5f&&!w.firstSurface)w.firstSurface=time;
-     r.resetCandidate=valid&&ws::dot(b,w.normal)>=.5f&&a.y>=.98f;
-     r.firstSurface=w.firstSurface;r.entry=lease->entry;
+     r.resetCandidate=valid&&(w.state!=4||w.lastOverride.load()!=0)&&ws::dot(b,w.normal)>=.5f&&a.y>=.98f;
+     r.firstSurface=w.firstSurface;r.entry=lease->entry;r.commitQpc=w.lastOverride.load();
     }
    }
    Unwind u{};u.c=c;if(ws_guarded_call(unwind,&u)&&u.count){r.callerValid=true;std::memcpy(r.callers,u.callers,sizeof(r.callers));}
@@ -129,11 +134,16 @@ bool begin(const Snapshot& s,unsigned state,std::uint64_t session,std::uintptr_t
  if(!veh){veh=AddVectoredExceptionHandler(1,handler);if(!veh){writeLog("orientation_trace_unavailable reason=VEH_registration_failed");return false;}}
  DWORD candidates[threadsCap]{};unsigned count=0,enumerated=0;auto self=GetCurrentThreadId();
  if(primary&&primary!=self)candidates[count++]=primary;
+ // Prearmed capture deliberately covers only the known primary thread. No
+ // Toolhelp enumeration or other suspension may delay securing this thread.
+ if(state!=4){
  HANDLE snap=CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD,0);if(snap==INVALID_HANDLE_VALUE)return false;
  THREADENTRY32 te{};te.dwSize=sizeof(te);if(Thread32First(snap,&te))do{if(te.th32OwnerProcessID!=GetCurrentProcessId()||te.th32ThreadID==self)continue;++enumerated;if(count<config.maxThreads&&std::find(candidates,candidates+count,te.th32ThreadID)==candidates+count)candidates[count++]=te.th32ThreadID;}while(Thread32Next(snap,&te));CloseHandle(snap);
+ }
  auto index=usedWindows++;auto& w=windows[index];w.id=index+1;w.state=state;w.session=session;w.hero=s.hero;w.transform=s.transform;w.owner=owner;w.normal=normal;auto axes=ws::diag::actorAxes(s.prefix);w.startUp=w.oldObserved=axes.up;w.start=now();w.end=w.start+config.windowMs;
- if(state==3){w.reset=nextReset;double commit=1000.*double(w.reset.commitQpc)/double(frequency.QuadPart);w.end=commit+30.;ws::Vec3 u{};if(ws::unit(axes.up,u)&&ws::dot(u,normal)>=.5f)w.firstSurface=w.start;}
+ if(state>=3){w.reset=nextReset;w.lastOverride=w.reset.commitQpc;double commit=1000.*double(w.reset.commitQpc)/double(frequency.QuadPart);w.end=state==4?w.start+std::max(0.,1100.-double(GetTickCount64()-w.reset.initMs)):commit+30.;ws::Vec3 u{};if(ws::unit(axes.up,u)&&ws::dot(u,normal)>=.5f)w.firstSurface=w.start;}
  w.capture=w.start<w.end;
+ if(state==4)publishedReset.store(int(index),std::memory_order_release);
  unsigned installed=0,busy=0,failed=0;
  for(unsigned n=0;n<count&&usedLeases<leasesCap&&w.capture.load()&&now()<w.end;++n){
   HANDLE thread=OpenThread(THREAD_SUSPEND_RESUME|THREAD_GET_CONTEXT|THREAD_SET_CONTEXT|THREAD_QUERY_LIMITED_INFORMATION|SYNCHRONIZE,FALSE,candidates[n]);if(!thread){++failed;continue;}
@@ -144,24 +154,27 @@ bool begin(const Snapshot& s,unsigned state,std::uint64_t session,std::uintptr_t
   if(got){occupied=(c.Dr7&0xf)||(c.Dr7&(1ull<<13));if(!occupied){
    l=&leases[usedLeases++];l->window=index;l->handle=thread;l->old0=c.Dr0;l->old1=c.Dr1;l->old6=c.Dr6;l->old7=c.Dr7;l->up=s.transform+0x10;
    l->tid.store(candidates[n],std::memory_order_release); // Handler ready BEFORE Resume.
-   if(state==3&&!installed){
+   if(state>=3&&!installed){
     // Seed the previous observation immediately before the first watched thread
     // resumes. No allocation, SDK call or user lock while it is suspended.
     ws::Vec3 up{};SIZE_T done=0;
     if(ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void*>(l->up),&up,12,&done)&&done==12){w.oldObserved=up;ws::Vec3 u{};w.firstSurface=ws::unit(up,u)&&ws::dot(u,normal)>=.5f?now():0;}
    }
-   c.Dr0=l->up;c.Dr1=l->up+8;c.Dr6&=~DWORD64(3);c.Dr7=(c.Dr7&~ownMask)|watchBits;ok=SetThreadContext(thread,&c);l->installed=ok;
+   c.Dr0=l->up;c.Dr1=l->up+8;c.Dr6&=~DWORD64(3);c.Dr7=(c.Dr7&~ownMask)|watchBits;bool changed=SetThreadContext(thread,&c);l->installed=changed;
+   CONTEXT readback{};readback.ContextFlags=CONTEXT_DEBUG_REGISTERS;
+   ok=changed&&GetThreadContext(thread,&readback)&&own(readback,*l)==3;
+   if(ok&&candidates[n]==primary){w.primaryArmedAt=now();w.primaryInstalled=true;}
   }}
   // A lease also retains an unbalanced suspension on an OS resume failure.
   if(!l){l=&leases[usedLeases++];l->window=index;l->handle=thread;}
   l->suspended=true;bool resumed=resume(*l);
-  if(ok&&resumed)++installed;else {if(resumed){l->handle=nullptr;CloseHandle(thread);}if(occupied)++busy;else ++failed;}
+  if(ok&&resumed)++installed;else {if(resumed&&!l->installed){l->handle=nullptr;CloseHandle(thread);}if(occupied)++busy;else ++failed;}
   if(!resumed){w.capture=false;break;}
  }
- if(!installed)w.capture=false;
+ if(!installed||(state==4&&!w.primaryInstalled.load()))w.capture=false;
  current=int(index);
  writeLog("orientation_trace_arm window=%u state=%s session=%llu hero=0x%llx transform=0x%llx watched=Up_[0x10,0x1c) mechanism=hardware_DR0_8bytes_DR1_4bytes window_ms=%u threads_enumerated=%u installed=%u skipped_busy=%u failed=%u complete_thread_coverage=0 primary_native_thread=%u N398=(%.6f,%.6f,%.6f) normal_source=%s actor_up=(%.6f,%.6f,%.6f) actor_writes=0",w.id,state==1?"WallRun":"CrawlCandidate",static_cast<unsigned long long>(session),static_cast<unsigned long long>(s.hero),static_cast<unsigned long long>(s.transform),config.windowMs,enumerated,installed,busy,failed,primary,normal.x,normal.y,normal.z,state==1?"active_WallRun_field":"cached_pre_Deinit_NOT_fresh_contact",axes.up.x,axes.up.y,axes.up.z);
- return installed>0;
+ return installed>0&&w.capture.load();
 }
 const char* module(DWORD64 address,DWORD64& base,char (&name)[128]){
  HMODULE m=nullptr;if(!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,reinterpret_cast<LPCWSTR>(address),&m)){base=0;std::strcpy(name,"unknown");return name;}base=reinterpret_cast<DWORD64>(m);char path[MAX_PATH]{};GetModuleFileNameA(m,path,MAX_PATH);path[MAX_PATH-1]=0;auto* tail=std::strrchr(path,'\\');auto* label=tail?tail+1:path;auto length=std::min(std::strlen(label),std::size_t(127));std::memcpy(name,label,length);name[length]=0;return name;
@@ -202,9 +215,17 @@ void tick(const ws::observed::VerifiedWallContext& ctx,unsigned nativeThread,con
 }
 void stop(){kill();for(unsigned attempt=0;attempt<3&&activeLeases();++attempt)for(unsigned i=0;i<usedWindows;++i)release(windows[i]);current=-1;drainLogs();writeLog("orientation_trace_shutdown cleanup_pending=%u VEH_tombstones_resident_until_process_exit=1",unsigned(activeLeases()));}
 void drainLogs(){
+ for(unsigned n=0;n<commonRecords.size();++n){
+  auto t=commonTail.load(std::memory_order_relaxed);if(t==commonHead.load(std::memory_order_acquire))break;
+  auto r=commonRecords[t%commonRecords.size()];commonTail.store(t+1,std::memory_order_release);auto& w=windows[r.window];auto& e=r.entry;
+  if(r.status){writeLog("PREARM_STATUS session=%llu elapsed=%.6f primary_thread=%u DR0_installed=%u DR1_installed=%u trace_already_armed_before_override=%u",(unsigned long long)w.session,r.elapsed,w.reset.thread,unsigned(r.armed),unsigned(r.armed),unsigned(r.armed));continue;}
+  float m[16]{};std::memcpy(m,e.source,64);ws::Vec3 u{};bool valid=e.readable&&ws::unit({m[4],m[5],m[6]},u);
+  writeLog("COMMON_WRITER_TRACE session=%llu elapsed=%.6f entry_id=%llu qpc_ms=%.6f thread_id=%lu caller_rva=0x%llx RCX=0x%llx RDX=0x%llx R8=0x%llx R9=0x%llx source_valid=%u source_right=(%.9g,%.9g,%.9g) source_up=(%.9g,%.9g,%.9g) source_forward=(%.9g,%.9g,%.9g) source_up_dot_world=%.9g source_up_dot_surface=%.9g actor_up_before=(%.9g,%.9g,%.9g) N398=(%.9g,%.9g,%.9g) source_overridden_this_entry=%u dropped=%u",
+   (unsigned long long)w.session,r.elapsed,(unsigned long long)e.id,e.qpc,e.tid,(unsigned long long)(e.caller>=gameBase?e.caller-gameBase:0),(unsigned long long)e.args[0],(unsigned long long)e.args[1],(unsigned long long)e.args[2],(unsigned long long)e.args[3],unsigned(valid),m[0],m[1],m[2],m[4],m[5],m[6],m[8],m[9],m[10],valid?u.y:0,valid?ws::dot(u,w.normal):0,e.actorUp.x,e.actorUp.y,e.actorUp.z,w.normal.x,w.normal.y,w.normal.z,unsigned(e.overridden),w.drops.load());
+ }
  for(unsigned n=0;n<ringCap;++n){auto t=tail.load(std::memory_order_relaxed);if(t==head.load(std::memory_order_acquire))break;auto r=events[t%ringCap];tail.store(t+1,std::memory_order_release);auto& w=windows[r.window];DWORD64 base=0;char name[128]{};module(r.ripAfter,base,name);
-  if(w.state==3){
-   double commit=1000.*double(w.reset.commitQpc)/double(frequency.QuadPart);
+  if(w.state>=3){
+   double commit=1000.*double(r.commitQpc)/double(frequency.QuadPart);
    ws::Vec3 before{r.oldUp[0],r.oldUp[1],r.oldUp[2]},after{r.newUp[0],r.newUp[1],r.newUp[2]},b{},a{};
    bool vectors=r.read&&ws::unit(before,b)&&ws::unit(after,a);
    DWORD64 image=0;auto* f=RtlLookupFunctionEntry(r.ripAfter-1,&image,nullptr);
@@ -212,10 +233,15 @@ void drainLogs(){
    const auto& entry=r.entry;
    bool correlated=entry.id&&entry.nativeUpdate&&entry.generation==w.reset.generation&&entry.owner==w.owner&&entry.tid==r.thread&&entry.qpc<=r.timestamp&&entry.args[0]==w.transform&&r.callerValid&&entry.caller==r.callers[0]&&r.gpr[6]==entry.args[1]&&functionRva==0x2cfc580;
    writeLog("RESET_TRACE_EVENT session=%llu native_update=%llu relative_us_from_override=%.3f override_commit_qpc=%llu qpc_ms=%.6f rip=0x%llx writer_function_rva=0x%x caller=0x%llx caller_rva=0x%llx caller2=0x%llx caller2_rva=0x%llx thread_id=%lu up_before=(%.9g,%.9g,%.9g) up_after=(%.9g,%.9g,%.9g) dot_before_surface=%.9g dot_after_surface=%.9g dot_before_world=%.9g dot_after_world=%.9g N398=(%.9g,%.9g,%.9g) transform=0x%llx target_verified_by_watch=1 read_valid=%u old_value_semantics=previous_observation_NOT_atomic_instruction_before entry_id=%llu entry_correlated=%u first_surface_observed_qpc_ms=%.6f first_surface_semantics=first_watched_or_arm_snapshot_NOT_exact_first_write dropped=%u",
-    (unsigned long long)w.session,(unsigned long long)(correlated?entry.nativeUpdate:0),(r.timestamp-commit)*1000.,(unsigned long long)w.reset.commitQpc,r.timestamp,(unsigned long long)r.ripAfter,functionRva,(unsigned long long)r.callers[0],(unsigned long long)(r.callers[0]>=gameBase?r.callers[0]-gameBase:0),(unsigned long long)r.callers[1],(unsigned long long)(r.callers[1]>=gameBase?r.callers[1]-gameBase:0),r.thread,before.x,before.y,before.z,after.x,after.y,after.z,vectors?ws::dot(b,w.normal):0,vectors?ws::dot(a,w.normal):0,vectors?b.y:0,vectors?a.y:0,w.normal.x,w.normal.y,w.normal.z,(unsigned long long)w.transform,unsigned(r.read),(unsigned long long)entry.id,unsigned(correlated),r.firstSurface,w.drops.load());
+    (unsigned long long)w.session,(unsigned long long)(correlated?entry.nativeUpdate:0),(r.commitQpc?(r.timestamp-commit)*1000.:-1.),(unsigned long long)r.commitQpc,r.timestamp,(unsigned long long)r.ripAfter,functionRva,(unsigned long long)r.callers[0],(unsigned long long)(r.callers[0]>=gameBase?r.callers[0]-gameBase:0),(unsigned long long)r.callers[1],(unsigned long long)(r.callers[1]>=gameBase?r.callers[1]-gameBase:0),r.thread,before.x,before.y,before.z,after.x,after.y,after.z,vectors?ws::dot(b,w.normal):0,vectors?ws::dot(a,w.normal):0,vectors?b.y:0,vectors?a.y:0,w.normal.x,w.normal.y,w.normal.z,(unsigned long long)w.transform,unsigned(r.read),(unsigned long long)entry.id,unsigned(correlated),r.firstSurface,w.drops.load());
    if(entry.id){
     float up[3]{};std::memcpy(up,entry.source+0x10,12);char raw[129]{};hex(entry.source,64,raw);
     writeLog("RESET_ENTRY_SOURCE session=%llu entry_id=%llu thread_id=%lu qpc_ms=%.6f RCX=0x%llx RDX=0x%llx R8=0x%llx R9=0x%llx caller_rva=0x%llx source_up=(%.9g,%.9g,%.9g) source_0x40=%s readable=%u source_overridden_this_entry=%u snapshot_phase=AFTER_override_BEFORE_original entry_correlated=%u post_RSI_matches_entry_RDX=%u",(unsigned long long)w.session,(unsigned long long)entry.id,entry.tid,entry.qpc,(unsigned long long)entry.args[0],(unsigned long long)entry.args[1],(unsigned long long)entry.args[2],(unsigned long long)entry.args[3],(unsigned long long)(entry.caller>=gameBase?entry.caller-gameBase:0),up[0],up[1],up[2],raw,unsigned(entry.readable),unsigned(entry.overridden),unsigned(correlated),unsigned(r.gpr[6]==entry.args[1]));
+   }
+   writeLog("RESET_TRACE_EVENT_ADDRESS session=%llu qpc_ms=%.6f RIP=0x%llx writer_rva=0x%x return_address=0x%llx watched_address=0x%llx write_address=UNKNOWN_requires_anchored_offline_decode relative_us_from_last_override=%.3f last_override_known=%u",(unsigned long long)w.session,r.timestamp,(unsigned long long)r.ripAfter,functionRva,(unsigned long long)r.callers[0],(unsigned long long)(w.transform+0x10),(r.commitQpc?(r.timestamp-commit)*1000.:-1.),unsigned(r.commitQpc!=0));
+   if(r.resetCandidate){
+    float sourceUp[3]{};if(correlated&&entry.readable)std::memcpy(sourceUp,entry.source+16,12);
+    writeLog("RESET_WRITER_CANDIDATE=1 session=%llu common_writer_reset=%u RESET_PATH_CORRELATED=%u reset_caller_rva=0x%llx reset_source_valid=%u reset_source_up=(%.9g,%.9g,%.9g) RESET_WRITER_VERIFIED=0",(unsigned long long)w.session,unsigned(functionRva==0x2cfc580),unsigned(correlated&&entry.readable),(unsigned long long)(r.callers[0]>=gameBase?r.callers[0]-gameBase:0),unsigned(correlated&&entry.readable),sourceUp[0],sourceUp[1],sourceUp[2]);
    }
    if(r.resetCandidate)writeLog("RESET_WRITER_CANDIDATE session=%llu writer_function_rva=0x%x caller_rva=0x%llx thread_id=%lu reset_latency_ms=%.6f reset_from_first_surface_ms=%.6f source_entry_correlated=%u RESET_WRITER_VERIFIED=0 requires_offline_instruction_validation_and_real_A_E_repeat=1",(unsigned long long)w.session,functionRva,(unsigned long long)(r.callers[0]>=gameBase?r.callers[0]-gameBase:0),r.thread,r.timestamp-commit,r.firstSurface?r.timestamp-r.firstSurface:-1.,unsigned(correlated));
    if(f&&image==gameBase)writeLog("RESET_WRITER_FUNCTION session=%llu begin_rva=0x%x end_rva=0x%x size=%u SHA256=offline_from_private_captured_function",(unsigned long long)w.session,f->BeginAddress,f->EndAddress,f->EndAddress-f->BeginAddress);
@@ -234,34 +260,57 @@ void drainLogs(){
   writeLog("orientation_writer_summary writer_id=%u hit_count=%u WallRun_hits=%u CrawlCandidate_hits=%u verified_WallCrawl_state=0",id+1,writer.hits,writer.run,writer.crawl);
  }
 }
-bool configureReset(bool verified,std::uintptr_t base,std::size_t size){
+bool configureReset(bool verified,std::uintptr_t base,std::size_t size,bool prearmed){
  if(usedWindows||externalReset)return false;
- externalReset=true;config={true,30,8,128,32};gameBase=base;gameSize=size;
- admitted=verified&&base&&size&&QueryPerformanceFrequency(&frequency)&&frequency.QuadPart>0;killed=!admitted;
- writeLog("RESET_TRACE_CONFIG admitted=%u window_ms=30 hard_max_ms=50 max_sessions=8 max_events=128 max_threads=32 once_per_session=1 source_callback_wait=0 additional_game_hooks=0 original_tailjump_preserved=1",unsigned(admitted));return admitted;
+ externalReset=true;config={true,prearmed?500u:30u,8,256,prearmed?1u:32u};gameBase=base;gameSize=size;
+ admitted=verified&&base&&size&&QueryPerformanceFrequency(&frequency)&&frequency.QuadPart>0&&!IsDebuggerPresent();
+ if(admitted&&!veh)veh=AddVectoredExceptionHandler(1,handler);
+ admitted=admitted&&veh;killed=!admitted;
+ writeLog("RESET_TRACE_MODE prearmed=%u prearm_elapsed=0.60 override_elapsed=0.70 end_elapsed=1.10 primary_first=1 max_threads=%u",unsigned(prearmed),config.maxThreads);
+ writeLog("RESET_TRACE_CONFIG admitted=%u window_ms=%u deadline_native_elapsed_ms=%u max_sessions=8 max_events=%u max_threads=%u once_per_session=1 source_callback_wait=0 additional_game_hooks=0 original_tailjump_preserved=1",unsigned(admitted),config.windowMs,prearmed?1100u:0u,config.maxEvents,config.maxThreads);return admitted;
 }
 bool beginReset(const reset_trace::Request& r,const Snapshot& s){
- double commit=1000.*double(r.commitQpc)/double(frequency.QuadPart);
- if(!externalReset||!admitted||killed.load()||now()<=0||now()>=commit+30.||r.hero!=s.hero||r.transform!=s.transform){writeLog("RESET_TRACE_SKIPPED session=%llu reason=gate_or_identity_or_arm_deadline arm_delay_us=%.3f",(unsigned long long)r.session,(now()-commit)*1000.);return false;}
- nextReset=r;bool ok=begin(s,3,r.session,r.owner,r.normal,r.thread);
- writeLog("RESET_TRACE_WINDOW session=%llu override_commit_qpc=%llu qpc_frequency=%llu arm_delay_us=%.3f deadline_from_commit_ms=30 armed=%u initial_applied_up=(%.9g,%.9g,%.9g) coverage=bounded_current_threads_NOT_complete_initial_write_may_precede_arm",(unsigned long long)r.session,(unsigned long long)r.commitQpc,(unsigned long long)frequency.QuadPart,(now()-commit)*1000.,unsigned(ok),r.appliedUp.x,r.appliedUp.y,r.appliedUp.z);
+ double commit=frequency.QuadPart?1000.*double(r.commitQpc)/double(frequency.QuadPart):0;
+ bool deadline=r.prearmed?(GetTickCount64()<r.initMs||GetTickCount64()-r.initMs>=1100):now()>=commit+30.;
+ if(!externalReset||!admitted||killed.load()||now()<=0||deadline||!ws::diag::actorAxes(s.prefix).valid||r.hero!=s.hero||r.transform!=s.transform){writeLog("RESET_TRACE_SKIPPED session=%llu reason=gate_or_identity_or_arm_deadline arm_delay_us=%.3f",(unsigned long long)r.session,(now()-commit)*1000.);return false;}
+ nextReset=r;bool ok=begin(s,r.prearmed?4:3,r.session,r.owner,r.normal,r.thread);
+ if(r.prearmed)writeLog("RESET_TRACE_WINDOW session=%llu prearmed=1 elapsed=%.6f deadline_elapsed=1.10 primary_thread=%u armed=%u primary_only=1",(unsigned long long)r.session,double(GetTickCount64()-r.initMs)/1000.,r.thread,unsigned(ok));
+ else writeLog("RESET_TRACE_WINDOW session=%llu override_commit_qpc=%llu qpc_frequency=%llu arm_delay_us=%.3f deadline_from_commit_ms=30 armed=%u initial_applied_up=(%.9g,%.9g,%.9g) coverage=bounded_current_threads_NOT_complete_initial_write_may_precede_arm",(unsigned long long)r.session,(unsigned long long)r.commitQpc,(unsigned long long)frequency.QuadPart,(now()-commit)*1000.,unsigned(ok),r.appliedUp.x,r.appliedUp.y,r.appliedUp.z);
+ if(ok)publishedReset.store(current,std::memory_order_release);
  if(!ok)pollReset(false);
  return ok;
 }
 bool pollReset(bool valid){
  if(current<0){if(activeLeases())for(unsigned i=0;i<usedWindows;++i)release(windows[i]);return false;}
- auto& w=windows[unsigned(current)];if(!valid||killed.load()||!w.capture.load()||now()<=0||now()>=w.end){release(w);current=-1;return false;}return true;
+ auto& w=windows[unsigned(current)];if(!valid||killed.load()||!w.capture.load()||now()<=0||now()>=w.end){publishedReset=-1;release(w);current=-1;return false;}return true;
+}
+void cancelReset() noexcept {
+ auto index=publishedReset.load(std::memory_order_acquire);if(index>=0)windows[unsigned(index)].capture=false;
+}
+bool resetCommitted(const reset_trace::Request& r) noexcept {
+ auto index=publishedReset.load(std::memory_order_acquire);if(index<0)return false;
+ auto& w=windows[unsigned(index)];
+ if(w.state!=4||w.session!=r.session||w.reset.generation!=r.generation||w.transform!=r.transform)return false;
+ if(eventLock.test_and_set(std::memory_order_acquire)){++w.drops;w.capture=false;return false;}
+ bool armed=w.capture.load()&&!killed.load()&&w.primaryInstalled.load()&&w.reset.thread==GetCurrentThreadId()&&now()<w.end&&r.overrideBeginQpc&&w.primaryArmedAt<1000.*double(r.overrideBeginQpc)/double(frequency.QuadPart);
+ w.lastOverride=r.commitQpc;
+ auto h=commonHead.load();if(h-commonTail.load()<commonRecords.size()){CommonRecord record{};record.window=unsigned(index);record.status=true;record.armed=armed;record.elapsed=double(GetTickCount64()-w.reset.initMs)/1000.;commonRecords[h%commonRecords.size()]=record;commonHead.store(h+1,std::memory_order_release);}else{++w.drops;w.capture=false;}
+ eventLock.clear(std::memory_order_release);return armed;
 }
 void resetEntry(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t caller,bool overridden,std::uint64_t nativeUpdate,std::uint64_t generation,std::uintptr_t owner) noexcept {
  if(!externalReset||killed.load())return;
- DWORD tid=GetCurrentThreadId();Lease* selected=nullptr;
- for(unsigned i=leasesCap;i>0;--i){auto& l=leases[i-1];if(l.tid.load(std::memory_order_acquire)!=tid)continue;auto& w=windows[l.window];if(w.state==3&&w.capture.load(std::memory_order_acquire)&&w.transform==rcx&&now()<w.end){selected=&l;break;}}
- if(!selected)return;
- Entry e{};e.nativeUpdate=nativeUpdate;e.generation=generation;e.owner=owner;e.tid=tid;e.args[0]=rcx;e.args[1]=rdx;e.args[2]=r8;e.args[3]=r9;e.caller=caller;e.qpc=now();e.overridden=overridden;
- // Bounded read only; never follow pointers or infer a typed game ABI.
- e.readable=rdx&&rdx<=UINTPTR_MAX-64&&readMemory(rdx,e.source,64);
- auto& w=windows[selected->window];if(eventLock.test_and_set(std::memory_order_acquire)){++w.drops;w.capture=false;return;}
- e.id=++entrySerial;selected->entry=e;eventLock.clear(std::memory_order_release);
+ auto index=publishedReset.load(std::memory_order_acquire);if(index<0)return;auto& w=windows[unsigned(index)];
+ if(!w.capture.load()||w.transform!=rcx||now()>=w.end)return;
+ DWORD tid=GetCurrentThreadId();Entry e{};e.nativeUpdate=nativeUpdate;e.generation=generation;e.owner=owner;e.tid=tid;e.args[0]=rcx;e.args[1]=rdx;e.args[2]=r8;e.args[3]=r9;e.caller=caller;e.qpc=now();e.overridden=overridden;
+ // One bounded read, no pointer chasing or guessed source ABI on invalid data.
+ ws::source_math::Matrix matrix{};e.readable=rdx&&rdx<=UINTPTR_MAX-64&&readMemory(rdx,&matrix,64)&&ws::source_math::valid(matrix);
+ if(e.readable)std::memcpy(e.source,&matrix,64);
+ readMemory(rcx+0x10,&e.actorUp,12);
+ if(eventLock.test_and_set(std::memory_order_acquire)){++w.drops;w.capture=false;return;}
+ e.id=++entrySerial;
+ for(unsigned i=leasesCap;i>0;--i){auto& l=leases[i-1];if(l.tid.load(std::memory_order_acquire)==tid&&l.window==unsigned(index)){l.entry=e;break;}}
+ if(w.state==4){auto h=commonHead.load();if(h-commonTail.load()<commonRecords.size()){CommonRecord record{};record.window=unsigned(index);record.entry=e;record.elapsed=double(GetTickCount64()-w.reset.initMs)/1000.;commonRecords[h%commonRecords.size()]=record;commonHead.store(h+1,std::memory_order_release);}else{++w.drops;w.capture=false;}}
+ eventLock.clear(std::memory_order_release);
 }
 
 }

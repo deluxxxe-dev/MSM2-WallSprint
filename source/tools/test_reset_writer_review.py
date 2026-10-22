@@ -41,3 +41,16 @@ if private.exists():
   body[50]^=1;p.write_text(capture(body));bad=decode(p);assert not bad['writers'][0]['function_capture']['owned_entry_prefix_normalized']
  print('PASS: optional private known-writer owned-prefix restoration only after full584byte original SHA; tamper rejected')
 else:print('SKIP: optional private584byte game-writer normalization replay; independent synthetic decoder/source tests ran')
+
+# b7 review must gate the first override and explicit session mapping; A need not be +Z.
+with tempfile.TemporaryDirectory() as tmp:
+ p=Path(tmp)/'b7.log'
+ header=['TEST_ONLY_SYNTHETIC','WallSprint v0.1b7 package_version=0.1.16','RESET_TRACE_SELF_CHECK exact_build=1 common_writer_hook=1 reset_trace_enabled=1 reset_trace_admitted=1 primary_thread_prearm_supported=1']
+ statuses=[f'PREARM_STATUS session={session} trace_already_armed_before_override=1 first_override=1' for session in (1,2)]
+ b7='\n'.join(header+statuses+rows[1:])
+ with patch('review_reset_writers.decode',return_value={'event_resolution':resolved}):
+  p.write_text(b7);good=review(p,1,2);assert good['same_A_E_writer_caller'] and not good['RESET_WRITER_VERIFIED']
+  for text in [b7.replace('trace_already_armed_before_override=1','trace_already_armed_before_override=0'),b7.replace(' first_override=1',''),b7.replace('dropped=0','dropped=1')]:
+   p.write_text(text);bad=review(p,1,2);assert not bad['same_A_E_writer_caller'] and not bad['RESET_WRITER_VERIFIED']
+  p.write_text(b7);assert not review(p,1,1)['same_A_E_writer_caller']
+print('PASS: b7 first-override prearm/missing/false/drop/session-mapping gates; synthetic never verified')

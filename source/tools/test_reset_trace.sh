@@ -6,3 +6,5 @@ gpp=/workspace/toolchains/windows/usr/bin/x86_64-w64-mingw32-g++-posix
 WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/build/windows/immediate_reset_smoke.exe" | tee logs/windows_reset_trace_smoke.log
 WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/build/windows/immediate_reset_smoke.exe" --helper | tee logs/windows_reset_coordinator_smoke.log
 /workspace/toolchains/analysis-python/bin/python tools/test_reset_writer_review.py | tee logs/reset_writer_review_tests.log
+
+WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/build/windows/immediate_reset_smoke.exe" --prearm | tee logs/windows_prearmed_reset_smoke.log

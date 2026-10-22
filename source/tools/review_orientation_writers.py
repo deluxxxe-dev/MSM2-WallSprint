@@ -44,7 +44,7 @@ def review(log):
   captured_sha=hashlib.sha256(raw).hexdigest();normalized=False
   # b6 known writer is owned-hook patched at entry. Normalize only its known
   # prefix, and accept reconstruction ONLY when the full original SHA matches.
-  if any('WallSprint v0.1b6 ' in line for line in lines) and f['size']==584:
+  if any('WallSprint v0.1b6 ' in line or 'WallSprint v0.1b7 ' in line for line in lines) and f['size']==584:
    ev=next((e for e in events if e['writer_id']==writer),None)
    if ev and f['begin']-int(ev['module_base'],16)==0x2cfc580 and any('orientation_source_hook installed=1 ' in line and 'exact_hash=3aae659545a606d36c0f9bf39eb773e09f1b091ff8ae139e72709c13688e6cd6' in line for line in lines):
     restored=bytearray(raw);restored[:32]=bytes.fromhex('488bc448895808488970104889781841564883ec6080795f00498bf8c5f82970')

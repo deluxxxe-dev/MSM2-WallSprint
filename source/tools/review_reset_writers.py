@@ -1,4 +1,4 @@
-"""Offline b6 review. Real A/E repetitions + anchored store/source required.
+"""Offline b6/b7 review. Real A/E repetitions + anchored store/source required.
 Synthetic fixtures can test decoding, never promote a game reset writer.
 """
 from pathlib import Path
@@ -7,10 +7,18 @@ from review_orientation_writers import review as decode, fields
 
 def review(path, a_session=None, e_session=None):
     text=path.read_text(errors='replace'); lines=text.splitlines(); base=decode(path)
+    b7='WallSprint v0.1b7 ' in text
+    header='WallSprint v0.1b7 ' if b7 else 'WallSprint v0.1b6 '
     actual=all(any(value in line for line in lines) for value in (
-        'WallSprint v0.1b6 ', 'target_build_gate=ACCEPTED',
+        header, 'target_build_gate=ACCEPTED',
         'exe_file_sha256=c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9',
         'RESET_TRACE_CONFIG admitted=1 ')) and 'TEST_ONLY_SYNTHETIC' not in text
+    if b7: actual=actual and any('RESET_TRACE_SELF_CHECK exact_build=1 common_writer_hook=1 reset_trace_enabled=1 reset_trace_admitted=1 primary_thread_prearm_supported=1' in l for l in lines) and 'V01B7_DIAGNOSTIC_NOT_ADMITTED' not in text
+    prearmed={fields(l).get('session') for l in lines if 'PREARM_STATUS ' in l and fields(l).get('trace_already_armed_before_override')=='1'}
+    if b7:
+        first_status=[fields(l) for l in lines if 'PREARM_STATUS ' in l and fields(l).get('first_override')=='1']
+        prearmed &= {d['session'] for d in first_status if d.get('trace_already_armed_before_override')=='1'}
+    common_calls=[fields(l) for l in lines if 'COMMON_WRITER_TRACE ' in l]
     resolutions={(e['session'],e['thread_id'],e['qpc_ms'],e['rip_after']):e for e in base['event_resolution']}
     entries={}; candidates=[]; windows=[]
     for line in lines:
@@ -33,16 +41,29 @@ def review(path, a_session=None, e_session=None):
             import struct
             up=unit(struct.unpack('<3f',raw[16:28])) if len(raw)==64 else None
             source_ok=bool(up and up[1]>=.98 and int(entry['RCX'],16)==int(d['transform'],16) and unit(vector(entry['source_up'])) and dot(up,unit(vector(entry['source_up'])))>=.999999)
-        evidence=bool(int(d.get('native_update','0'))>0 and d.get('read_valid')=='1' and d.get('target_verified_by_watch')=='1' and d.get('entry_correlated')=='1' and d.get('dropped')=='0' and 0<=float(d['relative_us_from_override'])<=30000 and int(d['caller_rva'],16)>0 and resolved.get('resolved') and source_ok)
+        evidence=bool(int(d.get('native_update','0'))>0 and d.get('read_valid')=='1' and d.get('target_verified_by_watch')=='1' and d.get('entry_correlated')=='1' and d.get('dropped')=='0' and 0<=float(d['relative_us_from_override'])<=(500000 if b7 else 30000) and int(d['caller_rva'],16)>0 and resolved.get('resolved') and source_ok)
         evidence=evidence and int(d['writer_function_rva'],16)==0x2cfc580 and resolved.get('function_capture',{}).get('sha256')=='3aae659545a606d36c0f9bf39eb773e09f1b091ff8ae139e72709c13688e6cd6'
+        if b7: evidence=evidence and d['session'] in prearmed
         first=float(d['first_surface_observed_qpc_ms']); now=float(d['qpc_ms'])
         evidence=evidence and 0<first<=now
-        face='A' if dot(normal,(0,0,1))>=.98 else 'E' if dot(normal,(-2**-.5,0,2**-.5))>=.98 else 'other'
+        face=('A' if str(a_session)==d['session'] else 'E' if str(e_session)==d['session'] else 'unmapped') if b7 else ('A' if dot(normal,(0,0,1))>=.98 else 'E' if dot(normal,(-2**-.5,0,2**-.5))>=.98 else 'other')
         candidates.append({'session':d['session'],'face_axis':face,'writer_function_rva':d['writer_function_rva'],'caller_rva':d['caller_rva'],'thread_id':d['thread_id'],'reset_latency_ms':float(d['relative_us_from_override'])/1000,'surface_to_reset_observed_ms':now-first,'native_update':d['native_update'],'source_up':entry.get('source_up'),'source_overridden_this_entry':entry.get('source_overridden_this_entry'),'source_entry_verified':source_ok,'instruction':resolved.get('resolved'),'function':resolved.get('function_capture'),'complete_candidate_evidence':bool(evidence)})
+    common_resets=[]
+    previous={}
+    for call in sorted(common_calls,key=lambda c:float(c.get('qpc_ms','0'))):
+        key=(call.get('session'),call.get('thread_id'),call.get('RCX'))
+        if call.get('source_valid')!='1':continue
+        if call.get('source_overridden_this_entry')=='1' and float(call.get('source_up_dot_surface','0'))>=.50:
+            previous[key]=call;continue
+        before=previous.get(key)
+        if before and float(call.get('source_up_dot_world','0'))>=.98:
+            latency=(float(call['qpc_ms'])-float(before['qpc_ms']))*1000
+            if 0<=latency<=100000:
+                common_resets.append({'session':call['session'],'thread_id':call['thread_id'],'target':call['RCX'],'source_entry_id':before['entry_id'],'world_entry_id':call['entry_id'],'reset_caller_rva':call['caller_rva'],'source_up':call['source_up'],'latency_us':latency,'different_caller':before['caller_rva']!=call['caller_rva'],'candidate_only':True,'prearmed':call['session'] in prearmed})
     def face_candidates(session,face):return [c for c in candidates if str(session)==c['session'] and c['face_axis']==face and c['complete_candidate_evidence']]
     a=face_candidates(a_session,'A'); e=face_candidates(e_session,'E')
     matching=[{'writer_function_rva':x['writer_function_rva'],'caller_rva':x['caller_rva']} for x in a for y in e if (x['writer_function_rva'],x['caller_rva'])==(y['writer_function_rva'],y['caller_rva'])]
-    return {'log_sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'actual_game_capture':actual,'confirmed_face_sessions':{'A':a_session,'E':e_session},'windows':windows,'reset_candidates':candidates,'same_A_E_writer_caller':matching,'RESET_WRITER_VERIFIED':bool(actual and matching),'success_E':bool(actual and e),'reset_patch_permission':False,'adhesion_permission':False,'limitations':['Old Up is previous watched/arm observation, not atomic instruction-before.','Current-thread enumeration is bounded and excludes helper/new threads; no-event is missing evidence.','Deadline is 30ms from committed source write; arm latency is reported; OS scheduling can delay cleanup.','Source/RSI/caller association is limited to the authenticated known common writer; unknown writers remain candidates.','A/E session mapping must be explicitly confirmed; runtime never self-promotes from synthetic events.']}
+    return {'log_sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'actual_game_capture':actual,'confirmed_face_sessions':{'A':a_session,'E':e_session},'windows':windows,'prearmed_sessions':sorted(prearmed),'common_writer_calls':common_calls,'common_world_after_surface_candidates':common_resets,'reset_candidates':candidates,'same_A_E_writer_caller':matching,'RESET_WRITER_VERIFIED':bool(actual and matching),'success_E':bool(actual and e),'reset_patch_permission':False,'adhesion_permission':False,'limitations':['Old Up is previous watched/arm observation, not atomic instruction-before.','Current-thread enumeration is bounded and excludes helper/new threads; no-event is missing evidence.','b7 captures .60-1.10s from native Init, primary thread only; b6 deadline is 30ms from commit. OS scheduling can delay physical cleanup.','Source/RSI/caller association is limited to the authenticated known common writer; unknown writers remain candidates.','A/E session mapping must be explicitly confirmed; runtime never self-promotes from synthetic events.']}
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('log',type=Path);p.add_argument('--a-session',type=int);p.add_argument('--e-session',type=int);p.add_argument('--output',required=True,type=Path);args=p.parse_args()

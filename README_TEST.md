@@ -1,39 +1,32 @@
-# WallSprint v0.1b6 — 姿勢を戻すwriterの短時間記録
+# WallSprint v0.1b7 — Pre-Armed Reset Writer Capture
 
-Package **0.1.15**。v0.1b5で姿勢sourceが実Actorへ届くことは確認できました。今回は、その直後にUpをWorld Upへ戻す書き込みを調べます。姿勢が一瞬変わって戻っても、そのままログを提出してください。保持を直す版ではありません。
+Package **0.1.16**。姿勢を戻す writer/caller を特定する診断版です。見た目の保持はまだ完成条件ではありません。**RESET_WRITER_VERIFIED=0、実機 A/E 未確認**。
 
 ## 導入
 
-1. ゲームを完全に終了する。
-2. **WallSprint_v0.1b6_reset_writer_trace.zipを展開**する。
-3. 古いWallSprintを無効にする。
-4. 中の**WallSprint.scriptは解凍せず**Overstrikeへ追加し、Install mods。
-5. これまでと同じScript supportと`-scripts`で起動する。
+1. ゲームを完全に終了し、古い WallSprint を無効にする。
+2. **WallSprint_v0.1b7_prearmed_reset_capture.zip** を展開する。
+3. 中の **WallSprint.script は解凍せず** Overstrike に追加し、Install mods。
+4. これまでと同じ Script support と `-scripts` で起動する。別 SDK・参考 MOD は不要。
 
-対象: Spider-Man2.exe **2.810.0.0** / SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`。参考MOD・WSU・別SDKは不要です。
+対象は Spider-Man2.exe **2.810.0.0**、SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`。別 build は fail closed。配布 INI の変更は不要。
 
-## 操作 — AとEで各1回、Crawl不要
+## 操作・提出
 
-録画を開始。マーカーキーは不要です。
+録画を開始し、地上で約2秒静止。Control A で左→右の横 WallRun を1回、約1.5秒。離脱して地上で約2秒静止し、同じ既知の斜め Face E で左→右を1回、約2秒。その後ゲームを終了する。Crawl・マーカーキー・繰り返し操作は不要。A/E 間の Fast Travel は可。
 
-1. **地上で約2秒静止**する。
-2. 前回と同じ**Control A**で、**左→右の横WallRunを1回、約1.5秒**。
-3. 離脱して**地上で約2秒静止**する。
-4. 従来と同じ斜めの**Face E**で、**左→右の横WallRunを1回、約2秒**。
-5. ゲームを終了する。
+`logs/WallSprint.log` と録画、A/E に対応する session 番号、見た目・クラッシュ・Position の異常有無を提出してください。失敗や0件でもログを加工しないでください。実機ログは公開 ZIP に含めません。
 
-Crawl、上方向WallRun、何度も繰り返す操作は不要です。A→E間のFast Travelは構いません。失敗や余計な入力が入っても、まずそのログを提出してください。
+F8 は診断と source 変更を停止し再起動まで OFF、F9 は script 停止。再採取はゲームを完全に再起動してください。
 
-0.7秒後からのsource変更はv0.1b5方式のままです。十分に傾いた最初の変更から**最大30msの取得区間**だけUpへの書き込みを監視し、戻る書き込みを捕捉したら終了します。Camera、吸着、移動、アニメーションは追加しません。通常Sprint姿勢が維持されることは、まだ完成条件として要求しません。
+## 確認するログ
 
-## 停止・提出
+起動時の `RESET_TRACE_SELF_CHECK` で `exact_build=1 common_writer_hook=1 reset_trace_enabled=1 reset_trace_admitted=1 primary_thread_prearm_supported=1` が必要です。`V01B7_DIAGNOSTIC_NOT_ADMITTED` があれば診断未成立です。
 
-異常があれば**F8でsource変更と監視を停止**。F9はscript停止です。再採取はゲームを完全に再起動してください。
+native Init から0.60秒以降の最初の verified Update（common-writer entry も fallback）で既知 primary native thread のみを先に監視します。source 変更開始は従来どおり0.70秒以降。監視は1.10秒まで、または reset 候補・Deinit・identity/guard loss・F8・予算上限で終了します。helper の scheduling で間に合わない場合も source 開始を遅らせず、`PREARM_STATUS first_override=1` の `trace_already_armed_before_override=0` で失敗を明示します。成功条件は同フィールドが1、かつ `RESET_TRACE_EVENT` が1件以上。
 
-**logs/WallSprint.logと録画**をChatGPT側へ提出してください。Codexへはログと、A/Eのsession対応・見た目の確認結果で十分です。
+`COMMON_WRITER_TRACE` は current Hero Transform 宛ての全 caller を記録し、`source_valid=0` の RDX を transform と解釈しません。記録予算・競合による欠落は dropped として報告し、capture を停止します。
 
-主なログ: `RESET_TRACE_CONFIG`、`RESET_TRACE_WINDOW`、`RESET_TRACE_EVENT`、`RESET_ENTRY_SOURCE`、`RESET_WRITER_CANDIDATE`。監視開始が間に合わない場合は`RESET_TRACE_SKIPPED`となります。0件でも加工せず提出してください。捕捉0件だけでは「戻すwriterが存在しない」と判断しません。
+`RESET_WRITER_CANDIDATE=1` は候補、`RESET_PATH_CORRELATED=1` は既知 common writer の thread/entry time/target/caller/post-RSI/source の照合です。実際の post-store RIP、命令の書込先と関数 SHA は private log の offline decode で確認します。watch address は実効書込命令の先頭アドレスとは限りません。A/E 両方で同じ writer/caller が再現するまで VERIFIED にしません。
 
-設定は配布済みで変更不要です。`WALLSPRINT_ENABLE=1`と`WALLSPRINT_NATIVE_SOURCE_OVERRIDE=1`で既存の限定source変更を使用。両方を0にすると停止します。direct Actor/Position・adhesion/movement設定は0です。常時監視やreset writerの改変は行いません。
-
-**v0.1b6のreset writer特定は今回の実機テスト待ち**です。クラウドの独立テストをゲーム内成功として扱いません。
+source48byte の既存変更だけを維持し、Position・direct Actor・reset patch/skip・adhesion/movement/camera/animation/physics は追加しません。

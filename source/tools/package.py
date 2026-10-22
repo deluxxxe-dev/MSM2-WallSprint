@@ -20,7 +20,7 @@ with zipfile.ZipFile(package,'w',zipfile.ZIP_DEFLATED) as z:
  for name,data in [('info.json',(root/'mod/info.json').read_bytes()),('WallSprint.ini',(root/'mod/WallSprint.ini').read_bytes()),('WallSprint.dll',binary)]:
   entry=zipfile.ZipInfo(name,(2026,10,22,0,0,0));entry.compress_type=zipfile.ZIP_DEFLATED;z.writestr(entry,data)
 with zipfile.ZipFile(package) as z:assert z.testzip() is None and z.read('WallSprint.dll')==binary and set(z.namelist())=={'info.json','WallSprint.ini','WallSprint.dll'}
-required=['V01B5_RESULT.md','IMMEDIATE_RESET_TRACE.md','RESET_WRITER_CANDIDATES.md','V01B6_GATE.md','V01B5_RESET_SUMMARY.json','V01B4_EVIDENCE_SUMMARY.json','sdk_sources.json']
+required=['V01B5_RESULT.md','IMMEDIATE_RESET_TRACE.md','RESET_WRITER_CANDIDATES.md','V01B6_GATE.md','V01B6_RESULT.md','PREARMED_RESET_TRACE.md','COMMON_WRITER_RESET_CALLS.md','RESET_WRITER_VERIFICATION.md','V01B7_GATE.md','V01B5_RESET_SUMMARY.json','V01B4_EVIDENCE_SUMMARY.json','sdk_sources.json']
 # Source is complete for runtime/build. Private game captures are deliberately excluded.
 source=out/'source';source.mkdir(exist_ok=True)
 for directory in ['src','include','tools','mod','vendor']:
@@ -29,6 +29,13 @@ for directory in ['src','include','tools','mod','vendor']:
   if not p.is_file() or '__pycache__' in p.parts or p.suffix=='.pyc' or 'native_v01a7' in p.parts or 'orientation_v01b3' in p.parts:continue
   target=source/relative;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(p,target)
 for name in ['README.md','README_TEST.md','BUILD.md','WORKLOG.md','CMakeLists.txt','LICENSE.txt','THIRD_PARTY_NOTICES.md']:shutil.copy2(root/name,source/name)
+docs=root.parent/'docs' if (root.parent/'docs').is_dir() else root/'docs'
+if docs.is_dir():
+ for name in ['DEV_RULES.md','PROJECT_STATE.md','CODEX_NEXT.md','CODEX_RESULT.md']:
+  if (docs/name).exists():
+   (source/'docs').mkdir(exist_ok=True);shutil.copy2(docs/name,source/'docs'/name)
+agent=root.parent/'AGENTS.md' if (root.parent/'AGENTS.md').exists() else root/'AGENTS.md'
+if agent.exists():shutil.copy2(agent,source/'AGENTS.md')
 for name in required:
  assert (root/'analysis'/name).exists()
  for folder in [source/'analysis',out/'analysis']:
@@ -56,12 +63,12 @@ manifest={
  'overwrite_observation':'read-only next matching nativePRE; distinct nativeUpdates>=20 or >=300ms dotActorUpN>=.98 after transition; worker snapshots supplemental; othercaller read-only capped16',
  'unknown_game_function_calls':0,'fresh_Hero_lookup':'reuse existing verified read-only SDK getter; no new vendor file or typed writer signature','WriteProcessMemory_import':False,
  'reference_mod_code_or_assets_added':False,'new_SM2ScriptTemplate_vendor_files':0,'full_game_code_dumps_distributed':False,'private_fixture_replays':'optional SKIP if captures absent; independent synthetic tests execute',
- 'v01b4_real_log_sha256':review['log_sha256'],'v01b4_source_matrix_verified':True,'v01b4_gate_pass':True,'v01b5_source_reaches_Actor_verified':True,'v01b5_retention_verified':False,'v01b5_actual_log_sha256':'b4cf534572e01d6369db6e9f950137d42061c0016ceb1195441b7f966786f4ab','v01b6_game_verified':False,'RESET_WRITER_VERIFIED':False,'v01b6_gate':'PENDING_ACTUAL_RESET_WRITE_A_E_TRACE','adhesion_next_phase_enabled':False,
- 'immediate_reset_trace':{'enabled_with_native_source':True,'trigger':'first successful source commit per session, dotWorld<=.85 OR dotN>=.50','deadline_ms_from_commit':30,'hard_ceiling_ms':50,'max_sessions':8,'max_events':128,'max_threads':32,'callback_wait':False,'new_hook_targets':0,'abi':'existing raw entry tailjump unchanged','timing':'QPC after source memcpy; first surface observation and actual data-write reset event','source_snapshot':'RDX64bytes only; after override before original; same thread/caller/target/postRSI correspondence required','reset_patch':False,'zero_events_prove_absence':False},
- 'validation':'b6 actual hardware/MinHook reset and independent second writer/helper/source snapshot/short-timeout/cancel/F8/DR cleanup + offline anchored decode/negative gates; portable ASan/UBSan; Windows warnings-as-errors; Wine wrongbuild/lifecycle/SEH/bounds; preserved source-gate callback across existing4MinHook ABI/20k tests; independent actual nativecaller+writer/MinHook A/E source transition and retained20Updates, source/position/metadata/parent buffer/returns; stack/heap/ABI/lifecycle/ABA/normal/identity/stale/patch/F8/overwrite negative tests; offline writes alone and synthetic never game PASS',
- 'limitations':['actual game b6 reset writer/caller/source/QPC pending; b5 source reaches Actor but is not retained','bounded current-thread enumeration excludes helper/new threads; capture arm delay and missed initial writes reported','30ms capture deadline enforced per handler/helper; OS scheduling can delay physical debug register cleanup','old Up is previous observation, not atomic instruction-before','no formal Cutscene/Death/WallCrawl accessor; native lifecycle/update freshness gates observed behavior','already admitted short in-flight commit may complete concurrently with F8; future admission OFF','source rollback failure is reported, no directActor repair','video mapping/no crash/position review required'],
+ 'v01b4_real_log_sha256':review['log_sha256'],'v01b4_source_matrix_verified':True,'v01b4_gate_pass':True,'v01b5_source_reaches_Actor_verified':True,'v01b5_retention_verified':False,'v01b5_actual_log_sha256':'b4cf534572e01d6369db6e9f950137d42061c0016ceb1195441b7f966786f4ab','v01b6_game_verified':False,'v01b7_game_verified':False,'RESET_WRITER_VERIFIED':False,'v01b6_gate':'NOT_ADMITTED_OR_LATE_PER_PROJECT_STATE','v01b7_gate':'PENDING_ACTUAL_PREARMED_A_E_CAPTURE','adhesion_next_phase_enabled':False,
+ 'prearmed_reset_trace':{'enabled_with_native_source':True,'trigger':'native verified Update at elapsed>=.60; common writer fallback','prearm_elapsed':.60,'source_override_elapsed':.70,'deadline_native_elapsed':1.10,'primary_first':True,'max_sessions':8,'max_events':256,'max_threads':1,'common_record_ring':1024,'callback_wait':False,'new_hook_targets':0,'abi':'existing raw entry tailjump unchanged','timing':'event snapshots last override QPC, PREARM_STATUS first_override required','all_current_Hero_callers':True,'invalid_source_interpreted':False,'reset_patch':False,'zero_events_prove_absence':False},
+ 'validation':'portable ASan/UBSan; Windows warnings-as-errors; Wine independent ABI/20k calls/source/native/reset/prearm tests; offline negative gates; cloud tests never game PASS',
+ 'limitations':['actual v0.1b7 game A/E reset path pending','primary-thread-only hardware coverage; all-caller entries are bounded','helper scheduling can miss prearm; first_override status=1 is required','native Init+1.10 deadline; OS scheduling may delay physical cleanup','Old Up is previous observation, not atomic instruction-before','unknown writer ABI/source remains unverified; post-store RIP needs anchored offline decode','short already-admitted source commit may finish concurrently with F8','source rollback failure is reported without directActor repair','explicit A/E mapping/video/no crash/Position review required'],
  'source_directory':'source'
 }
 (out/'BUILD_MANIFEST.json').write_text(json.dumps(manifest,indent=2)+'\n')
-(root/'logs/package_check.log').write_text(f'PASS: {label}/{version} DLL/version/README/INI; native-source-only ON, all direct/position/other writes OFF; PE32+/2exports/systemimports/noWPM; CRC/hash/source/licenses; no private game captures/reference binaries/full dumps; real b5 source-to-Actor verified/retention failed; b6 reset writer pending\n')
+(root/'logs/package_check.log').write_text(f'PASS: {label}/{version} DLL/version/README/INI; native-source-only ON, all direct/position/other writes OFF; PE32+/2exports/systemimports/noWPM; CRC/hash/source/licenses; no private game captures/reference binaries/full dumps; real b5 source-to-Actor verified/retention failed; b7 prearmed reset writer pending\n')
 print('PASS:',package)

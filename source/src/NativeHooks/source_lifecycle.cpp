@@ -4,9 +4,11 @@
 namespace {
 std::atomic_flag gate=ATOMIC_FLAG_INIT;
 ws::native_source::Token token;
+std::atomic<ws::native_source::Observer> observer{nullptr};
 std::atomic<bool> fault{false};std::atomic<std::uint64_t> contention{0};std::uint64_t cleanEpoch{};
 }
 namespace ws::native_source {
+void setObserver(Observer fn) noexcept {observer.store(fn,std::memory_order_release);}
 void armLifecycle(bool enabled){
  if(!enabled){ws_source_lifecycle_enabled=0;fault=true;return;}
  if(gate.test_and_set(std::memory_order_acquire))return;
@@ -29,6 +31,9 @@ void event(unsigned kind,std::uintptr_t owner) noexcept {
  else if(kind==2&&(token.phase==2||token.phase==3)){token.phase=3;token.updateMs=time;++token.updates;token.thread=GetCurrentThreadId();}
  else if(kind==3){token.phase=0;++token.generation;}
  else {token.phase=0;fault=true;}
- gate.clear(std::memory_order_release);SetLastError(error);
+ auto observed=token;
+ gate.clear(std::memory_order_release);
+ if(auto fn=observer.load(std::memory_order_acquire))fn(observed);
+ SetLastError(error);
 }
 }

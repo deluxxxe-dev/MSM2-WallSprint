@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.15",
-  "description": "WallSprint v0.1b6 Immediate Reset Writer Trace. Preserve verified caller-local source override; one targeted 30ms hardware Up watch per tilted WallRun session. No reset patch, direct Actor/Position/Camera/Physics/Animation writes.",
+  "version": "0.1.16",
+  "description": "WallSprint v0.1b7 Pre-Armed Reset Writer Capture. Preserve verified caller-local source override; primary native thread watch from .60 to 1.10 seconds and all-caller common-writer diagnostics. No reset patch, direct Actor/Position/Camera/Physics/Animation writes.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

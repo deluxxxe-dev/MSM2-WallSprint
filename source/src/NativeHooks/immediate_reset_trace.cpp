@@ -11,11 +11,15 @@ namespace {
 // while any thread is suspended by the reused hardware-watch engine.
 HANDLE wake{},stopped{},helper{};std::atomic<bool> disabled{true};
 std::atomic<unsigned> pending{0};msm2::reset_trace::Request slot;
+void nativeEvent(const ws::native_source::Token& token) noexcept {
+ if(token.phase!=3)msm2::trace::cancelReset();
+ else msm2::native_source::prearm(token);
+}
 bool live(const msm2::reset_trace::Request& r,msm2::Snapshot& s){
  ws::native_source::Token token{};
  return !disabled.load()&&msm2::native_source::observationGuardsAuthenticated()&&
   ws::native_source::lifecycle(token)&&token.phase==3&&GetTickCount64()>=token.updateMs&&GetTickCount64()-token.updateMs<=100&&token.generation==r.generation&&token.owner==r.owner&&
-  msm2::sample(s)&&s.hero==r.hero&&s.transform==r.transform&&ws::diag::actorAxes(s.prefix).valid;
+  msm2::sample(s)&&s.hero==r.hero&&s.transform==r.transform;
 }
 DWORD WINAPI run(void*){
  HANDLE handles[]={stopped,wake};
@@ -32,18 +36,25 @@ DWORD WINAPI run(void*){
 }
 }
 namespace msm2::reset_trace {
-void configure(bool verified,std::uintptr_t base,std::size_t size){
+void configure(bool verified,std::uintptr_t base,std::size_t size,bool prearmed){
  if(helper)return; // No rearming or configuration mutation within a process.
- if(!trace::configureReset(verified,base,size))return;
+ if(!trace::configureReset(verified,base,size,prearmed)){
+  writeLog("RESET_TRACE_SELF_CHECK exact_build=%u common_writer_hook=%u reset_trace_enabled=1 reset_trace_admitted=0 primary_thread_prearm_supported=0",unsigned(verified),unsigned(msm2::native_source::observationGuardsAuthenticated()));
+  writeLog("V01B7_DIAGNOSTIC_NOT_ADMITTED reason=build_hook_or_hardware_engine_gate");return;
+ }
  wake=CreateEventW(nullptr,FALSE,FALSE,nullptr);stopped=CreateEventW(nullptr,TRUE,FALSE,nullptr);
  if(wake&&stopped){disabled=false;helper=CreateThread(nullptr,0,run,nullptr,0,nullptr);}
  if(!helper){disabled=true;trace::kill();writeLog("RESET_TRACE_DISABLED reason=helper_creation_failed");}
+ ws::native_source::setObserver(nativeEvent);
+ writeLog("RESET_TRACE_SELF_CHECK exact_build=%u common_writer_hook=%u reset_trace_enabled=1 reset_trace_admitted=%u primary_thread_prearm_supported=%u",unsigned(verified),unsigned(msm2::native_source::observationGuardsAuthenticated()),unsigned(!disabled.load()),unsigned(helper!=nullptr));
+ if(disabled.load())writeLog("V01B7_DIAGNOSTIC_NOT_ADMITTED reason=helper_creation_failed");
 }
 void request(const Request& r) noexcept {
- if(disabled.load()||!r.commitQpc)return;
+ if(disabled.load()||(!r.prearmed&&!r.commitQpc))return;
  unsigned expected=0;if(!pending.compare_exchange_strong(expected,1,std::memory_order_acq_rel))return;
  slot=r;pending.store(2,std::memory_order_release);SetEvent(wake);
 }
+bool committed(const Request& r) noexcept {return !disabled.load()&&trace::resetCommitted(r);}
 void writerEntry(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t caller,bool overridden) noexcept {
  if(disabled.load())return;
  auto error=GetLastError();ws::native_source::Token token{};bool known=ws::native_source::lifecycle(token);trace::resetEntry(rcx,rdx,r8,r9,caller,overridden,known?token.updates:0,known?token.generation:0,known?token.owner:0);SetLastError(error);

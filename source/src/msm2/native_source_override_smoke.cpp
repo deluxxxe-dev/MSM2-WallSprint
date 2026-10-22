@@ -7,8 +7,9 @@
 #include <cstdarg>
 #include <string>
 #include <cassert>
-static unsigned resetRequests{};
-namespace msm2::reset_trace {void request(const Request& r) noexcept {assert(r.commitQpc);++resetRequests;}}
+static unsigned resetRequests{},prearmRequests{};
+namespace msm2::reset_trace {void request(const Request& r) noexcept {assert(r.prearmed&&!r.commitQpc);++prearmRequests;}
+bool committed(const Request& r) noexcept {assert(r.commitQpc);++resetRequests;return false;}}
 static msm2::Snapshot fakeHero;static std::string output;static bool sdkAvailable=true,sourceAuth=true;static unsigned char installedBytes[32]{};
 extern "C" {
 alignas(16) float ws_test_source_received[16];std::uint64_t ws_test_source_calls{};
@@ -43,10 +44,17 @@ int main(){
  assert(MH_Initialize()==MH_OK);assert(MH_CreateHook(reinterpret_cast<void*>(&ws_test_native_source_writer),reinterpret_cast<void*>(&ws_source_thunk),&ws_source_original)==MH_OK);assert(MH_EnableHook(reinterpret_cast<void*>(&ws_test_native_source_writer))==MH_OK);assert(msm2::readMemory(reinterpret_cast<std::uintptr_t>(&ws_test_native_source_writer),installedBytes,32));
  imageBase=reinterpret_cast<std::uintptr_t>(&ws_test_stack_caller)-callBegin;assert(msm2::readMemory(imageBase+callBegin,callerOriginal,168));
  for(unsigned i=0;i<4;++i){lifecyclePatches[i].address=reinterpret_cast<std::uintptr_t>(mem+4096+i*64);for(unsigned j=0;j<32;++j)lifecyclePatches[i].bytes[j]=static_cast<unsigned char>(i*32+j);std::memcpy(reinterpret_cast<void*>(lifecyclePatches[i].address),lifecyclePatches[i].bytes.data(),32);}
+ // Native Update path requests at .60 before any source entry/override.
+ prepare({0,0,1});token.initMs=GetTickCount64()-610;state.elapsed=.61f;
+ auto prearmBefore=prearmRequests;
+ ws::native_source::setObserver(msm2::native_source::prearm);
+ ws::native_source::event(2,owner);assert(prearmRequests==prearmBefore+1&&state.writes==0);
+ call();assert(prearmRequests==prearmBefore+1&&state.writes==0);
+ ws::native_source::setObserver(nullptr);
  for(ws::Vec3 n: {ws::Vec3{0,0,1},ws::Vec3{-.70710678f,0,.70710678f}}){
   prepare(n);auto resetBefore=resetRequests;auto callerInput=vanilla;call();assert(state.writes==1&&state.transition.active&&state.lastT==0&&!std::memcmp(&callerInput,&vanilla,64));
   state.transition.entryMs=GetTickCount64()-260;call();assert(state.lastT==1);auto up=ws::diag::actorAxes(ws_test_source_received).up;assert(ws::dot(up,n)>.999f);
-  for(unsigned i=0;i<22;++i){call();assert(state.transition.active);}assert(state.pass&&state.heldUpdates>=20);assert(resetRequests==resetBefore+1);
+  for(unsigned i=0;i<22;++i){call();assert(state.transition.active);}assert(state.pass&&state.heldUpdates>=20);assert(resetRequests==resetBefore+state.writes);
   assert(output.find("position_unchanged=1 source_is_stack_local=1")!=std::string::npos);
   // Deinit closes the NATIVE gate before worker processes the event.
   auto writes=state.writes;ws::native_source::event(3,owner);call(false);assert(state.writes==writes&&!std::memcmp(ws_test_source_received,&vanilla,64));
