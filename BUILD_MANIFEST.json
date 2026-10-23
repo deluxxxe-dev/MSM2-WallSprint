@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c9",
-  "package_version": "0.1.27",
+  "version": "v0.1c10",
+  "package_version": "0.1.28",
   "artifact": "WallSprint.script",
-  "sha256": "e12b87928d35a2022f2a67559c3b6498c51b0e4a0a802b47cf186ea9c4931815",
-  "dll_sha256": "6e008a79bb2dee16362f8425a741dfcb569a9bfe0a946cc9c8c1bcee578648f4",
+  "sha256": "3d54f6ed4382852da8ab526ca1974d4f484dda5fb34ce10ca36f8624362167d4",
+  "dll_sha256": "dba7b6126575d59159d1be77b49c40e477f6941a8e3285354b70da88aa13a4f2",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -128,13 +128,13 @@
     "original_capture": "private PATH_B_FUNCTION/PATH_B_CODE before hook; never redistributed",
     "caller_original_sha256": "1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d"
   },
-  "validation": "Windows warnings-as-errors; portable ASan/UBSan; full Wine ABI/MinHook/lifecycle/compact/watch/Position suites; production secondary B exact caller/own stack at1.75s after retention with fixed native thread/token/transition and primary continuation to4.4s Deinit; partial shared basis, foreign/hard identity/integrity negatives, stale recovery, bounded events and8-thread shared-budget race. Real c9 full hold pending.",
+  "validation": "Windows warnings-as-errors; portable ASan/UBSan; full Wine/ABI/MinHook/proof/watch/Position/c7-c9 suites; deterministic production secondary race with actual primary Update/worker refresh, latest diagonal/partial basis/current stack and metadata/scales, fixed native owner/clean Deinit; one-refresh bound and ownership/token/integrity/stale/close negatives. Actual c10 E zero-flash regression pending.",
   "limitations": [
-    "Real c8 proved B thread inequality alone was falsely fatal; real c9 visual full hold/flash/crash/Position still pending",
-    "Foreign B calls remain vanilla and receive no injected payload",
-    "An already-admitted guarded store can overlap close/kill",
-    "Secondary telemetry counts are separately sampled atomics; inflight/unique-ID saturation/drop telemetry bound interpretation",
-    "Position whole-path/W/exclusive-effects proof remains incomplete; no adhesion/later milestone"
+    "Real c9 A full hold/E diagonal orientation passed, but E had two WorldUp publication-race flashes; actual c10 E zero-flash verification pending",
+    "A second publication advance after the single refresh bound rejects; foreign/invalid calls remain vanilla",
+    "An already-admitted guarded store may overlap close/kill",
+    "Atomic telemetry counters are separately sampled; inflight/caps/drops delimit interpretation",
+    "Position whole-path/W/effects proof remains incomplete; no movement or active adhesion"
   ],
   "source_directory": "source",
   "path_b_override": true,
@@ -327,7 +327,7 @@
     "input_auth_rechecked_after_tick": true,
     "real_c7_first_cause": "UNKNOWN_FOR_C7_C8_IDENTIFIES_FALSE_SECONDARY_B_THREAD_RULE"
   },
-  "v01c9_gate": "SYNTHETIC_SECONDARY_B_PASS_REAL_LIFECYCLE_HOLD_PENDING",
+  "v01c9_gate": "REAL_A_FULL_HOLD_PASS_E_DIAGONAL_PASS_TWO_PUBLICATION_RACE_FLASHES",
   "secondary_path_b": {
     "enabled": true,
     "per_call_only": true,
@@ -360,5 +360,42 @@
     "per_session_cap": 4096,
     "failed_guarded_attempts_consume_slot": true,
     "foreign_or_stale_rejections_consume_slot": false
+  },
+  "v01c10_gate": "SYNTHETIC_REFRESH_REVALIDATION_PASS_REAL_E_ZERO_FLASH_PENDING",
+  "historical_c9_A_full_WallRun_hold_verified": true,
+  "historical_c9_E_diagonal_orientation_verified": true,
+  "secondary_publication_refresh": {
+    "max_refresh_attempts": 1,
+    "semantic_identity": [
+      "active",
+      "session",
+      "owner",
+      "hero",
+      "transform",
+      "generation",
+      "lifecycleEpoch",
+      "acceptedEpoch",
+      "initMs",
+      "native_thread",
+      "surface"
+    ],
+    "refreshable_payload": [
+      "publishedMs",
+      "nativeUpdate",
+      "elapsed",
+      "t",
+      "basis"
+    ],
+    "nonregressing_payload_required": true,
+    "same_ms_payload_change_detected": true,
+    "shared_full_validators_reused": true,
+    "latest_basis_and_current_stack_recomputed": true,
+    "second_advance_rejected": true,
+    "source_and_token_freshness_ms": 100,
+    "first_record_ring_independent": true,
+    "event_cap_process": 16,
+    "live_token_worker_SDK_integrity_rechecked": true,
+    "native_thread_migration": false,
+    "real_c10_E_zero_WorldUp_verified": false
   }
 }
