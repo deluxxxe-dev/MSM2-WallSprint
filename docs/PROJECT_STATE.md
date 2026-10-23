@@ -10,14 +10,16 @@ Convert vanilla WallRun into surface-relative locomotion. Do not advance movemen
 - Preserve exact-build fail-closed behavior, `AGENTS.md` / `docs/DEV_RULES.md`, independent implementation, and no raw user logs/full private game bodies in public artifacts.
 
 ## Accepted orientation
-Planar Surface Up/orientation remains accepted through verified Deinit on cardinal and diagonal walls.
+Planar Surface Up remains accepted through verified Deinit on cardinal and diagonal walls.
 
-Latest human c15 combined A -> E log:
+Latest human c16 combined A -> E result:
 ```text
-A/session1: 3860 ms, verified Deinit, retention pass, Up dot surface=1, stale0, hard0, Position writes0
-E/session2: 4297 ms, verified Deinit, retention pass, Up dot surface≈1.00000012, stale0, hard0, Position writes0
+A/session1: 3875 ms, verified Deinit, retention pass, Up dot surface=1, stale0, hard0, Position writes0
+E/session2: 4203 ms, verified Deinit, retention pass, Up dot surface=0.99999994, stale0, hard0, Position writes0
 ```
-Entry diagnostic and Position-watch cleanup restored normally.
+Session1 also naturally exercised c10 publication refresh once and admitted it. Entry diagnostic / Position-watch cleanup restored normally.
+
+Each session finalized 8 true entry snapshots / 8 complete invocation maps with XYZ mask0x7, source W0, destination W1.
 
 ## Verified movement chain
 ```text
@@ -28,82 +30,47 @@ exact callsite=0x351EEAB -> 0x2CFC900
 return=0x351EEB0
 observed second return=0x351A020
 ```
+Runtime source relation remains `RDX = entry RSP+0x28`, with `[RDX] XYZ` equal to exact executed Position XYZ bits on sampled A/E invocations. This is still correlation, not mutation permission.
 
-Actual entry/store evidence across A/E continues to show:
+## c15 result
+Branch-aware writer proof crossed `0x2CFC91F jne` and narrowed the writer-local blocker to `0x2CFC927 call`.
+
+## c16 actual-game result
+**Diagnostic PASS / exact callee alias blocker identified.** See `analysis/V01C16_RUNTIME_RESULT.md`.
+
+Authenticated call contract:
 ```text
-RDX = entry RSP+0x28
-[RDX] XYZ == exact executed Position XYZ store bits
-source W observed 0
-destination W observed 1
-entry_store_xyz_match_mask=0x7
-```
-This is strong correlation but still not mutation permission.
-
-## c15 actual-game result
-**Diagnostic PASS / exact next local writer blocker.** See `analysis/V01C15_RUNTIME_RESULT.md`.
-
-C15's branch-aware proof successfully crosses the previous c14 blocker `0x2CFC91F jne`. The next exact writer-local blocker is now:
-
-```text
-0x2CFC927: call
-```
-
-Actual startup contract:
-```text
-writer_complete_decode=1
-first_branch_rva=0x2CFC91F
-blocks_visited=2
-edges_visited=2
-branches_seen=4
-exact_store_sites_verified=1
-all_relevant_store_paths_proven=0
-x_path=unproven
-y_path=unproven
-z_path=unproven
-proven_component_mask=0x0
-next_barrier_rva=0x2CFC927
-next_barrier_instruction=call
-W_independent=1
-W_kind=unknown
-writable_source_proven=0
-reason=unsupported_relevant_writer_instruction_or_memory_effect
+writer call=0x2CFC927
+return=0x2CFC92C
+kind=direct_call
+target=0x2B23560
+boundary=0x2B23560..0x2B235E9
+hash=2d62e54b270c46f4babc8120a7e56123e3fe467ca383895d57a989f853095a9d
+target_complete_decode=1
 ```
 
-Per actual invocation, XYZ still match the RDX source (`mask=0x7`) but `xyz_causality_proven=0` because the call effect is unresolved.
-
-## C15 telemetry repair
-Final `MOVEMENT_ENTRY_CAPTURE_SUMMARY` is now correct for both A/E:
+Exact unresolved effect:
 ```text
-capture_activated=1
-true_entry_snapshots=8
-complete_invocation_maps=8
-xyz_source_candidate=20
-xyz_match_count=8
-xyz_match_mask=0x7
-xyz_stable_across_invocations=1
-source_w_bits=0x0
-destination_w_bits=0x3f800000
-phase=finalized
-summary_final=1
+effect=source_span_effect_unknown
+source_span_no_write_proven=0
+source_span_may_write=0
+source_span_effect_unknown=1
+next_callee_barrier_rva=0x2B23560
+next_callee_instruction=mov
+reason=callee_memory_write_alias_to_source_stack_or_destination_unresolved
 ```
-
-## Producer/storage boundary
-Historical bounded metadata remains unpromoted:
-```text
-RDX == entry RSP+0x28 == precall RSP+0x20
-caller_owned=0
-ownership_exclusive=0
-source_lifetime_exclusive=0
-downstream_conflicts_proven_absent=0
-exact_next_producer_rva=0x351EB00
-```
-Do not investigate or mutate `0x351EB00` until the writer-local call effect is resolved.
+C16 cannot yet prove that every callee memory write is disjoint from the 16-byte entry-RDX source object and the Hero Transform destination. Therefore `xyz_causality_proven=0` and W causality remain unproven.
 
 ## Current gate
 ```text
 writable_source_proven=0
 Position/source/input/movement writes=0
+caller_owned=0
+ownership_exclusive=0
+source_lifetime_exclusive=0
+downstream_conflicts_proven_absent=0
 ```
+Upstream producer `0x351EB00` remains deferred.
 
 ## Current stage
 1. lifecycle / SurfaceFrame ✅
@@ -114,27 +81,25 @@ Position/source/input/movement writes=0
 6. exact writer callsite ✅
 7. true writer-entry capture ✅
 8. RDX stack-local XYZ correlation ✅
-9. c14 JNE barrier identification ✅
-10. c15 branch-aware crossing of `0x2CFC91F jne` ✅
-11. exact writer call `0x2CFC927` effect contract ▶ CURRENT c16
-12. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-13. safe writable upstream movement source ⬜ NOT AUTHORIZED
-14. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-15. adhesion/contact refinement ⏸ deferred
-16. animation/camera/later traversal ⬜
+9. c14 JNE blocker identified ✅
+10. c15 branch crossing ✅
+11. c16 exact call target/boundary/hash ✅
+12. c17 callee memory-write alias contract ▶ CURRENT
+13. resume writer XYZ/W causal proof ⏸ after callee alias
+14. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+15. safe writable upstream movement source ⬜ NOT AUTHORIZED
+16. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+17. adhesion/contact refinement ⏸ deferred
+18. animation/camera/later traversal ⬜
 
-## Current implementation base
+## Current implementation base / next branch
 ```text
-completed branch: codex/v01c15-writer-branch-contract
-implementation commit: 0efd13924426b1c96247ff35577f7f323c934b97
-published delivery head: 8e500b2e5f4967457f8652f46e18eb2c6d4fcb7d
-version: v0.1c15 / package 0.1.33
-next branch: codex/v01c16-writer-call-effect
+c16 branch: codex/v01c16-writer-call-effect
+c16 implementation: 0a00bdeee05ffdae593d6963abd5c24424a2d8ef
+c16 delivery head: 8f66b15a109e503cdfc115eb5a48ebadd7bc4113
+c16 version: v0.1c16 / package 0.1.34
+c17 branch: codex/v01c17-callee-alias-contract
 ```
 
 ## Current objective
-Resolve only the exact call effect at writer `0x2CFC927`: authenticate the call target/form, determine whether the call can alter the entry-RDX XYZ source or the provenance required by the later exact Position stores, and then either continue the bounded branch proof or report the next exact local/callee blocker. No movement/source/input writes and no producer `0x351EB00` work in c16.
-
-## c16 cloud implementation
-
-Version v0.1c16 / package0.1.34 on codex/v01c16-writer-call-effect authenticates exact call0x2CFC927/return92C and its bounded current runtime-function target. A conservative no-write leaf classifier can resume the existing branch proof only after volatile and explicit nonvolatile carrier invalidation, saved-stack exclusion and per-invocation code/alias checks. Unsupported effects report the exact callee target/RVA/mnemonic; no observation hook added. Actual c16 target/effect/next blocker is PENDING A/E. C15 human evidence above stays accepted. Producer0x351EB00 and ownership/lifetime/exclusivity/downstream0 remain deferred; writable_source_proven0/Position-source-input-movement writes0.
+Resolve only callee `0x2B23560..0x2B235E9` memory-write address provenance relative to the entry-RDX 16-byte source object and Hero Transform destination. If all relevant writes are proven disjoint, resume the existing writer proof from `0x2CFC92C`; otherwise emit one exact narrower callee blocker. No producer traversal and no movement/source/input mutation in c17.
