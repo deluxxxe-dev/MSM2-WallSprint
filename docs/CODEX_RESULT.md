@@ -1,59 +1,51 @@
-# Codex result — WallSprint v0.1c3
+# Codex result — WallSprint v0.1c4
 
-Branch: **codex/v01c3-third-writer-trace**.
-Implementation commit: **fd105be35a12c4a4ba8b8a72c3f75a4bcf49ff82**.
-Base: published c2 head **727fcdc1594e36e6a1ffaabf5569eee89375b871**, including implementation2d26710034dcf695fa7bb2da763f117faf6171db. The pre-created c3 branch's base is preserved; the latest c2 runtime/state/c3 task were cherry-picked. Documentation conflicts were resolved to the exact origin/main handoff. No main rewrite or force push.
+Branch: **codex/v01c4-real-thread-enum-fix**.
+Implementation commit: **cfaae52304dfa757f2098eeb63c0168151c5b755**.
+Base: published c3 **b05278093b6e0ad92db7dad8c51a986ba16ca872**. The pre-created branch retained that exact implementation. Main handoff commits599f9a5/f1859e1/cd00c92 were cherry-picked; PROJECT_STATE/CODEX_NEXT content is unchanged from that handoff. No main rewrite or force push.
 
-## Outcome
+## Outcome and evidence boundary
 
-v0.1c3 / package **0.1.21** adds the requested diagnostic process-thread Hero Up watch while retaining working c2 A/B overrides. It identifies the first unexplained SurfaceUp-to-WorldUp write in owned multithread hardware fixtures. The actual game writer identity remains **UNKNOWN until the c3 human test**.
+v0.1c4 / package **0.1.22** repairs demonstrated pre-expansion diagnostic pressure stops and instruments the actual production helper/Toolhelp path. Real c3 A/B overrides and flicker remain authoritative; expanded coverage failed. Its precise real-game stop cause remains **UNKNOWN**, because the supplied summary lacks attempt/exit telemetry. The reproduced mechanism is not proven private-run causality.
 
-Outputs:
+The exact published c3 source reproduces capture=false and seen/eligible/installed=0 when its1024-entry common ring fills before expansion. Its poll releases the window before testing>=850ms. Prior c3 fixtures began above threshold and missed this interval. Event-ring/budget exhaustion had equivalent early-close paths. c4 keeps the coordinator alive under record pressure and limits pre-expansion observations to128/512 events, reserving384 for expanded evidence. Drops remain visible and mark coverage incomplete.
 
-- **WallSprint_v0.1c3_third_writer_trace.zip**
-- **WallSprint_v0.1c3_source.zip**
-- refreshed root **WallSprint.script** / **BUILD_MANIFEST.json**
+## Implementation and changed files
 
-## Implementation
+- `source/src/msm2/orientation_trace.cpp`: scheduled/attempt/enum/result and final requested/attempted/completed/failed telemetry; actual Toolhelp entry/owner-match counts, PID/TID/helper exclusion, immediate failed API/error. Verified elapsed>=850ms triggers one pass, with no rescan. Bounded per-reason/error skip summaries retain representative TID, counts and suppressed totals. Primary/install/readback/resume failure stages are retained. Common/event ring pressure and event-budget exhaustion drop records without closing the multithread coordinator.
+- `source/src/NativeHooks/immediate_reset_trace.cpp`, `source/include/msm2/orientation_trace.hpp`: pass the failing live-gate name to cleanup. Guard/lifecycle availability/native freshness/generation/owner/Hero/Transform/cancellation/kill/deadline checks still stop capture; invalid windows never reopen to force coverage.
+- `immediate_reset_smoke.cpp`, `third_writer_trace_smoke.cpp`, `tools/test_reset_trace.sh`: actual async production helper threshold and real Toolhelp filtering/install on owned OS threads; sparse samples, pre-expansion common-ring/event-budget pressure, OS errors and cleanup. Classification and once/session bounded identity/hash/callers remain.
+- Version/header/mod/telemetry, root/source README_TEST, README/BUILD/WORKLOG and packaging recipes updated. Required V01C3_RESULT, REAL_THREAD_ENUM_FIX, V01C4_GATE and authoritative runtime-result mirror are included in root/source analyses.
 
-- `source/src/msm2/orientation_trace.cpp`: primary prearm remains around elapsed0.60. One process-thread snapshot expands the watch at elapsed>=0.85 with an absolute1.50 end. Process candidates cap at128, skipped TID/reason summaries at16, event budget512/session. The helper itself is excluded. No continuously polled enumeration or thread-creation hook.
-- Each eligible handle is verified as belonging to this process. Protected fixed-lease DR0/8-byte+DR1/4-byte setup has readback, balanced suspension/resume, partial rollback and retained cleanup. Active foreign DR0/DR1/GD is skipped; foreign DR2/DR3 can coexist and is preserved. A busy primary does not prevent c3 from watching other eligible threads.
-- Timeout, lifecycle/identity/guard loss, cancellation, F8/shutdown and failed setup close capture and restore leases. Saved debug state is restored when still owned; foreign takeover is preserved and reported. Immutable tombstones and the pinned VEH remain available for delayed exceptions. No PAGE_GUARD or trace-related page-protection change.
-- Each captured Up write receives module/function classification (KNOWN_PATH_A, KNOWN_PATH_B, UNKNOWN_WRITER), bounded validated callers and separate last-A/last-B override timing. Diagnostic lock contention may drop a record but does not suppress A/B commits or stop c3 capture. Drops mark coverage incomplete.
-- THIRD_WRITER_EVENT is once/session after both sources commit: prior surface dot>=.90, later dot<=.50, and movement toward World Up. Partial scalar-store sequences can use a surface observation from<=5ms earlier with explicit non-atomic before_semantics. A known function reached through a different caller/thread is not silently excluded as an unexplained path.
-- THIRD_WRITER_IDENTITY records executing thread, RIP, module, function bounds/size/SHA and callers. At most16KiB of the one selected function can be written to the PRIVATE local runtime log as THIRD_WRITER_CODE private_do_not_distribute=1. It is never included in the release. Runtime bytes may include an existing owned hook and are not labeled original bytes.
-- `immediate_reset_trace.*`, `orientation_trace.hpp`, `telemetry.cpp`: enable this mode only after existing build/proof/admission gates; retain helper ownership of setup/cleanup.
-- `third_writer_trace_smoke.cpp` / `test_third_writer.sh`: actual hardware/VEH tests on owned native functions and memory. Existing trace fixture now synchronizes on native-loop readiness instead of a fixed20ms sleep; no assertion or production gate was relaxed.
-- Required V01C2_RESULT / THIRD_WRITER_TRACE / V01C3_GATE and runtime evidence mirror are included under root/source. Version, README_TEST, BUILD, WORKLOG, package/release recipes and manifest are updated.
-
-The c2 native_source_override.cpp, compact_map_proof.cpp, reset_copy_source.cpp and stack_source.cpp implementation files are unchanged. Exact exe version/SHA, compact proof, caller/hash, lifecycle/Hero/Transform/native-thread/stack/freshness/kill, Path A Position preservation, Path B first0x24-only row-scale/metadata preservation and lock-free admission remain intact. Retention remains dot>=.98 for300ms or20 distinct native updates.
-
-No third-path patch, direct Actor/Position, adhesion, movement, animation, camera, physics, gravity, parkour, swing or combat write is added.
+The native_source_override.cpp, reset_copy_source.cpp, compact_map_proof.cpp, stack_source.cpp and source_lifecycle.cpp implementations are unchanged from c3. Exact executable2.810.0.0/SHA, proof/authentication/current patch ownership, raw Win64 tailjump ABI, lifecycle/Hero/Transform/native-thread/stack/freshness/kill gates, lock-free A/B snapshot, Path A Position and Path B first0x24-only/row-scale/metadata behavior remain intact. No third-path patch, direct Actor/Position watcher write, new hook, page protection/PAGE_GUARD, direct game call or later milestone is added. Foreign DR0/1/GD refusal, DR2/3 coexistence, balanced suspension/resume and exact owned-state restore remain.
 
 ## Verification
 
-Completed with exit0:
+Completed exit0:
 
 - Windows x64 build with WallSprint warnings as errors.
 - Portable ASan/UBSan: **11 PASS**.
 - DLL smoke: **4 PASS**.
-- Full hook/offline/actual-byte/multithread suite: **32 PASS**, **4 explicit historical private-fixture SKIPs**.
-- The actual accepted-build c2 writer444/caller128 regression ran and retained all9 proof pairs and production installer authentication/restoration.
-- c3 fixtures installed2+ threads, captured the second-thread unknown function/hash/caller, emitted only one selected event/session, and captured sequential component resets after elapsed1.10. They verified active foreign DR0 refusal, foreign DR2 coexistence, exact previous DR0/1/2/3/6/7 restoration, busy-primary fallback, bad stack refusal, diagnostic contention, timeout/Deinit/identity/F8/shutdown cleanup, and unchanged Position/page protection.
-- One early legacy Wine trace run stalled; its standalone retry exposed zero hits with fixed startup timing. Both hardware fixtures now await explicit thread readiness and the complete final run passed.
-- Packaging checks cover DLL/version/default INI, PE32+/exports/system imports/no WriteProcessMemory, archive CRC/hash, complete WallSprint source/build recipes and licenses, and raw private-game-input exclusion.
-- Fresh standalone source ZIP extraction rebuilt the Windows DLL successfully with private captures absent.
+- Full hooks/offline/actual-byte/native-thread suite: **34 PASS**, **4 explicit historical private-fixture SKIPs**. Final diagnostic aggregation changes were followed by another Windows build and both affected trace suites, all PASS.
+- Actual accepted-build writer444/caller128 regression ran: complete9-pair proof, authenticated production installer/owned restoration and negative mutations remain PASS. No original game code executes.
+- Production async helper starts near.60, remains unexpanded below.85 and invokes the real enumeration/filter/install once. Fixture observed4 matching process threads,3 eligible/installed and1 excluded helper. Exact host totals vary; assertions require total>1/matches>1/installed>1.
+- Guard loss before threshold gives its exact stop reason without enumeration. Sparse polling from below.85 to approximately.93 still expands once after common-ring saturation and128-event pre-expansion cap, then captures a second-thread unknown reset. Pressure does not suppress A/B commit timestamps. Existing foreign-slot/full saved debug state, bad stack, timeout/Deinit/identity/F8/shutdown, Position/page protection checks remain PASS. Invalid OpenThread returns a nonzero OS error.
+- Exact published c3 source reproduces the old common-overflow silent stop in a separate owned-memory run.
 
-Only known cloud validation summaries are selected for release logs. The private game input, actual raw user log/video and the synthetic trace's full function dump are not packaged.
+A fresh standalone source ZIP extraction rebuilt the Windows DLL successfully with private captures absent. Final packaging validation passes archive CRC, current complete source/docs/licenses, nested script contents/hash, manifest gates and private full-game-byte exclusion. Only selected cloud validation summaries are distributed; raw game input and synthetic full-function logs are excluded.
 
-## Real-game gate and next test
+## Outputs and human gate
 
-PENDING: actual c3 third writer identity / repetition / clean real-game cleanup. Snapshot coverage does not cover threads created afterward; foreign DR, caps, failed access/setup, drops and sparse observations can still miss a writer. No captured event does not prove absence.
+- **WallSprint_v0.1c4_real_thread_enum_fix.zip**
+- **WallSprint_v0.1c4_source.zip**
+- refreshed root **WallSprint.script** / **BUILD_MANIFEST.json**
 
-First confirm c2 compact startup proof still admitted with writer444/caller128/pairs9. Then perform **one A Control left-to-right WallRun about1.5–2s**. Require A/B counts>0, MULTITHREAD_UP_WATCH installed>1, THIRD_WRITER_EVENT and THIRD_WRITER_IDENTITY, and cleanup_pending=0. Test E once only if A misses the event. Send the local log privately through the normal ChatGPT handoff, and note flicker/crash/position issues. Do not publish THIRD_WRITER_CODE or raw logs.
+Real c4 process coverage, third-writer identity and retention are **PENDING**. This is an enumeration/diagnostic repair, not a claimed flicker fix. Snapshot coverage excludes later-created threads; caps, foreign slots, access/setup failures and drops can miss a writer.
 
-Visible flicker may continue because c3 deliberately observes the remaining path. Brief Surface Up is not retained ownership and grants no adhesion permission.
+Confirm startup proof/admission. Perform one left-to-right WallRun around1.5–2s on the same wider near-A wall (N398 approximately -0.113317,0,+0.993559). Minimum: A/B counts>0; EXPAND_ATTEMPT trigger_seen=1; ENUM_RESULT total>1/matches>1; watch attempted=1/seen>1/eligible>0/installed>1; cleanup_pending=0. Unknown event/identity is strong additional success, not the minimum enumeration gate. E only if coverage succeeds but the unknown writer remains uncaptured. Return the complete log privately through normal ChatGPT handoff, plus flicker/crash/position observations. No raw log/video/function capture belongs in Git or release ZIPs.
+
+Retention still requires dot>=.98 for>=300ms OR>=20 distinct native updates after both commits. Third-path modification, adhesion, movement, animation and camera remain blocked.
 
 ## Persistence
 
-This result and the refreshed packages are committed after the implementation SHA above, then the dedicated branch is pushed and its remote artifact hashes verified. PROJECT_STATE / CODEX_NEXT remain the latest handoff content and were not rewritten by implementation.
+The implementation is in the exact SHA above. This result, refreshed release artifacts and release hash record are committed afterward on the same branch, then pushed and verified by authenticated Git retrieval. Final user links use that delivery commit: GitHub raw ZIP for direct download and GitHub blob README_TEST for test instructions.

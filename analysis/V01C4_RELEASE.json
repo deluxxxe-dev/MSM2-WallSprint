@@ -1,0 +1,29 @@
+{
+  "version": "v0.1c4",
+  "package_version": "0.1.22",
+  "branch": "codex/v01c4-real-thread-enum-fix",
+  "implementation_commit": "cfaae52304dfa757f2098eeb63c0168151c5b755",
+  "outputs": [
+    {
+      "path": "WallSprint_v0.1c4_real_thread_enum_fix.zip",
+      "bytes": 2332909,
+      "sha256": "bcc82c0bfa76982315ce2b05eacc3a2aa9509155328212dd7cd8357e1dd6affc"
+    },
+    {
+      "path": "WallSprint_v0.1c4_source.zip",
+      "bytes": 444919,
+      "sha256": "2c94f551d26c82b927e7df3e90787f22b103dcc56fe5f376fa84a22a9603ac19"
+    }
+  ],
+  "portable_pass": 11,
+  "dll_smoke_pass": 4,
+  "full_hook_pass": 34,
+  "historical_private_skips": 4,
+  "final_affected_trace_suites": "PASS",
+  "exact_published_c3_overflow_reproduction": "PASS_owned_memory_only",
+  "standalone_source_build": "PASS_private_captures_absent",
+  "private_game_function_bytes_distributed": false,
+  "real_game_c4_coverage": "PENDING",
+  "third_writer_identity": "PENDING",
+  "retention": "NOT_PASSED"
+}

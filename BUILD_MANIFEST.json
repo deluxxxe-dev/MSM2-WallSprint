@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c3",
-  "package_version": "0.1.21",
+  "version": "v0.1c4",
+  "package_version": "0.1.22",
   "artifact": "WallSprint.script",
-  "sha256": "09aa6a55cd1881927afadb2ff5c3dc98930b592637c89a4e92b08732a5ce0a84",
-  "dll_sha256": "7467bc320a387700afc1422350496ffbd3ab36a24b89e546d96df69a7932fbe8",
+  "sha256": "3f8ba1048007958a65db1ac5b5399c2099d12520fa5702529cdc137e6a95cdb0",
+  "dll_sha256": "e2742dd0b0ac349397a8e674e34f165ed916541ba589ead62e02b9e8e096a6fb",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -128,9 +128,9 @@
     "original_capture": "private PATH_B_FUNCTION/PATH_B_CODE before hook; never redistributed",
     "caller_original_sha256": "1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d"
   },
-  "validation": "Windows warnings-as-errors for WallSprint; portable ASan/UBSan; full Wine hook/ABI/lifecycle/lock-free A-B/metadata/retention suites; actual hash-verified writer444/caller128 reproduces old c1 failure and passes full Capstone proof + production installer; mutations, missing/duplicate/outside pairs, decode failures and caller/stack negatives. Actual c2 retention failed; c3 observes the remaining writer without patching it.",
+  "validation": "Windows warnings-as-errors for WallSprint; portable ASan/UBSan; full Wine hook/ABI/lifecycle/lock-free A-B/metadata/retention suites; actual hash-verified writer444/caller128 reproduces old c1 failure and passes full Capstone proof + production installer; mutations, missing/duplicate/outside pairs, decode failures and caller/stack negatives. Actual c3 had zero expanded coverage; c4 production helper/Toolhelp and sparse-threshold pressure tests pass on owned OS threads. Real-game c4 coverage and writer identity remain pending.",
   "limitations": [
-    "Actual c3 unknown writer identity requires human A run; E only if missed",
+    "Actual c4 process-thread coverage requires the near-A run; E only after coverage succeeds but unknown writer is missed",
     "Coverage is a bounded eligible-thread snapshot; caps, foreign DR, drops and later-created threads may miss writes",
     "Before Up is previous observation, not atomic pre-instruction",
     "A short already-admitted guarded store may finish concurrently with F8",
@@ -196,6 +196,33 @@
     "independent_last_A_B_timestamps": true,
     "real_game_third_writer_verified": false
   },
-  "v01c3_gate": "PENDING_REAL_MULTITHREAD_THIRD_WRITER_EVENT",
-  "v01c2_real_source_override_verified": true
+  "v01c3_gate": "REAL_PRIMARY_WATCH_ALIVE_ZERO_PROCESS_ENUMERATION_NO_THIRD_WRITER_CAPTURE",
+  "v01c2_real_source_override_verified": true,
+  "real_thread_enum_fix": {
+    "expand_threshold_comparison": ">=850ms",
+    "same_production_enumerator_in_native_test": true,
+    "expand_state_fields": [
+      "requested",
+      "attempted",
+      "completed",
+      "failed"
+    ],
+    "enum_telemetry": [
+      "snapshot_created",
+      "thread32first_ok",
+      "entries_total",
+      "owner_pid_matches",
+      "win32_error_stage",
+      "win32_error_code"
+    ],
+    "helper_stop_gate_named": true,
+    "common_record_pressure_closes_watch": false,
+    "event_pressure_closes_watch": false,
+    "preexpand_event_limit": 128,
+    "expanded_reserved_events": 384,
+    "attempts": 1,
+    "rescans": 0,
+    "real_game_coverage_verified": false
+  },
+  "v01c4_gate": "PENDING_REAL_GAME_ENUMERATION_AND_INSTALLED_GT_ONE"
 }
