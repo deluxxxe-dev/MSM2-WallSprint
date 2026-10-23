@@ -1,249 +1,242 @@
-# Next task — WallSprint v0.1c1 Compact Path-B Override + Lock-Free Path-A Admission
+# Next task — WallSprint v0.1c2 Real-Runtime Compact Proof Repair
 
 ## Objective
 
-v0.1b9 completed the path-B layout characterization needed for a narrow write experiment.
+v0.1c1 implemented the intended lock-free dual-source orientation ownership path, but the real game never reached either source override because the new Path-B compact-3x3 startup proof failed closed.
 
-The next goal is to make both verified orientation source paths feed the same shared WallSprint SurfaceFrame basis long enough to pass the orientation-retention gate.
+The target executable itself is still the verified build. Do not change or weaken exact-build safety. Fix the proof implementation so it can correctly decode the real accepted-build Path-B caller/writer and recover the already-characterized nine compact copy pairs.
 
-This task is still orientation-only. Do **not** add adhesion, movement, animation, camera, physics, parkour, swing or combat.
+This remains orientation-only. Do not add adhesion, movement, animation, camera, physics, gravity, parkour, swing or combat.
 
-Read first:
+## Implementation base — IMPORTANT
 
-- `analysis/V01B9_RUNTIME_RESULT.md`
+Do **not** start from main source alone.
+
+The v0.1c1 implementation is published at:
+
+```text
+branch: codex/v01c1-compact-path-b
+commit: 71437fac6c0640af01725a46e1b49c5627c739bb
+```
+
+Use that branch/commit as the implementation base, then read the latest handoff docs from `origin/main`:
+
+- `AGENTS.md`
 - `docs/PROJECT_STATE.md`
-- prior path-B analysis files under `analysis/`
+- `analysis/V01C1_RUNTIME_RESULT.md`
+- this `docs/CODEX_NEXT.md`
 
-## Runtime facts from v0.1b9 to treat as ground truth
+Preserve all c1 lock-free snapshot, Path-A, Path-B write-boundary and retention logic unless runtime evidence here specifically requires a correction.
 
-Build:
+## Authoritative v0.1c1 runtime result
+
+User report: no visible orientation change.
+
+The package was correct:
+
+```text
+WallSprint v0.1c1 package_version=0.1.19
+scope=shared_orientation_source_snapshot
+path_b_override=1
+```
+
+The executable itself passed:
 
 ```text
 Spider-Man2.exe 2.810.0.0
-SHA256 c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9
+exe_file_sha256=c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9
+target_build_gate=ACCEPTED
 ```
 
-Path A:
+But the new proof failed:
 
 ```text
-caller return RVA 0x2CFC8F3
-writer RVA 0x2CFC580
+PATH_B_COMPACT3X3_PROOF
+admitted=0
+caller_verified=0
+writer_verified=1
+rdx_to_rcx_map_verified=0
+source_bytes=0x24
+decoded_prefix_bytes=5
+pairs=0
+reason=instruction_or_dataflow_not_proven
 ```
 
-Path B:
+Then all source ownership was correctly disabled:
 
 ```text
-caller function 0x2CFC7D0..0x2CFC850
-caller return RVA 0x2CFC84B
-writer RVA 0x2CFC3C0
-writer range 0x2CFC3C0..0x2CFC57C
-writer SHA256 ee33ad96fb1834f9977621ea988f7667f0eb3e47166a7115ba262072ebc50196
+native_source_config admitted=0 caller_body_hash_verified=0
+DUAL_SOURCE_ADMISSION admitted=0 copy_hook_authenticated=0
+PATH_B_LAYOUT_CONFIG enabled=0 path_b_override=0
+RESET_TRACE_CONFIG admitted=0
+PATH_A_OVERRIDE_COUNT=0
+PATH_B_OVERRIDE_COUNT=0
 ```
 
-For exact path-B entries on both A and E:
+The existing path-A writer itself still authenticated and installed:
 
 ```text
-RDX = RSP + 0x28
-rdx_inside_stack_bounds=1
-source_span_inside_stack_bounds=1
-expected_rsp_relation_match=1
-source_readable=1
+orientation_source_hook installed=1
+writer_rva=0x2cfc580
+exact_hash=3aae659545a606d36c0f9bf39eb773e09f1b091ff8ae139e72709c13688e6cd6
+unique_AOB=1
+known_prefix=1
+runtime_boundary=1
 ```
 
-The path-B source is a compact 3x3 orientation basis occupying exactly nine floats:
+Therefore this is a c1 proof-decoder/self-check bug, not a changed game build and not evidence against the b9 compact source characterization.
+
+Detailed runtime handoff: `analysis/V01C1_RUNTIME_RESULT.md`.
+
+## Ground-truth Path-B map from b9
+
+Writer:
 
 ```text
-RDX + 0x00, +0x04, +0x08
-RDX + 0x0C, +0x10, +0x14
-RDX + 0x18, +0x1C, +0x20
+RVA 0x2CFC3C0 .. 0x2CFC57C
+size 444
+SHA256 ee33ad96fb1834f9977621ea988f7667f0eb3e47166a7115ba262072ebc50196
 ```
 
-Authenticated writer bytes directly copy them into Hero orientation slots as:
+Caller:
+
+```text
+function 0x2CFC7D0 .. 0x2CFC850
+call return RVA 0x2CFC84B
+```
+
+Exact runtime source provenance on A and E:
+
+```text
+RDX = writer-entry RSP + 0x28
+RDX inside current-thread stack
+[RDX,RDX+0x24) inside stack
+```
+
+Nine direct-copy pairs to prove from authenticated original writer bytes:
 
 ```text
 RDX + 0x00 -> RCX + 0x00
 RDX + 0x04 -> RCX + 0x04
 RDX + 0x08 -> RCX + 0x08
-
 RDX + 0x0C -> RCX + 0x10
 RDX + 0x10 -> RCX + 0x14
 RDX + 0x14 -> RCX + 0x18
-
 RDX + 0x18 -> RCX + 0x20
 RDX + 0x1C -> RCX + 0x24
 RDX + 0x20 -> RCX + 0x28
 ```
 
-Runtime values reproduce the same semantics on A and E: the second row remains approximately World Up while path A has already tilted Hero Up toward Surface Up.
-
-v0.1b9 also exposed a separate path-A reliability problem:
-
-```text
-COMMON_OVERRIDE_REJECT reason=state_lock_contention
-```
-
-occurred at very high frequency. The hot native hook must not depend on acquiring a shared mutex/try-lock in order to decide whether to override a qualifying current-Hero call.
+Do not hard-code admission solely from this list. The startup proof must independently recover and verify it from the exact accepted-build original bytes.
 
 ## Required implementation
 
-### 1. Preserve exact build and fail-closed behavior
+### 1. Diagnose why the real decoder stops at 5 bytes
 
-All native writes remain exact-build-only.
-
-Before any path-B source modification require at minimum:
+Instrument the compact proof parser/decoder so failure reports at least:
 
 ```text
-exact build accepted
-verified WallRun lifecycle active
-elapsed >= 0.70 s
-kill switch inactive
-RCX == current Hero Transform
-caller return RVA == 0x2CFC84B
-RDX readable
-RDX == writer-entry RSP + 0x28
-RDX and [RDX,RDX+0x24) inside current thread stack bounds
-anchored compact-3x3 writer map self-check passed
-shared WallSprint orientation snapshot valid for this session
+PATH_B_PROOF_DECODE_FAILURE
+role=caller|writer
+function_rva=
+byte_offset=
+absolute_rva=
+remaining_bytes=
+first_bytes_hex=
+decoder_backend=
+decoder_status=
+reason=
 ```
 
-Direct Actor Transform writes remain disabled.
+The current `decoded_prefix_bytes=5` is insufficient.
 
-### 2. Formalize the path-B store map with an anchored decoder/self-check
+Use the actual unhooked accepted-build bytes, not a synthetic fixture, for the startup proof.
 
-v0.1b9 captured the authenticated original writer/caller bytes, but runtime logging still reported:
+### 2. Use a decoder that fully supports the real instruction stream
+
+The proof must decode the complete instruction sequences needed to authenticate:
+
+- caller construction of the local compact source and the direct call returning at `0x2CFC84B`;
+- writer direct loads from RDX and stores to RCX for all nine orientation floats.
+
+If the c1 custom/minimal decoder cannot reliably handle the real instruction set/prefixes, replace that proof path with an already-vendored/runtime-safe decoder that supports the encountered x64 instructions, or use the project's existing proven Capstone-based offline/static decoder where appropriate.
+
+Do not simply skip undecodable instructions. A proof that silently skips bytes must not admit writes.
+
+### 3. Separate build identity from proof identity in diagnostics
+
+Do not report the verified executable as `exact_build=0` merely because a later proof component failed.
+
+Log distinct fields, for example:
 
 ```text
-static_store_proof=0
-requires_anchored_decode=1
+exe_build_verified=1
+path_a_writer_verified=1
+path_b_writer_verified=1
+path_b_caller_verified=0|1
+path_b_map_verified=0|1
+dual_source_admitted=0|1
 ```
 
-Before enabling path-B writes, implement an accepted-build startup self-check that decodes the original unhooked bytes and proves the nine direct-copy pairs listed above.
+Fail closed remains mandatory; this is a diagnostic clarity fix, not a safety relaxation.
 
-Do not enable path-B modification if any instruction boundary, source offset, destination offset, function hash/range or caller identity differs.
+### 4. Recover all nine pairs from real bytes
 
-Log once at startup:
-
-```text
-PATH_B_COMPACT3X3_PROOF admitted=1|0
-caller_verified=
-writer_verified=
-rdx_to_rcx_map_verified=
-source_bytes=0x24
-```
-
-Do not package full private captured game bytes in the distribution ZIP.
-
-### 3. One shared lock-free WallSprint orientation snapshot
-
-Both path A and path B must consume the same current interpolated orientation for a WallRun session.
-
-Publish an immutable/lock-free snapshot from the lifecycle/update side containing at least:
+Successful startup must log:
 
 ```text
-session generation
-active flag
-current Hero Transform pointer
-elapsed / transition progress
-current Right
-current Up
-current Forward
-surface N398
-```
-
-Native writer hooks must be able to read a coherent snapshot without waiting on a mutex and without `try_lock` rejection.
-
-Acceptable approaches include an atomic generation/seqlock-style snapshot or double-buffered immutable publication. Do not introduce blocking inside the native hook.
-
-The goal is that exact qualifying calls are never rejected merely because another thread temporarily owns a state lock.
-
-Diagnostic:
-
-```text
-PATH_A_LOCKFREE_SNAPSHOT_READ
-session=
-generation=
-coherent=1
-```
-
-Keep this diagnostic bounded; do not spam every call.
-
-### 4. Path A — override every exact qualifying Hero call
-
-For exact `0x2CFC8F3 -> 0x2CFC580` calls during active WallSprint after elapsed >= 0.70:
-
-- validate current Hero target and existing padded source layout;
-- use the lock-free shared snapshot;
-- supply the current shared Right/Up/Forward basis;
-- preserve Position;
-- do not restrict to one call per update;
-- do not allow `state_lock_contention` to be an admission outcome.
-
-Log bounded counters:
-
-```text
-PATH_A_OVERRIDE_COUNT=
-PATH_A_REJECT_COUNT=
-PATH_A_STATE_LOCK_CONTENTION=0
-```
-
-If a valid World-Up source is encountered and converted, retain `LATE_COMMON_WORLDUP_OVERRIDE=1`.
-
-### 5. Path B — override only the compact 3x3 source payload
-
-For exact verified `0x2CFC84B -> 0x2CFC3C0` calls after elapsed >= 0.70, modify only:
-
-```text
-[RDX + 0x00, RDX + 0x24)
-```
-
-Do **not** touch `RDX+0x24` or any later bytes.
-
-Interpret the three rows as the compact basis written into Hero Right/Up/Forward.
-
-Preserve row magnitudes/per-axis scale:
-
-```text
-sx = length(original row0)
-sy = length(original row1)
-sz = length(original row2)
-
-new row0 = shared Right   * sx
-new row1 = shared Up      * sy
-new row2 = shared Forward * sz
-```
-
-Require finite, sane nonzero row magnitudes before writing. Use conservative bounds and fail closed if the compact source is degenerate or unexpectedly scaled.
-
-Do not alter pointers, metadata or any source bytes after +0x20.
-
-Diagnostic:
-
-```text
-PATH_B_COMPACT3X3_OVERRIDE
-session=
-elapsed=
-source_ptr=
-rdx_minus_rsp=0x28
-original_row_lengths=(...)
-original_up=(...)
-applied_up=(...)
-applied_up_dot_surface=
-bytes_written=0x24
-metadata_untouched=1
+PATH_B_COMPACT3X3_PROOF
+admitted=1
 caller_verified=1
-target_verified=1
-stack_verified=1
+writer_verified=1
+rdx_to_rcx_map_verified=1
+source_bytes=0x24
+decoded_prefix_bytes=<complete required span>
+pairs=9
 ```
 
-### 6. Keep the hardware Up watch as verification only
+Additionally emit a bounded one-time map summary containing the nine recovered source/destination offsets. Do not log/package full private game-function captures.
 
-Use the bounded pre-armed primary-thread Hero Up watch to verify:
+### 5. Preserve the c1 lock-free shared snapshot
 
-- path B no longer immediately restores World Up;
-- no late path-A World-Up write survives;
-- whether any new reset writer appears after both overrides.
+Once proof admission succeeds, retain c1 behavior:
 
-If another writer resets orientation after both paths were successfully overridden, log:
+- no worker-state mutex/try-lock dependency inside Path A or Path B native hot hooks;
+- one coherent shared session/generation/Transform/Right/Up/Forward/N398 snapshot;
+- exact lifecycle/thread/target/stack/staleness/kill gates;
+- `PATH_A_STATE_LOCK_CONTENTION=0` should remain true.
+
+Do not regress to the b9 state-lock design.
+
+### 6. Preserve exact Path-B write boundary
+
+For admitted exact calls after elapsed >= 0.70:
+
+- RDX must equal entry RSP+0x28;
+- source/target/current Hero/lifecycle must verify;
+- validate sane finite row magnitudes;
+- write exactly `[RDX+0x00,RDX+0x24)`;
+- preserve all bytes at and after `RDX+0x24`;
+- preserve row magnitudes while replacing directions with the shared WallSprint Right/Up/Forward basis;
+- verify metadata remains unchanged.
+
+Do not write Actor Transform directly.
+
+### 7. Preserve Path-A every-call override
+
+For exact qualifying `0x2CFC8F3 -> 0x2CFC580` current-Hero calls after elapsed >= 0.70:
+
+- use the same lock-free shared orientation snapshot;
+- modify only Right/Up/Forward source rows;
+- preserve Position;
+- override every qualifying invocation, including late World-Up source calls;
+- bounded reject diagnostics must explain real gate failures.
+
+### 8. Runtime verification
+
+Keep the bounded prearmed Hero Up hardware watch.
+
+If both source paths commit and another writer resets Up, log:
 
 ```text
 NEW_RESET_AFTER_DUAL_OVERRIDE
@@ -254,29 +247,17 @@ up_before=
 up_after=
 ```
 
-Do not respond by adding direct Actor spam writes.
+Do not compensate with direct Actor spam writes.
 
-### 7. Orientation-retention gate
+### 9. Retention gate
 
-After transition completion, require:
-
-```text
-dot(ActorUp, N398) >= 0.98
-```
-
-for either:
+Require:
 
 ```text
->= 0.30 seconds
+dot(ActorUp,N398) >= 0.98
 ```
 
-or
-
-```text
->= 20 distinct native updates
-```
-
-while the same verified WallRun session remains active.
+for either >=0.30 s or >=20 distinct native updates in the same active WallRun session.
 
 Log:
 
@@ -286,75 +267,71 @@ held_ms=
 held_updates=
 ```
 
-This is the only result that authorizes the following adhesion milestone.
+Only this gate can authorize the later adhesion milestone.
 
-### 8. No adhesion yet
+## Tests
 
-Even if retention succeeds, this package must not add the 0.5 m standoff controller, surface-relative movement, animation or camera work.
+Add a regression using the **actual accepted-build byte sequences already independently captured/represented by project analysis**, sufficient to reproduce the c1 runtime decode failure. The test must fail under the old c1 proof decoder and pass after the repair.
 
-## Expected visible behavior
+Also retain negative tests:
 
-Unlike v0.1b9, this package should produce an obvious visible change **if orientation ownership succeeds**.
+- byte mutation / hash mismatch;
+- wrong caller return;
+- missing one of nine pairs;
+- duplicate/ambiguous pair;
+- source/destination offset outside expected orientation region;
+- decoder failure mid-stream;
+- stack relation mismatch;
+- metadata boundary write attempt.
 
-Because the camera is still world-up, Spider-Man should rotate sideways relative to the screen/world as Actor Up approaches wall Surface Up.
-
-Animation may look incorrect. That is acceptable for this milestone.
-
-If there is still no visible change, the runtime log must identify whether:
-
-- path-A override failed,
-- path-B compact override failed,
-- both succeeded but another writer reset orientation,
-- or retention did not last long enough.
+Synthetic fixtures alone are not sufficient for this bug.
 
 ## Human test
 
-A Control:
+After startup proof is confirmed admitted, test:
 
-- one left-to-right WallRun, about 1.5 s if available.
+A Control:
+- one left-to-right WallRun, about 1.5 s.
 
 E diagonal:
-
-- same known physical diagonal face;
+- same known diagonal face;
 - one left-to-right WallRun, about 2 s.
 
-Crawl not required.
-
-Video is useful for visible orientation, but runtime log remains authoritative.
+Expected visible success: Spider-Man clearly rotates sideways relative to world/screen because the camera remains world-up.
 
 ## PASS criteria
 
-Minimum implementation success:
-
-- anchored compact-3x3 map proof passes;
-- path-A hooks no longer reject due to state-lock contention;
-- exact current-Hero path-B stack source at RSP+0x28 is modified only in first 0x24 bytes;
-- row magnitude/per-axis scale preserved;
-- no direct Actor write, Position write or metadata write.
-
-Primary runtime success:
+Implementation gate:
 
 ```text
+PATH_B_COMPACT3X3_PROOF admitted=1
+caller_verified=1
+writer_verified=1
+rdx_to_rcx_map_verified=1
+pairs=9
+```
+
+and no state-lock dependency in the hot hooks.
+
+Runtime primary gate:
+
+```text
+PATH_A_OVERRIDE_COUNT > 0
+PATH_B_OVERRIDE_COUNT > 0
 ORIENTATION_RETENTION_PASS=1
 ```
 
-on at least one test wall.
-
-Strong success:
-
-- retention passes on both A and E;
-- no `NEW_RESET_AFTER_DUAL_OVERRIDE` during observed window;
-- no crash, transform corruption or position corruption.
+No adhesion yet even if runtime retention succeeds.
 
 ## Required outputs
 
 Update/create:
 
 ```text
-analysis/V01B9_RESULT.md
-analysis/PATH_B_COMPACT3X3_PROOF.md
+analysis/V01C1_RESULT.md
+analysis/PATH_B_PROOF_DECODER_FIX.md
 analysis/DUAL_SOURCE_RETENTION.md
-analysis/V01C1_GATE.md
+analysis/V01C2_GATE.md
 README_TEST.md
 docs/CODEX_RESULT.md
 ```
@@ -362,11 +339,13 @@ docs/CODEX_RESULT.md
 Package:
 
 ```text
-WallSprint_v0.1c1_compact_path_b_override.zip
+WallSprint_v0.1c2_real_runtime_proof_fix.zip
 ```
+
+Persist implementation on a new pushed branch based on c1, e.g. `codex/v01c2-proof-fix`, and record exact branch/commit SHA in `docs/CODEX_RESULT.md`.
 
 ## Distribution / provenance
 
 Follow `AGENTS.md` and `docs/DEV_RULES.md`.
 
-Use only WallSprint-owned source plus independent static/runtime analysis of Spider-Man2.exe. Do not copy reference-mod code, binaries or assets.
+Use only WallSprint-owned source plus independent runtime/static analysis of Spider-Man2.exe. Do not copy reference-mod code, binaries or assets.
