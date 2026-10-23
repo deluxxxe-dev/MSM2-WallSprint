@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.36",
-  "description": "WallSprint v0.1c18 Callee Branch-Aware Alias Contract. Exact callee identity and bounded write-address provenance relative to entry source and Transform. Position/source/input/movement writes remain disabled; producer edge is deferred. Dedicated timestamped log_wallsprint files preserve existing logs.",
+  "version": "0.1.37",
+  "description": "WallSprint v0.1c19 Exact Transform-Alias Write Contract. Exact callee identity and bounded write-address provenance relative to entry source and Transform. Position/source/input/movement writes remain disabled; producer edge is deferred. Dedicated timestamped log_wallsprint files preserve existing logs.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

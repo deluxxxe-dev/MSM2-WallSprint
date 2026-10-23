@@ -172,14 +172,21 @@ bool callStackFits(const Snapshot &v) noexcept {
           contractWriter.callStackHigh >= 0 &&
           v.stackHigh - v.rsp >= std::uint64_t(contractWriter.callStackHigh));
 }
+bool transformWriteRegionsFit(const Snapshot &v) noexcept {
+  return !writerAlias.transformWriteSeen ||
+         (v.target <= UINTPTR_MAX - 0x110 && v.stackLow <= v.stackHigh &&
+          (v.target + 0x110 <= v.stackLow || v.target >= v.stackHigh));
+}
 bool aliasRegionsFit(const Snapshot &v) noexcept {
-  return !writerAlias.usesGlobals ||
-         (imageBase <= UINTPTR_MAX - contractImageSize &&
-          v.target <= UINTPTR_MAX - 64 && v.stackLow <= v.stackHigh &&
-          (v.stackHigh <= imageBase ||
-           v.stackLow >= imageBase + contractImageSize) &&
-          (v.target + 64 <= imageBase ||
-           v.target >= imageBase + contractImageSize));
+  const unsigned span = writerAlias.transformWriteSeen ? 0x110 : 64;
+  return transformWriteRegionsFit(v) &&
+         (!writerAlias.usesGlobals ||
+          (imageBase <= UINTPTR_MAX - contractImageSize &&
+           v.target <= UINTPTR_MAX - span && v.stackLow <= v.stackHigh &&
+           (v.stackHigh <= imageBase ||
+            v.stackLow >= imageBase + contractImageSize) &&
+           (v.target + span <= imageBase ||
+            v.target >= imageBase + contractImageSize)));
 }
 bool callIntact() {
   unsigned char current[5]{};
@@ -544,6 +551,8 @@ void finish(unsigned slot) {
   }
   const bool calleeCodeVerified =
       writerAlias.authenticated && writerAlias.resolved &&
+      writerAlias.sourceNoWrite && writerAlias.positionProtected &&
+      writerAlias.relevantEffectsResolved &&
       calleeAliasIdentity(writerCall.target, writerCall.begin, writerCall.end,
                           writerCalleeHash) &&
       writerCall.noWrite && writerCallCurrent();
@@ -562,11 +571,12 @@ void finish(unsigned slot) {
       "MOVEMENT_WRITER_CALL_INTEGRITY session=%llu invocation_id=%llu "
       "relevant_call=%u current_code_verified=%u stack_footprint_verified=%u "
       "writer_entry_stack_low_offset=%lld global_regions_verified=%u "
+      "transform_write_regions_verified=%u "
       "writable_source_proven=0",
       (unsigned long long)v.session, (unsigned long long)v.id,
       unsigned(writerCall.relevant), unsigned(calleeCodeVerified),
       unsigned(callStackVerified), (long long)contractWriter.callStackLow,
-      unsigned(globalRegionsVerified));
+      unsigned(globalRegionsVerified), unsigned(transformWriteRegionsFit(v)));
   bool wCausal =
       (!writerCall.relevant || (storage.sameBytes && distinctTarget)) &&
       callCodeVerified && callStackVerified && globalRegionsVerified &&
@@ -910,6 +920,7 @@ void configure(const Spec &s, Gate validate) noexcept {
     writerAlias.size = writerCalleeSize;
     writerAlias.imageSize = s.imageSize;
     writerAlias.authenticated = calleeCurrent;
+    writerAlias.exactWrite.site = 0x2b2358e;
     writerAlias.reason =
         calleeCurrent ? "writer_call_not_reached_in_bounded_prefix"
                       : "exact_c17_target_boundary_hash_not_authenticated";
@@ -967,6 +978,59 @@ void configure(const Spec &s, Gate validate) noexcept {
                writerAlias.resolved ? "all_reachable_paths"
                                     : "analyzed_prefix_only");
     }
+    const auto &tw = writerAlias.exactWrite;
+    writeLog(
+        "MOVEMENT_CALLEE_WRITE_CONTRACT site_rva=0x%llx instruction_decoded=%u "
+        "mnemonic=%s width=%u dst_base=%s dst_index=%s dst_scale=%u "
+        "dst_disp=%lld "
+        "dst_provenance=%s dst_root=%d dst_root_offset=%lld "
+        "value_source_kind=%s value_source_register_or_memory=%s "
+        "value_source_tag=%d value_source_root=%d value_source_offset=%lld "
+        "value_source_constant_bits=0x%x value_source_provenance_exact=%u "
+        "reaching_state_count=%u analyzed_states_same_destination=%u "
+        "analyzed_states_same_value_origin=%u "
+        "all_reaching_states_same_destination=%u "
+        "all_reaching_states_same_value_origin=%u "
+        "all_reaching_states_examined=%u "
+        "write_overlaps_position_range=%s "
+        "write_overlaps_transform_identity_or_pointer_carrier=%s "
+        "write_affects_writer_reload_provenance=%s "
+        "write_effect_relevant_to_xyz=%s "
+        "write_effect_relevant_to_w=%s dependency_site_rva=0x%llx "
+        "modeled_irrelevant_transform_write=%u transform_no_write_proven=%u "
+        "transform_position_protected_range_unmodified=%u "
+        "relevant_transform_effects_resolved=%u read_site_cap=64 "
+        "counts_scope=static_analysis_not_CPU_execution runtime_observation=0 "
+        "full_bytes_logged=0 writable_source_proven=0 reason=%s",
+        (unsigned long long)tw.site, unsigned(tw.decoded), tw.mnemonic,
+        tw.width, tw.base, tw.index, tw.scale, (long long)tw.displacement,
+        tw.destinationOrigin, tw.root, (long long)tw.offset, tw.valueKind,
+        tw.sourceOperand, tw.valueTag, tw.valueRoot, (long long)tw.valueOffset,
+        tw.valueBits, unsigned(tw.valueExact), tw.reachingStates,
+        unsigned(tw.destinationSame && tw.destinationExact),
+        unsigned(tw.valueSame && tw.valueExact),
+        unsigned(tw.complete && tw.destinationSame && tw.destinationExact),
+        unsigned(tw.complete && tw.valueSame && tw.valueExact),
+        unsigned(tw.complete),
+        tw.reachingStates && tw.destinationExact
+            ? (tw.positionOverlap ? "1" : "0")
+            : "unknown",
+        tw.reachingStates && tw.destinationExact
+            ? (tw.carrierOverlap ? "1" : "0")
+            : "unknown",
+        tw.reloadDependency         ? "1"
+        : tw.complete && tw.modeled ? "0"
+                                    : "unknown",
+        tw.positionOverlap || tw.carrierOverlap || tw.reloadDependency ? "1"
+        : tw.complete && tw.modeled                                    ? "0"
+                                    : "unknown",
+        tw.positionOverlap || tw.carrierOverlap || tw.reloadDependency ? "1"
+        : tw.complete && tw.modeled                                    ? "0"
+                                    : "unknown",
+        (unsigned long long)tw.dependencySite, unsigned(tw.modeled),
+        unsigned(writerAlias.transformNoWrite),
+        unsigned(writerAlias.positionProtected),
+        unsigned(writerAlias.relevantEffectsResolved), writerAlias.reason);
     const auto &ac = writerAlias.counts;
     writeLog(
         "MOVEMENT_CALLEE_ALIAS_CONTRACT target_rva=0x2b23560 "
@@ -979,6 +1043,8 @@ void configure(const Spec &s, Gate validate) noexcept {
         "writes_transform_exact=%u writes_transform_possible_alias=%u "
         "writes_unknown=%u "
         "source_span_no_write_proven=%u transform_no_write_proven=%u "
+        "transform_position_protected_range_unmodified=%u "
+        "relevant_transform_effects_resolved=%u "
         "all_relevant_write_aliases_resolved=%u next_barrier_rva=0x%llx "
         "next_barrier_instruction=%s next_barrier_effect=%s address_root=%d "
         "address_offset=%lld write_width=%u callee_byte_cap=137 branch_cap=%u "
@@ -995,13 +1061,15 @@ void configure(const Spec &s, Gate validate) noexcept {
         ac[ws::rdx::sourcePossible], ac[ws::rdx::transformExact],
         ac[ws::rdx::transformPossible], ac[ws::rdx::unknownPointer],
         unsigned(writerAlias.sourceNoWrite),
-        unsigned(writerAlias.transformNoWrite), unsigned(writerAlias.resolved),
-        (unsigned long long)writerAlias.barrier, writerAlias.mnemonic,
-        writerAlias.barrierEffect, writerAlias.barrierRoot,
-        (long long)writerAlias.barrierOffset, writerAlias.barrierWidth,
-        writerAlias.branchBudget, writerAlias.pathBudget,
-        writerAlias.stateBudget, writerAlias.visits, writerAlias.paths,
-        writerAlias.reason);
+        unsigned(writerAlias.transformNoWrite),
+        unsigned(writerAlias.positionProtected),
+        unsigned(writerAlias.relevantEffectsResolved),
+        unsigned(writerAlias.resolved), (unsigned long long)writerAlias.barrier,
+        writerAlias.mnemonic, writerAlias.barrierEffect,
+        writerAlias.barrierRoot, (long long)writerAlias.barrierOffset,
+        writerAlias.barrierWidth, writerAlias.branchBudget,
+        writerAlias.pathBudget, writerAlias.stateBudget, writerAlias.visits,
+        writerAlias.paths, writerAlias.reason);
     writeLog(
         "MOVEMENT_WRITER_CALL_CONTRACT writer_rva=0x2cfc900 call_rva=0x2cfc927 "
         "call_kind=%s target_rva=0x%llx target_boundary_begin=0x%llx "

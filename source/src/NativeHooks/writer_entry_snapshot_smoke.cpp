@@ -743,8 +743,39 @@ static void aliasGates() {
        "overlaps/overflow; "
        "different pointer values alone never prove global disjointness");
 }
+static void writeGates() {
+  writerAlias = {};
+  writerAlias.transformWriteSeen = true;
+  decltype(records[0].snapshot) v{};
+  v.stackLow = 0x300000;
+  v.stackHigh = 0x400000;
+  v.target = v.stackLow - 0x110;
+  assert(transformWriteRegionsFit(v) && aliasRegionsFit(v));
+  v.target++;
+  assert(!transformWriteRegionsFit(v) && !aliasRegionsFit(v));
+  v.target = v.stackHigh;
+  assert(transformWriteRegionsFit(v));
+  v.target = UINTPTR_MAX - 0x100;
+  assert(!transformWriteRegionsFit(v));
+  v.target = 0x500000;
+  v.stackLow = v.stackHigh + 1;
+  assert(!transformWriteRegionsFit(v));
+  v.stackLow = 0x300000;
+  imageBase = 0x100000;
+  contractImageSize = 0x10000;
+  writerAlias.usesGlobals = true;
+  v.target = imageBase - 0x110;
+  assert(aliasRegionsFit(v));
+  v.target++;
+  assert(!aliasRegionsFit(v));
+  puts("PASS: c19 complete Transform+[0,0x110) excludes TEB/image, including "
+       "touching bounds, partial overlap, malformed stack and overflow; "
+       "ordinary distinct base pointers alone cannot certify the new write");
+}
 int main(int argc, char **argv) {
-  if (argc > 1 && std::string(argv[1]) == "--alias-gates")
+  if (argc > 1 && std::string(argv[1]) == "--write-gates")
+    writeGates();
+  else if (argc > 1 && std::string(argv[1]) == "--alias-gates")
     aliasGates();
   else if (argc > 1 && std::string(argv[1]) == "--call-integrity")
     callIntegrity();

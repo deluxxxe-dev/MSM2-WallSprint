@@ -50,13 +50,40 @@ struct AliasWrite {
   std::int64_t offset{};
   AliasKind kind = unknownPointer;
 };
+struct ExactWriteContract {
+  // Opt-in exact instruction RVA; production pins 0x2B2358E under the existing
+  // complete callee identity. Zero retains the c18 behavior.
+  std::uintptr_t site{}, dependencySite{};
+  unsigned reachingStates{}, width{}, scale{};
+  int root = -1, valueTag{}, valueRoot = -1;
+  std::int64_t offset{}, displacement{}, valueOffset{};
+  std::uint32_t valueBits{};
+  bool decoded{}, destinationExact{},
+      destinationSame = true, valueSame = true, valueExact{}, modeled{},
+      complete{}, positionOverlap{}, carrierOverlap{}, reloadDependency{};
+  const char *valueKind = "unknown";
+  const char *destinationOrigin = "unknown";
+  char mnemonic[32] = "none", base[32] = "none", index[32] = "none",
+       sourceOperand[32] = "none";
+};
+inline constexpr unsigned aliasReadCap = 64;
+struct AliasRead {
+  std::uintptr_t at{};
+  int root = -1;
+  std::int64_t offset{};
+  unsigned width{};
+};
 struct CalleeAlias {
   // Only authenticated current target bytes; never dereferenced process
   // pointers.
   const unsigned char *code{};
   std::size_t size{}, imageSize{};
   bool authenticated{}, argumentsComplete{}, resolved{}, sourceNoWrite{},
-      transformNoWrite{}, usesGlobals{};
+      transformNoWrite{}, usesGlobals{}, positionProtected{},
+      relevantEffectsResolved{}, transformWriteSeen{};
+  ExactWriteContract exactWrite{};
+  unsigned reads{};
+  std::array<AliasRead, aliasReadCap> readSites{};
   unsigned analyses{}, visits{}, paths{}, writes{}, sourceArgMask{},
       transformArgMask{};
   std::array<const char *, 4> argumentOrigins{

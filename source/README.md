@@ -1,7 +1,5 @@
 # WallSprint
 
-v0.1c18 / package0.1.36: exact137-byte callee CFG counts derive bounded branch/path/state budgets; both successors use unchanged c17 protected source/Transform write classification. New compact CFG and unique write records. C17 real A/E and timestamped logging passed; actual c18 CFG/write map/XYZ/W or narrower blocker awaits A/E. No Position/source/input/movement writes or producer0x351EB00 traversal.
+v0.1c19 / package0.1.37: exact authenticated MOV0x2B2358E destination/value/reaching-path metadata and a one-site Transform+0x10C protected-effect model. Literal Transform-no-write stays0 for real writes; Position-range and reload/provenance safety are separate gates. Unknown/conflicting effects refuse. Accepted c18 actual CFG/stack-write/A/E/logger evidence retained; actual c19 exact write/XYZ/W or next blocker awaits A/E. No source/Position/input/movement writes or producer traversal.
 
-Use the fixed GitHub direct ZIP link in the delivery message. Open [README_TEST.md](README_TEST.md) on GitHub for normal A/cardinal then E/diagonal~4s and one private complete log. See analysis/V01C18_GATE.md and docs/CODEX_RESULT.md.
-
-Logs stay at game-root `log_wallsprint/WallSprint_YYYYMMDD-HHMMSS.log` (host local time; collision suffixes, A/E in one file). Existing logs are never overwritten; errors use debug output, never shared logs.
+Use fixed GitHub direct ZIP in delivery and [README_TEST.md](README_TEST.md) on GitHub. A/cardinal~4s -> fully end -> move/fast-travel -> E/diagonal~4s; privately send newest complete timestamped game-root log_wallsprint/WallSprint_YYYYMMDD-HHMMSS.log. Logger/collision/append/no shared fallback behavior unchanged. See analysis/V01C19_GATE.md and docs/CODEX_RESULT.md.

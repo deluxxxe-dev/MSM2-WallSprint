@@ -117,7 +117,7 @@ Upstream producer `0x351EB00` remains deferred.
 12. c17 call argument provenance ✅
 13. c17 isolated timestamped logging ✅ actual game
 14. c18 actual callee CFG / first real writes ✅
-15. exact `0x2B2358E` Transform-alias write contract ▶ CURRENT
+15. exact `0x2B2358E` Transform-alias write implementation ✅ CLOUD; actual c19 A/E PENDING
 16. resume writer XYZ/W causal proof ⏸ after write contract
 17. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
 18. safe writable upstream movement source ⬜ NOT AUTHORIZED
@@ -133,3 +133,7 @@ c18 delivery head before human result: 3ffc19b5b3b3f42c0fcbf62679fe6d9e44f92dfb
 c18 version: v0.1c18 / package 0.1.36
 next: c19 exact 0x2B2358E write contract
 ```
+
+## c19 cloud implementation
+
+Version v0.1c19/package0.1.37 on codex/v01c19-transform-write-contract. Exact write metadata, one-site scalar Transform+0x10C model and conservative read-carrier exclusion are implemented; real Transform writes retain literal transform_no_write_proven0. New Position-range/effects-resolved certificate plus extended Transform+[0,0x110) runtime TEB/image exclusion is required. No runtime observation or producer traversal. Actual c19 operands/value/all-path effects/next blocker/XYZ/W remain PENDING A/E; see V01C19_TRANSFORM_WRITE_CONTRACT.md and CODEX_RESULT.md.

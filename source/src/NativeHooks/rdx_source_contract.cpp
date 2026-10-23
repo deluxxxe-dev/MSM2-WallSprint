@@ -693,8 +693,142 @@ bool globalLea(Slice &s, const cs_insn &ins, std::uintptr_t base,
   s.s.g[reg(x.operands[0].reg)] = a;
   return true;
 }
+bool overlaps(std::int64_t at, unsigned width, std::int64_t lo,
+              std::int64_t hi) {
+  return width && at < hi && at + std::int64_t(width) > lo;
+}
+void copyName(char *out, unsigned cap, const char *in) {
+  std::memset(out, 0, cap);
+  if (!in)
+    in = "none";
+  if (in)
+    for (unsigned j = 0; j + 1 < cap && in[j]; ++j)
+      out[j] = in[j];
+}
+bool readMayDepend(const AliasRead &read) {
+  if (read.root == 1)
+    return overlaps(read.offset, read.width, 0x10c, 0x110);
+  // Source and stack disjointness is conditional on complete runtime TEB
+  // exclusion of Transform+[0,0x110); global disjointness uses image exclusion.
+  return read.root != 2 && read.root != 4 && read.root != globalRoot;
+}
+bool recordRead(CalleeAlias &a, const State &state, const cs_insn &ins,
+                std::uintptr_t base) {
+  if (!a.exactWrite.site || ins.id == X86_INS_LEA)
+    return true;
+  auto remember = [&](Value v, unsigned width) {
+    AliasRead read{base + ins.address, v.kind == pointer ? v.root : -1, v.off,
+                   width};
+    if (read.root == 2 || read.root == 4) {
+      const auto off = read.offset + (read.root == 2 ? 0x28 : 0);
+      if (off < -4096 || off + read.width > 4096)
+        read.root = -1;
+      else {
+        a.stackLow = std::min(a.stackLow, off);
+        a.stackHigh = std::max(a.stackHigh, off + read.width);
+      }
+    }
+    // A root16 read is only disjoint if its whole span is inside the image.
+    if (read.root == globalRoot) {
+      if (read.offset <= 0 || std::uint64_t(read.offset) >= a.imageSize ||
+          read.width > a.imageSize - std::uint64_t(read.offset))
+        read.root = -1;
+      else
+        a.usesGlobals = true;
+    }
+    bool found = false;
+    for (unsigned k = 0; k < a.reads; ++k) {
+      const auto &old = a.readSites[k];
+      found |= old.at == read.at && old.root == read.root &&
+               old.offset == read.offset && old.width == read.width;
+    }
+    if (!found) {
+      if (a.reads == aliasReadCap) {
+        a.exactWrite.dependencySite = read.at;
+        return false;
+      }
+      a.readSites[a.reads++] = read;
+    }
+    if (a.exactWrite.modeled && readMayDepend(read)) {
+      a.exactWrite.reloadDependency = true;
+      a.exactWrite.dependencySite = read.at;
+      return false;
+    }
+    return true;
+  };
+  // POP has an implicit [RSP] read absent from Capstone's explicit operands.
+  // RET's natural return slot is already in the bounded call footprint.
+  if (ins.id == X86_INS_POP && !remember(state.g[4], 8))
+    return false;
+  const auto &x = ins.detail->x86;
+  for (unsigned j = 0; j < x.op_count; ++j) {
+    const auto &op = x.operands[j];
+    if (op.type != X86_OP_MEM ||
+        (!(op.access & CS_AC_READ) && (op.access & CS_AC_WRITE)))
+      continue;
+    if (!remember(aliasAddress(state, ins, op, base), op.size))
+      return false;
+  }
+  return true;
+}
+bool writeValueExact(const Value &v) {
+  return v.kind == constant || (v.kind == entry && v.root >= 16) ||
+         ((v.kind == memory || v.kind == memoryWide) &&
+          (v.root == 1 || v.root == 2 || v.root == 4 || v.root == globalRoot));
+}
+void describeWrite(CalleeAlias &a, const State &s, const cs_insn &ins, csh h) {
+  auto &t = a.exactWrite;
+  if (!t.site || ins.address != t.site)
+    return;
+  const auto &x = ins.detail->x86;
+  t.decoded = true;
+  copyName(t.mnemonic, sizeof(t.mnemonic), ins.mnemonic);
+  if (x.op_count != 2 || x.operands[0].type != X86_OP_MEM)
+    return;
+  const auto &dst = x.operands[0], &src = x.operands[1];
+  copyName(t.base, sizeof(t.base), cs_reg_name(h, dst.mem.base));
+  copyName(t.index, sizeof(t.index), cs_reg_name(h, dst.mem.index));
+  t.scale = unsigned(dst.mem.scale);
+  t.displacement = dst.mem.disp;
+  t.width = dst.size;
+  const auto addr = aliasAddress(s, ins, dst, 0);
+  const auto val = s.value(src);
+  if (t.reachingStates) {
+    t.destinationSame &= t.root == (addr.kind == pointer ? addr.root : -1) &&
+                         t.offset == addr.off;
+    t.valueSame &= t.valueTag == int(val.kind) && t.valueRoot == val.root &&
+                   t.valueOffset == val.off && t.valueBits == val.bits;
+  } else {
+    t.root = addr.kind == pointer ? addr.root : -1;
+    t.offset = addr.off;
+    t.valueTag = int(val.kind);
+    t.valueRoot = val.root;
+    t.valueOffset = val.off;
+    t.valueBits = val.bits;
+  }
+  ++t.reachingStates;
+  t.destinationExact =
+      t.destinationSame && addr.kind == pointer && addr.root == 1;
+  t.destinationOrigin = t.destinationExact ? "entry_writer_RCX_transform"
+                                           : "unknown_or_conflicting";
+  t.valueKind = val.kind == constant                           ? "constant"
+                : val.kind == computed                         ? "computed"
+                : val.kind == memory || val.kind == memoryWide ? "memory"
+                : val.kind == entry && val.root >= 16          ? "register"
+                                                               : "unknown";
+  copyName(t.sourceOperand, sizeof(t.sourceOperand),
+           src.type == X86_OP_REG   ? cs_reg_name(h, src.reg)
+           : src.type == X86_OP_IMM ? "immediate"
+                                    : "memory_operand");
+  t.valueExact = t.valueSame && writeValueExact(val);
+  t.positionOverlap =
+      !t.destinationExact || overlaps(addr.off, dst.size, 0x30, 0x40);
+  // Protect the entire original Transform+[0,64), including the Position rows.
+  t.carrierOverlap = !t.destinationExact || overlaps(addr.off, dst.size, 0, 64);
+}
 bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
   a.resolved = a.sourceNoWrite = a.transformNoWrite = false;
+  a.positionProtected = a.relevantEffectsResolved = false;
   auto fail = [&](std::uintptr_t at, const char *mnemonic, const char *effect,
                   const char *reason) {
     a.barrier = at;
@@ -765,6 +899,12 @@ bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
   boundaries.fill(-1);
   for (unsigned i = 0; i < d.n; ++i)
     boundaries[d.p[i].address - call.begin] = int(i);
+  if (a.exactWrite.site &&
+      (a.exactWrite.site < call.begin || a.exactWrite.site >= call.end ||
+       boundaries[a.exactWrite.site - call.begin] < 0))
+    return fail(a.exactWrite.site, "instruction_boundary",
+                "exact_write_identity",
+                "exact_write_site_outside_callee_or_not_instruction_aligned");
   // Count the *entire* authenticated decode first. Never discover the budget
   // by accepting a prefix or by taking only one observed branch successor.
   a.localBranches = a.conditionalBranches = 0;
@@ -903,6 +1043,47 @@ bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
       safe = true;
       a.usesGlobals = true;
     }
+    const char *exactFailureEffect = nullptr, *exactFailureReason = nullptr;
+    if (a.exactWrite.site == ins.address) {
+      auto &t = a.exactWrite;
+      if (addr.kind == pointer && addr.root == 1)
+        a.transformWriteSeen = true;
+      if (!t.destinationSame) {
+        exactFailureEffect = "conflicting_address_provenance";
+        exactFailureReason =
+            "exact_write_reaching_destination_roots_or_offsets_conflict";
+        kind = unknownPointer;
+        normalized.root = -1;
+        normalized.off = 0;
+        safe = false;
+      } else if (ins.id == X86_INS_MOV && width == 4 && t.destinationExact &&
+                 addr.off == 0x10c && !t.carrierOverlap) {
+        // Exact address classification is retained even if the value/effect
+        // cannot be certified. A refused write is still in the write-site map.
+        kind = transformExact;
+        if (!t.valueSame || !t.valueExact) {
+          exactFailureEffect = "value_provenance_unresolved";
+          exactFailureReason =
+              "exact_write_value_unknown_computed_or_reaching_origins_conflict";
+        } else {
+          for (unsigned k = 0; k < a.reads; ++k)
+            if (readMayDepend(a.readSites[k])) {
+              t.reloadDependency = true;
+              t.dependencySite = a.readSites[k].at;
+              exactFailureEffect = "earlier_read_provenance_dependency";
+              exactFailureReason =
+                  "exact_transform_write_may_change_a_decoded_read_carrier";
+              break;
+            }
+          if (!exactFailureEffect) {
+            // Only this site/offset/width is modeled. A real Transform write
+            // never gains a literal Transform-no-write certificate.
+            safe = true;
+            t.modeled = true;
+          }
+        }
+      }
+    }
     a.barrierRoot = addr.kind == pointer ? addr.root : -1;
     a.barrierOffset = addr.off;
     a.barrierWidth = width;
@@ -934,6 +1115,9 @@ bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
                                   normalized.off, kind};
       ++a.counts[kind];
     }
+    if (exactFailureEffect)
+      return fail(ins.address, ins.mnemonic, exactFailureEffect,
+                  exactFailureReason);
     if (!safe)
       return fail(
           ins.address, ins.mnemonic, aliasKindName(kind),
@@ -1003,6 +1187,11 @@ bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
           group(ins, CS_GRP_IRET) || group(ins, CS_GRP_INT))
         return fail(ins.address, ins.mnemonic, "nested_or_unsupported_control",
                     "callee_nested_call_or_unsupported_transfer_no_expansion");
+      describeWrite(a, work.slice.s, ins, d.h);
+      if (!recordRead(a, work.slice.s, ins, 0))
+        return fail(ins.address, ins.mnemonic,
+                    "read_provenance_dependency_or_cap",
+                    "exact_transform_write_reload_alias_unknown_or_read_cap");
       bool move = ins.id == X86_INS_MOV || ins.id == X86_INS_MOVSS ||
                   ins.id == X86_INS_VMOVSS || ins.id == X86_INS_MOVSD ||
                   ins.id == X86_INS_VMOVSD || ins.id == X86_INS_MOVAPS ||
@@ -1029,7 +1218,9 @@ bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
           if (!move || j != 0 || x.op_count != 2)
             return fail(ins.address, ins.mnemonic, "unsupported_write_effect",
                         "callee_write_instruction_semantics_not_supported");
-          globalWrite = address.root == globalRoot;
+          globalWrite =
+              address.root == globalRoot ||
+              (a.exactWrite.modeled && ins.address == a.exactWrite.site);
         }
       bool modeled = false;
       if (globalWrite)
@@ -1065,11 +1256,18 @@ bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
   std::memcpy(call.mnemonic, "none", 4);
   call.reason = "all_bounded_callee_paths_source_and_transform_disjoint_"
                 "conditional_on_runtime_regions";
-  a.resolved = a.sourceNoWrite = a.transformNoWrite = true;
+  a.resolved = a.sourceNoWrite = true;
+  a.transformNoWrite = !a.transformWriteSeen;
+  a.positionProtected = a.relevantEffectsResolved = true;
+  if (a.transformWriteSeen)
+    call.effect = "source_no_write_and_Position_provenance_effects_resolved";
   a.barrier = 0;
   a.barrierEffect = "none";
   std::memset(a.mnemonic, 0, sizeof(a.mnemonic));
   std::memcpy(a.mnemonic, "none", 4);
+  if (a.transformWriteSeen)
+    call.reason = "all_bounded_callee_paths_source_no_write_Position_and_read_"
+                  "provenance_resolved_conditional_on_runtime_regions";
   a.reason = call.reason;
   return true;
 }
@@ -1272,6 +1470,18 @@ Writer branchWriter(const unsigned char *b, std::size_t n,
         work.pc = unsigned(g.next[0]);
         continue;
       }
+      if (alias &&
+          !recordRead(*alias, work.slice.s, ins, call ? call->writer : 0)) {
+        alias->resolved = alias->relevantEffectsResolved = false;
+        alias->barrier = (call ? call->writer : 0) + at;
+        copyName(alias->mnemonic, sizeof(alias->mnemonic), ins.mnemonic);
+        alias->barrierEffect =
+            "writer_reload_provenance_dependency_or_read_cap";
+        alias->reason =
+            "modeled_transform_write_may_affect_writer_reload_provenance";
+        fail(at, ins.mnemonic, alias->reason);
+        return r;
+      }
       auto old = work.slice.mask;
       bool callApplied = false;
       if (group(ins, CS_GRP_CALL) && call && call->call == call->writer + at) {
@@ -1298,7 +1508,10 @@ Writer branchWriter(const unsigned char *b, std::size_t n,
           fail(at, ins.mnemonic, alias->reason);
           return r;
         }
-        bool exact = anchor && call->noWrite;
+        bool exact =
+            anchor && call->noWrite &&
+            (!alias || (alias->sourceNoWrite && alias->positionProtected &&
+                        alias->relevantEffectsResolved));
         auto sp = work.slice.s.g[4];
         // Natural CALL pushes its return in the writer's stack. The existing
         // per-invocation TEB proof binds source to entry RSP+0x28; neither that
@@ -1372,6 +1585,8 @@ Writer branchWriter(const unsigned char *b, std::size_t n,
       work.pc = unsigned(g.next[0]);
     }
   }
+  if (alias && alias->resolved)
+    alias->exactWrite.complete = true;
   r.bounded = true;
   r.prefix = r.mask == 15;
   for (unsigned c = 0; c < 3; ++c) {

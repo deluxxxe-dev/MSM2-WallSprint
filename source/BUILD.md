@@ -59,3 +59,8 @@ C17 isolated logging: tools/test_log_file.sh uses actual Windows filesystem call
 ## v0.1c18 local callee CFG
 
 Run tools/build_windows.sh, tools/test.sh, tools/smoke_windows.sh and tools/test_hooks_windows.sh serially. Focused tools/test_callee_branch_alias.sh adds6 groups to existing c17 alias7; uses independent nonexecuted fixtures, exact decoded count-derived caps and compact CFG/write summaries. Hard8branch storage ceiling is separate from measured runtime branch count; visits4096, writer16states and24write sites remain bounded. Private game body is unavailable/unpublished. Alias-safe paths alone may resume writer proof; no movement permission. Actual A/E pending. Logger/native lifecycle/entry ABI unchanged. tools/release.py emits c18 diagnostic/source ZIPs; rebuild fresh source ZIP with all focused contracts and DLL/logger smoke. See V01C18_CALLEE_BRANCH_ALIAS.md/CODEX_RESULT.md.
+
+
+## v0.1c19 exact Transform write
+
+Run build_windows.sh, test.sh, smoke_windows.sh, test_hooks_windows.sh serially. Focused test_transform_write.sh adds exact destination/value/conflict/read-dependency/continuation tests; test_writer_entry.sh includes extended Transform+[0,0x110) runtime range guards. Zero exact-site opt-in retains c18 alias behavior; no legacy State/Slice/native/logger changes. Source ZIP must rebuild from scratch and pass all focused entry/contract/branch/call/alias/write and DLL/logger tests. No private game captures are distributed. Actual c19 exact MOV operands/value/effects/next blocker pending human A/E; writable_source_proven remains0.
