@@ -1,0 +1,35 @@
+{
+  "version": "v0.1c5",
+  "package_version": "0.1.23",
+  "branch": "codex/v01c5-sustained-lifecycle",
+  "implementation_commit": "1cfe3c76a5e09183757f891c5025def860ef4a88",
+  "outputs": [
+    {
+      "path": "WallSprint_v0.1c5_sustained_lifecycle.zip",
+      "bytes": 2369703,
+      "sha256": "2157f252e463d68d8348dc07bd53992760ab0644e2ba4af94e261a1d17e3e50e"
+    },
+    {
+      "path": "WallSprint_v0.1c5_source.zip",
+      "bytes": 459378,
+      "sha256": "60f1698ab43e527af9dd40ca1e69fbaaa1da9e56ed707a989e4a6350d6d88e01"
+    }
+  ],
+  "portable_pass": 11,
+  "dll_smoke_pass": 4,
+  "full_hook_pass": 36,
+  "historical_private_skips": 4,
+  "final_affected_native_source_publication_suites": "PASS",
+  "exact_published_c4_reader_collision_reproduction": "PASS_owned_tokens_only",
+  "standalone_source_build": "PASS_private_captures_absent",
+  "private_game_function_bytes_distributed": false,
+  "real_game_c4_enumeration": "PASS_CAPPED_INCOMPLETE",
+  "real_game_c4_retention_threshold": "PASS",
+  "real_game_c5_full_lifecycle_hold": "PENDING",
+  "third_writer_identity": "PENDING",
+  "synthetic_sustained_publication_seconds": 4.1,
+  "synthetic_sustained_AB_native_elapsed_seconds": 4.114,
+  "synthetic_AB_writes_per_path": 186,
+  "synthetic_max_held_ms": 3006,
+  "synthetic_clean_Deinit_summary": true
+}

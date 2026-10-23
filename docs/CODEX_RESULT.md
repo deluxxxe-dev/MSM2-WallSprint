@@ -1,51 +1,54 @@
-# Codex result — WallSprint v0.1c4
+# Codex result — WallSprint v0.1c5
 
-Branch: **codex/v01c4-real-thread-enum-fix**.
-Implementation commit: **cfaae52304dfa757f2098eeb63c0168151c5b755**.
-Base: published c3 **b05278093b6e0ad92db7dad8c51a986ba16ca872**. The pre-created branch retained that exact implementation. Main handoff commits599f9a5/f1859e1/cd00c92 were cherry-picked; PROJECT_STATE/CODEX_NEXT content is unchanged from that handoff. No main rewrite or force push.
+Branch: **codex/v01c5-sustained-lifecycle**.
+Implementation commit: **1cfe3c76a5e09183757f891c5025def860ef4a88**.
+Base: published c4 **6bf7646d2aebdfda9c285b9a3ca4108760d6baa1**. The pre-created branch was used; authoritative runtime/state/task commits4b953b8/3cc38de/ef55948 were imported. PROJECT_STATE/CODEX_NEXT retain exact main handoff content. No force push or main rewrite.
 
 ## Outcome and evidence boundary
 
-v0.1c4 / package **0.1.22** repairs demonstrated pre-expansion diagnostic pressure stops and instruments the actual production helper/Toolhelp path. Real c3 A/B overrides and flicker remain authoritative; expanded coverage failed. Its precise real-game stop cause remains **UNKNOWN**, because the supplied summary lacks attempt/exit telemetry. The reproduced mechanism is not proven private-run causality.
+v0.1c5 / package **0.1.23** repairs two demonstrated continuity defects and adds exact exit and verified-Deinit evidence. c4 real enumeration and threshold retention are PASS; c5 real full-WallRun hold remains PENDING. The precise sub-gate behind the user's c4 collapsed exit remains UNKNOWN; no unsupported claim of private-run causality is made.
 
-The exact published c3 source reproduces capture=false and seen/eligible/installed=0 when its1024-entry common ring fills before expansion. Its poll releases the window before testing>=850ms. Prior c3 fixtures began above threshold and missed this interval. Event-ring/budget exhaustion had equivalent early-close paths. c4 keeps the coordinator alive under record pressure and limits pre-expansion observations to128/512 events, reserving384 for expanded evidence. Drops remain visible and mark coverage incomplete.
+Exact published c4 source reproduces a reader holding the lifecycle gate, dropping a native Update and permanently invalidating its collision epoch despite100 subsequent fresh same-owner Updates. c5 readers use bounded atomic publication and cannot prevent native event updates. Genuine event/event collision, invalid sequence and identity failures still fail closed until a clean session. Another demonstrated race sampled now before token acquisition, causing a newly published timestamp to appear in the future; now is sampled after acquisition. Neither100ms freshness limit is removed or widened.
 
-## Implementation and changed files
+## Changes and safety
 
-- `source/src/msm2/orientation_trace.cpp`: scheduled/attempt/enum/result and final requested/attempted/completed/failed telemetry; actual Toolhelp entry/owner-match counts, PID/TID/helper exclusion, immediate failed API/error. Verified elapsed>=850ms triggers one pass, with no rescan. Bounded per-reason/error skip summaries retain representative TID, counts and suppressed totals. Primary/install/readback/resume failure stages are retained. Common/event ring pressure and event-budget exhaustion drop records without closing the multithread coordinator.
-- `source/src/NativeHooks/immediate_reset_trace.cpp`, `source/include/msm2/orientation_trace.hpp`: pass the failing live-gate name to cleanup. Guard/lifecycle availability/native freshness/generation/owner/Hero/Transform/cancellation/kill/deadline checks still stop capture; invalid windows never reopen to force coverage.
-- `immediate_reset_smoke.cpp`, `third_writer_trace_smoke.cpp`, `tools/test_reset_trace.sh`: actual async production helper threshold and real Toolhelp filtering/install on owned OS threads; sparse samples, pre-expansion common-ring/event-budget pressure, OS errors and cleanup. Classification and once/session bounded identity/hash/callers remain.
-- Version/header/mod/telemetry, root/source README_TEST, README/BUILD/WORKLOG and packaging recipes updated. Required V01C3_RESULT, REAL_THREAD_ENUM_FIX, V01C4_GATE and authoritative runtime-result mirror are included in root/source analyses.
+- `source/src/NativeHooks/source_lifecycle.cpp`, `source/include/NativeHooks/source_lifecycle.hpp`: actual native writers retain a dedicated nonblocking gate; coherent readers use the existing AtomicPublication helper with at most8 attempts. Tokens retain native timestamps, explicit read status and accepted/collision epochs. No worker timestamp substitutes for native Update freshness.
+- `source/src/NativeHooks/native_source_override.cpp`: once-per-exit NATIVE_LIFECYCLE_EXIT_DIAG names the exact failing sub-gate and records token/context/phase/owner/thread/generation/updates/time/age, individual freshness tests, Hero/Transform match and transition state. It is emitted on the worker outside the lossy per-call ring. Real failed sessions cannot re-enter on a later Update.
+- A bounded native close notice and worker ORIENTATION_LIFECYCLE_SUMMARY retain the first exit reason, actual native WallRun duration, source-entry elapsed, A/B counts, threshold PASS/max held time/updates and last active-source dot/time/scope. until_deinit=1 requires matching fresh coherent ownership at native Deinit. An earlier exit remains0. A stop/new-session fallback has verified_deinit=0. Native close epoch wins over a worker publication racing Deinit; no stale pre-close token can adopt the new epoch.
+- `source/src/NativeHooks/source_lifecycle_smoke.cpp`, extended `source/src/msm2/native_source_override_smoke.cpp`, `tools/test_source_lifecycle.sh` / `test_native_source.sh`: real multi-second publication stress, MinHook A/B hold and negative/summary/close-race tests. Version, README_TEST (root/source), README/BUILD/WORKLOG, analysis and release recipes updated.
+- Required V01C4_RESULT, SOURCE_LIFECYCLE_CONTINUITY, V01C5_GATE and authoritative V01C4_RUNTIME_RESULT mirror are included in source and root analysis.
 
-The native_source_override.cpp, reset_copy_source.cpp, compact_map_proof.cpp, stack_source.cpp and source_lifecycle.cpp implementations are unchanged from c3. Exact executable2.810.0.0/SHA, proof/authentication/current patch ownership, raw Win64 tailjump ABI, lifecycle/Hero/Transform/native-thread/stack/freshness/kill gates, lock-free A/B snapshot, Path A Position and Path B first0x24-only/row-scale/metadata behavior remain intact. No third-path patch, direct Actor/Position watcher write, new hook, page protection/PAGE_GUARD, direct game call or later milestone is added. Foreign DR0/1/GD refusal, DR2/3 coexistence, balanced suspension/resume and exact owned-state restore remain.
+Exact executable2.810.0.0/SHA, caller/writer identity, current owned patches, compact proof, Path A Position preservation, Path B first0x24-only/row-scale/metadata boundaries, raw Win64 ABI and lock-free coherent A/B snapshot remain. The c4 watcher, immediate reset coordinator, compact proof, reset-copy installer, stack-source helper and hook thunks are unchanged. Native-thread/stack/owner/session/generation/Hero/Transform/freshness/kill gates remain. No third-writer patch, direct Actor/Position write, page protection/PAGE_GUARD, extra game call/hook, adhesion, movement, animation, camera or later milestone is added. Existing4096 writes/path and5-second-from-source-entry limits remain; the3–4-second human test fits within them.
 
-## Verification
+## Validation
 
 Completed exit0:
 
-- Windows x64 build with WallSprint warnings as errors.
+- Windows x64 build, WallSprint warnings as errors.
 - Portable ASan/UBSan: **11 PASS**.
 - DLL smoke: **4 PASS**.
-- Full hooks/offline/actual-byte/native-thread suite: **34 PASS**, **4 explicit historical private-fixture SKIPs**. Final diagnostic aggregation changes were followed by another Windows build and both affected trace suites, all PASS.
-- Actual accepted-build writer444/caller128 regression ran: complete9-pair proof, authenticated production installer/owned restoration and negative mutations remain PASS. No original game code executes.
-- Production async helper starts near.60, remains unexpanded below.85 and invokes the real enumeration/filter/install once. Fixture observed4 matching process threads,3 eligible/installed and1 excluded helper. Exact host totals vary; assertions require total>1/matches>1/installed>1.
-- Guard loss before threshold gives its exact stop reason without enumeration. Sparse polling from below.85 to approximately.93 still expands once after common-ring saturation and128-event pre-expansion cap, then captures a second-thread unknown reset. Pressure does not suppress A/B commit timestamps. Existing foreign-slot/full saved debug state, bad stack, timeout/Deinit/identity/F8/shutdown, Position/page protection checks remain PASS. Invalid OpenThread returns a nonzero OS error.
-- Exact published c3 source reproduces the old common-overflow silent stop in a separate owned-memory run.
+- Full hook/offline/actual-byte/native-thread suite: **36 PASS**, **4 explicit historical private-fixture SKIPs**. Final lifecycle/clock/summary changes were followed by a fresh Windows build, DLL smoke and the complete affected native-source/publication suite, all PASS.
+- Actual accepted-build writer444/caller128 proof/production installer replay ran and passed all9 pairs, authenticated installation/owned restoration and mutation negatives. Original game code is not executed.
+- Exact c4 reader collision mechanism reproduced against its published source/header using owned tokens.
+- Production publication sustained >=4 real seconds with4 concurrent OS readers: coherent monotonically advancing native updates, zero reader-induced event collisions, LastError preserved. Genuine native collision, owner mismatch, Deinit and disable fail closed.
+- Real MinHook A/B fixture reached4.114s native elapsed with186 writes per path; held Surface Up for3006ms/186 updates, then clean Deinit summary until_deinit=1. Its existing setup backdates Init by800ms; the sustained commit loop itself spans roughly3 real seconds. A separate publication fixture runs>=4 actual seconds. Diagnostic committed status becomes false after1.50 while orientation continues.
+- Real>100ms stale publication returns exact fresh_update_age; another Update cannot revive the failed session, and eventual native Deinit summary remains until_deinit=0. Native collision and Hero mismatch produce exact once-per-exit diagnostics. Future timestamps remain refused. Deinit injected during the worker Hero read cannot reopen A/B publication. Existing wrong-thread/caller/stack/auth/metadata/Position/A-E retention gates remain PASS.
+- An initial time-order test assumed Sleep2 crossed GetTickCount64 granularity; it now awaits an actual bounded tick advance. Its time-order assertions were retained and pass.
 
-A fresh standalone source ZIP extraction rebuilt the Windows DLL successfully with private captures absent. Final packaging validation passes archive CRC, current complete source/docs/licenses, nested script contents/hash, manifest gates and private full-game-byte exclusion. Only selected cloud validation summaries are distributed; raw game input and synthetic full-function logs are excluded.
+A fresh standalone source ZIP extraction rebuilt the Windows DLL successfully with private captures absent. Final archive/privacy validation passes ZIP CRC, complete current source/docs/licenses and source-byte/proof/watch preservation, nested script contents/hash and private full-function byte exclusion. Only selected independent validation summaries are distributed; no raw game log/video or synthetic full-function trace is packaged.
 
-## Outputs and human gate
+## Outputs and next human test
 
-- **WallSprint_v0.1c4_real_thread_enum_fix.zip**
-- **WallSprint_v0.1c4_source.zip**
+- **WallSprint_v0.1c5_sustained_lifecycle.zip**
+- **WallSprint_v0.1c5_source.zip**
 - refreshed root **WallSprint.script** / **BUILD_MANIFEST.json**
 
-Real c4 process coverage, third-writer identity and retention are **PENDING**. This is an enumeration/diagnostic repair, not a claimed flicker fix. Snapshot coverage excludes later-created threads; caps, foreign slots, access/setup failures and drops can miss a writer.
+Confirm exact startup proof/admission, then use the same large unobstructed A-direction wall for one continuous left-to-right WallRun around3–4 seconds. Require A and B commits after elapsed2.0, retained-threshold PASS, no early inactive/stale exit, and one verified native Deinit summary with source_active_until_deinit=1. Check last active observations remain Surface Up and its timestamp reaches the run's end; summary counts alone do not prove every unobserved frame. Report rotation, whole-run hold, crash/Position corruption and return the complete private log through normal ChatGPT handoff. E is unnecessary unless A passes and a specific angle regression needs checking.
 
-Confirm startup proof/admission. Perform one left-to-right WallRun around1.5–2s on the same wider near-A wall (N398 approximately -0.113317,0,+0.993559). Minimum: A/B counts>0; EXPAND_ATTEMPT trigger_seen=1; ENUM_RESULT total>1/matches>1; watch attempted=1/seen>1/eligible>0/installed>1; cleanup_pending=0. Unknown event/identity is strong additional success, not the minimum enumeration gate. E only if coverage succeeds but the unknown writer remains uncaptured. Return the complete log privately through normal ChatGPT handoff, plus flicker/crash/position observations. No raw log/video/function capture belongs in Git or release ZIPs.
+If the issue remains, the diagnostic names the actual failed sub-gate; no raw-log prerequisite blocked this implementation. c4 capped thread-watch diagnostics remain available, with cleanup_pending=0 required; no captured third writer is not proof of absence. Raw game logs/video/full function capture must remain out of Git/ZIP.
 
-Retention still requires dot>=.98 for>=300ms OR>=20 distinct native updates after both commits. Third-path modification, adhesion, movement, animation and camera remain blocked.
+Only a subsequent handoff after real lifecycle-wide hold may authorize adhesion or later milestones.
 
 ## Persistence
 
-The implementation is in the exact SHA above. This result, refreshed release artifacts and release hash record are committed afterward on the same branch, then pushed and verified by authenticated Git retrieval. Final user links use that delivery commit: GitHub raw ZIP for direct download and GitHub blob README_TEST for test instructions.
+Implementation is in the exact SHA above. This result, release artifacts and machine-readable hash record are committed afterward on the same branch, then pushed and checked by authenticated Git retrieval. User links point at that delivery commit: GitHub raw ZIP for direct download, GitHub blob README_TEST for the test page.
