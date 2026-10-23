@@ -41,7 +41,7 @@ Verified on cardinal and diagonal planar vertical walls:
 - `P320 - P338 ≈ 0.5 * N398`
 - `dot(HeroPosition - P338, N398) ≈ 0.5 m`
 
-The current A-direction control wall has now passed full lifecycle retention with c9.
+A wall c9 full lifecycle retention passed. E-wall c9 confirmed generic diagonal Surface Up but exposed a small remaining publication race.
 
 ## Orientation ownership
 
@@ -58,7 +58,7 @@ Path B:
 - return RVA `0x2CFC84B`
 - compact 3x3 source at `RDX = writer-entry RSP + 0x28`
 - real-game compact proof passes
-- c9 proves valid active-Hero Path B calls may occur on multiple secondary threads; per-call provenance is used instead of a fatal equality-to-native-thread invariant
+- valid active-Hero Path B calls may occur on multiple secondary threads; per-call provenance is used instead of a fatal equality-to-native-thread invariant
 
 ## Orientation history
 
@@ -69,9 +69,10 @@ Path B:
 - c6: Position/adhesion remained read-only; a real ~250 ms native Update gap caused `fresh_update_age` to permanently end source ownership.
 - c7: added transient stale suspend/resume, but real run hard-killed orientation after only two Path A writes / ~16 ms.
 - c8: exact first-cause attribution succeeded; a healthy secondary-thread Path B call was falsely treated as fatal `path_b_wrong_thread`.
-- c9: secondary-thread Path B per-call admission implemented and real-game full lifecycle retention passed.
+- c9 A wall: secondary-thread Path B admission passed real runtime with 193/193 secondary overrides and clean Deinit.
+- c9 E wall: diagonal Surface Up and Deinit lifecycle passed, but two secondary calls were rejected on `secondary_source_publication_changed`; each rejection correlated with a one-observation WorldUp flash.
 
-## Authoritative c9 real A-wall PASS
+## Authoritative c9 A-wall PASS
 
 Implementation:
 
@@ -82,50 +83,80 @@ published head: b865dabfa81626248ea8a8ae56a1dd1c992d7301
 version: v0.1c9 / package 0.1.27
 ```
 
-Real runtime:
+Real A runtime:
 
 ```text
 wallrun_duration_ms=3844
-source_entry_elapsed=0.719000
 source_exit_reason=verified_native_Deinit
 source_active_until_deinit=1
-verified_deinit=1
 path_a_writes=239
 path_b_writes=238
 retention_pass=1
 max_held_ms=2859
 max_held_updates=221
 last_actor_up_dot_surface=1
-stale_suspend_count=0
-stale_resume_count=0
+first_hard_kill=none
+hard_kill_calls=0
+secondary seen/admitted/overridden/rejected=193/193/193/0
+```
+
+Detailed result: `analysis/V01C9_RUNTIME_RESULT.md`.
+
+## c9 diagonal E-wall result
+
+The tested surface was genuinely diagonal:
+
+```text
+N398 ≈ (-0.70710677, 0, +0.70710677)
+```
+
+The target and actor reached the matching Surface Up:
+
+```text
+target_up ≈ (-0.70710671, 0, +0.70710683)
+actor_up_dot_surface=1
+```
+
+Lifecycle summary:
+
+```text
+wallrun_duration_ms=4157
+source_entry_elapsed=0.703000
+source_exit_reason=verified_native_Deinit
+source_active_until_deinit=1
+verified_deinit=1
+path_a_writes=231
+path_b_writes=228
+retention_pass=1
+max_held_ms=1391
+max_held_updates=90
+last_actor_up_dot_surface=1
 first_hard_kill=none
 hard_kill_calls=0
 ```
 
-Independent WallRun lifecycle:
+However, exactly two short WorldUp observations occurred while source ownership remained active. Both directly followed the only two secondary-thread Path B rejects:
 
 ```text
-Init=1
-Entry=1
-Update=300
-Deinit=1
-duration=3.836902 s
-end_reason=verified_deinit
+action=reject
+reason=secondary_source_publication_changed
 ```
 
-Secondary-thread Path B was heavily exercised:
+Secondary summary:
 
 ```text
-seen=193
-admitted=193
-overridden=193
-rejected=0
+seen=112
+admitted=110
+overridden=110
+rejected=2
 unique_threads=16
 ```
 
-A Path B override near elapsed 3.813 s still executed on a secondary thread while the expected native thread remained unchanged. The session continued cleanly to verified Deinit.
+At each rejection, the vanilla Path B payload had WorldUp. About 10 ms later Actor Up was observed as `(0,1,0)`, then the next common Path A/source call detected `late_worldup_source_detected=1` and restored diagonal Surface Up. The human tester did not notice these visually.
 
-Detailed result: `analysis/V01C9_RUNTIME_RESULT.md`.
+This is strong evidence that c9's exact `publishedMs` snapshot equality is too strict for a concurrent identity-preserving publication refresh. It should not be relaxed across real identity/lifecycle changes.
+
+Detailed result: `analysis/V01C9_E_RUNTIME_RESULT.md`.
 
 ## Planar standoff status
 
@@ -137,14 +168,7 @@ corrections_applied=0
 source_position_writes=0
 ```
 
-On the current large A wall, 29 samples showed essentially exact vanilla standoff:
-
-```text
-target_distance=0.5 m
-max_abs_error_before=2.98023224e-08 m
-```
-
-Therefore active normal-direction adhesion correction is not currently justified for this planar control case. Keep it deferred/optional unless movement work later introduces measurable standoff drift.
+A wall showed essentially exact 0.5 m standoff. E wall showed small natural variation, roughly 0.479–0.511 m in sampled examples. Therefore active adhesion correction remains deferred/observational; do not add it before movement unless later evidence requires it.
 
 ## Current blocker / stage
 
@@ -159,19 +183,20 @@ Therefore active normal-direction adhesion correction is not currently justified
 9. Path A + Path B SurfaceFrame writes ✅
 10. visible surface-relative rotation ✅
 11. retention threshold ✅
-12. transient freshness recovery implementation ✅ synthetic; no-gap real c9 did not need recovery
+12. transient freshness recovery implementation ✅ synthetic
 13. exact hard-kill attribution ✅ c8
-14. secondary-thread Path B admission ✅ c9 real
+14. secondary-thread Path B admission ✅ c9
 15. lifecycle-wide real orientation hold on A wall ✅ c9
-16. diagonal E-wall orientation regression ▶ CURRENT
-17. active planar adhesion correction ⏸ optional/deferred; current standoff already stable
-18. surface-relative movement ⬜
-19. animation integration ⬜
-20. camera and later roadmap ⬜
+16. diagonal E-wall Surface Up generality ✅ c9
+17. eliminate secondary publication-race WorldUp flash ▶ CURRENT
+18. active planar adhesion correction ⏸ optional/deferred
+19. surface-relative movement ⬜
+20. animation integration ⬜
+21. camera and later roadmap ⬜
 
 ## Current implementation base
 
-Keep c9 as the runtime base:
+Use published c9 exactly:
 
 ```text
 branch: codex/v01c9-secondary-path-b-thread-admission
@@ -179,25 +204,18 @@ implementation commit: 0c276126ccac8e3bd2a6dd1d850da63e80bc35ce
 published head: b865dabfa81626248ea8a8ae56a1dd1c992d7301
 ```
 
-## Current objective
-
-Do not create another implementation version yet.
-
-Use the same c9 build on a diagonal E-type planar wall. The next gate is to verify that the now-stable orientation lifecycle is surface-normal-generic rather than accidentally A-specific.
-
-Required E-wall evidence:
+Pre-created next branch:
 
 ```text
-N398 diagonal / non-cardinal
-rotation reaches the corresponding Surface Up
-ORIENTATION_RETENTION_PASS=1
-source_active_until_deinit=1
-verified Deinit clean final close
-first_hard_kill=none
-Position writes=0
-no visible upright flash/snap/crash
+codex/v01c10-secondary-publication-race
 ```
 
-A shorter wall is acceptable if it still gives enough time to complete the ~0.7 s delay + 0.25 s transition and retain orientation before Deinit. Prefer a wider diagonal wall if available.
+## Current objective
 
-After the E regression passes, proceed to the next planar locomotion milestone. Do not add active adhesion correction merely because it was on the old roadmap; current measured A-wall standoff gives no evidence it is necessary yet.
+Repair only the demonstrated c9 secondary Path B publication race.
+
+A secondary call must not be rejected merely because the lock-free source publication advanced to a newer snapshot during its validation when the newer snapshot is still the same active WallRun ownership identity. Use a bounded refresh/revalidation approach, recomputing the secondary applied orientation from the latest admitted basis before store.
+
+Real changes to session, owner, Hero, Transform, generation, lifecycle epoch, native token identity/thread, accepted/collision epoch, source integrity, caller, stack provenance, compact proof, stale/close/F8/shutdown must remain fail-closed or rejected as appropriate.
+
+Do not begin surface-relative movement until the same E-wall regression produces no WorldUp actor observations after full Surface Up is reached.
