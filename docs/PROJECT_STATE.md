@@ -7,12 +7,12 @@ Convert vanilla WallRun into surface-relative locomotion. Do not advance movemen
 - Spider-Man2.exe 2.810.0.0
 - SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`
 - WallRun Init `0x14233C0`, Entry `0x14235C0`, Update `0x1424530`, Deinit `0x1416660`
-- Preserve fail-closed exact-build behavior, `AGENTS.md` / `docs/DEV_RULES.md`, independent implementation, and no raw user logs/full private game bodies in public artifacts.
+- Preserve fail-closed exact-build behavior, `AGENTS.md` / `docs/DEV_RULES.md`, independent implementation suitable for Nexus Mods, and no raw user logs/full private game bodies in public artifacts.
 
 ## Accepted orientation
 Planar Surface Up remains accepted on cardinal and diagonal walls through verified Deinit.
 
-Latest human c15 A/E log:
+Latest accepted human c15 A/E:
 ```text
 A/session1: 3860 ms, verified Deinit, retention pass, Up dot surface=1, stale0, hard0, Position writes0
 E/session2: 4297 ms, verified Deinit, retention pass, Up dot surface≈1.00000012, stale0, hard0, Position writes0
@@ -37,68 +37,45 @@ entry_store_xyz_match_mask=0x7
 source W observed 0
 destination W observed 1
 ```
-Correlation is strong but is not yet writable-source proof.
+This remains correlation until the writer-side causal contract completes.
 
 ## c15 actual-game verdict
-**Diagnostic PASS / exact next local writer blocker.** See `analysis/V01C15_RUNTIME_RESULT.md`.
+Diagnostic PASS. The bounded branch proof crossed `0x2CFC91F jne` and stopped at the exact next local blocker `0x2CFC927 call`. Four Position store sites were authenticated, but XYZ causality remains unproven because the call effect is unresolved. Final capture summaries are correct at 8 true entries / 8 complete maps per A/E session.
 
-C15 crosses the c14 `0x2CFC91F jne` barrier. The next exact blocker is:
+## c16 implementation handoff
+**Implementation complete; actual-game c16 result pending.**
+
 ```text
-0x2CFC927: call
+branch: codex/v01c16-writer-call-effect
+implementation commit: 0a00bdeee05ffdae593d6963abd5c24424a2d8ef
+validated/package head: 8f66b15a109e503cdfc115eb5a48ebadd7bc4113
+version: v0.1c16 / package 0.1.34
 ```
 
-Actual branch contract:
-```text
-writer_complete_decode=1
-first_branch_rva=0x2CFC91F
-blocks_visited=2
-edges_visited=2
-branches_seen=4
-exact_store_sites_verified=1
-all_relevant_store_paths_proven=0
-proven_component_mask=0x0
-next_barrier_rva=0x2CFC927
-next_barrier_instruction=call
-W_independent=1
-W_kind=unknown
-writable_source_proven=0
-reason=unsupported_relevant_writer_instruction_or_memory_effect
-```
+C16 adds a bounded writer-local call-effect contract for the single authenticated call at `0x2CFC927`, return `0x2CFC92C`. It authenticates direct target/runtime-function boundary/current code identity, refuses indirect/thunk/out-of-image/overlap cases, and analyzes only a bounded <=1024-byte linear leaf callee. Unknown memory effects, nested calls, branches, unsupported effects, stack-boundary violations, or uncertain provenance fail closed.
 
-Per invocation, XYZ still match (`mask=0x7`) but `xyz_causality_proven=0` remains correct because the call effect is unresolved.
+The effect model permits only explicitly proven private callee-stack writes and tracks register/stack provenance. Win64 volatile GPRs and XMM0..5 are invalidated conservatively; writer XYZ may continue only through independently preserved/reloaded provenance. Per-invocation TEB/source/destination/code-integrity checks remain required before any causal flag. W remains independently classified.
 
-## Capture-summary repair
-C15 fixes the early-zero summary. Both A/E finalize with:
-```text
-capture_activated=1
-true_entry_snapshots=8
-complete_invocation_maps=8
-xyz_source_candidate=20
-xyz_match_count=8
-xyz_match_mask=0x7
-xyz_stable_across_invocations=1
-source_w_bits=0x0
-destination_w_bits=0x3f800000
-phase=finalized
-summary_final=1
-```
+No new game-call invocation or general interprocedural traversal was introduced. `0x351EB00` remains deferred.
 
-## Producer/storage boundary
-Still unpromoted:
+Cloud validation reported:
 ```text
-RDX == entry RSP+0x28 == precall RSP+0x20
-caller_owned=0
-ownership_exclusive=0
-source_lifetime_exclusive=0
-downstream_conflicts_proven_absent=0
-exact_next_producer_rva=0x351EB00
+Portable ASan/UBSan: 13 PASS
+DLL smoke: 4 PASS
+Full public hooks/native: 75 PASS / 5 private-input SKIP
+Total public PASS records: 92
+C16 exact call/effect focused records: 7 PASS
 ```
-Do not chase/mutate `0x351EB00` until the writer-local call effect is resolved.
+These owned-fixture results validate the mechanism only; they do not establish the actual game's call target/effect.
 
 ## Current gate
 ```text
 writable_source_proven=0
 Position/source/input/movement writes=0
+caller_owned=0
+ownership_exclusive=0
+source_lifetime_exclusive=0
+downstream_conflicts_proven_absent=0
 ```
 
 ## Current stage
@@ -112,20 +89,13 @@ Position/source/input/movement writes=0
 8. RDX stack-local XYZ correlation ✅
 9. c14 JNE blocker identified ✅
 10. c15 branch-aware crossing of `0x2CFC91F` ✅
-11. writer call `0x2CFC927` effect contract ▶ CURRENT c16
-12. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-13. safe writable upstream movement source ⬜ NOT AUTHORIZED
-14. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-15. adhesion/contact refinement ⏸ deferred
-16. animation/camera/later traversal ⬜
-
-## Current implementation base / next branch
-```text
-c15 branch: codex/v01c15-writer-branch-contract
-c15 implementation: 0efd13924426b1c96247ff35577f7f323c934b97
-c15 published delivery: 8e500b2e5f4967457f8652f46e18eb2c6d4fcb7d
-c16 branch: codex/v01c16-writer-call-effect
-```
+11. c16 writer-call effect mechanism ✅ IMPLEMENTED / ACTUAL GAME PENDING
+12. actual c16 call target/effect + resumed writer proof ▶ CURRENT RUNTIME GATE
+13. caller/storage/producer ownership (`0x351EB00`) ⏸ only after writer contract
+14. safe writable upstream movement source ⬜ NOT AUTHORIZED
+15. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+16. adhesion/contact refinement ⏸ deferred
+17. animation/camera/later traversal ⬜
 
 ## Current action
-Run Codex on `docs/CODEX_NEXT.md`. C16 remains diagnostic/read-only and resolves only the exact writer-local call at `0x2CFC927`; no movement/source/input mutation is authorized.
+Install `WallSprint_v0.1c16_writer_call_effect.zip` and collect one complete private A/cardinal ~4 s -> fully end WallRun -> move/fast-travel -> E/diagonal ~4 s log. Confirm c16/package 0.1.34 and exact-build admission. The log must determine the actual `0x2CFC927` target/boundary/hash/effect, the next writer blocker or XYZ proof, independent W classification, finalized capture/lineage summaries, and clean A/E orientation/watch cleanup. Do not begin producer ownership or any movement/adhesion/camera implementation from cloud-only evidence.
