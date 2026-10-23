@@ -1,314 +1,368 @@
-# Next task — WallSprint v0.1c10 Secondary Publication Race Repair
+# Next task — WallSprint v0.1c11 Movement Path Ownership / Translation Writer Attribution
 
 ## Implementation base
 
-Use published c9 exactly:
+Use c10 delivery head exactly:
 
 ```text
-base branch: codex/v01c9-secondary-path-b-thread-admission
-implementation commit: 0c276126ccac8e3bd2a6dd1d850da63e80bc35ce
-published c9 head: b865dabfa81626248ea8a8ae56a1dd1c992d7301
+base branch: codex/v01c10-secondary-publication-race
+implementation commit: 609fdf935e40947d7aad29fea4bed5f2cf3d0e2e
+published c10 head: 6246fd6d2e52cf81e18e6ff8ffd4d8ee4d863aa1
+version: v0.1c10 / package 0.1.28
 ```
 
 Pre-created branch:
 
 ```text
-codex/v01c10-secondary-publication-race
+codex/v01c11-movement-path-ownership
 ```
 
 Read first:
 
-- `analysis/V01C9_RUNTIME_RESULT.md`
-- `analysis/V01C9_E_RUNTIME_RESULT.md`
-- `analysis/SECONDARY_PATH_B_THREAD.md`
+- `analysis/V01C10_RUNTIME_RESULT.md`
+- `analysis/PATH_A_POSITION_PROOF.md`
+- `analysis/PLANAR_ADHESION.md`
 - `docs/PROJECT_STATE.md`
-- c9 `docs/CODEX_RESULT.md`
+- c10 branch `docs/CODEX_RESULT.md`
 
-## Authoritative c9 E-wall result
+## Authoritative c10 human result
 
-The E regression confirmed generic diagonal orientation:
+Two real WallRun sessions completed cleanly through verified Deinit.
+
+Diagonal session:
 
 ```text
 N398 ≈ (-0.70710677, 0, +0.70710677)
-target_up ≈ (-0.70710671, 0, +0.70710683)
-```
-
-Final lifecycle still passed:
-
-```text
-wallrun_duration_ms=4157
-source_exit_reason=verified_native_Deinit
+wallrun_duration_ms=4172
 source_active_until_deinit=1
-verified_deinit=1
-path_a_writes=231
-path_b_writes=228
 retention_pass=1
 last_actor_up_dot_surface=1
-first_hard_kill=none
 hard_kill_calls=0
+secondary seen/admitted/overridden/rejected=102/102/102/0
 ```
 
-The user visually saw stable orientation through the wall.
-
-However, the log proves exactly two very short internal WorldUp flashes. The secondary-thread summary was:
+Cardinal session:
 
 ```text
-seen=112
-admitted=110
-overridden=110
-rejected=2
-unique_threads=16
+wallrun_duration_ms=3421
+source_active_until_deinit=1
+retention_pass=1
+last_actor_up_dot_surface=1
+hard_kill_calls=0
+secondary seen/admitted/overridden/rejected=161/161/161/0
 ```
 
-Both rejected calls were:
+Across the c10 human log:
 
 ```text
-action=reject
-reason=secondary_source_publication_changed
+post-transition actor_up=(0,1,0) observations=0
+secondary_source_publication_changed=0
+Position writes by mod=0
 ```
 
-The first sequence was approximately:
+The c10 bounded publication-refresh branch did not naturally fire in that log; deterministic c10 fixtures are the evidence for the actual race branch. This does not block movement-path discovery.
 
-```text
-secondary Path B begins from active valid c9 publication
--> secondary_source_publication_changed reject
--> primary Path A still writes Surface Up in the same general interval
--> Actor observation ~10 ms later: actor_up=(0,1,0)
--> next common source call sees WorldUp source
--> LATE_COMMON_WORLDUP_OVERRIDE=1
--> Surface Up restored
-```
+## Deferred visual alignment
 
-The second sequence is equivalent near elapsed ~3.53 s.
+The user has visually identified:
 
-There were exactly two `actor_up=(0,1,0)` observations and exactly two `secondary_source_publication_changed` secondary rejects.
+- excessive apparent wall standoff / floating feet;
+- body/root lean relative to the apparent surface compared with normal ground running.
 
-## Current c9 code mechanism
-
-`captureCopy()` reads an initial `Published p`, validates the secondary call, then later reads `Published final` and requires exact equality including:
-
-```cpp
-final.session == p.session
-final.generation == p.generation
-final.lifecycleEpoch == p.lifecycleEpoch
-final.publishedMs == p.publishedMs
-final.active
-```
-
-A normal worker/native Update may republish the same active WallSprint ownership identity with a newer `publishedMs` and updated `nativeUpdate` while the secondary callback is validating. c9 treats that benign refresh as `secondary_source_publication_changed` and allows the vanilla Path B payload to proceed. On the diagonal wall that vanilla payload is WorldUp and produces the observed short flash.
-
-Do not simply remove the final validation or ignore publication changes.
+Do **not** solve these in c11. Record them as a later visual-alignment/contact pass. c11 is about movement ownership only.
 
 ## Objective
 
-Make a secondary-thread Path B call tolerate a bounded, identity-preserving source publication refresh during validation, while continuing to reject or hard-close any real ownership/integrity change.
+Identify and authenticate the native/caller-local data path that actually advances Hero translation during verified WallRun, so the next revision can implement surface-relative movement upstream and safely.
 
-The result should eliminate the two WorldUp flashes without weakening c7/c8/c9 safety.
+**c11 is diagnostic/read-only with respect to movement and Position.**
 
-This task is still orientation-only. No Position correction or movement yet.
+Do not directly write Actor Transform Position, do not alter the candidate Path A Position row, and do not add a custom velocity/gravity system in this task.
+
+The preferred outcome is a proof-quality answer to:
+
+```text
+Which writer(s) update Hero Transform Position during WallRun?
+What caller/source data produces those updates?
+Is Path A source+0x30 actually causal for Position?
+If not, what safer upstream velocity/displacement source should c12 own?
+```
 
 ## Required work
 
-### 1. Define semantic publication identity vs refreshable payload
+### 1. Preserve c10 orientation exactly
 
-Document and implement which `Published` fields define ownership identity and which may legitimately advance during one secondary callback.
+Do not regress:
 
-At minimum, a refresh may be considered identity-preserving only if all safety-critical identity still matches:
-
-```text
-session
-owner
-hero
-transform
-generation
-lifecycleEpoch
-expected native thread
-initMs / source generation origin
-active ownership state
-verified WallRun context identity
-native lifecycle token owner/generation/thread/phase
-accepted event epoch
-collision epoch
-```
-
-The following may legitimately advance with a newer worker/native Update and should not by themselves force vanilla pass-through:
-
-```text
-publishedMs
-nativeUpdate
-elapsed
-current interpolation/basis payload
-```
-
-Use the actual c9 structures and token semantics; do not rely on this list blindly if code proves a field has stronger meaning.
-
-### 2. Bounded refresh/revalidation for secondary Path B
-
-When the final publication no longer exactly equals the initial `p`, do not immediately reject.
-
-Implement a bounded strategy such as one retry/refresh:
-
-1. read latest publication;
-2. prove it is the same active ownership identity;
-3. re-run the existing token/freshness/current worker-context/source-integrity checks against that latest publication;
-4. confirm RCX still equals the same active Transform;
-5. confirm current callback caller/RSP/RDX/stack/compact source remain valid;
-6. recompute the compact replacement using the **latest admitted basis**;
-7. perform the guarded compact orientation store only if all checks still pass.
-
-No loops without a strict bound. Prefer one refresh attempt unless tests demonstrate a need for a second bounded attempt.
-
-Do not restart the 0.7 s delay or transition. Do not migrate the expected native thread. Do not synthesize an Update.
-
-### 3. Preserve real-change rejection / hard-close
-
-A refresh must NOT be accepted if any safety-critical identity actually changed, including:
-
-```text
-session/owner/Hero/Transform change
-generation/lifecycle epoch change
-verified Deinit / hard close
-native token owner/generation/thread/phase change
-accepted or collision epoch change
-genuine stale publication under existing c7 rules
-source/caller/writer/lifecycle patch integrity loss
-compact proof loss
-current callback caller or stack provenance failure
-rollback failure
-F8/script stop/shutdown
-```
-
-Unrelated foreign Path B traffic still gets no WallSprint payload and normally passes through without killing the active session unless it proves real owned-source corruption.
-
-### 4. Recompute from latest basis before store
-
-Do not validate `final` then store an `applied` block computed from stale `p.basis`.
-
-After an identity-preserving refresh, recompute compact orientation from the latest `final.basis` and the current stack-local incoming block. Preserve row scales/metadata exactly as c9 does.
-
-If the transition is already at t=1, latest basis should remain full Surface Up.
-
-### 5. Add exact race telemetry
-
-Add bounded diagnostics distinguishing:
-
-```text
-secondary_publication_refresh_seen
-secondary_publication_refresh_admitted
-secondary_publication_refresh_rejected_identity_change
-secondary_publication_refresh_rejected_stale
-secondary_publication_refresh_rejected_integrity
-```
-
-A first-event record should include old/new publication update numbers/timestamps and whether semantic identity matched, without dumping private full game bytes.
-
-Extend final secondary summary with refresh counts.
-
-### 6. Add a production-policy race test
-
-Reproduce the c9 E failure deterministically:
-
-1. active WallSprint session reaches full Surface Up;
-2. secondary Path B callback starts with valid `p`;
-3. before its final validation, primary worker publishes a newer snapshot for the same session/owner/Hero/Transform/generation/lifecycle identity;
-4. only `publishedMs/nativeUpdate/elapsed/basis payload` advance normally;
-5. secondary callback refreshes/revalidates and still overrides the compact source;
-6. no WorldUp vanilla payload reaches the target;
-7. no hard kill occurs;
-8. expected native thread remains unchanged;
-9. primary A/B continue afterward;
-10. verified Deinit closes cleanly.
-
-Also test negative races where the intervening publication changes:
-
-- session;
-- owner;
-- Hero or Transform;
-- generation;
-- lifecycle epoch / Deinit;
-- native token thread/owner/generation/accepted/collision epoch;
-- source integrity;
-- stale timeout.
-
-Those must not receive secondary orientation stores.
-
-### 7. Preserve c9/c8/c7 protections
-
-Keep unchanged unless directly required by this race fix:
-
-- exact executable/SHA admission;
-- Path A thread/caller/stack policy;
+- exact build/SHA gate;
 - c7 stale suspend/resume;
-- c8 immutable first hard-kill attribution;
-- c9 secondary caller/target/current-thread-stack/compact proof checks;
-- no secondary native-thread ownership migration;
-- shared 4096 B store-attempt budget;
-- only compact orientation bytes are written;
-- Position writes remain zero;
-- no direct Actor Transform write;
-- no PAGE_GUARD/protection changes;
-- no keepalive game call.
+- c8 first hard-kill attribution;
+- c9 secondary-thread Path B admission;
+- c10 bounded publication refresh/revalidation;
+- Path A/B orientation behavior;
+- no direct Actor Transform writes;
+- Position writes remain zero.
 
-### 8. Human regression
+The c11 diagnostics must not change the c10 Surface Up result.
 
-Use the same diagonal E wall first.
+### 2. Add bounded Hero Position writer observation
 
-Required log result after reaching full Surface Up:
+Observe writes to the current verified Hero Transform Position row:
 
 ```text
-no actor_up=(0,1,0) observations while source lifecycle remains active
-no secondary_source_publication_changed vanilla pass-through caused by a benign identity-preserving refresh
-ORIENTATION_RETENTION_PASS=1
-source_active_until_deinit=1
-verified_Deinit clean close
-first_hard_kill=none
-Position writes=0
+Transform + 0x30 .. +0x3F
 ```
 
-If a publication refresh race naturally occurs, it should show refresh-admitted telemetry and still override Surface Up.
+The read layout already used by the SDK establishes XYZ at `+0x30/+0x34/+0x38`; c11 must also observe/read `+0x3C` only as bounded read-only diagnostic data, without assuming its semantic meaning in advance.
 
-After E passes with zero WorldUp flashes, run the large A wall once as a quick regression if practical.
+Use hardware data breakpoints / existing watch infrastructure rather than PAGE_GUARD or page-protection mutation.
+
+Coordinate with the existing Up writer watch so the two diagnostics do not fight over DR0-DR3. Preferred policy:
+
+- keep the existing early orientation watch unchanged;
+- after full Surface Up/retention and after the old bounded Up watch has ended, arm a separate bounded Position watch;
+- use at most the available hardware slots and preserve/restore foreign DR state exactly;
+- no unbounded rescans or persistent process-wide debugging.
+
+A reasonable real window is roughly `t >= 1.55 s` for ~0.4–0.8 s, but derive the exact window from existing coordinator timing and tests rather than hardcoding an unsafe overlap.
+
+### 3. Attribute actual Position writers
+
+For each unique writer identity, capture bounded evidence such as:
+
+```text
+POSITION_WRITE_EVENT
+session=
+elapsed=
+thread_id=
+rip/module_rva=
+writer_function_rva=
+caller_rva=
+caller2_rva=
+target_transform=
+slot_mask=
+position_before=(x,y,z,w?)
+position_after=(x,y,z,w?)
+delta=(dx,dy,dz)
+delta_normal=
+delta_surface_forward=
+delta_surface_right=
+relative_us_from_last_path_a=
+relative_us_from_last_path_b=
+classification=
+```
+
+Do not spam per-frame logs. Keep a strict event cap per unique writer and aggregate hit counts.
+
+Add a final summary:
+
+```text
+POSITION_WRITER_SUMMARY
+session=
+watch_armed=
+threads_seen=
+threads_installed=
+unique_writers=
+total_write_events=
+writer_1_rva=/hits=
+writer_2_rva=/hits=
+...
+unknown_writer_events=
+cleanup_restored=
+```
+
+### 4. Decompose translation in SurfaceFrame
+
+For observed consecutive Hero Position samples, compute:
+
+```text
+delta = P_now - P_prev
+normal_component = dot(delta, SurfaceUp/N398)
+forward_component = dot(delta, SurfaceForward)
+right_component = dot(delta, SurfaceRight)
+```
+
+Also record `dt` and a finite-difference velocity estimate for correlation only.
+
+This is diagnostic decomposition, not a physics claim.
+
+Add bounded samples such as:
+
+```text
+MOVEMENT_DELTA_SAMPLE
+session=
+native_update=
+dt_ms=
+delta_world=(...)
+delta_normal=
+delta_forward=
+delta_right=
+speed_estimate=
+N398=(...)
+```
+
+### 5. Revisit Path A source+0x30 Position causality
+
+c6 established only a candidate source row and pre-writer equality; it did **not** prove causal copy or exclusive effects.
+
+Use c11 writer-watch/runtime evidence plus complete bounded static inspection to answer whether the authenticated Path A writer/caller actually propagates:
+
+```text
+source+0x30/+0x34/+0x38/+0x3C
+```
+
+to the verified Hero Transform Position row.
+
+If Path A is observed as a Position writer, prove at minimum:
+
+- exact destination offsets/instructions;
+- exact source lineage for all Position components actually written;
+- caller-local source provenance still matches authenticated stack relation;
+- post-writer target XYZ equals the expected source/result when that writer executes;
+- behavior of the fourth component is observed and documented, not guessed;
+- any calls/branches that can alter or duplicate Position effect are accounted for;
+- whether other Position writers immediately overwrite the result;
+- whether modifying this source can reasonably be isolated to intended Hero translation rather than other transform metadata.
+
+Do not set `admitted=1` from simple source/Hero equality alone.
+
+Emit:
+
+```text
+PATH_A_POSITION_CAUSALITY_PROOF
+admitted=0|1
+writer_verified=
+caller_verified=
+stack_relation_verified=
+source_offsets=
+destination_offsets=
+post_writer_match=
+position_w_observed=
+downstream_overwrite_observed=
+exclusive_effects_proven=
+reason=
+```
+
+### 6. Prefer a safer upstream movement source if one exists
+
+Analyze the authenticated WallRun Entry/Update and the newly identified Position writer/caller chain for a caller-local or native source representing:
+
+- displacement;
+- velocity;
+- desired movement direction;
+- root-motion translation;
+- another tangent-motion vector upstream of final Transform Position.
+
+A safe upstream vector is preferable to manually incrementing Transform Position.
+
+If a candidate is found, document exact provenance and runtime correlation, but **do not modify it in c11**.
+
+Emit one bounded candidate table:
+
+```text
+MOVEMENT_SOURCE_CANDIDATE
+candidate_id=
+producer_rva=
+consumer_rva=
+source_kind=position|displacement|velocity|direction|root_motion|unknown
+storage_or_stack_location=
+wallrun_owned=0|1
+hero_target_verified=0|1
+correlates_with_translation=0|1
+surface_tangent_relation=
+writable_source_proven=0|1
+reason=
+```
+
+If no safe upstream candidate can be authenticated, say so explicitly.
+
+### 7. No input rewrite yet
+
+Do not hook or rewrite controller/keyboard input in c11.
+
+You may document already-visible input/control accesses in the authenticated WallRun code if static/runtime evidence supports them, but do not add a speculative input ABI or new game call.
+
+The next task will map input into SurfaceFrame only after c11 establishes a safe movement source.
+
+### 8. Safety / fail-closed requirements
+
+No:
+
+- direct Actor Position write;
+- Path A Position modification;
+- active adhesion correction;
+- custom gravity;
+- movement injection;
+- PAGE_GUARD/protection changes;
+- camera/animation/wall jump/corners/ceilings/parkour/swing/combat.
+
+If writer attribution cannot be made safe with current hardware-watch capacity or thread coverage, fail closed and ship the strongest bounded diagnostic result instead of broadening to invasive instrumentation.
+
+### 9. Tests
+
+Add offline/native tests for:
+
+- Position watch arm/restore and foreign DR preservation;
+- writer identity aggregation/event caps;
+- SurfaceFrame delta decomposition on cardinal and diagonal normals;
+- Path A Position causal-positive synthetic fixture;
+- computed/partial/multi-writer/overwrite negative fixtures;
+- fourth-component mismatch;
+- wrong caller/target/thread/stack/session/generation/Deinit/stale cases;
+- c10 orientation regression unchanged while Position watch is inactive and while it is active after the Up watch window.
+
+Do not ship private full game-function bodies.
+
+## Human test
+
+Use the c11 package on the same large planar walls.
+
+Preferred sequence:
+
+```text
+1. one continuous ~4 s cardinal/A-style WallRun
+2. one continuous ~4 s diagonal/E-style WallRun
+```
+
+No special stick pattern is required for c11 unless README_TEST explicitly adds one based on an authenticated input observation discovered during implementation.
+
+Report:
+
+- whether c10 surface-relative posture still holds visually;
+- crash/hitch/freeze if any;
+- full private WallSprint log.
+
+The important c11 evidence is diagnostic; no visible movement change is expected.
 
 ## PASS criteria
 
-Primary c10 PASS:
+Full c11 proof PASS:
 
 ```text
-E wall remains diagonal Surface Up
-zero WorldUp actor observations after full orientation is reached
-identity-preserving publication refreshes no longer cause vanilla Path B leakage
-secondary Path B remains safe across multiple threads
-verified Deinit is final clean close
-source_active_until_deinit=1
-hard_kill_calls=0
-Position writes=0
+c10 orientation still holds to verified Deinit
+Position writes by mod=0
+bounded Position watch arms and restores cleanly
+actual Hero Position writer identity/identities captured
+SurfaceFrame translation decomposition valid on cardinal and diagonal runs
+PATH_A_POSITION_CAUSALITY_PROOF has an evidence-based admitted/rejected result
+at least one safe upstream movement source is authenticated, OR exact blocker is identified
+no hard kill/crash/foreign DR corruption
 ```
 
-Only after this should the next handoff define surface-relative movement input / movement-path ownership.
+A diagnostic PASS is acceptable if no writable movement source is admitted, provided the task identifies the exact missing proof needed for the next step.
 
-## Non-goals
-
-Do not add:
-
-- active adhesion correction;
-- movement input rewriting;
-- gravity replacement;
-- animation;
-- camera;
-- wall jump;
-- corners/ceilings;
-- parkour;
-- swing reconnect;
-- combat.
+Do **not** proceed to actual surface-relative input rewriting inside c11.
 
 ## Required outputs
 
 Update/create:
 
 ```text
-analysis/V01C9_E_RESULT.md
-analysis/SECONDARY_PUBLICATION_RACE.md
-analysis/V01C10_GATE.md
+analysis/V01C10_RUNTIME_RESULT.md
+analysis/POSITION_WRITER_ATTRIBUTION.md
+analysis/PATH_A_POSITION_CAUSALITY.md
+analysis/MOVEMENT_SOURCE_OWNERSHIP.md
+analysis/V01C11_GATE.md
 README_TEST.md
 docs/CODEX_RESULT.md
 ```
@@ -316,7 +370,7 @@ docs/CODEX_RESULT.md
 Package:
 
 ```text
-WallSprint_v0.1c10_secondary_publication_race.zip
+WallSprint_v0.1c11_movement_path_ownership.zip
 ```
 
-Follow `AGENTS.md` / `docs/DEV_RULES.md`. Do not commit raw user logs/video or private full captured game-function bytes.
+Follow `AGENTS.md` / `docs/DEV_RULES.md`. Do not commit raw user logs/video/screenshots or private full captured game-function bytes.
