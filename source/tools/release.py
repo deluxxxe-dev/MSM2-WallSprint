@@ -17,6 +17,8 @@ for name in ['v01c1_build.log','v01c1_portable.log','v01c1_smoke.log','v01c1_hoo
  else:print('SKIP: optional maintainer validation log',name)
 if (root.parent/'docs/CODEX_RESULT.md').exists():
  (out/'docs').mkdir(exist_ok=True);shutil.copy2(root.parent/'docs/CODEX_RESULT.md',out/'docs/CODEX_RESULT.md')
+shutil.copy2(out/'WallSprint.script',root.parent/'WallSprint.script')
+shutil.copy2(out/'BUILD_MANIFEST.json',root.parent/'BUILD_MANIFEST.json')
 # All corresponding tools, fixtures and license copies remain in source/.
 result=[]
 for name,folder in [('WallSprint_'+label+'_compact_path_b_override.zip',out),('WallSprint_'+label+'_source.zip',out/'source')]:
