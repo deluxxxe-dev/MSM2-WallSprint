@@ -9,7 +9,7 @@
 namespace {
 // One slot, no allocation or wait in the game callback. No worker lock is held
 // while any thread is suspended by the reused hardware-watch engine.
-HANDLE wake{},stopped{},helper{};std::atomic<bool> disabled{true};
+HANDLE wake{},stopped{},helper{};std::atomic<bool> disabled{true};bool processWatch{};
 std::atomic<unsigned> pending{0};msm2::reset_trace::Request slot;
 void nativeEvent(const ws::native_source::Token& token) noexcept {
  if(token.phase!=3){msm2::native_source::lifecycleClosed(token);msm2::trace::cancelReset();}
@@ -36,9 +36,10 @@ DWORD WINAPI run(void*){
 }
 }
 namespace msm2::reset_trace {
-void configure(bool verified,std::uintptr_t base,std::size_t size,bool prearmed){
+void configure(bool verified,std::uintptr_t base,std::size_t size,bool prearmed,bool multithread){
  if(helper)return; // No rearming or configuration mutation within a process.
- if(!trace::configureReset(verified,base,size,prearmed)){
+ processWatch=multithread;
+ if(!trace::configureReset(verified,base,size,prearmed,multithread)){
   writeLog("RESET_TRACE_SELF_CHECK prerequisite_gates_verified=%u common_writer_hook=%u reset_trace_enabled=1 reset_trace_admitted=0 primary_thread_prearm_supported=0",unsigned(verified),unsigned(msm2::native_source::observationGuardsAuthenticated()));
   writeLog("V01B7_DIAGNOSTIC_NOT_ADMITTED reason=build_hook_or_hardware_engine_gate");return;
  }
@@ -52,7 +53,7 @@ void configure(bool verified,std::uintptr_t base,std::size_t size,bool prearmed)
 void request(const Request& r) noexcept {
  if(disabled.load()||(!r.prearmed&&!r.commitQpc))return;
  unsigned expected=0;if(!pending.compare_exchange_strong(expected,1,std::memory_order_acq_rel))return;
- slot=r;pending.store(2,std::memory_order_release);SetEvent(wake);
+ slot=r;slot.multithread=processWatch;pending.store(2,std::memory_order_release);SetEvent(wake);
 }
 bool committed(const Request& r) noexcept {return !disabled.load()&&trace::resetCommitted(r);}
 void writerEntry(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t caller,bool overridden) noexcept {

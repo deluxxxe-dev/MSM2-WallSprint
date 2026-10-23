@@ -1,66 +1,49 @@
-# WallSprint v0.1c2 — Real-Runtime Compact Proof Repair
+# WallSprint v0.1c3 — Third Reset Writer Multithread Trace
 
-Package **0.1.20**。この版は exact build `Spider-Man2.exe 2.810.0.0` の姿勢ソースだけを変更します。Path A と Path B は同じ lock-free snapshot を使い、Path B は compact 3x3 の先頭 0x24 bytes だけを書き換えます。direct Actor / Position / adhesion / movement / animation / camera / physics は変更しません。
+Package **0.1.21**。c2 で確認できた A/B の姿勢変更を維持し、姿勢を World Up に戻す書き込み元を調べる版です。ちらつきはまだ発生する見込みです。
 
-## ダウンロードと導入
+## ダウンロード・導入
 
-配布ファイルは **WallSprint_v0.1c2_real_runtime_proof_fix.zip** です。Codex の完了メッセージにある GitHub の直接ダウンロードリンクを使ってください。
+配布は **WallSprint_v0.1c3_third_writer_trace.zip**。完了メッセージの GitHub 直接ダウンロードリンクから取得してください。ゲームを完全終了して古い WallSprint を無効にし、ZIP を展開します。中の **WallSprint.script は解凍せず** Overstrike に追加して Install mods。従来の Script support と `-scripts`、配布 INI をそのまま使います。
 
-1. ゲームを完全終了し、古い WallSprint を無効にします。
-2. 配布 ZIP を展開します。
-3. 中の **WallSprint.script は解凍せず** Overstrike に追加し、Install mods を実行します。
-4. 従来どおり Script support と `-scripts` を有効にして起動します。配布 INI の変更は不要です。
+## 起動確認
 
-## 起動時の確認
-
-ゲームのインストール先にある `logs\WallSprint.log` で次を確認します。
+ゲームのインストール先の `logs\WallSprint.log` を確認します。
 
 ```text
-WallSprint v0.1c2 package_version=0.1.20
+WallSprint v0.1c3 package_version=0.1.21
 target_build_gate=ACCEPTED
 PATH_B_COMPACT3X3_PROOF admitted=1 caller_verified=1 writer_verified=1 rdx_to_rcx_map_verified=1 source_bytes=0x24 decoded_prefix_bytes=444 caller_decoded_bytes=128 pairs=9
-RESET_COPY_HOOK admitted=1 installed=1
 DUAL_SOURCE_ADMISSION admitted=1
-PATH_B_LAYOUT_CONFIG ... path_b_override=1
+RESET_TRACE_MODE ... multithread=1 ... max_threads=128
 ```
 
-**`PATH_B_COMPACT3X3_PROOF admitted=1` を確認してから A/E テストを行ってください。** c2 は c1 の起動時 proof 停止を修正した版です。ゲーム本体の認証と proof は `ORIENTATION_ADMISSION` の各フィールドで別々に表示します。proof が失敗した場合はテストを進めず、`PATH_B_PROOF_DECODE_FAILURE` と `ORIENTATION_ADMISSION` の行を送ってください。
+proof が失敗した場合は WallRun 試験を進めず、`PATH_B_PROOF_DECODE_FAILURE` と `ORIENTATION_ADMISSION` を送ってください。
 
-## 実機テスト
+## 今回の試験
 
-起動後、次を各1回だけ行います。
+**まず A Control だけ**、同じ平らな壁を左→右へ約1.5〜2秒 WallRun します。Crawl、マーカー操作は不要です。ゲームを終了し、ログを通常どおり ChatGPT に送ってください。
 
-1. **A Control**: 通常の垂直壁で左から右へ約1.5秒 WallRun。
-2. **E diagonal**: 以前と同じ斜め壁で左から右へ約2秒 WallRun。
+A のログに `THIRD_WRITER_EVENT` がない場合だけ、完全再起動して同じ既知の斜め E 壁でも1回試します。左右への姿勢の切り替わりが見えたか、クラッシュ・位置ずれがあったかも添えてください。動画は補助で、ログを優先します。
 
-成功すれば、カメラは world-up のまま Spider-Man の Actor Up が壁面法線へ近づくため、画面上では明確に横向きへ回転します。アニメーションの不自然さはこの段階では許容します。動画は見た目の補助になり、判定はログを優先します。
-
-## ログの判定
-
-以下が最低条件です。
+## 確認するログ
 
 ```text
-PATH_A_LOCKFREE_SNAPSHOT_READ ... coherent=1
-PATH_A_OVERRIDE_COUNT=（1以上）
-PATH_A_STATE_LOCK_CONTENTION=0
-PATH_B_COMPACT3X3_OVERRIDE ... bytes_written=0x24 metadata_untouched=1 caller_verified=1 target_verified=1 stack_verified=1
+PATH_A_OVERRIDE_COUNT=（1以上） ... PATH_A_STATE_LOCK_CONTENTION=0 ... PATH_B_OVERRIDE_COUNT=（1以上）
+MULTITHREAD_UP_WATCH ... installed=（2以上） ... complete_thread_coverage=...
+THIRD_WRITER_EVENT ... thread_id=... writer_rva=... caller_rva=... caller2_rva=...
+THIRD_WRITER_IDENTITY ... function_sha256=...
+MULTITHREAD_UP_WATCH_RESTORE ... cleanup_pending=0
 ```
 
-保持成功は次の行です。
+primary thread は約0.60秒から先に監視し、約0.85秒でプロセス内の安全に扱えるスレッドへ一度だけ拡張、1.50秒で終了します。foreign DR、アクセス失敗、128-thread 上限、記録 drop はログへ明示します。`complete_thread_coverage` は取得したスナップショットの対象範囲についての値で、後から生まれるスレッドは含みません。
 
-```text
-ORIENTATION_RETENTION_PASS=1 held_ms=... held_updates=...
-```
+`UP_WRITE_CLASSIFICATION` は KNOWN_PATH_A / KNOWN_PATH_B / UNKNOWN_WRITER を区別します。`THIRD_WRITER_EVENT` は、A/B 両方の変更後に Surface Up から World Up 方向へ戻った最初の記録です。同じ既知関数の別 caller／thread が原因でも記録します。これは調査資料で、この版では第三の経路を書き換えません。
 
-`dot(ActorUp, N398) >= 0.98` を 300 ms または 20 native updates 保持すると出ます。A または E の少なくとも一方で出れば今回の runtime gate は PASS です。
+scalar store の途中で Up が一時的に不完全になる場合、5 ms 以内の直前 Surface Up 観測を使い、その由来を `before_semantics` に明記します。原子的な命令直前値を取得したという意味ではありません。
 
-`NEW_RESET_AFTER_DUAL_OVERRIDE` が出た場合は、その行を含むログが次の writer 調査資料になります。F8 を押すと全書き込みを即時停止し、再起動まで無効のままです。
+`ORIENTATION_RETENTION_PASS=1` は従来どおり 300 ms または20 distinct native updates の保持が必要です。短く Surface Up が見えただけでは成功扱いにしません。
 
-## 返してほしいもの
+**F8 は再起動まで全書き込み・監視 OFF、F9 は script 停止**。再試験は完全再起動してください。
 
-- `WallSprint.log` 全体
-- A / E のどちらで横向きが見えたか
-- クラッシュ、位置ずれ、transform corruption の有無
-- 可能なら短い動画
-
-元ゲームの code dump や capture ファイルは不要です。
+`THIRD_WRITER_CODE ... private_do_not_distribute=1` は次の解析用の私的な命令記録です。ログは非公開のまま送ってください。生ログやこのコード列を GitHub・公開 ZIP に追加する必要はありません。

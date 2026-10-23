@@ -1,6 +1,6 @@
-# v0.1c2 real-runtime proof repair
+# v0.1c3 third writer process-thread trace
 
-Current version0.1.20: exact-build Path A and compact Path B consume one lock-free coherent orientation snapshot. Path B writes only its first nine floats and preserves row scale and all later metadata. See README_TEST.md and analysis/V01C2_GATE.md. Build with tools/build_windows.sh; run tools/test.sh, tools/smoke_windows.sh, tools/test_hooks_windows.sh and tools/release.py. Original game captures stay private.
+Current version0.1.21: exact-build Path A and compact Path B consume one lock-free coherent orientation snapshot. Path B writes only its first nine floats and preserves row scale and all later metadata. See README_TEST.md and analysis/V01C3_GATE.md. Build with tools/build_windows.sh; run tools/test.sh, tools/smoke_windows.sh, tools/test_hooks_windows.sh and tools/release.py. c3 extends the observational Hero Up watch to a capped process-thread snapshot at elapsed0.85..1.50; third paths remain unmodified. Original game captures stay private.
 
 # WallSprint v0.1b8 — Dual-Source Orientation Ownership
 

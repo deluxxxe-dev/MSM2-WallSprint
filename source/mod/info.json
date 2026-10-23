@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.20",
-  "description": "WallSprint v0.1c2 Real-Runtime Compact Proof Repair. Full AVX-aware startup proof, lock-free shared orientation sources. No direct Actor/Position/adhesion/movement/camera/animation/physics writes.",
+  "version": "0.1.21",
+  "description": "WallSprint v0.1c3 Third Reset Writer Multithread Trace. Retains verified A/B source overrides and adds a bounded process-thread Hero Up watch. Diagnostic only for other writers; no direct Actor/Position/adhesion/movement/camera/animation/physics writes.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

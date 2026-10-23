@@ -1,10 +1,12 @@
-# v0.1c2 real-runtime proof repair
+# v0.1c3 third writer process-thread trace
+
+Run `bash tools/test_third_writer.sh` after the Windows build for the actual debug-register/second-thread capture and cleanup fixture. It uses owned functions/memory only. No new external dependency is added in c3.
 
 The Windows build fetches Capstone 5.0.6 from its upstream source archive, verifies SHA256 `240ebc834c51aae41ca9215d3190cc372fd132b9c5c8aa2d5f19ca0c325e28f9`, and statically builds its full x86 decoder (no diet/reduced ISA). `tools/setup_runtime_decoder.sh` caches only the archive under `/workspace/toolchains/decoder-cache`; generated sources/library stay under `build/deps`. No external Capstone DLL is needed. BSD/LLVM notices are in `vendor/capstone/`.
 
 For the private actual-byte regression after build and `tools/test_dual_source.sh`, run `WALLSPRINT_PATH_B_CAPTURE=/private/startup-excerpt.log bash tools/test_compact_proof.sh`. The input must contain exactly one authenticated original writer444/caller128 capture with the documented hashes. The harness compares the published c1 decoder with c2 and exercises the production installer in a nonexecuted owned image. It emits hashes, counts and derived offsets only, and removes temporary input binaries. Do not place the private input in Git or a release ZIP.
 
-Current version0.1.20: exact-build Path A and compact Path B consume one lock-free coherent orientation snapshot. Path B writes only its first nine floats and preserves row scale and all later metadata. See README_TEST.md and analysis/V01C2_GATE.md. Build with tools/build_windows.sh; run tools/test.sh, tools/smoke_windows.sh, tools/test_hooks_windows.sh and tools/release.py. Original game captures stay private.
+Current version0.1.21: exact-build Path A and compact Path B consume one lock-free coherent orientation snapshot. Path B writes only its first nine floats and preserves row scale and all later metadata. See README_TEST.md and analysis/V01C3_GATE.md. Build with tools/build_windows.sh; run tools/test.sh, tools/smoke_windows.sh, tools/test_hooks_windows.sh and tools/release.py. Original game captures stay private.
 
 # WallSprint v0.1b8 build — package0.1.17
 

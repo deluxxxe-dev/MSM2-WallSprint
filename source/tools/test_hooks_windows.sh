@@ -21,7 +21,7 @@ python tools/test_surface_pair_review.py | tee logs/surface_pair_review_tests.lo
 "$gpp" -std=c++17 -O2 -g -Wall -Wextra -Werror -DNOMINMAX -Iinclude -Ivendor/minhook/include -static src/msm2/actor_writer_smoke.cpp build/windows/hook_capture.o build/windows/hook_thunks.o build/windows/update_bridge.o build/windows/guard.o build/windows/minhook_buffer.o build/windows/minhook_hook.o build/windows/minhook_trampoline.o build/windows/minhook_hde64.o -luser32 -o build/windows/actor_writer_smoke.exe
 WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/build/windows/actor_writer_smoke.exe" | tee logs/windows_actor_writer_smoke.log
 
-"$gpp" -std=c++17 -O2 -g -Wall -Wextra -Werror -DNOMINMAX -Iinclude -static src/msm2/orientation_trace_smoke.cpp build/windows/guard.o -o build/windows/orientation_trace_smoke.exe
+"$gpp" -std=c++17 -O2 -g -Wall -Wextra -Werror -DNOMINMAX -Iinclude -static src/msm2/orientation_trace_smoke.cpp build/windows/guard.o -lbcrypt -o build/windows/orientation_trace_smoke.exe
 WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/build/windows/orientation_trace_smoke.exe" | tee logs/windows_orientation_trace_smoke.log
 /workspace/toolchains/analysis-python/bin/python tools/test_orientation_writer_review.py
 
@@ -37,3 +37,5 @@ bash tools/test_dual_source.sh
 /workspace/toolchains/analysis-python/bin/python tools/test_path_b_layout.py 2>&1 | tee logs/path_b_layout_tests.log
 
 bash tools/test_compact_proof.sh
+
+bash tools/test_third_writer.sh

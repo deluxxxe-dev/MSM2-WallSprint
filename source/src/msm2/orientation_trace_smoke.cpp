@@ -6,6 +6,7 @@
 #include <cstdio>
 static std::string output;static std::uintptr_t fakeHero{},fakeTransform{};
 static std::atomic<bool> running{true};static std::atomic<unsigned> selected{1},crawl{0};static std::atomic<bool> burst{false};static std::atomic<unsigned> nativeCalls{0};
+static HANDLE threadReady[2]{};
 namespace msm2 {
 bool readMemory(std::uintptr_t p,void* out,std::size_t n){SIZE_T done=0;return ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void*>(p),out,n,&done)&&done==n;}
 bool sample(Snapshot& s){s={};s.hero=fakeHero;s.transform=fakeTransform;float data[15]{};if(!readMemory(fakeTransform,data,sizeof(data)))return false;std::memcpy(s.prefix,data,48);std::memcpy(s.position,data+12,12);return true;}
@@ -18,16 +19,18 @@ __attribute__((noinline,noclone)) void nativeWriter(volatile float* t,float x,fl
  t[8]=t[9]=0;t[10]=1;
  ++nativeCalls;
 }
-DWORD WINAPI nativeLoop(void* raw){auto id=unsigned(reinterpret_cast<std::uintptr_t>(raw));while(running.load()){if(selected.load()==id){bool c=crawl.load();nativeWriter(reinterpret_cast<float*>(fakeTransform),c?1.f:0.f,c?0.f:1.f);}Sleep(burst.load()?0:5);}return 0;}
+DWORD WINAPI nativeLoop(void* raw){auto id=unsigned(reinterpret_cast<std::uintptr_t>(raw));SetEvent(threadReady[id-1]);while(running.load()){if(selected.load()==id){bool c=crawl.load();nativeWriter(reinterpret_cast<float*>(fakeTransform),c?1.f:0.f,c?0.f:1.f);}Sleep(burst.load()?0:5);}return 0;}
 CONTEXT debug(HANDLE t){assert(SuspendThread(t)!=DWORD(-1));CONTEXT c{};c.ContextFlags=CONTEXT_DEBUG_REGISTERS;assert(GetThreadContext(t,&c));assert(ResumeThread(t)!=DWORD(-1));return c;}
 int main(){
  auto* t=static_cast<float*>(VirtualAlloc(nullptr,4096,MEM_COMMIT|MEM_RESERVE,PAGE_READWRITE));auto* h=VirtualAlloc(nullptr,4096,MEM_COMMIT|MEM_RESERVE,PAGE_READWRITE);auto* owner=static_cast<unsigned char*>(VirtualAlloc(nullptr,4096,MEM_COMMIT|MEM_RESERVE,PAGE_READWRITE));assert(t&&h&&owner);fakeTransform=reinterpret_cast<std::uintptr_t>(t);fakeHero=reinterpret_cast<std::uintptr_t>(h);std::memcpy(h,&fakeTransform,8);t[0]=t[5]=t[10]=1;t[3]=7;t[7]=8;t[11]=9;t[12]=10;t[13]=20;t[14]=30;ws::Vec3 n{1,0,0};std::memcpy(owner+0x398,&n,12);
- DWORD ids[2]{};HANDLE threads[2]={CreateThread(nullptr,0,nativeLoop,reinterpret_cast<void*>(1),0,&ids[0]),CreateThread(nullptr,0,nativeLoop,reinterpret_cast<void*>(2),0,&ids[1])};assert(threads[0]&&threads[1]);Sleep(20);auto original0=debug(threads[0]),original1=debug(threads[1]);
+ for(auto& ready:threadReady)ready=CreateEventW(nullptr,TRUE,FALSE,nullptr);
+ DWORD ids[2]{};HANDLE threads[2]={CreateThread(nullptr,0,nativeLoop,reinterpret_cast<void*>(1),0,&ids[0]),CreateThread(nullptr,0,nativeLoop,reinterpret_cast<void*>(2),0,&ids[1])};assert(threads[0]&&threads[1]);assert(WaitForMultipleObjects(2,threadReady,TRUE,1000)==WAIT_OBJECT_0);auto original0=debug(threads[0]),original1=debug(threads[1]);
  auto base=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));auto* dos=reinterpret_cast<IMAGE_DOS_HEADER*>(base);auto* nt=reinterpret_cast<IMAGE_NT_HEADERS64*>(base+dos->e_lfanew);
  msm2::trace::Config cfg;cfg.windowMs=120;ws::observed::VerifiedWallContext ctx{};ctx.lifecycleVerified=ctx.wallRunActive=true;ctx.wallRunSessionId=1;ctx.wallRunOwner=reinterpret_cast<std::uintptr_t>(owner);ctx.elapsed=1;ctx.wallRunUpdateCalls=20;
  msm2::trace::configure(cfg,false,base,nt->OptionalHeader.SizeOfImage);msm2::trace::tick(ctx,ids[0],"none");assert(!usedWindows);
  msm2::trace::configure(cfg,true,base,nt->OptionalHeader.SizeOfImage);msm2::trace::tick(ctx,ids[0],"none");assert(usedWindows==1&&current==0);assert(windows[0].capture);
  for(unsigned i=0;i<20;++i){Sleep(10);msm2::trace::tick(ctx,ids[0],"none");msm2::trace::drainLogs();}
+ if(!windows[0].hits)std::printf("TRACE_FIXTURE_FAILURE native_calls=%u output=%s\n",nativeCalls.load(),output.c_str());
  assert(windows[0].hits>0);assert(current<0&&!activeLeases());assert(writerCount>0);assert(output.find("state=WallRun")!=std::string::npos);
  auto after0=debug(threads[0]);assert(after0.Dr0==original0.Dr0&&after0.Dr1==original0.Dr1&&(after0.Dr7&ownMask)==(original0.Dr7&ownMask));
  MEMORY_BASIC_INFORMATION page{};assert(VirtualQuery(t,&page,sizeof(page))&&page.Protect==PAGE_READWRITE);assert(t[3]==7&&t[7]==8&&t[11]==9&&t[12]==10&&t[13]==20&&t[14]==30);
@@ -57,6 +60,7 @@ int main(){
  // F8-equivalent stops an active window and restores debug contexts.
  assert(begin(snapshot,2,3,0,n,ids[0]));msm2::trace::kill();msm2::trace::tick(ctx,ids[0],"verified_deinit");assert(!activeLeases());auto calls=nativeCalls.load();Sleep(30);assert(nativeCalls>calls); // original still executes
  msm2::trace::stop();assert(!activeLeases());running=false;for(auto thread:threads){assert(WaitForSingleObject(thread,1000)==WAIT_OBJECT_0);CloseHandle(thread);}
+ for(auto ready:threadReady)CloseHandle(ready);
  assert(output.find("orientation_writer_function")!=std::string::npos&&output.find("ORIENTATION_WRITER_REGS")!=std::string::npos);
  auto f=std::fopen("logs/windows_orientation_trace_synthetic.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);
  assert(VirtualFree(t,0,MEM_RELEASE)&&VirtualFree(h,0,MEM_RELEASE)&&VirtualFree(owner,0,MEM_RELEASE));

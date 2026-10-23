@@ -11,7 +11,7 @@ void kill() noexcept;
 void stop();
 void drainLogs();
 // External mode: one dedicated helper owns all arming/cleanup; worker only drains.
-bool configureReset(bool verified,std::uintptr_t base,std::size_t size,bool prearmed=false);
+bool configureReset(bool verified,std::uintptr_t base,std::size_t size,bool prearmed=false,bool multithread=false);
 void cancelReset() noexcept;
 bool resetCommitted(const reset_trace::Request&) noexcept;
 bool beginReset(const reset_trace::Request&,const Snapshot&);
