@@ -32,7 +32,7 @@ Current outputs: `../WallSprint_v0.1c15_writer_branch_contract.zip`, `../WallSpr
 Offline real-log review:
 
 ```bash
-python tools/review_dual_source.py /path/to/WallSprint.log --a-session 1 --e-session 2 --output /path/to/DUAL_SOURCE_REVIEW.json
+python tools/review_dual_source.py /path/to/log_wallsprint/WallSprint_YYYYMMDD-HHMMSS.log --a-session 1 --e-session 2 --output /path/to/DUAL_SOURCE_REVIEW.json
 ```
 
 A/E numbers are examples; confirm actual sessions from the user. For unknown reset stores, use the existing Capstone writer decoder with private bounded complete function captures. Native data-breakpoint RIP is post-store; do not guess its write address, function hash or source ABI. No real b8 ownership is verified until the accepted game supplies the entry/retention evidence. No adhesion is implemented.
@@ -52,3 +52,5 @@ C15: tools/test_writer_branch.sh tests independently authored183-byte conditiona
 C16: tools/test_writer_call.sh adds independently authored nonexecuted exact-call/no-write-leaf/clobber/reload/memory/control/target/return/stack-alias/W tests. Included in full hooks suite. No new dependency or runtime observation hook; tests remain isolated from private game bytes.
 
 C17: tools/test_callee_alias.sh adds owned137byte callee/183byte writer fixtures for stack/home/source/Transform/global/argument/branch/conflict/unknown/control/exact-store continuation. test_writer_entry.sh adds pinned identity and runtime footprint/region refusal tests. Both are in hooks suite; no new dependencies/hooks/private bodies.
+
+C17 isolated logging: tools/test_log_file.sh uses actual Windows filesystem calls for path/timestamp/directory/collision/concurrent/open-failure/reopen/never-shared behavior. Included in smoke_windows.sh, whose actual DLL lifecycle integration reads only newly created timestamped files and verifies any old shared log remains byte-identical. Filename local time; existing telemetry line UTC format unchanged.

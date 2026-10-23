@@ -41,3 +41,7 @@ Static analysis either resolves the effect or exposes the exact narrower address
 Actual c17 A/E is pending. Outcome A requires protected objects disjoint and writer proof advancement; outcome B is one precise narrower callee blocker. Neither authorizes movement. Producer0x351EB00, caller ownership, lifetime/exclusivity/downstream safety remain deferred/unproven0. Writable_source_proven stays0; Position/source/input/movement writes0.
 
 Owned/offline and real metadata/region refusal tests plus full regressions and isolated source-ZIP rebuild are documented in CODEX_RESULT/V01C17_RELEASE.json. No private game body or raw log is packaged.
+
+## Required isolated logging gate
+
+C17 task update6836fec also requires dedicated game-root log_wallsprint/WallSprint_YYYYMMDD-HHMMSS.log using local PC time. Atomic CREATE_NEW suffixes preserve collisions; same loaded-module re-enable appends to the selected run file. Directory/open failure uses debug output with stage/path/Win32Error and never the shared logs folder. Telemetry line UTC format stays unchanged. Both diagnostic A and narrower B require this operational change; actual game path/A/E remains pending. See docs/LOGGING_CONVENTION.md and CODEX_RESULT.

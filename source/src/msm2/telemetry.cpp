@@ -13,6 +13,7 @@
 #include "msm2/orientation_log.hpp"
 #include "msm2/wallrun_hooks.hpp"
 #include "version.hpp"
+#include "GameInterop/log_file.hpp"
 #include "msm2/actor_writer.hpp"
 #include "msm2/orientation_trace.hpp"
 #include "msm2/orientation_source.hpp"
@@ -29,19 +30,8 @@ HANDLE stopEvent{},workerHandle{},logFile=INVALID_HANDLE_VALUE;
 DWORD workerId{};
 std::wstring executablePath(){std::vector<wchar_t> path(32768);DWORD n=GetModuleFileNameW(nullptr,path.data(),static_cast<DWORD>(path.size()));if(!n||n>=path.size())return {};return {path.data(),n};}
 std::wstring directory(const std::wstring& path){auto pos=path.find_last_of(L"\\/");return pos==std::wstring::npos?L".":path.substr(0,pos);}
-void openLog(){
- auto dir=directory(executablePath())+L"\\logs";CreateDirectoryW(dir.c_str(),nullptr);
- auto path=dir+L"\\WallSprint.log";
- // Keep the previous run, without replacing an existing backup.
- SYSTEMTIME now{};GetSystemTime(&now);wchar_t suffix[96]{};
- swprintf(suffix,96,L".%04u%02u%02u-%02u%02u%02u-%03u-%lu.bak",now.wYear,now.wMonth,now.wDay,now.wHour,now.wMinute,now.wSecond,now.wMilliseconds,GetCurrentProcessId());
- if(GetFileAttributesW(path.c_str())!=INVALID_FILE_ATTRIBUTES&&!MoveFileW(path.c_str(),(path+suffix).c_str())){
-  // No truncation if preservation fails; use a distinct filename.
-  path+=suffix;path+=L".log";
- }
- logFile=CreateFileW(path.c_str(),GENERIC_WRITE,FILE_SHARE_READ,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr);
- if(logFile==INVALID_HANDLE_VALUE)OutputDebugStringA("WallSprint: cannot create game-directory logs/WallSprint.log; using debug output only\n");
-}
+ws::logging::Session logSession;
+void openLog(){logFile=logSession.open(executablePath());}
 void closeLog(){AcquireSRWLockExclusive(&logLock);if(logFile!=INVALID_HANDLE_VALUE){CloseHandle(logFile);logFile=INVALID_HANDLE_VALUE;}ReleaseSRWLockExclusive(&logLock);}
 bool buildIdentity(){
  bool versionMatches=false,hashMatches=false;
@@ -115,6 +105,7 @@ unsigned markerEvents(ws::diag::MarkerKeys& keys){
 }
 void run(){
  openLog();msm2::writeLog("WallSprint %s package_version=%s Planar Adhesion Diagnostics; scope=shared_orientation_sources_and_bounded_process_thread_watch path_b_override=1 third_path_override=0 hook_mode=build_scoped_verified_lifecycle",ws::versionLabel,ws::packageVersion);
+ msm2::writeLog("LOG_FILE path=%ls filename_clock=host_local line_clock=UTC shared_logs_fallback=0",logSession.path().c_str());
  msm2::writeLog("marker_keys=1,2,3,4,5,6 modifier=NONE top_row_digits=true edge_triggered=true");
  bool targetConfirmed=buildIdentity();auto config=settings();bool ready=msm2::initialize(targetConfirmed,config.audit,config.hooks.enabled);
  msm2::writer::configure(config.planar,targetConfirmed&&ready);

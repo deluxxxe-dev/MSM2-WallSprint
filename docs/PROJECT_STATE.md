@@ -107,3 +107,7 @@ Resolve only callee `0x2B23560..0x2B235E9` memory-write address provenance relat
 ## c17 cloud implementation
 
 v0.1c17/package0.1.35 pins the measured137byte callee identity and analyzes write-address origins using every relevant writer pre-call state. Source/Transform writes, unknown/conflicting addresses and nested/unsupported effects refuse exactly. Private-stack/home/global separation requires per-invocation TEB/source/nonstack Transform/image checks. Only both protected no-write certificates plus all-resolved can resume writer exact XYZ/W stores. Actual c17 alias result or next blocker is pending A/E. Producer0x351EB00 and all upstream mutation/ownership/lifetime/exclusive/downstream gates remain0/deferred; no new hook or movement/source/input writes.
+
+## c17 isolated logging
+
+Remote task update6836fec incorporated: logs now use game-root log_wallsprint/WallSprint_YYYYMMDD-HHMMSS.log with local PC time, atomic collision suffix and no overwrite/shared-folder fallback. Re-enable in the same loaded module appends to the selected run file; A/E shares that file. File line timestamps remain UTC. Directory/open failure is reported to debug output with stage/path/Win32Error. Human tests must send the newest timestamped file from log_wallsprint. Actual game path/A/E verification remains pending.

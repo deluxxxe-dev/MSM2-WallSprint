@@ -12,11 +12,13 @@ for name in ['V01C16_RUNTIME_RESULT.md', 'V01C17_CALLEE_ALIAS_CONTRACT.md', 'V01
  shutil.copy2(root/'analysis'/name,out/'analysis'/name)
 (out/'logs').mkdir(exist_ok=True)
 # Only known independent cloud validation logs; no raw private game logs.
-for name in ['v01c17_build.log','v01c17_portable.log','v01c17_smoke.log','v01c17_hooks.log','v01c17_public_build.log','v01c17_entry.log','v01c17_contract.log','v01c17_branch.log','v01c17_call.log','v01c17_alias.log','package_check.log']:
+for name in ['v01c17_build.log','v01c17_portable.log','v01c17_smoke.log','v01c17_hooks.log','v01c17_public_build.log','v01c17_entry.log','v01c17_contract.log','v01c17_branch.log','v01c17_call.log','v01c17_alias.log','v01c17_logging.log','package_check.log']:
  if (root/'logs'/name).exists():shutil.copy2(root/'logs'/name,out/'logs'/name)
  else:print('SKIP: optional maintainer validation log',name)
 if (root.parent/'docs/CODEX_RESULT.md').exists():
  (out/'docs').mkdir(exist_ok=True);shutil.copy2(root.parent/'docs/CODEX_RESULT.md',out/'docs/CODEX_RESULT.md')
+if (root.parent/'docs/LOGGING_CONVENTION.md').exists():
+ (out/'docs').mkdir(exist_ok=True);shutil.copy2(root.parent/'docs/LOGGING_CONVENTION.md',out/'docs/LOGGING_CONVENTION.md')
 shutil.copy2(out/'WallSprint.script',root.parent/'WallSprint.script')
 shutil.copy2(out/'BUILD_MANIFEST.json',root.parent/'BUILD_MANIFEST.json')
 # All corresponding tools, fixtures and license copies remain in source/.

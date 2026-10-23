@@ -32,3 +32,7 @@ Normal diagnostic test:
 A ~4 s -> fully end WallRun -> move/fast-travel -> E ~4 s
 ```
 Send the single newest timestamped file from `log_wallsprint`. Video is only needed for a visible anomaly or when specifically requested.
+
+## Implementation / failure behavior
+
+The existing executable-path root is used. Win32 CREATE_NEW chooses a free timestamped name atomically; suffix search is bounded to _9999 and never truncates an existing file. Re-enabling the same loaded module appends to its selected file; a full module reload starts a new run file. Directory/open/collision failure reports stage, attempted path and Win32Error through OutputDebugString; shared logs fallback is disabled. The filename uses GetLocalTime while telemetry line timestamps retain their existing UTC format.
