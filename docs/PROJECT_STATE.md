@@ -50,7 +50,7 @@ Known writer:
 - writer RVA `0x2CFC580`
 - WallRun caller return RVA `0x2CFC8F3`
 
-For the relevant Hero calls its RDX source layout is verified as:
+For relevant Hero calls its RDX source layout is verified as:
 
 - `+0x00` Right
 - `+0x10` Up
@@ -59,66 +59,77 @@ For the relevant Hero calls its RDX source layout is verified as:
 
 WallSprint can override this caller-local source and briefly change the real Hero Actor Up toward Surface Up without direct Actor writes.
 
-## Reset path discovered in v0.1b7
+Current remaining path-A issue: v0.1b9 logged thousands of `COMMON_OVERRIDE_REJECT reason=state_lock_contention` events. The hot hook must stop depending on a contended mutex/try-lock before orientation ownership can be considered complete.
 
-Immediate reset path reproduced on A and E:
+## Orientation reset path B
+
+Verified immediate reset path:
 
 - writer RVA `0x2CFC3C0`
 - range `0x2CFC3C0..0x2CFC57C`
 - size 444 bytes
 - captured SHA256 `ee33ad96fb1834f9977621ea988f7667f0eb3e47166a7115ba262072ebc50196`
 - caller return RVA `0x2CFC84B`
+- caller function `0x2CFC7D0..0x2CFC850`
 - caller2 RVA `0x35184A5`
 
-It acts roughly 0.8–1.4 ms after a representative WallSprint source commit and drives Hero Up back toward World Up.
+It acts roughly 0.8–1.4 ms after representative path-A source commits and restores Hero orientation toward World Up.
 
-A later reset path also exists through `0x2CFC580 / 0x2CFC8F3` when a World-Up source invocation is allowed through unmodified.
+## v0.1b9 result — path-B compact 3x3 layout characterized
 
-## v0.1b8 result — dual-source attempt failed closed
-
-User reported no visible orientation change. Runtime behavior matches that report.
-
-Startup/authentication succeeded:
-
-- exact build accepted
-- `RESET_COPY_HOOK admitted=1 installed=1`
-- `DUAL_SOURCE_ADMISSION admitted=1`
-- prearmed verification active
-
-Path A continued to work: `0x2CFC8F3 / 0x2CFC580` source overrides generated interpolated Surface-relative Up values.
-
-Path B did **not** get modified. On both A and E, actual `0x2CFC84B -> 0x2CFC3C0` entry capture reported:
+User reported no visible change. That is expected because v0.1b9 explicitly ran with:
 
 ```text
-source_readable=1
-source_is_stack_local=0
-layout_valid=0
-override=0
-reason=caller_local_provenance_or_source_sanity_failed
+path_b_override=0
+path_b_characterization_active=1
 ```
 
-Representative captured relation:
+The diagnostic milestone succeeded.
+
+### Proven caller-local provenance
+
+On both A and E, exact path-B entries repeatedly reported:
 
 ```text
 RDX = RSP + 0x28
-RDX numerically lies inside the reported current-thread stack bounds
+rdx_inside_stack_bounds=1
+source_span_inside_stack_bounds=1
+expected_rsp_relation_match=1
+source_readable=1
 ```
 
-but the first 0x40 bytes at RDX do not validate as the ordinary affine matrix layout used by path A.
+So the old v0.1b8 `source_is_stack_local=0` result was a misleading diagnostic, not evidence against stack-local provenance.
 
-Therefore the old hypothesis that path B uses the same RDX matrix format as `0x2CFC580` is **not proven and must not be used for writes**.
+### Compact 3x3 source layout
 
-The hook correctly failed closed. Retention remained:
+Authenticated caller bytes show nine scalar products written into a local stack buffer before the call to `0x2CFC3C0`.
+
+Authenticated writer bytes show direct copies from those nine floats into Hero orientation slots:
 
 ```text
-held_updates=0
-held_ms=0
-stability_observed=0
+RDX + 0x00 -> RCX + 0x00
+RDX + 0x04 -> RCX + 0x04
+RDX + 0x08 -> RCX + 0x08
+
+RDX + 0x0C -> RCX + 0x10
+RDX + 0x10 -> RCX + 0x14
+RDX + 0x14 -> RCX + 0x18
+
+RDX + 0x18 -> RCX + 0x20
+RDX + 0x1C -> RCX + 0x24
+RDX + 0x20 -> RCX + 0x28
 ```
 
-The immediate `0x2CFC3C0` reset still occurs, and later common-writer World-Up calls may also remain after the session aborts.
+Interpretation: path B uses a compact 3x3 basis payload in `[RDX+0x00, RDX+0x24)`, unlike path A's padded affine layout.
 
-Detailed runtime result: `analysis/V01B8_RUNTIME_RESULT.md`.
+Runtime values support the same interpretation on A and E:
+
+- A path-B source basis stays world-relative with Up ≈ `(0,1,0)` while path A has already tilted Hero Up toward the wall.
+- E path-B source basis has diagonal horizontal Right/Forward rows but still Up ≈ `(0,1,0)`, while path A drives Hero Up toward `(-0.707,0,+0.707)`.
+
+Path B therefore remains the immediate World-Up reset owner.
+
+Detailed evidence: `analysis/V01B9_RUNTIME_RESULT.md`.
 
 ## Current blocker / stage
 
@@ -130,8 +141,8 @@ Detailed runtime result: `analysis/V01B8_RUNTIME_RESULT.md`.
 6. path-A native orientation source injection ✅
 7. reset writer discovery ✅
 8. path-B hook/authentication ✅
-9. path-B source layout / provenance characterization ▶ CURRENT
-10. retained WallSprint orientation ⬜
+9. path-B source provenance / compact 3x3 layout ✅
+10. dual-source retained orientation ▶ CURRENT
 11. adhesion ⬜
 12. surface-relative movement ⬜
 13. animation integration ⬜
@@ -139,17 +150,15 @@ Detailed runtime result: `analysis/V01B8_RUNTIME_RESULT.md`.
 
 ## Current implementation objective
 
-The next task is diagnostic-first. For exact caller `0x2CFC84B -> 0x2CFC3C0`:
+Next package should attempt orientation ownership only:
 
-- statically decode the writer and its caller `0x2CFC7D0..0x2CFC850`;
-- identify exactly how RDX is constructed and which RDX fields are copied/used to determine RCX orientation;
-- correlate those fields against A and E runtime observations;
-- distinguish ordinary matrix data from packed/mixed structure fields or embedded pointers;
-- do not modify path-B data until same-offset semantics are proven across A/E;
-- preserve path-A source injection and bounded write-watch for correlation;
-- direct Actor writes, adhesion, movement, animation, camera and physics remain disabled.
-
-Orientation retention must still reach `dot(ActorUp,N398) >= 0.98` for >=0.30 s or >=20 distinct native updates before adhesion is authorized.
+1. Formalize an anchored startup decode/self-check for the path-B compact 3x3 direct-copy map.
+2. For exact verified `0x2CFC84B -> 0x2CFC3C0` Hero/WallRun calls after the transition delay, replace only the first nine source floats with the shared current WallSprint basis.
+3. Preserve original row magnitudes/per-axis scale; modify orientation direction only.
+4. Do not touch anything at or after `RDX+0x24`.
+5. Replace path-A lock-dependent admission with a lock-free published orientation snapshot so qualifying `0x2CFC8F3 -> 0x2CFC580` calls do not fail because of `state_lock_contention`.
+6. Require retained `dot(ActorUp,N398) >= 0.98` for >=0.30 s or >=20 distinct native updates.
+7. Do not add adhesion until that retention gate passes.
 
 ## Human test locations
 
