@@ -1,137 +1,138 @@
-# Next task — WallSprint v0.1c18 Callee Branch-Aware Alias Contract
+# Next task — WallSprint v0.1c19 Exact Transform-Alias Write Contract
 
 ## Base
 ```text
-source branch: codex/v01c17-callee-alias-contract
-source implementation: d1867bb2de42079a46ceb547f8fccc4d477ae18d
-source delivery head: 4f7d1590af744f449d717b8ede30400de0cef820
-next branch: codex/v01c18-callee-branch-alias
-version target: v0.1c18
+source branch: codex/v01c18-callee-branch-alias
+source implementation: 19aa3012959bf7538df3917278dd4a97551123dd
+source delivery head before human result: 3ffc19b5b3b3f42c0fcbf62679fe6d9e44f92dfb
+next branch: codex/v01c19-transform-write-contract
+version target: v0.1c19
 ```
 
-Read `AGENTS.md`, `docs/DEV_RULES.md`, `docs/PROJECT_STATE.md`, `docs/LOGGING_CONVENTION.md`, `analysis/V01C17_RUNTIME_RESULT.md`, `analysis/V01C17_CALLEE_ALIAS_CONTRACT.md`, `analysis/RDX_XYZ_SOURCE_CONTRACT.md`, and c17 `docs/CODEX_RESULT.md` first.
+Read first:
+- `AGENTS.md`
+- `docs/DEV_RULES.md`
+- `docs/PROJECT_STATE.md`
+- `docs/LOGGING_CONVENTION.md`
+- `analysis/V01C18_RUNTIME_RESULT.md`
+- `analysis/V01C18_CALLEE_BRANCH_ALIAS.md`
+- `analysis/RDX_XYZ_SOURCE_CONTRACT.md`
+- c18 `docs/CODEX_RESULT.md`
 
-## Accepted c17 actual-game result
-C17 is **Diagnostic PASS / narrower exact callee CFG blocker**.
+## Accepted c18 actual-game result
+C18 is **Diagnostic PASS / narrower exact write blocker**.
 
+Regression/logging gate:
 ```text
-A/session1 duration=3875 ms
-E/session2 duration=4390 ms
+A/session1 duration=2984 ms
+E/session2 duration=4171 ms
 both verified Deinit
 both retention_pass=1
 both stale_suspend_count=0
 both hard_kill_calls=0
 both Position_writes_by_mod=0
-both final Up dot surface=1
+A final Up dot surface=1
+E final Up dot surface=1.00000012
 ```
-Both sessions finalized 8 true entry snapshots / 8 complete invocation maps with XYZ mask0x7, source W0 and destination W1.
+Both sessions finalized 8 true entries / 8 complete maps with XYZ mask `0x7`, source W=0, destination W=1. Dedicated `log_wallsprint/WallSprint_YYYYMMDD-HHMMSS.log` remains verified with no shared fallback.
 
-Dedicated logging is actual-game verified:
+Authenticated call/callee remains:
 ```text
-game-root\log_wallsprint\WallSprint_YYYYMMDD-HHMMSS.log
-shared_logs_fallback=0
-```
-Preserve it unchanged.
-
-C17 actual writer call arguments:
-```text
-call_rva=0x2CFC927
-arg_rcx_origin=entry_writer_RCX_transform
-arg_rdx_origin=entry_writer_RCX_transform
-arg_r8_origin=constant_bits_NOT_pointer
-arg_r9_origin=unknown_argument
-source_span_alias_mask=0x0
-transform_alias_mask=0x3
-proof_complete=1
-```
-
-Authenticated callee:
-```text
+writer call=0x2CFC927
+return=0x2CFC92C
 target=0x2B23560
 boundary=0x2B23560..0x2B235E9
 hash=2d62e54b270c46f4babc8120a7e56123e3fe467ca383895d57a989f853095a9d
 ```
+Call-time RCX and RDX are Transform-derived; writer-entry RDX Position source is distinct. R8 is constant/non-pointer; R9 remains unknown.
 
-Exact c17 blocker:
+C18 resolved the c17 branch-cap problem:
 ```text
-memory_writes_seen=0
+local_branch_sites=5
+conditional_branch_sites=4
+branch_cap=5
+blocks_total=8
+edges_total=10
+complete_local_cfg=1
+backedges_seen=0
+indirect_transfers_seen=0
+```
+
+Actual reachable write classifications before the new blocker:
+```text
+0x2B23560 width8 -> caller_shadow_or_return_area, no source/Transform alias
+0x2B23565 width8 -> caller_shadow_or_return_area, no source/Transform alias
+0x2B2356A width8 -> callee_private_stack, no source/Transform alias
+0x2B2358E width4 -> hero_transform_possible_alias, address_root=1, address_offset=268 (0x10C), source=0, Transform=1
+```
+Current exact blocker:
+```text
+next_barrier_rva=0x2B2358E
+next_barrier_instruction=mov
+next_barrier_effect=hero_transform_possible_alias
+writes_transform_possible_alias=1
 source_span_no_write_proven=0
 transform_no_write_proven=0
 all_relevant_write_aliases_resolved=0
-next_barrier_rva=0x2B235C1
-next_barrier_instruction=je
-next_barrier_effect=indirect_or_branch_cap
-reason=callee_indirect_transfer_or_branch_cap_refused
+reason=callee_write_not_proven_disjoint_from_both_protected_objects
 ```
-`memory_writes_seen=0` means the analysis stopped before write classification; it is not proof of a write-free callee.
 
 ## Objective
-Resolve only the local control flow inside authenticated 137-byte callee `0x2B23560..0x2B235E9`, beginning with exact blocker `0x2B235C1: je`, so the existing c17 write-address provenance classifier can reach and classify all relevant memory write sites.
+Resolve **only the exact 4-byte write at callee RVA `0x2B2358E`**.
 
-Do not inspect/mutate producer `0x351EB00`. Do not implement movement.
+Answer:
+1. What is the exact decoded destination operand and its base/index/displacement?
+2. What does `address_root=1` mean on every reaching state, and is the destination exactly Hero Transform + `0x10C` or merely a possible alias?
+3. What is the exact value source written by this `mov`?
+4. Does the 4-byte destination overlap the protected Transform range relevant to later Position stores (`+0x30..+0x3F`) or any carrier/provenance needed by writer continuation?
+5. Can this write be proven irrelevant/disjoint to Position XYZ/W causality, or is it a real Transform-side dependency that must be modeled?
 
-## Exact local CFG requirements
-Use authenticated complete decode/instruction boundaries. Enumerate local direct Jcc/JMP targets only inside the exact callee. Consider both Jcc successors unless an independently authenticated runtime-path restriction exists.
+Do not inspect/mutate upstream producer `0x351EB00`. Do not implement movement.
 
-Do not blindly raise c17's generic `branch_cap=4`. Decode/count the actual local branch sites in this exact 137-byte function and derive a small explicit cap from that count plus at most a tiny safety margin. Emit the actual counts.
-
-No arbitrary pointer chasing, indirect transfer expansion, nested-call expansion, recursion, cross-function traversal or open-ended fixpoint. Conflicting provenance at a merge becomes unknown/refuse. Report any real backedge/indirect/nested-call/unsupported effect exactly.
-
-Emit:
+## Exact instruction/provenance contract
+Under all existing exact exe/SHA, writer, call, callee boundary/hash/current-code gates, decode `0x2B2358E` exactly and emit compact metadata:
 ```text
-MOVEMENT_CALLEE_CFG_CONTRACT
-target_rva=0x2b23560
-target_end=0x2b235e9
-local_branch_sites=
-blocks_total=
-edges_total=
-blocks_visited=
-edges_visited=
-paths_examined=
-backedges_seen=
-indirect_transfers_seen=
-nested_calls_seen=
-first_unresolved_rva=
-first_unresolved_instruction=
-reason=
+MOVEMENT_CALLEE_WRITE_CONTRACT
+site_rva=0x2b2358e
+mnemonic=mov
+width=4
+dst_base=
+dst_index=
+dst_scale=
+dst_disp=
+dst_provenance=
+value_source_kind=
+value_source_register_or_memory=
+value_source_provenance=
+reaching_state_count=
+all_reaching_states_same_destination=0|1
+all_reaching_states_same_value_origin=0|1
 ```
+Do not publish full private callee bytes.
 
-## Reuse c17 alias analysis
-For every reachable memory write, reuse the existing c17 address provenance model and classify as:
+Use the c18 CFG states and c17 call-argument provenance to resolve `address_root=1` on every reaching path. Do not assume root identity from numbering alone. Preserve MOV/LEA/add/sub/copy chains; conflicting roots/offsets remain possible alias/refuse.
+
+Explicitly classify relative to Position/protected writer state:
 ```text
-callee_private_stack
-caller_shadow_or_return_area
-source_span_exact
-source_span_possible_alias
-hero_transform_exact
-hero_transform_possible_alias
-rip_relative_global
-known_disjoint_object
-unknown_pointer
+write_overlaps_position_range=0|1
+write_overlaps_transform_identity_or_pointer_carrier=0|1
+write_affects_writer_reload_provenance=0|1|unknown
+write_effect_relevant_to_xyz=0|1|unknown
+write_effect_relevant_to_w=0|1|unknown
 ```
+The later Position range is +0x30..+0x3F. Do not infer semantics for Transform+0x10C beyond proof.
 
-Call-time RCX/RDX are Transform-derived. Keep writer-entry RDX source span distinct. R8 is constant bits/non-pointer. R9 remains unknown unless independently proven.
+Track the source value only enough to classify constant/register/memory/computed/unknown. If the write is exactly Transform+0x10C but provably outside all Position/provenance ranges, model it as a real Transform write that is non-overlapping/irrelevant to the narrow Position proof; do not pretend the callee is Transform-write-free.
 
-Emit compact metadata per unique reachable write: RVA, width, address class/root/offset, source alias, Transform alias. Do not publish complete private callee bytes.
+## Continue only after this write is modeled
+If all paths to `0x2B2358E` have exact destination/value provenance and the write is proven irrelevant to protected Position/provenance, feed a modeled safe effect back into c18 analysis and continue to the next reachable write/control effect. Then either finish the callee and resume writer proof from `0x2CFC92C`, or report the next exact blocker.
 
-`source_span_no_write_proven=1` and `transform_no_write_proven=1` require every reachable write to be disjoint from the respective protected object. Any exact alias or unknown address is a blocker.
+Do not blanket-set `transform_no_write_proven=1` when a real Transform write exists. Introduce/retain a narrower certificate such as `transform_position_protected_range_unmodified=1` / `relevant_transform_effects_resolved=1` and make writer continuation depend on what is actually required.
 
-## Resume writer proof only after alias PASS
-Only after:
-```text
-all_relevant_write_aliases_resolved=1
-source_span_no_write_proven=1
-transform_no_write_proven=1
-```
-may writer proof resume from `0x2CFC92C` to exact stores `0x2CFC936/93C/942/945`.
-
-Update CALL_CONTRACT, CALLEE_CFG_CONTRACT, CALLEE_ALIAS_CONTRACT, RDX_BRANCH_CONTRACT, XYZ_PROOF and W_PROOF. Report any later exact writer blocker and stop. W remains independent.
-
-## Runtime observation
-Prefer static exact-CFG/address provenance. Only if one exact pointer-root ambiguity remains, add the smallest bounded read-only observation for max8 eligible invocations/session. Do not use before/after equality to rule out transient writes. No PAGE_GUARD, no game-call invocation, no generic tracing.
+Prefer static proof. Only if one exact pointer-root ambiguity remains, add the smallest bounded read-only observation for max8 eligible invocations/session: effective destination address, Transform address, source-span address, value bits, return/session/thread identity, code integrity. No mutation, PAGE_GUARD, generic tracing or manual callee invocation.
 
 ## Safety boundary
-Even a complete writer certificate leaves:
+Even if c19 clears this write and completes writer XYZ/W causality:
 ```text
 writable_source_proven=0
 caller_owned=0
@@ -140,38 +141,35 @@ source_lifetime_exclusive=0
 downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
-unchanged.
+remain unchanged. Producer `0x351EB00` stays deferred.
 
-Preserve c7-c17 lifecycle/orientation/stale/hard-kill/secondary/publication-refresh/DR-watch/direct-call/entry-pairing/accounting/branch/call-target/callee-identity/logging/cleanup protections. Preserve `log_wallsprint\WallSprint_YYYYMMDD-HHMMSS.log` with no shared-logs fallback.
-
-## Prohibited in c18
-No Actor/Transform Position write, RDX/source/stack mutation, input rewrite, custom movement/velocity/gravity, adhesion correction, upstream producer traversal, camera/animation/traversal, PAGE_GUARD/data-page protection mutation, guessed native game calls, raw log publication, or complete private body distribution.
+Preserve all c7-c18 lifecycle/orientation/stale/hard-kill/secondary/publication-refresh/DR-watch/direct-call/entry-pairing/accounting/callee identity/CFG/logging/cleanup protections.
 
 ## Tests
-Cover exact local CFG with >4 branches, both-successor reconvergence, function-derived cap, conflicting-root merge refusal, Transform-derived RCX/RDX writes, source-span distinction, private-stack/global safe writes, source/Transform exact aliases, unknown R9 write blocker, local backedge/indirect/nested-call refusal, alias-safe writer continuation, all c17 regressions and logging behavior.
+Cover exact Transform+0x10C non-overlap continuation, Position-range overlap refusal, conflicting roots/displacements, value-origin classes, later reload-carrier dependency, modeled irrelevant Transform write followed by continuation, exact later blocker reporting, all c18 regressions and logging.
 
 ## Human test
 If needed after cloud validation:
 ```text
-A/cardinal ~4 s -> fully end WallRun -> move/fast-travel -> E/diagonal ~4 s -> send newest complete file from log_wallsprint
+A/cardinal ~4 s -> fully end WallRun -> move/fast-travel -> E/diagonal ~4 s -> send newest complete timestamped file from log_wallsprint
 ```
 No special input. Video only for visible anomaly.
 
 ## PASS
-A. Exact callee CFG bounded, all reachable write aliases resolved, source/Transform no-write proven, writer proof advances or reports a later exact blocker.
+A. `0x2B2358E` destination/value/effect is exact and irrelevant to protected Position/provenance; analysis advances to next exact blocker or completes callee/writer causality.
 
-B. One narrower exact callee/write/CFG blocker is reported with all safety gates preserved.
+B. One exact unresolved/relevant effect at `0x2B2358E` is identified more precisely than c18, with all safety gates preserved.
 
 Do not implement movement automatically.
 
 ## Required outputs
 ```text
-analysis/V01C17_RUNTIME_RESULT.md
-analysis/V01C18_CALLEE_BRANCH_ALIAS.md
-analysis/V01C18_GATE.md
+analysis/V01C18_RUNTIME_RESULT.md
+analysis/V01C19_TRANSFORM_WRITE_CONTRACT.md
+analysis/V01C19_GATE.md
 analysis/RDX_XYZ_SOURCE_CONTRACT.md
 README_TEST.md
 docs/PROJECT_STATE.md
 docs/CODEX_RESULT.md
 ```
-Package c18 diagnostic release/source per existing rules.
+Package c19 diagnostic release/source per existing rules.
