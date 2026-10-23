@@ -1,0 +1,110 @@
+{
+  "version": "v0.1c13",
+  "package_version": "0.1.31",
+  "branch": "codex/v01c13-writer-entry-snapshot",
+  "base_delivery_commit": "c966d233787504dda88f65d1825c5c1c408a2d67",
+  "precreated_handoff_commit": "6e475d10ef2c1c14a1e878e7e2bae689f0fe9dc9",
+  "implementation_commit": "eb257e340be347d6ac17358efeb61eaa6a83066e",
+  "outputs": [
+    {
+      "path": "WallSprint_v0.1c13_writer_entry_snapshot.zip",
+      "bytes": 2929070,
+      "sha256": "cd5d795ae3f971e367a9c41b440cf20503c830b6d3ea5c3c0eb6e2313ca5bcab"
+    },
+    {
+      "path": "WallSprint_v0.1c13_source.zip",
+      "bytes": 618099,
+      "sha256": "92ed4ebcdff4d06e90d272e29417b4942ff29ee666b02c51698bec3df0babb93"
+    }
+  ],
+  "test_pass_counts": {
+    "portable": 13,
+    "smoke": 4,
+    "hooks": 58
+  },
+  "total_pass": 75,
+  "historical_private_skips": 4,
+  "new_entry_suite_pass_records_included_in_total": 5,
+  "final_complete_suite_execution": "PASS_serial",
+  "intermediate_repeated_integration_failure": "Expected capture marker missed; exact cause not established; isolated and final serial complete suite passed; diagnostic output now saved on failure; no assertions or gates weakened",
+  "standalone_source_build": "PASS_private_game_captures_absent",
+  "archive_current_source_docs_CRC_script_hash_license_private_body_exclusion": "PASS",
+  "c12_native_source_lifecycle_and_static_proof_byte_identical": true,
+  "CODEX_NEXT_preserved": true,
+  "PROJECT_STATE_updated_as_required": true,
+  "owned_entry_fixture": {
+    "true_entry_snapshots": 8,
+    "complete_distinct_invocation_maps": 7,
+    "hardware_store_events_paired": 28,
+    "concurrent_writer_threads": 2,
+    "reentrant_writer_test": true,
+    "entry_cap": 8,
+    "pointer_candidate_exact_four_component_and_lane_matrix_matches": 7,
+    "raw_ABI_flags_GPR_XMM_YMM_x87_MXCSR_LastError_return": "PASS",
+    "hash_boundary_identity_stale_guard_candidate_chain_negative_tests": "PASS",
+    "synchronous_cancel_owned_unhook_foreign_patch_refusal": "PASS"
+  },
+  "owned_A_E_orientation": [
+    {
+      "session": "1",
+      "wallrun_duration_ms": "4116",
+      "source_active_until_deinit": "1",
+      "verified_deinit": "1",
+      "path_a_writes": "177",
+      "path_b_writes": "177",
+      "max_held_ms": "2120",
+      "max_held_updates": "131",
+      "retention_pass": "1",
+      "last_actor_up_dot_surface": "1",
+      "first_hard_kill": "none",
+      "hard_kill_calls": "0"
+    },
+    {
+      "session": "2",
+      "wallrun_duration_ms": "4101",
+      "source_active_until_deinit": "1",
+      "verified_deinit": "1",
+      "path_a_writes": "178",
+      "path_b_writes": "178",
+      "max_held_ms": "2141",
+      "max_held_updates": "132",
+      "retention_pass": "1",
+      "last_actor_up_dot_surface": "1",
+      "first_hard_kill": "none",
+      "hard_kill_calls": "0"
+    }
+  ],
+  "owned_A_E_position_watch": [
+    {
+      "session": "1",
+      "watch_armed": "1",
+      "threads_seen": "2",
+      "threads_installed": "1",
+      "unique_writers": "1",
+      "total_write_events": "12",
+      "dropped": "0",
+      "cleanup_restored": "1",
+      "cleanup_pending": "0",
+      "Position_writes_by_mod": "0"
+    },
+    {
+      "session": "2",
+      "watch_armed": "1",
+      "threads_seen": "2",
+      "threads_installed": "1",
+      "unique_writers": "1",
+      "total_write_events": "12",
+      "dropped": "0",
+      "cleanup_restored": "1",
+      "cleanup_pending": "0",
+      "Position_writes_by_mod": "0"
+    }
+  ],
+  "actual_c12_A_E_orientation_and_direct_callsite": "VERIFIED_compact_human_handoff",
+  "actual_c13_entry_source_hitch_cleanup_A_E": "PENDING_human_run",
+  "safe_upstream_writable_source_authenticated": false,
+  "Position_writes_by_mod": 0,
+  "movement_input_source_adhesion_injection": false,
+  "private_full_game_bytes_distributed": false,
+  "exact_next_edge": "Adjudicate actual c13 entry/store component and lane matches; trace candidate construction/lifetime in caller0x351eea7..0x351eec5 and observed caller2 chain; XYZ/W causal semantics/downstream conflicts/exclusive intended effects remain unproven"
+}
