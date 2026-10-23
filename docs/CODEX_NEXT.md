@@ -1,368 +1,386 @@
-# Next task — WallSprint v0.1c11 Movement Path Ownership / Translation Writer Attribution
+# Next task — WallSprint v0.1c12 Movement Source Lineage / Upstream Translation Ownership
 
 ## Implementation base
 
-Use c10 delivery head exactly:
+Use c11 delivery head exactly:
 
 ```text
-base branch: codex/v01c10-secondary-publication-race
-implementation commit: 609fdf935e40947d7aad29fea4bed5f2cf3d0e2e
-published c10 head: 6246fd6d2e52cf81e18e6ff8ffd4d8ee4d863aa1
-version: v0.1c10 / package 0.1.28
+base branch: codex/v01c11-movement-path-ownership
+implementation commit: 2129e69fe003e71bf705fb67f723b447cf3e3764
+published c11 head: 9593f0230e220770f2b34faf512ca4108c1825cc
+version: v0.1c11 / package 0.1.29
 ```
 
 Pre-created branch:
 
 ```text
-codex/v01c11-movement-path-ownership
+codex/v01c12-movement-source-lineage
 ```
 
 Read first:
 
-- `analysis/V01C10_RUNTIME_RESULT.md`
-- `analysis/PATH_A_POSITION_PROOF.md`
-- `analysis/PLANAR_ADHESION.md`
+- `analysis/V01C11_RUNTIME_RESULT.md`
+- `analysis/POSITION_WRITER_ATTRIBUTION.md`
+- `analysis/PATH_A_POSITION_CAUSALITY.md`
+- `analysis/MOVEMENT_SOURCE_OWNERSHIP.md`
 - `docs/PROJECT_STATE.md`
-- c10 branch `docs/CODEX_RESULT.md`
+- c11 branch `docs/CODEX_RESULT.md`
 
-## Authoritative c10 human result
+## Authoritative c11 human result
 
-Two real WallRun sessions completed cleanly through verified Deinit.
+Human sequence was A/cardinal first, then E/diagonal.
 
-Diagonal session:
-
-```text
-N398 ≈ (-0.70710677, 0, +0.70710677)
-wallrun_duration_ms=4172
-source_active_until_deinit=1
-retention_pass=1
-last_actor_up_dot_surface=1
-hard_kill_calls=0
-secondary seen/admitted/overridden/rejected=102/102/102/0
-```
-
-Cardinal session:
+Both sessions preserved orientation through verified Deinit with no Position writes by the mod.
 
 ```text
-wallrun_duration_ms=3421
-source_active_until_deinit=1
-retention_pass=1
-last_actor_up_dot_surface=1
-hard_kill_calls=0
-secondary seen/admitted/overridden/rejected=161/161/161/0
+A: wallrun_duration_ms=4125, retention_pass=1, last_actor_up_dot_surface=1, hard_kill_calls=0
+E: wallrun_duration_ms=4063, retention_pass=1, last_actor_up_dot_surface≈0.99999994, hard_kill_calls=0
 ```
 
-Across the c10 human log:
+Both Position-watch windows:
 
 ```text
-post-transition actor_up=(0,1,0) observations=0
-secondary_source_publication_changed=0
-Position writes by mod=0
+watch_armed=1
+threads_seen=128
+threads_installed=126
+unique_writers=14
+total_write_events=256
+cleanup_restored=1
+cleanup_pending=0
+Position_writes_by_mod=0
 ```
 
-The c10 bounded publication-refresh branch did not naturally fire in that log; deterministic c10 fixtures are the evidence for the actual race branch. This does not block movement-path discovery.
+## New runtime evidence
 
-## Deferred visual alignment
+A real Transform Position writer family was captured:
 
-The user has visually identified:
+```text
+writer_function_rva=0x2CFC900
+store RVAs=0x2CFC936 / 0x2CFC93C / 0x2CFC942 / 0x2CFC945
+Transform destinations=+0x30 / +0x34 / +0x38 / +0x3C
+```
 
-- excessive apparent wall standoff / floating feet;
-- body/root lean relative to the apparent surface compared with normal ground running.
+The caller chain that correlated with actual translation on both A and E was:
 
-Do **not** solve these in c11. Record them as a later visual-alignment/contact pass. c11 is about movement ownership only.
+```text
+caller return RVA=0x351EEB0
+caller2 return RVA=0x351A020
+consumer writer=0x2CFC900
+```
+
+Examples:
+
+- A: the 0x351EEB0 path changed Y/Z while X (surface normal) stayed essentially fixed.
+- E: the same path changed X/Y/Z; combined worker finite-difference deltas remained predominantly surface-tangent.
+
+Path A `0x2CFC580` also touches Position and can produce a full-row post-writer match with its caller-local `source+0x30`, but c11 observed downstream Position writes and did not prove exclusive effects. Therefore Path A Position remains denied.
+
+No real runtime candidate reached `writable_source_proven=1`.
 
 ## Objective
 
-Identify and authenticate the native/caller-local data path that actually advances Hero translation during verified WallRun, so the next revision can implement surface-relative movement upstream and safely.
-
-**c11 is diagnostic/read-only with respect to movement and Position.**
-
-Do not directly write Actor Transform Position, do not alter the candidate Path A Position row, and do not add a custom velocity/gravity system in this task.
-
-The preferred outcome is a proof-quality answer to:
+Trace and authenticate the source lineage that feeds the movement-producing call chain centered on:
 
 ```text
-Which writer(s) update Hero Transform Position during WallRun?
-What caller/source data produces those updates?
-Is Path A source+0x30 actually causal for Position?
-If not, what safer upstream velocity/displacement source should c12 own?
+0x351EEB0 -> 0x2CFC900
+caller2 ≈ 0x351A020
 ```
 
-## Required work
+Determine whether the upstream payload represents:
 
-### 1. Preserve c10 orientation exactly
-
-Do not regress:
-
-- exact build/SHA gate;
-- c7 stale suspend/resume;
-- c8 first hard-kill attribution;
-- c9 secondary-thread Path B admission;
-- c10 bounded publication refresh/revalidation;
-- Path A/B orientation behavior;
-- no direct Actor Transform writes;
-- Position writes remain zero.
-
-The c11 diagnostics must not change the c10 Surface Up result.
-
-### 2. Add bounded Hero Position writer observation
-
-Observe writes to the current verified Hero Transform Position row:
-
-```text
-Transform + 0x30 .. +0x3F
-```
-
-The read layout already used by the SDK establishes XYZ at `+0x30/+0x34/+0x38`; c11 must also observe/read `+0x3C` only as bounded read-only diagnostic data, without assuming its semantic meaning in advance.
-
-Use hardware data breakpoints / existing watch infrastructure rather than PAGE_GUARD or page-protection mutation.
-
-Coordinate with the existing Up writer watch so the two diagnostics do not fight over DR0-DR3. Preferred policy:
-
-- keep the existing early orientation watch unchanged;
-- after full Surface Up/retention and after the old bounded Up watch has ended, arm a separate bounded Position watch;
-- use at most the available hardware slots and preserve/restore foreign DR state exactly;
-- no unbounded rescans or persistent process-wide debugging.
-
-A reasonable real window is roughly `t >= 1.55 s` for ~0.4–0.8 s, but derive the exact window from existing coordinator timing and tests rather than hardcoding an unsafe overlap.
-
-### 3. Attribute actual Position writers
-
-For each unique writer identity, capture bounded evidence such as:
-
-```text
-POSITION_WRITE_EVENT
-session=
-elapsed=
-thread_id=
-rip/module_rva=
-writer_function_rva=
-caller_rva=
-caller2_rva=
-target_transform=
-slot_mask=
-position_before=(x,y,z,w?)
-position_after=(x,y,z,w?)
-delta=(dx,dy,dz)
-delta_normal=
-delta_surface_forward=
-delta_surface_right=
-relative_us_from_last_path_a=
-relative_us_from_last_path_b=
-classification=
-```
-
-Do not spam per-frame logs. Keep a strict event cap per unique writer and aggregate hit counts.
-
-Add a final summary:
-
-```text
-POSITION_WRITER_SUMMARY
-session=
-watch_armed=
-threads_seen=
-threads_installed=
-unique_writers=
-total_write_events=
-writer_1_rva=/hits=
-writer_2_rva=/hits=
-...
-unknown_writer_events=
-cleanup_restored=
-```
-
-### 4. Decompose translation in SurfaceFrame
-
-For observed consecutive Hero Position samples, compute:
-
-```text
-delta = P_now - P_prev
-normal_component = dot(delta, SurfaceUp/N398)
-forward_component = dot(delta, SurfaceForward)
-right_component = dot(delta, SurfaceRight)
-```
-
-Also record `dt` and a finite-difference velocity estimate for correlation only.
-
-This is diagnostic decomposition, not a physics claim.
-
-Add bounded samples such as:
-
-```text
-MOVEMENT_DELTA_SAMPLE
-session=
-native_update=
-dt_ms=
-delta_world=(...)
-delta_normal=
-delta_forward=
-delta_right=
-speed_estimate=
-N398=(...)
-```
-
-### 5. Revisit Path A source+0x30 Position causality
-
-c6 established only a candidate source row and pre-writer equality; it did **not** prove causal copy or exclusive effects.
-
-Use c11 writer-watch/runtime evidence plus complete bounded static inspection to answer whether the authenticated Path A writer/caller actually propagates:
-
-```text
-source+0x30/+0x34/+0x38/+0x3C
-```
-
-to the verified Hero Transform Position row.
-
-If Path A is observed as a Position writer, prove at minimum:
-
-- exact destination offsets/instructions;
-- exact source lineage for all Position components actually written;
-- caller-local source provenance still matches authenticated stack relation;
-- post-writer target XYZ equals the expected source/result when that writer executes;
-- behavior of the fourth component is observed and documented, not guessed;
-- any calls/branches that can alter or duplicate Position effect are accounted for;
-- whether other Position writers immediately overwrite the result;
-- whether modifying this source can reasonably be isolated to intended Hero translation rather than other transform metadata.
-
-Do not set `admitted=1` from simple source/Hero equality alone.
-
-Emit:
-
-```text
-PATH_A_POSITION_CAUSALITY_PROOF
-admitted=0|1
-writer_verified=
-caller_verified=
-stack_relation_verified=
-source_offsets=
-destination_offsets=
-post_writer_match=
-position_w_observed=
-downstream_overwrite_observed=
-exclusive_effects_proven=
-reason=
-```
-
-### 6. Prefer a safer upstream movement source if one exists
-
-Analyze the authenticated WallRun Entry/Update and the newly identified Position writer/caller chain for a caller-local or native source representing:
-
+- final/target Position;
 - displacement;
 - velocity;
 - desired movement direction;
 - root-motion translation;
-- another tangent-motion vector upstream of final Transform Position.
+- another locomotion vector.
 
-A safe upstream vector is preferable to manually incrementing Transform Position.
+The preferred outcome is a safe caller-local/native source contract that a later revision can rewrite in SurfaceFrame coordinates without direct Actor Position spam.
 
-If a candidate is found, document exact provenance and runtime correlation, but **do not modify it in c11**.
+**c12 remains movement-read-only unless an upstream source contract is independently proven. Do not implement player input rewriting yet.**
 
-Emit one bounded candidate table:
+## Required work
+
+### 1. Preserve c11/c10 behavior
+
+Do not regress:
+
+- exact exe/SHA admission;
+- c7 stale recovery;
+- c8 first hard-kill attribution;
+- c9 secondary Path B admission;
+- c10 bounded publication refresh;
+- c11 Position watch and movement-delta diagnostics;
+- A/B Surface Up orientation;
+- Position writes by mod = 0.
+
+### 2. Authenticate writer 0x2CFC900 as a concrete runtime function
+
+Use the accepted build and runtime function metadata to establish the exact function boundary containing `0x2CFC900`.
+
+At minimum record:
+
+```text
+MOVEMENT_WRITER_PROOF
+writer_rva=0x2cfc900
+function_begin=
+function_end=
+function_size=
+complete_decode=
+current_code_hash=
+position_store_offsets=
+position_destination_offsets=
+entry_target_relation=
+reason=
+```
+
+The c11 runtime hash may be used as evidence, but do not treat one runtime hash alone as proof of exclusive semantics. Do not log or commit a full private function body.
+
+### 3. Prove the 0x351EEB0 callsite/caller relation
+
+Identify the exact call instruction whose return address is `0x351EEB0`, prove that it targets `0x2CFC900`, and derive the containing caller function boundary.
+
+Also attribute the observed `caller2≈0x351A020` chain.
+
+Emit bounded evidence:
+
+```text
+MOVEMENT_CALLSITE_PROOF
+return_rva=0x351eeb0
+call_rva=
+target_rva=0x2cfc900
+direct_call_verified=
+caller_function_begin=
+caller_function_end=
+caller_hash=
+caller2_return_rva=
+reason=
+```
+
+### 4. Capture writer-entry source provenance
+
+For Hero-target calls from exactly the verified `0x351EEB0` callsite, capture only bounded read-only entry data needed to explain the four Position stores.
+
+Determine which entry registers / stack locations / pointed source values ultimately feed:
+
+```text
+Transform+0x30
+Transform+0x34
+Transform+0x38
+Transform+0x3C
+```
+
+Use complete instruction/data-flow analysis across the 0x2CFC900 function, not just scalar store observation.
+
+Emit:
+
+```text
+MOVEMENT_WRITER_SOURCE_MAP
+caller_rva=0x351eeb0
+source_component_x=
+source_component_y=
+source_component_z=
+source_component_w=
+source_kind=register|stack|pointer|computed|unknown
+source_span=
+source_readable=
+source_identity_stable=
+post_store_match=
+position_w_semantics_observed=
+```
+
+No source modification in this task.
+
+### 5. Backtrace source construction in the 0x351EEB0 caller
+
+Once the writer-entry source is known, walk backward through the verified caller to find where that payload is constructed.
+
+Classify the nearest safe semantic layer:
+
+```text
+final_target_position
+position_plus_delta
+displacement
+velocity_times_dt
+root_motion_delta
+desired_direction_times_speed
+unknown
+```
+
+If the caller is too complex for a full general CFG proof, use bounded runtime correlation plus explicit unsupported edges rather than guessing.
+
+Emit:
+
+```text
+MOVEMENT_CALLER_SOURCE_PROOF
+caller_rva=0x351eeb0
+source_storage=
+construction_kind=
+producer_rva=
+producer_caller_rva=
+uses_current_position=0|1
+uses_dt=0|1
+uses_direction_like_vector=0|1
+uses_speed_like_scalar=0|1
+surface_tangent_correlation=
+exclusive_to_hero_translation=
+writable_source_proven=0|1
+reason=
+```
+
+### 6. Correlate with A and E translation
+
+Keep c11 finite-difference samples and add a bounded correlation record for the 0x351EEB0 source payload.
+
+For each sampled call, compare the predicted/derived XYZ update with observed Hero translation and SurfaceFrame decomposition:
+
+```text
+MOVEMENT_SOURCE_CORRELATION
+session=
+elapsed=
+source_before=(...)
+source_after_or_payload=(...)
+observed_position_before=(...)
+observed_position_after=(...)
+predicted_delta=(...)
+observed_delta=(...)
+delta_error=
+delta_normal=
+delta_forward=
+delta_right=
+```
+
+Do not claim physics velocity from finite differences alone.
+
+### 7. Distinguish Path A Position from actual locomotion ownership
+
+Continue to observe Path A Position events only as comparison.
+
+The expected c11 pattern is:
+
+```text
+Path A may copy/match Position row
+then other Position writers can update/overwrite translation
+```
+
+Do not upgrade Path A `source+0x30` unless c12 independently proves caller construction, W behavior, downstream/exclusive effects and that it is the intended movement-control point.
+
+### 8. Search for a safer upstream tangent vector
+
+From the authenticated `0x351EEB0` caller and its producer chain, prefer a source that is earlier than final target Position if available:
+
+- tangent displacement;
+- velocity;
+- desired direction;
+- root-motion delta.
+
+For each candidate emit:
 
 ```text
 MOVEMENT_SOURCE_CANDIDATE
 candidate_id=
 producer_rva=
 consumer_rva=
-source_kind=position|displacement|velocity|direction|root_motion|unknown
+source_kind=
 storage_or_stack_location=
-wallrun_owned=0|1
-hero_target_verified=0|1
-correlates_with_translation=0|1
+hero_target_verified=
+wallrun_owned=
+correlates_with_translation=
 surface_tangent_relation=
-writable_source_proven=0|1
+writable_source_proven=
 reason=
 ```
 
-If no safe upstream candidate can be authenticated, say so explicitly.
+If one reaches `writable_source_proven=1`, document the exact future write contract but still do not perform the write in c12.
 
-### 7. No input rewrite yet
+### 9. Optional input observation only after movement source is known
 
-Do not hook or rewrite controller/keyboard input in c11.
+Do not hook/rewrite input.
 
-You may document already-visible input/control accesses in the authenticated WallRun code if static/runtime evidence supports them, but do not add a speculative input ABI or new game call.
+If an authenticated movement source exposes a direction-like vector, c12 may add **read-only** correlation against already-known game/control fields or existing runtime data, but must not invent an input ABI or add a speculative game call.
 
-The next task will map input into SurfaceFrame only after c11 establishes a safe movement source.
-
-### 8. Safety / fail-closed requirements
+### 10. Safety
 
 No:
 
-- direct Actor Position write;
-- Path A Position modification;
+- direct Actor/Transform Position writes;
+- Path A Position writes;
+- 0x351EEB0/0x2CFC900 source writes;
+- input rewriting;
+- custom velocity/gravity;
 - active adhesion correction;
-- custom gravity;
-- movement injection;
-- PAGE_GUARD/protection changes;
+- PAGE_GUARD/protection mutation;
 - camera/animation/wall jump/corners/ceilings/parkour/swing/combat.
 
-If writer attribution cannot be made safe with current hardware-watch capacity or thread coverage, fail closed and ship the strongest bounded diagnostic result instead of broadening to invasive instrumentation.
+If exact source lineage cannot be proven, ship a diagnostic PASS with the precise missing edge.
 
-### 9. Tests
+## Tests
 
 Add offline/native tests for:
 
-- Position watch arm/restore and foreign DR preservation;
-- writer identity aggregation/event caps;
-- SurfaceFrame delta decomposition on cardinal and diagonal normals;
-- Path A Position causal-positive synthetic fixture;
-- computed/partial/multi-writer/overwrite negative fixtures;
-- fourth-component mismatch;
-- wrong caller/target/thread/stack/session/generation/Deinit/stale cases;
-- c10 orientation regression unchanged while Position watch is inactive and while it is active after the Up watch window.
+- direct callsite/return verification;
+- complete 0x2CFC900-like scalar Position-store source lineage;
+- source pointer/register/stack variants;
+- computed target Position / displacement / velocity-times-dt patterns;
+- partial/multi-writer/downstream-overwrite negative cases;
+- W mismatch and metadata preservation;
+- wrong Hero/Transform/caller/thread/session/generation/Deinit/stale cases;
+- A/E SurfaceFrame correlation;
+- unchanged c10/c11 orientation and Position-write-zero guarantees.
 
-Do not ship private full game-function bodies.
+No private full game-function bodies in the repository/package.
 
 ## Human test
 
-Use the c11 package on the same large planar walls.
+Use the c12 package on the same planar walls.
 
 Preferred sequence:
 
 ```text
-1. one continuous ~4 s cardinal/A-style WallRun
-2. one continuous ~4 s diagonal/E-style WallRun
+1. A/cardinal continuous WallRun ~4 s
+2. E/diagonal continuous WallRun ~4 s
 ```
 
-No special stick pattern is required for c11 unless README_TEST explicitly adds one based on an authenticated input observation discovered during implementation.
+No special stick pattern is required unless README_TEST explicitly introduces a read-only correlation pattern based on a source that c12 actually authenticates.
 
 Report:
 
-- whether c10 surface-relative posture still holds visually;
-- crash/hitch/freeze if any;
-- full private WallSprint log.
+- posture/orientation still visually stable;
+- any hitch/freeze/crash;
+- complete private WallSprint log.
 
-The important c11 evidence is diagnostic; no visible movement change is expected.
+No visible movement behavior change is expected.
 
 ## PASS criteria
 
-Full c11 proof PASS:
+Full c12 PASS:
 
 ```text
-c10 orientation still holds to verified Deinit
+c11/c10 orientation preserved through verified Deinit
 Position writes by mod=0
-bounded Position watch arms and restores cleanly
-actual Hero Position writer identity/identities captured
-SurfaceFrame translation decomposition valid on cardinal and diagonal runs
-PATH_A_POSITION_CAUSALITY_PROOF has an evidence-based admitted/rejected result
-at least one safe upstream movement source is authenticated, OR exact blocker is identified
-no hard kill/crash/foreign DR corruption
+0x2CFC900 writer boundary/store map authenticated
+0x351EEB0 direct callsite -> 0x2CFC900 proven
+entry source lineage for XYZ/W identified
+caller-side source construction classified
+runtime source-to-translation correlation validated on A and E
+one safe upstream movement source reaches writable_source_proven=1
+no crash/hard kill/DR corruption
 ```
 
-A diagnostic PASS is acceptable if no writable movement source is admitted, provided the task identifies the exact missing proof needed for the next step.
+Diagnostic PASS is acceptable if the exact remaining proof blocker is isolated.
 
-Do **not** proceed to actual surface-relative input rewriting inside c11.
+Only after a safe source is admitted should the following task implement a minimal surface-relative movement/source rewrite.
 
 ## Required outputs
 
 Update/create:
 
 ```text
-analysis/V01C10_RUNTIME_RESULT.md
-analysis/POSITION_WRITER_ATTRIBUTION.md
-analysis/PATH_A_POSITION_CAUSALITY.md
-analysis/MOVEMENT_SOURCE_OWNERSHIP.md
-analysis/V01C11_GATE.md
+analysis/V01C11_RUNTIME_RESULT.md
+analysis/MOVEMENT_WRITER_2CFC900.md
+analysis/MOVEMENT_CALLER_351EEB0.md
+analysis/MOVEMENT_SOURCE_LINEAGE.md
+analysis/V01C12_GATE.md
 README_TEST.md
 docs/CODEX_RESULT.md
 ```
@@ -370,7 +388,7 @@ docs/CODEX_RESULT.md
 Package:
 
 ```text
-WallSprint_v0.1c11_movement_path_ownership.zip
+WallSprint_v0.1c12_movement_source_lineage.zip
 ```
 
 Follow `AGENTS.md` / `docs/DEV_RULES.md`. Do not commit raw user logs/video/screenshots or private full captured game-function bytes.
