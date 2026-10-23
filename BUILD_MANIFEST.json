@@ -2,8 +2,8 @@
   "version": "v0.1c17",
   "package_version": "0.1.35",
   "artifact": "WallSprint.script",
-  "sha256": "301971229c17ed0c6d11f03d236e5031222b187445af4f2e5acbbd4fb6e930fd",
-  "dll_sha256": "44becb8ec373f9cf5a54a9d03d0ba398ad0150c073e2a2b144315646aeb835e8",
+  "sha256": "b6a0da38d6440c4a9d338c3239ac8c125a02a3c5f5797c0a2224b3989f93fdda",
+  "dll_sha256": "550eecb23b14997842c78da2e8061cc62bf72c2ad68bf42e868ea6ba6539ea52",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -647,5 +647,17 @@
     "input_mutation": false,
     "data_page_protection_changes": false,
     "private_full_game_bodies_distributed": false
+  },
+  "isolated_logging": {
+    "directory": "game-root/log_wallsprint",
+    "filename": "WallSprint_YYYYMMDD-HHMMSS.log",
+    "filename_clock": "host_local_GetLocalTime",
+    "line_clock": "UTC_unchanged",
+    "collision_creation": "CREATE_NEW_atomic",
+    "maximum_suffix": 9999,
+    "overwrite_existing": false,
+    "same_loaded_module_reenable": "append_selected_run",
+    "shared_logs_fallback": false,
+    "failure_channel": "OutputDebugString_stage_path_Win32Error"
   }
 }

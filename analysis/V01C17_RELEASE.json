@@ -2,26 +2,26 @@
   "version": "v0.1c17",
   "package_version": "0.1.35",
   "branch": "codex/v01c17-callee-alias-contract",
-  "base_handoff_commit": "74a4c49487f9363792b9924b3634ca6eefd57f42",
-  "implementation_commit": "be59ac2004f6810e5ea362e0de28a02f9c4cf8f4",
+  "base_handoff_commit": "6836fec60e146eaae6dc38d95ff096d2654269b9",
+  "implementation_commit": "d1867bb2de42079a46ceb547f8fccc4d477ae18d",
   "outputs": [
     {
       "path": "WallSprint_v0.1c17_callee_alias_contract.zip",
-      "bytes": 3177530,
-      "sha256": "fa106404ccafa37c30029555502c9d02bcadda728d7e8ccb94ff00a987dad54f"
+      "bytes": 3201383,
+      "sha256": "bf83737088fbe00abf30b54392c3fe8df63dabd097e6d1562b3ef32c04a402f5"
     },
     {
       "path": "WallSprint_v0.1c17_source.zip",
-      "bytes": 687151,
-      "sha256": "6b601c89846e38006690d49e53dd86b3571b829db74442a177990856c9511361"
+      "bytes": 694512,
+      "sha256": "763da511369e0bdf07772891e3181fc0b1298f16ad2b492ded5de35026b1f221"
     }
   ],
   "public_test_pass_records": {
     "portable": 13,
-    "smoke": 4,
+    "smoke": 7,
     "hooks": 83
   },
-  "total_public_pass_records": 100,
+  "total_public_pass_records": 103,
   "public_private_input_skip_records": 5,
   "separate_private_replay_pass_records": 4,
   "private_replay_duplicate_baseline_record": 1,
@@ -36,6 +36,7 @@
   },
   "standalone_source_build": "PASS_private_captures_absent",
   "standalone_focused_pass_records": 34,
+  "standalone_dll_smoke_pass_records": 7,
   "archives_CRC_current_complete_sources_docs_script_hash_licenses_private_body_exclusion": "PASS",
   "native_orientation_lifecycle_c12_analyzer_c13_thunk_c14_c15_finalization_stop_cleanup_unchanged": true,
   "legacy_State_Slice_writer_caller_producer_and_c15_CFG_setup_unchanged": true,
@@ -107,6 +108,8 @@
   ],
   "human_c16": "ACCEPTED_A3875_E4203_diagnostic_PASS_exact_137byte_callee_boundary_hash_first_MOV_alias_blocker",
   "actual_c17_callee_alias_result_or_narrower_blocker": "PENDING_human_A_E",
+  "isolated_logging": "PASS_owned_Win32_path_time_collision_concurrent_append_failure_no_shared_fallback_and_actual_DLL_integration",
+  "actual_game_log_folder": "PENDING_human_run",
   "safe_upstream_writable_source_authenticated": false,
   "Position_writes_by_mod": 0,
   "source_input_movement_mutation": false,

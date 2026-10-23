@@ -1,13 +1,13 @@
 # Codex result — WallSprint v0.1c17
 
 Branch: **codex/v01c17-callee-alias-contract**.
-Implementation commit: **be59ac2004f6810e5ea362e0de28a02f9c4cf8f4**.
+Implementation commit: **d1867bb2de42079a46ceb547f8fccc4d477ae18d**.
 Pre-created handoff/base: **74a4c49487f9363792b9924b3634ca6eefd57f42**.
-C16 implementation0a00bde / delivery8f66b15 retained. AGENTS/DEV_RULES/CODEX_NEXT unchanged; PROJECT_STATE updated as explicitly requested. No main rewrite/force push.
+C16 implementation0a00bde / delivery8f66b15 retained. Updated task instructions6836fec60e146eaae6dc38d95ff096d2654269b9 were merged and implemented, including isolated logging; alias implementation be59ac2 is retained in history. AGENTS/DEV_RULES/CODEX_NEXT unchanged; PROJECT_STATE updated as explicitly requested. No main rewrite/force push.
 
 ## Outcome / evidence boundary
 
-**v0.1c17 / package0.1.35 implements pinned137byte callee write-address alias diagnostics using exact writer pre-call provenance. Cloud build/tests PASS. Actual c17 alias result, XYZ/W advancement or narrower exact callee blocker remains PENDING human A/E.**
+**v0.1c17 / package0.1.35 implements pinned137byte callee write-address alias diagnostics using exact writer pre-call provenance and dedicated timestamped logging. Cloud build/tests PASS. Actual c17 alias result, XYZ/W advancement or narrower exact callee blocker and game-install logging verification remain PENDING human A/E.**
 
 Human c16 A3875ms/E4203ms is accepted: verified Deinit/retention/Surface Up, hard0/stale0/Position writes0,8 complete entry maps each, source XYZ mask7/sourceW0/destinationW1 and clean diagnostic/watch restoration. A naturally admitted one bounded publication refresh. Exact call0x2CFC927 ->0x2B23560, return0x2CFC92C, boundary0x2B23560..0x2B235E9 and hash2d62e54b270c46f4babc8120a7e56123e3fe467ca383895d57a989f853095a9d are verified c16 metadata. C16 first MOV alias effect remained unknown.
 
@@ -22,20 +22,28 @@ Cloud has neither the current private writer nor callee body; it does not invent
 - Added `MOVEMENT_WRITER_CALL_ARGUMENT_CONTRACT`, `MOVEMENT_CALLEE_ALIAS_CONTRACT`; updated existing call/branch/XYZ/W/integrity records with compact metadata and exact address ambiguity. No full bytes, new observation hook, return interception, data-page protection change, game invocation or producer traversal.
 - New `callee_alias_contract_smoke.cpp` / `tools/test_callee_alias.sh`; existing entry fixture gains pinned-identity/upper-footprint/image-region refusal mode. Included in full hooks suite. Required analyses/source mirrors, README_TEST/README, BUILD/WORKLOG, version/mod, PROJECT_STATE and release recipes updated. No new dependency/vendor/reference MOD source.
 
+## Dedicated logging / files
+
+- New `source/include/GameInterop/log_file.hpp` provides worker-only run-file selection; telemetry uses the existing executable-path game root plus `log_wallsprint`, creating the directory if needed. Filename `WallSprint_YYYYMMDD-HHMMSS.log` uses host-PC GetLocalTime, while existing log-line UTC timestamps/telemetry payload stay unchanged.
+- Atomic Win32 CREATE_NEW selects the first unused name, then `_01`, `_02`, up to bounded `_9999`; no old file is renamed or truncated. Same loaded-module re-enable appends to the selected run file, so A/E stays together. Full module reload starts a new run file. No game install path is hard-coded.
+- Directory/root/open/collision failure reports explicit stage, attempted path and Win32Error through OutputDebugString; shared `logs` fallback is disabled. Diagnostic path text is bounded for debug formatting. Existing log mutex, shutdown and native policy paths remain.
+- New `log_file_smoke.cpp` / `tools/test_log_file.sh` use real Windows filesystem operations for formatting, creation, concurrent same-second collisions, existing-file preservation, restart append, held-file open failure, blocked directory, root/collision failure and shared-folder refusal. Included in `smoke_windows.sh`; actual DLL lifecycle tests read newly created files and assert any old shared log is byte-identical. README/README_TEST, LOGGING_CONVENTION, BUILD/WORKLOG, PROJECT_STATE, mod/package/release notes updated. No synthetic raw logs packaged.
+
 ## Validation
 
-Final Windows x64 build passed with warnings-as-errors. Full regressions ran serially. No assertion/timing/admission gate was weakened. Expanded boundary/cap fixtures were recompiled and passed in the focused alias run after the full suite; production code did not change.
+Final Windows x64 build passed with warnings-as-errors. Full regressions ran serially. No assertion/timing/admission gate was weakened. Expanded boundary/cap fixtures passed in the focused alias run. Alias/native code stayed unchanged while logging received its own final DLL and filesystem regressions.
 
 ```text
 Portable ASan/UBSan:                    13 PASS
-DLL smoke:                              4 PASS
+DLL smoke + logging:                    7 PASS
 Full public hooks/native:              83 PASS / 5 private-input SKIP
-Total public PASS records:             100
+Total public PASS records:             103
 Entry/ABI/hardware/finalization/gates:  10 PASS (included)
 C14 straight-line/storage/producer:      4 PASS (included)
 C15 branch contract:                    6 PASS (included)
 C16 exact call/effect:                   7 PASS (included)
 C17 alias contract:                     7 PASS (included)
+Isolated logging groups:                3 PASS (included in DLL smoke)
 Separate accepted private replay:       4 PASS records
 ```
 
@@ -47,11 +55,11 @@ Unchanged raw entry tests preserve GPR/YMM/XMM/x87/MXCSR/flags/stack/nonvolatile
 
 Composed production orientation/watch fixture: A4113ms (A176/B176, held2130ms/132 updates), E4106ms (A178/B178, held2136ms/132 updates). Both verified Deinit/retention/Up-dot1/hard0/no stale,12 Position events/no drops, clean DR restoration and Position writes0. This owned host cannot pass actual-game entry admission.
 
-Standalone source ZIP: **PASS**. A fresh extraction without build/logs/private captures rebuilt the Windows DLL and passed all34 focused entry/contract/branch/call/alias records, with correct c17/package version, PE32+/exports/system imports and no WriteProcessMemory. Final archive/current-source/docs/license/hash/private-body exclusion checks are recorded in analysis/V01C17_RELEASE.json.
+Standalone source ZIP: **PASS**. A fresh corrected extraction without builds/logs/private captures rebuilt the Windows DLL and passed all34 focused entry/contract/branch/call/alias records plus7 DLL/logging smoke records. Correct c17/package version, PE32+/exports/system imports and no WriteProcessMemory passed. Final archive/current-source/docs/license/hash/private-body exclusion checks are recorded in analysis/V01C17_RELEASE.json.
 
 ## Safety / limitations
 
-Exact Spider-Man2.exe2.810.0.0/SHA c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9 and measured callee hash are mandatory. Existing Hero/Transform/session/generation/thread/epoch/freshness/source/owned-code gates,8 entries/session and8 windows/600ms watch/raw256/printed4/thread128/no rescans remain. Native source/lifecycle/c12 analyzer, c13 raw thunk/start/activate/cancel/stop/pair/drain and c14/c15 final accounting/finalization remain unchanged.
+Exact Spider-Man2.exe2.810.0.0/SHA c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9 and measured callee hash are mandatory. Existing Hero/Transform/session/generation/thread/epoch/freshness/source/owned-code gates,8 entries/session and8 windows/600ms watch/raw256/printed4/thread128/no rescans remain. Native source/lifecycle/c12 analyzer, c13 raw thunk/start/activate/cancel/stop/pair/drain and c14/c15 final accounting/finalization remain unchanged. Telemetry changes are confined to log opening and the compact LOG_FILE path record; UTC formatting and buildIdentity/native lifecycle logic remain identical.
 
 Static no-write certificates are conditional on per-invocation alias/region admission. Code snapshots do not attest atomic execution; before/after equality cannot exclude transient writes. Unknown/conflicting address/unsupported effect supplies an exact diagnostic blocker instead of assumed safety. Static result A or narrower B needs no new runtime detour. Actual c17 target write map/proof/next blocker and visible A/E regression still require human evidence.
 
@@ -63,4 +71,4 @@ writable_source_proven=0 remains unconditional. No Position/RDX/stack-source/inp
 - WallSprint_v0.1c17_source.zip
 - root WallSprint.script, BUILD_MANIFEST.json, analysis/V01C17_RELEASE.json
 
-Install c17 in place of older WallSprint. Ordinary A/cardinal~4s -> fully end WallRun -> move/fast-travel -> E/diagonal~4s -> send one complete private WallSprint.log to ChatGPT. No special input; video only for visible anomaly. Open README_TEST on GitHub using fixed delivery link. Confirm c17/package0.1.35/exact build, pinned call identity, argument origins, ALIAS_CONTRACT write classes/conditional no-write/precise next effect, BRANCH_CONTRACT XYZ/next writer blocker, independent W, finalized summaries and clean orientation/watch restoration. No producer/movement follow-up automatically authorized.
+Install c17 in place of older WallSprint and confirm a new local-time filename under game-root log_wallsprint. Ordinary A/cardinal~4s -> fully end WallRun -> move/fast-travel -> E/diagonal~4s -> send the newest complete timestamped WallSprint_YYYYMMDD-HHMMSS.log (or collision-suffixed variant) from log_wallsprint privately to ChatGPT. No special input; video only for visible anomaly. Open README_TEST on GitHub using fixed delivery link. Confirm c17/package0.1.35/exact build, pinned call identity, argument origins, ALIAS_CONTRACT write classes/conditional no-write/precise next effect, BRANCH_CONTRACT XYZ/next writer blocker, independent W, finalized summaries and clean orientation/watch restoration. No producer/movement follow-up automatically authorized.
