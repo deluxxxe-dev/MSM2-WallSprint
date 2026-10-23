@@ -6,6 +6,7 @@ clang_bin="$toolchain_root/usr/lib/llvm-19/bin/clang"
 gpp="$toolchain_root/usr/bin/x86_64-w64-mingw32-g++-posix"
 export LD_LIBRARY_PATH="$toolchain_root/usr/lib/x86_64-linux-gnu${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 mkdir -p build/windows
+bash tools/setup_runtime_decoder.sh
 common=(-std=c++17 -O2 -g -ffunction-sections -fdata-sections -DWINVER=0x0601 -D_WIN32_WINNT=0x0601 -DLOGLEVEL=0 -DNOMINMAX -Iinclude -Ivendor/minhook/src/hde -Itools/compat -isystem vendor/SM2ScriptTemplate -Wall -Wextra -Werror)
 gcc="$toolchain_root/usr/bin/x86_64-w64-mingw32-gcc-posix"
 for source in buffer hook trampoline; do
@@ -19,7 +20,7 @@ done
 "$gcc" -c -g src/msm2/orientation_source_thunk.S -o build/windows/orientation_source_thunk.o
 "$gpp" "${common[@]}" -Ivendor/minhook/include -c src/msm2/orientation_source.cpp -o build/windows/orientation_source.o
 "$gcc" -c -g src/NativeHooks/reset_copy_thunk.S -o build/windows/reset_copy_thunk.o
-"$gpp" "${common[@]}" -c src/NativeHooks/compact_map_proof.cpp -o build/windows/compact_map_proof.o
+"$gpp" "${common[@]}" -Ibuild/deps/capstone-5.0.6/include -c src/NativeHooks/compact_map_proof.cpp -o build/windows/compact_map_proof.o
 "$gpp" "${common[@]}" -Ivendor/minhook/include -c src/NativeHooks/reset_copy_source.cpp -o build/windows/reset_copy_source.o
 "$gpp" "${common[@]}" -c src/msm2/orientation_trace.cpp -o build/windows/orientation_trace.o
 "$gpp" "${common[@]}" -c src/NativeHooks/source_lifecycle.cpp -o build/windows/source_lifecycle.o
@@ -33,4 +34,4 @@ done
 "$gpp" "${common[@]}" -c src/msm2/orientation_log.cpp -o build/windows/orientation_log.o
 "$gpp" "${common[@]}" -c src/msm2/telemetry.cpp -o build/windows/telemetry.o
 "$clang_bin" --target=x86_64-w64-windows-gnu --sysroot="$toolchain_root/usr/x86_64-w64-mingw32" -O2 -g -fms-extensions -Wall -Wextra -Werror -c src/msm2/guard.c -o build/windows/guard.o
-"$gpp" -shared -static -static-libgcc -static-libstdc++ -o build/windows/WallSprint.dll build/windows/sdk_bridge.o build/windows/telemetry.o build/windows/guard.o build/windows/public_transform.o build/windows/orientation_log.o build/windows/hook_capture.o build/windows/hook_thunks.o build/windows/wallrun_hooks.o build/windows/actor_writer.o build/windows/orientation_trace.o build/windows/orientation_source.o build/windows/orientation_source_thunk.o build/windows/reset_copy_source.o build/windows/compact_map_proof.o build/windows/reset_copy_thunk.o build/windows/source_lifecycle.o build/windows/native_source_override.o build/windows/path_b_layout.o build/windows/immediate_reset_trace.o build/windows/stack_source.o build/windows/update_bridge.o build/windows/minhook_buffer.o build/windows/minhook_hook.o build/windows/minhook_trampoline.o build/windows/minhook_hde64.o -lbcrypt -lversion -luser32 -Wl,--exclude-all-symbols,--gc-sections,--dynamicbase,--nxcompat
+"$gpp" -shared -static -static-libgcc -static-libstdc++ -o build/windows/WallSprint.dll build/windows/sdk_bridge.o build/windows/telemetry.o build/windows/guard.o build/windows/public_transform.o build/windows/orientation_log.o build/windows/hook_capture.o build/windows/hook_thunks.o build/windows/wallrun_hooks.o build/windows/actor_writer.o build/windows/orientation_trace.o build/windows/orientation_source.o build/windows/orientation_source_thunk.o build/windows/reset_copy_source.o build/windows/compact_map_proof.o build/windows/reset_copy_thunk.o build/windows/source_lifecycle.o build/windows/native_source_override.o build/windows/path_b_layout.o build/windows/immediate_reset_trace.o build/windows/stack_source.o build/windows/update_bridge.o build/windows/minhook_buffer.o build/windows/minhook_hook.o build/windows/minhook_trampoline.o build/windows/minhook_hde64.o build/deps/capstone-5.0.6/capstone.lib -lbcrypt -lversion -luser32 -Wl,--exclude-all-symbols,--gc-sections,--dynamicbase,--nxcompat

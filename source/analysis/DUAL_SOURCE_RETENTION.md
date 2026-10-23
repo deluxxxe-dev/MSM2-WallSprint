@@ -1,4 +1,6 @@
-# v0.1c1 dual-source retention design
+# v0.1c2 dual-source retention design
+
+c2 repairs startup proof only and preserves the c1 ownership/retention implementation. SHA-authenticated actual-byte startup replay now passes both functions and nine pairs; real-game A/E retention remains PENDING. See PATH_B_PROOF_DECODER_FIX.md and V01C2_GATE.md.
 
 The verified lifecycle/update side is the state writer. It publishes session, generation, active state, current Hero/Transform/owner, native thread/update, elapsed/progress, Surface N398, and the interpolated Right/Up/Forward basis through atomic 64-bit words guarded by an even/odd sequence. Readers retry a bounded eight times and never take the worker state lock. A separate atomic lifecycle gate closes admission immediately on Deinit/kill/end.
 

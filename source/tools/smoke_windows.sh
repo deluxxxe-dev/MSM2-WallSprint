@@ -42,7 +42,8 @@ version_header=Path('../../include/version.hpp').read_text()
 label=re.search(r'versionLabel\[\]="([^"]+)"',version_header)[1]
 package_version=re.search(r'packageVersion\[\]="([^"]+)"',version_header)[1]
 assert f'WallSprint {label} package_version={package_version}' in log
-assert 'RESET_TRACE_SELF_CHECK exact_build=0 common_writer_hook=0 reset_trace_enabled=1 reset_trace_admitted=0 primary_thread_prearm_supported=0' in log
+assert 'RESET_TRACE_SELF_CHECK prerequisite_gates_verified=0 common_writer_hook=0 reset_trace_enabled=1 reset_trace_admitted=0 primary_thread_prearm_supported=0' in log
+assert 'ORIENTATION_ADMISSION exe_build_verified=0 path_a_writer_verified=0 path_b_writer_verified=0 path_b_caller_verified=0 path_b_map_verified=0 dual_source_admitted=0' in log
 assert 'V01B7_DIAGNOSTIC_NOT_ADMITTED' in log
 assert 'reason=TelemetryStopped' in log
 assert 'orientation_trace_config enabled=0 admitted=0' in log

@@ -114,7 +114,7 @@ unsigned markerEvents(ws::diag::MarkerKeys& keys){
  return keys.update(foreground(),numbers);
 }
 void run(){
- openLog();msm2::writeLog("WallSprint %s package_version=%s Compact Path-B Override + Lock-Free Path-A Admission; scope=shared_orientation_source_snapshot path_b_override=1 hook_mode=build_scoped_verified_lifecycle",ws::versionLabel,ws::packageVersion);
+ openLog();msm2::writeLog("WallSprint %s package_version=%s Real-Runtime Compact Proof Repair; scope=shared_orientation_source_snapshot path_b_override=1 hook_mode=build_scoped_verified_lifecycle",ws::versionLabel,ws::packageVersion);
  msm2::writeLog("marker_keys=1,2,3,4,5,6 modifier=NONE top_row_digits=true edge_triggered=true");
  bool targetConfirmed=buildIdentity();auto config=settings();bool ready=msm2::initialize(targetConfirmed,config.audit,config.hooks.enabled);
  msm2::writer::configure(config.planar,targetConfirmed&&ready);
@@ -124,6 +124,8 @@ void run(){
  msm2::input::configure(config.input,targetConfirmed&&ready&&traceImage&&msm2::hooks::observationPlanAuthenticated(),image,traceImage?traceNt.OptionalHeader.SizeOfImage:0);
  msm2::reset_copy::configure(targetConfirmed&&ready&&msm2::input::authenticated()&&msm2::hooks::observationPlanAuthenticated(),image,traceImage?traceNt.OptionalHeader.SizeOfImage:0);
  msm2::native_source::configure(config.source,targetConfirmed&&ready&&msm2::input::authenticated()&&msm2::hooks::observationPlanAuthenticated(),image,traceImage?traceNt.OptionalHeader.SizeOfImage:0,msm2::hooks::patchSnapshot());
+ auto proofStatus=msm2::reset_copy::proofStatus();
+ msm2::writeLog("ORIENTATION_ADMISSION exe_build_verified=%u path_a_writer_verified=%u path_b_writer_verified=%u path_b_caller_verified=%u path_b_map_verified=%u dual_source_admitted=%u",unsigned(targetConfirmed),unsigned(msm2::input::authenticated()),unsigned(proofStatus.writer),unsigned(proofStatus.caller),unsigned(proofStatus.map),unsigned(msm2::native_source::observationGuardsAuthenticated()));
  msm2::reset_trace::configure(targetConfirmed&&ready&&msm2::native_source::observationGuardsAuthenticated(),image,traceImage?traceNt.OptionalHeader.SizeOfImage:0);
  msm2::writeLog("surface_axis_verified=1 surface_sign_verified=1 plane_reference_verified=1 diagonal_surface_verified=1 source=prior_read_only_v01a9_A_E_validation scope=exact_build_planar_vertical NOT_formal_engine_field_names legacy_crawl_calibration_disabled=1");
  msm2::writeLog("surface_probe requested=%u effective=0 reason=unverified_query_ABI_no_game_call",unsigned(config.surface));

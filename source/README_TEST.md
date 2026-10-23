@@ -1,10 +1,10 @@
-# WallSprint v0.1c1 — Compact Path-B Override + Lock-Free Path-A
+# WallSprint v0.1c2 — Real-Runtime Compact Proof Repair
 
-Package **0.1.19**。この版は exact build `Spider-Man2.exe 2.810.0.0` の姿勢ソースだけを変更します。Path A と Path B は同じ lock-free snapshot を使い、Path B は compact 3x3 の先頭 0x24 bytes だけを書き換えます。direct Actor / Position / adhesion / movement / animation / camera / physics は変更しません。
+Package **0.1.20**。この版は exact build `Spider-Man2.exe 2.810.0.0` の姿勢ソースだけを変更します。Path A と Path B は同じ lock-free snapshot を使い、Path B は compact 3x3 の先頭 0x24 bytes だけを書き換えます。direct Actor / Position / adhesion / movement / animation / camera / physics は変更しません。
 
 ## ダウンロードと導入
 
-配布ファイルは **WallSprint_v0.1c1_compact_path_b_override.zip** です。Codex の完了メッセージにある GitHub の直接ダウンロードリンクを使ってください。
+配布ファイルは **WallSprint_v0.1c2_real_runtime_proof_fix.zip** です。Codex の完了メッセージにある GitHub の直接ダウンロードリンクを使ってください。
 
 1. ゲームを完全終了し、古い WallSprint を無効にします。
 2. 配布 ZIP を展開します。
@@ -13,18 +13,18 @@ Package **0.1.19**。この版は exact build `Spider-Man2.exe 2.810.0.0` の姿
 
 ## 起動時の確認
 
-`Documents\Marvel's Spider-Man 2\scripts\WallSprint.log` で次を確認します。
+ゲームのインストール先にある `logs\WallSprint.log` で次を確認します。
 
 ```text
-WallSprint v0.1c1 package_version=0.1.19
-BUILD_IDENTITY accepted=1
-PATH_B_COMPACT3X3_PROOF admitted=1 caller_verified=1 writer_verified=1 rdx_to_rcx_map_verified=1 source_bytes=0x24
+WallSprint v0.1c2 package_version=0.1.20
+target_build_gate=ACCEPTED
+PATH_B_COMPACT3X3_PROOF admitted=1 caller_verified=1 writer_verified=1 rdx_to_rcx_map_verified=1 source_bytes=0x24 decoded_prefix_bytes=444 caller_decoded_bytes=128 pairs=9
 RESET_COPY_HOOK admitted=1 installed=1
 DUAL_SOURCE_ADMISSION admitted=1
 PATH_B_LAYOUT_CONFIG ... path_b_override=1
 ```
 
-どれかが `0` の場合は fail closed です。書き込みは行われないため、そのままログを送ってください。
+**`PATH_B_COMPACT3X3_PROOF admitted=1` を確認してから A/E テストを行ってください。** c2 は c1 の起動時 proof 停止を修正した版です。ゲーム本体の認証と proof は `ORIENTATION_ADMISSION` の各フィールドで別々に表示します。proof が失敗した場合はテストを進めず、`PATH_B_PROOF_DECODE_FAILURE` と `ORIENTATION_ADMISSION` の行を送ってください。
 
 ## 実機テスト
 

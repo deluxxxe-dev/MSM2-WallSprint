@@ -13,7 +13,7 @@ def review(path, a_session=None, e_session=None):
         header, 'target_build_gate=ACCEPTED',
         'exe_file_sha256=c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9',
         'RESET_TRACE_CONFIG admitted=1 ')) and 'TEST_ONLY_SYNTHETIC' not in text
-    if b7: actual=actual and any('RESET_TRACE_SELF_CHECK exact_build=1 common_writer_hook=1 reset_trace_enabled=1 reset_trace_admitted=1 primary_thread_prearm_supported=1' in l for l in lines) and 'V01B7_DIAGNOSTIC_NOT_ADMITTED' not in text
+    if b7: actual=actual and any('RESET_TRACE_SELF_CHECK prerequisite_gates_verified=1 common_writer_hook=1 reset_trace_enabled=1 reset_trace_admitted=1 primary_thread_prearm_supported=1' in l.replace('SELF_CHECK exact_build=', 'SELF_CHECK prerequisite_gates_verified=') for l in lines) and 'V01B7_DIAGNOSTIC_NOT_ADMITTED' not in text
     prearmed={fields(l).get('session') for l in lines if 'PREARM_STATUS ' in l and fields(l).get('trace_already_armed_before_override')=='1'}
     if b7:
         first_status=[fields(l) for l in lines if 'PREARM_STATUS ' in l and fields(l).get('first_override')=='1']

@@ -49,6 +49,8 @@ static void prepare(ws::Vec3 normal){
 static void callA(){auto original=vanilla;auto result=ws_test_stack_caller(reinterpret_cast<void*>(fakeHero.transform),&vanilla);assert(result==0xabcdef0011223344ull);assert(!std::memcmp(&original,&vanilla,64));}
 static void callB(){auto original=compact;auto result=ws_test_copy_caller(reinterpret_cast<void*>(fakeHero.transform),&compact);assert(result==0xabcdef0011223344ull);assert(!std::memcmp(&original,&compact,64));assert(!std::memcmp(reinterpret_cast<unsigned char*>(ws_test_copy_received)+36,compact.metadata.data(),28));}
 int main(){
+ alignas(16) ws::source_math::CompactBlock local{},changed{};local.rows[0]=local.rows[4]=local.rows[8]=1;changed=local;changed.metadata[0]=1;
+ auto localBefore=local;assert(!ws::interop::writeStackCompact(reinterpret_cast<std::uintptr_t>(&local),local,changed).success&&!std::memcmp(&local,&localBefore,64));
  auto* mem=static_cast<unsigned char*>(VirtualAlloc(nullptr,8192,MEM_RESERVE|MEM_COMMIT,PAGE_READWRITE));assert(mem);owner=reinterpret_cast<std::uintptr_t>(mem+1024);fakeHero.hero=reinterpret_cast<std::uintptr_t>(mem+256);fakeHero.transform=reinterpret_cast<std::uintptr_t>(mem);
  msm2::native_source::configure({},false,1,1,{});assert(!admitted&&!ws_native_source_enabled);
  assert(MH_Initialize()==MH_OK);assert(MH_CreateHook(reinterpret_cast<void*>(&ws_test_native_source_writer),reinterpret_cast<void*>(&ws_source_thunk),&ws_source_original)==MH_OK);assert(MH_EnableHook(reinterpret_cast<void*>(&ws_test_native_source_writer))==MH_OK);assert(msm2::readMemory(reinterpret_cast<std::uintptr_t>(&ws_test_native_source_writer),installedBytes,32));

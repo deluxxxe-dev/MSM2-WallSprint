@@ -66,7 +66,7 @@ int main(int argc,char** argv){
   prearmTest=true;std::memcpy(memory,world,64);fakeToken.phase=3;fakeToken.generation=1;fakeToken.owner=hero.hero;fakeToken.updates=77;fakeToken.thread=tid;
   armedSignal=CreateEventW(nullptr,FALSE,FALSE,nullptr);
   msm2::reset_trace::configure(true,base,nt->OptionalHeader.SizeOfImage);
-  assert(output.find("RESET_TRACE_SELF_CHECK exact_build=1 common_writer_hook=1 reset_trace_enabled=1 reset_trace_admitted=1 primary_thread_prearm_supported=1")!=std::string::npos);
+  assert(output.find("RESET_TRACE_SELF_CHECK prerequisite_gates_verified=1 common_writer_hook=1 reset_trace_enabled=1 reset_trace_admitted=1 primary_thread_prearm_supported=1")!=std::string::npos);
   testRequest.prearmed=true;testRequest.verifyDual=true;testRequest.initMs=GetTickCount64()-600;testRequest.session=1;testRequest.generation=1;testRequest.nativeUpdate=77;testRequest.hero=hero.hero;testRequest.transform=hero.transform;testRequest.owner=hero.hero;testRequest.thread=tid;testRequest.normal=sequence?ws::Vec3{-.70710678f,0,.70710678f}:ws::Vec3{0,0,1};
   msm2::reset_trace::request(testRequest);assert(WaitForSingleObject(armedSignal,1000)==WAIT_OBJECT_0);
   assert(windows[0].state==4&&windows[0].primaryInstalled&&windows[0].end-windows[0].start>350);

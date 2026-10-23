@@ -39,14 +39,14 @@ namespace msm2::reset_trace {
 void configure(bool verified,std::uintptr_t base,std::size_t size,bool prearmed){
  if(helper)return; // No rearming or configuration mutation within a process.
  if(!trace::configureReset(verified,base,size,prearmed)){
-  writeLog("RESET_TRACE_SELF_CHECK exact_build=%u common_writer_hook=%u reset_trace_enabled=1 reset_trace_admitted=0 primary_thread_prearm_supported=0",unsigned(verified),unsigned(msm2::native_source::observationGuardsAuthenticated()));
+  writeLog("RESET_TRACE_SELF_CHECK prerequisite_gates_verified=%u common_writer_hook=%u reset_trace_enabled=1 reset_trace_admitted=0 primary_thread_prearm_supported=0",unsigned(verified),unsigned(msm2::native_source::observationGuardsAuthenticated()));
   writeLog("V01B7_DIAGNOSTIC_NOT_ADMITTED reason=build_hook_or_hardware_engine_gate");return;
  }
  wake=CreateEventW(nullptr,FALSE,FALSE,nullptr);stopped=CreateEventW(nullptr,TRUE,FALSE,nullptr);
  if(wake&&stopped){disabled=false;helper=CreateThread(nullptr,0,run,nullptr,0,nullptr);}
  if(!helper){disabled=true;trace::kill();writeLog("RESET_TRACE_DISABLED reason=helper_creation_failed");}
  ws::native_source::setObserver(nativeEvent);
- writeLog("RESET_TRACE_SELF_CHECK exact_build=%u common_writer_hook=%u reset_trace_enabled=1 reset_trace_admitted=%u primary_thread_prearm_supported=%u",unsigned(verified),unsigned(msm2::native_source::observationGuardsAuthenticated()),unsigned(!disabled.load()),unsigned(helper!=nullptr));
+ writeLog("RESET_TRACE_SELF_CHECK prerequisite_gates_verified=%u common_writer_hook=%u reset_trace_enabled=1 reset_trace_admitted=%u primary_thread_prearm_supported=%u",unsigned(verified),unsigned(msm2::native_source::observationGuardsAuthenticated()),unsigned(!disabled.load()),unsigned(helper!=nullptr));
  if(disabled.load())writeLog("V01B7_DIAGNOSTIC_NOT_ADMITTED reason=helper_creation_failed");
 }
 void request(const Request& r) noexcept {
