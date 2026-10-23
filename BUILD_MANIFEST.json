@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c10",
-  "package_version": "0.1.28",
+  "version": "v0.1c11",
+  "package_version": "0.1.29",
   "artifact": "WallSprint.script",
-  "sha256": "3d54f6ed4382852da8ab526ca1974d4f484dda5fb34ce10ca36f8624362167d4",
-  "dll_sha256": "dba7b6126575d59159d1be77b49c40e477f6941a8e3285354b70da88aa13a4f2",
+  "sha256": "0188455698002d4a749186a41f89737ea9beb14bf6889dc4f7d2abbd0e3e81b1",
+  "dll_sha256": "20eb0a48b3cd46d4c9c547fc08cf09f204afc6d378e0471aa5143558aa9ebb52",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -128,13 +128,14 @@
     "original_capture": "private PATH_B_FUNCTION/PATH_B_CODE before hook; never redistributed",
     "caller_original_sha256": "1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d"
   },
-  "validation": "Windows warnings-as-errors; portable ASan/UBSan; full Wine/ABI/MinHook/proof/watch/Position/c7-c9 suites; deterministic production secondary race with actual primary Update/worker refresh, latest diagonal/partial basis/current stack and metadata/scales, fixed native owner/clean Deinit; one-refresh bound and ownership/token/integrity/stale/close negatives. Actual c10 E zero-flash regression pending.",
+  "validation": "Windows warnings-as-errors, portable sanitizer and complete Wine DLL/ABI/MinHook/proof/watch suites. Owned real Position hardware/foreign DR/4-record writer aggregation/raw256 cap/restore and anchored store identity; production c10 A/B with late Position watch on A/E through Deinit; strict complete direct-row certificate and computed/partial/control/W/overwrite negatives; finite-difference A/E math. Actual c11 writer/upstream proof awaits human log.",
   "limitations": [
-    "Real c9 A full hold/E diagonal orientation passed, but E had two WorldUp publication-race flashes; actual c10 E zero-flash verification pending",
-    "A second publication advance after the single refresh bound rejects; foreign/invalid calls remain vanilla",
-    "An already-admitted guarded store may overlap close/kill",
-    "Atomic telemetry counters are separately sampled; inflight/caps/drops delimit interpretation",
-    "Position whole-path/W/effects proof remains incomplete; no movement or active adhesion"
+    "Actual c11 game Position writer identities/caller/source lineage not yet measured; no upstream writable movement source authenticated",
+    "Position watch is one bounded incomplete-coverage snapshot; absence of a writer is not proof of absence",
+    "Position before/after are serialized watch snapshots/post instruction, not atomic pre-state or whole-function return",
+    "Runtime hash/decode of an unknown writer is not original-body authentication or movement permission",
+    "Position W/caller construction/full CFG/downstream/exclusive effects remain unproven; body lean/foot floating deferred",
+    "c10 bounded refresh and admitted-store/close overlap limits remain unchanged"
   ],
   "source_directory": "source",
   "path_b_override": true,
@@ -361,7 +362,7 @@
     "failed_guarded_attempts_consume_slot": true,
     "foreign_or_stale_rejections_consume_slot": false
   },
-  "v01c10_gate": "SYNTHETIC_REFRESH_REVALIDATION_PASS_REAL_E_ZERO_FLASH_PENDING",
+  "v01c10_gate": "REAL_CARDINAL_DIAGONAL_ORIENTATION_PASS_NO_WORLDUP_NO_REJECT_NATURAL_REFRESH_NOT_OBSERVED",
   "historical_c9_A_full_WallRun_hold_verified": true,
   "historical_c9_E_diagonal_orientation_verified": true,
   "secondary_publication_refresh": {
@@ -396,6 +397,54 @@
     "event_cap_process": 16,
     "live_token_worker_SDK_integrity_rechecked": true,
     "native_thread_migration": false,
-    "real_c10_E_zero_WorldUp_verified": false
+    "real_c10_E_zero_WorldUp_verified": true,
+    "natural_real_refresh_observed": false
+  },
+  "v01c11_gate": "SYNTHETIC_READ_ONLY_DIAGNOSTICS_PASS_REAL_WRITER_ATTRIBUTION_PENDING",
+  "historical_c10_A_E_orientation_verified": true,
+  "position_writer_watch": {
+    "diagnostic_only": true,
+    "range": "Transform+[0x30,0x40)",
+    "fourth_component_semantics": "UNKNOWN_raw_bits_only",
+    "earliest_elapsed_ms": 1550,
+    "latest_start_elapsed_ms": 3000,
+    "duration_ms": 600,
+    "full_pose_and_retention_required": true,
+    "previous_Up_leases_restored_required": true,
+    "hardware_slots": "DR0_8_bytes_DR1_8_bytes",
+    "foreign_DR_preserved": true,
+    "same_original_helper_coordinator": true,
+    "self_suspend_cleanup_refused": true,
+    "native_source_identity_freshness_required": true,
+    "stale_cancels_diagnostic_only": true,
+    "position_windows_cap": 8,
+    "original_Up_windows_cap": 8,
+    "thread_snapshot_cap": 128,
+    "rescans": 0,
+    "raw_event_cap": 256,
+    "writer_identity_cap": 16,
+    "printed_events_per_writer": 4,
+    "runtime_function_decode_cap_bytes": 1024,
+    "full_game_bytes_logged": false,
+    "watch_coverage_complete": false,
+    "real_game_writer_identity_verified": false
+  },
+  "movement_delta": {
+    "read_only": true,
+    "sample_attempt_cap": 40,
+    "minimum_interval_ms": 100,
+    "maximum_difference_dt_ms": 500,
+    "distinct_native_updates": true,
+    "stale_resets_baseline": true,
+    "velocity_semantics": "finite_difference_estimate_NOT_engine_velocity",
+    "normal_forward_right_decomposition": true
+  },
+  "path_a_position_causality": {
+    "admitted": false,
+    "write_permission": false,
+    "strict_complete_direct_copy_certificate": true,
+    "runtime_source_post_instruction_match_observed": false,
+    "actual_game_CFG_W_exclusive_effects_proven": false,
+    "real_game_upstream_movement_source_authenticated": false
   }
 }

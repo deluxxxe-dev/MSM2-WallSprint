@@ -1,0 +1,101 @@
+{
+  "version": "v0.1c11",
+  "package_version": "0.1.29",
+  "branch": "codex/v01c11-movement-path-ownership",
+  "base_delivery_commit": "6246fd6d2e52cf81e18e6ff8ffd4d8ee4d863aa1",
+  "precreated_handoff_commit": "4d78695d4a426158b46fb6ec3faf04ccbd8728db",
+  "implementation_commit": "2129e69fe003e71bf705fb67f723b447cf3e3764",
+  "outputs": [
+    {
+      "path": "WallSprint_v0.1c11_movement_path_ownership.zip",
+      "bytes": 2687358,
+      "sha256": "376d33b4399c21cd09aecff1725e956d3b427d50cacbd5440cd7087c44055e65"
+    },
+    {
+      "path": "WallSprint_v0.1c11_source.zip",
+      "bytes": 563687,
+      "sha256": "fcb9b298a863c76198e2d6ddc5c99e57fe66beabc28349c9208b5796dd7dcd92"
+    }
+  ],
+  "test_pass_counts": {
+    "portable": 13,
+    "smoke": 4,
+    "hooks": 46
+  },
+  "total_pass": 63,
+  "historical_private_skips": 4,
+  "final_diagnostic_refinement_checks": {
+    "position_watch": 1,
+    "production_orientation_integration": 1,
+    "DLL_smoke": 4
+  },
+  "owned_cardinal_diagonal_orientation_lifecycles": [
+    {
+      "wallrun_duration_ms": "4115",
+      "source_active_until_deinit": "1",
+      "verified_deinit": "1",
+      "path_a_writes": "178",
+      "path_b_writes": "178",
+      "retention_pass": "1",
+      "last_actor_up_dot_surface": "1",
+      "first_hard_kill": "none",
+      "hard_kill_calls": "0"
+    },
+    {
+      "wallrun_duration_ms": "4103",
+      "source_active_until_deinit": "1",
+      "verified_deinit": "1",
+      "path_a_writes": "179",
+      "path_b_writes": "179",
+      "retention_pass": "1",
+      "last_actor_up_dot_surface": "1",
+      "first_hard_kill": "none",
+      "hard_kill_calls": "0"
+    }
+  ],
+  "owned_cardinal_diagonal_position_watch": [
+    {
+      "watch_armed": "1",
+      "threads_seen": "2",
+      "threads_installed": "1",
+      "unique_writers": "1",
+      "total_write_events": "12",
+      "unknown_writer_events": "12",
+      "dropped": "0",
+      "cleanup_restored": "1",
+      "cleanup_pending": "0",
+      "complete_thread_coverage": "0",
+      "rescan_count": "0",
+      "Position_writes_by_mod": "0"
+    },
+    {
+      "watch_armed": "1",
+      "threads_seen": "2",
+      "threads_installed": "1",
+      "unique_writers": "1",
+      "total_write_events": "12",
+      "unknown_writer_events": "12",
+      "dropped": "0",
+      "cleanup_restored": "1",
+      "cleanup_pending": "0",
+      "complete_thread_coverage": "0",
+      "rescan_count": "0",
+      "Position_writes_by_mod": "0"
+    }
+  ],
+  "raw_event_cap256_foreign_DR_restore_LastError": "PASS",
+  "per_writer4_identity16_bounded_summary": "PASS",
+  "owned_Vec4_copy_positive_computed_W_mismatch_overwrite_negatives": "PASS",
+  "complete_direct_only_static_certificate": "PASS_no_game_permission",
+  "cardinal_diagonal_finite_difference": "PASS_ASan_UBSan",
+  "c10_hot_A_B_and_token_context_policy_unchanged": true,
+  "actual_c11_game_Position_writer_identity": "PENDING_human_A_E_log",
+  "Path_A_Position_causal_permission": false,
+  "safe_upstream_movement_source_authenticated": false,
+  "exact_blocker": "Actual writer/caller producer lineage plus complete Position CFG/caller construction/W/downstream/exclusive effects missing",
+  "Position_writes_by_mod": 0,
+  "movement_input_adhesion_injection": false,
+  "private_full_game_bytes_distributed": false,
+  "standalone_source_build": "PASS_private_captures_absent",
+  "historical_real_c10_A_E_orientation": "PASS_natural_refresh_not_observed"
+}
