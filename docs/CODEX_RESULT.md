@@ -1,71 +1,65 @@
-# Codex result — WallSprint v0.1c15
+# Codex result — WallSprint v0.1c16
 
-Branch: **codex/v01c15-writer-branch-contract**.
-Implementation commit: **0efd13924426b1c96247ff35577f7f323c934b97**.
-Pre-created c15 handoff/base: **7514c9c39b4c5fdfddbae35509ab80c225acc925**; accepted c14 implementation617d7b6 / delivery5fd2cdff9ae6732cf0eaa53fec02253c4d6ae25c preserved. CODEX_NEXT and compact human c14 evidence are byte-identical to the handoff; PROJECT_STATE explicitly updated as requested. No main rewrite/force push.
+Branch: **codex/v01c16-writer-call-effect**.
+Implementation commit: **0a00bdeee05ffdae593d6963abd5c24424a2d8ef**.
+Pre-created handoff/base: **9eab1422f8c4e0c939d34f5aeb9492a188360127**.
+Accepted c15 implementation0efd139 / delivery8e500b2 retained. CODEX_NEXT/AGENTS/DEV_RULES preserved; PROJECT_STATE updated as explicitly requested. No main rewrite or force push.
 
 ## Outcome / evidence boundary
 
-**v0.1c15 / package0.1.33 implements bounded branch-aware writer RDX XYZ / independent W proof and fixes capture-summary finalization. Cloud build/tests PASS. Actual c15 writer proof or exact next local blocker remains PENDING human A/E.**
+**v0.1c16 / package0.1.34 implements exact writer-local call authentication and bounded source-effect diagnostics. Cloud build and regressions PASS. Actual c16 target/form/boundary/hash/effect or narrower callee/writer blocker remains PENDING human A/E.**
 
-Accepted human c14: A4453ms/E4172ms, retained Up/verified Deinit/hard0/Position writes0/no stale/clean DR+entry-hook restoration;8 true entries/complete maps per session and correct final lineage summary. RDX=entryRSP+0x28, XYZ mask7/sourceW0/destW1 remain correlation. C14 fully decoded the183-byte writer but stopped at0x2CFC91F JNE. Parent anchored call0x351A01B->0x351EB00 is measured metadata, with caller ownership/provenance/lifetime/downstream/exclusive effects unproven.
+Accepted human c15: A3860ms/E4297ms, verified Deinit/retention/Surface Up, hard0/stale0/Position writes0,8 complete maps per session and finalized summaries. C15 crossed JNE0x2CFC91F and stopped exactly at CALL0x2CFC927. RDX=entryRSP+0x28, XYZ mask7/sourceW0/destinationW1 remain corroboration. The cloud has neither the current private183-byte writer nor the callee, so owned fixture success is not an actual game proof. No full raw log or private function was requested or distributed.
 
-The cloud has no complete private current writer body or running game. Owned183-byte functions are independently authored fixtures, not captures or reconstructions of the game. A real c15 diagnostic PASS A (writer XYZ+separate W proved) or B (precise narrower local blocker) is adjudicated only from the new actual runtime evidence. No equality is upgraded into actual causal proof here.
+## Changes / files
 
-## What changed / files
-
-- `source/include/NativeHooks/rdx_source_contract.hpp` / `source/src/NativeHooks/rdx_source_contract.cpp`: new `branchWriter()` shares the existing c14 instruction/provenance model, leaving the old straight-line `writer()`, caller/producer API and c12 analyzer unchanged. Limits are183bytes/block16/edge24/branch4/path16/state31/instruction visits4096. Full decode/no skipdata, direct forward instruction-aligned local branches only, both ordinary Jcc successors without guessing flags, no recursion/call expansion/fixpoint. Loop/backedge/foreign/indirect/malformed/cap failure emits its exact local barrier/edge.
-- A reverse DAG pass identifies instructions that can reach one of the four named stores; separate bounded states enumerate all relevant entry paths. Unknown relevant instruction/memory effects refuse. Suffix effects unable to reach a target store are outside the proof, not certified safe or exclusive. Structural transfer validation still covers the decoded span. Each exact0x2CFC936/93c/942/945 store must target its entry-RCX component. Conflicting reaching provenance invalidates that component; paths bypassing a store supply no evidence, and each required store needs at least one reaching entry path. XYZ origin must remain entryRDX+0/+4/+8 on every relevant path. `all_relevant_store_paths_proven` explicitly covers XYZ; W is independent.
-- W constant_one/independent_register/independent_memory requires consistent decoded provenance. Computed/unknown/conflicting W remains classified but unproven; destination1.0 alone never supplies provenance. homogeneous_coordinate_semantics stays unknown, writable_source_proven0.
-- `writer_entry_snapshot.cpp`: production config selects the new exact-site proof under the unchanged exe/boundary/full-baseline-hash/current-code/direct-call gates and emits `MOVEMENT_RDX_BRANCH_CONTRACT` with static graph/path counts, component paths/mask, all caps and precise next barrier. Per-invocation XYZ/W additionally require the branch-bounded exact-site certificate and all existing true-entry/identity/ordered-hardware/guarded-stack/bit checks. The obsolete generic prefix-mismatch overwrite is removed so it cannot hide the next exact local blocker. No additional data-instruction semantics, memory dump or game ABI is introduced; branches explore both successors.
-- Summary timing: the existing cancel operation additionally sets a reporting-only finalized flag after detaching the active scope. Worker drain waits for finalization and no callback; the existing hardware queue/inflight drain gate is unchanged. Inactive before activation is no longer mistaken for completion. Final evidence prints once with phase=finalized/summary_final=1; never-activated windows can honestly report zero on stop. Install/activate/freshness/8-entry/session/watch/hardware/raw-hook/cleanup policies are unchanged. The executable unhook/owned-code/foreign-patch block is unchanged.
-- New `writer_branch_contract_smoke.cpp` / `tools/test_writer_branch.sh` provides owned183-byte offline fixtures and is included in the complete hooks suite. Existing entry fixture adds real preactivation/active-drain/stop-only summary tests and retains concurrent/nested hardware and ABI/cleanup regressions. Required analyses, version/mod/README_TEST/README/BUILD/WORKLOG, source copies, PROJECT_STATE and packaging metadata updated. No producer hook, producer traversal expansion, new dependency or vendor/reference MOD code.
+- `source/include/NativeHooks/rdx_source_contract.hpp`, `source/src/NativeHooks/rdx_source_contract.cpp`: exact single-call API anchors writer+0x27/return+0x2c by complete decode. Direct target must be in image and outside writer. Indirect register/memory forms refuse without pointer chasing. Runtime supplies only one exact target; no recursion, branch/call expansion or fixpoint. Target <=1024bytes, complete decode, linear leaf through plain RET; unknown effects report exact callee RVA/mnemonic/class. A first entry JMP is labeled thunk/wrapper and stopped.
+- Source-no-write effect language accepts register/flags operations and only explicitly proven private stack writes. PUSH/POP, allocation, GPR/XMM saves/restores are tracked with the unchanged independent provenance engine. Private writes must remain within the currently allocated negative stack span, at most4096bytes. Return/home/unallocated/unknown-pointer writes, unbalanced/out-of-range SP and unsupported/implicit effects refuse. Nonvolatile preservation is decoded from saves/restores; modified/unresolved carriers are invalidated. All Win64 volatile GPR and XMM0..5 lanes are invalidated unconditionally, so XYZ must reload through preserved aliases after the call.
+- Optional call summary resumes only the exact c15 call/return/target. Every c15 relevant path and four exact Position stores remain required; mismatched provenance or a later unsupported instruction stops precisely. Caller saved slots must not overlap the possible callee-private/return/shadow footprint. The lowest write/return offset is carried to the writer certificate. Per invocation, source==entryRSP+0x28 with guarded equal TEB samples, nonstack Transform, complete ordered exact-site maps and a call footprint inside captured TEB bounds are mandatory. Call-dependent W requires these alias checks too and remains independent of XYZ.
+- `writer_entry_snapshot.cpp`: exact-build/full writer/current owned-code/direct caller guards precede target lookup. Target must have a same-image runtime-function entry, end in image, <=1024bytes, no writer/deferred-producer overlap. Guarded full target bytes/SHA and a second-byte comparison establish startup current identity. Worker rechecks complete target/boundary/hash per sampled invocation before causal flags. `MOVEMENT_WRITER_CALL_CONTRACT` reports only compact metadata and exact effect blocker; `MOVEMENT_WRITER_CALL_INTEGRITY` reports code/stack-footprint checks. No new runtime observation hook, return interception, data-page protection change or game invocation.
+- New owned `writer_call_effect_smoke.cpp` / `tools/test_writer_call.sh`, included in full hooks suite. Existing entry fixture gains an isolated real owned unwind-table/hash/suffix/boundary/TEB-footprint refusal mode. Old ABI/pairing/cleanup/finalization assertions are retained.
+- Required c15/c16/RDX analyses, README_TEST/README and source mirrors, BUILD/WORKLOG, PROJECT_STATE, version/mod and package/release recipes updated. Selected independent cloud stdout logs only; raw synthetic/private logs are not packaged. Existing vendor/dependency sources are unchanged.
 
 ## Validation
 
-Complete suite ran serially with warnings-as-errors. No safety/timing/old assertion gate was weakened.
+Final production Windows x64 build passed with warnings-as-errors. Final full hooks suite ran serially; no assertion/timing/admission gate was weakened.
 
 ```text
-Windows x64 build:                    PASS
 Portable ASan/UBSan:                  13 PASS
 DLL smoke:                            4 PASS
-Full public-source hooks/native:     67 PASS / 5 private-input SKIP
-Public-source total PASS records:    84
-Entry/ABI/hardware/finalization:       8 PASS (included above)
-C14 straight-line/storage/producer:    4 PASS (included above)
-C15 branch contract:                  6 PASS (included above)
-Separate accepted private-byte replay: 4 PASS records
+Full public hooks/native:            75 PASS / 5 private-input SKIP
+Total public PASS records:           92
+Entry/ABI/hardware/finalization:       9 PASS (included)
+C14 straight-line/storage/producer:    4 PASS (included)
+C15 branch contract:                  6 PASS (included)
+C16 exact call/effect:                 7 PASS (included)
+Separate accepted private replay:     4 PASS records
 ```
 
-One of the5 public-suite SKIPs is the optional accepted writer444/caller128 replay, subsequently run separately with authorized private input: published-c1 refusal reproduction, corrected copy/caller proof and negatives, production installation/owned restoration on a nonexecuted owned image passed. Its fourth PASS repeats the baseline reset-copy fixture, so separate records are not summed as unique tests. The other4 historical unavailable-private-input checks remain skipped. Private game instructions are not executed or packaged.
+One of the5 public SKIPs is the optional authenticated historical writer444/caller128 replay, subsequently run with authorized private input. Its4 records include a duplicate baseline reset-copy PASS and are not summed as unique public tests. The other4 historical private-input checks remain unavailable/skipped. Captured game instructions are not executed or distributed; these are the older reset-copy functions, not the current183-byte Position writer.
 
-New branch fixtures prove both JNE successors reconverge on identical RDX XYZ provenance with separate W1. One-leg X/Y/Z changes reject exactly that component; selective bypass only contributes to stores actually reached, while unreachable stores cannot be proved. Nested4 branches and all16 paths/31 states pass under caps;5th branch/oversize/loops/backedges/indirect/call/outside/mid-instruction/unsupported/memory/wrong-site/wrong-target/W conflict negatives refuse. Next unsupported examples emit exact owned local+0x24 RVA/mnemonic, instead of the old JNE barrier+0x1F. This demonstrates mechanism, not the actual game's next instruction.
+Owned c16 fixtures exercise nested local reconvergence, source-safe direct call continuation, volatile GPR/XMM loss versus reload, explicit nonvolatile clobbers and decoded stack restoration, source XYZ/unknown/implicit/return/home/unallocated writes, private-stack caps/caller-spill overlap, indirect/out-of-image/wrong-site/return/target/boundary, malformed decode/no-return, callee branch/thunk/nested call, later precise writer BSWAP barrier and independent W constant/register/memory/computed/unknown.
 
-Real owned entry hook: preactivation drains never emit/finalize zero; active capture is not drained early; stop prints actual one-entry partial count once; another never-activated session prints honest zero at stop. Existing actual hardware test retains28 paired store events/seven complete concurrent+nested invocations/eight captured records, exact XYZ mask7 with sourceW0 unchanged/destW1. ABI/flags/all GPR/YMM/XMM/x87/MXCSR/LastError/return, guards/identity/hash/caller/freshness and foreign-patch cleanup remain PASS.
+Real owned runtime-function metadata and complete target identity tests reject changed suffix bytes even beyond the analyzed RET, wrong boundary/digest, removed unwind table and insufficient captured TEB stack headroom. This target is not executed or hooked. Existing raw-entry tests preserve GPR/YMM/XMM/x87/MXCSR/flags/stack/nonvolatiles/LastError/return; concurrent+nested hardware pairing remains8 captures/7 complete maps/28 stores/two threads, XYZ mask7 with sourceW0/destinationW1. Finalization still refuses preactivation/active drain and prints once after stop; never-activated session honestly stays0.
 
-Composed unchanged production A/B orientation with real Position watch: session1/A4100ms (A175/B175, held2118ms/131updates), session2/E4110ms (A177/B177, held2110ms/131updates). Both verified Deinit/retention/Up-dot1/hard0/no stale,12 watch events/no drops, clean DR restoration and Position writes0. This owned host cannot pass the exact public game-entry admission.
+Unchanged composed production orientation/watch fixture: A4100ms (A174/B174, held2115ms/131 updates), E4106ms (A178/B178, held2140ms/132 updates). Both verified Deinit/retention/Up-dot1/hard0/no stale,12 Position events/no drops, clean DR restoration and Position writes0. This owned host cannot pass the actual-game public entry admission.
 
-Byte comparison confirms unchanged native orientation/reset/lifecycle/c12 analyzer/raw thunk/orientation watch/c14 final lineage accounting/caller and producer metadata code. Cancel adds only a reporting flag; the executable stop/unhook block remains identical. CODEX_NEXT and compact human c14 result preserved.
+Byte comparisons preserve native orientation/reset/lifecycle/c7-c12 sources, c12 analyzer, raw entry thunk, shared legacy State/Slice/straight-line writer, caller/producer API, c15 graph construction, start/activate/cancel/stop/pair/drain/finalization and executable-code ownership/restoration. No producer traversal expanded.
 
-Fresh extracted standalone source ZIP rebuilt the Windows DLL with correct c15/package version, PE32+/exports/import checks and all18 focused entry/contract/branch PASS records. No private captures are in the extracted source. Final CRC/current-source/docs/license/nested-script/hash/private-full-body exclusion checks are in `analysis/V01C15_RELEASE.json`. Only selected independent cloud stdout logs are packaged; raw synthetic/user logs and full private game bodies are excluded.
+Standalone source ZIP: **PASS**. A fresh extraction without builds/logs/private captures rebuilt the Windows DLL and passed all26 focused entry/contract/branch/call records, with correct c16/package version, PE32+/exports/system imports and no WriteProcessMemory. Final archive/source/license/private-body checks and hashes are recorded in `analysis/V01C16_RELEASE.json`.
 
-## Safety / remaining gate
+## Safety / limitations
 
-Exact Spider-Man2.exe2.810.0.0 SHA c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9, full current writer/caller baseline, exact direct E8, current owned-code and live Hero/Transform/session/generation/thread/epoch/freshness gates remain. C7 recovery/c8 immutable cause/c9 secondary admission/c10 bounded refresh, c11 DR watch/cleanup, c12 direct-call proof, c13 entry/pairing and c14 final accounting remain. Max8 entry records/session,8 windows,600ms watch/raw256/printed4/thread128/no rescans, bounded stack/pointers/TLS and retained safe trampoline remain.
+Exact Spider-Man2.exe2.810.0.0 SHA `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9` remains mandatory. Existing Hero/Transform/session/generation/thread/epoch/freshness/stack/owned-code gates,8 entries per session/8 windows,600ms watch/raw256/printed4/thread128/no rescans, c7 recovery/c8 immutable hard cause/c9 secondary admission/c10 bounded refresh/c11 DR cleanup/c12 exact call/c13 pairing/c14 aggregate/c15 finalized summary remain.
 
-No Position/RDX/stack-source/Path A/input/movement/velocity/gravity/adhesion/camera/animation write; no producer hook, new producer read/traversal expansion, game call/guessed ABI, PAGE_GUARD/data-page mutation, raw user log/full private body or copied mod/vendor assets. Only the already-authorized exact c13 diagnostic executable entry patch is installed/restored through its unchanged mechanism.
+Startup/current code snapshots are accepted-build runtime identity, not an independently supplied historical callee digest or atomic execution attestation. No before/after equality is promoted over an unresolved effect; transient writes are not ruled out by equality. Unsupported callee effects remain an exact diagnostic B blocker. Extra runtime detours are unnecessary for that narrower static result, so no observation ABI is introduced. Actual c16 A/E, visible stability, target/effect and next exact blocker still require the human log.
 
-`writable_source_proven=0` unconditionally. Historical producer0x351EB00, caller_owned0/ownership_exclusive0/source_lifetime_exclusive0/downstream_conflicts_proven_absent0 remain unpromoted. A local writer certificate is not source lifetime/type/whole-function return/downstream/exclusive Hero translation or mutation permission. Counts are static proof exploration, not measured CPU branch decisions. Guarded entry/post-store observations are not atomic engine state; incomplete hardware coverage cannot prove absence of conflicts.
+`writable_source_proven=0` remains unconditional. No Position/RDX/stack-source/input/movement/velocity/gravity/adhesion/camera/animation writes. Producer0x351EB00 remains deferred; caller_owned/ownership_exclusive/source_lifetime_exclusive/downstream_conflicts_proven_absent remain unpromoted0. A writer certificate grants no upstream mutation permission. Prior incomplete watch coverage, admitted-store/close overlap and bounded refresh limits remain.
 
-Actual c15 will either prove all relevant exact XYZ paths and independently classify W, or report one precise narrower local writer barrier. No producer investigation or automatic movement rewrite is part of this task. Only after writer evidence is adjudicated should a separate task decide whether to inspect0x351EB00.
+## Outputs / next human test
 
-## Outputs / persistence / next human test
+- `WallSprint_v0.1c16_writer_call_effect.zip`
+- `WallSprint_v0.1c16_source.zip`
+- root `WallSprint.script`, `BUILD_MANIFEST.json`, `analysis/V01C16_RELEASE.json`
 
-- `WallSprint_v0.1c15_writer_branch_contract.zip`
-- `WallSprint_v0.1c15_source.zip`
-- root `WallSprint.script` / `BUILD_MANIFEST.json`
-- `analysis/V01C15_RELEASE.json` with exact sizes/hashes/validation
-
-Implementation is at the SHA above; result/script/manifest/ZIPs/release record form a delivery commit on the same authorized branch. The final message supplies a fixed GitHub SHA after fresh remote clone and exact ZIP byte/size/SHA256/CRC/document comparison. No main rewrite/force push. Private-repository browser access is not independently claimed.
-
-Human test: ordinary A/cardinal~4s, fully end WallRun, move/fast-travel to E, E/diagonal~4s; send one complete private WallSprint log and note visible anomaly/hitch/freeze/crash. Video only for a visible anomaly. Require unchanged lifecycle/Up/hard0/Position0/DR+entry-hook cleanup, BRANCH_CONTRACT / XYZ_PROOF / POSITION_W_PROOF and final capture summary. Unknown/partial/refused records preserve their exact reasons; do not loosen gates to make counts positive.
+After installing c16 in place of the older WallSprint: ordinary A/cardinal~4s -> fully end WallRun -> move/fast-travel to E -> E/diagonal~4s -> one complete private WallSprint.log to ChatGPT. No special input; video only for visible anomaly. Read README_TEST on GitHub using the fixed delivery link. Confirm startup c16/package0.1.34 and exact build accepted, then CALL_CONTRACT target/boundary/hash/effect/callee blocker, BRANCH_CONTRACT next writer blocker/XYZ, independent W, finalized capture/lineage summaries and clean A/E orientation/watch cleanup. No producer/movement follow-up is automatically authorized.

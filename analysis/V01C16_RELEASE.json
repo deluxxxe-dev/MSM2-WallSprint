@@ -1,0 +1,114 @@
+{
+  "version": "v0.1c16",
+  "package_version": "0.1.34",
+  "branch": "codex/v01c16-writer-call-effect",
+  "base_handoff_commit": "9eab1422f8c4e0c939d34f5aeb9492a188360127",
+  "implementation_commit": "0a00bdeee05ffdae593d6963abd5c24424a2d8ef",
+  "outputs": [
+    {
+      "path": "WallSprint_v0.1c16_writer_call_effect.zip",
+      "bytes": 3121759,
+      "sha256": "91c95d59c5737d2b0a4cf19256deaebaab5d366250740711aa00bfb5f005772f"
+    },
+    {
+      "path": "WallSprint_v0.1c16_source.zip",
+      "bytes": 671323,
+      "sha256": "bdc623b35a04727984df5f10cc323ba6bb60a4a9242a45140ecd6cfcaff6618a"
+    }
+  ],
+  "public_test_pass_records": {
+    "portable": 13,
+    "smoke": 4,
+    "hooks": 75
+  },
+  "total_public_pass_records": 92,
+  "public_private_input_skip_records": 5,
+  "separate_private_replay_pass_records": 4,
+  "private_replay_duplicate_baseline_record": 1,
+  "optional_public_replay_skip_resolved_separately": true,
+  "historical_other_private_input_skips": 4,
+  "focused_pass_records_included": {
+    "entry": 9,
+    "contract": 4,
+    "branch": 6,
+    "call": 7
+  },
+  "standalone_source_build": "PASS_private_captures_absent",
+  "standalone_focused_pass_records": 26,
+  "archives_CRC_current_complete_sources_docs_script_hash_licenses_private_body_exclusion": "PASS",
+  "native_orientation_lifecycle_c12_analyzer_c13_thunk_c14_c15_finalization_stop_cleanup_unchanged": true,
+  "legacy_State_Slice_writer_caller_producer_and_c15_CFG_setup_unchanged": true,
+  "CODEX_NEXT_preserved": true,
+  "PROJECT_STATE_updated_as_required": true,
+  "callee_byte_cap": 1024,
+  "private_stack_byte_cap": 4096,
+  "callee_interprocedural_expansion_depth": 0,
+  "new_runtime_observation_hooks": 0,
+  "owned_hardware": {
+    "true_entry_snapshots": 8,
+    "complete_distinct_invocation_maps": 7,
+    "hardware_store_events_paired": 28,
+    "concurrent_writer_threads": 2,
+    "reentrant_writer_test": true,
+    "source_W_bits": "0x0",
+    "destination_W_bits": "0x3f800000",
+    "ABI_gates_cleanup_finalization": "PASS"
+  },
+  "owned_A_E_orientation": [
+    {
+      "session": "1",
+      "wallrun_duration_ms": "4100",
+      "source_active_until_deinit": "1",
+      "verified_deinit": "1",
+      "path_a_writes": "174",
+      "path_b_writes": "174",
+      "max_held_ms": "2115",
+      "max_held_updates": "131",
+      "retention_pass": "1",
+      "last_actor_up_dot_surface": "1",
+      "first_hard_kill": "none",
+      "hard_kill_calls": "0"
+    },
+    {
+      "session": "2",
+      "wallrun_duration_ms": "4106",
+      "source_active_until_deinit": "1",
+      "verified_deinit": "1",
+      "path_a_writes": "178",
+      "path_b_writes": "178",
+      "max_held_ms": "2140",
+      "max_held_updates": "132",
+      "retention_pass": "1",
+      "last_actor_up_dot_surface": "1",
+      "first_hard_kill": "none",
+      "hard_kill_calls": "0"
+    }
+  ],
+  "owned_A_E_position_watch": [
+    {
+      "session": "1",
+      "watch_armed": "1",
+      "total_write_events": "12",
+      "dropped": "0",
+      "cleanup_restored": "1",
+      "cleanup_pending": "0",
+      "Position_writes_by_mod": "0"
+    },
+    {
+      "session": "2",
+      "watch_armed": "1",
+      "total_write_events": "12",
+      "dropped": "0",
+      "cleanup_restored": "1",
+      "cleanup_pending": "0",
+      "Position_writes_by_mod": "0"
+    }
+  ],
+  "human_c15": "ACCEPTED_A3860_E4297_diagnostic_PASS_exact_CALL_0x2CFC927_blocker_finalized_capture_summaries",
+  "actual_c16_call_target_effect_or_narrower_blocker": "PENDING_human_A_E",
+  "safe_upstream_writable_source_authenticated": false,
+  "Position_writes_by_mod": 0,
+  "source_input_movement_mutation": false,
+  "private_full_game_bodies_distributed": false,
+  "exact_next_edge": "Actual authenticated call0x2CFC927 target/boundary/effect or narrower callee/writer blocker; producer0x351EB00 deferred."
+}
