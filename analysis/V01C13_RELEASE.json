@@ -8,13 +8,13 @@
   "outputs": [
     {
       "path": "WallSprint_v0.1c13_writer_entry_snapshot.zip",
-      "bytes": 2929070,
-      "sha256": "cd5d795ae3f971e367a9c41b440cf20503c830b6d3ea5c3c0eb6e2313ca5bcab"
+      "bytes": 2929864,
+      "sha256": "1dfd7ba67b0abe5831027c3bbbf24bff36f73982171dc80f130c1127c2343e24"
     },
     {
       "path": "WallSprint_v0.1c13_source.zip",
-      "bytes": 618099,
-      "sha256": "92ed4ebcdff4d06e90d272e29417b4942ff29ee666b02c51698bec3df0babb93"
+      "bytes": 618496,
+      "sha256": "34254c3a9c45e0c08719b40b6f7a119f1d7e91c33b38f55f0aac986851d8abc9"
     }
   ],
   "test_pass_counts": {
@@ -106,5 +106,14 @@
   "Position_writes_by_mod": 0,
   "movement_input_source_adhesion_injection": false,
   "private_full_game_bytes_distributed": false,
-  "exact_next_edge": "Adjudicate actual c13 entry/store component and lane matches; trace candidate construction/lifetime in caller0x351eea7..0x351eec5 and observed caller2 chain; XYZ/W causal semantics/downstream conflicts/exclusive intended effects remain unproven"
+  "exact_next_edge": "Adjudicate actual c13 entry/store component and lane matches; trace candidate construction/lifetime in caller0x351eea7..0x351eec5 and observed caller2 chain; XYZ/W causal semantics/downstream conflicts/exclusive intended effects remain unproven",
+  "publication": {
+    "status": "BLOCKED_INVALID_ENVIRONMENT_GITHUB_TOKEN",
+    "remote_push_complete": false,
+    "authenticated_remote_artifact_retrieval_verified": false,
+    "first_packaged_local_delivery_commit": "eddcdea",
+    "local_branch": "codex/v01c13-writer-entry-snapshot",
+    "recovery_bundle": "WallSprint_v0.1c13_handoff.bundle",
+    "required_action": "Reconnect GitHub authentication, push without force, fetch and compare exact ZIP bytes/hashes"
+  }
 }
