@@ -528,13 +528,14 @@ void finish(unsigned slot) {
                : "decoded_causal_path_and_same_invocation_bits_verified");
   writeLog(
       "MOVEMENT_POSITION_W_PROOF session=%llu invocation_id=%llu "
-      "store_rva=0x%llx source_kind=%s source_value_bits=0x%x "
+      "store_rva=0x2cfc945 decoded_store_offset=0x%x decoded_site_verified=%u "
+      "source_kind=%s source_value_bits=0x%x "
       "source_value_is_constant=%u source_value_valid=%u "
       "destination_value_valid=%u source_register_id=%d source_offset=%lld "
       "destination_value_bits=0x%x causality_proven=%u "
       "homogeneous_coordinate_semantics=unknown reason=%s",
       (unsigned long long)v.session, (unsigned long long)v.id,
-      (unsigned long long)(target - imageBase + contractWriter.stores[3]),
+      contractWriter.stores[3], unsigned(contractWriter.prefix && sites),
       contractWriter.wKind, contractWriter.wConstant ? contractWriter.wBits : w,
       unsigned(contractWriter.wConstant),
       unsigned(contractWriter.wConstant || (a.mask & 8)),
@@ -831,7 +832,10 @@ void configure(const Spec &s, Gate validate) noexcept {
              "full_bytes_logged=0 reason=%s",
              unsigned(contractWriter.decoded), unsigned(contractWriter.prefix),
              unsigned(contractWriter.xyz), contractWriter.wKind,
-             unsigned(contractWriter.w), s.begin + contractWriter.barrier,
+             unsigned(contractWriter.w),
+             contractWriter.decoded && !contractWriter.prefix
+                 ? s.begin + contractWriter.barrier
+                 : 0,
              contractWriter.barrierMnemonic, unsigned(contractCaller.prefix),
              unsigned(contractCaller.rdxLocal), unsigned(contractCaller.owned),
              contractProducer.kind,
