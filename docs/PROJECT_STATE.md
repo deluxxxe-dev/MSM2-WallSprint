@@ -1,7 +1,7 @@
 # WallSprint project state
 
 ## Goal
-Convert vanilla WallRun into surface-relative locomotion. Do not advance movement rewrite, adhesion, or camera until the runtime ownership gates authorize them.
+Convert vanilla WallRun into surface-relative locomotion. Do not advance movement rewrite, adhesion, or camera until runtime ownership gates authorize them.
 
 ## Exact target / safety
 - Spider-Man2.exe 2.810.0.0
@@ -9,7 +9,7 @@ Convert vanilla WallRun into surface-relative locomotion. Do not advance movemen
 - WallRun Init `0x14233C0`, Entry `0x14235C0`, Update `0x1424530`, Deinit `0x1416660`
 - Preserve fail-closed exact-build behavior, `AGENTS.md` / `docs/DEV_RULES.md`, independent implementation, and no raw user logs/full private game bodies in public artifacts.
 
-## Accepted orientation
+## Accepted orientation / c13 runtime evidence
 Planar Surface Up is accepted on cardinal and diagonal walls through verified Deinit.
 
 Latest human c13 combined A -> fast travel -> E log:
@@ -17,7 +17,7 @@ Latest human c13 combined A -> fast travel -> E log:
 - E/session2: 4281 ms, verified Deinit, retention pass, final Up dot surface=1, stale0, hard kill0, Position writes0
 - no visible anomaly reported
 
-Fast travel did not merge/corrupt sessions; the combined-log workflow is accepted.
+C13 captured 16 true writer-entry snapshots, eight per surface. Every sampled invocation paired to all four Position stores. On all 16, `RDX = entry RSP+0x28`; guarded `[RDX]` and stack `RSP+0x28` matched executed Position XYZ bits (`mask=0x7`), with source W=0 and destination W=1. This is correlation, not a writable contract.
 
 ## Verified movement chain
 ```text
@@ -29,32 +29,39 @@ return=0x351EEB0
 observed second return=0x351A020
 ```
 
-## c13 actual-game verdict
-Diagnostic PASS. See `analysis/V01C13_RUNTIME_RESULT.md`.
-
-Actual game captured 16 true writer-entry snapshots, 8 on A and 8 on E. Every sampled invocation paired to all four Position stores.
-
-Repeated source relation on all 16 invocations:
+## c14 implementation handoff
 ```text
-RDX = entry RSP + 0x28
-candidate20=[RDX]
-candidate23=stack RSP+0x28
-XYZ == exact executed Position XYZ stores
-source W=0
-Position W=1
-exact_store_match_mask=0x7
-observed_store_mask=0xF
+branch: codex/v01c14-rdx-source-contract
+implementation commit: 617d7b6a84f752582aebd7be8a766c5ef02e476a
+delivery head: 5fd2cdff9ae6732cf0eaa53fec02253c4d6ae25c
+version: v0.1c14 / package 0.1.32
 ```
-This is strong evidence that a caller-local stack payload feeds Position XYZ. It is not yet a writable contract.
 
-C13 aggregate telemetry has a reporting defect: final summary says `true_entry_snapshot=0/source_capture_ready=0` despite real captured snapshots, and stability fields remain 0 because the current aggregation requires W to match too.
+C14 implements a separate read-only bounded decoder/contract diagnostic for the exact RDX XYZ path, independent W, caller stack ownership, and bounded producer relation. It also repairs c13 true-entry/XYZ aggregate accounting. The c12 analyzer and c13 raw entry hook/cleanup remain unchanged.
 
-## Current gate
+Cloud validation reported by Codex:
+```text
+Windows x64 build: PASS
+Portable ASan/UBSan: 13 PASS
+DLL smoke: 4 PASS
+Full public hooks/native: 60 PASS / 5 private-input SKIP
+Public-source total: 77 PASS
+Separate accepted private-byte replay: 4 PASS records
+Focused entry: 7 PASS
+Focused contract: 4 PASS
+```
+
+Owned fixtures cover scalar/packed SSE/AVX/shuffle/double-lane XYZ/W paths, conservative refusal, stack ownership/bounds, direct/wrapper/tail/indirect producer edges, concurrent/reentrant invocation pairing, partial/unreadable records, and cleanup. Synthetic A/E orientation/Position-watch regressions remain PASS with Position writes0. These fixtures do not establish actual-game c14 causality or ownership.
+
+## Current evidence boundary
+C14 actual-game diagnostics are still pending. In particular, cloud tests do not prove the private runtime writer prefix, W behavior, RDX stack ownership, producer provenance, source lifetime, downstream conflict absence, typed semantics, or exclusive intended Hero translation effect.
+
 ```text
 writable_source_proven=0
 Position/source/input/movement writes=0
 ```
-Still unproven: exact RDX->XYZ causal dataflow, W source/meaning, stack-object lifetime, producer provenance through the observed caller2 path, downstream conflict behavior and exclusive intended translation effect.
+
+Do not infer velocity, displacement, desired direction, root motion, or writable movement semantics from c13 equality or c14 owned fixtures.
 
 ## Current stage
 1. lifecycle / SurfaceFrame ✅
@@ -65,16 +72,14 @@ Still unproven: exact RDX->XYZ causal dataflow, W source/meaning, stack-object l
 6. exact `0x351EEAB -> 0x2CFC900` callsite ✅
 7. true writer-entry capture ✅ c13 actual game
 8. RDX stack-local XYZ correlation ✅ c13 actual game
-9. RDX source construction / W / lifetime / producer contract ▶ CURRENT c14
-10. safe writable upstream movement source ⬜ NOT AUTHORIZED
-11. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-12. adhesion/contact refinement ⏸ deferred
-13. animation/camera/later traversal ⬜
+9. c14 RDX XYZ/W/storage/producer diagnostics implementation ✅ cloud validated
+10. c14 actual-game source-contract gate ▶ CURRENT
+11. safe writable upstream movement source ⬜ NOT AUTHORIZED
+12. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+13. adhesion/contact refinement ⏸ deferred
+14. animation/camera/later traversal ⬜
 
-## Current branch
-```text
-codex/v01c14-rdx-source-contract
-```
+## Current action
+Run `WallSprint_v0.1c14_rdx_source_contract.zip` in the actual game using ordinary input: A/cardinal ~4 s, fully end WallRun, move or fast-travel to E, E/diagonal ~4 s, then return one complete startup-through-cleanup WallSprint log. Video is optional unless a visible anomaly occurs.
 
-## Current objective
-Authenticate the RDX stack-local XYZ contract, prove W independently, trace who constructs the `RSP+0x28` payload before the writer call, and repair c13 telemetry aggregation. Keep movement read-only until a later explicit write gate.
+Adjudicate `MOVEMENT_STATIC_CONTRACT`, `MOVEMENT_RDX_XYZ_PROOF`, `MOVEMENT_POSITION_W_PROOF`, `MOVEMENT_RDX_STORAGE_PROOF`, `MOVEMENT_RDX_PRODUCER_PROOF`, and `MOVEMENT_ENTRY_CAPTURE_SUMMARY`. Refusal/partial/unresolved records are exact blockers and must not be bypassed by weakening gates.
