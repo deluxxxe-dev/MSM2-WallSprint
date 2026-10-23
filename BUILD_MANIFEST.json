@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c17",
-  "package_version": "0.1.35",
+  "version": "v0.1c18",
+  "package_version": "0.1.36",
   "artifact": "WallSprint.script",
-  "sha256": "b6a0da38d6440c4a9d338c3239ac8c125a02a3c5f5797c0a2224b3989f93fdda",
-  "dll_sha256": "550eecb23b14997842c78da2e8061cc62bf72c2ad68bf42e868ea6ba6539ea52",
+  "sha256": "cc23970a34bd151bf45be973a68eab5bfcfecd51a7522f25f92dd9ccc1df88c8",
+  "dll_sha256": "5af0dbb409fefa10044368461c1c839161150c9c9546cfd7e68c386631fe32f3",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -128,9 +128,9 @@
     "original_capture": "private PATH_B_FUNCTION/PATH_B_CODE before hook; never redistributed",
     "caller_original_sha256": "1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d"
   },
-  "validation": "Windows warnings-as-errors; portable/DLL/full c16 regression suite plus independent callee write-provenance/arguments/branches/control/source/Transform/global tests, pinned identity/region/footprint refusals and isolated source rebuild. Counts in CODEX_RESULT.",
+  "validation": "Windows warnings-as-errors; portable/DLL/full c17 regressions plus owned c18 exact CFG budgets/provenance/refusal/continuation tests and standalone source rebuild; counts in CODEX_RESULT.",
   "limitations": [
-    "Actual c17 callee writes/argument map/alias result or next blocker awaits A/E",
+    "Actual c18 CFG counts/write addresses/alias result/XYZ/W or exact next blocker await A/E; c17 actual argument and isolated logger verified",
     "Stack/global disjointness is conditional on per-invocation TEB/source/nonstack Transform/image region admission",
     "Unknown/conflicting pointer origins, unsupported effects and nested calls refuse at exact site",
     "Startup/current code snapshots are not atomic execution attestation; equality does not exclude transient writes",
@@ -617,7 +617,7 @@
     "data_page_protection_changes": false,
     "private_full_game_bodies_distributed": false
   },
-  "v01c17_gate": "CLOUD_CALLEE_ALIAS_IMPLEMENTATION_ACTUAL_A_E_PENDING",
+  "v01c17_gate": "REAL_A_E_DIAGNOSTIC_PASS_EXACT_JE_BRANCH_CAP_BLOCKER",
   "historical_c16_A_E_call_target_verified": true,
   "callee_alias_contract": {
     "diagnostic_only": true,
@@ -625,11 +625,11 @@
     "end": "0x2b235e9",
     "sha256": "2d62e54b270c46f4babc8120a7e56123e3fe467ca383895d57a989f853095a9d",
     "callee_byte_cap": 137,
-    "branch_cap": 4,
-    "paths_per_call": 16,
-    "states_per_call": 31,
+    "branch_cap": "exact_complete_decode_count",
+    "paths_per_call": "2^conditional_branch_count_max256",
+    "states_per_call": "2*paths-1_max511",
     "writer_call_states": 16,
-    "total_return_paths": 64,
+    "total_return_paths": 4096,
     "total_visits": 4096,
     "unique_write_cap": 24,
     "exact_writer_precall_arguments": true,
@@ -646,7 +646,10 @@
     "source_mutation": false,
     "input_mutation": false,
     "data_page_protection_changes": false,
-    "private_full_game_bodies_distributed": false
+    "private_full_game_bodies_distributed": false,
+    "branch_resource_ceiling": 8,
+    "pending_states": 9,
+    "actual_c18_alias_proven": false
   },
   "isolated_logging": {
     "directory": "game-root/log_wallsprint",
@@ -659,5 +662,17 @@
     "same_loaded_module_reenable": "append_selected_run",
     "shared_logs_fallback": false,
     "failure_channel": "OutputDebugString_stage_path_Win32Error"
+  },
+  "v01c18_gate": "CLOUD_LOCAL_CFG_ALIAS_IMPLEMENTATION_ACTUAL_A_E_PENDING",
+  "callee_cfg_contract": {
+    "complete_decode_before_budget": true,
+    "branch_cap_margin": 0,
+    "both_Jcc_successors": true,
+    "write_merge_conflict": "unknown_refuse",
+    "backedges": "exact_refusal",
+    "indirect_transfers": "no_expansion",
+    "nested_calls": "no_expansion",
+    "runtime_actual_counts": "pending_A_E",
+    "unique_write_metadata_only": true
   }
 }

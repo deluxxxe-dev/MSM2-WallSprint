@@ -1,74 +1,62 @@
-# Codex result — WallSprint v0.1c17
+# Codex result — WallSprint v0.1c18
 
-Branch: **codex/v01c17-callee-alias-contract**.
-Implementation commit: **d1867bb2de42079a46ceb547f8fccc4d477ae18d**.
-Pre-created handoff/base: **74a4c49487f9363792b9924b3634ca6eefd57f42**.
-C16 implementation0a00bde / delivery8f66b15 retained. Updated task instructions6836fec60e146eaae6dc38d95ff096d2654269b9 were merged and implemented, including isolated logging; alias implementation be59ac2 is retained in history. AGENTS/DEV_RULES/CODEX_NEXT unchanged; PROJECT_STATE updated as explicitly requested. No main rewrite/force push.
+Branch: **codex/v01c18-callee-branch-alias**.
+Implementation commit: **19aa3012959bf7538df3917278dd4a97551123dd**.
+Handoff/base: **07bce21ef386f8f23a7d8acb480672138e7abcef**; c17 delivery4f7d159 / implementationd1867bb retained. AGENTS/DEV_RULES/CODEX_NEXT and LOGGING_CONVENTION unchanged. PROJECT_STATE updated as explicitly requested. No main rewrite/force push.
 
-## Outcome / evidence boundary
+## Outcome / evidence
 
-**v0.1c17 / package0.1.35 implements pinned137byte callee write-address alias diagnostics using exact writer pre-call provenance and dedicated timestamped logging. Cloud build/tests PASS. Actual c17 alias result, XYZ/W advancement or narrower exact callee blocker and game-install logging verification remain PENDING human A/E.**
+**v0.1c18 / package0.1.36 implements exact-count-derived bounded local callee CFG and reuses c17 all-path protected-write alias checks. Cloud fixtures/regressions PASS; actual c18 branch count/write classification/next exact blocker/XYZ/W remains PENDING human A/E.**
 
-Human c16 A3875ms/E4203ms is accepted: verified Deinit/retention/Surface Up, hard0/stale0/Position writes0,8 complete entry maps each, source XYZ mask7/sourceW0/destinationW1 and clean diagnostic/watch restoration. A naturally admitted one bounded publication refresh. Exact call0x2CFC927 ->0x2B23560, return0x2CFC92C, boundary0x2B23560..0x2B235E9 and hash2d62e54b270c46f4babc8120a7e56123e3fe467ca383895d57a989f853095a9d are verified c16 metadata. C16 first MOV alias effect remained unknown.
-
-Cloud has neither the current private writer nor callee body; it does not invent the actual first MOV operand, argument origin or next instruction. Owned fixtures establish the mechanism only. No raw log/full private body was requested or distributed.
+Accepted c17 actual A3875ms/E4390ms: verified Deinit/retention/Up dot1/stale0/hard0/Position0,8 true entries and8 complete maps each, XYZ mask7/sourceW0/destinationW1, clean restoration. Dedicated log_wallsprint timestamped run file/no shared fallback verified. Exact call0x2CFC927->0x2B23560/return0x2CFC92C,137byte boundary ending0x2B235E9/hash2d62e54b270c46f4babc8120a7e56123e3fe467ca383895d57a989f853095a9d; RCX/RDX Transform, R8 constant, R9 unknown/source argument mask0. C17 stopped at0x2B235C1:je, generic4branch cap, before write classification. Zero writes seen did not prove no writes. Cloud has no current private function bodies; owned fixtures are not actual game evidence.
 
 ## Changes / files
 
-- `source/include/NativeHooks/rdx_source_contract.hpp`, `source/src/NativeHooks/rdx_source_contract.cpp`: separate bounded alias model and optional c17 branch-proof context. Legacy State/Slice/straight-line writer/c16 classifier/caller/producer and c15 graph construction stay unchanged. Exact writer pre-call GPR/vector/stack state maps into callee entry. RCX/RDX/R8/R9 labels/offsets/masks distinguish entry-RDX source from repurposed call-time RDX; unknown argument roots never imply distinct safe objects.
-- Tracks exact pointer copies, simple LEA/add/sub, caller stack arguments and in-image RIP-relative globals. Source normalization to writer-entry RSP+0x28 is conditional on existing per-invocation storage admission. Loaded pointer values/indexed/segmented/truncated addresses remain unknown. Every reachable write gets site/width/root/offset/class; source/Transform/unknown/conflicting writes refuse. Private frame/home writes require known bounds, protected return/source exclusions and no overlap with writer saved carriers. Actual stack/register saves/restores determine preserved nonvolatiles; volatile GPR/XMM0..5 are always invalidated. No arguments/return/flags/native behavior are altered.
-- Callee CFG is forward/local/instruction-aligned; both Jcc successors are enumerated without choosing flags. Caps137bytes/4 branches/16 pending paths/31 states per call,16 writer call states,64 total return paths,4096 total instruction visits,24 unique write sites. No recursion/nested-call expansion/indirect transfer/backedge/fixpoint. Missing/unbalanced return, unsupported effect and cap failure print exact blocker. Unique-site counts describe analyzed prefixes, not CPU execution counts. Different reaching addresses at one common store refuse even if individually safe.
-- `writer_entry_snapshot.cpp`: pin measured callee target/boundary/full digest before alias proof, retaining all exe/writer/caller/current-byte gates. Whole target identity is rechecked per sampled invocation. Entire stack write/return footprint must fit captured TEB lower and upper bounds, source must equal entryRSP+0x28 with guarded bytes, and Transform must be nonstack. Image-global separation additionally requires complete TEB stack and protected Transform range to exclude the image; unequal pointer values alone are insufficient. Only all-resolved plus both protected no-write certificates can resume existing exact XYZ/W stores. Unsupported later writer effects remain exact. Writable source never becomes positive.
-- Added `MOVEMENT_WRITER_CALL_ARGUMENT_CONTRACT`, `MOVEMENT_CALLEE_ALIAS_CONTRACT`; updated existing call/branch/XYZ/W/integrity records with compact metadata and exact address ambiguity. No full bytes, new observation hook, return interception, data-page protection change, game invocation or producer traversal.
-- New `callee_alias_contract_smoke.cpp` / `tools/test_callee_alias.sh`; existing entry fixture gains pinned-identity/upper-footprint/image-region refusal mode. Included in full hooks suite. Required analyses/source mirrors, README_TEST/README, BUILD/WORKLOG, version/mod, PROJECT_STATE and release recipes updated. No new dependency/vendor/reference MOD source.
-
-## Dedicated logging / files
-
-- New `source/include/GameInterop/log_file.hpp` provides worker-only run-file selection; telemetry uses the existing executable-path game root plus `log_wallsprint`, creating the directory if needed. Filename `WallSprint_YYYYMMDD-HHMMSS.log` uses host-PC GetLocalTime, while existing log-line UTC timestamps/telemetry payload stay unchanged.
-- Atomic Win32 CREATE_NEW selects the first unused name, then `_01`, `_02`, up to bounded `_9999`; no old file is renamed or truncated. Same loaded-module re-enable appends to the selected run file, so A/E stays together. Full module reload starts a new run file. No game install path is hard-coded.
-- Directory/root/open/collision failure reports explicit stage, attempted path and Win32Error through OutputDebugString; shared `logs` fallback is disabled. Diagnostic path text is bounded for debug formatting. Existing log mutex, shutdown and native policy paths remain.
-- New `log_file_smoke.cpp` / `tools/test_log_file.sh` use real Windows filesystem operations for formatting, creation, concurrent same-second collisions, existing-file preservation, restart append, held-file open failure, blocked directory, root/collision failure and shared-folder refusal. Included in `smoke_windows.sh`; actual DLL lifecycle tests read newly created files and assert any old shared log is byte-identical. README/README_TEST, LOGGING_CONVENTION, BUILD/WORKLOG, PROJECT_STATE, mod/package/release notes updated. No synthetic raw logs packaged.
+- NativeHooks/rdx_source_contract.hpp/.cpp: complete decode first counts all branch and conditional sites. Admitted branch budget=exact decoded count (zero margin); path2^N/state2*2^N-1 derived before evaluation. Separate hard8branch/256path storage ceiling,9pending DFS states,16writer call states/4096total instruction visits/24unique writes. Total4096return ceiling=16*256. Writer's own4branch/16path/31state contract unchanged. The hard8 ceiling is not an invented actual function count.
+- Forward local instruction-aligned Jcc/JMP only; both successors. Basic blocks/edges and unique visitation, return paths, exact unresolved site/mnemonic/effect, backedge/indirect/nested counts. No nested/cross-function expansion/recursion/loop guessing. Unsupported counted-register Jcc is distinguished from indirect transfer. Budget/unknown control overflows refuse.
+- Existing c17 private-stack/home/return/source16/Transform64/RIP-global/unknown classifier receives every reachable write/state. Source remains separate from Transform-derived call-time RDX. Reconvergence preserves separate path states; per-write certificate conflicts join to unknown/root-1 and refuse, including safe stack/global roots. No unsafe sibling is excused. Existing saved-carrier, volatile/nonvolatile, full current-code/hash/boundary/TEB footprint/image exclusions retained. Only all-resolved protected no-write can resume unchanged exact writer stores; W independent.
+- writer_entry_snapshot.cpp only adds MOVEMENT_CALLEE_CFG_CONTRACT, MOVEMENT_CALLEE_WRITE_ALIAS and derived budget fields. At most24compact site metadata records; failure explicitly labels analyzed_prefix_only. Existing call/branch/XYZ/W consume the stricter shared alias result. No new observation/hook/ABI/PAGE_GUARD/game call.
+- New callee_branch_alias_smoke.cpp/tools/test_callee_branch_alias.sh6groups integrated into full hooks. C17 alias7 retained, with only superseded fifth-Jcc refusal updated to counted fifth-Jcc success. Test gates otherwise unchanged. Current analyses/RDX history/source mirrors, README_TEST/README, PROJECT_STATE, BUILD/WORKLOG, version/mod, package/release recipes updated. No dependency/vendor/reference MOD addition.
 
 ## Validation
 
-Final Windows x64 build passed with warnings-as-errors. Full regressions ran serially. No assertion/timing/admission gate was weakened. Expanded boundary/cap fixtures passed in the focused alias run. Alias/native code stayed unchanged while logging received its own final DLL and filesystem regressions.
+Final Windows x64 warnings-as-errors build PASS. Serial public regressions:
 
 ```text
-Portable ASan/UBSan:                    13 PASS
-DLL smoke + logging:                    7 PASS
-Full public hooks/native:              83 PASS / 5 private-input SKIP
-Total public PASS records:             103
-Entry/ABI/hardware/finalization/gates:  10 PASS (included)
-C14 straight-line/storage/producer:      4 PASS (included)
-C15 branch contract:                    6 PASS (included)
-C16 exact call/effect:                   7 PASS (included)
-C17 alias contract:                     7 PASS (included)
-Isolated logging groups:                3 PASS (included in DLL smoke)
-Separate accepted private replay:       4 PASS records
+Portable ASan/UBSan                     13 PASS
+DLL smoke + isolated logging            7 PASS
+Full public hooks/native               89 PASS /5 private-input SKIP
+Total public PASS records              109
+Entry/ABI/hardware/finalization/gates   10 PASS (included)
+C14 contract                            4 PASS (included)
+C15 writer branch                       6 PASS (included)
+C16 call/effect                         7 PASS (included)
+C17 alias                               7 PASS (included)
+C18 callee CFG/branch alias              6 PASS (included)
+Logging                                 3 PASS (included in DLL smoke)
+Separate accepted old private replay     4 PASS records
 ```
 
-One public SKIP is optional historical authenticated writer444/caller128 replay, separately passed using authorized private input. Its4 records include a duplicate baseline and are not summed as unique public tests; the other4 unavailable historical private-input checks remain skipped. Those older reset-copy functions are not the current Position writer/callee. Captured instructions are not executed or packaged.
+The historical replay includes one duplicate baseline and resolves one optional public SKIP separately; other4 unavailable historical private input checks remain skipped. These older444/128byte reset-copy functions are not the current137byte callee. Bodies are never executed/published/packaged.
 
-New owned nonexecuted137/183byte fixtures cover private-stack/home/source16/Transform/return writes, MOV/LEA alias chains, repurposed call-time RDX, exact direct/global-argument RIP addresses and foreign global refusal, same-origin branch reconvergence versus conflicting addresses, all64 bounded return paths/fifth-branch refusal, unknown/index-width/control/nested-call blockers, caller saved-slot overlap, nonvolatile source-carrier clobber, exact XYZ/W continuation and later writer BSWAP barrier. Runtime helper tests cover fixed target/begin/end/digest mismatches, TEB footprint both bounds and complete image/source-stack/Transform range overlap/overflow refusals.
+New tests verify5Jcc/32paths/63states,128combinedwriter/callee paths, exact blocks12/edges15/visited11/15 and one write;8branch/256paths/511states versus full-count9branch refusal; unchanged4096visit refusal; conflicting safe stack/global root->unknown; Transform-derived RCX and RDX writes/distinct entry-source/unknownR9; safe home/global and XYZ/W continuation/later writer BSWAP; exact backedge/indirect/nested/foreign/mid-target/unsupported direct form and auth refusals. C17 private-stack/source/global/saved-carrier/nonvolatile/TEB/identity tests pass.
 
-Unchanged raw entry tests preserve GPR/YMM/XMM/x87/MXCSR/flags/stack/nonvolatiles/LastError/returns. Concurrent+nested owned hardware still yields8 captures/7 complete maps/28 paired stores/two threads, XYZ mask7 with sourceW0/destinationW1. Finalized summaries remain stop-only/idempotent; never-activated session stays0. Cleanup/foreign patches/retained trampolines and all c7-c16 policies pass.
+Owned hardware still preserves raw entry ABI/YMM/GPR/x87/MXCSR/flags/stack/LastError/returns, concurrent+nested8captures/7complete maps/28paired stores/two threads, XYZ mask7/sourceW0/destW1 and finalized cleanup. Owned production A/E orientation/watch fixture retains verified Deinit/retention/Up1/hard0/Position0 and DR restoration; measured durations and counters are in analysis/V01C18_RELEASE.json. These fixtures cannot pass actual-game admission.
 
-Composed production orientation/watch fixture: A4113ms (A176/B176, held2130ms/132 updates), E4106ms (A178/B178, held2136ms/132 updates). Both verified Deinit/retention/Up-dot1/hard0/no stale,12 Position events/no drops, clean DR restoration and Position writes0. This owned host cannot pass actual-game entry admission.
+Standalone source ZIP: **PASS: fresh source ZIP rebuilt Windows DLL, all40 focused entry/contract/branch/call/alias/c18 records plus7 DLL/logging records; no private captures, prior build or logs.** Archive CRC/current complete source/docs/licenses/nested script/DLL hashes/private-body exclusion are recorded in analysis/V01C18_RELEASE.json. No browser/anonymous HTTP download test is claimed.
 
-Standalone source ZIP: **PASS**. A fresh corrected extraction without builds/logs/private captures rebuilt the Windows DLL and passed all34 focused entry/contract/branch/call/alias records plus7 DLL/logging smoke records. Correct c17/package version, PE32+/exports/system imports and no WriteProcessMemory passed. Final archive/current-source/docs/license/hash/private-body exclusion checks are recorded in analysis/V01C17_RELEASE.json.
+## Safety / limits
 
-## Safety / limitations
+Exact exe2.810.0.0/SHA c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9 and pinned callee identity/current full bytes required. Existing Hero/Transform/session/generation/thread/epoch/freshness/direct-call/owned-code/8entry/DR limits unchanged. Legacy State/Slice/straight-line writer/caller/producer, c15writer CFG, c16classifier, native lifecycle/c12 analyzer, raw entry thunk/start/activate/cancel/stop/pair/drain/final summaries and dedicated logger code are unchanged. No test assertion/timing/admission was weakened beyond replacing the intentionally superseded callee4branch cap.
 
-Exact Spider-Man2.exe2.810.0.0/SHA c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9 and measured callee hash are mandatory. Existing Hero/Transform/session/generation/thread/epoch/freshness/source/owned-code gates,8 entries/session and8 windows/600ms watch/raw256/printed4/thread128/no rescans remain. Native source/lifecycle/c12 analyzer, c13 raw thunk/start/activate/cancel/stop/pair/drain and c14/c15 final accounting/finalization remain unchanged. Telemetry changes are confined to log opening and the compact LOG_FILE path record; UTC formatting and buildIdentity/native lifecycle logic remain identical.
+Runtime snapshots do not attest atomic code execution; no before/after equality excludes transient writes. Global/stack certificates remain conditional on per-invocation regions. On any failure, counts/metadata cover only explored prefix and no protected no-write certificate is granted. Actual c18 PASS A or narrower B requires the human log; no claim that the real JE or any later write has already passed.
 
-Static no-write certificates are conditional on per-invocation alias/region admission. Code snapshots do not attest atomic execution; before/after equality cannot exclude transient writes. Unknown/conflicting address/unsupported effect supplies an exact diagnostic blocker instead of assumed safety. Static result A or narrower B needs no new runtime detour. Actual c17 target write map/proof/next blocker and visible A/E regression still require human evidence.
-
-writable_source_proven=0 remains unconditional. No Position/RDX/stack-source/input/movement/velocity/gravity/adhesion/camera/animation writes. Producer0x351EB00 is deferred; caller_owned/ownership_exclusive/source_lifetime_exclusive/downstream_conflicts_proven_absent remain unpromoted0. Full writer proof would not grant mutation permission. Existing incomplete hardware coverage, admitted-store/close overlap and bounded refresh limits remain.
+writable_source_proven=0, caller_owned=0, ownership_exclusive=0, source_lifetime_exclusive=0, downstream_conflicts_proven_absent=0. Position/source/input/movement writes=0. No producer0x351EB00 traversal, movement/velocity/gravity/adhesion/camera/animation/traversal implementation. Existing incomplete hardware coverage/admitted-store close overlap/bounded refresh limitations remain.
 
 ## Outputs / next human test
 
-- WallSprint_v0.1c17_callee_alias_contract.zip
-- WallSprint_v0.1c17_source.zip
-- root WallSprint.script, BUILD_MANIFEST.json, analysis/V01C17_RELEASE.json
+- WallSprint_v0.1c18_callee_branch_alias.zip
+- WallSprint_v0.1c18_source.zip
+- WallSprint.script / BUILD_MANIFEST.json / analysis/V01C18_RELEASE.json
 
-Install c17 in place of older WallSprint and confirm a new local-time filename under game-root log_wallsprint. Ordinary A/cardinal~4s -> fully end WallRun -> move/fast-travel -> E/diagonal~4s -> send the newest complete timestamped WallSprint_YYYYMMDD-HHMMSS.log (or collision-suffixed variant) from log_wallsprint privately to ChatGPT. No special input; video only for visible anomaly. Open README_TEST on GitHub using fixed delivery link. Confirm c17/package0.1.35/exact build, pinned call identity, argument origins, ALIAS_CONTRACT write classes/conditional no-write/precise next effect, BRANCH_CONTRACT XYZ/next writer blocker, independent W, finalized summaries and clean orientation/watch restoration. No producer/movement follow-up automatically authorized.
+Use fixed GitHub direct ZIP and GitHub README_TEST links in delivery. Replace old WallSprint, verify v0.1c18/package0.1.36/exact build and new log_wallsprint run file. A/cardinal~4s -> fully end -> move/fast-travel -> E/diagonal~4s; normal input. Send newest complete timestamped log privately to ChatGPT, video only on visible anomaly. Review CFG actual counts/caps/visited coverage, per-site write classes/possible aliases, protected no-write and writer progress or exact next blocker, independent W, finalized8entry/maps, verified Deinit/retention/Up and watch restoration. No automatic later producer/movement task authorization.
