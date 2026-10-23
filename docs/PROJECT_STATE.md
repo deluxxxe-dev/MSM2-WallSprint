@@ -93,7 +93,7 @@ Upstream producer `0x351EB00` remains deferred.
 11. c16 exact call target/boundary/hash ✅
 12. c17 call argument provenance ✅
 13. c17 isolated timestamped logging ✅ actual game
-14. c18 bounded local callee CFG + write alias proof ▶ CURRENT
+14. c18 bounded local callee CFG + write alias implementation ✅ CLOUD; actual A/E PENDING
 15. resume writer XYZ/W causal proof ⏸ after callee alias
 16. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
 17. safe writable upstream movement source ⬜ NOT AUTHORIZED
@@ -110,5 +110,7 @@ c17 version: v0.1c17 / package 0.1.35
 c18 branch: codex/v01c18-callee-branch-alias
 ```
 
-## Current objective
+## Current objective / c18 implementation
 Resolve only the exact local control flow in authenticated callee `0x2B23560..0x2B235E9`, beginning at blocker `0x2B235C1: je`, and feed every reachable memory write into the existing c17 address-provenance classifier. Derive a small callee-specific branch cap from the actual decoded local CFG rather than blindly raising the old cap. Resume writer proof only after source/Transform no-write certificates pass. No producer traversal or movement/source/input mutation in c18.
+
+C18 cloud implementation now counts complete authenticated local branches before deriving branch/path/state budgets, explores both successors, emits CFG and unique write metadata, and preserves c17 protected-object provenance. Exact runtime count is not available from the c17 compact excerpt; actual c18 count/write classification/next blocker remain pending. No upstream traversal or write permission is added. See V01C18_CALLEE_BRANCH_ALIAS.md and CODEX_RESULT.md. C18 target version v0.1c18/package0.1.36.

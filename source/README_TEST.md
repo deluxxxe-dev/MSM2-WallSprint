@@ -1,10 +1,10 @@
-# WallSprint v0.1c17 — Callee Alias Contract
+# WallSprint v0.1c18 — Callee Branch-Aware Alias Contract
 
-Package **0.1.35**。c16 で確認した callee `0x2B23560..0x2B235E9` の書き込み先を、writer の call 直前の引数から追跡する診断版です。source／Transform と重ならないと証明できた場合だけ XYZ／W 解析を続け、未解決なら正確な命令・書き込み先の由来を記録します。Position・source・入力・移動の書き換えはありません。見た目の変化は想定していません。
+Package **0.1.36**。c17 の実機で止まった callee 内 `0x2B235C1: je` の分岐解析を進める診断版です。認証済み137バイトの全分岐を数えて解析上限を計算し、両方の経路で書き込み先を確認します。source／Transform に書かないと証明できた場合だけ writer の XYZ／W 解析を再開し、未解決なら正確な障害を記録します。Position・source・入力・移動の書き換えはありません。見た目の変化は想定していません。実機の分岐数・書き込み先・次の障害は今回の試験で確認します。
 
 ## ダウンロード・導入
 
-配布は **WallSprint_v0.1c17_callee_alias_contract.zip**。完了メッセージの GitHub 直接ダウンロードリンクから取得し、この手順も GitHub 上で開いてください。
+配布は **WallSprint_v0.1c18_callee_branch_alias.zip**。完了メッセージの GitHub 直接ダウンロードリンクから取得し、この手順も GitHub 上で開いてください。
 
 ゲームを完全終了し、旧 WallSprint を無効にして外側の ZIP を展開。**WallSprint.script は解凍せず** Overstrike に追加して Install mods。従来の Script support、`-scripts` と配布 INI を使います。
 
@@ -23,13 +23,15 @@ Package **0.1.35**。c16 で確認した callee `0x2B23560..0x2B235E9` の書き
 ## 確認するログ
 
 ```text
-WallSprint v0.1c17 package_version=0.1.35
+WallSprint v0.1c18 package_version=0.1.36
 target_build_gate=ACCEPTED
 PATH_B_COMPACT3X3_PROOF admitted=1
 DUAL_SOURCE_ADMISSION admitted=1
 MOVEMENT_ENTRY_DIAGNOSTIC_GATE admitted=1
 MOVEMENT_WRITER_CALL_CONTRACT ... call_rva=0x2cfc927 call_kind=... target_rva=... target_boundary_begin=... target_boundary_end=... target_code_hash=... return_rva=0x2cfc92c current_code_verified=... relevant_to_xyz_paths=... effect=... next_callee_barrier_rva=... next_callee_instruction=... reason=...
 MOVEMENT_WRITER_CALL_ARGUMENT_CONTRACT ... arg_rcx_origin=... arg_rdx_origin=... arg_r8_origin=... arg_r9_origin=... source_span_alias_mask=... transform_alias_mask=... proof_complete=...
+MOVEMENT_CALLEE_CFG_CONTRACT ... local_branch_sites=... conditional_branch_sites=... branch_cap=... path_cap_per_call=... state_cap_per_call=... blocks_total=... edges_total=... blocks_visited=... edges_visited=... paths_examined=... backedges_seen=... indirect_transfers_seen=... nested_calls_seen=... first_unresolved_rva=... first_unresolved_instruction=... reason=...
+MOVEMENT_CALLEE_WRITE_ALIAS ... site_rva=... width=... address_class=... address_root=... address_offset=... may_alias_source=... may_alias_transform=... coverage=...
 MOVEMENT_CALLEE_ALIAS_CONTRACT ... target_rva=0x2b23560 memory_writes_seen=... source_span_no_write_proven=... transform_no_write_proven=... all_relevant_write_aliases_resolved=... next_barrier_rva=... next_barrier_instruction=... next_barrier_effect=... reason=...
 MOVEMENT_WRITER_CALL_INTEGRITY ... current_code_verified=... stack_footprint_verified=... global_regions_verified=...
 MOVEMENT_RDX_BRANCH_CONTRACT ... all_relevant_store_paths_proven=... next_barrier_rva=... next_barrier_instruction=... reason=...
@@ -41,4 +43,4 @@ MOVEMENT_LINEAGE_SUMMARY ... true_entry_snapshots=... complete_invocation_maps=.
 
 callee の未知／競合する書き込み先、source／Transform 書き込み、入れ子 call、境界・上限の拒否も、次の障害を正確に絞れた診断結果として扱います。値の一致だけでは call の無害性や書き込み許可を証明しません。XYZ と W は別判定です。`writable_source_proven=0` と `Position_writes_by_mod=0` を維持します。
 
-従来の回帰確認は、A/E の通常 Deinit、retention、Surface Up 維持、hard kill／stale なし、入口診断と DR/watch の正常な解除です。起動版が c16 になっていることも確認してください。
+従来の回帰確認は、A/E の通常 Deinit、retention、Surface Up 維持、hard kill／stale なし、入口診断と DR/watch の正常な解除です。起動版が c18 になっていることも確認してください。

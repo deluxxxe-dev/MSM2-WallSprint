@@ -765,7 +765,30 @@ bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
   boundaries.fill(-1);
   for (unsigned i = 0; i < d.n; ++i)
     boundaries[d.p[i].address - call.begin] = int(i);
-  unsigned branches = 0;
+  // Count the *entire* authenticated decode first. Never discover the budget
+  // by accepting a prefix or by taking only one observed branch successor.
+  a.localBranches = a.conditionalBranches = 0;
+  a.blocks = a.edges = a.blocksVisited = a.edgesVisited = 0;
+  a.backedges = a.indirectTransfers = a.nestedCalls = 0;
+  a.cfgComplete = false;
+  for (unsigned i = 0; i < d.n; ++i) {
+    if (group(d.p[i], CS_GRP_JUMP)) {
+      ++a.localBranches;
+      if (conditional(d.p[i].id))
+        ++a.conditionalBranches;
+    }
+    if (group(d.p[i], CS_GRP_CALL))
+      ++a.nestedCalls;
+  }
+  a.branchBudget = a.localBranches; // exact count, zero speculative margin
+  a.pathBudget = a.conditionalBranches <= aliasBranchCeiling
+                     ? 1u << a.conditionalBranches
+                     : 0;
+  a.stateBudget = a.pathBudget ? 2 * a.pathBudget - 1 : 0;
+  std::array<bool, aliasByteCap> leader{}, visitedBlocks{};
+  std::array<std::array<bool, 2>, aliasByteCap> visitedEdges{};
+  std::array<unsigned, aliasByteCap> block{};
+  leader[0] = true;
   for (unsigned i = 0; i < d.n; ++i) {
     auto &ins = d.p[i];
     auto &g = nodes[i];
@@ -773,34 +796,61 @@ bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
     if (group(ins, CS_GRP_JUMP)) {
       g.branch = true;
       g.cond = conditional(ins.id);
-      if (++branches > 4 || (ins.id != X86_INS_JMP && !g.cond) ||
-          x.op_count != 1 || x.operands[0].type != X86_OP_IMM)
-        return fail(ins.address, ins.mnemonic, "indirect_or_branch_cap",
-                    "callee_indirect_transfer_or_branch_cap_refused");
+      if (x.op_count != 1 || x.operands[0].type != X86_OP_IMM) {
+        ++a.indirectTransfers;
+        return fail(ins.address, ins.mnemonic, "indirect_transfer",
+                    "callee_indirect_transfer_no_expansion");
+      }
+      if (ins.id != X86_INS_JMP && !g.cond)
+        return fail(ins.address, ins.mnemonic, "unsupported_branch_form",
+                    "callee_only_regular_flag_Jcc_and_direct_JMP_supported");
       auto dest = x.operands[0].imm;
-      if (dest <= std::int64_t(ins.address) ||
-          dest < std::int64_t(call.begin) || dest >= std::int64_t(call.end) ||
+      if (dest <= std::int64_t(ins.address)) {
+        ++a.backedges;
+        return fail(ins.address, ins.mnemonic, "backedge",
+                    "callee_backedge_no_termination_guess");
+      }
+      if (dest < std::int64_t(call.begin) || dest >= std::int64_t(call.end) ||
           boundaries[dest - call.begin] < 0)
-        return fail(
-            ins.address, ins.mnemonic, "nonlocal_backedge_or_boundary",
-            "callee_nonforward_or_nonlocal_or_mid_instruction_branch_refused");
+        return fail(ins.address, ins.mnemonic, "nonlocal_or_boundary",
+                    "callee_nonlocal_or_mid_instruction_branch_refused");
       g.next[g.count++] = boundaries[dest - call.begin];
+      leader[g.next[0]] = true;
       if (g.cond) {
         if (i + 1 == d.n)
           return fail(ins.address, ins.mnemonic, "fallthrough",
                       "callee_conditional_leaves_boundary");
         g.next[g.count++] = int(i + 1);
       }
-    } else if (ins.id == X86_INS_RET && x.op_count == 0)
+      if (i + 1 < d.n)
+        leader[i + 1] = true;
+      // Count is known before imposing the separate hard resource ceiling.
+      if (a.branchBudget > aliasBranchCeiling)
+        return fail(ins.address, ins.mnemonic, "branch_resource_ceiling",
+                    "exact_decoded_branch_count_exceeds_owned_path_storage");
+    } else if (ins.id == X86_INS_RET && x.op_count == 0) {
       g.ret = true;
-    else if (i + 1 < d.n)
+      if (i + 1 < d.n)
+        leader[i + 1] = true;
+    } else if (i + 1 < d.n)
       g.next[g.count++] = int(i + 1);
   }
+  for (unsigned i = 0; i < d.n; ++i) {
+    if (leader[i])
+      ++a.blocks;
+    block[i] = a.blocks - 1;
+    for (unsigned j = 0; j < nodes[i].count; ++j)
+      if (nodes[i].branch || leader[nodes[i].next[j]])
+        ++a.edges;
+  }
+  a.cfgComplete = true;
   struct Work {
     Slice slice{};
     unsigned pc{};
   };
-  std::array<Work, 16> todo{};
+  // Depth-first enumeration needs at most one pending state per Jcc depth.
+  // It avoids a large heap/stack array of 256 full provenance states.
+  std::array<Work, aliasBranchCeiling + 1> todo{};
   unsigned pending = 1, states = 1;
   todo[0].slice = writer;
   todo[0].slice.s.g[4] = plus(sp, -8);
@@ -865,6 +915,10 @@ bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
             old.width != width || old.kind != kind) {
           --a.counts[old.kind];
           old.kind = unknownPointer;
+          old.root = -1;
+          old.offset = 0;
+          a.barrierRoot = -1;
+          a.barrierOffset = 0;
           ++a.counts[unknownPointer];
           return fail(ins.address, ins.mnemonic,
                       "conflicting_address_provenance",
@@ -904,9 +958,21 @@ bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
       if (++a.visits > 4096)
         return fail(ins.address, ins.mnemonic, "visit_cap",
                     "callee_total_instruction_visit_cap_exceeded");
+      if (!visitedBlocks[block[work.pc]]) {
+        visitedBlocks[block[work.pc]] = true;
+        ++a.blocksVisited;
+      }
+      auto edge = [&](unsigned j) {
+        if ((g.branch || leader[g.next[j]]) && !visitedEdges[work.pc][j]) {
+          visitedEdges[work.pc][j] = true;
+          ++a.edgesVisited;
+        }
+      };
       if (g.branch) {
+        for (unsigned j = 0; j < g.count; ++j)
+          edge(j);
         if (g.cond) {
-          if (pending == todo.size() || states + 2 > 31)
+          if (pending == todo.size() || states + 2 > a.stateBudget)
             return fail(ins.address, ins.mnemonic, "state_cap",
                         "callee_local_state_cap_exceeded");
           todo[pending] = work;
@@ -928,7 +994,7 @@ bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
             if (!equal(work.slice.s.x[j * 4 + lane], initial.x[j * 4 + lane]))
               xmmMask |= 1u << j;
         }
-        if (++a.paths > 64)
+        if (++a.paths > 16 * aliasPathCeiling)
           return fail(ins.address, ins.mnemonic, "path_cap",
                       "callee_total_return_path_cap_exceeded");
         break;
@@ -985,6 +1051,7 @@ bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
       if (!g.count)
         return fail(ins.address, ins.mnemonic, "fallthrough",
                     "callee_path_has_no_authenticated_return");
+      edge(0);
       work.pc = unsigned(g.next[0]);
     }
   }

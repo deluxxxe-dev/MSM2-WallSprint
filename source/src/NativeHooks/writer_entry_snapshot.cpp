@@ -929,6 +929,44 @@ void configure(const Spec &s, Gate validate) noexcept {
         (long long)writerAlias.argumentOffsets[3], writerAlias.sourceArgMask,
         writerAlias.transformArgMask, unsigned(writerAlias.argumentsComplete),
         writerAlias.analyses, writerAlias.reason);
+    writeLog(
+        "MOVEMENT_CALLEE_CFG_CONTRACT target_rva=0x2b23560 "
+        "target_end=0x2b235e9 "
+        "local_branch_sites=%u conditional_branch_sites=%u branch_cap=%u "
+        "branch_resource_ceiling=8 path_cap_per_call=%u state_cap_per_call=%u "
+        "blocks_total=%u edges_total=%u blocks_visited=%u edges_visited=%u "
+        "paths_examined=%u backedges_seen=%u indirect_transfers_seen=%u "
+        "nested_calls_seen=%u complete_local_cfg=%u "
+        "first_unresolved_rva=0x%llx "
+        "first_unresolved_instruction=%s first_unresolved_effect=%s "
+        "counts_scope=static_analysis_not_CPU_execution full_bytes_logged=0 "
+        "reason=%s",
+        writerAlias.localBranches, writerAlias.conditionalBranches,
+        writerAlias.branchBudget, writerAlias.pathBudget,
+        writerAlias.stateBudget, writerAlias.blocks, writerAlias.edges,
+        writerAlias.blocksVisited, writerAlias.edgesVisited, writerAlias.paths,
+        writerAlias.backedges, writerAlias.indirectTransfers,
+        writerAlias.nestedCalls, unsigned(writerAlias.cfgComplete),
+        (unsigned long long)writerAlias.barrier, writerAlias.mnemonic,
+        writerAlias.barrierEffect, writerAlias.reason);
+    for (unsigned i = 0; i < writerAlias.writes; ++i) {
+      const auto &w = writerAlias.writeSites[i];
+      const bool unknown = w.kind == ws::rdx::unknownPointer;
+      writeLog("MOVEMENT_CALLEE_WRITE_ALIAS site_rva=0x%llx width=%u "
+               "address_class=%s address_root=%d address_offset=%lld "
+               "may_alias_source=%u may_alias_transform=%u "
+               "global_disjoint_conditional_on_runtime_regions=%u "
+               "coverage=%s full_bytes_logged=0",
+               (unsigned long long)w.at, w.width,
+               ws::rdx::aliasKindName(w.kind), w.root, (long long)w.offset,
+               unsigned(unknown || w.kind == ws::rdx::sourceExact ||
+                        w.kind == ws::rdx::sourcePossible),
+               unsigned(unknown || w.kind == ws::rdx::transformExact ||
+                        w.kind == ws::rdx::transformPossible),
+               unsigned(w.kind == ws::rdx::imageGlobal),
+               writerAlias.resolved ? "all_reachable_paths"
+                                    : "analyzed_prefix_only");
+    }
     const auto &ac = writerAlias.counts;
     writeLog(
         "MOVEMENT_CALLEE_ALIAS_CONTRACT target_rva=0x2b23560 "
@@ -943,9 +981,9 @@ void configure(const Spec &s, Gate validate) noexcept {
         "source_span_no_write_proven=%u transform_no_write_proven=%u "
         "all_relevant_write_aliases_resolved=%u next_barrier_rva=0x%llx "
         "next_barrier_instruction=%s next_barrier_effect=%s address_root=%d "
-        "address_offset=%lld write_width=%u callee_byte_cap=137 branch_cap=4 "
-        "path_cap_per_call=16 state_cap_per_call=31 call_state_cap=16 "
-        "total_path_cap=64 "
+        "address_offset=%lld write_width=%u callee_byte_cap=137 branch_cap=%u "
+        "path_cap_per_call=%u state_cap_per_call=%u call_state_cap=16 "
+        "total_path_cap=4096 "
         "total_visit_cap=4096 unique_write_cap=24 instruction_visits=%u "
         "return_paths=%u "
         "RIP_disjoint_conditional_on_runtime_regions=1 runtime_observation=0 "
@@ -961,7 +999,9 @@ void configure(const Spec &s, Gate validate) noexcept {
         (unsigned long long)writerAlias.barrier, writerAlias.mnemonic,
         writerAlias.barrierEffect, writerAlias.barrierRoot,
         (long long)writerAlias.barrierOffset, writerAlias.barrierWidth,
-        writerAlias.visits, writerAlias.paths, writerAlias.reason);
+        writerAlias.branchBudget, writerAlias.pathBudget,
+        writerAlias.stateBudget, writerAlias.visits, writerAlias.paths,
+        writerAlias.reason);
     writeLog(
         "MOVEMENT_WRITER_CALL_CONTRACT writer_rva=0x2cfc900 call_rva=0x2cfc927 "
         "call_kind=%s target_rva=0x%llx target_boundary_begin=0x%llx "

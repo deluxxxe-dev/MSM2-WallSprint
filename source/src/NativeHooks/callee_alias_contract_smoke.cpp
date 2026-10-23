@@ -163,7 +163,9 @@ int main() {
   assert(q.xyz && maximal.alias.paths == 64 && maximal.alias.visits <= 4096);
   put(maximal.body, 12, {0x75, 1});
   q = maximal.run();
-  assert(!q.xyz && maximal.alias.barrier == calleeRva + 12);
+  assert(q.xyz && maximal.alias.localBranches == 5 &&
+         maximal.alias.branchBudget == 5 && maximal.alias.pathBudget == 32 &&
+         maximal.alias.stateBudget == 63 && maximal.alias.paths == 128);
   assert(!home.run(false).xyz);
   puts("PASS: c17 unknown pointer, nested call, indirect/backedge and 32-bit "
        "address truncation stop at exact callee blocker; unauthenticated "

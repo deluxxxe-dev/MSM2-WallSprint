@@ -54,3 +54,8 @@ C16: tools/test_writer_call.sh adds independently authored nonexecuted exact-cal
 C17: tools/test_callee_alias.sh adds owned137byte callee/183byte writer fixtures for stack/home/source/Transform/global/argument/branch/conflict/unknown/control/exact-store continuation. test_writer_entry.sh adds pinned identity and runtime footprint/region refusal tests. Both are in hooks suite; no new dependencies/hooks/private bodies.
 
 C17 isolated logging: tools/test_log_file.sh uses actual Windows filesystem calls for path/timestamp/directory/collision/concurrent/open-failure/reopen/never-shared behavior. Included in smoke_windows.sh, whose actual DLL lifecycle integration reads only newly created timestamped files and verifies any old shared log remains byte-identical. Filename local time; existing telemetry line UTC format unchanged.
+
+
+## v0.1c18 local callee CFG
+
+Run tools/build_windows.sh, tools/test.sh, tools/smoke_windows.sh and tools/test_hooks_windows.sh serially. Focused tools/test_callee_branch_alias.sh adds6 groups to existing c17 alias7; uses independent nonexecuted fixtures, exact decoded count-derived caps and compact CFG/write summaries. Hard8branch storage ceiling is separate from measured runtime branch count; visits4096, writer16states and24write sites remain bounded. Private game body is unavailable/unpublished. Alias-safe paths alone may resume writer proof; no movement permission. Actual A/E pending. Logger/native lifecycle/entry ABI unchanged. tools/release.py emits c18 diagnostic/source ZIPs; rebuild fresh source ZIP with all focused contracts and DLL/logger smoke. See V01C18_CALLEE_BRANCH_ALIAS.md/CODEX_RESULT.md.

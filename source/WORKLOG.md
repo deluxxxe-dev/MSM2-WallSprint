@@ -329,3 +329,8 @@ Consumed accepted compact c16 A3875/E4203ms, exact137byte target/hash and first 
 C17 task update6836fec was merged without rewriting remote work: added dedicated game-root log_wallsprint timestamped local-time files, atomic CREATE_NEW suffix collisions, fixed per-module run append on worker restart, explicit debug-only filesystem failure and no shared-logs fallback. Full alias implementation remains unchanged. Logging tests and final source rebuild recorded in CODEX_RESULT.
 
 Final standalone logging validation found smoke_windows.sh assumed a pre-existing maintainer logs directory. It now creates its own output directory before piping test stdout; final corrected source ZIP is extracted independently and rebuilt again. Production logging/native behavior is unchanged by this test setup fix.
+
+
+## v0.1c18 local callee CFG
+
+Run tools/build_windows.sh, tools/test.sh, tools/smoke_windows.sh and tools/test_hooks_windows.sh serially. Focused tools/test_callee_branch_alias.sh adds6 groups to existing c17 alias7; uses independent nonexecuted fixtures, exact decoded count-derived caps and compact CFG/write summaries. Hard8branch storage ceiling is separate from measured runtime branch count; visits4096, writer16states and24write sites remain bounded. Private game body is unavailable/unpublished. Alias-safe paths alone may resume writer proof; no movement permission. Actual A/E pending. Logger/native lifecycle/entry ABI unchanged. tools/release.py emits c18 diagnostic/source ZIPs; rebuild fresh source ZIP with all focused contracts and DLL/logger smoke. See V01C18_CALLEE_BRANCH_ALIAS.md/CODEX_RESULT.md.

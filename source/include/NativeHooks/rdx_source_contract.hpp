@@ -28,6 +28,9 @@ CallEffect exactCall(const unsigned char *, std::size_t,
 void classifyCallee(CallEffect &, const unsigned char *, std::size_t,
                     std::uintptr_t begin, std::uintptr_t end) noexcept;
 inline constexpr unsigned aliasByteCap = 137, aliasWriteCap = 24;
+// Absolute allocation ceiling, not the admitted CFG's branch budget. The
+// complete authenticated decode derives its own exact branch/path/state caps.
+inline constexpr unsigned aliasBranchCeiling = 8, aliasPathCeiling = 256;
 enum AliasKind {
   privateStack,
   callerArea,
@@ -61,6 +64,10 @@ struct CalleeAlias {
   std::array<std::int64_t, 4> argumentOffsets{};
   std::array<unsigned, aliasKinds> counts{};
   std::array<AliasWrite, aliasWriteCap> writeSites{};
+  unsigned localBranches{}, conditionalBranches{}, branchBudget{}, pathBudget{},
+      stateBudget{}, blocks{}, edges{}, blocksVisited{}, edgesVisited{},
+      backedges{}, indirectTransfers{}, nestedCalls{};
+  bool cfgComplete{};
   std::int64_t stackLow{}, stackHigh{};
   std::uintptr_t barrier{};
   int barrierRoot{};

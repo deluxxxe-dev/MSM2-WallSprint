@@ -55,3 +55,4 @@ bash tools/test_writer_branch.sh
 bash tools/test_writer_call.sh
 
 bash tools/test_callee_alias.sh
+bash tools/test_callee_branch_alias.sh
