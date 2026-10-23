@@ -1,98 +1,172 @@
-# Next task — WallSprint v0.1c16 Actual-Game Writer Call Gate
+# Next task — WallSprint v0.1c17 Callee Alias Contract
 
-## Status
+## Base
 ```text
-implementation branch: codex/v01c16-writer-call-effect
-implementation commit: 0a00bdeee05ffdae593d6963abd5c24424a2d8ef
-validated/package head: 8f66b15a109e503cdfc115eb5a48ebadd7bc4113
-version: v0.1c16 / package 0.1.34
+source branch: codex/v01c16-writer-call-effect
+source implementation: 0a00bdeee05ffdae593d6963abd5c24424a2d8ef
+source delivery head: 8f66b15a109e503cdfc115eb5a48ebadd7bc4113
+next branch: codex/v01c17-callee-alias-contract
+version target: v0.1c17
 ```
 
-Read `AGENTS.md`, `docs/DEV_RULES.md`, `docs/PROJECT_STATE.md`, `analysis/V01C15_RUNTIME_RESULT.md`, `analysis/V01C16_WRITER_CALL_EFFECT.md`, `analysis/V01C16_GATE.md`, and c16 `docs/CODEX_RESULT.md` before interpreting the next log.
+Read `AGENTS.md`, `docs/DEV_RULES.md`, `docs/PROJECT_STATE.md`, `analysis/V01C16_RUNTIME_RESULT.md`, `analysis/V01C16_WRITER_CALL_EFFECT.md`, `analysis/RDX_XYZ_SOURCE_CONTRACT.md`, and c16 `docs/CODEX_RESULT.md` first.
 
-## Accepted evidence
-C15 actual A/E is accepted: orientation retained through verified Deinit, hard0/stale0/Position writes0, clean cleanup, 8 true entry snapshots and 8 complete maps per session. The writer branch proof crossed `0x2CFC91F jne` and stopped exactly at `0x2CFC927 call`.
-
-C16 implementation is complete and cloud regressions pass, but the cloud does not contain the current private 183-byte writer/callee. Therefore the actual call target, runtime-function boundary/hash, effect classification, resumed writer proof and any later exact blocker remain unknown until the real-game c16 log is supplied.
-
-## Current task: human runtime gate only
-Do not implement c17 yet.
-
-Install:
+## Accepted c16 actual-game result
+Regression gate passed:
 ```text
-WallSprint_v0.1c16_writer_call_effect.zip
+A/session1 3875 ms
+E/session2 4203 ms
+both verified Deinit / retention pass / stale0 / hard0 / Position writes0
+A Up dot surface=1
+E Up dot surface=0.99999994
+```
+Both sessions finalized 8 true entries / 8 complete maps with XYZ mask0x7, source W0 and destination W1.
+
+Authenticated writer call:
+```text
+writer=0x2CFC900..0x2CFC9B7
+call=0x2CFC927
+return=0x2CFC92C
+kind=direct_call
+target=0x2B23560
+boundary=0x2B23560..0x2B235E9
+hash=2d62e54b270c46f4babc8120a7e56123e3fe467ca383895d57a989f853095a9d
+target_complete_decode=1
 ```
 
-Run one private log:
+Exact c16 blocker:
 ```text
-A/cardinal ~4 s
--> fully end WallRun
--> move or fast-travel to E
--> E/diagonal ~4 s
--> stop and provide the complete WallSprint.log
+effect=source_span_effect_unknown
+source_span_no_write_proven=0
+source_span_may_write=0
+source_span_effect_unknown=1
+next_callee_barrier_rva=0x2B23560
+next_callee_instruction=mov
+reason=callee_memory_write_alias_to_source_stack_or_destination_unresolved
 ```
-No special input. Video is needed only if a visible anomaly occurs.
+Actual `[entryRDX] XYZ == Position XYZ` remains corroboration only; `xyz_causality_proven=0`.
 
-## Required runtime checks
-Confirm startup:
+## Objective
+Resolve only memory-write aliasing inside authenticated callee `0x2B23560..0x2B235E9` as used by writer call `0x2CFC927`.
+
+For every relevant callee memory write, prove or reject disjointness from:
+1. `[entryRDX, entryRDX+0x10)` — the 16-byte source object / writer-entry stack object;
+2. the Hero Transform destination object/range needed by exact Position stores.
+
+If all relevant writes are proven disjoint, resume the existing writer proof from `0x2CFC92C`. Otherwise report one exact callee RVA/mnemonic/address-provenance blocker and stop.
+
+Do not inspect/mutate upstream producer `0x351EB00`. Do not implement movement.
+
+## Required implementation
+### Exact callee identity
+Preserve exact executable/SHA, writer hash/current bytes, exact call/return, target boundary and target hash. Any mismatch fails closed. Do not log/package full private callee bytes.
+
+### Bounded address provenance
+Extend the c16 effect classifier only enough to classify effective addresses of callee memory writes. Track exact/simple provenance from call-time arguments, preserved aliases, callee RSP/allocation, RIP-relative addresses, LEA/MOV/add/sub/copy chains and bounded local branches.
+
+Classify writes as:
 ```text
-v0.1c16
-package 0.1.34
-exact Spider-Man2.exe 2.810.0.0
-SHA256 c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9
-exact-build admission=1
+callee_private_stack
+caller_shadow_or_return_area
+source_span_exact
+source_span_possible_alias
+hero_transform_exact
+hero_transform_possible_alias
+rip_relative_global
+known_disjoint_object
+unknown_pointer
 ```
+Unknown/conflicting pointer provenance fails closed. No arbitrary interprocedural traversal, recursion, nested-call expansion or open-ended fixpoint. If a nested call/indirect/unsupported effect is encountered, emit its exact blocker.
 
-For `0x2CFC927`, extract and evaluate `MOVEMENT_WRITER_CALL_CONTRACT` / integrity fields:
+### Map call-time arguments
+At `0x2CFC927`, prove provenance of RCX/RDX/R8/R9 and needed stack args. Keep writer-entry RDX distinct from call-time RDX.
+
+Emit:
 ```text
-call_rva=0x2cfc927
-return_rva=0x2cfc92c
-call_kind
-target_rva
-target boundary
-target code identity/hash result
-callee effect classification
-source-span effect
-clobber/preservation result
-exact callee blocker RVA/mnemonic/class if refused
+MOVEMENT_WRITER_CALL_ARGUMENT_CONTRACT
+...
 ```
+with argument origins, source/Transform alias masks, proof completeness and reason.
 
-Then inspect the resumed `MOVEMENT_RDX_BRANCH_CONTRACT` / XYZ proof:
+### Alias summary
+Emit:
 ```text
-all_relevant_store_paths_proven
-proven_component_mask
-x_path / y_path / z_path
-next_barrier_rva / mnemonic / reason
-xyz_causality_proven
-W classification independently
+MOVEMENT_CALLEE_ALIAS_CONTRACT
+target_rva=0x2b23560
+target_end=0x2b235e9
+memory_writes_seen=
+writes_proven_private_stack=
+writes_proven_global_disjoint=
+writes_proven_other_disjoint=
+writes_source_exact=
+writes_source_possible_alias=
+writes_transform_exact=
+writes_transform_possible_alias=
+writes_unknown=
+source_span_no_write_proven=0|1
+transform_no_write_proven=0|1
+all_relevant_write_aliases_resolved=0|1
+next_barrier_rva=
+next_barrier_instruction=
+next_barrier_effect=
+reason=
 ```
 
-Require per-session final capture/lineage accounting and clean lifecycle/watch cleanup. A/E orientation must remain retained and `Position_writes_by_mod=0`.
+Only set source/Transform no-write when every relevant executable write is proven disjoint.
 
-## Decision after the log
-Outcome A — actual call effect is authenticated and compatible, and the writer proof reaches all XYZ stores:
-- record the actual c16 runtime result;
-- only then define a separate next task for caller/storage/producer ownership around `0x351EB00`;
-- do not mutate the producer merely because the writer certificate passes.
+### Optional minimal runtime observation
+Only if static caller-to-callee pointer identity remains ambiguous, observe the natural call for the existing max 8 eligible invocations/session. Allowed: call-time RCX/RDX/R8/R9, source address, Transform address, RSP relation, source before/after bits, exact pointer relations, return/code integrity. Runtime equality must not be used to rule out transient writes. No PAGE_GUARD and never invoke the callee from the mod.
 
-Outcome B — c16 emits a narrower exact call/callee or later writer blocker:
-- record that exact blocker;
-- next task must address only that smallest unresolved scope;
-- do not expand to general tracing or producer traversal.
+### Resume writer proof only after alias PASS
+Require:
+```text
+all_relevant_write_aliases_resolved=1
+source_span_no_write_proven=1
+transform_no_write_proven=1
+```
+before resuming from `0x2CFC92C` to exact stores `0x2CFC936/93C/942/945`. Update CALL_CONTRACT, BRANCH_CONTRACT, XYZ_PROOF and W_PROOF. Report the next exact writer blocker if one appears. W remains independent.
 
-Outcome C — build/hash/integrity/lifecycle/orientation/cleanup regression:
-- stop and repair the regression before any lineage work.
-
-## Unchanged safety gate
+## Safety boundary
+Even if writer causality completes:
 ```text
 writable_source_proven=0
-Position/source/input/movement writes=0
 caller_owned=0
 ownership_exclusive=0
 source_lifetime_exclusive=0
 downstream_conflicts_proven_absent=0
+Position/source/input/movement writes=0
 ```
+must remain. Producer `0x351EB00` is a later separate task.
 
-No Actor/Transform Position write, RDX/stack-source mutation, Path A Position mutation, input rewrite, custom movement/velocity/gravity, active adhesion, producer hook/traversal at `0x351EB00`, camera/animation/traversal work, PAGE_GUARD/data-page protection mutation, guessed native game calls, raw-log publication, or full private game-body distribution.
+Preserve all c7-c16 lifecycle/orientation/stale/hard-kill/secondary/publication-refresh/DR-watch/direct-call/entry-pairing/accounting/branch/call-target/integrity/cleanup protections.
 
-Preserve exact-build fail-closed behavior, `AGENTS.md`, `docs/DEV_RULES.md`, c7-c15 lifecycle/orientation/refresh/DR-watch/direct-call/entry-pairing/accounting/branch gates, and independent implementation suitable for Nexus Mods.
+No Position/RDX/source/input/movement/velocity/gravity/adhesion/camera/animation writes, producer traversal, PAGE_GUARD, guessed native game calls, raw user-log publication, or full private game-body distribution.
+
+## Tests
+Cover private-stack disjoint writes, source exact/possible alias, Transform exact/possible alias, argument-pointer copy chains, RIP-global writes, branch reconvergence/conflicting provenance, shadow/return area, unknown pointer, nested-call/indirect exact refusal, and owned writer continuation after an alias-safe call. Preserve all c16 regressions.
+
+## Human test
+If needed after cloud validation:
+```text
+A/cardinal ~4 s -> fully end WallRun -> move/fast-travel -> E/diagonal ~4 s -> one complete WallSprint.log
+```
+No special input; video only for visible anomaly.
+
+## PASS
+A. All callee write aliases resolved, source/Transform no-write proven, writer proof advances or reports a strictly later exact writer blocker.
+
+B. One narrower exact callee address-provenance blocker is reported with all safety/regression gates preserved.
+
+Do not implement movement automatically.
+
+## Required outputs
+```text
+analysis/V01C16_RUNTIME_RESULT.md
+analysis/V01C17_CALLEE_ALIAS_CONTRACT.md
+analysis/V01C17_GATE.md
+analysis/RDX_XYZ_SOURCE_CONTRACT.md
+README_TEST.md
+docs/PROJECT_STATE.md
+docs/CODEX_RESULT.md
+```
+Package c17 diagnostic release/source per existing rules.
