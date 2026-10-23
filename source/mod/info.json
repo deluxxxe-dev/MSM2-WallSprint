@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.18",
-  "description": "WallSprint v0.1b9 Reset-Source Layout Characterization. Path B is read-only; Path A supplies the reference interpolation. Exact-build diagnostics only. No direct Actor/Position/adhesion/movement/camera/animation/physics writes.",
+  "version": "0.1.19",
+  "description": "WallSprint v0.1c1 Compact Path-B Override + Lock-Free Path-A Admission. Exact-build orientation-source overrides only. No direct Actor/Position/adhesion/movement/camera/animation/physics writes.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

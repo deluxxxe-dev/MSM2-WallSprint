@@ -7,6 +7,7 @@
 #include <atomic>
 #include <cstring>
 #include "NativeHooks/reset_copy_source.hpp"
+#include "NativeHooks/compact_map_proof.hpp"
 #include "NativeHooks/native_source_override.hpp"
 #include "msm2/sdk_bridge.hpp"
 extern "C" {
@@ -18,7 +19,7 @@ constexpr unsigned writerSize=444;
 constexpr char expectedHash[]="ee33ad96fb1834f9977621ea988f7667f0eb3e47166a7115ba262072ebc50196";
 std::uintptr_t base{},target{},callerBegin{};unsigned callerSize{};
 std::array<unsigned char,writerSize> original{},owned{};std::array<unsigned char,0x4000> callerOriginal{};
-std::atomic<bool> installed{false},admitted{false};bool attempted{};
+std::atomic<bool> installed{false},admitted{false};bool attempted{};bool compactProof{};
 bool digest(const unsigned char* data,unsigned count,char (&text)[65]){
  BCRYPT_ALG_HANDLE alg=nullptr;BCRYPT_HASH_HANDLE hash=nullptr;unsigned char object[512]{},result[32]{};DWORD size=0,done=0;
  bool ok=BCryptOpenAlgorithmProvider(&alg,BCRYPT_SHA256_ALGORITHM,nullptr,0)>=0;
@@ -65,10 +66,14 @@ bool authenticated() noexcept {
  std::array<unsigned char,0x4000> caller{};
  return callerSize&&readMemory(callerBegin,caller.data(),callerSize)&&!std::memcmp(caller.data(),callerOriginal.data(),callerSize);
 }
+bool compactProofAuthenticated() noexcept {return compactProof&&authenticated();}
 void configure(bool verified,std::uintptr_t image,std::size_t size){
  if(attempted)return;
  attempted=true;base=image;target=base+writerRva;
- if(!verified||!authenticateOriginal(size)){writeLog("RESET_COPY_HOOK admitted=0 installed=0 reason=exact_build_boundary_original_hash_or_direct_caller_failed");return;}
+ if(!verified||!authenticateOriginal(size)){writeLog("PATH_B_COMPACT3X3_PROOF admitted=0 caller_verified=0 writer_verified=0 rdx_to_rcx_map_verified=0 source_bytes=0x24 reason=exact_build_hash_range_or_caller_failed");writeLog("RESET_COPY_HOOK admitted=0 installed=0 reason=exact_build_boundary_original_hash_or_direct_caller_failed");return;}
+ auto proof=ws::compact_proof::writer(original.data(),original.size());bool callerProof=ws::compact_proof::caller(callerOriginal.data(),callerSize,callerBegin-base,writerRva,returnRva);compactProof=proof.admitted&&callerProof;
+ writeLog("PATH_B_COMPACT3X3_PROOF admitted=%u caller_verified=%u writer_verified=1 rdx_to_rcx_map_verified=%u source_bytes=0x24 decoded_prefix_bytes=%u pairs=%u reason=%s",unsigned(compactProof),unsigned(callerProof),unsigned(proof.admitted),proof.decodedBytes,proof.pairs,proof.reason);
+ if(!compactProof)return;
  logOriginal("writer",target,original.data(),writerSize);logOriginal("caller",callerBegin,callerOriginal.data(),callerSize);
  HMODULE pin=nullptr;if(!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_PIN,reinterpret_cast<LPCWSTR>(&configure),&pin))return;
  auto init=MH_Initialize();if(init!=MH_OK&&init!=MH_ERROR_ALREADY_INITIALIZED)return;

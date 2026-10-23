@@ -22,6 +22,18 @@ void ws_test_probe_target();void ws_test_invoke_probe(void*);
 int main(){
  msm2::reset_copy::configure(false,1,1);assert(!reads&&!msm2::reset_copy::authenticated());
  char hash[65]{};assert(digest(reinterpret_cast<const unsigned char*>("abc"),3,hash));assert(!std::strcmp(hash,"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"));
+ // Independently generated direct-copy sequence exercises the production HDE
+ // proof. This validates the decoder, never the accepted game's private bytes.
+ std::array<unsigned char,128> map{};map.fill(0x90);unsigned cursor=0;
+ constexpr unsigned destinations[]={0,4,8,16,20,24,32,36,40};
+ for(unsigned i=0;i<9;++i){unsigned source=i*4;
+  map[cursor++]=0x8b;map[cursor++]=source?0x42:0x02;if(source)map[cursor++]=static_cast<unsigned char>(source);
+  map[cursor++]=0x89;map[cursor++]=destinations[i]?0x41:0x01;if(destinations[i])map[cursor++]=static_cast<unsigned char>(destinations[i]);
+ }
+ auto proof=ws::compact_proof::writer(map.data(),map.size());assert(proof.admitted&&proof.pairs==9);
+ auto broken=map;broken[5]=5;assert(!ws::compact_proof::writer(broken.data(),broken.size()).admitted);
+ std::array<unsigned char,128> caller{};caller.fill(0x90);constexpr std::uintptr_t callerBegin=0x1000,callerReturn=0x107b,writerTarget=0x2000;auto callOffset=unsigned(callerReturn-callerBegin-5);caller[callOffset]=0xe8;auto displacement=std::int32_t(writerTarget-callerReturn);std::memcpy(caller.data()+callOffset+1,&displacement,4);
+ assert(ws::compact_proof::caller(caller.data(),caller.size(),callerBegin,writerTarget,callerReturn));caller[callOffset]=0x90;assert(!ws::compact_proof::caller(caller.data(),caller.size(),callerBegin,writerTarget,callerReturn));
  // Correct unwind shape with an independent body still fails the exact hash.
  constexpr unsigned bytes=0x2cfd000;auto* memory=static_cast<unsigned char*>(VirtualAlloc(nullptr,bytes,MEM_RESERVE|MEM_COMMIT,PAGE_READWRITE));assert(memory);
  base=reinterpret_cast<std::uintptr_t>(memory);target=base+writerRva;std::memset(memory+writerRva,0x90,writerSize);memory[0x800]=1;

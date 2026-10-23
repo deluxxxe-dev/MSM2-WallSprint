@@ -13,6 +13,7 @@ static std::string output;static std::mutex outputLock;
 static bool prearmTest{};static msm2::reset_trace::Request testRequest;static ws::native_source::Observer lifecycleObserver{};
 static ws::native_source::Token fakeToken;static std::atomic<bool> fakeGuard{true};static HANDLE armedSignal{};
 namespace msm2::native_source {void prearm(const ws::native_source::Token&) noexcept {}
+void lifecycleClosed(const ws::native_source::Token&) noexcept {}
 bool observationGuardsAuthenticated() noexcept{return fakeGuard.load();}}
 namespace ws::native_source {void setObserver(Observer fn) noexcept {lifecycleObserver=fn;}
 bool lifecycle(Token& t) noexcept {t=fakeToken;if(prearmTest)t.updateMs=GetTickCount64();return true;}}

@@ -7,7 +7,7 @@ assert not result['actual_game_capture'] and not result['v01b5_game_pass_observe
 text=source.read_text()
 with tempfile.TemporaryDirectory() as d:
  p=Path(d)/'bad.log'
- for bad in [text.replace('position_unchanged=1','position_unchanged=0'),text.replace('source_is_stack_local=1','source_is_stack_local=0'),re.sub(r'actor_up_dot_surface=\S+','actor_up_dot_surface=0',text),text.replace('observation_phase=next_matching_native_PRE','observation_phase=worker')]:
+ for bad in [text.replace('position_unchanged=1','position_unchanged=0'),text.replace('source_is_stack_local=1','source_is_stack_local=0'),re.sub(r'actor_up_dot_surface=\S+','actor_up_dot_surface=0',text),text.replace('observation_phase=verified_native_update_worker','observation_phase=supplementary_worker').replace('observation_phase=next_matching_native_PRE','observation_phase=supplementary_worker')]:
   p.write_text(bad);b=review(p);assert not any(s['scope_retention_pass'] for s in b['sessions'].values())
  # Losing orientation after the minimum good period still reports an abort.
  p.write_text(text+'\nNATIVE_SOURCE_EXIT session=1 reason=B_returned_from_surface_orientation\n');b=review(p);assert not b['sessions']['1']['scope_retention_pass']

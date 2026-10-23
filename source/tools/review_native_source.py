@@ -26,7 +26,7 @@ def review(path):
    t=float(d['t']);
    if t>=1:s['completed']=True
    if t<0 or t>1:s['violations'].append('bad_transition_parameter')
-  if 'NATIVE_SOURCE_ACTOR_OBSERVATION ' in line and d.get('observation_phase')=='next_matching_native_PRE' and s['completed']:
+  if 'NATIVE_SOURCE_ACTOR_OBSERVATION ' in line and d.get('observation_phase') in ('next_matching_native_PRE','verified_native_update_worker') and s['completed']:
    update=int(d['native_update']);now=int(d['native_ms']);up=vec(d['actor_up']);length=math.sqrt(dot(up,up));measured=float(d['actor_up_dot_surface'])
    if update==s['last_update']:continue
    if s['last_update'] is not None and update<s['last_update']:s['violations'].append('native_update_reversed')

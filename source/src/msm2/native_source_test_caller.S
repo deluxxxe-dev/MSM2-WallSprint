@@ -81,6 +81,8 @@ ws_test_copy_writer:
  .rept 32
  nop
  .endr
+ # Retain the independent input for byte-range assertions, then model the
+ # proven compact3x3 -> padded Hero orientation copy map.
  movdqu xmm0,XMMWORD PTR [rdx]
  movdqu xmm1,XMMWORD PTR [rdx+16]
  movdqu xmm2,XMMWORD PTR [rdx+32]
@@ -89,10 +91,24 @@ ws_test_copy_writer:
  movdqu XMMWORD PTR ws_test_copy_received+16[rip],xmm1
  movdqu XMMWORD PTR ws_test_copy_received+32[rip],xmm2
  movdqu XMMWORD PTR ws_test_copy_received+48[rip],xmm3
- movdqu XMMWORD PTR [rcx],xmm0
- movdqu XMMWORD PTR [rcx+16],xmm1
- movdqu XMMWORD PTR [rcx+32],xmm2
- movdqu XMMWORD PTR [rcx+48],xmm3
+ mov eax,DWORD PTR [rdx]
+ mov DWORD PTR [rcx],eax
+ mov eax,DWORD PTR [rdx+4]
+ mov DWORD PTR [rcx+4],eax
+ mov eax,DWORD PTR [rdx+8]
+ mov DWORD PTR [rcx+8],eax
+ mov eax,DWORD PTR [rdx+12]
+ mov DWORD PTR [rcx+16],eax
+ mov eax,DWORD PTR [rdx+16]
+ mov DWORD PTR [rcx+20],eax
+ mov eax,DWORD PTR [rdx+20]
+ mov DWORD PTR [rcx+24],eax
+ mov eax,DWORD PTR [rdx+24]
+ mov DWORD PTR [rcx+32],eax
+ mov eax,DWORD PTR [rdx+28]
+ mov DWORD PTR [rcx+36],eax
+ mov eax,DWORD PTR [rdx+32]
+ mov DWORD PTR [rcx+40],eax
  inc QWORD PTR ws_test_copy_calls[rip]
  mov rax,0xabcdef0011223344
  ret

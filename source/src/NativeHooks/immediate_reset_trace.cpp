@@ -12,7 +12,7 @@ namespace {
 HANDLE wake{},stopped{},helper{};std::atomic<bool> disabled{true};
 std::atomic<unsigned> pending{0};msm2::reset_trace::Request slot;
 void nativeEvent(const ws::native_source::Token& token) noexcept {
- if(token.phase!=3)msm2::trace::cancelReset();
+ if(token.phase!=3){msm2::native_source::lifecycleClosed(token);msm2::trace::cancelReset();}
  else msm2::native_source::prearm(token);
 }
 bool live(const msm2::reset_trace::Request& r,msm2::Snapshot& s){

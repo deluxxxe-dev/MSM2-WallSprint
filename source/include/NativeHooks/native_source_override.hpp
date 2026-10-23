@@ -10,6 +10,7 @@ void tick(const ws::observed::VerifiedWallContext&,const char* exitReason,bool a
 void capture(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t originalRsp) noexcept;
 void captureCopy(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t originalRsp) noexcept;
 void prearm(const ws::native_source::Token&) noexcept;
+void lifecycleClosed(const ws::native_source::Token&) noexcept;
 void kill() noexcept;
 void drainLogs();
 void stop();
