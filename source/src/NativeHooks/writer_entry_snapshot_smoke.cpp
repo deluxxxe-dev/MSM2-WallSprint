@@ -150,7 +150,7 @@ struct Hit {
 static std::array<Hit, 128> hits;
 static std::atomic<unsigned> hitCount{0};
 static float *hero;
-static float source[4]{10, 20, 30, 1};
+static float source[4]{10, 20, 30, 0};
 static float other[16]{};
 static LONG CALLBACK watched(EXCEPTION_POINTERS *e) {
   if (e->ExceptionRecord->ExceptionCode != EXCEPTION_SINGLE_STEP)
@@ -315,7 +315,8 @@ static void pairing() {
   unsigned full = 0;
   for (unsigned i = 0; i < 7; ++i) {
     auto &a = aggregates[i];
-    assert(a.mask == 15 && a.printed && !std::memcmp(a.values, source, 16));
+    assert(a.mask == 15 && a.printed && !std::memcmp(a.values, source, 12) &&
+           a.values[3] == 1);
     ++full;
   }
   assert(full == 7);
@@ -349,7 +350,8 @@ static void pairing() {
   assert(activeScope.load()->reserved == 8);
   for (unsigned i = 0; i < 12; ++i)
     assert(hero[i] == float(i + 1));
-  assert(!std::memcmp(hero + 12, source, 16));
+  assert(!std::memcmp(hero + 12, source, 12) && hero[15] == 1 &&
+         source[3] == 0);
   msm2::writer_entry::stop();
   assert(!installed && bytesEqual(baseline));
   msm2::writer_entry::drain();
@@ -357,6 +359,21 @@ static void pairing() {
          output.find("true_entry_snapshot=1") != std::string::npos &&
          output.find("origin=pointer origin_register_or_offset=0x0") !=
              std::string::npos);
+  auto stats = msm2::writer_entry::summary(expected.session);
+  assert(stats.activated && stats.snapshots == 8 && stats.complete == 7 &&
+         stats.xyzMatches == 7 && stats.candidate == 20);
+  assert(msm2::writer_entry::summary(expected.session + 1).snapshots == 0);
+  assert(evidence[0].full[20] == 0 && evidence[0].xyz[20] == 7 &&
+         evidence[0].xyz[23] == 0);
+  assert(output.find("same_origin_xyz_matches=7 stable_across_invocations=1") !=
+         std::string::npos);
+  assert(output.find("source_w_pattern=constant_observed source_w_bits=0x0 "
+                     "destination_w_pattern=constant_observed "
+                     "destination_w_bits=0x3f800000") != std::string::npos);
+  puts("PASS: c14 actual concurrent/nested hardware maps retain seven XYZ "
+       "mask=0x7 matches with independent constant W=1 and untouched source "
+       "W=0; session summary counts eight entries/seven complete maps without "
+       "c12 or cross-session contamination");
   VirtualFree(hero, 0, MEM_RELEASE);
   puts("PASS: c13 real hardware-store to true-entry invocation pairing on "
        "concurrent and nested owned calls; seven complete XYZ/W maps use "
@@ -494,8 +511,92 @@ static void cleanup() {
        "cleanup failure stays closed and trampoline remains safe for inflight "
        "tails");
 }
+static void accounting() {
+  // Worker-only owned record fixture; cannot pass the public game gate.
+  usedScopes = 4;
+  for (unsigned scope = 0; scope < 4; ++scope) {
+    auto &q = scopes[scope];
+    q.index = scope;
+    q.request.session = scope + 1;
+    q.activated = scope != 3;
+    q.reserved = scope < 2 ? 2 : scope == 2 ? 2 : 0;
+  }
+  float input[4]{10, 20, 30, 0};
+  for (unsigned scope = 0; scope < 2; ++scope)
+    for (unsigned j = 0; j < 2; ++j) {
+      unsigned id = scope * perSession + j;
+      auto &v = records[id].snapshot;
+      v.id = id + 1;
+      v.session = scope + 1;
+      v.pointerMask = 1;
+      v.stackRead = true;
+      v.rsp = 0x1000;
+      v.gpr[2] = 0x1028;
+      v.stackLow = 0x800;
+      v.stackHigh = 0x2000;
+      v.target = 0x4000;
+      std::memcpy(v.pointed[0].data(), input, 16);
+      std::memcpy(v.stack.data(), input, 16);
+      records[id].state = 1;
+      auto &a = aggregates[id];
+      a.mask = 15;
+      a.events = 4;
+      std::memcpy(a.values, input, 12);
+      a.values[3] = 1;
+      if (scope == 1 && j == 1)
+        a.values[0] = 99;
+      finish(id);
+    }
+  for (unsigned scope = 0; scope < 2; ++scope) {
+    auto q = msm2::writer_entry::summary(scope + 1);
+    assert(q.snapshots == 2 && q.complete == 2 && q.candidate == 20 &&
+           q.xyzMatches == (scope ? 1u : 2u));
+  }
+  assert(evidence[0].xyz[23] == 2 && evidence[0].full[20] == 0 &&
+         evidence[1].xyz[20] == 1);
+  assert(output.find("same_origin_xyz_matches=2 stable_across_invocations=1") !=
+         std::string::npos);
+  auto &v = records[16].snapshot;
+  v.id = 17;
+  v.session = 3;
+  records[16].state = 1;
+  float targetPosition[4]{};
+  msm2::writer_entry::storeComponent(17, 0, 0, targetPosition, 0, 0, 0);
+  msm2::writer_entry::storeComponent(17, 0, 0, targetPosition, 0, 0, 0);
+  auto &unreadable = records[17].snapshot;
+  unreadable.id = 18;
+  unreadable.session = 3;
+  records[17].state = 1;
+  msm2::writer_entry::observe(18, 1, 0, nullptr, nullptr, false, targetPosition,
+                              0, 0, false);
+  msm2::writer_entry::storeComponent(18, 0, 0, targetPosition, 0, 0, 0);
+  assert(aggregates[17].rejected && aggregates[17].events == 0);
+  msm2::writer_entry::drain();
+  auto q = msm2::writer_entry::summary(3);
+  assert(q.snapshots == 2 && q.complete == 0 && q.xyzMatches == 0 &&
+         aggregates[16].rejected);
+  q = msm2::writer_entry::summary(4);
+  assert(!q.activated && q.snapshots == 0 && q.complete == 0);
+  assert(output.find("session=1 capture_activated=1 true_entry_snapshots=2 "
+                     "complete_invocation_maps=2 xyz_source_candidate=20 "
+                     "xyz_match_count=2") != std::string::npos);
+  assert(output.find("session=2 capture_activated=1 true_entry_snapshots=2 "
+                     "complete_invocation_maps=2 xyz_source_candidate=20 "
+                     "xyz_match_count=1") != std::string::npos);
+  assert(output.find("session=3 capture_activated=1 true_entry_snapshots=2 "
+                     "complete_invocation_maps=0") != std::string::npos);
+  auto before = output.size();
+  msm2::writer_entry::drain();
+  assert(before == output.size());
+  puts("PASS: c14 worker summaries isolate sessions, retain pointer/stack XYZ "
+       "matches with W mismatch, reject duplicate/partial maps and invalidate "
+       "stability after a later XYZ mismatch; drain is idempotent and "
+       "zero-capture remains zero");
+}
 int main(int argc, char **argv) {
-  if (argc > 1 && std::string(argv[1]) == "--abi")
+  if (argc > 1 && std::string(argv[1]) == "--accounting")
+    accounting();
+  else if (argc > 1 && std::string(argv[1]) == "--abi")
     abi();
   else if (argc > 1 && std::string(argv[1]) == "--pair")
     pairing();

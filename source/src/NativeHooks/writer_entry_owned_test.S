@@ -25,8 +25,7 @@ ws_owned_entry_writer:
  movss DWORD PTR [rcx+0x34],xmm0
  movss xmm0,DWORD PTR [rdx+8]
  movss DWORD PTR [rcx+0x38],xmm0
- movss xmm0,DWORD PTR [rdx+12]
- movss DWORD PTR [rcx+0x3c],xmm0
+ mov DWORD PTR [rcx+0x3c],0x3f800000
  mov rax,0x123455667788abcd
  add rsp,0x48
  ret

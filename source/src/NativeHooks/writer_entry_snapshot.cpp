@@ -1,6 +1,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include "NativeHooks/writer_entry_snapshot.hpp"
 #include "Math/movement_delta.hpp"
+#include "NativeHooks/rdx_source_contract.hpp"
 #include "msm2/sdk_bridge.hpp"
 #include <MinHook.h>
 #include <algorithm>
@@ -11,6 +12,9 @@
 #include <cmath>
 #include <cstring>
 #include <windows.h>
+namespace msm2 {
+void writeLog(const char *, ...) __attribute__((format(printf, 1, 2)));
+}
 extern "C" {
 void ws_movement_entry_thunk();
 void *ws_movement_entry_original{};
@@ -25,11 +29,13 @@ struct Scope {
   std::atomic<unsigned> reserved{0};
   std::atomic<bool> active{false};
   unsigned index{};
+  std::atomic<bool> activated{false};
 };
 struct Snapshot {
   std::uint64_t id{}, session{}, generation{};
   DWORD tid{};
-  std::uintptr_t hero{}, target{}, owner{}, rsp{}, ret{}, caller2{};
+  std::uintptr_t hero{}, target{}, owner{}, rsp{}, ret{}, caller2{}, stackLow{},
+      stackHigh{};
   double elapsed{};
   std::array<std::uint64_t, 16> gpr{};
   std::array<std::uint32_t, 64> xmm{};
@@ -47,13 +53,28 @@ struct Record {
 struct Aggregate {
   unsigned mask{}, events{};
   float values[4]{}, after[4]{};
-  bool printed{};
+  bool printed{}, rejected{}, ordered{true};
+  std::array<unsigned, 4> stores{};
 };
 std::array<Scope, windows> scopes;
 std::array<Record, capacity> records;
 std::array<Aggregate, capacity> aggregates;
-std::array<unsigned, 28> candidateCounts{};
-std::array<std::uint64_t, 28> candidateSessions{};
+struct Evidence {
+  std::array<unsigned, 27> xyz{}, full{};
+  unsigned complete{};
+  std::array<std::uint32_t, 27> sourceW{};
+  std::array<bool, 27> sourceWSeen{}, sourceWMixed{};
+  std::uint32_t destinationW{};
+  bool destinationWSeen{}, destinationWMixed{}, summarized{};
+};
+std::array<Evidence, windows> evidence;
+ws::rdx::Writer contractWriter{};
+ws::rdx::Caller contractCaller{}, contractParent{};
+ws::rdx::Relation contractProducer{};
+std::array<unsigned char, 8192> producerCode{};
+unsigned producerSize{}, producerBegin{}, producerEnd{};
+bool contractConfigured{};
+bool contractRead(std::uintptr_t, void *, std::size_t) noexcept;
 std::atomic<Scope *> activeScope{nullptr};
 std::atomic<unsigned> callbacks{0};
 std::atomic<unsigned> usedScopes{0};
@@ -65,6 +86,7 @@ thread_local std::array<Local, 8> local;
 thread_local unsigned depth{};
 std::uintptr_t imageBase{}, target{}, callReturn{}, callerStart{};
 unsigned functionSize{};
+std::size_t contractImageSize{};
 std::array<unsigned char, 1024> baseline{}, patch{};
 std::array<unsigned char, 5> directCall{};
 std::array<unsigned char, 30> callerCode{};
@@ -214,6 +236,8 @@ void rawCapture(const writer_entry::Frame &f, const unsigned char *fx) {
   std::uintptr_t lo{}, hi{};
   __asm__ volatile("movq %%gs:0x10,%0" : "=r"(lo));
   __asm__ volatile("movq %%gs:0x08,%0" : "=r"(hi));
+  v.stackLow = lo;
+  v.stackHigh = hi;
   if (rsp >= lo && rsp <= hi && hi - rsp >= 0x28 + 64)
     v.stackRead = writer_entry::guardedRead(rsp + 0x28, v.stack.data(), 64);
   const std::uintptr_t pointers[] = {f.rdx, f.r8, f.r9};
@@ -283,6 +307,17 @@ unsigned laneMatches(const std::uint32_t *values, const float *stores,
     }
   return result;
 }
+bool contractRead(std::uintptr_t p, void *out, std::size_t n) noexcept {
+  MEMORY_BASIC_INFORMATION m{};
+  if (!VirtualQuery(reinterpret_cast<void *>(p), &m, sizeof(m)) ||
+      !(m.Protect & (PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE |
+                     PAGE_EXECUTE_WRITECOPY)))
+    return false;
+  // Only direct jump bytes in the admitted image; no pointer chase.
+  return p >= imageBase && p - imageBase < contractImageSize && n <= 5 &&
+         n <= contractImageSize - (p - imageBase) &&
+         writer_entry::guardedRead(p, out, n);
+}
 void finish(unsigned slot) {
   auto &record = records[slot];
   if (record.state.load(std::memory_order_acquire) != 1)
@@ -316,7 +351,18 @@ void finish(unsigned slot) {
              (unsigned long long)v.gpr[i * 4 + 1],
              (unsigned long long)v.gpr[i * 4 + 2],
              (unsigned long long)v.gpr[i * 4 + 3]);
-  unsigned sourceMask = 0, pointerMask = 0;
+  auto &e = evidence[slot / perSession];
+  const bool complete = a.mask == 15 && !a.rejected;
+  if (complete) {
+    ++e.complete;
+    std::uint32_t w{};
+    std::memcpy(&w, a.values + 3, 4);
+    if (e.destinationWSeen && e.destinationW != w)
+      e.destinationWMixed = true;
+    e.destinationWSeen = true;
+    e.destinationW = w;
+  }
+  unsigned sourceMask = 0, pointerMask = 0, stableMask = 0;
   for (unsigned id = 0; id < 27; ++id) {
     std::uint32_t bits[4]{};
     bool read = true;
@@ -363,27 +409,43 @@ void finish(unsigned slot) {
                                                         : "none";
     bool matched = mask == 15 && a.mask == 15;
     if (matched) {
-      ++candidateCounts[id];
-      candidateSessions[id] = v.session;
+      ++e.full[id];
       sourceMask |= 1u << (id % 32);
       if (id >= 20 && id < 23)
         pointerMask |= 1u << (id - 20);
     }
+    const bool xyzMatched = complete && read && (mask & 7) == 7;
+    if (xyzMatched) {
+      ++e.xyz[id];
+      sourceMask |= 1u << id;
+      if (id >= 20 && id < 23)
+        pointerMask |= 1u << (id - 20);
+      if (e.sourceWSeen[id] && e.sourceW[id] != bits[3])
+        e.sourceWMixed[id] = true;
+      e.sourceWSeen[id] = true;
+      e.sourceW[id] = bits[3];
+    }
+    const bool xyzStable = e.xyz[id] >= 2 && e.xyz[id] == e.complete;
+    if (xyzStable)
+      stableMask |= 1u << id;
     writeLog("MOVEMENT_ENTRY_SOURCE_CANDIDATE session=%llu invocation_id=%llu "
              "candidate_id=%u origin=%s origin_register_or_offset=0x%x "
              "read_valid=%u value4=(%.9g,%.9g,%.9g,%.9g) "
              "raw_bits=(0x%x,0x%x,0x%x,0x%x) relationship=%s "
              "exact_store_match_mask=0x%x observed_store_mask=0x%x "
              "lane_to_store_match_matrix=0x%x "
-             "same_origin_full_matches=%u stable_across_invocations=0 "
+             "same_origin_full_matches=%u same_origin_xyz_matches=%u "
+             "stable_across_invocations=%u xyz_stable_across_invocations=%u "
+             "stability_scope=observed_session_prefix_XYZ_bit_matches "
+             "storage_provenance_stable=0 "
              "stable_across_surfaces=0 "
              "typed_semantics=unknown writable_source_proven=0 "
              "reason=entry_value_correlation_NOT_causal_or_exclusive_proof",
              (unsigned long long)v.session, (unsigned long long)v.id, id,
              origin, offset, unsigned(read), values[0], values[1], values[2],
              values[3], bits[0], bits[1], bits[2], bits[3], relation, mask,
-             a.mask, read ? laneMatches(bits, a.values, a.mask) : 0,
-             candidateCounts[id]);
+             a.mask, read ? laneMatches(bits, a.values, a.mask) : 0, e.full[id],
+             e.xyz[id], unsigned(xyzStable), unsigned(xyzStable));
   }
   auto d = !v.beforeRead || !a.events
                ? ws::movement::Delta{}
@@ -398,7 +460,9 @@ void finish(unsigned slot) {
       "position_after=(%.9g,%.9g,%.9g,%.9g) "
       "exact_component_values=(%.9g,%.9g,%.9g,%.9g) "
       "entry_source_match_mask=0x%x entry_pointer_candidate_mask=0x%x "
-      "source_stable=0 position_before_read=%u position_after_read=%u "
+      "source_stable=%u "
+      "stability_scope=observed_XYZ_match_pattern_NOT_storage_lifetime "
+      "position_before_read=%u position_after_read=%u "
       "delta_valid=%u delta_normal=%.9g delta_forward=%.9g delta_right=%.9g "
       "events=%u reason=%s writable_source_proven=0 Position_writes_by_mod=0",
       (unsigned long long)v.session, (unsigned long long)v.id, v.tid,
@@ -407,11 +471,180 @@ void finish(unsigned slot) {
       unsigned(a.mask & 4 ? 1 : 0), unsigned(a.mask & 8 ? 1 : 0), v.before[0],
       v.before[1], v.before[2], v.before[3], a.after[0], a.after[1], a.after[2],
       a.after[3], a.values[0], a.values[1], a.values[2], a.values[3],
-      sourceMask, pointerMask, unsigned(v.beforeRead), unsigned(a.events > 0),
-      unsigned(d.valid), d.normal, d.forward, d.right, a.events,
+      sourceMask, pointerMask, unsigned(stableMask != 0),
+      unsigned(v.beforeRead), unsigned(a.events > 0), unsigned(d.valid),
+      d.normal, d.forward, d.right, a.events,
       a.mask == 15 ? "four_same_invocation_post_store_components_NOT_atomic_"
                      "return_or_causal_proof"
                    : "partial_or_no_store_capture");
+  bool samePointer = v.stackRead && (v.pointerMask & 1) &&
+                     !std::memcmp(v.stack.data(), v.pointed[0].data(), 16);
+  auto storage = ws::rdx::storage(v.rsp, v.gpr[2], v.stackLow, v.stackHigh,
+                                  v.stackRead && (v.pointerMask & 1),
+                                  samePointer, contractCaller);
+  bool distinctTarget =
+      v.target <= UINTPTR_MAX - 64 &&
+      (v.target + 64 <= v.stackLow || v.target >= v.stackHigh);
+  bool sites = true;
+  for (unsigned k = 0; k < 4; ++k)
+    sites &= a.stores[k] == contractWriter.stores[k];
+  unsigned xyz = 0;
+  if ((v.pointerMask & 1) && complete) {
+    std::uint32_t b[4]{};
+    std::memcpy(b, v.pointed[0].data(), 16);
+    xyz = matchMask(b, a.values, 15) & 7;
+  }
+  bool causal = contractConfigured && contractWriter.xyz && complete &&
+                a.ordered && sites && storage.sameBytes && distinctTarget &&
+                xyz == 7;
+  std::uint32_t w{};
+  std::memcpy(&w, a.values + 3, 4);
+  bool wCausal = contractConfigured && contractWriter.w && complete &&
+                 a.ordered && sites &&
+                 (!contractWriter.wConstant || w == contractWriter.wBits);
+  writeLog("MOVEMENT_RDX_XYZ_PROOF session=%llu invocation_id=%llu "
+           "writer_rva=0x2cfc900 source_register=RDX source_offsets=0,4,8 "
+           "position_offsets=0x30,0x34,0x38 "
+           "component_paths=%s "
+           "static_prefix_proven=%u prefix_end_rva=0x%llx "
+           "xyz_causality_proven=%u entry_store_xyz_match_mask=0x%x "
+           "scope=entry_through_sampled_stores_NOT_whole_CFG "
+           "writable_source_proven=0 reason=%s",
+           (unsigned long long)v.session, (unsigned long long)v.id,
+           contractWriter.xyz ? "decoded_RDX_0_4_8_to_Position_30_34_38"
+                              : "unresolved",
+           unsigned(contractWriter.xyz),
+           (unsigned long long)(target - imageBase + contractWriter.prefixEnd),
+           unsigned(causal), xyz,
+           !contractConfigured   ? "contract_not_admitted"
+           : !contractWriter.xyz ? contractWriter.reason
+           : !complete           ? "partial_or_rejected_invocation"
+           : !a.ordered          ? "store_order_or_missing_first_event"
+           : !sites              ? "store_site_mismatch"
+           : !storage.sameBytes  ? "bounded_equal_RDX_stack_snapshot_missing"
+           : !distinctTarget     ? "stack_target_alias_not_excluded"
+           : xyz != 7
+               ? "entry_XYZ_store_bits_mismatch"
+               : "decoded_causal_path_and_same_invocation_bits_verified");
+  writeLog(
+      "MOVEMENT_POSITION_W_PROOF session=%llu invocation_id=%llu "
+      "store_rva=0x%llx source_kind=%s source_value_bits=0x%x "
+      "source_value_is_constant=%u source_value_valid=%u "
+      "destination_value_valid=%u source_register_id=%d source_offset=%lld "
+      "destination_value_bits=0x%x causality_proven=%u "
+      "homogeneous_coordinate_semantics=unknown reason=%s",
+      (unsigned long long)v.session, (unsigned long long)v.id,
+      (unsigned long long)(target - imageBase + contractWriter.stores[3]),
+      contractWriter.wKind, contractWriter.wConstant ? contractWriter.wBits : w,
+      unsigned(contractWriter.wConstant),
+      unsigned(contractWriter.wConstant || (a.mask & 8)),
+      unsigned((a.mask & 8) != 0), contractWriter.wSourceReg,
+      (long long)contractWriter.wSourceOffset, w, unsigned(wCausal),
+      !contractConfigured ? "contract_not_admitted"
+      : !contractWriter.w ? contractWriter.reason
+      : !complete         ? "partial_or_rejected_invocation"
+      : !sites            ? "store_site_mismatch"
+      : !wCausal          ? "executed_W_bits_do_not_match_decoded_constant"
+                          : "decoded_store_operand_and_invocation_verified_NOT_"
+                            "coordinate_type");
+  writeLog(
+      "MOVEMENT_RDX_STORAGE_PROOF session=%llu invocation_id=%llu "
+      "call_rva=0x351eeab rdx_relation=%s stack_object_begin=0x%llx "
+      "stack_object_size=16 current_thread_TEB_bounded=%u "
+      "pointer_stack_bytes_equal=%u static_RDX_local_assignment=%u "
+      "lifetime_scope=%s caller_owned=%u ownership_exclusive=0 reason=%s",
+      (unsigned long long)v.session, (unsigned long long)v.id,
+      storage.bounded ? "entry_rsp_plus_0x28_equals_precall_rsp_plus_0x20"
+                      : "unproven",
+      (unsigned long long)(storage.bounded ? v.gpr[2] : 0),
+      unsigned(storage.bounded), unsigned(storage.sameBytes),
+      unsigned(contractCaller.rdxLocal),
+      storage.callerOwned
+          ? "allocated_caller_frame_until_return_NOT_exclusive_effect"
+          : "current_invocation_snapshot_only_owner_unproven",
+      unsigned(contractConfigured && storage.callerOwned && distinctTarget),
+      contractCaller.reason);
+  unsigned char liveProducer[8192]{};
+  bool producerIntact =
+      producerSize &&
+      writer_entry::guardedRead(imageBase + producerBegin, liveProducer,
+                                producerSize) &&
+      !std::memcmp(liveProducer, producerCode.data(), producerSize);
+  auto relation = producerIntact ? ws::rdx::relation(liveProducer, producerSize,
+                                                     imageBase + producerBegin,
+                                                     imageBase + 0x351a020,
+                                                     callerStart, contractRead)
+                                 : ws::rdx::Relation{};
+  writeLog(
+      "MOVEMENT_RDX_PRODUCER_PROOF session=%llu invocation_id=%llu "
+      "storage=entry_rsp_plus_0x28 producer_rva=0x%llx "
+      "producer_function_begin=0x%x producer_function_end=0x%x "
+      "producer_relation_to_0x351A020=%s static_anchored_relation=%s "
+      "relation_reaches_tiny_caller=%u "
+      "anchored_call_rva=0x%llx direct_target_rva=0x%llx next_edge_rva=0x%llx "
+      "exact_jump_hops=%u producer_code_intact_at_worker=%u "
+      "code_scope=startup_and_worker_NOT_atomic_entry "
+      "runtime_stack_verified=%u construction_kind=unknown "
+      "producer_x_rva=0x%llx producer_y_rva=0x%llx producer_z_rva=0x%llx "
+      "caller_first_barrier_rva=0x%llx parent_candidate_x_rva=0x%llx "
+      "parent_candidate_y_rva=0x%llx parent_candidate_z_rva=0x%llx "
+      "parent_first_barrier_rva=0x%llx parent_slice_reason=%s "
+      "parent_candidate_is_causal=0 "
+      "uses_current_position=unknown uses_dt=unknown "
+      "uses_direction_like_vector=unknown uses_speed_like_scalar=unknown "
+      "source_lifetime_exclusive=0 downstream_conflicts_proven_absent=0 "
+      "writable_source_proven=0 reason=%s",
+      (unsigned long long)v.session, (unsigned long long)v.id,
+      (unsigned long long)(contractCaller.constructed
+                               ? callerStart - imageBase +
+                                     contractCaller.producers[0] - 1
+                               : 0),
+      producerBegin, producerEnd,
+      v.chainVerified && v.caller2 == imageBase + 0x351a020 ? relation.kind
+                                                            : "unresolved",
+      relation.kind,
+      unsigned(relation.reaches && v.chainVerified &&
+               v.caller2 == imageBase + 0x351a020),
+      (unsigned long long)(relation.call >= imageBase
+                               ? relation.call - imageBase
+                               : 0),
+      (unsigned long long)(relation.target >= imageBase
+                               ? relation.target - imageBase
+                               : 0),
+      (unsigned long long)(relation.next >= imageBase
+                               ? relation.next - imageBase
+                               : 0),
+      relation.hops, unsigned(producerIntact), unsigned(v.chainVerified),
+      (unsigned long long)(contractCaller.producers[0]
+                               ? callerStart - imageBase +
+                                     contractCaller.producers[0] - 1
+                               : 0),
+      (unsigned long long)(contractCaller.producers[1]
+                               ? callerStart - imageBase +
+                                     contractCaller.producers[1] - 1
+                               : 0),
+      (unsigned long long)(contractCaller.producers[2]
+                               ? callerStart - imageBase +
+                                     contractCaller.producers[2] - 1
+                               : 0),
+      (unsigned long long)(contractCaller.prefix ? 0
+                                                 : callerStart - imageBase +
+                                                       contractCaller.barrier),
+      (unsigned long long)(contractParent.producers[0]
+                               ? producerBegin + contractParent.producers[0] - 1
+                               : 0),
+      (unsigned long long)(contractParent.producers[1]
+                               ? producerBegin + contractParent.producers[1] - 1
+                               : 0),
+      (unsigned long long)(contractParent.producers[2]
+                               ? producerBegin + contractParent.producers[2] - 1
+                               : 0),
+      (unsigned long long)(contractParent.prefix
+                               ? 0
+                               : producerBegin + contractParent.barrier),
+      contractParent.reason,
+      producerIntact ? relation.reason
+                     : "producer_span_not_captured_or_changed");
   writeLog(
       "MOVEMENT_CALLER_CHAIN_RUNTIME session=%llu invocation_id=%llu "
       "return_rva=0x%llx caller2_observed_rva=0x%llx relation=%s "
@@ -549,6 +782,63 @@ void configure(const Spec &s, Gate validate) noexcept {
     chainDirect = s.caller2Direct;
     callerCodeSize = 30;
     std::memcpy(callerCode.data(), callerBytes, 30);
+    contractImageSize = s.imageSize;
+    contractWriter = ws::rdx::writer(code, functionSize);
+    contractCaller = ws::rdx::caller(callerBytes, sizeof(callerBytes),
+                                     0x351eeab - s.callerBegin);
+    const std::array<unsigned, 4> sites{0x36, 0x3c, 0x42, 0x45};
+    if (contractWriter.stores != sites) {
+      contractWriter.xyz = false;
+      contractWriter.w = false;
+      contractWriter.reason =
+          "exact_position_store_sites_mismatch_or_prefix_incomplete";
+    }
+    contractConfigured = true;
+    if (s.caller2Original && s.caller2End > s.caller2Begin &&
+        s.caller2End - s.caller2Begin <= producerCode.size() &&
+        s.caller2End <= s.imageSize) {
+      producerBegin = s.caller2Begin;
+      producerEnd = s.caller2End;
+      producerSize = producerEnd - producerBegin;
+      DWORD64 producerImage{};
+      auto producerFunction = RtlLookupFunctionEntry(imageBase + 0x351a01f,
+                                                     &producerImage, nullptr);
+      bool verifiedProducer =
+          producerFunction && producerImage == imageBase &&
+          producerFunction->BeginAddress == producerBegin &&
+          producerFunction->EndAddress == producerEnd &&
+          guardedRead(imageBase + producerBegin, producerCode.data(),
+                      producerSize) &&
+          !std::memcmp(producerCode.data(), s.caller2Original, producerSize);
+      if (!verifiedProducer)
+        producerSize = 0;
+      contractProducer = ws::rdx::relation(
+          producerCode.data(), producerSize, imageBase + producerBegin,
+          imageBase + 0x351a020, callerStart, contractRead);
+      if (contractProducer.call >= imageBase + producerBegin &&
+          contractProducer.call < imageBase + producerEnd)
+        contractParent = ws::rdx::caller(
+            producerCode.data(), producerSize,
+            unsigned(contractProducer.call - imageBase - producerBegin));
+    }
+    writeLog("MOVEMENT_RDX_STATIC_CONTRACT admitted_build=1 "
+             "writer_complete_decode=%u entry_store_prefix=%u "
+             "xyz_RDX_0_4_8_paths=%u W_kind=%s W_classified=%u "
+             "first_barrier_rva=0x%x first_barrier_instruction=%s "
+             "caller_prefix=%u caller_RDX_local=%u "
+             "caller_allocation_owned=%u caller2_relation=%s "
+             "exact_next_producer_rva=0x%llx writable_source_proven=0 "
+             "full_bytes_logged=0 reason=%s",
+             unsigned(contractWriter.decoded), unsigned(contractWriter.prefix),
+             unsigned(contractWriter.xyz), contractWriter.wKind,
+             unsigned(contractWriter.w), s.begin + contractWriter.barrier,
+             contractWriter.barrierMnemonic, unsigned(contractCaller.prefix),
+             unsigned(contractCaller.rdxLocal), unsigned(contractCaller.owned),
+             contractProducer.kind,
+             (unsigned long long)(contractProducer.next >= imageBase
+                                      ? contractProducer.next - imageBase
+                                      : 0),
+             contractWriter.reason);
     configured = true;
     reason = "exact_build_runtime_boundary_and_c12_baseline_hash_direct_call_"
              "verified";
@@ -621,6 +911,7 @@ bool activate() noexcept {
   if (!scope || !installed || failed || !gate || !gate(scope->request) ||
       !owned())
     return false;
+  scope->activated.store(true, std::memory_order_release);
   scope->active.store(true, std::memory_order_release);
   ws_movement_entry_enabled = 1;
   writeLog("MOVEMENT_ENTRY_DIAGNOSTIC_ACTIVE session=%llu capture_ready=1 "
@@ -667,11 +958,17 @@ std::uint64_t pair(std::uint64_t session, std::uint64_t generation,
                    std::uintptr_t transform, std::uintptr_t rsp,
                    std::uintptr_t ret) noexcept {
   auto *scope = activeScope.load(std::memory_order_acquire);
+  auto invalidate = [&]() noexcept {
+    for (unsigned i = 0; i < depth; ++i)
+      if (local[i].rsp == rsp)
+        local[i].id = 0;
+    return std::uint64_t{0};
+  };
   if (!scope || !scope->active || scope->request.session != session ||
       scope->request.generation != generation ||
       scope->request.transform != transform || !gate || !gate(scope->request) ||
       !owned())
-    return 0;
+    return invalidate();
   for (unsigned i = depth; i > 0; --i) {
     auto t = local[i - 1];
     if (t.rsp != rsp)
@@ -686,13 +983,14 @@ std::uint64_t pair(std::uint64_t session, std::uint64_t generation,
                    v.target == transform && v.ret == ret &&
                    v.tid == GetCurrentThreadId()
                ? t.id
-               : 0;
+               : invalidate();
   }
   return 0;
 }
 void storeComponent(std::uint64_t id, unsigned component,
                     std::uint32_t writtenBits, const float p[4],
-                    std::uintptr_t ret, std::uintptr_t caller2) noexcept {
+                    std::uintptr_t ret, std::uintptr_t caller2,
+                    unsigned storeOffset) noexcept {
   if (!id || id > capacity || component > 3 || !p)
     return;
   auto slot = unsigned(id - 1);
@@ -701,17 +999,22 @@ void storeComponent(std::uint64_t id, unsigned component,
     return;
   auto &v = rec.snapshot;
   auto &a = aggregates[slot];
-  if (a.printed || ret != v.ret || (v.chainVerified && caller2 != v.caller2))
+  if (a.printed || a.rejected || ret != v.ret ||
+      (v.chainVerified && caller2 != v.caller2))
     return;
   if (a.mask & (1u << component)) {
     a.printed = true;
+    a.rejected = true;
     writeLog("MOVEMENT_WRITER_INVOCATION_REJECT invocation_id=%llu "
              "reason=duplicate_component_or_reentry_unproven "
              "writable_source_proven=0",
              (unsigned long long)id);
     return;
   }
+  if (component != a.events)
+    a.ordered = false;
   a.mask |= 1u << component;
+  a.stores[component] = storeOffset;
   std::memcpy(a.values + component, &writtenBits, 4);
   std::memcpy(a.after, p, 16);
   ++a.events;
@@ -748,8 +1051,12 @@ int registerIndex(unsigned r) {
 }
 void observe(std::uint64_t id, std::uintptr_t after, std::uintptr_t transform,
              const std::uint64_t *gpr, const unsigned char *xmm, bool floating,
-             const float p[4], std::uintptr_t ret,
-             std::uintptr_t caller2) noexcept {
+             const float p[4], std::uintptr_t ret, std::uintptr_t caller2,
+             bool positionReadable) noexcept {
+  if (id && id <= capacity && !positionReadable) {
+    aggregates[id - 1].rejected = true;
+    return;
+  }
   if (!id || id > capacity || !gpr || !p || !functionSize || after <= target ||
       after > target + functionSize)
     return;
@@ -761,7 +1068,7 @@ void observe(std::uint64_t id, std::uintptr_t after, std::uintptr_t transform,
   auto count = cs_disasm(h, baseline.data(), functionSize, target, 0, &ins);
   std::uintptr_t pc = target;
   bool complete = true, found = false;
-  unsigned component{};
+  unsigned component{}, storeOffset{};
   std::uint32_t bits{};
   for (std::size_t i = 0; i < count; ++i) {
     auto &v = ins[i];
@@ -796,6 +1103,7 @@ void observe(std::uint64_t id, std::uintptr_t after, std::uintptr_t transform,
         address > transform + 60 || (address - transform - 48) % 4)
       continue;
     component = unsigned(address - transform - 48) / 4;
+    storeOffset = unsigned(v.address - target);
     auto &source = x.operands[1];
     if (source.type == X86_OP_IMM) {
       bits = std::uint32_t(source.imm);
@@ -818,7 +1126,33 @@ void observe(std::uint64_t id, std::uintptr_t after, std::uintptr_t transform,
   if (complete && pc == target + functionSize && found &&
       records[id - 1].state.load(std::memory_order_acquire) == 1 &&
       records[id - 1].snapshot.target == transform)
-    storeComponent(id, component, bits, p, ret, caller2);
+    storeComponent(id, component, bits, p, ret, caller2, storeOffset);
+  else if (id && id <= capacity)
+    aggregates[id - 1].rejected = true;
+}
+CaptureSummary summary(std::uint64_t session) noexcept {
+  CaptureSummary result{};
+  for (unsigned i = 0; i < usedScopes.load(std::memory_order_acquire); ++i) {
+    auto &scope = scopes[i];
+    if (scope.request.session != session)
+      continue;
+    result.activated = scope.activated.load(std::memory_order_acquire);
+    for (unsigned j = 0; j < scope.reserved.load(std::memory_order_acquire);
+         ++j)
+      if (records[i * perSession + j].state.load(std::memory_order_acquire) ==
+          1)
+        ++result.snapshots;
+    auto &e = evidence[i];
+    result.complete = e.complete;
+    for (unsigned id :
+         {20u, 23u, 0u,  1u,  2u,  3u,  4u,  5u,  6u,  7u,  8u,  9u,  10u, 11u,
+          12u, 13u, 14u, 15u, 16u, 17u, 18u, 19u, 21u, 22u, 24u, 25u, 26u})
+      if (e.xyz[id] > result.xyzMatches) {
+        result.xyzMatches = e.xyz[id];
+        result.candidate = id;
+      }
+  }
+  return result;
 }
 void drain() noexcept {
   for (unsigned i = 0; i < usedScopes; ++i) {
@@ -827,6 +1161,34 @@ void drain() noexcept {
       continue;
     for (unsigned j = 0; j < scope.reserved.load(); ++j)
       finish(i * perSession + j);
+    auto &e = evidence[i];
+    if (!e.summarized) {
+      e.summarized = true;
+      auto result = summary(scope.request.session);
+      auto id = result.candidate;
+      writeLog(
+          "MOVEMENT_ENTRY_CAPTURE_SUMMARY session=%llu capture_activated=%u "
+          "true_entry_snapshots=%u complete_invocation_maps=%u "
+          "xyz_source_candidate=%u xyz_match_count=%u xyz_match_mask=0x%x "
+          "xyz_stable_across_invocations=%u source_w_pattern=%s "
+          "source_w_bits=0x%x destination_w_pattern=%s destination_w_bits=0x%x "
+          "stability_scope=session_XYZ_match_pattern storage_lifetime_proven=0 "
+          "stable_across_surfaces=0 writable_source_proven=0 "
+          "Position_writes_by_mod=0",
+          (unsigned long long)scope.request.session, unsigned(result.activated),
+          result.snapshots, result.complete, id, result.xyzMatches,
+          result.xyzMatches ? 7 : 0,
+          unsigned(result.xyzMatches >= 2 &&
+                   result.xyzMatches == result.complete),
+          id == 27 || !e.sourceWSeen[id] ? "unobserved"
+          : e.sourceWMixed[id]           ? "mixed"
+                                         : "constant_observed",
+          id == 27 ? 0 : e.sourceW[id],
+          !e.destinationWSeen   ? "unobserved"
+          : e.destinationWMixed ? "mixed"
+                                : "constant_observed",
+          e.destinationW);
+    }
   }
 }
 } // namespace msm2::writer_entry

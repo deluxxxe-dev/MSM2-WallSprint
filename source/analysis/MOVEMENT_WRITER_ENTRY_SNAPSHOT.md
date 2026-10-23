@@ -35,3 +35,7 @@ No return boundary is intercepted: four components mean four same-invocation sto
 ## Deterministic verification
 
 New owned ABI probe checks integer/stack/GPR/flags/nonvolatiles, all YMM/XMM, x87/MXCSR, LastError and unchanged return while a gate deliberately clobbers floating state. Independent actual hardware watch captures28 stores on two concurrent threads, including reentry, and yields seven complete unique invocation maps with exact source bits. Generic target/wrong caller, source/current-position/W/partial/zero-observation negatives, all identity/epoch/generation/stale gates,8-record saturation, guard/noaccess/cross-page refusal and unhook/cancel/foreign ownership failures are exercised. Caller classification tests direct, indirect, exact E9 wrapper and unresolved mismatch. No owned executable passes the public game-RVA gate. Existing complete c12 suite remains required; final counts/source rebuild/archive validation are in CODEX_RESULT.
+
+## c14 handoff update
+
+The earlier pending-game statements above describe the c13 implementation-time boundary. Actual c13 A/E capture is now accepted in V01C13_RUNTIME_RESULT.md:16 entries/all stores, pointer20/stack23 XYZ mask0x7, sourceW0/destW1. C14 repairs the aggregate/XYZ reporting and adds separate decoded XYZ/W and caller/producer diagnostics. Actual c14 contract results remain pending; see RDX_XYZ_SOURCE_CONTRACT.md and RDX_CALLER_PRODUCER.md. No write permission is granted.

@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.31",
-  "description": "WallSprint v0.1c13 Writer Entry Snapshot. Exact-build bounded transparent entry diagnostics and invocation-linked Position evidence; c12 orientation unchanged. No Position, source, input or movement rewrite.",
+  "version": "0.1.32",
+  "description": "WallSprint v0.1c14 RDX Stack-Local Source Contract. Read-only decoded XYZ/W, bounded caller/producer proofs and corrected entry/XYZ summaries. Accepted orientation unchanged; Position/source/input/movement writes remain disabled.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

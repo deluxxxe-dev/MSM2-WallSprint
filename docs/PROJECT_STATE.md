@@ -89,3 +89,7 @@ c14 branch: codex/v01c14-rdx-source-contract
 
 ## Current objective
 Authenticate exactly how the caller constructs the stack-local payload at entry `RSP+0x28` / `RDX`, prove its XYZ path into Transform Position, separately prove destination W behavior, and determine producer/lifetime/downstream ownership. Repair the c13 summary/candidate aggregation defects while preserving all read-only movement constraints.
+
+## c14 implementation status
+
+v0.1c14 / package0.1.32 implements read-only independent decoded RDX XYZ/W prefix, bounded caller storage/producer-edge diagnostics and corrected session true-entry/XYZ summaries. Existing c12 analyzer, orientation admission/lifecycle/refresh policies and c13 entry-hook cleanup remain unchanged. Exact implementation SHA, tests and archive hashes are in docs/CODEX_RESULT.md / analysis/V01C14_RELEASE.json. Actual c14 XYZ/W/storage/producer A/E proof remains PENDING human run; accepted c13 facts remain historical evidence. Source lifetime, typed semantics, downstream/exclusive effects remain unproven. writable_source_proven=0 and Position/source/input/movement writes0. CODEX_NEXT is preserved.

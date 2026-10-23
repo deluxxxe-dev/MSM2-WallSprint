@@ -21,6 +21,8 @@ struct Spec {
   const char *hash{};
   const char *caller2Relation = "unresolved";
   bool caller2Direct{};
+  const unsigned char *caller2Original{};
+  unsigned caller2Begin{}, caller2End{};
 };
 void configure(const Spec &, Gate) noexcept;
 bool start(const reset_trace::Request
@@ -36,9 +38,15 @@ std::uint64_t pair(std::uint64_t session, std::uint64_t generation,
 void observe(std::uint64_t id, std::uintptr_t ripAfter,
              std::uintptr_t transform, const std::uint64_t *gpr,
              const unsigned char *xmm, bool xmmValid, const float position[4],
-             std::uintptr_t ret,
-             std::uintptr_t caller2) noexcept; // worker only
-void drain() noexcept;                         // worker only
+             std::uintptr_t ret, std::uintptr_t caller2,
+             bool positionReadable = true) noexcept; // worker only
+struct CaptureSummary {
+  bool activated{};
+  unsigned snapshots{}, complete{}, xyzMatches{}, candidate{27};
+};
+// Worker only, after event drain. Does not alter c12 admission/reconstruction.
+CaptureSummary summary(std::uint64_t session) noexcept;
+void drain() noexcept; // worker only
 bool guardedRead(std::uintptr_t, void *, std::size_t) noexcept;
 // Full bounded decode; wrapper only when a direct call lands on an exact E9
 // tail jump to the containing caller. No guessed wrapper/indirect relation.

@@ -21,3 +21,7 @@ Actual c13 game entries are PENDING. Cloud owned fixtures prove the mechanism an
 If a real origin matches the four store values on A and E, the next edge is the origin's construction/lifetime in caller0x351EEA7..0x351EEC5 and its observed caller2 producer path. If only partial or no match occurs, use the exact component masks, raw entry registers/stack offsets and captured store-source values to identify the missing transform/computation (including unsupported writer+0xA) rather than guessing semantics. Full original CFG/XYZW causal feed, source lifetime, native Hero/session/thread ownership, downstream conflict and exclusive intended effects remain necessary for a future separate proof/write task.
 
 Path A source+0x30 stays rejected. Existing owner+0x320/+0x338 remain reference points, not velocity fields. Position/input/source/movement/adhesion/gravity/camera/animation/visual contact remain unchanged. No future rewrite is enabled automatically.
+
+## c14 handoff update
+
+The earlier pending-game statements above describe the c13 implementation-time boundary. Actual c13 A/E capture is now accepted in V01C13_RUNTIME_RESULT.md:16 entries/all stores, pointer20/stack23 XYZ mask0x7, sourceW0/destW1. C14 repairs the aggregate/XYZ reporting and adds separate decoded XYZ/W and caller/producer diagnostics. Actual c14 contract results remain pending; see RDX_XYZ_SOURCE_CONTRACT.md and RDX_CALLER_PRODUCER.md. No write permission is granted.
