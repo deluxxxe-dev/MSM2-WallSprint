@@ -10,12 +10,14 @@ Convert vanilla WallRun into surface-relative locomotion. Do not advance movemen
 - Preserve fail-closed exact-build behavior, `AGENTS.md` / `docs/DEV_RULES.md`, independent implementation, and no raw user logs/full private game bodies in public artifacts.
 
 ## Accepted orientation
-Planar Surface Up is accepted on cardinal and diagonal walls through verified Deinit.
+Planar Surface Up remains accepted on cardinal and diagonal walls through verified Deinit.
 
-Latest human c14 A/E log:
-- A/session1: 4453 ms, verified Deinit, retention pass, final Up dot surface=1, stale0, hard kill0, Position writes0
-- E/session2: 4172 ms, verified Deinit, retention pass, final Up dot surface=1.00000012, stale0, hard kill0, Position writes0
-- entry-hook / Position-watch cleanup restored normally
+Latest human c15 A/E log:
+```text
+A/session1: 3860 ms, verified Deinit, retention pass, Up dot surface=1, stale0, hard0, Position writes0
+E/session2: 4297 ms, verified Deinit, retention pass, Up dot surface≈1.00000012, stale0, hard0, Position writes0
+```
+Entry-hook / Position-watch cleanup restored normally.
 
 ## Verified movement chain
 ```text
@@ -27,45 +29,71 @@ return=0x351EEB0
 observed second return=0x351A020
 ```
 
-## c13/c14 runtime source evidence
-C13 captured 16 true writer-entry snapshots, eight per surface. C14 preserves the same real relation:
+Runtime A/E source relation remains:
 ```text
 RDX = entry RSP+0x28
-[RDX] XYZ == executed Position XYZ store bits
+[RDX] XYZ == exact executed Position XYZ store bits
 entry_store_xyz_match_mask=0x7
 source W observed 0
 destination W observed 1
 ```
-This is still correlation until writer-side decoded causality is proven.
+Correlation is strong but is not yet writable-source proof.
 
-C14 also repairs the c13 final aggregate: both sessions report `source_capture_ready=1`, `true_entry_snapshot=1`, `true_entry_snapshots=8`, `complete_invocation_maps=8`.
+## c15 actual-game verdict
+**Diagnostic PASS / exact next local writer blocker.** See `analysis/V01C15_RUNTIME_RESULT.md`.
 
-## c14 actual-game verdict
-**Diagnostic PASS / exact local blocker identified.** See `analysis/V01C14_RUNTIME_RESULT.md`.
-
-Independent static contract result:
+C15 crosses the c14 `0x2CFC91F jne` barrier. The next exact blocker is:
 ```text
-writer_complete_decode=1
-entry_store_prefix=0
-xyz_RDX_0_4_8_paths=0
-W_kind=unknown
-W_classified=0
-first_barrier_rva=0x2CFC91F
-first_barrier_instruction=jne
-caller_prefix=1
-caller_RDX_local=0
-caller_allocation_owned=0
-caller2_relation=unresolved
-exact_next_producer_rva=0x351EB00
-writable_source_proven=0
-reason=exact_position_store_sites_mismatch_or_prefix_incomplete
+0x2CFC927: call
 ```
 
-Thus actual entries still match XYZ bits, but `xyz_causality_proven=0`. W remains unclassified because the same writer-prefix proof stops first.
+Actual branch contract:
+```text
+writer_complete_decode=1
+first_branch_rva=0x2CFC91F
+blocks_visited=2
+edges_visited=2
+branches_seen=4
+exact_store_sites_verified=1
+all_relevant_store_paths_proven=0
+proven_component_mask=0x0
+next_barrier_rva=0x2CFC927
+next_barrier_instruction=call
+W_independent=1
+W_kind=unknown
+writable_source_proven=0
+reason=unsupported_relevant_writer_instruction_or_memory_effect
+```
 
-Storage is narrowed to a 16-byte TEB-bounded current-invocation stack object with `RDX == entry RSP+0x28 == precall RSP+0x20`, but caller ownership/exclusivity is unproven. Parent anchor `0x351A01B` points to exact next producer edge `0x351EB00`; do not chase/mutate it until writer causality is proven.
+Per invocation, XYZ still match (`mask=0x7`) but `xyz_causality_proven=0` remains correct because the call effect is unresolved.
 
-`MOVEMENT_ENTRY_CAPTURE_SUMMARY` is still emitted before capture activation and reports zero; final `MOVEMENT_LINEAGE_SUMMARY` and actual entry records are authoritative. C15 should re-emit the capture summary at finalization.
+## Capture-summary repair
+C15 fixes the early-zero summary. Both A/E finalize with:
+```text
+capture_activated=1
+true_entry_snapshots=8
+complete_invocation_maps=8
+xyz_source_candidate=20
+xyz_match_count=8
+xyz_match_mask=0x7
+xyz_stable_across_invocations=1
+source_w_bits=0x0
+destination_w_bits=0x3f800000
+phase=finalized
+summary_final=1
+```
+
+## Producer/storage boundary
+Still unpromoted:
+```text
+RDX == entry RSP+0x28 == precall RSP+0x20
+caller_owned=0
+ownership_exclusive=0
+source_lifetime_exclusive=0
+downstream_conflicts_proven_absent=0
+exact_next_producer_rva=0x351EB00
+```
+Do not chase/mutate `0x351EB00` until the writer-local call effect is resolved.
 
 ## Current gate
 ```text
@@ -79,24 +107,25 @@ Position/source/input/movement writes=0
 3. planar A/E orientation ✅ COMPLETE
 4. Position writer attribution ✅
 5. SurfaceFrame translation decomposition ✅
-6. exact `0x351EEAB -> 0x2CFC900` callsite ✅
-7. true writer-entry capture ✅ c13 real
-8. RDX stack-local XYZ bit correlation ✅ c13/c14 real
-9. c14 final entry accounting repair ✅
-10. writer branch-aware RDX->Position causal proof ▶ CURRENT c15
-11. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-12. safe writable upstream movement source ⬜ NOT AUTHORIZED
-13. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-14. adhesion/contact refinement ⏸ deferred
-15. animation/camera/later traversal ⬜
+6. exact writer callsite ✅
+7. true writer-entry capture ✅
+8. RDX stack-local XYZ correlation ✅
+9. c14 JNE blocker identified ✅
+10. c15 branch-aware crossing of `0x2CFC91F` ✅
+11. writer call `0x2CFC927` effect contract ▶ CURRENT c16
+12. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+13. safe writable upstream movement source ⬜ NOT AUTHORIZED
+14. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+15. adhesion/contact refinement ⏸ deferred
+16. animation/camera/later traversal ⬜
 
 ## Current implementation base / next branch
 ```text
-c14 branch: codex/v01c14-rdx-source-contract
-c14 implementation: 617d7b6a84f752582aebd7be8a766c5ef02e476a
-c14 published delivery before human result: 5fd2cdff9ae6732cf0eaa53fec02253c4d6ae25c
 c15 branch: codex/v01c15-writer-branch-contract
+c15 implementation: 0efd13924426b1c96247ff35577f7f323c934b97
+c15 published delivery: 8e500b2e5f4967457f8652f46e18eb2c6d4fcb7d
+c16 branch: codex/v01c16-writer-call-effect
 ```
 
 ## Current action
-Run Codex on `docs/CODEX_NEXT.md`. C15 is read-only and limited to the authenticated writer control-flow/dataflow barrier beginning at `0x2CFC91F`; no movement/source mutation is authorized.
+Run Codex on `docs/CODEX_NEXT.md`. C16 remains diagnostic/read-only and resolves only the exact writer-local call at `0x2CFC927`; no movement/source/input mutation is authorized.
