@@ -36,7 +36,7 @@ ws::interop::AtomicPublication<StaleSignal> stalePublication;
 enum class Ownership {Dormant,Active,StaleSuspended,HardClosed};
 struct NativeClose {Token token{};Published source{};bool wasOpen{},sourceRead{};};
 ws::interop::AtomicPublication<NativeClose> deinitPublication;
-std::atomic<unsigned> pathAWrites{0},pathBWrites{0},pathARejects{0},pathBRejects{0};
+std::atomic<unsigned> pathAWrites{0},pathBWrites{0},pathARejects{0},pathBRejects{0},pathBReservations{0};
 std::atomic<bool> resetRequested{false},lifecycleOpen{false};std::atomic<std::uint64_t> lifecycleEpoch{0};
 ws::position_proof::Result positionProof;
 struct Adhesion {unsigned attempts{},samples{},failClosed{};std::uint64_t lastMs{},lastUpdate{};float maxError{},maxRequested{},maxCandidateTangent{};bool finished{};};
@@ -53,10 +53,25 @@ struct Shared {
 } state;
 struct Record {
  unsigned kind{},gateMask{};const char* reason="none";std::uint64_t session{},ms{},generation{},nativeUpdate{},heldMs{},commitQpc{};
- std::uintptr_t source{},caller{};float elapsed{},t{},actorDotSurface{},actorDotWorld{};unsigned writes{},heldUpdates{};Matrix original{},applied{};ws::source_math::CompactBlock compactOriginal{},compactApplied{};ws::diag::ActorAxes target{};Vec3 n{},actorUp{},rowLengths{},positionBefore{};bool positionSame{},stack{},success{},prearmed{},copy{},late{},sourceReadable{},sourceLayout{};unsigned nativeThread{};std::uintptr_t rcx{},r8{},r9{},rsp{},stackLimit{},stackBase{};
+ std::uintptr_t source{},caller{};float elapsed{},t{},actorDotSurface{},actorDotWorld{};unsigned writes{},heldUpdates{};Matrix original{},applied{};ws::source_math::CompactBlock compactOriginal{},compactApplied{};ws::diag::ActorAxes target{};Vec3 n{},actorUp{},rowLengths{},positionBefore{};bool positionSame{},stack{},success{},prearmed{},copy{},late{},sourceReadable{},sourceLayout{};unsigned nativeThread{},expectedThread{};const char* tokenStatus="not_read";bool tokenIdentity{};std::uintptr_t rcx{},r8{},r9{},rsp{},stackLimit{},stackBase{};
 };
 std::array<Record,capacity> records;std::atomic<unsigned> head{0},tail{0};
 std::atomic_flag recordLock=ATOMIC_FLAG_INIT;std::atomic<unsigned> recordDrops{0};
+struct SecondaryCounters {
+ std::atomic<unsigned> seen{0},admitted{0},overridden{0},rejected{0},firstThread{0},lastThread{0},overflowEvents{0},inflight{0};
+ std::array<std::atomic<unsigned>,16> threads{};
+} secondary;
+struct FirstSecondary {std::atomic<unsigned> ready{0};Record record{};};
+FirstSecondary firstSecondaryOverride,firstSecondaryReject;
+void secondaryLog(const Record& r){
+ writeLog("PATH_B_SECONDARY_THREAD_EVENT session=%llu elapsed=%.6f thread_id=%u expected_thread=%u caller_rva=0x%llx target_transform=0x%llx rdx_minus_rsp=%lld stack_verified=%u compact_verified=%u token_status=%s identity_verified=%u source_up_before=(%.9g,%.9g,%.9g) target_up=(%.9g,%.9g,%.9g) action=%s reason=%s expected_native_thread_unchanged=1 position_source_write=0",
+  (unsigned long long)r.session,r.elapsed,r.nativeThread,r.expectedThread,(unsigned long long)r.caller,(unsigned long long)r.rcx,(long long)(std::int64_t(r.source-r.rsp)),unsigned(r.stack),unsigned(r.sourceLayout),r.tokenStatus,unsigned(r.tokenIdentity),r.compactOriginal.rows[3],r.compactOriginal.rows[4],r.compactOriginal.rows[5],r.target.up.x,r.target.up.y,r.target.up.z,r.success?"override":"reject",r.reason);
+}
+void secondarySummary(std::uint64_t session,bool final){
+ unsigned unique=0;for(auto& id:secondary.threads)if(id.load())++unique;
+ writeLog("PATH_B_SECONDARY_THREAD_SUMMARY session=%llu scope=process seen=%u admitted=%u overridden=%u rejected=%u unique_threads=%u first_thread=%u last_thread=%u unique_thread_cap=16 thread_table_saturated=%u overflow_events=%u inflight=%u event_cap_per_action=16 final=%u",
+  (unsigned long long)session,secondary.seen.load(),secondary.admitted.load(),secondary.overridden.load(),secondary.rejected.load(),unique,secondary.firstThread.load(),secondary.lastThread.load(),unsigned(secondary.overflowEvents.load()!=0),secondary.overflowEvents.load(),secondary.inflight.load(),unsigned(final));
+}
 unsigned reportedA=~0u,reportedB=~0u,reportedAR=~0u,reportedBR=~0u;
 bool room(){return head.load(std::memory_order_relaxed)-tail.load(std::memory_order_acquire)<capacity;}
 void emit(const Record& r){
@@ -64,6 +79,25 @@ void emit(const Record& r){
  auto h=head.load(std::memory_order_relaxed);if(h-tail.load(std::memory_order_acquire)<capacity){records[h%capacity]=r;head.store(h+1,std::memory_order_release);}else ++recordDrops;
  recordLock.clear(std::memory_order_release);
 }
+struct SecondaryCall {
+ bool enabled{},admitted{};Record event{};
+ void begin(const Published& p,unsigned thread,std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t ret,std::uintptr_t rsp,std::uint64_t now){
+  enabled=true;++secondary.seen;++secondary.inflight;unsigned empty=0;secondary.firstThread.compare_exchange_strong(empty,thread);secondary.lastThread=thread;
+  bool registered=false;for(auto& id:secondary.threads){auto value=id.load();if(value==thread){registered=true;break;}if(!value&&id.compare_exchange_strong(value,thread)){registered=true;break;}if(value==thread){registered=true;break;}}
+  if(!registered)++secondary.overflowEvents;
+  event.kind=12;event.session=p.session;event.elapsed=now>=p.initMs?float(now-p.initMs)/1000.f:p.elapsed;event.nativeThread=thread;event.expectedThread=p.thread;event.caller=ret>=imageBase?ret-imageBase:0;event.rcx=rcx;event.source=rdx;event.rsp=rsp;event.target=p.basis;event.reason="secondary_source_inactive";
+ }
+ void finish(){
+  if(!enabled)return;
+  enabled=false;
+  if(admitted)++secondary.admitted;
+  auto index=event.success?secondary.overridden.fetch_add(1):secondary.rejected.fetch_add(1);
+  if(index==0){auto& slot=event.success?firstSecondaryOverride:firstSecondaryReject;slot.record=event;slot.ready.store(2,std::memory_order_release);}
+  else if(index<16)emit(event);
+  --secondary.inflight;
+ }
+};
+bool reservePathB(){auto n=pathBReservations.load();while(n<4096){if(pathBReservations.compare_exchange_strong(n,n+1))return true;}return false;}
 void publishInactive() noexcept {Published p{};publication.publish(p);}
 void adhesionSummary(const char* reason){
  auto& a=state.adhesion;if(!state.entered||a.finished)return;a.finished=true;
@@ -160,13 +194,23 @@ void prearmPublished(const Token& token,std::uint64_t now){
 bool freshToken(const Token& t,std::uint64_t now){return t.phase==3&&t.owner&&t.updates&&now>=t.initMs&&now>=t.updateMs&&now-t.updateMs<=100;}
 // Every owned entry checks the native publication, including immediately before
 // the stack store. Worker publication age alone cannot establish native freshness.
-bool entryToken(const Published& p,const char* path) noexcept {
+struct EntryTokenStatus {const char* status="not_read";const char* failure="secondary_token_incoherent";};
+bool entryToken(const Published& p,const char* path,EntryTokenStatus* evidence=nullptr) noexcept {
  Token t{};bool coherent=ws::native_source::lifecycle(t);auto now=GetTickCount64();
+ if(evidence)evidence->status=ws::native_source::lifecycleReadName(t.readStatus);
  if(!coherent){if(t.observed)msm2::native_source::kill("entry_token_incoherent",path);return false;}
  if(t.owner!=p.owner||t.generation!=p.generation||t.initMs!=p.initMs||t.thread!=p.thread||
-    t.acceptedEventEpoch!=p.acceptedEpoch||t.collisionEpoch!=p.acceptedEpoch||now<t.initMs||now<t.updateMs){msm2::native_source::kill("token_identity_epoch_mismatch",path);return false;}
- if(!freshToken(t,now)){stalePublication.publish({t,p.session,now});return false;}
+    t.acceptedEventEpoch!=p.acceptedEpoch||t.collisionEpoch!=p.acceptedEpoch||now<t.initMs||now<t.updateMs){if(evidence)evidence->failure="secondary_identity_epoch_mismatch";msm2::native_source::kill("token_identity_epoch_mismatch",path);return false;}
+ if(!freshToken(t,now)){if(evidence)evidence->failure="secondary_token_stale";stalePublication.publish({t,p.session,now});return false;}
+ if(evidence)evidence->failure="secondary_source_publication_changed";
  return now>=p.publishedMs&&now-p.publishedMs<=100&&!killed.load()&&lifecycleOpen.load()&&p.lifecycleEpoch==lifecycleEpoch.load();
+}
+bool secondaryContext(const Published& p,const char*& reason){
+ WorkerEvidence w{};
+ if(!workerEvidence.read(w)||!w.available){reason="secondary_context_unavailable";return false;}
+ const auto& c=w.context;
+ if(!c.lifecycleVerified||!c.wallRunActive||c.wallRunSessionId!=p.session||c.wallRunOwner!=p.owner){reason="secondary_identity_epoch_mismatch";msm2::native_source::kill(reason,"path_b");return false;}
+ return true;
 }
 bool suspendStale(const Token& t,std::uint64_t detected){
  if(state.ownership!=Ownership::Active)return state.ownership==Ownership::StaleSuspended;
@@ -222,7 +266,7 @@ void exitDiagnostic(const ws::observed::VerifiedWallContext& ctx,const Token& t,
 }
 void lifecycleSummary(std::uint64_t finish,bool verifiedDeinit,bool untilDeinit){
  if(!state.entered||state.summaryEmitted)return;
- state.summaryEmitted=true;
+ state.summaryEmitted=true;secondarySummary(state.session,false);
  writeLog("ORIENTATION_LIFECYCLE_SUMMARY session=%llu wallrun_duration_ms=%llu source_entry_elapsed=%.6f source_exit_reason=%s source_active_until_deinit=%u verified_deinit=%u path_a_writes=%u path_b_writes=%u retention_pass=%u max_held_ms=%llu max_held_updates=%u last_actor_up_dot_surface=%.9g last_actor_observation_valid=%u last_actor_observation_ms=%llu last_actor_observation_scope=active_source_worker_snapshot stale_suspend_count=%u stale_resume_count=%u max_stale_duration_ms=%llu stale_log_pair_cap=16 first_hard_kill=%s hard_kill_calls=%u",
   (unsigned long long)state.session,(unsigned long long)(finish>=state.initMs?finish-state.initMs:0),double(state.transition.entryMs-state.initMs)/1000.,state.exitReason,unsigned(verifiedDeinit&&untilDeinit),unsigned(verifiedDeinit),pathAWrites.load(),pathBWrites.load(),unsigned(state.pass),(unsigned long long)state.maxHeldMs,state.maxHeldUpdates,state.lastActorDot,unsigned(state.lastActorValid),(unsigned long long)state.lastObserveMs,state.staleSuspends,state.staleResumes,(unsigned long long)state.maxStaleMs,causeState.load(std::memory_order_acquire)>=2?firstCause.reason:"none",killCalls.load());
 }
@@ -276,7 +320,7 @@ void configure(Config c,bool verified,std::uintptr_t base,std::size_t size,const
  writeLog("SOURCE_LIFECYCLE_CONTRACT readers_lock_native_events=0 native_event_collision_fail_closed=1 native_update_freshness_ms=100 worker_publication_freshness_ms=100 stale_policy=suspend_until_same_identity_real_Update transition_recovery=freeze_last_published_progress stale_episode_log_cap=16 clock_sample=after_token_acquisition verified_Deinit_summary=1 diagnostic_window_limits_source_ownership=0");
  path_b::configure(admitted,true);
  if(!admitted)return;
- state={};pathAWrites=0;pathBWrites=0;pathARejects=0;pathBRejects=0;resetRequested=false;lifecycleOpen=false;publishInactive();killed=false;ws::native_source::armLifecycle(true);ws_native_source_enabled=1;
+ state={};pathAWrites=0;pathBWrites=0;pathBReservations=0;pathARejects=0;pathBRejects=0;resetRequested=false;lifecycleOpen=false;publishInactive();killed=false;ws::native_source::armLifecycle(true);ws_native_source_enabled=1;
 }
 void prearm(const Token& token) noexcept {
  if(killed.load()||!admitted)return;
@@ -329,7 +373,7 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
   end("new_native_session",now);++epoch;lifecycleSummary(now,false,false);state={};
   state.generation=token.generation;state.session=ctx.wallRunSessionId;state.initMs=token.initMs;state.hero=s.hero;state.transform=s.transform;state.owner=token.owner;
   state.permissionEpoch=epoch;state.acceptedEpoch=token.acceptedEventEpoch;state.expectedThread=token.thread;
-  pathAWrites=0;pathBWrites=0;pathARejects=0;pathBRejects=0;resetRequested=false;
+  pathAWrites=0;pathBWrites=0;pathBReservations=0;pathARejects=0;pathBRejects=0;resetRequested=false;
  }
  if(state.ownership==Ownership::HardClosed){stateLock.clear(std::memory_order_release);return;}
  if(s.hero!=state.hero||s.transform!=state.transform){hardClose(s.hero!=state.hero?"hero_identity_changed":"transform_identity_changed");return;}
@@ -415,38 +459,65 @@ void capturePath(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::ui
 }
 void capture(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t rsp) noexcept {capturePath(rcx,rdx,r8,r9,ret,rsp);}
 void captureCopy(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t rsp) noexcept {
- auto error=GetLastError();trace::beginResetCopyEntry();if(inside||killed.load()||!ws_native_source_enabled.load()){SetLastError(error);return;}
- inside=true;auto release=[&]{inside=false;SetLastError(error);};auto now=GetTickCount64();Published p{};entryEvidence={rcx,rdx,rsp,ret};
+ didOverride=false;auto error=GetLastError();trace::beginResetCopyEntry();if(inside||killed.load()||!ws_native_source_enabled.load()){SetLastError(error);return;}
+ inside=true;SecondaryCall secondaryCall{};auto release=[&]{secondaryCall.finish();inside=false;SetLastError(error);};Published p{};entryEvidence={rcx,rdx,rsp,ret};
+ bool coherent=publication.read(p);bool active=coherent&&p.active&&lifecycleOpen.load();
+ // Retained identity is attribution only. Inactive/stale permission never admits.
+ Published identity=p;if(!identity.session)identityPublication.read(identity);
+ auto thread=GetCurrentThreadId();bool otherThread=identity.active&&identity.thread&&identity.thread!=thread;
+ auto now=GetTickCount64();if(otherThread)secondaryCall.begin(identity,thread,rcx,rdx,ret,rsp,now);
+ auto rejectEntry=[&](const char* why){pathBRejects.fetch_add(1);if(otherThread)secondaryCall.event.reason=why;};
  if(ret!=imageBase+0x2cfc84b){
-  if(ret>=imageBase+0x2cfc7d0&&ret<imageBase+0x2cfc850&&publication.read(p)&&p.active&&rcx==p.transform)kill("path_b_known_caller_mismatch","path_b");
+  if(otherThread){rejectEntry("secondary_wrong_caller");}
+  else if(ret>=imageBase+0x2cfc7d0&&ret<imageBase+0x2cfc850&&coherent&&p.active&&rcx==p.transform)kill("path_b_known_caller_mismatch","path_b");
   release();return;
  }
- auto rejectEntry=[&]{pathBRejects.fetch_add(1);};
- if(!lifecycleOpen.load()||!publication.read(p)||!p.active){rejectEntry();release();return;}
- if(rcx!=p.transform){release();return;}
- if(p.thread!=GetCurrentThreadId()){kill("path_b_wrong_thread","path_b");release();return;}
- if(!entryToken(p,"path_b")){rejectEntry();release();return;}
- if(p.lifecycleEpoch!=lifecycleEpoch.load()||now<p.publishedMs||now-p.publishedMs>100){rejectEntry();release();return;}
- if(!msm2::reset_copy::compactProofAuthenticated()||!currentGuards()){kill("path_b_compact_or_guard_lost","path_b");rejectEntry();release();return;}
- if(pathBWrites.load()>=4096){rejectEntry();release();return;}
- msm2::Snapshot hero{};if(!msm2::sample(hero)||hero.hero!=p.hero||hero.transform!=p.transform){kill("path_b_hero_transform_mismatch","path_b");rejectEntry();release();return;}
+ if(!active){rejectEntry("secondary_source_inactive");release();return;}
+ if(rcx!=p.transform){if(otherThread)rejectEntry("secondary_wrong_target");release();return;}
+ // Primary A/B ownership and the token still belong to p.thread. Only this B
+ // source store may run on another independently verified current-thread stack.
+ EntryTokenStatus tokenStatus{};
+ auto tokenOK=[&](const Published& current){bool ok=entryToken(current,"path_b",otherThread?&tokenStatus:nullptr);if(otherThread){secondaryCall.event.tokenStatus=tokenStatus.status;if(!ok)secondaryCall.event.tokenIdentity=false;if(!ok)secondaryCall.event.reason=tokenStatus.failure;}return ok;};
+ if(!tokenOK(p)){rejectEntry(otherThread?tokenStatus.failure:"primary_token_rejected");release();return;}
+ if(otherThread&&!secondaryContext(p,secondaryCall.event.reason)){secondaryCall.event.tokenIdentity=false;rejectEntry(secondaryCall.event.reason);release();return;}
+ if(p.lifecycleEpoch!=lifecycleEpoch.load()||now<p.publishedMs||now-p.publishedMs>100){rejectEntry("secondary_source_publication_changed");release();return;}
+ auto integrityLost=[&]{const char* why=otherThread?"secondary_source_integrity_lost":"path_b_compact_or_guard_lost";kill(why,"path_b");rejectEntry(why);};
+ if(!msm2::reset_copy::compactProofAuthenticated()||!currentGuards()){integrityLost();release();return;}
+ if(pathBWrites.load()>=4096){rejectEntry("secondary_write_budget_exhausted");release();return;}
+ msm2::Snapshot hero{};if(!msm2::sample(hero)||hero.hero!=p.hero||hero.transform!=p.transform){const char* why=otherThread?"secondary_identity_epoch_mismatch":"path_b_hero_transform_mismatch";kill(why,"path_b");rejectEntry(why);release();return;}
+ if(otherThread)secondaryCall.event.tokenIdentity=true;
  auto stack=ws::interop::currentStack();ws::source_math::CompactBlock incoming{},applied{};Vec3 lengths{};
- if(!ws::interop::stackCompact(rdx,rsp,stack,incoming)){kill("path_b_stack_or_source_layout_failed","path_b");rejectEntry();release();return;}
- if(!ws::source_math::compactReplacement(incoming,p.basis,applied,lengths)){kill("path_b_stack_or_source_layout_failed","path_b");rejectEntry();release();return;}
- path_b::Entry e{};e.session=p.session;e.generation=p.generation;e.update=p.nativeUpdate;e.owner=p.owner;e.thread=p.thread;e.elapsed=p.elapsed;e.rcx=rcx;e.rdx=rdx;e.r8=r8;e.r9=r9;e.rsp=rsp;e.caller=0x2cfc84b;e.stackLimit=stack.limit;e.stackBase=stack.base;e.normal=p.surface;e.actorBefore={hero.prefix[4],hero.prefix[5],hero.prefix[6]};e.referenceValid=pathAWrites.load()>0;e.pathAUp=p.basis.up;e.readable=path_b::readBounded(rdx,e.raw,128);
- if(!currentGuards()){kill("path_b_compact_or_guard_lost","path_b");release();return;}
- Published final{};if(!publication.read(final)||final.session!=p.session||final.generation!=p.generation||final.lifecycleEpoch!=p.lifecycleEpoch||final.lifecycleEpoch!=lifecycleEpoch.load()||final.publishedMs!=p.publishedMs||!final.active||!currentGuards()||!entryToken(final,"path_b")){path_b::capture(e);rejectEntry();release();return;}
+ if(otherThread&&(rsp>UINTPTR_MAX-0x28||rdx!=rsp+0x28)){rejectEntry("secondary_stack_relation_failed");release();return;}
+ if(!ws::interop::stackCompact(rdx,rsp,stack,incoming)){if(otherThread)rejectEntry("secondary_source_span_failed");else {kill("path_b_stack_or_source_layout_failed","path_b");rejectEntry("primary_stack_or_source_layout_failed");}release();return;}
+ if(otherThread){secondaryCall.event.stack=true;secondaryCall.event.compactOriginal=incoming;}
+ if(!ws::source_math::compactReplacement(incoming,p.basis,applied,lengths)){if(otherThread)rejectEntry("secondary_layout_invalid");else {kill("path_b_stack_or_source_layout_failed","path_b");rejectEntry("primary_layout_invalid");}release();return;}
+ if(otherThread)secondaryCall.event.sourceLayout=true;
+ path_b::Entry e{};e.session=p.session;e.generation=p.generation;e.update=p.nativeUpdate;e.owner=p.owner;e.thread=thread;e.elapsed=p.elapsed;e.rcx=rcx;e.rdx=rdx;e.r8=r8;e.r9=r9;e.rsp=rsp;e.caller=0x2cfc84b;e.stackLimit=stack.limit;e.stackBase=stack.base;e.normal=p.surface;e.actorBefore={hero.prefix[4],hero.prefix[5],hero.prefix[6]};e.referenceValid=pathAWrites.load()>0;e.pathAUp=p.basis.up;e.readable=path_b::readBounded(rdx,e.raw,128);
+ if(!currentGuards()){integrityLost();release();return;}
+ Published final{};
+ if(!publication.read(final)||final.session!=p.session||final.generation!=p.generation||final.lifecycleEpoch!=p.lifecycleEpoch||final.lifecycleEpoch!=lifecycleEpoch.load()||final.publishedMs!=p.publishedMs||!final.active){secondaryCall.event.tokenIdentity=false;path_b::capture(e);rejectEntry("secondary_source_publication_changed");release();return;}
+ if(!currentGuards()){integrityLost();release();return;}
+ if(!tokenOK(final)){path_b::capture(e);rejectEntry(otherThread?tokenStatus.failure:"primary_token_rejected");release();return;}
+ if(otherThread&&!secondaryContext(final,secondaryCall.event.reason)){secondaryCall.event.tokenIdentity=false;rejectEntry(secondaryCall.event.reason);release();return;}
+ if(!reservePathB()){rejectEntry("secondary_write_budget_exhausted");release();return;}
+ secondaryCall.admitted=otherThread;
  LARGE_INTEGER begin{};QueryPerformanceCounter(&begin);auto result=ws::interop::writeStackCompact(rdx,incoming,applied);e.overridden=result.success;path_b::capture(e);
- if(!result.success){rejectEntry();if(result.rollbackFailed)kill("path_b_rollback_failed","path_b");release();return;}
- didOverride=true;auto count=pathBWrites.fetch_add(1)+1;msm2::reset_trace::Request committed{};committed.prearmed=true;committed.resetCopy=true;committed.verifyDual=true;committed.characterize=true;committed.initMs=p.initMs;committed.session=p.session;committed.generation=p.generation;committed.nativeUpdate=p.nativeUpdate;committed.commitQpc=result.commitQpc;committed.overrideBeginQpc=begin.QuadPart;committed.hero=p.hero;committed.transform=p.transform;committed.owner=p.owner;committed.thread=p.thread;committed.normal=p.surface;committed.appliedUp=p.basis.up;msm2::reset_trace::committed(committed);
- Record r{};r.kind=11;r.copy=true;r.session=p.session;r.generation=p.generation;r.nativeUpdate=p.nativeUpdate;r.ms=now;r.elapsed=p.elapsed;r.source=rdx;r.rcx=rcx;r.rsp=rsp;r.stackLimit=stack.limit;r.stackBase=stack.base;r.caller=0x2cfc84b;r.n=p.surface;r.compactOriginal=incoming;r.compactApplied=applied;r.rowLengths=lengths;r.writes=count;r.commitQpc=result.commitQpc;r.positionSame=result.positionUnchanged;r.stack=true;emit(r);release();
+ if(!result.success){rejectEntry("secondary_write_failed");if(result.rollbackFailed)kill("path_b_rollback_failed","path_b");release();return;}
+ didOverride=true;auto count=pathBWrites.fetch_add(1)+1;
+ // The old bounded primary watch must not adopt a secondary call as its owner.
+ if(!otherThread){msm2::reset_trace::Request committed{};committed.prearmed=true;committed.resetCopy=true;committed.verifyDual=true;committed.characterize=true;committed.initMs=p.initMs;committed.session=p.session;committed.generation=p.generation;committed.nativeUpdate=p.nativeUpdate;committed.commitQpc=result.commitQpc;committed.overrideBeginQpc=begin.QuadPart;committed.hero=p.hero;committed.transform=p.transform;committed.owner=p.owner;committed.thread=p.thread;committed.normal=p.surface;committed.appliedUp=p.basis.up;msm2::reset_trace::committed(committed);}
+ if(otherThread){secondaryCall.event.success=true;secondaryCall.event.reason="secondary_verified";}
+ Record r{};r.kind=11;r.copy=true;r.session=p.session;r.generation=p.generation;r.nativeUpdate=p.nativeUpdate;r.nativeThread=thread;r.expectedThread=p.thread;r.ms=now;r.elapsed=p.elapsed;r.source=rdx;r.rcx=rcx;r.rsp=rsp;r.stackLimit=stack.limit;r.stackBase=stack.base;r.caller=0x2cfc84b;r.n=p.surface;r.compactOriginal=incoming;r.compactApplied=applied;r.rowLengths=lengths;r.writes=count;r.commitQpc=result.commitQpc;r.positionSame=result.positionUnchanged;r.stack=true;emit(r);release();
 }
 void drainLogs(){
- drainCause();path_b::drainLogs();
+ drainCause();
+ for(auto* slot:{&firstSecondaryOverride,&firstSecondaryReject}){unsigned ready=2;if(slot->ready.compare_exchange_strong(ready,3,std::memory_order_acq_rel))secondaryLog(slot->record);}
+ path_b::drainLogs();
  auto lost=recordDrops.exchange(0);if(lost)writeLog("NATIVE_SOURCE_LOG_DROPS count=%u writes_unaffected=1",lost);
  auto a=pathAWrites.load(),b=pathBWrites.load(),ar=pathARejects.load(),br=pathBRejects.load();
  if(reportedA==~0u||a-reportedA>=64||b-reportedB>=64||ar-reportedAR>=64||br-reportedBR>=64){writeLog("PATH_A_OVERRIDE_COUNT=%u PATH_A_REJECT_COUNT=%u PATH_A_STATE_LOCK_CONTENTION=0 PATH_B_OVERRIDE_COUNT=%u PATH_B_REJECT_COUNT=%u",a,ar,b,br);reportedA=a;reportedB=b;reportedAR=ar;reportedBR=br;}
  for(unsigned n=0;n<capacity;++n){auto t=tail.load(std::memory_order_relaxed);if(t==head.load(std::memory_order_acquire))break;auto r=records[t%capacity];tail.store(t+1,std::memory_order_release);
+  if(r.kind==12)secondaryLog(r);
   if(r.kind==10)writeLog("COMMON_OVERRIDE_REJECT session=%llu elapsed=%.6f reason=%s caller_ok=%u target_ok=%u stack_ok=%u source_layout_ok=%u lifecycle_ok=%u elapsed_ok=%u",(unsigned long long)r.session,r.elapsed,r.reason,unsigned(bool(r.gateMask&1)),unsigned(bool(r.gateMask&2)),unsigned(bool(r.gateMask&4)),unsigned(bool(r.gateMask&8)),unsigned(bool(r.gateMask&16)),unsigned(bool(r.gateMask&32)));
   if(r.kind==7)writeLog("ORIENTATION_RETENTION_PASS=1 session=%llu held_ms=%llu held_updates=%u game_verification=requires_accepted_build_runtime_log",(unsigned long long)r.session,(unsigned long long)r.heldMs,r.heldUpdates);
   if(r.kind==1){
@@ -456,7 +527,7 @@ void drainLogs(){
     if(r.late)writeLog("LATE_COMMON_WORLDUP_OVERRIDE=1 session=%llu native_update=%llu reason=repeated_native_update_worldup_source",(unsigned long long)r.session,(unsigned long long)r.nativeUpdate);
   }
   if(r.kind==1&&r.writes==1)writeLog("PATH_A_LOCKFREE_SNAPSHOT_READ session=%llu generation=%llu coherent=1",(unsigned long long)r.session,(unsigned long long)r.generation);
-  if(r.kind==11)writeLog("PATH_B_COMPACT3X3_OVERRIDE session=%llu generation=%llu elapsed=%.6f source_ptr=0x%llx rdx_minus_rsp=0x%llx original_row_lengths=(%.9g,%.9g,%.9g) original_up=(%.9g,%.9g,%.9g) applied_up=(%.9g,%.9g,%.9g) applied_up_dot_surface=%.9g bytes_written=0x24 metadata_untouched=1 caller_verified=1 target_verified=1 stack_verified=1 write_index=%u override_commit_qpc=%llu",(unsigned long long)r.session,(unsigned long long)r.generation,r.elapsed,(unsigned long long)r.source,(unsigned long long)(r.source-r.rsp),r.rowLengths.x,r.rowLengths.y,r.rowLengths.z,r.compactOriginal.rows[3],r.compactOriginal.rows[4],r.compactOriginal.rows[5],r.compactApplied.rows[3],r.compactApplied.rows[4],r.compactApplied.rows[5],ws::dot(Vec3{r.compactApplied.rows[3],r.compactApplied.rows[4],r.compactApplied.rows[5]}*(1/r.rowLengths.y),r.n),r.writes,(unsigned long long)r.commitQpc);
+  if(r.kind==11)writeLog("PATH_B_COMPACT3X3_OVERRIDE session=%llu generation=%llu elapsed=%.6f source_ptr=0x%llx rdx_minus_rsp=0x%llx original_row_lengths=(%.9g,%.9g,%.9g) original_up=(%.9g,%.9g,%.9g) applied_up=(%.9g,%.9g,%.9g) applied_up_dot_surface=%.9g bytes_written=0x24 metadata_untouched=1 caller_verified=1 target_verified=1 stack_verified=1 write_index=%u override_commit_qpc=%llu thread_id=%u expected_thread=%u",(unsigned long long)r.session,(unsigned long long)r.generation,r.elapsed,(unsigned long long)r.source,(unsigned long long)(r.source-r.rsp),r.rowLengths.x,r.rowLengths.y,r.rowLengths.z,r.compactOriginal.rows[3],r.compactOriginal.rows[4],r.compactOriginal.rows[5],r.compactApplied.rows[3],r.compactApplied.rows[4],r.compactApplied.rows[5],ws::dot(Vec3{r.compactApplied.rows[3],r.compactApplied.rows[4],r.compactApplied.rows[5]}*(1/r.rowLengths.y),r.n),r.writes,(unsigned long long)r.commitQpc,r.nativeThread,r.expectedThread);
   if(r.kind==1&&r.writes==1)writeLog("PREARM_STATUS session=%llu elapsed=%.6f primary_thread=%u DR0_installed=%u DR1_installed=%u trace_already_armed_before_override=%u first_override=1",(unsigned long long)r.session,r.elapsed,r.nativeThread,unsigned(r.prearmed),unsigned(r.prearmed),unsigned(r.prearmed));
   if(r.kind==1&&!r.copy)writeLog("NATIVE_SOURCE_OVERRIDE session=%llu generation=%llu native_ms=%llu native_update=%llu elapsed=%.6f caller_rva=0x%llx source_ptr=0x%llx original_right=(%.9g,%.9g,%.9g) original_up=(%.9g,%.9g,%.9g) original_forward=(%.9g,%.9g,%.9g) target_right=(%.9g,%.9g,%.9g) target_up=(%.9g,%.9g,%.9g) target_forward=(%.9g,%.9g,%.9g) applied_right=(%.9g,%.9g,%.9g) applied_up=(%.9g,%.9g,%.9g) applied_forward=(%.9g,%.9g,%.9g) t=%.6f position_unchanged=%u source_is_stack_local=%u direct_actor_transform_write=0 write_index=%u override_commit_qpc=%llu",static_cast<unsigned long long>(r.session),static_cast<unsigned long long>(r.generation),static_cast<unsigned long long>(r.ms),static_cast<unsigned long long>(r.nativeUpdate),r.elapsed,static_cast<unsigned long long>(r.caller),static_cast<unsigned long long>(r.source),r.original.v[0],r.original.v[1],r.original.v[2],r.original.v[4],r.original.v[5],r.original.v[6],r.original.v[8],r.original.v[9],r.original.v[10],r.target.right.x,r.target.right.y,r.target.right.z,r.target.up.x,r.target.up.y,r.target.up.z,r.target.forward.x,r.target.forward.y,r.target.forward.z,r.applied.v[0],r.applied.v[1],r.applied.v[2],r.applied.v[4],r.applied.v[5],r.applied.v[6],r.applied.v[8],r.applied.v[9],r.applied.v[10],r.t,unsigned(r.positionSame),unsigned(r.stack),r.writes,static_cast<unsigned long long>(r.commitQpc));
   else if(r.kind==2)writeLog("NATIVE_SOURCE_EXIT session=%llu reason=%s duration_since_source_entry=%.6f applied_writes=%u held_updates=%u held_ms=%llu stability_observed=%u direct_actor_transform_write=0",static_cast<unsigned long long>(r.session),r.reason,r.elapsed,r.writes,r.heldUpdates,static_cast<unsigned long long>(r.heldMs),unsigned(r.success));
@@ -465,5 +536,5 @@ void drainLogs(){
   else if(r.kind==4)writeLog("NATIVE_SOURCE_OTHER_WRITER session=%llu caller_return_rva=0x%llx source_up=(%.9g,%.9g,%.9g) override=0",static_cast<unsigned long long>(r.session),static_cast<unsigned long long>(r.caller),r.original.v[4],r.original.v[5],r.original.v[6]);
  }
 }
-void stop(){kill("script_stop","shutdown");if(!stateLock.test_and_set(std::memory_order_acquire)){drainVerifiedDeinit();end("script_stop",GetTickCount64());lifecycleSummary(GetTickCount64(),false,false);stateLock.clear(std::memory_order_release);}drainLogs();writeLog("PATH_A_OVERRIDE_COUNT=%u PATH_A_REJECT_COUNT=%u PATH_A_STATE_LOCK_CONTENTION=0 PATH_B_OVERRIDE_COUNT=%u PATH_B_REJECT_COUNT=%u final=1",pathAWrites.load(),pathARejects.load(),pathBWrites.load(),pathBRejects.load());writeLog("native_source_stop source_override=OFF direct_actor_transform_write=0 vanilla_passthrough=1");}
+void stop(){kill("script_stop","shutdown");if(!stateLock.test_and_set(std::memory_order_acquire)){drainVerifiedDeinit();end("script_stop",GetTickCount64());lifecycleSummary(GetTickCount64(),false,false);stateLock.clear(std::memory_order_release);}drainLogs();secondarySummary(state.session,true);writeLog("PATH_A_OVERRIDE_COUNT=%u PATH_A_REJECT_COUNT=%u PATH_A_STATE_LOCK_CONTENTION=0 PATH_B_OVERRIDE_COUNT=%u PATH_B_REJECT_COUNT=%u final=1",pathAWrites.load(),pathARejects.load(),pathBWrites.load(),pathBRejects.load());writeLog("native_source_stop source_override=OFF direct_actor_transform_write=0 vanilla_passthrough=1");}
 }

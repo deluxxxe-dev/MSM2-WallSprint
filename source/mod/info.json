@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.26",
-  "description": "WallSprint v0.1c8 Exact Hard-Kill Attribution. Immutable first-cause caller/context and detailed four-hook authentication diagnostics. Diagnostic-only field-plan loss stops observation; actual source integrity/identity failures still close ownership. Preserves c7 freshness recovery. Position remains read-only; no direct Actor/Position/movement/camera/physics writes.",
+  "version": "0.1.27",
+  "description": "WallSprint v0.1c9 Secondary-Thread Path B Admission. Per-call secondary B source override requires the same verified lifecycle/Hero/Transform, exact caller/current-thread stack and compact proof, unchanged source integrity and fresh token. Native ownership thread and Path A policy stay fixed. Preserves c7 recovery/c8 first cause. Position stays read-only; no direct Actor/Position/movement/camera/physics writes.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

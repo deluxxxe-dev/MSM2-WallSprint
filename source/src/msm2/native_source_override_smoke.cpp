@@ -6,6 +6,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <string>
+#include <functional>
 static unsigned diagnosticStops{},inputStops{};
 namespace msm2::trace {void kill() noexcept {++diagnosticStops;} void beginResetCopyEntry() noexcept {} void resetCopyEntry(const path_b::Entry&) noexcept {}}
 static unsigned resetRequests{},prearmRequests{};
@@ -14,7 +15,7 @@ void kill() noexcept {++diagnosticStops;}
 void request(const Request& r) noexcept {assert(r.prearmed&&!r.commitQpc);++prearmRequests;}
 bool committed(const Request& r) noexcept {assert(r.commitQpc);++resetRequests;auto now=GetTickCount64();return now>=r.initMs&&now-r.initMs<1500;} // Model the bounded diagnostic ending; source ownership must continue.
 }
-static msm2::Snapshot fakeHero;static std::string output;static bool sdkAvailable=true,sourceAuth=true,copyAuth=true,deinitOnSample=false,pointReadable=true;static unsigned planeReads{};
+static msm2::Snapshot fakeHero;static std::string output;static bool sdkAvailable=true,sourceAuth=true,copyAuth=true,compactAuth=true,deinitOnSample=false,pointReadable=true;static unsigned planeReads{};
 static unsigned char installedBytes[32]{},copyInstalledBytes[32]{};
 extern "C" {
 alignas(16) float ws_test_copy_received[16];std::uint64_t ws_test_copy_calls{};
@@ -27,7 +28,7 @@ extern "C" void ws_source_capture(const CaptureFrame* f) noexcept {msm2::native_
 extern "C" void ws_reset_copy_capture(const CaptureFrame* f) noexcept {msm2::native_source::captureCopy(f->rcx,f->rdx,f->r8,f->r9,f->ret,reinterpret_cast<std::uintptr_t>(&f->ret));}
 namespace msm2::reset_copy {
 bool authenticated() noexcept {unsigned char b[32]{};return copyAuth&&msm2::readMemory(reinterpret_cast<std::uintptr_t>(&ws_test_copy_writer),b,32)&&!std::memcmp(b,copyInstalledBytes,32);}
-bool compactProofAuthenticated() noexcept {return authenticated();}
+bool compactProofAuthenticated() noexcept {return compactAuth&&authenticated();}
 }
 namespace msm2 {
 bool readMemory(std::uintptr_t p,void* out,std::size_t n){if(causeState.load()==1)assert(!msm2::native_source::active()&&(killed.load()||!lifecycleOpen.load()));if(p==token.owner+0x338){++planeReads;if(!pointReadable)return false;}SIZE_T done=0;return ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void*>(p),out,n,&done)&&done==n;}
@@ -40,8 +41,11 @@ static ws::source_math::Matrix vanilla;static ws::source_math::CompactBlock comp
 static ws::observed::VerifiedWallContext context;
 static ws::source_math::Matrix identity(){ws::source_math::Matrix m{};m.v[0]=m.v[5]=m.v[10]=m.v[15]=1;m.v[12]=123;m.v[13]=45;m.v[14]=67;return m;}
 static void waitMs(ULONGLONG duration){auto begin=GetTickCount64();do {Sleep(1);}while(GetTickCount64()-begin<duration);}
-static void workerTick(bool advance=true){if(advance)ws::native_source::event(2,owner);context.wallRunUpdateCalls=token.updates;context.elapsed=double(GetTickCount64()-token.initMs)/1000.;msm2::native_source::tick(context,"none",true);}
+static msm2::guards::ObservationStatus observationStatus();
+static void workerTick(bool advance=true){if(advance)ws::native_source::event(2,owner);context.wallRunUpdateCalls=token.updates;context.elapsed=double(GetTickCount64()-token.initMs)/1000.;WorkerEvidence w{};w.available=true;w.context=context;w.observation=observationStatus();w.inputAuthenticated=sourceAuth;workerEvidence.publish(w);msm2::native_source::tick(context,"none",true);}
 static void prepare(ws::Vec3 normal,bool full=true,unsigned backdate=800){
+ secondary.seen=0;secondary.admitted=0;secondary.overridden=0;secondary.rejected=0;secondary.firstThread=0;secondary.lastThread=0;secondary.overflowEvents=0;secondary.inflight=0;for(auto& id:secondary.threads)id=0;
+ firstSecondaryOverride.ready=0;firstSecondaryReject.ready=0;pathBReservations=0;compactAuth=true;
  causeState=0;killCalls=0;workerEvidence.publish({});identityPublication.publish({});firstCause={};
  killed=false;admitted=true;ws_native_source_enabled=1;config={};config.dualSource=true;state={};pathAWrites=0;pathBWrites=0;pathARejects=0;pathBRejects=0;resetRequested=false;publishInactive();
  ws::native_source::armLifecycle(true);ws::native_source::event(0,owner);ws::native_source::event(1,owner);token.initMs=GetTickCount64()-backdate;ws::native_source::event(2,owner);
@@ -71,6 +75,34 @@ static void assertFirst(const char* reason,const char* origin){
  msm2::native_source::drainLogs();assert(causeState==3&&firstCause.reason==std::string(reason)&&firstCause.origin==std::string(origin));
  auto key="NATIVE_SOURCE_HARD_KILL session="+std::to_string(state.session)+" ";assert(countText(output,key)==1);
  msm2::native_source::kill("script_stop","shutdown");msm2::native_source::drainLogs();assert(countText(output,key)==1&&firstCause.reason==std::string(reason));
+}
+struct SecondaryJob {
+ HANDLE ready{},go{};std::uintptr_t target{};unsigned mode{},thread{};bool changed{};ws::source_math::CompactBlock before{},after{};
+};
+static DWORD WINAPI secondaryJob(void* raw){
+ auto& j=*static_cast<SecondaryJob*>(raw);j.thread=GetCurrentThreadId();alignas(16) ws::source_math::CompactBlock local=j.before;
+ SetEvent(j.ready);assert(WaitForSingleObject(j.go,2000)==WAIT_OBJECT_0);
+ SetLastError(0x12345);
+ if(j.mode==0||j.mode==1){
+  auto transform=j.target+(j.mode==1?2048:0);
+  auto result=ws_test_copy_caller(reinterpret_cast<void*>(transform),&local);assert(result==0xabcdef0011223344ull);
+  assert(!std::memcmp(&local,&j.before,64));std::memcpy(&j.after,ws_test_copy_received,64);j.changed=msm2::native_source::entryOverridden();
+ }else{
+  auto src=reinterpret_cast<std::uintptr_t>(&local);auto rsp=src-0x28;auto ret=imageBase+0x2cfc84b;
+  if(j.mode==2)++ret;
+  if(j.mode==3)rsp-=8;
+  if(j.mode==4){src=reinterpret_cast<std::uintptr_t>(&j.before);rsp=src-0x28;}
+  msm2::native_source::captureCopy(j.target,src,0x1234,0x5678,ret,rsp);j.changed=msm2::native_source::entryOverridden();j.after=local;
+ }
+ assert(GetLastError()==0x12345);return 0;
+}
+static SecondaryJob secondaryCall(unsigned mode=0,bool refresh=true,const ws::source_math::CompactBlock* input=nullptr,const std::function<void()>& beforeGo={}){
+ SecondaryJob job{};job.target=fakeHero.transform;job.mode=mode;job.before=input?*input:compact;job.ready=CreateEventW(nullptr,TRUE,FALSE,nullptr);job.go=CreateEventW(nullptr,TRUE,FALSE,nullptr);assert(job.ready&&job.go);
+ auto th=CreateThread(nullptr,0,secondaryJob,&job,0,nullptr);assert(th&&WaitForSingleObject(job.ready,2000)==WAIT_OBJECT_0);
+ if(refresh)workerTick();
+ if(beforeGo)beforeGo();
+ SetEvent(job.go);assert(WaitForSingleObject(th,2000)==WAIT_OBJECT_0);
+ CloseHandle(th);CloseHandle(job.go);CloseHandle(job.ready);return job;
 }
 int main(){
  alignas(16) ws::source_math::CompactBlock local{},changed{};local.rows[0]=local.rows[4]=local.rows[8]=1;changed=local;changed.metadata[0]=1;
@@ -117,7 +149,7 @@ int main(){
  prepare({0,0,1});auto* patch=reinterpret_cast<unsigned char*>(lifecyclePatches[2].address);patch[11]^=1;callA();
  assertFirst("path_a_current_guards_lost","path_a");assert(firstCause.guards.failedGate()==std::string("WallRun_Update_patch")&&firstCause.guards.hooks[2].firstDifference==11);patch[11]^=1;
  prepare({0,0,1});copyAuth=false;callB();copyAuth=true;assertFirst("path_b_compact_or_guard_lost","path_b");
- prepare({0,0,1});auto bthread=CreateThread(nullptr,0,[](void*)->DWORD{callB();return 0;},nullptr,0,nullptr);assert(bthread&&WaitForSingleObject(bthread,2000)==WAIT_OBJECT_0);CloseHandle(bthread);assertFirst("path_b_wrong_thread","path_b");
+
  prepare({0,0,1});assert(!lifecycleWriteGate.test_and_set());ws::native_source::event(2,owner);lifecycleWriteGate.clear();callA();assertFirst("entry_token_incoherent","path_a");
  prepare({0,0,1});auto nativeThread=CreateThread(nullptr,0,[](void*)->DWORD{ws::native_source::event(2,owner);return 0;},nullptr,0,nullptr);assert(nativeThread&&WaitForSingleObject(nativeThread,2000)==WAIT_OBJECT_0);CloseHandle(nativeThread);callA();assertFirst("token_identity_epoch_mismatch","path_a");
  // The atomic first-claim record is immutable even for racing explicit kills.
@@ -127,6 +159,70 @@ int main(){
  // The production source token/worker/A-B path runs through a real multi-second
  // interval; diagnostic lifetime is not consulted by this orientation contract.
  ws::native_source::setObserver([](const Token& t) noexcept {if(t.phase!=3)msm2::native_source::lifecycleClosed(t);});
+ // Exact c8 sequence: retention, secondary B at~1.75, then primary A/B
+ // continue to a normal~4.4s Deinit. Secondary never publishes a native event.
+ prepare({0,0,1});auto secondarySession=state.session;auto nativeOwnerThread=state.expectedThread;
+ while(context.elapsed<1.75){callA();callB();waitMs(16);workerTick();msm2::native_source::drainLogs();}
+ assert(state.pass&&state.lastT==1);auto entry=state.transition.entryMs;auto target=state.transition.targetQ;auto aBefore=pathAWrites.load(),bBefore=pathBWrites.load();
+ auto beforeUpdates=token.updates;auto job=secondaryCall(0,false);
+ assert(job.changed&&job.thread!=nativeOwnerThread&&job.after.rows[5]>.999f&&job.after.metadata==compact.metadata&&pathAWrites==aBefore&&pathBWrites==bBefore+1);
+ assert(causeState==0&&!killed.load()&&state.expectedThread==nativeOwnerThread&&token.thread==nativeOwnerThread&&token.updates==beforeUpdates&&state.transition.entryMs==entry&&!std::memcmp(&state.transition.targetQ,&target,sizeof(target)));
+ assert(secondary.seen==1&&secondary.admitted==1&&secondary.overridden==1&&secondary.rejected==0&&secondary.firstThread==job.thread);
+ do {waitMs(16);workerTick();callA();callB();msm2::native_source::drainLogs();}while(context.elapsed<4.4);
+ assert(pathAWrites>aBefore+100&&pathBWrites>bBefore+100&&state.pass&&state.expectedThread==nativeOwnerThread);
+ ws::native_source::event(3,owner);context.wallRunActive=false;msm2::native_source::tick(context,"verified_deinit",true);msm2::native_source::drainLogs();
+ auto c9Key="ORIENTATION_LIFECYCLE_SUMMARY session="+std::to_string(secondarySession)+" ";auto c9Summary=output.substr(output.find(c9Key));
+ assert(c9Summary.find("source_active_until_deinit=1 verified_deinit=1")!=std::string::npos&&c9Summary.find("first_hard_kill=none")!=std::string::npos);
+ auto eventKey="PATH_B_SECONDARY_THREAD_EVENT session="+std::to_string(secondarySession)+" ";assert(countText(output,eventKey)==1&&output.find("action=override reason=secondary_verified")!=std::string::npos);
+ // Shared partial interpolation is applied directly, no new delay/transition.
+ prepare({0,0,1},false);waitMs(65);workerTick();Published partial{};assert(publication.read(partial)&&partial.t>0&&partial.t<1);auto c9PartialEntry=state.transition.entryMs;
+ job=secondaryCall(0,false);assert(job.changed&&std::abs(job.after.rows[4]-partial.basis.up.y)<.0001f&&std::abs(job.after.rows[5]-partial.basis.up.z)<.0001f&&state.lastT==partial.t&&state.transition.entryMs==c9PartialEntry&&state.expectedThread==GetCurrentThreadId());
+ // Foreign target/caller/relation/span/layout rejects never kill or migrate.
+ for(unsigned mode=1;mode<=5;++mode){
+  prepare({0,0,1});auto input=compact;if(mode==5)input.rows[4]=0;job=secondaryCall(mode,false,&input);
+  assert(!job.changed&&causeState==0&&!killed.load()&&pathBWrites==0&&state.expectedThread==GetCurrentThreadId());
+  workerTick();callA();callB();assert(pathAWrites==1&&pathBWrites==1);
+  msm2::native_source::drainLogs();const char* reasons[]={"unused","secondary_wrong_target","secondary_wrong_caller","secondary_stack_relation_failed","secondary_source_span_failed","secondary_layout_invalid"};
+  auto key="PATH_B_SECONDARY_THREAD_EVENT session="+std::to_string(state.session)+" ";auto event=output.substr(output.find(key));assert(event.find(std::string("action=reject reason=")+reasons[mode])!=std::string::npos);
+ }
+ // Row scale and all metadata survive secondary policy stores (owned stack only).
+ prepare({0,0,1});auto scaled=compact;for(unsigned i=0;i<3;++i){scaled.rows[i]*=.75f;scaled.rows[3+i]*=1.25f;scaled.rows[6+i]*=1.5f;}
+ job=secondaryCall(6,false,&scaled);assert(job.changed&&job.after.metadata==scaled.metadata&&std::abs(job.after.rows[5]-1.25f)<.0001f);
+ // Proof loss and every real lifecycle patch mutation remain process-fatal.
+ for(unsigned i=0;i<5;++i){
+  prepare({0,0,1});unsigned char* changed=nullptr;
+  job=secondaryCall(0,true,nullptr,[&]{if(i==4)compactAuth=false;else {changed=reinterpret_cast<unsigned char*>(lifecyclePatches[i].address);changed[13+i]^=1;}});assert(!job.changed&&killed.load()&&pathBWrites==0);assertFirst("secondary_source_integrity_lost","path_b");
+  if(changed)changed[13+i]^=1;
+  compactAuth=true;workerTick();callA();callB();assert(pathAWrites==0&&pathBWrites==0);
+ }
+ // Fresh Hero/Transform, worker session/owner, generation/accepted epoch/collision
+ // are independent requirements. Later primary updates cannot revive failure.
+ for(unsigned i=0;i<7;++i){
+  prepare({0,0,1});auto hero=fakeHero.hero,transform=fakeHero.transform;
+  job=secondaryCall(0,true,nullptr,[&]{
+  if(i==0)fakeHero.hero+=16;
+  if(i==1)fakeHero.transform+=64;
+  if(i==2||i==3){WorkerEvidence w{};assert(workerEvidence.read(w));if(i==2)++w.context.wallRunSessionId;else w.context.wallRunOwner+=16;workerEvidence.publish(w);}
+  if(i==4){auto wrong=token;++wrong.generation;lifecyclePublication.publish(wrong);}
+  if(i==5){auto wrong=token;++wrong.acceptedEventEpoch;lifecyclePublication.publish(wrong);}
+  if(i==6){assert(!lifecycleWriteGate.test_and_set());ws::native_source::event(2,owner);lifecycleWriteGate.clear();}
+  });assert(!job.changed&&killed.load()&&pathBWrites==0&&state.expectedThread==GetCurrentThreadId());
+  fakeHero.hero=hero;fakeHero.transform=transform;workerTick();callA();callB();assert(pathAWrites==0&&pathBWrites==0);
+ }
+ // Stale secondary calls signal the same c7 recovery path, never keep it alive.
+ prepare({0,0,1});waitMs(270);job=secondaryCall(0,false);assert(!job.changed&&causeState==0&&pathBWrites==0);
+ workerTick(false);assert(state.ownership==Ownership::StaleSuspended);job=secondaryCall(0,false);assert(!job.changed&&causeState==0);
+ workerTick();assert(state.staleSuspends==1&&state.staleResumes==1);job=secondaryCall();assert(job.changed&&causeState==0&&state.expectedThread==GetCurrentThreadId());
+ // Both accepted/rejected evidence caps are process-bounded; counters continue.
+ prepare({0,0,1});for(unsigned i=0;i<20;++i){job=secondaryCall(0);assert(job.changed);job=secondaryCall(2);assert(!job.changed);}
+ msm2::native_source::drainLogs();auto capKey="PATH_B_SECONDARY_THREAD_EVENT session="+std::to_string(state.session)+" ";assert(countText(output,capKey)==32&&secondary.seen==40&&secondary.overridden==20&&secondary.rejected==20);
+ // The common atomic B attempt budget cannot be oversubscribed by threads.
+ prepare({0,0,1});std::array<SecondaryJob,8> contenders{};std::array<HANDLE,8> threads{},ready{};auto go=CreateEventW(nullptr,TRUE,FALSE,nullptr);assert(go);
+ for(unsigned i=0;i<8;++i){auto& c=contenders[i];c.target=fakeHero.transform;c.mode=6;c.before=compact;c.go=go;c.ready=ready[i]=CreateEventW(nullptr,TRUE,FALSE,nullptr);assert(c.ready);threads[i]=CreateThread(nullptr,0,secondaryJob,&c,0,nullptr);assert(threads[i]);}
+ assert(WaitForMultipleObjects(8,ready.data(),TRUE,2000)==WAIT_OBJECT_0);workerTick();pathBReservations=4095;SetEvent(go);
+ assert(WaitForMultipleObjects(8,threads.data(),TRUE,2000)==WAIT_OBJECT_0);unsigned winners=0;for(unsigned i=0;i<8;++i){winners+=unsigned(contenders[i].changed);CloseHandle(threads[i]);CloseHandle(ready[i]);}CloseHandle(go);
+ unsigned uniqueThreads=0;for(auto& id:secondary.threads)if(id.load())++uniqueThreads;assert(uniqueThreads==8&&secondary.inflight==0);
+ assert(winners==1&&pathBReservations==4096&&pathBWrites==1&&secondary.overridden==1&&secondary.rejected==7&&causeState==0);callB();assert(pathBWrites==1);
  prepare({0,0,1});auto sustainedSession=state.session;std::atomic<bool> readerDone{false};
  auto reader=CreateThread(nullptr,0,[](void* raw)->DWORD{auto& done=*static_cast<std::atomic<bool>*>(raw);while(!done.load()){Token t{};ws::native_source::lifecycle(t);Sleep(0);}return 0;},&readerDone,0,nullptr);assert(reader);
  unsigned atTwoSeconds=0;do {
@@ -228,6 +324,7 @@ int main(){
  auto f=std::fopen("logs/windows_native_source_synthetic.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);
  puts("PASS: lock-free coherent A/B shared basis, A exact stack source, B compact36-only scale/metadata preservation, contended worker lock cannot reject hooks, A/E retention, identity/thread/lifecycle/auth/kill/degenerate gates; independent MinHook fixtures only");
  puts("PASS: production native publication/worker and real MinHook A/B commits persist beyond2s through a >=4s WallRun with concurrent reader, SurfaceUp and sustained retention; synchronous Deinit passthrough and once/session lifecycle summary; hard collision/Hero/time-order gates diagnose and remain closed");
+ puts("PASS: c9 real secondary-thread MinHook B at1.75s after full retention, unchanged native thread/token/session/transition, primary A-B continue to clean4.4s Deinit; partial progress, foreign negatives, proof/four-patch/Hero/Transform/session/owner/generation/epoch/collision hard gates, stale recovery, scale/metadata, bounded32 events and shared B budget; Path A wrong-thread still fatal");
  puts("PASS: c8 production worker diagnostic-only field-plan loss at first0.7s A/B interpolation stops diagnostics without killing source, reaches t1 and retention; four independent real patch mutations stop A/B with precise first hook/offset, hot-entry and input attribution, immutable/racing first cause and no hard-close revival");
  puts("PASS: c7 real270ms stale gap blocks A/B before and after worker poll, same-session real Update resumes full target through verified Deinit; fresh-worker/stale-native gate and missed-worker signal; partial transition freeze/continue, bounded18 episodes/16 pairs, eleven stale-to-hard invalidations never revive");
  puts("PASS: c6 Position stays read-only with explicit proof rejection, authenticated-source provenance records and bounded valid plane samples/one summary; unreadable plane/out-of-range refuse candidate correction without stopping orientation, in-range request<=0.02, Position16 preserved; no plane reads after Deinit/kill");
