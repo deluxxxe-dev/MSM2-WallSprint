@@ -7,6 +7,7 @@
 static std::string output;static std::uintptr_t fakeHero{},fakeTransform{};
 static std::atomic<bool> running{true};static std::atomic<unsigned> selected{1},crawl{0};static std::atomic<bool> burst{false};static std::atomic<unsigned> nativeCalls{0};
 static HANDLE threadReady[2]{};
+namespace msm2::native_source {bool diagnosticIdentity(const msm2::reset_trace::Request&) noexcept {return false;}}
 namespace msm2 {
 bool readMemory(std::uintptr_t p,void* out,std::size_t n){SIZE_T done=0;return ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void*>(p),out,n,&done)&&done==n;}
 bool sample(Snapshot& s){s={};s.hero=fakeHero;s.transform=fakeTransform;float data[15]{};if(!readMemory(fakeTransform,data,sizeof(data)))return false;std::memcpy(s.prefix,data,48);std::memcpy(s.position,data+12,12);return true;}

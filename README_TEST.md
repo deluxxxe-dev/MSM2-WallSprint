@@ -1,91 +1,62 @@
-# WallSprint v0.1c12 — Movement Source Lineage
+# WallSprint v0.1c13 — Writer Entry Snapshot
 
-Package **0.1.30**。c10／c11 の A／E 壁での姿勢保持は実機で成功しました。今回は**移動経路を調べる診断版**です。Position・入力・速度・重力は変更しません。見た目の移動変化は想定していません。体の傾きや足の浮きは、後の見た目・接地調整として保留しています。
+Package **0.1.31**。c12 の A／E 壁での姿勢保持と直接 call の実機結果を維持し、今回は **writer が値を変更する前の入口記録**を採取します。Position・source・入力・移動・重力の書き換えはありません。見た目の移動変化は想定していません。足の浮き・壁との距離・体の傾きは保留しています。
 
 ## ダウンロード・導入
 
-配布は **WallSprint_v0.1c12_movement_source_lineage.zip**。完了メッセージの GitHub 直接ダウンロードリンクから取得し、この手順も GitHub 上の README_TEST.md で確認してください。
+配布：**WallSprint_v0.1c13_writer_entry_snapshot.zip**。完了メッセージの GitHub 直接ダウンロードリンクから取得し、この手順も GitHub 上で確認してください。
 
 ゲームを完全終了し、旧 WallSprint を無効にして外側の ZIP を展開します。**WallSprint.script は解凍せず** Overstrike に追加して Install mods。従来の Script support、`-scripts` と配布 INI を使います。
 
+## 試験
+
+1. 平らな A/cardinal 壁で、約4秒の連続 WallRun を1回。
+2. 斜め E/diagonal 壁でも、約4秒の連続 WallRun を1回。
+
+普通の入力で試してください。特別なスティック操作・意図した処理落ちは不要です。約0.7秒からの Surface Up が終了まで保たれるか、ちらつき・位置破損・クラッシュ・停止・引っかかりがないかを確認します。
+
+終了後、**起動から終了までの完全な WallSprint.log を非公開のまま ChatGPT に送ってください**。A／E の対応と見た目・hitch/freeze/crash の有無を添えてください。動画は任意で、今回の判定はログが中心です。生ログ・動画・private game body を GitHub や配布 ZIP に追加する必要はありません。
+
 ## 起動確認
 
-`logs\WallSprint.log` に以下があることを確認します。
-
 ```text
-WallSprint v0.1c12 package_version=0.1.30
+WallSprint v0.1c13 package_version=0.1.31
 target_build_gate=ACCEPTED
-PATH_B_COMPACT3X3_PROOF admitted=1 ... pairs=9
+PATH_B_COMPACT3X3_PROOF admitted=1
 DUAL_SOURCE_ADMISSION admitted=1
-PATH_A_POSITION_PROOF admitted=0 ... position_source_write=0
-PATH_A_POSITION_CAUSALITY_PROOF admitted=0 ... write_permission=0
+MOVEMENT_WRITER_PROOF ... function_begin=0x2cfc900 function_end=0x2cfc9b7 ... first_unsupported_offset=0xa
+MOVEMENT_CALLSITE_PROOF ... direct_call_verified=1
+MOVEMENT_ENTRY_DIAGNOSTIC_GATE admitted=1 ... original_sha256=... reason=...
 ```
 
-Position／causality の admitted=0 は想定どおりです。安全な移動 source をまだ認証していないため、この版では書き込みを許可しません。build／Path B proof／dual-source admission に失敗した場合は走らずログを送ってください。
+c12 の `source_prefix_proven=0`／`true_entry_snapshot=0` は、c12 の再構成診断として残ります。c13 入口診断の結果とは別の記録です。Position/source の書き換え許可は常に0です。build／Path B／dual-source の admission が失敗したら走らずログを共有してください。
 
-## c12 の追加診断
+## c13 の採取
 
-c11 で実測した `0x351EEB0 → 0x2CFC900` と `caller2≈0x351A020` を読み取り専用で調べます。起動時には次の記録が出ます。
+元の Up 監視が復元され、完全姿勢と retention が確認できた場合だけ、既存の1.55〜3.0秒開始・最大600msの Position 監視に合わせて入口診断を有効にします。**1セッション最大8回**、入口レジスタ・64 bytes の stack 引数・3個の小さな pointer 候補を採取します。別対象の generic Transform 呼び出しは除外します。
 
 ```text
-MOVEMENT_WRITER_PROOF ... function_begin=... function_end=... complete_decode=... current_code_hash=... lineage_complete=... source_map_supported_prefix=... reason=...
-MOVEMENT_WRITER_SOURCE_COMPONENT ... component=... store_rva=... source=...
-MOVEMENT_CALLSITE_PROOF ... direct_call_verified=... caller_function_begin=... caller_hash=... caller2_direct_relation_verified=... reason=...
-MOVEMENT_CALLER_SOURCE_PROOF ... construction_kind=unknown ... writable_source_proven=0 reason=...
-MOVEMENT_CALLER_SOURCE_COMPONENT ... expression=...
-MOVEMENT_LINEAGE_UNSUPPORTED ... instruction_rva=... reason=...
+MOVEMENT_ENTRY_DIAGNOSTIC_START ... installed=1 ... eligible_cap=8
+MOVEMENT_ENTRY_DIAGNOSTIC_ACTIVE ... capture_ready=1 hardware_watch_published=1
+MOVEMENT_WRITER_ENTRY_SNAPSHOT ... session=... invocation_id=... thread_id=... return_rva=... caller2_observed_rva=... true_entry_snapshot=1
+POSITION_WRITE_EVENT invocation_id=... ... writer_function_rva=0x2cfc900
+MOVEMENT_WRITER_INVOCATION_MAP ... invocation_id=... store_30_seen=... store_34_seen=... store_38_seen=... store_3c_seen=... entry_source_match_mask=... entry_pointer_candidate_mask=... source_stable=0 ... reason=...
+MOVEMENT_ENTRY_SOURCE_CANDIDATE ... origin=... raw_bits=... relationship=... exact_store_match_mask=... typed_semantics=unknown writable_source_proven=0
+MOVEMENT_CALLER_CHAIN_RUNTIME ... relation=direct|indirect|wrapper|unresolved ... runtime_stack_verified=...
+MOVEMENT_ENTRY_DIAGNOSTIC_STOP restored=1 code_restored=1 ... trampoline_retained=1
 ```
 
-`complete_decode=1` と、完全なデータフロー証明や移動の所有権は別の項目です。非対応命令・分岐・範囲上限は具体的な位置と理由を記録します。`construction_kind=unknown`／`writable_source_proven=0` は想定内で、診断のために条件を緩める必要はありません。
+`final_position`／`delta_like` は値の関係を示す診断ラベルで、ゲーム内部の velocity・displacement・root motion と認定するものではありません。全4成分が一致しても、W の意味・書き込み後の競合・移動の所有権は未証明です。Position 行の観測は命令実行後で、関数終了やエンジン全体の原子的状態ではありません。入れ子・並行呼び出しは入口 RSP と ID で区別し、不明なイベントは一致扱いにしません。
 
-監視中には、証明できた経路だけで以下を採取します。
+admitted/installed=0、部分イベント、candidate=none／unresolved も、理由を含めてそのまま送ってください。条件を緩める必要はありません。caller2 の以前の direct mismatch を、根拠なく direct/wrapper に変えることもありません。
 
-```text
-MOVEMENT_WRITER_SOURCE_MAP ... source_readable=... recovered_aliases_stable=... post_store_match=... entry_snapshot_captured=0 writable_source_proven=0 reason=...
-MOVEMENT_SOURCE_CORRELATION ... source_payload=... observed_position_before=... observed_position_after=... predicted_delta=... observed_delta=... delta_error=... delta_normal=... delta_forward=... delta_right=...
-MOVEMENT_LINEAGE_SUMMARY ... source_capture_ready=... attempts=... source_prefix_proven=... direct_call_verified=... true_entry_snapshot=0 writable_source_proven=0 Position_writes_by_mod=0
-```
-
-既存の書き込み監視時点で残るレジスタ／ソースからの復元であり、関数入口で直接採取した値ではありません。1監視あたり最大16回、1 writer の表示は従来どおり最大4件です。途中の scalar store では行全体が一致しないことがあります。一致しても W の意味や後続 writer の排他性は証明されません。復元できない場合も、正確な理由が次の解析材料になります。
-
-## 今回の試験
-
-1. 大きな平らな A 方向の壁で、約4秒の連続 WallRun を1回。
-2. 同じ斜め E 壁でも、約4秒の連続 WallRun を1回。
-
-特別なスティック操作や意図した処理落ちは不要です。試験ごとにゲームを完全再起動すると、ログの対応が分かりやすくなります。
-
-- c10 と同じく、約0.7秒から回転して Surface Up を終了まで保持するか。
-- クラッシュ、停止、引っかかり、強い処理落ちがないか。
-- 直立するちらつき、位置破損、急な飛び出しがないか。
-
-ゲームを終了し、**起動から終了までの完全なログを非公開のまま ChatGPT に送ってください**。A／E のどちらか、見た目・停止や引っかかりの有無も添えてください。動画・命令列・生ログを GitHub／公開 ZIP に追加する必要はありません。
-
-## 診断で確認する項目
-
-元の Up writer 監視は約1.50秒までです。その全 lease の復元後、完全姿勢と retention が確認できた場合だけ、1.55〜3.0秒の間に Position の監視を1回開始し、**最大600ms**観測します。空き DR0／DR1 を使い、既存の foreign DR は保持します。監視できない場合は、条件を緩めず理由を記録します。
+## 終了時の確認
 
 ```text
-POSITION_WATCH_ARM ... watched=Transform+[0x30,0x40) ... old_Up_leases_restored=1
-POSITION_WRITE_EVENT ... writer_function_rva=... caller_rva=... slot_mask=... position_before=... position_after=... position_w_bits_after=... classification=...
-POSITION_WRITER_SUMMARY ... watch_armed=1 ... unique_writers=... total_write_events=... cleanup_restored=1 cleanup_pending=0 ... Position_writes_by_mod=0
-POSITION_WRITER_HITS ... writer_rva=... hits=...
-MOVEMENT_DELTA_SAMPLE ... dt_ms=... delta_world=... delta_normal=... delta_forward=... delta_right=... speed_estimate=... valid=1 ... Position_writes=0
-MOVEMENT_SOURCE_CANDIDATE ... writable_source_proven=0 reason=...
-```
-
-Position の第4成分は意味を決めずに読み取ります。速度表示は位置差分からの診断値で、ゲーム内部の velocity だとは扱いません。Position event の before は直前の監視観測、after は命令実行後の観測で、関数完了時の結果ではありません。記録上限・スナップショット対象外のスレッドがあるため、writer が捕まらなかったことだけで「他の writer が存在しない」とは判断しません。
-
-最終確認：
-
-```text
-ORIENTATION_RETENTION_PASS=1
-ORIENTATION_LIFECYCLE_SUMMARY ... source_exit_reason=verified_native_Deinit source_active_until_deinit=1 verified_deinit=1 ... retention_pass=1 ... first_hard_kill=none hard_kill_calls=0
+ORIENTATION_LIFECYCLE_SUMMARY ... source_exit_reason=verified_native_Deinit source_active_until_deinit=1 verified_deinit=1 ... retention_pass=1 ... hard_kill_calls=0
 ADHESION_SUMMARY ... corrections_applied=0 ... source_position_writes=0
-MULTITHREAD_UP_WATCH_RESTORE ... cleanup_pending=0
-POSITION_WRITER_SUMMARY ... cleanup_pending=0
+POSITION_WRITER_SUMMARY ... cleanup_restored=1 cleanup_pending=0 ... Position_writes_by_mod=0
+MOVEMENT_ENTRY_DIAGNOSTIC_STOP restored=1 code_restored=1
 ```
 
-監視が開始されなかった場合も、`POSITION_WATCH_SKIPPED`／`POSITION_WRITER_SUMMARY watch_armed=0` と理由を含めた完全ログが必要です。c12 の新しい記録で writer 全体・直接 call・ソース復元・呼び出し元のどの証明が残っているかを確認します。
-
-F8 は再起動まで書き込み・診断監視を停止、F9 は script 停止です。c7 の自然な stale 停止／同一対象の新しい実 Update による復帰、c8 の初回異常原因、c9／c10 の別スレッド B と更新再検証は維持しています。Position 補正・movement 注入・入力 rewrite・animation・camera・gravity は追加していません。
+入口診断が install されなかった場合は STOP が無いことがあります。START/GATE の拒否理由と完全ログを共有してください。F8 は再起動まで書き込み・監視を停止、F9 は script 停止です。実機の入口→store→candidate を判定してから次のタスクを決めます。c13 から移動・入力 rewrite へ自動では進みません。

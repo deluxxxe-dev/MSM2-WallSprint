@@ -158,8 +158,8 @@ int main(){
   do{waitMs(16);workerTick();callA();callB();msm2::trace::drainLogs();}while(context.elapsed<4.1);assert(state.pass&&causeState==0);
   ws::native_source::event(3,owner);assert(!msm2::native_source::diagnosticIdentity(r));context.wallRunActive=false;msm2::native_source::tick(context,"verified_deinit",true);assert(state.summaryEmitted);
  }
- assert(output.find("POSITION_WRITE_EVENT ")!=std::string::npos&&output.find("POSITION_WRITER_SUMMARY ")!=std::string::npos&&output.find("cleanup_restored=1 cleanup_pending=0")!=std::string::npos);
  {auto f=std::fopen("logs/windows_position_orientation_integration.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);}
+ assert(output.find("POSITION_WRITE_EVENT ")!=std::string::npos&&output.find("POSITION_WRITER_SUMMARY ")!=std::string::npos&&output.find("cleanup_restored=1 cleanup_pending=0")!=std::string::npos);
  puts("PASS: c11 production c10 primary A/B orientation retains cardinal/diagonal SurfaceUp with real Position hardware watch active, observed unchanged Position rows; diagnostic identity/session/owner/Hero/Transform/thread/generation/epoch/stale/Deinit rejects and normal close, zero Position source writes");return 0;
 #endif
  for(ws::Vec3 n:{ws::Vec3{0,0,1},ws::Vec3{-.70710678f,0,.70710678f}}){

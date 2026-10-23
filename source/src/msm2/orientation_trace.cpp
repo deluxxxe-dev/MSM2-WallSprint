@@ -13,6 +13,8 @@
 #include "Math/movement_delta.hpp"
 #include "NativeHooks/path_a_position_proof.hpp"
 #include "NativeHooks/movement_lineage.hpp"
+#include "NativeHooks/writer_entry_snapshot.hpp"
+#include "NativeHooks/native_source_override.hpp"
 extern "C" bool ws_guarded_call(void (*)(void*),void*);
 namespace {
 using namespace msm2;
@@ -43,6 +45,7 @@ struct Lease {
 };
 struct LineageCapture {ws::lineage::Sample sample{};bool codeCurrent{};};
 struct Event {
+ std::uint64_t writerInvocation{};
  LineageCapture lineage{};
  unsigned window{},slotMask{};DWORD thread{};double timestamp{};DWORD64 ripAfter{},rsp{},callers[2]{},gpr[16]{};
  Entry entry{};path_b::Entry copyEntry{};double firstSurface{};bool resetCandidate{},dualCommitted{},sequenceCandidate{},thirdCandidate{};double surfaceAnchorTime{};ws::Vec3 surfaceAnchor{};std::uint64_t commitQpc{},commonQpc{},copyQpc{};
@@ -60,7 +63,7 @@ std::array<Event,ringCap> events;std::atomic<unsigned> head{0},tail{0};std::atom
 PVOID veh{};double lastSample{},deinitMs{};std::uint64_t lastSession{},runTraced{},crawlTraced{};
 Snapshot lastHero{};ws::Vec3 lastNormal{};bool normalValid{};unsigned crawlStable{};
 double now(){LARGE_INTEGER q{};if(!QueryPerformanceCounter(&q)||!frequency.QuadPart)return 0;return 1000.*double(q.QuadPart)/double(frequency.QuadPart);}
-void closeCapture(Window& w,const char* reason){const char* empty=nullptr;w.stopReason.compare_exchange_strong(empty,reason);w.capture=false;}
+void closeCapture(Window& w,const char* reason){const char* empty=nullptr;w.stopReason.compare_exchange_strong(empty,reason);w.capture=false;if(w.state==5)msm2::writer_entry::cancel();}
 unsigned own(const CONTEXT& c,const Lease& l){
  unsigned mask=0;
  if(c.Dr0==l.up&&(c.Dr7&0xf0003ull)==0x90001ull)mask|=1;
@@ -74,7 +77,7 @@ void restore(CONTEXT& c,const Lease& l,bool snapshot=false){
  if(snapshot&&mask==3&&(c.Dr6&0xe00c)==(l.old6&0xe00c))c.Dr6=l.old6;
  else c.Dr6=(c.Dr6&~DWORD64(mask))|(snapshot?(l.old6&mask):0);
 }
-struct Unwind {CONTEXT c;DWORD64 callers[2]{};unsigned count{};};
+struct Unwind {CONTEXT c;DWORD64 returnSlots[2]{},callers[2]{};unsigned count{};};
 void unwind(void* raw){
  auto& u=*static_cast<Unwind*>(raw);
  std::uintptr_t limit{},base{};__asm__ volatile("movq %%gs:0x10,%0":"=r"(limit));__asm__ volatile("movq %%gs:0x08,%0":"=r"(base));
@@ -85,7 +88,7 @@ void unwind(void* raw){
   if(f){void* handler=nullptr;DWORD64 frame=0;RtlVirtualUnwind(UNW_FLAG_NHANDLER,image,u.c.Rip,f,&u.c,&handler,&frame,nullptr);}
   else {SIZE_T got{};if(!ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void*>(u.c.Rsp),&u.c.Rip,8,&got)||got!=8)break;u.c.Rsp+=8;}
   if(u.c.Rsp<=oldRsp||u.c.Rsp>base||u.c.Rsp-oldRsp>0x10000||!VirtualQuery(reinterpret_cast<void*>(u.c.Rip),&m,sizeof(m))||m.State!=MEM_COMMIT||(m.Protect&(PAGE_GUARD|PAGE_NOACCESS))||!(m.Protect&(PAGE_EXECUTE|PAGE_EXECUTE_READ|PAGE_EXECUTE_READWRITE|PAGE_EXECUTE_WRITECOPY)))break;
-  u.callers[u.count++]=u.c.Rip;
+  u.returnSlots[u.count]=u.c.Rsp-8;u.callers[u.count++]=u.c.Rip;
  }
 }
 
@@ -128,7 +131,8 @@ void captureLineage(Event &r, Window &w) {
   unsigned char current[1024]{};
   r.lineage.codeCurrent =
       lineageRead(gameBase + m.writerBegin, current, m.writerSize) &&
-      !std::memcmp(current, m.writerBytes.data(), m.writerSize);
+      (!std::memcmp(current, m.writerBytes.data(), m.writerSize)||
+       writer_entry::originalIfOwned(gameBase+m.writerBegin,current,m.writerSize));
   unsigned char call[5]{}, call2[5]{};
   r.lineage.codeCurrent =
       r.lineage.codeCurrent && lineageRead(gameBase + 0x351eeab, call, 5) &&
@@ -192,7 +196,8 @@ LONG CALLBACK handler(EXCEPTION_POINTERS* e){
    bool unchanged=w.state!=5&&w.reset.verifyDual&&r.read&&!std::memcmp(r.oldUp,r.newUp,12);
    if(!unchanged){
    ++w.hits;
-   Unwind u{};u.c=c;if(ws_guarded_call(unwind,&u)&&u.count){r.callerValid=true;std::memcpy(r.callers,u.callers,sizeof(r.callers));}
+   Unwind u{};u.c=c;if(ws_guarded_call(unwind,&u)&&u.count){r.callerValid=true;std::memcpy(r.callers,u.callers,sizeof(r.callers));
+    if(w.state==5&&r.ripAfter>gameBase+0x2cfc900&&r.ripAfter<gameBase+0x2cfc9b7)r.writerInvocation=writer_entry::pair(w.session,w.reset.generation,w.transform,u.returnSlots[0],r.callers[0]);}
    if(w.state==5)captureLineage(r,w);
    events[h%ringCap]=r;head.store(h+1,std::memory_order_release);
    if(r.resetCandidate&&!w.reset.characterize&&!w.reset.multithread){w.capture=false;restore(c,*lease,w.state==5);}
@@ -227,6 +232,7 @@ void release(Window& w){
   if(ok&&resumed){l.installed=false;CloseHandle(l.handle);l.handle=nullptr;++restored;}else ++pending;
  }
  writeLog("orientation_trace_stop window=%u captured=%u dropped=%u restored=%u already_cleared_or_foreign=%u cleanup_pending=%u no_page_protection_change=1",w.id,std::min(w.hits.load(),config.maxEvents),w.drops.load(),restored,foreign,pending);
+ if(w.state==5&&pending==0)writer_entry::stop();
  if(w.state==5){w.positionCleanup=pending;w.positionClosed.store(true,std::memory_order_release);}
  if(w.reset.multithread&&w.state!=5){watchSummary(w,"stopped");writeLog("MULTITHREAD_UP_WATCH_RESTORE session=%llu restored=%u already_cleared_or_foreign=%u cleanup_pending=%u modified_slots=DR0_DR1 exact_saved_owned_slot_state=1",(unsigned long long)w.session,restored,foreign,pending);}
 }
@@ -412,6 +418,10 @@ bool movementFunction(unsigned rva, unsigned &begin, unsigned &end) {
   end = b.EndAddress;
   return true;
 }
+bool movementEntryGate(const reset_trace::Request& r) noexcept {
+ if(killed.load()||!native_source::diagnosticIdentity(r))return false;
+ Snapshot live{};return sample(live)&&live.hero==r.hero&&live.transform==r.transform;
+}
 void configureMovementLineage() {
   auto &m = movementLineage;
   if (m.attempted)
@@ -519,6 +529,9 @@ void configureMovementLineage() {
              "typed_semantics=unknown writable_source_proven=0",
              k, expression);
   }
+  writer_entry::Spec entrySpec{};entrySpec.verified=admitted;entrySpec.decoded=m.writer.decoded;entrySpec.directCall=m.call.verified;entrySpec.base=gameBase;entrySpec.imageSize=gameSize;entrySpec.begin=m.writerBegin;entrySpec.end=m.writerEnd;entrySpec.callerBegin=m.callerBegin;entrySpec.callerEnd=m.callerEnd;entrySpec.original=m.writerBytes.data();entrySpec.hash=m.writerHash;entrySpec.callerOriginal=caller.data();entrySpec.callerHash=m.callerHash;entrySpec.caller2Direct=m.caller2Verified;
+  if(c2&&c2size<=caller2.size())entrySpec.caller2Relation=writer_entry::callerRelation(caller2.data(),c2size,gameBase+m.caller2Begin,gameBase+0x351a020,gameBase+m.callerBegin,lineageRead);
+  writer_entry::configure(entrySpec,movementEntryGate);
   m.ready = m.writer.sourceMap && m.call.verified;
   writeLog("MOVEMENT_SOURCE_CANDIDATE candidate_id=c12_verified_chain "
            "producer_rva=0x%x consumer_rva=0x2cfc900 source_kind=%s "
@@ -588,24 +601,26 @@ void movementSourceEvent(Window &w, const Event &r) {
 }
 void positionEvent(Window& w,const Event& r,DWORD64 moduleBase,const char* moduleName){
  DWORD64 image{};auto* function=RtlLookupFunctionEntry(r.ripAfter?r.ripAfter-1:0,&image,nullptr);auto begin=function?image+function->BeginAddress:0;
+ if(r.writerInvocation&&r.read&&image==gameBase&&function&&function->BeginAddress==0x2cfc900)writer_entry::observe(r.writerInvocation,r.ripAfter,w.transform,r.gpr,r.xmm,r.xmmValid,r.newUp,r.callers[0],r.callers[1]);
  PositionWriter* writer=nullptr;for(unsigned i=0;i<w.positionWriterCount;++i)if(w.positionWriters[i].pc==r.ripAfter&&w.positionWriters[i].caller==r.callers[0]){writer=&w.positionWriters[i];break;}
  if(!writer){if(w.positionWriterCount==w.positionWriters.size()){++w.positionOverflow;return;}writer=&w.positionWriters[w.positionWriterCount++];writer->pc=r.ripAfter;writer->caller=r.callers[0];writer->function=begin;}
  ++writer->hits;bool pathA=image==gameBase&&function&&function->BeginAddress==0x2cfc580;if(!pathA)++w.positionUnknown;
+
  if(writer->printed++>=4)return;
  movementSourceEvent(w,r);
  ws::Vec3 before{r.oldUp[0],r.oldUp[1],r.oldUp[2]},after{r.newUp[0],r.newUp[1],r.newUp[2]};auto delta=ws::movement::decompose(before,after,w.reset.basis,1);
  unsigned char bytes[1024]{};unsigned size=function?function->EndAddress-function->BeginAddress:0;
  // Owned Path A entry bytes are hooked; startup inspection owns its original
  // proof. Dynamic decode of a hooked body is never advertised as original.
- if(!writer->analyzed){writer->analyzed=true;writer->functionSize=size;if(!pathA&&size&&size<=sizeof(bytes)&&readMemory(begin,bytes,size)){writer->store=ws::position_proof::positionStore(bytes,size,unsigned(r.ripAfter-begin));sha256(bytes,size,writer->hash);}}
+ if(!writer->analyzed){writer->analyzed=true;writer->functionSize=size;if(!pathA&&size&&size<=sizeof(bytes)&&(writer_entry::originalIfOwned(begin,bytes,size)||readMemory(begin,bytes,size))){writer->store=ws::position_proof::positionStore(bytes,size,unsigned(r.ripAfter-begin));sha256(bytes,size,writer->hash);}}
  auto store=writer->store;const char* hash=writer->hash;
  bool effective=false;std::uintptr_t address{};
  if(store.matched&&store.baseRegister<16){auto reg=r.gpr[store.baseRegister];if(store.displacement>=0&&reg<=UINTPTR_MAX-std::uint64_t(store.displacement)){address=reg+store.displacement;effective=address>=w.transform+0x30&&address<w.transform+0x40&&store.width<=w.transform+0x40-address;}else if(store.displacement<0&&reg>=std::uint64_t(-store.displacement)){address=reg-std::uint64_t(-store.displacement);effective=address>=w.transform+0x30&&address<w.transform+0x40&&store.width<=w.transform+0x40-address;}}
  if(writer->hits==1)writeLog("MOVEMENT_WRITER_STATIC session=%llu writer_function_rva=0x%llx function_size=%u complete_decode=%u store_matched=%u exact_store_instruction_offset=0x%x calls=%u branches=%u source_register_id=%u original_body_verified=%u reason=%s full_bytes_logged=0 writable_source_proven=0",(unsigned long long)w.session,(unsigned long long)(image==gameBase&&function?function->BeginAddress:0),size,unsigned(store.decoded),unsigned(store.matched),store.instruction,store.calls,store.branches,store.sourceRegister,0u,pathA?"owned_patch_originals_inspected_at_startup":store.decoded?"bounded_complete_decode_runtime_operand_only":"missing_boundary_over_1024_bytes_or_decode_failed");
  auto& entry=r.entry;bool linked=pathA&&entry.readable&&entry.overridden&&entry.tid==r.thread&&entry.args[0]==w.transform&&entry.owner==w.owner&&entry.generation==w.reset.generation&&entry.caller==gameBase+0x2cfc8f3&&r.callerValid&&r.callers[0]==entry.caller&&entry.qpc<=r.timestamp&&r.timestamp-entry.qpc<=5.;
  bool match=linked&&r.read&&!std::memcmp(entry.source+48,r.newUp,16);bool overwrite=!pathA&&r.read&&w.matchedPositionMs&&r.timestamp>=w.matchedPositionMs&&std::memcmp(w.matchedPosition,r.newUp,16);if(match){std::memcpy(w.matchedPosition,r.newUp,16);w.matchedPositionMs=r.timestamp;}unsigned oldW{},newW{};std::memcpy(&oldW,r.oldUp+3,4);std::memcpy(&newW,r.newUp+3,4);
- writeLog("POSITION_WRITE_EVENT session=%llu elapsed=%.6f thread_id=%lu rip=0x%llx module=%s module_rva=0x%llx writer_function_rva=0x%llx caller_rva=0x%llx caller2_rva=0x%llx target_transform=0x%llx slot_mask=%u position_before=(%.9g,%.9g,%.9g,%.9g) position_after=(%.9g,%.9g,%.9g,%.9g) position_w_bits_before=0x%x position_w_bits_after=0x%x delta=(%.9g,%.9g,%.9g) delta_normal=%.9g delta_surface_forward=%.9g delta_surface_right=%.9g delta_valid=%u relative_us_from_last_path_a=%.3f relative_us_from_last_path_b=%.3f classification=%s before_semantics=previous_serialized_watch_snapshot_NOT_atomic_pre_store after_semantics=post_instruction_NOT_function_return read_valid=%u store_instruction_rva=0x%llx store_width=%u destination_offset=%lld anchored_decode=%u effective_address_verified=%u function_sha256=%s printed_cap_per_writer=4 position_writes=0",
-  (unsigned long long)w.session, w.positionElapsed+(r.timestamp-w.start)/1000.,r.thread,(unsigned long long)r.ripAfter,moduleName,(unsigned long long)(r.ripAfter-moduleBase),(unsigned long long)(image==gameBase&&function?function->BeginAddress:0),(unsigned long long)gameRva(r.callers[0]),(unsigned long long)gameRva(r.callers[1]),(unsigned long long)w.transform,r.slotMask,r.oldUp[0],r.oldUp[1],r.oldUp[2],r.oldUp[3],r.newUp[0],r.newUp[1],r.newUp[2],r.newUp[3],oldW,newW,delta.world.x,delta.world.y,delta.world.z,delta.normal,delta.forward,delta.right,unsigned(delta.valid),since(r.commonQpc,r.timestamp),since(r.copyQpc,r.timestamp),pathA?"PATH_A_POSITION_CANDIDATE":"OTHER_POSITION_WRITER",unsigned(r.read),(unsigned long long)(store.matched&&image==gameBase&&begin?begin+store.instruction-gameBase:0),store.width,effective?static_cast<long long>(address-w.transform):-1,unsigned(store.decoded),unsigned(effective),hash);
+ writeLog("POSITION_WRITE_EVENT invocation_id=%llu session=%llu elapsed=%.6f thread_id=%lu rip=0x%llx module=%s module_rva=0x%llx writer_function_rva=0x%llx caller_rva=0x%llx caller2_rva=0x%llx target_transform=0x%llx slot_mask=%u position_before=(%.9g,%.9g,%.9g,%.9g) position_after=(%.9g,%.9g,%.9g,%.9g) position_w_bits_before=0x%x position_w_bits_after=0x%x delta=(%.9g,%.9g,%.9g) delta_normal=%.9g delta_surface_forward=%.9g delta_surface_right=%.9g delta_valid=%u relative_us_from_last_path_a=%.3f relative_us_from_last_path_b=%.3f classification=%s before_semantics=previous_serialized_watch_snapshot_NOT_atomic_pre_store after_semantics=post_instruction_NOT_function_return read_valid=%u store_instruction_rva=0x%llx store_width=%u destination_offset=%lld anchored_decode=%u effective_address_verified=%u function_sha256=%s printed_cap_per_writer=4 position_writes=0",
+  (unsigned long long)r.writerInvocation,(unsigned long long)w.session, w.positionElapsed+(r.timestamp-w.start)/1000.,r.thread,(unsigned long long)r.ripAfter,moduleName,(unsigned long long)(r.ripAfter-moduleBase),(unsigned long long)(image==gameBase&&function?function->BeginAddress:0),(unsigned long long)gameRva(r.callers[0]),(unsigned long long)gameRva(r.callers[1]),(unsigned long long)w.transform,r.slotMask,r.oldUp[0],r.oldUp[1],r.oldUp[2],r.oldUp[3],r.newUp[0],r.newUp[1],r.newUp[2],r.newUp[3],oldW,newW,delta.world.x,delta.world.y,delta.world.z,delta.normal,delta.forward,delta.right,unsigned(delta.valid),since(r.commonQpc,r.timestamp),since(r.copyQpc,r.timestamp),pathA?"PATH_A_POSITION_CANDIDATE":"OTHER_POSITION_WRITER",unsigned(r.read),(unsigned long long)(store.matched&&image==gameBase&&begin?begin+store.instruction-gameBase:0),store.width,effective?static_cast<long long>(address-w.transform):-1,unsigned(store.decoded),unsigned(effective),hash);
  writeLog("PATH_A_POSITION_CAUSALITY_PROOF admitted=0 session=%llu writer_verified=%u caller_verified=%u stack_relation_verified=%u source_offsets=candidate_[0x30,0x40) destination_offsets=watch_[0x30,0x40) post_writer_match=%u position_w_observed=%u downstream_overwrite_observed=%u exclusive_effects_proven=0 reason=whole_function_CFG_caller_construction_W_and_exclusive_effects_not_proven write_permission=0",
   (unsigned long long)w.session,unsigned(linked),unsigned(linked),unsigned(linked),unsigned(match),unsigned(r.read),unsigned(overwrite));
  if(writer->hits==1)writeLog("MOVEMENT_SOURCE_CANDIDATE candidate_id=%u session=%llu producer_rva=0x%llx consumer_rva=0x%llx source_kind=%s storage_or_stack_location=0x%llx wallrun_owned=%u hero_target_verified=1 verification_scope=watch_identity_NOT_atomic_game_snapshot correlates_with_translation=%u surface_tangent_relation=observed_delta_only writable_source_proven=0 reason=runtime_store_identity_only_upstream_lineage_and_exclusive_effects_missing",w.positionWriterCount,(unsigned long long)w.session,(unsigned long long)gameRva(r.callers[0]),(unsigned long long)(image==gameBase&&function?function->BeginAddress:0),linked?"position":"unknown",(unsigned long long)(linked?entry.args[1]+48:0),unsigned(linked),unsigned(r.read&&delta.valid&&ws::dot(delta.world,delta.world)>0));
@@ -618,7 +633,7 @@ void configure(Config c,bool verified,std::uintptr_t base,std::size_t size){
  if(admitted)configureMovementLineage();
  writeLog("orientation_trace_config enabled=%u admitted=%u diagnostic_only=1 window_ms=%u max_windows=%u max_events=%u max_threads=%u actor_writes=0 unknown_game_calls=0 PAGE_GUARD=0 coverage=current_threads_bounded_NOT_complete",unsigned(c.enabled),unsigned(admitted),c.windowMs,c.maxWindows,c.maxEvents,c.maxThreads);
 }
-void kill() noexcept{killed=true;for(auto& w:windows)closeCapture(w,"kill_or_shutdown");}
+void kill() noexcept{writer_entry::cancel();killed=true;for(auto& w:windows)closeCapture(w,"kill_or_shutdown");}
 void tick(const ws::observed::VerifiedWallContext& ctx,unsigned nativeThread,const char* exitReason){
  if(externalReset)return; // Dedicated helper is the sole owner of external windows.
  double time=now();
@@ -643,7 +658,7 @@ void tick(const ws::observed::VerifiedWallContext& ctx,unsigned nativeThread,con
   if(current<0&&normalValid&&crawlStable>=3&&crawlTraced!=lastSession){begin(s,2,lastSession,0,lastNormal,nativeThread);crawlTraced=lastSession;}
  }
 }
-void stop(){kill();for(unsigned attempt=0;attempt<3&&activeLeases();++attempt)for(unsigned i=0;i<usedWindows;++i)release(windows[i]);current=-1;drainLogs();writeLog("orientation_trace_shutdown cleanup_pending=%u VEH_tombstones_resident_until_process_exit=1",unsigned(activeLeases()));}
+void stop(){kill();for(unsigned attempt=0;attempt<3&&activeLeases();++attempt)for(unsigned i=0;i<usedWindows;++i)release(windows[i]);current=-1;writer_entry::stop();drainLogs();writeLog("orientation_trace_shutdown cleanup_pending=%u VEH_tombstones_resident_until_process_exit=1",unsigned(activeLeases()));}
 void drainLogs(){
  for(unsigned n=0;n<commonRecords.size();++n){
   auto t=commonTail.load(std::memory_order_relaxed);if(t==commonHead.load(std::memory_order_acquire))break;
@@ -699,6 +714,8 @@ void drainLogs(){
   }
   writeLog("orientation_writer_summary writer_id=%u hit_count=%u WallRun_hits=%u CrawlCandidate_hits=%u verified_WallCrawl_state=0",id+1,writer.hits,writer.run,writer.crawl);
  }
+ bool entryDrainSafe=head.load()==tail.load();for(unsigned i=0;i<publishedWindowCount.load(std::memory_order_acquire);++i)if(windows[i].state==5&&windows[i].positionInflight.load())entryDrainSafe=false;
+ if(entryDrainSafe)writer_entry::drain();
  for(unsigned i=0;i<publishedWindowCount.load(std::memory_order_acquire);++i){auto& w=windows[i];if(w.state!=5||!w.positionClosed.load(std::memory_order_acquire)||w.positionInflight.load()||head.load()!=tail.load()||w.positionSummary)continue;w.positionSummary=true;
   writeLog("MOVEMENT_LINEAGE_SUMMARY session=%llu source_capture_ready=%u eligible_hits=%u reconstruction_attempt_cap=16 attempts=%u complete_writer_CFG=%u source_prefix_proven=%u direct_call_verified=%u caller2_direct_relation_verified=%u true_entry_snapshot=0 writable_source_proven=0 Position_writes_by_mod=0 reason=entry_snapshot_typed_caller_W_and_exclusive_effects_unproven",(unsigned long long)w.session,unsigned(movementLineage.ready),w.lineageAttempts.load(),std::min(16u,w.lineageAttempts.load()),unsigned(movementLineage.writer.complete),unsigned(movementLineage.writer.sourceMap),unsigned(movementLineage.call.verified),unsigned(movementLineage.caller2Verified));
   writeLog("POSITION_WRITER_SUMMARY session=%llu watch_armed=%u threads_seen=%u threads_installed=%u unique_writers=%u total_write_events=%u unknown_writer_events=%u writer_table_overflow=%u dropped=%u cleanup_restored=%u cleanup_pending=%u complete_thread_coverage=0 rescan_count=0 event_cap=256 per_writer_print_cap=4 Position_writes_by_mod=0",(unsigned long long)w.session,unsigned(w.installedThreads>0),w.seen,w.installedThreads,w.positionWriterCount,w.hits.load(),w.positionUnknown,w.positionOverflow,w.drops.load(),unsigned(w.positionCleanup.load()==0),w.positionCleanup.load());
@@ -719,7 +736,8 @@ bool configureReset(bool verified,std::uintptr_t base,std::size_t size,bool prea
 bool beginPosition(const reset_trace::Request& r,const Snapshot& s){
  auto tick=GetTickCount64();
  if(!externalReset||!admitted||killed.load()||!r.position||!r.prearmed||tick<r.initMs||tick-r.initMs<1550||tick-r.initMs>3000||activeLeases()||current>=0||r.hero!=s.hero||r.transform!=s.transform||!r.basis.valid||!ws::diag::measure({r.basis.right,r.basis.up,r.basis.forward}).properRotation){writeLog("POSITION_WATCH_SKIPPED session=%llu reason=identity_timing_capacity_or_previous_Up_cleanup_gate",(unsigned long long)r.session);return false;}
- nextReset=r;bool ok=begin(s,5,r.session,r.owner,r.normal,r.thread);if(ok)publishedReset.store(current,std::memory_order_release);else pollReset(false,"position_arm_failed");return ok;
+ if(!writer_entry::start(r))writeLog("MOVEMENT_ENTRY_DIAGNOSTIC_START session=%llu installed=0 reason=entry_gate_live_identity_integrity_capacity_or_install_refused orientation_continues=1",(unsigned long long)r.session);
+ nextReset=r;bool ok=begin(s,5,r.session,r.owner,r.normal,r.thread);if(ok){publishedReset.store(current,std::memory_order_release);if(!writer_entry::activate())writeLog("MOVEMENT_ENTRY_DIAGNOSTIC_ACTIVE session=%llu capture_ready=0 reason=entry_hook_or_fresh_identity_unavailable",(unsigned long long)r.session);}else {pollReset(false,"position_arm_failed");writer_entry::stop();}return ok;
 }
 void positionCopyCommit(std::uintptr_t transform) noexcept {
  auto error=GetLastError();auto index=publishedReset.load();if(index>=0){auto& w=windows[unsigned(index)];if(w.state==5&&w.transform==transform&&w.capture.load()){LARGE_INTEGER q{};QueryPerformanceCounter(&q);w.copyCommit=q.QuadPart;}}SetLastError(error);

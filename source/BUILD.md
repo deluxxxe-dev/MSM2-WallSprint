@@ -1,4 +1,4 @@
-# v0.1c12 movement-path ownership diagnostics
+# v0.1c13 writer-entry snapshot diagnostics
 
 Run `bash tools/test_position_proof.sh` and `bash tools/test_native_source.sh` (including `tools/test_source_lifecycle.sh`), `bash tools/test_reset_trace.sh` and `bash tools/test_third_writer.sh` after the Windows build for sustained native publication/MinHook A-B continuity, production async threshold, actual Toolhelp filtering, record-pressure, debug-register/second-thread capture and cleanup fixtures. It uses owned functions/memory only. No new external dependency is added in c4.
 
@@ -6,7 +6,7 @@ The Windows build fetches Capstone 5.0.6 from its upstream source archive, verif
 
 For the private actual-byte regression after build and `tools/test_dual_source.sh`, run `WALLSPRINT_PATH_B_CAPTURE=/private/startup-excerpt.log bash tools/test_compact_proof.sh`. The input must contain exactly one authenticated original writer444/caller128 capture with the documented hashes. The harness compares the published c1 decoder with c2 and exercises the production installer in a nonexecuted owned image. It emits hashes, counts and derived offsets only, and removes temporary input binaries. Do not place the private input in Git or a release ZIP.
 
-Current version0.1.30: exact-build Path A and compact Path B consume one lock-free coherent orientation snapshot. Path B writes only its first nine floats and preserves row scale and all later metadata. See README_TEST.md and analysis/V01C11_GATE.md. Build with tools/build_windows.sh; run tools/test.sh, tools/smoke_windows.sh, tools/test_hooks_windows.sh and tools/release.py. Original game captures stay private.
+Current version0.1.31: exact-build Path A and compact Path B consume one lock-free coherent orientation snapshot. Path B writes only its first nine floats and preserves row scale and all later metadata. See README_TEST.md and analysis/V01C11_GATE.md. Build with tools/build_windows.sh; run tools/test.sh, tools/smoke_windows.sh, tools/test_hooks_windows.sh and tools/release.py. Original game captures stay private.
 
 # WallSprint v0.1b8 build — package0.1.17
 
@@ -27,7 +27,7 @@ Pinned GCC14 POSIX, Clang19 SEH, MinHook1.3.4, Wine10 and hash-pinned Capstone5.
 
 The hooks suite includes b7 prearm, original source/ABI/20k-call/stack/Position tests, dual native source transitions/retention/late same-update calls, real second-thunk MinHook vector/return/FPU preservation, exact-hash denial and offline gate negatives. No real game instructions are executed in synthetic fixtures. Private original-game replay is optional SKIP if unavailable, never a fake PASS.
 
-Current outputs: `../WallSprint_v0.1c12_movement_source_lineage.zip`, `../WallSprint_v0.1c12_source.zip`; generated script/manifest in `output/WallSprint_v0.1c12/`. GitHub branch/implementation commit are in `docs/CODEX_RESULT.md`; the public source includes all build/test instructions and known files needed to reproduce the implementation, without private game captures.
+Current outputs: `../WallSprint_v0.1c13_writer_entry_snapshot.zip`, `../WallSprint_v0.1c13_source.zip`; generated script/manifest in `output/WallSprint_v0.1c13/`. GitHub branch/implementation commit are in `docs/CODEX_RESULT.md`; the public source includes all build/test instructions and known files needed to reproduce the implementation, without private game captures.
 
 Offline real-log review:
 
@@ -42,3 +42,5 @@ C10 adds deterministic guarded-reader interposition only in the owned native fix
 C11: tools/test_position_writer.sh exercises the shared real hardware engine after Up cleanup (foreign DR/caps/restore/anchored stores); tools/test_native_source.sh additionally builds the same production c10 source fixture with the real Position watch linked, A/E orientation retained through normal Deinit. Position causal certificate/negative tests live in test_position_proof.sh; cardinal/diagonal movement delta is also portable ASan/UBSan. No game bodies are supplied by the public source.
 
 C12: tools/test_movement_lineage.sh adds complete scalar/vector source maps, anchored direct caller/return verification, supported caller substitution/untyped arithmetic, invalid CFG/effect/W/overwrite cases and A/E correlation. test_position_writer.sh also reconstructs four owned scalar stores from real hardware exception contexts and checks new guard-page reads refuse without protection changes. Source contains no private 0x2cfc900/0x351eeb0 game body.
+
+C13: tools/test_writer_entry.sh builds independent owned raw-thunk ABI, exact hash/boundary/lifecycle/guard gates, actual concurrent+nested hardware invocation pairing, candidate/chain and cleanup/foreign-ownership fixtures. It is included in test_hooks_windows.sh. The cross-build compiles WallSprint-owned writer_entry_snapshot.cpp / writer_entry_thunk.S; no new dependency or private game body. The original c12 source analyzer remains unchanged.

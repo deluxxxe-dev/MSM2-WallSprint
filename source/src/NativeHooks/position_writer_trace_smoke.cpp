@@ -6,6 +6,7 @@
 #include <string>
 #include <immintrin.h>
 static std::string output;static msm2::Snapshot hero;
+namespace msm2::native_source {bool diagnosticIdentity(const msm2::reset_trace::Request&) noexcept {return false;}}
 namespace msm2 {
 bool readMemory(std::uintptr_t p,void* out,std::size_t n){SIZE_T got=0;return ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void*>(p),out,n,&got)&&got==n;}
 bool sample(Snapshot& s){s=hero;return readMemory(s.transform,s.prefix,48);}

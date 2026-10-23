@@ -78,3 +78,7 @@ The real Position writer chain remains visible on E: `0x2CFC900` with return `0x
 The smallest missing evidence is `true_entry_snapshot=0` for verified writer `0x2CFC900`. c13 should capture the actual entry-time state only for active verified Hero-targeted invocations, pair it to existing Position hardware-write events by invocation, and identify the exact entry register/pointer/stack source feeding the Position stores.
 
 Keep movement and Position read-only. Do not weaken c12 proof or infer typed velocity/displacement semantics from resemblance.
+
+## c13 implementation handoff
+
+C13 implements bounded true entry-time capture and explicit invocation/store correlation in response to this exact blocker. No measured c12 fact above is reclassified as a c13 game result. See MOVEMENT_WRITER_ENTRY_SNAPSHOT.md and V01C13_GATE.md; actual c13 A/E is pending.

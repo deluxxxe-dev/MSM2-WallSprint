@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.30",
-  "description": "WallSprint v0.1c12 Movement Source Lineage. Preserves c10/c11 orientation; read-only complete writer/callsite inspection, bounded source reconstruction and explicit caller/entry/W/exclusive-effect blockers. No Position, movement or input rewrite.",
+  "version": "0.1.31",
+  "description": "WallSprint v0.1c13 Writer Entry Snapshot. Exact-build bounded transparent entry diagnostics and invocation-linked Position evidence; c12 orientation unchanged. No Position, source, input or movement rewrite.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

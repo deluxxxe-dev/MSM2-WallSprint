@@ -100,3 +100,9 @@ branch: codex/v01c13-writer-entry-snapshot
 
 ## c13 objective
 Capture actual entry-time state for verified Hero-targeted writer `0x2CFC900` invocations, pair each bounded invocation to the existing Position stores, and identify the exact entry register/pointer/stack source feeding Hero Position. Keep movement and Position read-only and do not weaken c12 gates.
+
+## c13 implementation status
+
+v0.1c13 / package0.1.31 implements the true-entry diagnostic on codex/v01c13-writer-entry-snapshot. Exact implementation SHA and final build/test/artifact evidence are in docs/CODEX_RESULT.md / analysis/V01C13_RELEASE.json. Native A/B source admission, c7-c10 lifecycle policy and c12 static proof stay unchanged; the new MinHook entry is diagnostic only, during the existing Position watch. Maximum8 entries/session, raw ABI preserved, explicit entry-RSP/thread/invocation linkage, guarded bounded raw origins and source-register/immediate store bits.
+
+Cloud owned tests validate the mechanism, including concurrent/reentrant calls and transparent cleanup. **Actual c13 A/E installation/entry/store/candidate evidence remains PENDING**, not a completed game source contract. writable_source_proven=0 and Position/input/movement/source writes=0. Next action is ordinary~4s A/cardinal then E/diagonal human run and private log adjudication; no automatic movement rewrite.
