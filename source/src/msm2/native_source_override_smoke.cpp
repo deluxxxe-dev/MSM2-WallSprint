@@ -7,6 +7,7 @@
 #include <cstdarg>
 #include <string>
 #include <cassert>
+namespace msm2::trace {void beginResetCopyEntry() noexcept {} void resetCopyEntry(const path_b::Entry&) noexcept {}}
 static unsigned resetRequests{},prearmRequests{};
 namespace msm2::reset_trace {void request(const Request& r) noexcept {assert(r.prearmed&&!r.commitQpc);++prearmRequests;}
 bool committed(const Request& r) noexcept {assert(r.commitQpc);++resetRequests;return false;}}
@@ -31,7 +32,7 @@ namespace msm2::input {bool authenticated(){unsigned char b[32]{};return sourceA
 static ws::source_math::Matrix identity(){ws::source_math::Matrix m{};m.v[0]=m.v[5]=m.v[10]=m.v[15]=1;m.v[12]=123;m.v[13]=45;m.v[14]=67;return m;}
 static std::uintptr_t owner{};static unsigned session{};static ws::source_math::Matrix vanilla;
 static void prepare(ws::Vec3 n){
- killed=false;admitted=true;ws_native_source_enabled=1;config={};config.dualSource=false;state={};
+ msm2::path_b::configure(true);killed=false;admitted=true;ws_native_source_enabled=1;config={};config.dualSource=false;state={};
  ws::native_source::armLifecycle(true);ws::native_source::event(0,owner);ws::native_source::event(1,owner);token.initMs=GetTickCount64()-800;ws::native_source::event(2,owner);
  ws::observed::VerifiedWallContext ctx{};ctx.lifecycleVerified=ctx.wallRunActive=true;ctx.wallRunOwner=owner;ctx.wallRunSessionId=++session;ctx.elapsed=.8;ctx.wallRunUpdateCalls=2;
  vanilla=identity();vanilla.v[0]=0;vanilla.v[2]=-1;vanilla.v[8]=1;vanilla.v[10]=0; // Forward +X, valid on A/E.
@@ -89,41 +90,45 @@ int main(){
  // Real second raw-entry thunk + independent native writer, not game bytes.
  assert(MH_CreateHook(reinterpret_cast<void*>(&ws_test_copy_writer),reinterpret_cast<void*>(&ws_reset_copy_thunk),&ws_reset_copy_original)==MH_OK);assert(MH_EnableHook(reinterpret_cast<void*>(&ws_test_copy_writer))==MH_OK);assert(msm2::readMemory(reinterpret_cast<std::uintptr_t>(&ws_test_copy_writer),copyInstalledBytes,32));
  for(ws::Vec3 n: {ws::Vec3{0,0,1},ws::Vec3{-.70710678f,0,.70710678f}}){
-  prepare(n);config.dualSource=true;state.elapsed=.69f;token.initMs=GetTickCount64()-710;
-  call();assert(state.commonWrites==1);auto entryTime=state.transition.entryMs;auto entryQ=state.transition.entryQ;
-  state.transition.entryMs=GetTickCount64()-260;entryTime=state.transition.entryMs;
-  auto callB=[&]{auto original=vanilla;auto result=ws_test_copy_caller(reinterpret_cast<void*>(fakeHero.transform),&vanilla);assert(result==0xabcdef0011223344ull);assert(!std::memcmp(&original,&vanilla,64));assert(!std::memcmp(ws_test_copy_received+12,vanilla.v+12,16));msm2::native_source::drainLogs();};
-  callB();assert(state.copyWrites==1&&state.lastT==1);call(false);assert(state.commonWrites==2&&state.transition.entryMs==entryTime&&!std::memcmp(&entryQ,&state.transition.entryQ,sizeof(entryQ)));
-  assert(!std::memcmp(ws_test_source_received,ws_test_copy_received,48));
-  auto nativeUpdates=token.updates;for(unsigned i=0;i<22;++i)callB();assert(token.updates==nativeUpdates&&state.heldUpdates<20&&!state.pass);
-  for(unsigned i=0;i<22;++i){call();callB();}assert(state.pass&&state.heldUpdates>=20);
-  assert(output.find("RESET_COPY_SOURCE_ENTRY")!=std::string::npos&&output.find("R8=0x1234 R9=0x5678")!=std::string::npos&&output.find("LATE_COMMON_WORLDUP_OVERRIDE=1")!=std::string::npos&&output.find("ORIENTATION_RETENTION_PASS=1")!=std::string::npos);
-  auto count=state.writes;ws::native_source::event(3,owner);callB();assert(state.writes==count);
+  prepare(n);config.dualSource=true;call();assert(state.commonWrites==1);
+  state.transition.entryMs=GetTickCount64()-260;
+  for(unsigned i=0;i<24;++i){
+   call();auto writes=state.writes;auto original=vanilla;
+   auto result=ws_test_copy_caller(reinterpret_cast<void*>(fakeHero.transform),&vanilla);
+   assert(result==0xabcdef0011223344ull&&!std::memcmp(&original,&vanilla,64));
+   assert(!std::memcmp(ws_test_copy_received,vanilla.v,64));
+   assert(state.writes==writes&&!state.copyWrites&&state.transition.active&&!state.pass);
+   msm2::native_source::drainLogs();
+  }
  }
- // A same-update reset between A and B must break continuity, even if the
- // next exact source promptly restores Surface Up. Never count20 such updates.
- prepare({0,0,1});config.dualSource=true;call();state.transition.entryMs=GetTickCount64()-260;ws_test_copy_caller(reinterpret_cast<void*>(fakeHero.transform),&vanilla);
- for(unsigned i=0;i<24;++i){call();std::memcpy(reinterpret_cast<void*>(fakeHero.transform),&vanilla,64);ws_test_copy_caller(reinterpret_cast<void*>(fakeHero.transform),&vanilla);}
- assert(!state.pass&&state.heldUpdates==0&&state.transition.active);
- // Real time retention alternative: >=300 ms with fewer than20 updates.
- prepare({0,0,1});config.dualSource=true;call();state.transition.entryMs=GetTickCount64()-260;
- ws_test_copy_caller(reinterpret_cast<void*>(fakeHero.transform),&vanilla);
- for(unsigned i=0;i<8;++i){call();ws_test_copy_caller(reinterpret_cast<void*>(fakeHero.transform),&vanilla);Sleep(50);}
- assert(state.pass&&state.heldUpdates<20&&GetTickCount64()-state.firstHeld>=300);
+ // Unknown layout is observed without modifying it or aborting Path A.
+ prepare({0,0,1});config.dualSource=true;call();
+ alignas(16) unsigned char local[128]{};float unusual=1000;std::memcpy(local+16,&unusual,4);
+ auto localPtr=reinterpret_cast<std::uintptr_t>(local);
+ msm2::native_source::captureCopy(fakeHero.transform,localPtr,0x1234,0x5678,imageBase+0x2cfc84b,localPtr-0x28);
+ assert(!state.copyWrites&&state.transition.active&&ws_native_source_enabled);
  msm2::native_source::drainLogs();
- prepare({0,0,1});config.dualSource=true;auto copyCount=state.copyWrites;
- // Heap/wrong caller/target/delay/copy-hook ownership fail closed.
- msm2::native_source::captureCopy(fakeHero.transform,p,0x1234,0x5678,imageBase+0x2cfc84b,p-0x28);assert(state.copyWrites==copyCount);
- prepare({0,0,1});config.dualSource=true;msm2::native_source::captureCopy(fakeHero.transform,reinterpret_cast<std::uintptr_t>(&vanilla),0,0,imageBase+0x2cfc84c,reinterpret_cast<std::uintptr_t>(&vanilla)-0x28);assert(!state.copyWrites);
- prepare({0,0,1});config.dualSource=true;auto local=vanilla;auto localPtr=reinterpret_cast<std::uintptr_t>(&local);
- msm2::native_source::captureCopy(fakeHero.transform,localPtr,0x1234,0x5678,imageBase+0x2cfc84b,localPtr-0x500);assert(!state.copyWrites&&!std::memcmp(&local,&vanilla,64));
- prepare({0,0,1});config.dualSource=true;local=vanilla;local.v[4]=1000;
- msm2::native_source::captureCopy(fakeHero.transform,localPtr,0x1234,0x5678,imageBase+0x2cfc84b,localPtr-0x28);assert(!state.copyWrites&&local.v[4]==1000);msm2::native_source::drainLogs();assert(output.find("caller_local_provenance_or_source_sanity_failed")!=std::string::npos);
- prepare({0,0,1});config.dualSource=true;copyAuth=false;ws_test_copy_caller(reinterpret_cast<void*>(fakeHero.transform),&vanilla);assert(!state.copyWrites&&!ws_native_source_enabled);copyAuth=true;
+ assert(output.find("RESET_COPY_LAYOUT_ENTRY")!=std::string::npos);
+ assert(output.find("rdx_inside_stack_bounds=1")!=std::string::npos);
+ assert(output.find("expected_rsp_relation_match=1")!=std::string::npos);
+ assert(output.find("path_b_override=0")!=std::string::npos);
+ auto writes=state.writes;call();assert(state.writes==writes+1);
+ // Pointer-looking values are never followed; guard/noaccess reads refuse.
+ unsigned char bytes[128]{};assert(!msm2::path_b::readBounded(1,bytes,128));
+ DWORD protection{};assert(VirtualProtect(mem+4096,4096,PAGE_NOACCESS,&protection));
+ assert(!msm2::path_b::readBounded(reinterpret_cast<std::uintptr_t>(mem+4090),bytes,128));
+ assert(VirtualProtect(mem+4096,4096,protection,&protection));
+ // Wrong caller, target, lifecycle and authentication never permit B writes.
+ msm2::native_source::captureCopy(fakeHero.transform,localPtr,0,0,imageBase+0x2cfc84c,localPtr-0x28);
+ msm2::native_source::captureCopy(fakeHero.transform+16,localPtr,0,0,imageBase+0x2cfc84b,localPtr-0x28);
+ copyAuth=false;ws_test_copy_caller(reinterpret_cast<void*>(fakeHero.transform),&vanilla);copyAuth=true;
+ assert(!state.copyWrites);ws::native_source::event(3,owner);
+ msm2::native_source::captureCopy(fakeHero.transform,localPtr,0,0,imageBase+0x2cfc84b,localPtr-0x28);
+ assert(!state.copyWrites);
  assert(MH_DisableHook(reinterpret_cast<void*>(&ws_test_copy_writer))==MH_OK);assert(MH_RemoveHook(reinterpret_cast<void*>(&ws_test_copy_writer))==MH_OK);
  // The public write helper independently refuses heap destinations.
  assert(!ws::interop::writeStackOrientation(p,vanilla,vanilla).success);
  msm2::native_source::stop();assert(MH_DisableHook(reinterpret_cast<void*>(&ws_test_native_source_writer))==MH_OK);assert(MH_RemoveHook(reinterpret_cast<void*>(&ws_test_native_source_writer))==MH_OK);assert(MH_Uninitialize()==MH_OK);assert(VirtualFree(mem,0,MEM_RELEASE));
  auto f=std::fopen("logs/windows_native_source_synthetic.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);
- puts("PASS: independent actual MinHook native caller stack+0x28 input -> native writer, A/E transition/20distinctUpdates ownership, Position/metadata/parent input unchanged, original return; native Deinit/ABA/R8/wrongtarget/heap/stale/normal/identity/patch/F8/SDK gates, reset observation does not suppress late source calls; dual raw-entry sources share one transition, late same-update coverage, copy heap/caller/auth refusal, direct-Actor writes absent; synthetic NOT game evidence");
+ puts("PASS: independent actual MinHook native caller stack+0x28 input -> native writer, A/E transition/20distinctUpdates ownership, Position/metadata/parent input unchanged, original return; native Deinit/ABA/R8/wrongtarget/heap/stale/normal/identity/patch/F8/SDK gates, reset observation does not suppress late source calls; Path B read-only raw128 capture, unknown layout continues Path A, guard-page refusal, caller/auth/lifecycle refusal, direct-Actor writes absent; synthetic NOT game evidence");
 }

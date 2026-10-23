@@ -8,6 +8,8 @@
 #include "NativeHooks/source_lifecycle.hpp"
 #include "NativeHooks/immediate_reset_trace.hpp"
 #include "NativeHooks/reset_copy_source.hpp"
+#include "NativeHooks/path_b_layout.hpp"
+#include "msm2/orientation_trace.hpp"
 #include "GameInterop/stack_source.hpp"
 #include "msm2/sdk_bridge.hpp"
 #include "msm2/orientation_source.hpp"
@@ -21,12 +23,13 @@ struct Shared {
  std::uintptr_t hero{},transform{},owner{};std::uint64_t session{},generation{},published{};
  ws::source_math::Transition transition;std::uint64_t blocked{},lastWrite{},lastUpdate{},firstHeld{},lastObserveUpdate{};
  Matrix entryBasis{},currentBasis{};Vec3 entryForward{};std::uint64_t lastCommonUpdate{},lastObserveMs{},lastMetricMs{};
- unsigned writes{},commonWrites{},copyWrites{},heldUpdates{},otherWriters{};float elapsed{},lastT{},bestSurface{};bool pass{},resetRequested{};
+ unsigned writes{},commonWrites{},copyWrites{},heldUpdates{},otherWriters{};float elapsed{},lastT{},bestSurface{};unsigned rejects{};bool pass{},resetRequested{};
 } state;
 struct Record {
- unsigned kind{};const char* reason="none";std::uint64_t session{},ms{},generation{},nativeUpdate{},heldMs{},commitQpc{};
+ unsigned kind{},gateMask{};const char* reason="none";std::uint64_t session{},ms{},generation{},nativeUpdate{},heldMs{},commitQpc{};
  std::uintptr_t source{},caller{};float elapsed{},t{},actorDotSurface{},actorDotWorld{};unsigned writes{},heldUpdates{};Matrix original{},applied{};ws::diag::ActorAxes target{};Vec3 n{},actorUp{};bool positionSame{},stack{},success{},prearmed{},copy{},late{},sourceReadable{},sourceLayout{};unsigned nativeThread{};std::uintptr_t rcx{},r8{},r9{},rsp{},stackLimit{},stackBase{};
 };
+std::atomic<unsigned> commonLockRejects{0};
 std::array<Record,capacity> records;std::atomic<unsigned> head{0},tail{0};
 bool room(){return head.load(std::memory_order_relaxed)-tail.load(std::memory_order_acquire)<capacity;}
 void emit(const Record& r){auto h=head.load(std::memory_order_relaxed);records[h%capacity]=r;head.store(h+1,std::memory_order_release);}
@@ -62,7 +65,7 @@ void prearmLocked(const Token& token,std::uint64_t now){
  if(!state.resetRequested&&now>=token.initMs&&now-token.initMs>=600&&now-token.initMs<1100&&currentGuards()){
   Vec3 normal{};
   if(token.owner<=UINTPTR_MAX-0x3a4&&msm2::readMemory(token.owner+0x398,&normal,12)&&ws::finite(normal)&&ws::dot(normal,normal)>=.95f*.95f&&ws::dot(normal,normal)<=1.05f*1.05f&&std::abs(normal.y)<=.20f){
-   state.resetRequested=true;msm2::reset_trace::Request r{};r.prearmed=true;r.verifyDual=config.dualSource;r.initMs=token.initMs;r.session=state.session;r.generation=token.generation;r.nativeUpdate=token.updates;r.hero=state.hero;r.transform=state.transform;r.owner=state.owner;r.thread=token.thread;r.normal=normal;msm2::reset_trace::request(r);
+   state.resetRequested=true;msm2::reset_trace::Request r{};r.prearmed=true;r.verifyDual=config.dualSource;r.characterize=true;r.initMs=token.initMs;r.session=state.session;r.generation=token.generation;r.nativeUpdate=token.updates;r.hero=state.hero;r.transform=state.transform;r.owner=state.owner;r.thread=token.thread;r.normal=normal;msm2::reset_trace::request(r);
   }
  }
 }
@@ -102,6 +105,7 @@ void configure(Config c,bool verified,std::uintptr_t base,std::size_t size,const
  kill();if(configured){writeLog("native_source_rearm_refused full_game_restart_required=1");return;}configured=true;config=c;lifecyclePatches=patches;imageBase=base;admitted=verified&&c.enabled&&c.sourceOverride&&base&&size>callReturn&&std::isfinite(c.delay)&&c.delay>=.7f&&c.delay<=5&&std::isfinite(c.rotateTime)&&c.rotateTime>=.2f&&c.rotateTime<=1&&callerAuthenticated()&&currentGuards();
  writeLog("native_source_config enabled=%u requested_override=%u admitted=%u direct_actor_transform_write=0 adhesion=0 movement=0 camera=0 animation=0 source_write_range=[0x00,0x30) position_write=0 caller_rva=0x2cfc8f3 caller_body_hash_verified=%u source_stack_relation=writer_entry_RSP+0x28 delay=%.3f rotate_time=%.3f",unsigned(c.enabled),unsigned(c.sourceOverride),unsigned(admitted),unsigned(admitted),c.delay,c.rotateTime);
  writeLog("DUAL_SOURCE_ADMISSION admitted=%u dual_source_required=%u common_caller=0x2cfc8f3 copy_caller=0x2cfc84b copy_hook_authenticated=%u",unsigned(admitted),unsigned(c.dualSource),unsigned(msm2::reset_copy::authenticated()));
+ path_b::configure(admitted);
  if(!admitted)return;
  state={};killed=false;ws::native_source::armLifecycle(true);ws_native_source_enabled=1;
 }
@@ -111,7 +115,7 @@ void prearm(const Token& token) noexcept {
  if(state.published&&now>=state.published&&now-state.published<=100&&freshToken(token,now)&&token.generation==state.generation&&token.owner==state.owner&&token.thread==GetCurrentThreadId())prearmLocked(token,now);
  stateLock.clear(std::memory_order_release);
 }
-void kill() noexcept{killed=true;ws_native_source_enabled=0;isActive=false;ws::native_source::armLifecycle(false);}
+void kill() noexcept{path_b::kill();killed=true;ws_native_source_enabled=0;isActive=false;ws::native_source::armLifecycle(false);}
 bool active() noexcept{return isActive.load();}
 bool observationGuardsAuthenticated() noexcept{return !killed.load()&&admitted&&currentGuards();}
 bool entryOverridden() noexcept{return didOverride;}
@@ -133,67 +137,81 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
  observe(s,token,now,false);
  stateLock.clear(std::memory_order_release);
 }
-void capturePath(bool copy,std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t originalRsp) noexcept {
+void capturePath(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t originalRsp) noexcept {
  didOverride=false;
  if(inside||killed.load()||!ws_native_source_enabled.load())return;
  inside=true;auto lastError=GetLastError();
- if(stateLock.test_and_set(std::memory_order_acquire)){inside=false;SetLastError(lastError);return;}
+ if(stateLock.test_and_set(std::memory_order_acquire)){if(ret==imageBase+callReturn)++commonLockRejects;inside=false;SetLastError(lastError);return;}
  auto release=[&]{stateLock.clear(std::memory_order_release);inside=false;SetLastError(lastError);};
  auto now=GetTickCount64();Token token{};
- if(!state.published||now<state.published||now-state.published>100||!ws::native_source::lifecycle(token)||!freshToken(token,now)||token.generation!=state.generation||token.owner!=state.owner||token.thread!=GetCurrentThreadId()){release();return;}
+ bool lifecycleOk=false;
+ auto deny=[&](const char* reason){
+  bool elapsed=token.initMs&&now>=token.initMs&&now-token.initMs>=700;
+  if(ret!=imageBase+callReturn||!state.transform||rcx!=state.transform||(!elapsed&&state.elapsed<.70f)||state.rejects>=64||!room())return;
+  auto stack=ws::interop::currentStack();Matrix raw{};bool layout=path_b::readBounded(rdx,&raw,64)&&ws::source_math::valid(raw);
+  Record r{};r.kind=10;r.reason=reason;r.session=state.session;r.elapsed=token.initMs&&now>=token.initMs?float(now-token.initMs)/1000:state.elapsed;
+  r.gateMask=1u|2u|(ws::interop::stackLocation(rdx,originalRsp,stack)?4u:0u)|(layout?8u:0u)|(lifecycleOk?16u:0u)|((elapsed&&now-token.initMs>=config.delay*1000)?32u:0u);emit(r);++state.rejects;
+ };
+ lifecycleOk=ws::native_source::lifecycle(token)&&freshToken(token,now)&&token.generation==state.generation&&token.owner==state.owner&&token.thread==GetCurrentThreadId();
+ if(!state.published||now<state.published||now-state.published>100||!lifecycleOk){deny("native_lifecycle_identity_thread_or_worker_stale");release();return;}
  if(rcx!=state.transform){release();return;}
  prearmLocked(token,now);
- if(copy&&!config.dualSource){release();return;}
- auto expectedReturn=copy?std::uintptr_t(0x2cfc84b):callReturn;
+ auto expectedReturn=callReturn;
  if(ret!=imageBase+expectedReturn){
   if(state.writes&&state.otherWriters<16&&room()){Matrix in{};if(msm2::readMemory(rdx,&in,64)&&ws::source_math::valid(in)){Record r{};r.kind=4;r.session=state.session;r.ms=now;r.caller=ret-imageBase;r.original=in;emit(r);++state.otherWriters;}}
   release();return;
  }
- if(state.blocked==state.generation||now-token.initMs<config.delay*1000||(!config.dualSource&&state.elapsed<config.delay)){release();return;}
- if(!copy&&r8!=0){reject("unexpected_R8_not_null",now);release();return;}
+ if(state.blocked==state.generation||now-token.initMs<config.delay*1000||(!config.dualSource&&state.elapsed<config.delay)){deny(state.blocked==state.generation?"session_blocked_by_prior_path_A_failure":"elapsed_delay_not_met");release();return;}
+ if(r8!=0){deny("unexpected_R8_not_null");reject("unexpected_R8_not_null",now);release();return;}
  msm2::Snapshot hero{};
- if(!msm2::sample(hero)||hero.hero!=state.hero||hero.transform!=state.transform||rcx!=hero.transform){reject("native_fresh_Hero_identity_or_basis_invalid",now);release();return;}
- if(!currentGuards()){reject("entry_hook_ownership_lost",now);killed=true;ws_native_source_enabled=0;release();return;}
+ if(!msm2::sample(hero)||hero.hero!=state.hero||hero.transform!=state.transform||rcx!=hero.transform){deny("fresh_Hero_identity_unavailable_or_changed");reject("native_fresh_Hero_identity_or_basis_invalid",now);release();return;}
+ if(!currentGuards()){deny("entry_hook_or_caller_integrity_lost");reject("entry_hook_ownership_lost",now);killed=true;ws_native_source_enabled=0;release();return;}
  Matrix incoming{};auto stack=ws::interop::currentStack();
- if(!(copy?ws::interop::callerStackMatrix(rdx,originalRsp,stack,incoming):ws::interop::stackMatrix(rdx,originalRsp,stack,incoming))||!(rdx+64<=rcx||rcx+64<=rdx)){
-  if(copy&&room()){Record raw{};raw.kind=8;raw.session=state.session;raw.elapsed=float(now-token.initMs)/1000;raw.nativeThread=token.thread;raw.rcx=rcx;raw.source=rdx;raw.r8=r8;raw.r9=r9;raw.rsp=originalRsp;raw.stackLimit=stack.limit;raw.stackBase=stack.base;raw.caller=expectedReturn;raw.sourceReadable=rdx&&rdx<=UINTPTR_MAX-64&&msm2::readMemory(rdx,&raw.original,64);raw.sourceLayout=raw.sourceReadable&&ws::source_math::valid(raw.original);emit(raw);}
+ if(!(ws::interop::stackMatrix(rdx,originalRsp,stack,incoming))||!(rdx+64<=rcx||rcx+64<=rdx)){
+  deny("path_A_stack_provenance_or_source_layout_failed");
   reject("source_not_verified_stack_local_matrix",now);release();return;
  }
- Vec3 n{};if(token.owner>UINTPTR_MAX-0x3a4||!msm2::readMemory(token.owner+0x398,&n,12)){reject("surface_read_failed",now);release();return;}
- if(!state.transition.active){if(!state.transition.enter(incoming,n,double(now))){reject("invalid_entry_normal_or_projected_forward",now);release();return;}state.entryBasis=incoming;state.entryForward=ws::diag::actorAxes(incoming.v).forward;state.lastObserveUpdate=token.updates;isActive=true;}
+ Vec3 n{};if(token.owner>UINTPTR_MAX-0x3a4||!msm2::readMemory(token.owner+0x398,&n,12)){deny("surface_read_failed");reject("surface_read_failed",now);release();return;}
+ if(!state.transition.active){if(!state.transition.enter(incoming,n,double(now))){deny("invalid_entry_normal_or_forward");reject("invalid_entry_normal_or_projected_forward",now);release();return;}state.entryBasis=incoming;state.entryForward=ws::diag::actorAxes(incoming.v).forward;state.lastObserveUpdate=token.updates;isActive=true;}
  if(!observe(hero,token,now,true)){release();return;}
- if(state.writes>=4096||now-state.transition.entryMs>=5000){end("bounded_test_budget_4096writes_or_5seconds",now);release();return;}
- Matrix applied{};float t=0;if(!state.transition.sample(incoming,n,double(now),config.rotateTime,applied,t)){end("invalid_normal_corner_or_source_basis",now);release();return;}
+ if(state.writes>=4096||now-state.transition.entryMs>=5000){deny("write_or_time_budget_exhausted");end("bounded_test_budget_4096writes_or_5seconds",now);release();return;}
+ Matrix applied{};float t=0;if(!state.transition.sample(incoming,n,double(now),config.rotateTime,applied,t)){deny("normal_corner_or_source_basis_changed");end("invalid_normal_corner_or_source_basis",now);release();return;}
  Token final{};
- if(!room()||!currentGuards()||killed.load()||!ws_native_source_enabled.load()||!ws::native_source::lifecycle(final)||final.generation!=token.generation||final.owner!=token.owner||final.updates!=token.updates||final.thread!=token.thread){end("commit_admission_lost_or_log_overflow",now);release();return;}
+ if(!room()||!currentGuards()||killed.load()||!ws_native_source_enabled.load()||!ws::native_source::lifecycle(final)||final.generation!=token.generation||final.owner!=token.owner||final.updates!=token.updates||final.thread!=token.thread){deny("commit_guard_changed_or_log_overflow");end("commit_admission_lost_or_log_overflow",now);release();return;}
  LARGE_INTEGER overrideBegin{};QueryPerformanceCounter(&overrideBegin);
  auto result=ws::interop::writeStackOrientation(rdx,incoming,applied);
- if(!result.success){end(result.rollbackFailed?"source_write_failed_rollback_failed":"source_write_failed_restored_or_untouched",now);killed=true;ws_native_source_enabled=0;release();return;}
+ if(!result.success){deny("guarded_source_write_failed");end(result.rollbackFailed?"source_write_failed_rollback_failed":"source_write_failed_restored_or_untouched",now);killed=true;ws_native_source_enabled=0;release();return;}
  didOverride=true;state.currentBasis=applied;
  Vec3 appliedUp{applied.v[4],applied.v[5],applied.v[6]};
- msm2::reset_trace::Request committed{};committed.prearmed=true;committed.resetCopy=copy;committed.verifyDual=config.dualSource;committed.initMs=token.initMs;committed.session=state.session;committed.generation=token.generation;committed.nativeUpdate=token.updates;committed.commitQpc=result.commitQpc;committed.overrideBeginQpc=overrideBegin.QuadPart;committed.hero=state.hero;committed.transform=state.transform;committed.owner=state.owner;committed.thread=token.thread;committed.normal=state.transition.surface;committed.appliedUp=appliedUp;bool prearmed=msm2::reset_trace::committed(committed);
- bool late=!copy&&state.commonWrites&&token.updates==state.lastCommonUpdate&&incoming.v[5]>=.98f;
- if(copy)++state.copyWrites;else{++state.commonWrites;state.lastCommonUpdate=token.updates;}
+ msm2::reset_trace::Request committed{};committed.prearmed=true;committed.resetCopy=false;committed.verifyDual=config.dualSource;committed.initMs=token.initMs;committed.session=state.session;committed.generation=token.generation;committed.nativeUpdate=token.updates;committed.commitQpc=result.commitQpc;committed.overrideBeginQpc=overrideBegin.QuadPart;committed.hero=state.hero;committed.transform=state.transform;committed.owner=state.owner;committed.thread=token.thread;committed.normal=state.transition.surface;committed.appliedUp=appliedUp;bool prearmed=msm2::reset_trace::committed(committed);
+ bool late=state.commonWrites&&token.updates==state.lastCommonUpdate&&incoming.v[5]>=.98f;
+ ++state.commonWrites;state.lastCommonUpdate=token.updates;
  ++state.writes;state.lastWrite=now;state.lastUpdate=token.updates;state.lastT=t;
- Record r{};r.copy=copy;r.late=late;r.rcx=rcx;r.r8=r8;r.r9=r9;r.rsp=originalRsp;r.stackLimit=stack.limit;r.stackBase=stack.base;r.prearmed=prearmed;r.nativeThread=token.thread;r.kind=1;r.commitQpc=result.commitQpc;r.session=state.session;r.generation=state.generation;r.ms=now;r.nativeUpdate=token.updates;r.source=rdx;r.caller=expectedReturn;r.elapsed=float(now-token.initMs)/1000;r.t=t;r.original=incoming;r.applied=applied;r.target=state.transition.target;r.n=state.transition.surface;r.positionSame=result.positionUnchanged;r.stack=true;r.writes=state.writes;emit(r);release();
+ Record r{};r.copy=false;r.late=late;r.rcx=rcx;r.r8=r8;r.r9=r9;r.rsp=originalRsp;r.stackLimit=stack.limit;r.stackBase=stack.base;r.prearmed=prearmed;r.nativeThread=token.thread;r.kind=1;r.commitQpc=result.commitQpc;r.session=state.session;r.generation=state.generation;r.ms=now;r.nativeUpdate=token.updates;r.source=rdx;r.caller=expectedReturn;r.elapsed=float(now-token.initMs)/1000;r.t=t;r.original=incoming;r.applied=applied;r.target=state.transition.target;r.n=state.transition.surface;r.positionSame=result.positionUnchanged;r.stack=true;r.writes=state.writes;emit(r);release();
 }
-void capture(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t rsp) noexcept {capturePath(false,rcx,rdx,r8,r9,ret,rsp);}
-void captureCopy(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t rsp) noexcept {capturePath(true,rcx,rdx,r8,r9,ret,rsp);}
-void drainLogs(){
- for(unsigned n=0;n<capacity;++n){auto t=tail.load(std::memory_order_relaxed);if(t==head.load(std::memory_order_acquire))break;auto r=records[t%capacity];tail.store(t+1,std::memory_order_release);
-  if(r.kind==8){
-   char raw[129]{};constexpr char digits[]="0123456789abcdef";auto* bytes=reinterpret_cast<const unsigned char*>(&r.original);if(r.sourceReadable)for(unsigned i=0;i<64;++i){raw[2*i]=digits[bytes[i]>>4];raw[2*i+1]=digits[bytes[i]&15];}
-   writeLog("RESET_COPY_SOURCE_ENTRY session=%llu elapsed=%.6f caller_rva=0x%llx thread_id=%u RCX=0x%llx RDX=0x%llx R8=0x%llx R9=0x%llx RSP=0x%llx stack_limit=0x%llx stack_base=0x%llx source_is_stack_local=0 layout_valid=%u source_readable=%u raw_source_0x40=%s override=0 reason=caller_local_provenance_or_source_sanity_failed",(unsigned long long)r.session,r.elapsed,(unsigned long long)r.caller,r.nativeThread,(unsigned long long)r.rcx,(unsigned long long)r.source,(unsigned long long)r.r8,(unsigned long long)r.r9,(unsigned long long)r.rsp,(unsigned long long)r.stackLimit,(unsigned long long)r.stackBase,unsigned(r.sourceLayout),unsigned(r.sourceReadable),r.sourceReadable?raw:"unavailable");
+void capture(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t rsp) noexcept {capturePath(rcx,rdx,r8,r9,ret,rsp);}
+void captureCopy(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t rsp) noexcept {
+ auto error=GetLastError();trace::beginResetCopyEntry();
+ if(inside||killed.load()||!ws_native_source_enabled.load()){SetLastError(error);return;}
+ inside=true;if(stateLock.test_and_set(std::memory_order_acquire)){inside=false;SetLastError(error);return;}
+ auto now=GetTickCount64();Token token{};
+ if(state.published&&now>=state.published&&now-state.published<=100&&ws::native_source::lifecycle(token)&&freshToken(token,now)&&token.generation==state.generation&&token.owner==state.owner&&token.thread==GetCurrentThreadId()&&rcx==state.transform&&ret==imageBase+0x2cfc84b&&currentGuards()){
+  msm2::Snapshot hero{};Vec3 normal{};
+  if(msm2::sample(hero)&&hero.hero==state.hero&&hero.transform==state.transform&&token.owner<=UINTPTR_MAX-0x3a4&&msm2::readMemory(token.owner+0x398,&normal,12)&&ws::finite(normal)){
+   path_b::Entry e{};e.session=state.session;e.generation=token.generation;e.update=token.updates;e.owner=token.owner;e.thread=token.thread;e.elapsed=float(now-token.initMs)/1000;e.rcx=rcx;e.rdx=rdx;e.r8=r8;e.r9=r9;e.rsp=rsp;e.caller=0x2cfc84b;auto stack=ws::interop::currentStack();e.stackLimit=stack.limit;e.stackBase=stack.base;e.normal=normal;e.actorBefore={hero.prefix[4],hero.prefix[5],hero.prefix[6]};e.referenceValid=state.transition.active&&state.commonWrites>0;if(e.referenceValid)e.pathAUp={state.currentBasis.v[4],state.currentBasis.v[5],state.currentBasis.v[6]};path_b::capture(e);
   }
+ }
+ stateLock.clear(std::memory_order_release);inside=false;SetLastError(error);
+}
+void drainLogs(){
+ path_b::drainLogs();
+ auto lockMisses=commonLockRejects.exchange(0);if(lockMisses)writeLog("COMMON_OVERRIDE_REJECT reason=state_lock_contention count=%u caller_ok=1 target_ok=UNKNOWN stack_ok=UNKNOWN source_layout_ok=UNKNOWN lifecycle_ok=UNKNOWN elapsed_ok=UNKNOWN scope=caller_only_unresolved",lockMisses);
+ for(unsigned n=0;n<capacity;++n){auto t=tail.load(std::memory_order_relaxed);if(t==head.load(std::memory_order_acquire))break;auto r=records[t%capacity];tail.store(t+1,std::memory_order_release);
+  if(r.kind==10)writeLog("COMMON_OVERRIDE_REJECT session=%llu elapsed=%.6f reason=%s caller_ok=%u target_ok=%u stack_ok=%u source_layout_ok=%u lifecycle_ok=%u elapsed_ok=%u",(unsigned long long)r.session,r.elapsed,r.reason,unsigned(bool(r.gateMask&1)),unsigned(bool(r.gateMask&2)),unsigned(bool(r.gateMask&4)),unsigned(bool(r.gateMask&8)),unsigned(bool(r.gateMask&16)),unsigned(bool(r.gateMask&32)));
   if(r.kind==7)writeLog("ORIENTATION_RETENTION_PASS=1 session=%llu held_ms=%llu held_updates=%u game_verification=requires_accepted_build_runtime_log",(unsigned long long)r.session,(unsigned long long)r.heldMs,r.heldUpdates);
   if(r.kind==1){
-   if(r.copy){
-    writeLog("RESET_COPY_SOURCE_ENTRY session=%llu elapsed=%.6f caller_rva=0x%llx thread_id=%u RCX=0x%llx RDX=0x%llx R8=0x%llx R9=0x%llx RSP=0x%llx stack_limit=0x%llx stack_base=0x%llx source_is_stack_local=1 layout_valid=1 source_right=(%.9g,%.9g,%.9g) source_up=(%.9g,%.9g,%.9g) source_forward=(%.9g,%.9g,%.9g) source_position=(%.9g,%.9g,%.9g) source_up_dot_world=%.9g source_up_dot_surface=%.9g",(unsigned long long)r.session,r.elapsed,(unsigned long long)r.caller,r.nativeThread,(unsigned long long)r.rcx,(unsigned long long)r.source,(unsigned long long)r.r8,(unsigned long long)r.r9,(unsigned long long)r.rsp,(unsigned long long)r.stackLimit,(unsigned long long)r.stackBase,r.original.v[0],r.original.v[1],r.original.v[2],r.original.v[4],r.original.v[5],r.original.v[6],r.original.v[8],r.original.v[9],r.original.v[10],r.original.v[12],r.original.v[13],r.original.v[14],r.original.v[5],ws::dot({r.original.v[4],r.original.v[5],r.original.v[6]},r.n));
-    writeLog("RESET_COPY_SOURCE_OVERRIDE session=%llu elapsed=%.6f source_ptr=0x%llx original_up=(%.9g,%.9g,%.9g) applied_up=(%.9g,%.9g,%.9g) applied_up_dot_surface=%.9g position_unchanged=1 caller_verified=1 target_verified=1 source_stack_verified=1 override_commit_qpc=%llu native_update=%llu",(unsigned long long)r.session,r.elapsed,(unsigned long long)r.source,r.original.v[4],r.original.v[5],r.original.v[6],r.applied.v[4],r.applied.v[5],r.applied.v[6],ws::dot({r.applied.v[4],r.applied.v[5],r.applied.v[6]},r.n),(unsigned long long)r.commitQpc,(unsigned long long)r.nativeUpdate);
-   }else{
     writeLog("COMMON_SOURCE_OVERRIDE session=%llu elapsed=%.6f caller_rva=0x%llx target_transform=0x%llx source_ptr=0x%llx source_up_before=(%.9g,%.9g,%.9g) source_up_after=(%.9g,%.9g,%.9g) late_worldup_source_detected=%u position_unchanged=1",(unsigned long long)r.session,r.elapsed,(unsigned long long)r.caller,(unsigned long long)r.rcx,(unsigned long long)r.source,r.original.v[4],r.original.v[5],r.original.v[6],r.applied.v[4],r.applied.v[5],r.applied.v[6],unsigned(r.late));
     if(r.late)writeLog("LATE_COMMON_WORLDUP_OVERRIDE=1 session=%llu native_update=%llu reason=repeated_native_update_worldup_source",(unsigned long long)r.session,(unsigned long long)r.nativeUpdate);
-   }
   }
   if(r.kind==1&&r.writes==1)writeLog("PREARM_STATUS session=%llu elapsed=%.6f primary_thread=%u DR0_installed=%u DR1_installed=%u trace_already_armed_before_override=%u first_override=1",(unsigned long long)r.session,r.elapsed,r.nativeThread,unsigned(r.prearmed),unsigned(r.prearmed),unsigned(r.prearmed));
   if(r.kind==1&&!r.copy)writeLog("NATIVE_SOURCE_OVERRIDE session=%llu generation=%llu native_ms=%llu native_update=%llu elapsed=%.6f caller_rva=0x%llx source_ptr=0x%llx original_right=(%.9g,%.9g,%.9g) original_up=(%.9g,%.9g,%.9g) original_forward=(%.9g,%.9g,%.9g) target_right=(%.9g,%.9g,%.9g) target_up=(%.9g,%.9g,%.9g) target_forward=(%.9g,%.9g,%.9g) applied_right=(%.9g,%.9g,%.9g) applied_up=(%.9g,%.9g,%.9g) applied_forward=(%.9g,%.9g,%.9g) t=%.6f position_unchanged=%u source_is_stack_local=%u direct_actor_transform_write=0 write_index=%u override_commit_qpc=%llu",static_cast<unsigned long long>(r.session),static_cast<unsigned long long>(r.generation),static_cast<unsigned long long>(r.ms),static_cast<unsigned long long>(r.nativeUpdate),r.elapsed,static_cast<unsigned long long>(r.caller),static_cast<unsigned long long>(r.source),r.original.v[0],r.original.v[1],r.original.v[2],r.original.v[4],r.original.v[5],r.original.v[6],r.original.v[8],r.original.v[9],r.original.v[10],r.target.right.x,r.target.right.y,r.target.right.z,r.target.up.x,r.target.up.y,r.target.up.z,r.target.forward.x,r.target.forward.y,r.target.forward.z,r.applied.v[0],r.applied.v[1],r.applied.v[2],r.applied.v[4],r.applied.v[5],r.applied.v[6],r.applied.v[8],r.applied.v[9],r.applied.v[10],r.t,unsigned(r.positionSame),unsigned(r.stack),r.writes,static_cast<unsigned long long>(r.commitQpc));

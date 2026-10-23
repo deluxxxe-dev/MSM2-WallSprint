@@ -1,29 +1,31 @@
-# WallSprint v0.1b8 — Dual-Source Orientation Ownership
+# WallSprint v0.1b9 — Reset-Source Layout Characterization
 
-Package **0.1.17**。二つの確認済み WallRun source 経路へ同じ補間姿勢を渡す、orientation-only 版です。**b8 の実機保持は未確認**。adhesion / movement / animation / camera / physics は追加しません。
+Package **0.1.18**。Path B は読み取り専用、Path A の姿勢補間は比較用です。**実機のソース形式・保持成功は未確認**。この版の目的はリセット元の特定で、見た目の変化は必須ではありません。
 
-## 導入
+## ダウンロード・導入
 
-ゲームを完全に終了し、古い WallSprint を無効化。**WallSprint_v0.1b8_dual_source_ownership.zip** を展開し、中の **WallSprint.script は解凍せず** Overstrike へ追加、Install mods。従来の Script support と `-scripts` で起動します。別 SDK・参考 MOD は不要です。
+配布ファイル: **WallSprint_v0.1b9_path_b_layout.zip**。チャットの直接ダウンロードリンクから取得できます。ゲームを完全終了し古い WallSprint を無効化。ZIP を展開し、中の **WallSprint.script は解凍せず** Overstrike に追加して Install mods。従来の Script support と `-scripts` で起動します。配布 INI の変更は不要です。
 
-対象は Spider-Man2.exe **2.810.0.0**、SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`。別 build、未認証 writer/caller、未知 source layout は fail closed。配布 INI の変更は不要。
+対象は Spider-Man2.exe **2.810.0.0**、SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`。別 build や認証不一致では停止します。
 
-## A / E テスト
+## 今回の A / E テスト
 
-地上で約2秒静止後、現在の Control A の平らな壁で左→右の横 WallRun を1回、約1.5秒。離脱して地上で約2秒静止し、同じ既知の斜め Face E で左→右を1回、約2秒。その後ゲームを終了。壁の長さに合わせて構いません。Crawl・マーカーキーは不要です。
+1. 地上で約2秒静止し、Control A の壁で左→右の横 WallRun を1回、約1.5秒。
+2. 離脱して地上で約2秒静止し、同じ既知の斜め Face E で左→右を1回、約2秒。
+3. ゲームを終了。**A/E の session 対応**、クラッシュ・Position 異常の有無を添えて、通常どおり ChatGPT にログを送ってください。Crawl・マーカー操作は不要です。
 
-録画は可能なら添付し、**未加工の logs/WallSprint.log と明示した A/E の session 対応**を提出してください。runtime log が保持判定の基準です。クラッシュ、Position 異常、姿勢が戻るタイミングも報告してください。
+起動時に `RESET_COPY_HOOK admitted=1 installed=1`、`DUAL_SOURCE_ADMISSION admitted=1`、`PATH_B_LAYOUT_CONFIG ... path_b_override=0 ... path_b_characterization_active=1` を確認します。診断窓は約0.60〜1.50秒。未知の Path B layout で Path A 全体を停止しません。
 
-成功すれば壁に対して姿勢が保持され、world-up のカメラに対して横向きに見える可能性があります。Animation が不自然でもこの段階では許容します。見た目だけで保持成功と判断しません。
+## 確認する記録
 
-## ログと停止
+`RESET_COPY_LAYOUT_ENTRY` の raw128 と RCX/RDX/R8/R9/RSP、stack bounds、`rdx_minus_rsp`、`rdx_inside_stack_bounds`、`expected_rsp_relation_match` を分けて確認します。通常の行列とは仮定しません。Path B の書き込みは常に0です。
 
-起動時に `RESET_COPY_HOOK admitted=1 installed=1` と `DUAL_SOURCE_ADMISSION admitted=1 dual_source_required=1 copy_hook_authenticated=1` が必要です。第二 writer は元444bytesの SHA / runtime boundary / exact caller を認証してから hook します。
+Path A の `COMMON_SOURCE_OVERRIDE`、遅い未変更呼び出しの `COMMON_OVERRIDE_REJECT`（各 admission 判定付き）、`PATH_B_ENTRY_LINK` と hardware store 記録が比較対象です。prearm未成立・drop・イベント0件は成功扱いにしません。保持成功や吸着の許可は出しません。
 
-`COMMON_SOURCE_OVERRIDE`、`LATE_COMMON_WORLDUP_OVERRIDE=1`、`RESET_COPY_SOURCE_ENTRY`、`RESET_COPY_SOURCE_OVERRIDE` を確認。第二 source はその関数自身の raw entry と stack/layout を検証し、orientation48bytesだけ変更します。`position_unchanged=1` が必要です。拒否された entry は raw args / stack bounds と理由を残し、書き込みません。
+起動時の `PATH_B_FUNCTION` / `PATH_B_CODE` は、フック前の caller128bytes / writer444bytes を解析するための私的記録です。**生ログ・完全なゲーム関数を公開 GitHub や配布 ZIP に入れないでください**。追加解析が必要な範囲はこの起動記録と、A/E の elapsed0.60〜1.50にある `RESET_COPY_LAYOUT_ENTRY` / `PATH_B_ENTRY_LINK` / `ORIENTATION_WRITER_EVENT` / `ORIENTATION_WRITER_REGS` です。ChatGPT から Codex へは派生結果を `analysis/V01B9_RUNTIME_RESULT.md` で引き継げます。
 
-補間完了後の `ORIENTATION_RETENTION_PASS=1`（held_ms>=300 または held_updates>=20）が主ゲートです。同一 update の複数呼び出しを20回と数えません。A/E 両方で保持し、未知 reset・クラッシュ・Position 異常がないことを確認します。後の `NEW_RESET_AFTER_DUAL_OVERRIDE` や sampled retention loss は未解決として提出してください。
+**F8 は再起動まで OFF、F9 は script 停止**。再試験はゲームを完全再起動します。direct Actor/Position、adhesion/movement/animation/camera/physics は追加していません。
 
-primary thread の監視は約0.60〜1.50秒で、同じ Up の繰り返しを省略します。`PREARM_STATUS first_override=1` の prearm=0、dropped、0件も加工せず提出。watch の期限/coverage外を「未知 writer なし」とは判断しません。
+## 保守者のオフライン解析
 
-**F8 は source と診断を再起動まで OFF、F9 は script 停止**。再試験はゲームを完全に再起動してください。reset writer の NOP/skip、direct Actor/Position 書き込み、吸着・移動の修正は行いません。
+Capstone5.0.6 の Python で `tools/review_path_b_layout.py A.log --label A --output A.json`、続いて `tools/review_path_b_layout.py E.log --label E --peer A.json --output E.json`。元のゲームコードを出力へコピーしません。対応オフセット・instruction RVA・スコアは候補としてレビューし、未確定の計算やポインタは UNKNOWN のまま残します。出力から書き込み許可を自動付与する機能はありません。

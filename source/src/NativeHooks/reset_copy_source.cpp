@@ -3,6 +3,7 @@
 #include <bcrypt.h>
 #include <MinHook.h>
 #include <array>
+#include <algorithm>
 #include <atomic>
 #include <cstring>
 #include "NativeHooks/reset_copy_source.hpp"
@@ -39,13 +40,18 @@ bool authenticateOriginal(std::size_t imageSize){
  // an actual direct CALL to this writer, never infer an entry-RSP offset from a
  // post-prologue hardware snapshot. Unknown call encodings fail closed.
  f=RtlLookupFunctionEntry(base+returnRva-1,&image,nullptr);
- if(!f||image!=base||f->EndAddress<=f->BeginAddress||f->EndAddress>imageSize||f->BeginAddress>returnRva-5||f->EndAddress<returnRva||f->EndAddress-f->BeginAddress>callerOriginal.size())return false;
+ if(!f||image!=base||f->BeginAddress!=0x2cfc7d0||f->EndAddress!=0x2cfc850||f->EndAddress>imageSize)return false;
  callerBegin=base+f->BeginAddress;callerSize=f->EndAddress-f->BeginAddress;
  unsigned char call[5]{};std::int32_t displacement{};
  if(!msm2::readMemory(base+returnRva-5,call,5)||call[0]!=0xe8)return false;
  std::memcpy(&displacement,call+1,4);
  if(std::int64_t(base+returnRva)+displacement!=std::int64_t(target))return false;
  return msm2::readMemory(callerBegin,callerOriginal.data(),callerSize);
+}
+void logOriginal(const char* role,std::uintptr_t begin,const unsigned char* bytes,unsigned size){
+ char hash[65]{};if(!digest(bytes,size,hash))return;
+ msm2::writeLog("PATH_B_FUNCTION role=%s begin_rva=0x%llx size=%u sha256=%s authenticated=1 original_before_hook=1 image_base=0x%llx private_runtime_capture=1",role,(unsigned long long)(begin-base),size,hash,(unsigned long long)base);
+ constexpr char hex[]="0123456789abcdef";for(unsigned offset=0;offset<size;offset+=64){unsigned count=std::min(64u,size-offset);char text[129]{};for(unsigned i=0;i<count;++i){text[2*i]=hex[bytes[offset+i]>>4];text[2*i+1]=hex[bytes[offset+i]&15];}msm2::writeLog("PATH_B_CODE role=%s offset=0x%x bytes=%s private_do_not_distribute=1",role,offset,text);}
 }
 struct Frame {std::uintptr_t r11,r10,r9,r8,rdx,rcx,rax,flags,ret;};
 static_assert(offsetof(Frame,rcx)==40&&offsetof(Frame,ret)==64);
@@ -63,6 +69,7 @@ void configure(bool verified,std::uintptr_t image,std::size_t size){
  if(attempted)return;
  attempted=true;base=image;target=base+writerRva;
  if(!verified||!authenticateOriginal(size)){writeLog("RESET_COPY_HOOK admitted=0 installed=0 reason=exact_build_boundary_original_hash_or_direct_caller_failed");return;}
+ logOriginal("writer",target,original.data(),writerSize);logOriginal("caller",callerBegin,callerOriginal.data(),callerSize);
  HMODULE pin=nullptr;if(!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_PIN,reinterpret_cast<LPCWSTR>(&configure),&pin))return;
  auto init=MH_Initialize();if(init!=MH_OK&&init!=MH_ERROR_ALREADY_INITIALIZED)return;
  if(MH_CreateHook(reinterpret_cast<void*>(target),reinterpret_cast<void*>(&ws_reset_copy_thunk),&ws_reset_copy_original)!=MH_OK)return;

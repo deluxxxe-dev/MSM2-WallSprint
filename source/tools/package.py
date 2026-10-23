@@ -20,7 +20,7 @@ with zipfile.ZipFile(package,'w',zipfile.ZIP_DEFLATED) as z:
  for name,data in [('info.json',(root/'mod/info.json').read_bytes()),('WallSprint.ini',(root/'mod/WallSprint.ini').read_bytes()),('WallSprint.dll',binary)]:
   entry=zipfile.ZipInfo(name,(2026,10,22,0,0,0));entry.compress_type=zipfile.ZIP_DEFLATED;z.writestr(entry,data)
 with zipfile.ZipFile(package) as z:assert z.testzip() is None and z.read('WallSprint.dll')==binary and set(z.namelist())=={'info.json','WallSprint.ini','WallSprint.dll'}
-required=['V01B5_RESULT.md','IMMEDIATE_RESET_TRACE.md','RESET_WRITER_CANDIDATES.md','V01B6_GATE.md','V01B6_RESULT.md','PREARMED_RESET_TRACE.md','COMMON_WRITER_RESET_CALLS.md','RESET_WRITER_VERIFICATION.md','V01B7_GATE.md','V01B7_RUNTIME_RESULT.md','V01B7_RESULT.md','RESET_COPY_WRITER_ANALYSIS.md','DUAL_SOURCE_OWNERSHIP.md','V01B8_GATE.md','V01B5_RESET_SUMMARY.json','V01B4_EVIDENCE_SUMMARY.json','sdk_sources.json']
+required=['V01B8_RUNTIME_RESULT.md', 'V01B8_RESULT.md', 'PATH_B_CALLER_DECODE.md', 'PATH_B_SOURCE_LAYOUT.md', 'PATH_B_STORE_MAP.md', 'V01B9_GATE.md']+['V01B5_RESULT.md','IMMEDIATE_RESET_TRACE.md','RESET_WRITER_CANDIDATES.md','V01B6_GATE.md','V01B6_RESULT.md','PREARMED_RESET_TRACE.md','COMMON_WRITER_RESET_CALLS.md','RESET_WRITER_VERIFICATION.md','V01B7_GATE.md','V01B7_RUNTIME_RESULT.md','V01B7_RESULT.md','RESET_COPY_WRITER_ANALYSIS.md','DUAL_SOURCE_OWNERSHIP.md','V01B8_GATE.md','V01B5_RESET_SUMMARY.json','V01B4_EVIDENCE_SUMMARY.json','sdk_sources.json']
 # Source is complete for runtime/build. Private game captures are deliberately excluded.
 source=out/'source';source.mkdir(exist_ok=True)
 for directory in ['src','include','tools','mod','vendor']:
@@ -70,6 +70,19 @@ manifest={
  'limitations':['b7 reset identity accepted from checked-in runtime summary; actual b8 source layout/ownership pending','primary-thread-only hardware coverage; all-caller entries are bounded','helper scheduling can miss prearm; first_override status=1 is required','native Init+1.10 deadline; OS scheduling may delay physical cleanup','Old Up is previous observation, not atomic instruction-before','unknown writer ABI/source remains unverified; post-store RIP/5ms observed sequence anchor need anchored offline decode','short already-admitted source commit may finish concurrently with F8','source rollback failure is reported without directActor repair','explicit A/E mapping/video/no crash/Position review required'],
  'source_directory':'source'
 }
+# b9 supersedes historical dual-source write claims above.
+manifest.update({
+ 'path_b_override':False,'path_b_characterization_active':True,
+ 'source_range':'Path A ONLY: RDX+[0x00,0x30), current-thread verified caller-local affine source',
+ 'overwrite_observation':'Path A reference only; Path B never commits; no ownership PASS authorized',
+ 'v01b8_game_verified':False,'v01b8_gate':'MEASURED_LAYOUT_REJECTION_ZERO_B_WRITES_RETENTION_FAILED',
+ 'v01b9_gate':'PENDING_ORIGINAL_INSTRUCTION_MAP_AND_REAL_A_E_FIELD_SEMANTICS',
+ 'PATH_B_FIELDS_VERIFIED':False,'PATH_B_WRITE_PERMISSION':False,
+ 'validation':'Windows warnings-as-errors, ASan/UBSan portable, Wine ABI/MinHook/source/read-only B/hardware-reset-continuation; conservative offline decode negative tests. Synthetic tests never game evidence.',
+ 'limitations':['Original caller/writer instructions not supplied by runtime summary; exact static field map pending private capture','Real b9 A/E source offsets and semantics pending','Unsupported computations/nested pointers/spills remain unknown','Hardware primary-thread-only and bounded; missing events do not prove absence','Before Up is previous observation, not atomic pre-instruction','Path A reference may be reset by unmodified Path B; retention is not expected or authorized']})
+manifest['reset_copy_source'].update({'source_provenance':'raw128 root observation; independent pointer-in-stack/span/RSP+0x28/readability facts; NO matrix assumption','source_write_range':'NONE','shared_transition':False,'position_bytes_unchanged':'all source bytes unchanged','path_b_override':False,'original_capture':'private PATH_B_FUNCTION/PATH_B_CODE before hook; never redistributed'})
+manifest['prearmed_reset_trace'].update({'continue_after_first_reset':True,'path_b_write':False,'entry_link':'own B entry/current-thread serial, session/generation/owner/target/caller/QPC<=5ms; anchored original decode required'})
+manifest['path_b_layout']={'bytes':128,'max_sessions':8,'entries_per_session':128,'ring_records':256,'elapsed_window':[.60,1.50],'pointer_dereferences':0,'matrix_assumption':False,'unknown_layout_aborts_path_a':False}
 (out/'BUILD_MANIFEST.json').write_text(json.dumps(manifest,indent=2)+'\n')
-(root/'logs/package_check.log').write_text(f'PASS: {label}/{version} DLL/version/README/INI; native-source-only ON, all direct/position/other writes OFF; PE32+/2exports/systemimports/noWPM; CRC/hash/source/licenses; no private game captures/reference binaries/full dumps; real b5 source-to-Actor verified/retention failed; b8 dual-source game retention pending\n')
+(root/'logs/package_check.log').write_text(f'PASS: {label}/{version} DLL/version/README/INI; native-source-only ON, all direct/position/other writes OFF; PE32+/2exports/systemimports/noWPM; CRC/hash/source/licenses; no private game captures/reference binaries/full dumps; real b5 source-to-Actor verified/retention failed; b9 Path B read-only; original static map and actual A/E field semantics pending\n')
 print('PASS:',package)

@@ -114,7 +114,7 @@ unsigned markerEvents(ws::diag::MarkerKeys& keys){
  return keys.update(foreground(),numbers);
 }
 void run(){
- openLog();msm2::writeLog("WallSprint %s package_version=%s Dual-Source Orientation Ownership; scope=two_exact_caller_local_sources_and_bounded_primary_Up_verification hook_mode=build_scoped_verified_lifecycle",ws::versionLabel,ws::packageVersion);
+ openLog();msm2::writeLog("WallSprint %s package_version=%s Reset-Source Layout Characterization; scope=path_b_read_only_raw128_and_path_a_reference path_b_override=0 hook_mode=build_scoped_verified_lifecycle",ws::versionLabel,ws::packageVersion);
  msm2::writeLog("marker_keys=1,2,3,4,5,6 modifier=NONE top_row_digits=true edge_triggered=true");
  bool targetConfirmed=buildIdentity();auto config=settings();bool ready=msm2::initialize(targetConfirmed,config.audit,config.hooks.enabled);
  msm2::writer::configure(config.planar,targetConfirmed&&ready);

@@ -4,6 +4,7 @@
 namespace ws::interop {
 struct StackRange {std::uintptr_t limit{},base{};};
 StackRange currentStack() noexcept;
+bool stackLocation(std::uintptr_t source,std::uintptr_t originalRsp,StackRange) noexcept;
 bool stackMatrix(std::uintptr_t source,std::uintptr_t originalRsp,StackRange stack,source_math::Matrix& out) noexcept;
 struct WriteResult {bool success{},positionUnchanged{},rolledBack{},rollbackFailed{};std::uint64_t commitQpc{};};
 bool callerStackMatrix(std::uintptr_t source,std::uintptr_t originalRsp,StackRange stack,source_math::Matrix& out) noexcept;

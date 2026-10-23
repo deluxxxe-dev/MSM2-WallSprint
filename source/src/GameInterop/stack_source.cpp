@@ -15,10 +15,11 @@ void store(void* raw){auto* s=static_cast<Store*>(raw);std::memcpy(reinterpret_c
 }
 namespace ws::interop {
 StackRange currentStack() noexcept{StackRange r;__asm__ volatile("movq %%gs:0x10,%0":"=r"(r.limit));__asm__ volatile("movq %%gs:0x08,%0":"=r"(r.base));return r;}
+bool stackLocation(std::uintptr_t p,std::uintptr_t rsp,StackRange range) noexcept {
+ return p&&p%16==0&&p<=UINTPTR_MAX-64&&rsp<=UINTPTR_MAX-0x28&&p==rsp+0x28&&range.limit<range.base&&rsp>=range.limit&&p>=range.limit&&p+64<=range.base&&writable(p);
+}
 bool stackMatrix(std::uintptr_t p,std::uintptr_t rsp,StackRange range,source_math::Matrix& out) noexcept {
- // Exact caller uses source=entryWriterRSP+0x28. Do not accept arbitrary live stack data.
- if(p%16||!p||p>UINTPTR_MAX-64||rsp>UINTPTR_MAX-0x28||p!=rsp+0x28||range.limit>=range.base||rsp<range.limit||p<range.limit||p+64>range.base||!writable(p))return false;
- return msm2::readMemory(p,&out,64)&&source_math::valid(out);
+ return stackLocation(p,rsp,range)&&msm2::readMemory(p,&out,64)&&source_math::valid(out);
 }
 bool callerStackMatrix(std::uintptr_t p,std::uintptr_t rsp,StackRange range,source_math::Matrix& out) noexcept {
  // Authenticated exact direct caller + above entry return/shadow space, within

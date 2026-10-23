@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.17",
-  "description": "WallSprint v0.1b8 Dual-Source Orientation Ownership. Two exact authenticated caller-local orientation sources share one per-session SurfaceFrame transition. No direct Actor/Position/adhesion/movement/camera/animation/physics writes.",
+  "version": "0.1.18",
+  "description": "WallSprint v0.1b9 Reset-Source Layout Characterization. Path B is read-only; Path A supplies the reference interpolation. Exact-build diagnostics only. No direct Actor/Position/adhesion/movement/camera/animation/physics writes.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

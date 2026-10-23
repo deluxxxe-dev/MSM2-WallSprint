@@ -33,3 +33,5 @@ bash tools/test_native_source.sh
 bash tools/test_reset_trace.sh
 
 bash tools/test_dual_source.sh
+
+/workspace/toolchains/analysis-python/bin/python tools/test_path_b_layout.py 2>&1 | tee logs/path_b_layout_tests.log

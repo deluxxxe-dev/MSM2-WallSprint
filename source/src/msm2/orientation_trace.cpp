@@ -26,16 +26,17 @@ struct Window {
 };
 struct Lease {
  std::atomic<DWORD> tid{0};unsigned window{};HANDLE handle{};bool installed{},suspended{};
- Entry entry{};DWORD64 old0{},old1{},old6{},old7{},up{};
+ Entry entry{};path_b::Entry copyEntry{};DWORD64 old0{},old1{},old6{},old7{},up{};
 };
 struct Event {
  unsigned window{},slotMask{};DWORD thread{};double timestamp{};DWORD64 ripAfter{},rsp{},callers[2]{},gpr[16]{};
- Entry entry{};double firstSurface{};bool resetCandidate{},dualCommitted{},sequenceCandidate{};double surfaceAnchorTime{};ws::Vec3 surfaceAnchor{};std::uint64_t commitQpc{};
+ Entry entry{};path_b::Entry copyEntry{};double firstSurface{};bool resetCandidate{},dualCommitted{},sequenceCandidate{};double surfaceAnchorTime{};ws::Vec3 surfaceAnchor{};std::uint64_t commitQpc{};
  float oldUp[3]{},newUp[3]{};unsigned char xmm[256]{};bool read{},callerValid{},xmmValid{};
 };
 struct CommonRecord {unsigned window{};Entry entry{};bool status{},armed{};double elapsed{};};
 std::array<CommonRecord,1024> commonRecords;std::atomic<unsigned> commonHead{0},commonTail{0};
 std::atomic<int> publishedReset{-1};
+thread_local std::uint64_t currentCopyEntry{};
 bool externalReset{};msm2::reset_trace::Request nextReset{};std::uint64_t entrySerial{};
 trace::Config config;bool admitted{},haveDeinit{},wasActive{};std::atomic<bool> killed{true};
 std::uintptr_t gameBase{};std::size_t gameSize{};LARGE_INTEGER frequency{};
@@ -95,7 +96,7 @@ LONG CALLBACK handler(EXCEPTION_POINTERS* e){
      r.resetCandidate=valid&&(w.state!=4||w.lastOverride.load()!=0)&&ws::dot(b,w.normal)>=.5f&&a.y>=.98f;
      r.sequenceCandidate=w.reset.verifyDual&&valid&&a.y>=.98f&&w.surfaceAnchorTime>0&&time-w.surfaceAnchorTime<=5.&&w.lastOverride.load()!=0;
      r.resetCandidate|=r.sequenceCandidate;r.surfaceAnchor=w.surfaceAnchor;r.surfaceAnchorTime=w.surfaceAnchorTime;
-     r.firstSurface=w.firstSurface;r.entry=lease->entry;r.commitQpc=w.lastOverride.load();r.dualCommitted=w.commonCommit.load()&&w.copyCommit.load();
+     r.firstSurface=w.firstSurface;r.entry=lease->entry;if(currentCopyEntry&&currentCopyEntry==lease->copyEntry.id)r.copyEntry=lease->copyEntry;r.commitQpc=w.lastOverride.load();r.dualCommitted=w.commonCommit.load()&&w.copyCommit.load();
     }
    }
    bool unchanged=w.reset.verifyDual&&r.read&&!std::memcmp(r.oldUp,r.newUp,12);
@@ -103,7 +104,7 @@ LONG CALLBACK handler(EXCEPTION_POINTERS* e){
    ++w.hits;
    Unwind u{};u.c=c;if(ws_guarded_call(unwind,&u)&&u.count){r.callerValid=true;std::memcpy(r.callers,u.callers,sizeof(r.callers));}
    events[h%ringCap]=r;head.store(h+1,std::memory_order_release);
-   if(r.resetCandidate){w.capture=false;restore(c,*lease);}
+   if(r.resetCandidate&&!w.reset.characterize){w.capture=false;restore(c,*lease);}
    }
   }
   eventLock.clear(std::memory_order_release);
@@ -237,6 +238,12 @@ void drainLogs(){
    DWORD64 image=0;auto* f=RtlLookupFunctionEntry(r.ripAfter-1,&image,nullptr);
    auto functionRva=f&&image==gameBase?f->BeginAddress:0u;
    const auto& entry=r.entry;
+   const auto& copyEntry=r.copyEntry;
+   if(copyEntry.id&&functionRva==0x2cfc3c0){
+    bool linked=copyEntry.session==w.session&&copyEntry.generation==w.reset.generation&&copyEntry.owner==w.owner&&copyEntry.thread==r.thread&&copyEntry.rcx==w.transform&&r.callerValid&&r.callers[0]==gameBase+copyEntry.caller&&copyEntry.qpc<=std::uint64_t(r.timestamp*double(frequency.QuadPart)/1000.)&&r.timestamp-1000.*double(copyEntry.qpc)/double(frequency.QuadPart)<=5.;
+    writeLog("PATH_B_ENTRY_LINK session=%llu qpc_ms=%.6f entry_id=%llu entry_qpc=%llu thread_id=%lu writer_rva=0x2cfc3c0 caller_rva=0x%llx target=0x%llx entry_link_checks=%u static_store_proof=0 requires_anchored_decode=1",(unsigned long long)w.session,r.timestamp,(unsigned long long)copyEntry.id,(unsigned long long)copyEntry.qpc,r.thread,(unsigned long long)copyEntry.caller,(unsigned long long)copyEntry.rcx,unsigned(linked));
+   }
+
    bool correlated=entry.id&&entry.nativeUpdate&&entry.generation==w.reset.generation&&entry.owner==w.owner&&entry.tid==r.thread&&entry.qpc<=r.timestamp&&entry.args[0]==w.transform&&r.callerValid&&entry.caller==r.callers[0]&&r.gpr[6]==entry.args[1]&&functionRva==0x2cfc580;
    writeLog("RESET_TRACE_EVENT session=%llu native_update=%llu relative_us_from_override=%.3f override_commit_qpc=%llu qpc_ms=%.6f rip=0x%llx writer_function_rva=0x%x caller=0x%llx caller_rva=0x%llx caller2=0x%llx caller2_rva=0x%llx thread_id=%lu up_before=(%.9g,%.9g,%.9g) up_after=(%.9g,%.9g,%.9g) dot_before_surface=%.9g dot_after_surface=%.9g dot_before_world=%.9g dot_after_world=%.9g N398=(%.9g,%.9g,%.9g) transform=0x%llx target_verified_by_watch=1 read_valid=%u old_value_semantics=previous_observation_NOT_atomic_instruction_before entry_id=%llu entry_correlated=%u first_surface_observed_qpc_ms=%.6f first_surface_semantics=first_watched_or_arm_snapshot_NOT_exact_first_write dropped=%u",
     (unsigned long long)w.session,(unsigned long long)(correlated?entry.nativeUpdate:0),(r.commitQpc?(r.timestamp-commit)*1000.:-1.),(unsigned long long)r.commitQpc,r.timestamp,(unsigned long long)r.ripAfter,functionRva,(unsigned long long)r.callers[0],(unsigned long long)(r.callers[0]>=gameBase?r.callers[0]-gameBase:0),(unsigned long long)r.callers[1],(unsigned long long)(r.callers[1]>=gameBase?r.callers[1]-gameBase:0),r.thread,before.x,before.y,before.z,after.x,after.y,after.z,vectors?ws::dot(b,w.normal):0,vectors?ws::dot(a,w.normal):0,vectors?b.y:0,vectors?a.y:0,w.normal.x,w.normal.y,w.normal.z,(unsigned long long)w.transform,unsigned(r.read),(unsigned long long)entry.id,unsigned(correlated),r.firstSurface,w.drops.load());
@@ -305,6 +312,15 @@ bool resetCommitted(const reset_trace::Request& r) noexcept {
  if(r.resetCopy)w.copyCommit=r.commitQpc;else w.commonCommit=r.commitQpc;
  auto h=commonHead.load();if(h-commonTail.load()<commonRecords.size()){CommonRecord record{};record.window=unsigned(index);record.status=true;record.armed=armed;record.elapsed=double(GetTickCount64()-w.reset.initMs)/1000.;commonRecords[h%commonRecords.size()]=record;commonHead.store(h+1,std::memory_order_release);}else{++w.drops;w.capture=false;}
  eventLock.clear(std::memory_order_release);return armed;
+}
+void beginResetCopyEntry() noexcept {currentCopyEntry=0;}
+void resetCopyEntry(const path_b::Entry& entry) noexcept {
+ if(killed.load())return;
+ auto index=publishedReset.load(std::memory_order_acquire);if(index<0)return;auto& w=windows[unsigned(index)];
+ if(!w.capture.load()||entry.session!=w.session||entry.generation!=w.reset.generation||entry.owner!=w.owner||entry.rcx!=w.transform||now()>=w.end)return;
+ if(eventLock.test_and_set(std::memory_order_acquire)){++w.drops;return;}
+ for(auto& l:leases)if(l.tid.load(std::memory_order_acquire)==entry.thread&&l.window==unsigned(index)){l.copyEntry=entry;currentCopyEntry=entry.id;break;}
+ eventLock.clear(std::memory_order_release);
 }
 void resetEntry(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t caller,bool overridden,std::uint64_t nativeUpdate,std::uint64_t generation,std::uintptr_t owner) noexcept {
  if(!externalReset||killed.load())return;

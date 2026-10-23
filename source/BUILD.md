@@ -1,3 +1,7 @@
+# v0.1b9 diagnostic update
+
+Current version0.1.18: Path B is read-only, Path A interpolation is a reference. See README_TEST.md and analysis/V01B9_GATE.md. Historical version claims below do not grant Path B layout/ownership proof. Build with tools/build_windows.sh; run tools/test.sh, tools/smoke_windows.sh, tools/test_hooks_windows.sh and tools/release.py. Original game captures stay private.
+
 # WallSprint v0.1b8 build — package0.1.17
 
 Use the existing checkout; isolated cloud tasks do not need an extra worktree. From `/workspace/WallSprint/source`:

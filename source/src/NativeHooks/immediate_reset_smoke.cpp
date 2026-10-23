@@ -35,8 +35,13 @@ __attribute__((noinline,noclone)) void otherWriter(float* target){
 __attribute__((noinline,noclone)) void sequentialWriter(float* target){
  auto* up=static_cast<volatile float*>(target+4);up[0]=0;__asm__ volatile("" ::: "memory");up[1]=1;__asm__ volatile("" ::: "memory");up[2]=0;__asm__ volatile("" ::: "memory");
 }
+static std::atomic<unsigned> entryAssociationTest{0};
 DWORD WINAPI writerThread(void*){
  while(WaitForSingleObject(go,INFINITE)==WAIT_OBJECT_0){if(finish.load())break;
+  if(auto stage=entryAssociationTest.load()){
+   msm2::trace::beginResetCopyEntry();
+   if(stage==1){msm2::path_b::Entry e{};e.id=1234;e.session=6;e.rcx=hero.transform;e.thread=GetCurrentThreadId();msm2::trace::resetCopyEntry(e);}
+  }
   if(prearmTest&&mode.load()==2){LARGE_INTEGER q{};QueryPerformanceCounter(&q);auto r=testRequest;r.commitQpc=q.QuadPart;r.overrideBeginQpc=q.QuadPart;msm2::reset_trace::committed(r);commonWriter(reinterpret_cast<float*>(hero.transform),tilted,0x1234,0x5678);}
   else if(prearmTest&&mode.load()==0){LARGE_INTEGER q{};QueryPerformanceCounter(&q);auto r=testRequest;r.resetCopy=true;r.commitQpc=r.overrideBeginQpc=q.QuadPart;msm2::reset_trace::committed(r);commonWriter(reinterpret_cast<float*>(hero.transform),world,0x1234,0x5678);}
   else if(prearmTest&&mode.load()==1){LARGE_INTEGER q{};QueryPerformanceCounter(&q);auto r=testRequest;r.resetCopy=true;r.commitQpc=r.overrideBeginQpc=q.QuadPart;msm2::reset_trace::committed(r);sequentialWriter(reinterpret_cast<float*>(hero.transform));}
@@ -114,11 +119,19 @@ int main(int argc,char** argv){
   puts("PASS: production async reset coordinator wake/identity/native gate + actual hardware event + stop/join/DR cleanup on owned synthetic memory; no game verification");return 0;
  }
  assert(msm2::trace::configureReset(true,base,nt->OptionalHeader.SizeOfImage));config.maxThreads=1;
- auto arm=[&](unsigned session){std::memcpy(memory,tilted,64);Snapshot snapshot{};assert(msm2::sample(snapshot));LARGE_INTEGER q{};QueryPerformanceCounter(&q);msm2::reset_trace::Request r{};r.session=session;r.nativeUpdate=76;r.commitQpc=q.QuadPart;r.hero=hero.hero;r.transform=hero.transform;r.thread=tid;r.normal={0,0,1};r.appliedUp={0,0,1};assert(msm2::trace::beginReset(r,snapshot));};
+ auto arm=[&](unsigned session,bool characterize=false){std::memcpy(memory,tilted,64);Snapshot snapshot{};assert(msm2::sample(snapshot));LARGE_INTEGER q{};QueryPerformanceCounter(&q);msm2::reset_trace::Request r{};r.session=session;r.characterize=characterize;r.nativeUpdate=76;r.commitQpc=q.QuadPart;r.hero=hero.hero;r.transform=hero.transform;r.thread=tid;r.normal={0,0,1};r.appliedUp={0,0,1};assert(msm2::trace::beginReset(r,snapshot));};
  arm(1);SetEvent(go);assert(WaitForSingleObject(done,1000)==WAIT_OBJECT_0);msm2::trace::pollReset(true);msm2::trace::drainLogs();assert(!activeLeases());assert(windows[0].hits==1);
  assert(output.find("RESET_WRITER_CANDIDATE session=1")!=std::string::npos);assert(output.find("R8=0x1234 R9=0x5678")!=std::string::npos);assert(output.find("source_up=(0,1,0)")!=std::string::npos);assert(output.find("native_update=0")!=std::string::npos); // unknown synthetic writer cannot inherit the trigger update
  assert(output.find("entry_correlated=0")!=std::string::npos);assert(output.find("RESET_WRITER_VERIFIED=1")==std::string::npos);
  auto restored=debug(thread);assert(restored.Dr0==original.Dr0&&restored.Dr1==original.Dr1&&(restored.Dr7&ownMask)==(original.Dr7&ownMask));
+ // b9: a reset is an observation, not an end to the bounded window.
+ arm(6,true);entryAssociationTest=1;auto eventIndex=head.load();SetEvent(go);assert(WaitForSingleObject(done,1000)==WAIT_OBJECT_0);
+ assert(windows[1].capture&&windows[1].hits==1);assert(events[eventIndex%ringCap].copyEntry.id==1234);
+ entryAssociationTest=2;eventIndex=head.load();
+ std::memcpy(memory,tilted,64);SetEvent(go);assert(WaitForSingleObject(done,1000)==WAIT_OBJECT_0);
+ assert(windows[1].capture&&windows[1].hits==2);assert(!events[eventIndex%ringCap].copyEntry.id);entryAssociationTest=0;
+ msm2::trace::pollReset(false);assert(!activeLeases());
+ puts("PASS: b9 characterization keeps hardware watch after first reset and captures second reset; cleanup restores debug registers");
  mode=1;arm(2);SetEvent(go);assert(WaitForSingleObject(done,1000)==WAIT_OBJECT_0);msm2::trace::pollReset(true);msm2::trace::drainLogs();assert(!activeLeases());assert(output.find("RESET_WRITER_CANDIDATE session=2")!=std::string::npos);
  // No reset: expires from source commit, not from setup completion.
  arm(3);Sleep(35);assert(!msm2::trace::pollReset(true));assert(!activeLeases());
