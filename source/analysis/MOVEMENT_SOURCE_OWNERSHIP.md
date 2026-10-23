@@ -21,3 +21,7 @@ After full interpolation, on distinct native updates and at least100ms between a
 ## Next decision
 
 No safe upstream movement vector is authenticated in this cloud task. Exact blocker: actual c11 writer/caller identities and corresponding bounded producer/source lineage have not yet been measured; complete Position W/control-flow/downstream effects also remain unresolved. Human c11 A/E logs locate that slice without direct Actor Position spam. C12 must authenticate an upstream displacement/velocity/direction/root-motion source or explicitly reject it before input is mapped into SurfaceFrame. C11 authorizes no minimal proof write, input rewrite, adhesion, gravity, animation or camera. Body lean/foot floating remain a later visual/contact pass.
+
+## Subsequent c11 real evidence / c12
+
+The c11 implementation-era pending statements above are superseded by V01C11_RUNTIME_RESULT.md: A/E orientation passed and writer0x2CFC900 with return0x351EEB0/caller2≈0x351A020 was measured. Path A full-row matches plus downstream writes do not prove exclusive effects. Source semantics and writable permission remain unknown. Current follow-up: MOVEMENT_SOURCE_LINEAGE.md and V01C12_GATE.md.

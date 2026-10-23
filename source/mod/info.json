@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.29",
-  "description": "WallSprint v0.1c11 Movement Path Ownership. c10 orientation unchanged; bounded read-only Position writer watch after Up cleanup/retention, SurfaceFrame translation diagnostics and conservative causality inspection. No Position/movement/input/adhesion injection.",
+  "version": "0.1.30",
+  "description": "WallSprint v0.1c12 Movement Source Lineage. Preserves c10/c11 orientation; read-only complete writer/callsite inspection, bounded source reconstruction and explicit caller/entry/W/exclusive-effect blockers. No Position, movement or input rewrite.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

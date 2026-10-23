@@ -23,3 +23,7 @@ Final summaries drain on the worker only after queued events/inflight handlers a
 VERIFIED SYNTHETIC: two independent owned Position writers, exact post-store Vec4 copy and later computed/overwriting/W-mismatch writer, anchored effective store decode, per-writer aggregation/cap, raw256 limit, foreign DR0 refusal/DR2 preservation, full debug-state restoration under timeout/cancel/F8, unchanged orientation/page protection. Production c10 policy and actual MinHook A/B run with real Position watch on cardinal/diagonal targets through normal lifecycle; no source Position write.
 
 ACTUAL GAME: c11 Position writers/caller chain are NOT YET CAPTURED here. The human A/E log is required. No game identity is inferred from an owned fixture. If watch capacity/identity/freshness prevents capture, ship/report the exact rejection rather than widening instrumentation. Never infer exclusive effects or absence of downstream writers from a short, incomplete-coverage window.
+
+## Subsequent c11 real evidence / c12
+
+The c11 implementation-era pending statements above are superseded by V01C11_RUNTIME_RESULT.md: A/E orientation passed and writer0x2CFC900 with return0x351EEB0/caller2≈0x351A020 was measured. Path A full-row matches plus downstream writes do not prove exclusive effects. Source semantics and writable permission remain unknown. Current follow-up: MOVEMENT_SOURCE_LINEAGE.md and V01C12_GATE.md.

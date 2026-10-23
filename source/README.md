@@ -1,3 +1,5 @@
-# WallSprint v0.1c11 — movement path ownership diagnostics
+# WallSprint
 
-Package0.1.29 preserves c10 source orientation and adds a bounded read-only Position writer watch after original Up cleanup/retention, per-writer attribution, conservative Position causality inspection and SurfaceFrame finite differences. No Position/movement/input/adhesion injection. No safe upstream movement source is admitted; actual c11 A/E logs are pending. Deferred body lean/foot floating is not changed. See README_TEST.md and analysis/V01C11_GATE.md. Build tools/build_windows.sh; run tools/test.sh, tools/smoke_windows.sh, tools/test_hooks_windows.sh; tools/release.py packages complete source/licenses without private captures.
+v0.1c12 / package0.1.30: read-only movement source lineage diagnostics for the measured 0x351EEB0 -> 0x2CFC900 chain. C10/c11 Surface Up remains unchanged; no Position/input/movement rewrite. Actual writer/caller semantics and a safe upstream source require c12 game evidence.
+
+Download the version ZIP using the GitHub direct-download link in CODEX_RESULT/delivery message. Read [README_TEST.md](README_TEST.md) on GitHub for A/cardinal then E/diagonal~4s and private log handoff. See analysis/V01C12_GATE.md and docs/CODEX_RESULT.md for proof limits and validation.

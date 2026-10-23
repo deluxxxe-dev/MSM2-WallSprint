@@ -12,6 +12,7 @@
 #include "Math/source_orientation.hpp"
 #include "Math/movement_delta.hpp"
 #include "NativeHooks/path_a_position_proof.hpp"
+#include "NativeHooks/movement_lineage.hpp"
 extern "C" bool ws_guarded_call(void (*)(void*),void*);
 namespace {
 using namespace msm2;
@@ -22,7 +23,7 @@ struct Entry {
 };
 struct PositionWriter {DWORD64 pc{},caller{},function{};unsigned hits{},printed{},functionSize{};bool analyzed{};ws::position_proof::Store store{};char hash[65]="unavailable";};
 struct Window {
- double positionElapsed{};std::atomic<unsigned> positionInflight{0};float oldPosition[4]{};std::array<PositionWriter,16> positionWriters{};float matchedPosition[4]{};double matchedPositionMs{};unsigned positionWriterCount{},positionUnknown{},positionOverflow{};bool positionSummary{};std::atomic<bool> positionClosed{false};std::atomic<unsigned> positionCleanup{1};
+ std::atomic<unsigned> lineageAttempts{0};double positionElapsed{};std::atomic<unsigned> positionInflight{0};float oldPosition[4]{};std::array<PositionWriter,16> positionWriters{};float matchedPosition[4]{};double matchedPositionMs{};unsigned positionWriterCount{},positionUnknown{},positionOverflow{};bool positionSummary{};std::atomic<bool> positionClosed{false};std::atomic<unsigned> positionCleanup{1};
 
  std::atomic<bool> capture{false};unsigned id{},state{};std::uint64_t session{};
  std::uintptr_t hero{},transform{},owner{};ws::Vec3 normal{},startUp{},oldObserved{};
@@ -40,7 +41,9 @@ struct Lease {
  std::atomic<DWORD> tid{0};unsigned window{};HANDLE handle{};bool installed{},suspended{};DWORD resumeError{};
  Entry entry{};path_b::Entry copyEntry{};DWORD64 old0{},old1{},old6{},old7{},up{};
 };
+struct LineageCapture {ws::lineage::Sample sample{};bool codeCurrent{};};
 struct Event {
+ LineageCapture lineage{};
  unsigned window{},slotMask{};DWORD thread{};double timestamp{};DWORD64 ripAfter{},rsp{},callers[2]{},gpr[16]{};
  Entry entry{};path_b::Entry copyEntry{};double firstSurface{};bool resetCandidate{},dualCommitted{},sequenceCandidate{},thirdCandidate{};double surfaceAnchorTime{};ws::Vec3 surfaceAnchor{};std::uint64_t commitQpc{},commonQpc{},copyQpc{};
  float oldUp[4]{},newUp[4]{};unsigned char xmm[256]{};bool read{},callerValid{},xmmValid{};
@@ -84,6 +87,63 @@ void unwind(void* raw){
   if(u.c.Rsp<=oldRsp||u.c.Rsp>base||u.c.Rsp-oldRsp>0x10000||!VirtualQuery(reinterpret_cast<void*>(u.c.Rip),&m,sizeof(m))||m.State!=MEM_COMMIT||(m.Protect&(PAGE_GUARD|PAGE_NOACCESS))||!(m.Protect&(PAGE_EXECUTE|PAGE_EXECUTE_READ|PAGE_EXECUTE_READWRITE|PAGE_EXECUTE_WRITECOPY)))break;
   u.callers[u.count++]=u.c.Rip;
  }
+}
+
+bool lineageRead(std::uintptr_t address, void *output, std::size_t size) {
+  MEMORY_BASIC_INFORMATION m{};
+  if (!address || !size || address > UINTPTR_MAX - size ||
+      !VirtualQuery(reinterpret_cast<void *>(address), &m, sizeof(m)) ||
+      m.State != MEM_COMMIT || (m.Protect & (PAGE_GUARD | PAGE_NOACCESS)))
+    return false;
+  auto base = reinterpret_cast<std::uintptr_t>(m.BaseAddress);
+  if (address < base || address - base > m.RegionSize ||
+      size > m.RegionSize - (address - base))
+    return false;
+  return readMemory(address, output, size);
+}
+struct LineageRuntime {
+  bool attempted{}, ready{}, caller2Verified{};
+  unsigned writerBegin{}, writerEnd{}, callerBegin{}, callerEnd{},
+      caller2Begin{}, caller2End{};
+  ws::lineage::Proof writer{};
+  ws::lineage::Call call{}, call2{};
+  ws::lineage::Caller caller{};
+  std::array<unsigned char, 5> callBytes{}, call2Bytes{};
+  std::array<unsigned char, 1024> writerBytes{};
+  unsigned writerSize{};
+  char writerHash[65] = "unavailable", callerHash[65] = "unavailable";
+};
+LineageRuntime movementLineage;
+void captureLineage(Event &r, Window &w) {
+  const auto &m = movementLineage;
+  if (!m.ready || r.ripAfter < gameBase + m.writerBegin ||
+      r.ripAfter > gameBase + m.writerEnd || !r.callerValid ||
+      r.callers[0] != gameBase + 0x351eeb0 ||
+      r.callers[1] != gameBase + 0x351a020 || !r.read)
+    return;
+  if (w.lineageAttempts.fetch_add(1, std::memory_order_relaxed) >= 16)
+    return;
+  // Post-store hardware exception on this exact watched target/current thread.
+  // No new detour, executable breakpoint, ABI, stack scan or game call.
+  unsigned char current[1024]{};
+  r.lineage.codeCurrent =
+      lineageRead(gameBase + m.writerBegin, current, m.writerSize) &&
+      !std::memcmp(current, m.writerBytes.data(), m.writerSize);
+  unsigned char call[5]{}, call2[5]{};
+  r.lineage.codeCurrent =
+      r.lineage.codeCurrent && lineageRead(gameBase + 0x351eeab, call, 5) &&
+      !std::memcmp(call, m.callBytes.data(), 5) &&
+      (!m.caller2Verified || (lineageRead(gameBase + 0x351a01b, call2, 5) &&
+                              !std::memcmp(call2, m.call2Bytes.data(), 5)));
+  if (!r.lineage.codeCurrent)
+    return;
+  ws::lineage::Context c{};
+  std::memcpy(c.gpr.data(), r.gpr, sizeof(r.gpr));
+  c.floating = r.xmmValid;
+  std::memcpy(c.xmm.data(), r.xmm, sizeof(r.xmm));
+  r.lineage.sample = ws::lineage::sample(
+      m.writer, unsigned(r.ripAfter - gameBase - m.writerBegin), c, w.transform,
+      r.newUp, lineageRead);
 }
 LONG CALLBACK handler(EXCEPTION_POINTERS* e){
  if(!e||!e->ExceptionRecord||!e->ContextRecord||e->ExceptionRecord->ExceptionCode!=EXCEPTION_SINGLE_STEP)return EXCEPTION_CONTINUE_SEARCH;
@@ -133,6 +193,7 @@ LONG CALLBACK handler(EXCEPTION_POINTERS* e){
    if(!unchanged){
    ++w.hits;
    Unwind u{};u.c=c;if(ws_guarded_call(unwind,&u)&&u.count){r.callerValid=true;std::memcpy(r.callers,u.callers,sizeof(r.callers));}
+   if(w.state==5)captureLineage(r,w);
    events[h%ringCap]=r;head.store(h+1,std::memory_order_release);
    if(r.resetCandidate&&!w.reset.characterize&&!w.reset.multithread){w.capture=false;restore(c,*lease,w.state==5);}
    }
@@ -336,12 +397,202 @@ void classifyWrite(Window& w,const Event& r,DWORD64 moduleBase,const char* modul
   (unsigned long long)w.session,(unsigned long long)r.ripAfter,moduleName,(unsigned long long)image,begin,end,size,captured?hash:"unavailable",unsigned(captured),(unsigned long long)gameRva(r.callers[0]),(unsigned long long)gameRva(r.callers[1]),r.thread);
  if(captured)for(unsigned offset=0;offset<size;offset+=64){unsigned count=std::min(64u,size-offset);char text[129]{};hex(bytes.data()+offset,count,text);writeLog("THIRD_WRITER_CODE session=%llu offset=0x%x bytes=%s private_do_not_distribute=1",(unsigned long long)w.session,offset,text);}
 }
+
+bool movementFunction(unsigned rva, unsigned &begin, unsigned &end) {
+  if (!gameBase || rva >= gameSize)
+    return false;
+  DWORD64 image{};
+  auto f = RtlLookupFunctionEntry(gameBase + rva, &image, nullptr);
+  RUNTIME_FUNCTION b{};
+  if (image != gameBase || !f ||
+      !readMemory(reinterpret_cast<std::uintptr_t>(f), &b, sizeof(b)) ||
+      b.BeginAddress > rva || b.EndAddress <= rva || b.EndAddress > gameSize)
+    return false;
+  begin = b.BeginAddress;
+  end = b.EndAddress;
+  return true;
+}
+void configureMovementLineage() {
+  auto &m = movementLineage;
+  if (m.attempted)
+    return;
+  m.attempted = true;
+  bool wb = movementFunction(0x2cfc900, m.writerBegin, m.writerEnd) &&
+            m.writerBegin == 0x2cfc900;
+  m.writerSize = wb ? m.writerEnd - m.writerBegin : 0;
+  if (wb && m.writerSize <= m.writerBytes.size() &&
+      lineageRead(gameBase + m.writerBegin, m.writerBytes.data(),
+                  m.writerSize)) {
+    sha256(m.writerBytes.data(), m.writerSize, m.writerHash);
+    m.writer = ws::lineage::writer(m.writerBytes.data(), m.writerSize);
+  }
+  writeLog("MOVEMENT_WRITER_PROOF writer_rva=0x2cfc900 function_begin=0x%x "
+           "function_end=0x%x function_size=%u complete_decode=%u "
+           "current_code_hash=%s position_store_count=%u destination_mask=0x%x "
+           "entry_target_relation=%s lineage_complete=%u "
+           "source_map_supported_prefix=%u first_unsupported_offset=0x%x "
+           "unsupported=%u reason=%s "
+           "hash_scope=accepted_exe_current_runtime_NOT_exclusive_semantics "
+           "full_bytes_logged=0 writable_source_proven=0",
+           m.writerBegin, m.writerEnd, m.writerSize, unsigned(m.writer.decoded),
+           m.writerHash, m.writer.storeCount, m.writer.mask,
+           m.writer.sourceMap ? "entry_RCX_plus_0x30_through_0x3c"
+                              : "unproven_see_components",
+           unsigned(m.writer.complete), unsigned(m.writer.sourceMap),
+           m.writer.firstUnsupported, m.writer.unsupported,
+           wb ? m.writerSize > m.writerBytes.size() ? "writer_span_over_1024"
+                                                    : m.writer.reason
+              : "exact_runtime_writer_boundary_missing");
+  for (unsigned i = 0;
+       i < std::min<unsigned>(m.writer.unsupported,
+                              m.writer.unsupportedOffsets.size());
+       ++i)
+    writeLog(
+        "MOVEMENT_LINEAGE_UNSUPPORTED function=writer instruction_rva=0x%x "
+        "reason=unsupported_effect_or_control_flow full_bytes_logged=0",
+        m.writerBegin + m.writer.unsupportedOffsets[i]);
+  for (unsigned i = 0; i < m.writer.storeCount; ++i) {
+    auto &t = m.writer.stores[i];
+    char expression[384]{};
+    ws::lineage::describe(m.writer, t.value, expression, sizeof(expression));
+    writeLog("MOVEMENT_WRITER_SOURCE_COMPONENT component=%u store_rva=0x%x "
+             "destination_offset=0x%x source=%s whole_function_lineage=%u "
+             "entry_values_captured=0",
+             t.component, m.writerBegin + t.offset, 48 + 4 * t.component,
+             expression, unsigned(m.writer.complete));
+  }
+  std::array<unsigned char, 8192> caller{};
+  bool cb = movementFunction(0x351eeaf, m.callerBegin, m.callerEnd);
+  unsigned size = cb ? m.callerEnd - m.callerBegin : 0;
+  if (cb && size <= caller.size() &&
+      lineageRead(gameBase + m.callerBegin, caller.data(), size)) {
+    sha256(caller.data(), size, m.callerHash);
+    m.call = ws::lineage::callsite(caller.data(), size, m.callerBegin,
+                                   0x351eeb0, 0x2cfc900);
+    if (m.call.verified)
+      std::memcpy(m.callBytes.data(), caller.data() + m.call.offset, 5);
+    if (m.call.verified)
+      m.caller =
+          ws::lineage::caller(caller.data(), size, m.call.offset, m.writer);
+  }
+  if (cb && size > caller.size())
+    m.call.reason = "caller_runtime_span_over_8192";
+  std::array<unsigned char, 8192> caller2{};
+  bool c2 = cb && movementFunction(0x351a01f, m.caller2Begin, m.caller2End);
+  unsigned c2size = c2 ? m.caller2End - m.caller2Begin : 0;
+  if (c2 && c2size <= caller2.size() &&
+      lineageRead(gameBase + m.caller2Begin, caller2.data(), c2size))
+    m.call2 = ws::lineage::callsite(caller2.data(), c2size, m.caller2Begin,
+                                    0x351a020, m.callerBegin);
+  if (c2 && c2size > caller2.size())
+    m.call2.reason = "caller2_runtime_span_over_8192";
+  m.caller2Verified = m.call2.verified;
+  if (m.caller2Verified)
+    std::memcpy(m.call2Bytes.data(), caller2.data() + m.call2.offset, 5);
+  writeLog("MOVEMENT_CALLSITE_PROOF return_rva=0x351eeb0 call_rva=0x%x "
+           "target_rva=0x2cfc900 direct_call_verified=%u "
+           "caller_function_begin=0x%x caller_function_end=0x%x caller_hash=%s "
+           "complete_decode=%u caller2_return_rva=0x351a020 "
+           "caller2_function_begin=0x%x caller2_function_end=0x%x "
+           "caller2_direct_relation_verified=%u caller2_reason=%s reason=%s",
+           m.call.verified ? m.callerBegin + m.call.offset : 0,
+           unsigned(m.call.verified), m.callerBegin, m.callerEnd, m.callerHash,
+           unsigned(m.call.decoded), m.caller2Begin, m.caller2End,
+           unsigned(m.caller2Verified), m.call2.reason, m.call.reason);
+  writeLog(
+      "MOVEMENT_CALLER_SOURCE_PROOF caller_rva=0x351eeb0 "
+      "source_storage=bounded_symbolic_caller_slice construction_kind=%s "
+      "arithmetic_shape=%s producer_rva=0 slice_last_instruction_rva=0x%x "
+      "producer_caller_rva=0x351a020 uses_current_position=unknown "
+      "uses_dt=unknown uses_direction_like_vector=unknown "
+      "uses_speed_like_scalar=unknown slice_complete=%u unsupported_edges=%u "
+      "last_barrier_offset=0x%x surface_tangent_correlation=pending_runtime "
+      "exclusive_to_hero_translation=0 writable_source_proven=0 reason=%s",
+      m.caller.construction, m.caller.shape,
+      m.callerBegin + m.caller.producerOffset, unsigned(m.caller.sliceComplete),
+      m.caller.unsupported, m.caller.barrier, m.caller.reason);
+  for (unsigned k = 0; k < 4; ++k) {
+    char expression[384]{};
+    ws::lineage::describe(m.caller.slice, m.caller.payload[k], expression,
+                          sizeof(expression));
+    writeLog("MOVEMENT_CALLER_SOURCE_COMPONENT component=%u expression=%s "
+             "typed_semantics=unknown writable_source_proven=0",
+             k, expression);
+  }
+  m.ready = m.writer.sourceMap && m.call.verified;
+  writeLog("MOVEMENT_SOURCE_CANDIDATE candidate_id=c12_verified_chain "
+           "producer_rva=0x%x consumer_rva=0x2cfc900 source_kind=%s "
+           "storage_or_stack_location=symbolic_component_records "
+           "hero_target_verified=0 wallrun_owned=0 "
+           "correlates_with_translation=unknown "
+           "surface_tangent_relation=pending_runtime writable_source_proven=0 "
+           "reason=%s source_capture_ready=%u input_observation=0",
+           m.callerBegin, m.caller.construction,
+           m.ready ? "trap_time_reconstruction_only_entry_snapshot_and_W_"
+                     "exclusive_effects_missing"
+                   : "writer_source_prefix_or_direct_callsite_proof_missing",
+           unsigned(m.ready));
+}
+void movementSourceEvent(Window &w, const Event &r) {
+  auto &m = movementLineage;
+  if (!r.callerValid || gameRva(r.callers[0]) != 0x351eeb0 ||
+      gameRva(r.ripAfter) < 0x2cfc900 || gameRva(r.ripAfter) > m.writerEnd)
+    return;
+  auto &s = r.lineage.sample;
+  writeLog(
+      "MOVEMENT_WRITER_SOURCE_MAP session=%llu caller_rva=0x351eeb0 "
+      "thread_id=%lu source_component_x=see_static_component_0 "
+      "source_component_y=see_static_component_1 "
+      "source_component_z=see_static_component_2 "
+      "source_component_w=see_static_component_3 source_kind=%s source_span=%u "
+      "source_readable=%u source_identity_stable=0 recovered_aliases_stable=%u "
+      "post_store_match=%u position_w_semantics_observed=0 W_bits_sampled=%u "
+      "reconstructed_mask=0x%x code_current=%u hero_target_verified=%u "
+      "entry_snapshot_captured=0 "
+      "observation=post_instruction_surviving_aliases_and_trap_time_pointed_"
+      "values writable_source_proven=0 reason=%s",
+      (unsigned long long)w.session, r.thread,
+      m.writer.sourceMap ? "computed_or_entry_leaves" : "unknown",
+      m.writer.sourceMap ? 16u : 0u, unsigned(s.readable), unsigned(s.stable),
+      unsigned(s.match), unsigned(s.wObserved), s.mask,
+      unsigned(r.lineage.codeCurrent), unsigned(s.target),
+      s.found ? "true_entry_snapshot_W_and_exclusive_effects_unproven"
+              : "writer_lineage_call_chain_or_surviving_values_unproven");
+  if (!s.target || !s.fullRow)
+    return;
+  ws::Vec3 before{r.oldUp[0], r.oldUp[1], r.oldUp[2]},
+      observed{r.newUp[0], r.newUp[1], r.newUp[2]},
+      payload{s.payload[0], s.payload[1], s.payload[2]};
+  auto d = ws::movement::decompose(before, observed, w.reset.basis, 1);
+  auto predicted = payload - before;
+  auto error = payload - observed;
+  writeLog(
+      "MOVEMENT_SOURCE_CORRELATION session=%llu elapsed=%.6f "
+      "source_payload=(%.9g,%.9g,%.9g,%.9g) "
+      "observed_position_before=(%.9g,%.9g,%.9g,%.9g) "
+      "observed_position_after=(%.9g,%.9g,%.9g,%.9g) "
+      "predicted_delta=(%.9g,%.9g,%.9g) observed_delta=(%.9g,%.9g,%.9g) "
+      "delta_error=%.9g delta_normal=%.9g delta_forward=%.9g delta_right=%.9g "
+      "post_store_match=%u component=%u full_row_final_store=%u "
+      "before_semantics=previous_serialized_watch_snapshot "
+      "after_semantics=scalar_store_NOT_whole_function_return "
+      "delta_semantics=correlation_NOT_physics_velocity "
+      "concurrent_or_downstream_effects_excluded=0 writable_source_proven=0",
+      (unsigned long long)w.session,
+      w.positionElapsed + (r.timestamp - w.start) / 1000., s.payload[0],
+      s.payload[1], s.payload[2], s.payload[3], r.oldUp[0], r.oldUp[1],
+      r.oldUp[2], r.oldUp[3], r.newUp[0], r.newUp[1], r.newUp[2], r.newUp[3],
+      predicted.x, predicted.y, predicted.z, d.world.x, d.world.y, d.world.z,
+      std::sqrt(ws::dot(error, error)), d.normal, d.forward, d.right,
+      unsigned(s.match), s.component, unsigned(s.finalStore));
+}
 void positionEvent(Window& w,const Event& r,DWORD64 moduleBase,const char* moduleName){
  DWORD64 image{};auto* function=RtlLookupFunctionEntry(r.ripAfter?r.ripAfter-1:0,&image,nullptr);auto begin=function?image+function->BeginAddress:0;
  PositionWriter* writer=nullptr;for(unsigned i=0;i<w.positionWriterCount;++i)if(w.positionWriters[i].pc==r.ripAfter&&w.positionWriters[i].caller==r.callers[0]){writer=&w.positionWriters[i];break;}
  if(!writer){if(w.positionWriterCount==w.positionWriters.size()){++w.positionOverflow;return;}writer=&w.positionWriters[w.positionWriterCount++];writer->pc=r.ripAfter;writer->caller=r.callers[0];writer->function=begin;}
  ++writer->hits;bool pathA=image==gameBase&&function&&function->BeginAddress==0x2cfc580;if(!pathA)++w.positionUnknown;
  if(writer->printed++>=4)return;
+ movementSourceEvent(w,r);
  ws::Vec3 before{r.oldUp[0],r.oldUp[1],r.oldUp[2]},after{r.newUp[0],r.newUp[1],r.newUp[2]};auto delta=ws::movement::decompose(before,after,w.reset.basis,1);
  unsigned char bytes[1024]{};unsigned size=function?function->EndAddress-function->BeginAddress:0;
  // Owned Path A entry bytes are hooked; startup inspection owns its original
@@ -364,6 +615,7 @@ namespace msm2::trace {
 void configure(Config c,bool verified,std::uintptr_t base,std::size_t size){
  if(usedWindows){killed=true;admitted=false;writeLog("orientation_trace_rearm_refused reason=process_lifetime_budget_requires_full_game_restart");return;}
  config=c;admitted=verified&&base&&size&&c.enabled&&c.windowMs>=100&&c.windowMs<=500&&c.maxWindows<=windowsCap&&c.maxEvents>=1&&c.maxEvents<=256&&c.maxThreads>=1&&c.maxThreads<=threadsCap;gameBase=base;gameSize=size;QueryPerformanceFrequency(&frequency);killed=!admitted;
+ if(admitted)configureMovementLineage();
  writeLog("orientation_trace_config enabled=%u admitted=%u diagnostic_only=1 window_ms=%u max_windows=%u max_events=%u max_threads=%u actor_writes=0 unknown_game_calls=0 PAGE_GUARD=0 coverage=current_threads_bounded_NOT_complete",unsigned(c.enabled),unsigned(admitted),c.windowMs,c.maxWindows,c.maxEvents,c.maxThreads);
 }
 void kill() noexcept{killed=true;for(auto& w:windows)closeCapture(w,"kill_or_shutdown");}
@@ -448,6 +700,7 @@ void drainLogs(){
   writeLog("orientation_writer_summary writer_id=%u hit_count=%u WallRun_hits=%u CrawlCandidate_hits=%u verified_WallCrawl_state=0",id+1,writer.hits,writer.run,writer.crawl);
  }
  for(unsigned i=0;i<publishedWindowCount.load(std::memory_order_acquire);++i){auto& w=windows[i];if(w.state!=5||!w.positionClosed.load(std::memory_order_acquire)||w.positionInflight.load()||head.load()!=tail.load()||w.positionSummary)continue;w.positionSummary=true;
+  writeLog("MOVEMENT_LINEAGE_SUMMARY session=%llu source_capture_ready=%u eligible_hits=%u reconstruction_attempt_cap=16 attempts=%u complete_writer_CFG=%u source_prefix_proven=%u direct_call_verified=%u caller2_direct_relation_verified=%u true_entry_snapshot=0 writable_source_proven=0 Position_writes_by_mod=0 reason=entry_snapshot_typed_caller_W_and_exclusive_effects_unproven",(unsigned long long)w.session,unsigned(movementLineage.ready),w.lineageAttempts.load(),std::min(16u,w.lineageAttempts.load()),unsigned(movementLineage.writer.complete),unsigned(movementLineage.writer.sourceMap),unsigned(movementLineage.call.verified),unsigned(movementLineage.caller2Verified));
   writeLog("POSITION_WRITER_SUMMARY session=%llu watch_armed=%u threads_seen=%u threads_installed=%u unique_writers=%u total_write_events=%u unknown_writer_events=%u writer_table_overflow=%u dropped=%u cleanup_restored=%u cleanup_pending=%u complete_thread_coverage=0 rescan_count=0 event_cap=256 per_writer_print_cap=4 Position_writes_by_mod=0",(unsigned long long)w.session,unsigned(w.installedThreads>0),w.seen,w.installedThreads,w.positionWriterCount,w.hits.load(),w.positionUnknown,w.positionOverflow,w.drops.load(),unsigned(w.positionCleanup.load()==0),w.positionCleanup.load());
   for(unsigned j=0;j<w.positionWriterCount;++j){auto& writer=w.positionWriters[j];writeLog("POSITION_WRITER_HITS session=%llu writer_id=%u writer_rva=0x%llx rip_rva=0x%llx hits=%u",(unsigned long long)w.session,j+1,(unsigned long long)gameRva(writer.function),(unsigned long long)gameRva(writer.pc),writer.hits);}
  }
@@ -459,6 +712,7 @@ bool configureReset(bool verified,std::uintptr_t base,std::size_t size,bool prea
  admitted=verified&&(!multithread||prearmed)&&base&&size&&QueryPerformanceFrequency(&frequency)&&frequency.QuadPart>0&&!IsDebuggerPresent();
  if(admitted&&!veh)veh=AddVectoredExceptionHandler(1,handler);
  admitted=admitted&&veh;killed=!admitted;
+ if(admitted)configureMovementLineage();
  writeLog("RESET_TRACE_MODE prearmed=%u prearm_elapsed=0.60 override_elapsed=0.70 end_elapsed=%.2f primary_first=1 multithread=%u expand_elapsed=0.85 max_threads=%u",unsigned(prearmed),multithread?1.50:1.10,unsigned(multithread),config.maxThreads);
  writeLog("RESET_TRACE_CONFIG admitted=%u window_ms=%u deadline_native_elapsed_ms=%u max_sessions=8 max_events=%u max_threads=%u once_per_session=1 source_callback_wait=0 additional_game_hooks=0 original_tailjump_preserved=1",unsigned(admitted),config.windowMs,prearmed?(multithread?1500u:1100u):0u,config.maxEvents,config.maxThreads);return admitted;
 }

@@ -1,10 +1,10 @@
-# WallSprint v0.1c11 — Movement Path Ownership
+# WallSprint v0.1c12 — Movement Source Lineage
 
-Package **0.1.29**。c10 の A／E 壁での姿勢保持は実機で成功しました。今回は**移動経路を調べる診断版**です。Position・入力・速度・重力は変更しません。見た目の移動変化は想定していません。体の傾きや足の浮きは、後の見た目・接地調整として保留しています。
+Package **0.1.30**。c10／c11 の A／E 壁での姿勢保持は実機で成功しました。今回は**移動経路を調べる診断版**です。Position・入力・速度・重力は変更しません。見た目の移動変化は想定していません。体の傾きや足の浮きは、後の見た目・接地調整として保留しています。
 
 ## ダウンロード・導入
 
-配布は **WallSprint_v0.1c11_movement_path_ownership.zip**。完了メッセージの GitHub 直接ダウンロードリンクから取得し、この手順も GitHub 上の README_TEST.md で確認してください。
+配布は **WallSprint_v0.1c12_movement_source_lineage.zip**。完了メッセージの GitHub 直接ダウンロードリンクから取得し、この手順も GitHub 上の README_TEST.md で確認してください。
 
 ゲームを完全終了し、旧 WallSprint を無効にして外側の ZIP を展開します。**WallSprint.script は解凍せず** Overstrike に追加して Install mods。従来の Script support、`-scripts` と配布 INI を使います。
 
@@ -13,7 +13,7 @@ Package **0.1.29**。c10 の A／E 壁での姿勢保持は実機で成功しま
 `logs\WallSprint.log` に以下があることを確認します。
 
 ```text
-WallSprint v0.1c11 package_version=0.1.29
+WallSprint v0.1c12 package_version=0.1.30
 target_build_gate=ACCEPTED
 PATH_B_COMPACT3X3_PROOF admitted=1 ... pairs=9
 DUAL_SOURCE_ADMISSION admitted=1
@@ -22,6 +22,31 @@ PATH_A_POSITION_CAUSALITY_PROOF admitted=0 ... write_permission=0
 ```
 
 Position／causality の admitted=0 は想定どおりです。安全な移動 source をまだ認証していないため、この版では書き込みを許可しません。build／Path B proof／dual-source admission に失敗した場合は走らずログを送ってください。
+
+## c12 の追加診断
+
+c11 で実測した `0x351EEB0 → 0x2CFC900` と `caller2≈0x351A020` を読み取り専用で調べます。起動時には次の記録が出ます。
+
+```text
+MOVEMENT_WRITER_PROOF ... function_begin=... function_end=... complete_decode=... current_code_hash=... lineage_complete=... source_map_supported_prefix=... reason=...
+MOVEMENT_WRITER_SOURCE_COMPONENT ... component=... store_rva=... source=...
+MOVEMENT_CALLSITE_PROOF ... direct_call_verified=... caller_function_begin=... caller_hash=... caller2_direct_relation_verified=... reason=...
+MOVEMENT_CALLER_SOURCE_PROOF ... construction_kind=unknown ... writable_source_proven=0 reason=...
+MOVEMENT_CALLER_SOURCE_COMPONENT ... expression=...
+MOVEMENT_LINEAGE_UNSUPPORTED ... instruction_rva=... reason=...
+```
+
+`complete_decode=1` と、完全なデータフロー証明や移動の所有権は別の項目です。非対応命令・分岐・範囲上限は具体的な位置と理由を記録します。`construction_kind=unknown`／`writable_source_proven=0` は想定内で、診断のために条件を緩める必要はありません。
+
+監視中には、証明できた経路だけで以下を採取します。
+
+```text
+MOVEMENT_WRITER_SOURCE_MAP ... source_readable=... recovered_aliases_stable=... post_store_match=... entry_snapshot_captured=0 writable_source_proven=0 reason=...
+MOVEMENT_SOURCE_CORRELATION ... source_payload=... observed_position_before=... observed_position_after=... predicted_delta=... observed_delta=... delta_error=... delta_normal=... delta_forward=... delta_right=...
+MOVEMENT_LINEAGE_SUMMARY ... source_capture_ready=... attempts=... source_prefix_proven=... direct_call_verified=... true_entry_snapshot=0 writable_source_proven=0 Position_writes_by_mod=0
+```
+
+既存の書き込み監視時点で残るレジスタ／ソースからの復元であり、関数入口で直接採取した値ではありません。1監視あたり最大16回、1 writer の表示は従来どおり最大4件です。途中の scalar store では行全体が一致しないことがあります。一致しても W の意味や後続 writer の排他性は証明されません。復元できない場合も、正確な理由が次の解析材料になります。
 
 ## 今回の試験
 
@@ -61,6 +86,6 @@ MULTITHREAD_UP_WATCH_RESTORE ... cleanup_pending=0
 POSITION_WRITER_SUMMARY ... cleanup_pending=0
 ```
 
-監視が開始されなかった場合も、`POSITION_WATCH_SKIPPED`／`POSITION_WRITER_SUMMARY watch_armed=0` と理由を含めた完全ログが必要です。まず実際の writer／caller／source の証拠を集め、次の版で認証する対象を決めます。
+監視が開始されなかった場合も、`POSITION_WATCH_SKIPPED`／`POSITION_WRITER_SUMMARY watch_armed=0` と理由を含めた完全ログが必要です。c12 の新しい記録で writer 全体・直接 call・ソース復元・呼び出し元のどの証明が残っているかを確認します。
 
 F8 は再起動まで書き込み・診断監視を停止、F9 は script 停止です。c7 の自然な stale 停止／同一対象の新しい実 Update による復帰、c8 の初回異常原因、c9／c10 の別スレッド B と更新再検証は維持しています。Position 補正・movement 注入・入力 rewrite・animation・camera・gravity は追加していません。
