@@ -1,0 +1,40 @@
+{
+  "version": "v0.1c6",
+  "package_version": "0.1.24",
+  "branch": "codex/v01c6-planar-adhesion",
+  "implementation_commit": "6ed21d411b8b6868185143d275c2e40486b57781",
+  "outputs": [
+    {
+      "path": "WallSprint_v0.1c6_planar_adhesion.zip",
+      "bytes": 2461535,
+      "sha256": "bb18636e2921db117071ecd783b55db864cbec5d17510c115079a03173d5867e"
+    },
+    {
+      "path": "WallSprint_v0.1c6_source.zip",
+      "bytes": 480730,
+      "sha256": "0dff00b170db55934816e84cbc661a121144a23042b61afcbb9626713adfab22"
+    }
+  ],
+  "portable_pass": 12,
+  "dll_smoke_pass": 4,
+  "full_hook_pass": 38,
+  "historical_private_skips": 4,
+  "final_affected_native_source_publication_suites": "PASS",
+  "position_permission": false,
+  "actual_A_Position_bytes_replayed": false,
+  "startup_position_candidate_inspector": "PASS_owned_584_168_fixtures",
+  "standalone_source_build": "PASS_private_captures_absent",
+  "private_game_function_bytes_distributed": false,
+  "real_game_c4_enumeration": "PASS_CAPPED_INCOMPLETE",
+  "real_game_c4_retention_threshold": "PASS",
+  "real_game_c5_full_lifecycle_hold": "PASS",
+  "real_game_c6_diagnostics": "PENDING",
+  "third_writer_identity": "PENDING",
+  "synthetic_sustained_publication_seconds": 4.1,
+  "synthetic_sustained_AB_native_elapsed_seconds": 4.118,
+  "synthetic_AB_writes_per_path": 186,
+  "synthetic_max_held_ms": 2995,
+  "synthetic_valid_standoff_samples": 28,
+  "actual_position_writes": 0,
+  "synthetic_clean_Deinit_summary": true
+}

@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c5",
-  "package_version": "0.1.23",
+  "version": "v0.1c6",
+  "package_version": "0.1.24",
   "artifact": "WallSprint.script",
-  "sha256": "3dedc9cc141a93d08301aa204e1671e60c82faf9633e8599698eaa9ceead458e",
-  "dll_sha256": "2c783b66d3071d643052c24baa792245b8ce0ac635a28ae94de277bab60d39d7",
+  "sha256": "fa83d36e7ca01dfac35bfcb6ed86a72303d434d518eaa0c0ae4ddc71292f86c9",
+  "dll_sha256": "f1a6456bde66920b2b0a2e798c60a49ce143edd0f448761845b3341825f42107",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -75,7 +75,7 @@
   "v01b7_reset_path_identified": true,
   "v01b8_game_verified": false,
   "RESET_WRITER_VERIFIED": true,
-  "ORIENTATION_OWNERSHIP_VERIFIED": false,
+  "ORIENTATION_OWNERSHIP_VERIFIED": true,
   "v01b6_gate": "NOT_ADMITTED_OR_LATE_PER_PROJECT_STATE",
   "v01b7_gate": "RESET_PATH_IDENTIFIED_PER_CHECKED_IN_RUNTIME_RESULT",
   "v01b8_gate": "MEASURED_LAYOUT_REJECTION_ZERO_B_WRITES_RETENTION_FAILED",
@@ -128,9 +128,9 @@
     "original_capture": "private PATH_B_FUNCTION/PATH_B_CODE before hook; never redistributed",
     "caller_original_sha256": "1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d"
   },
-  "validation": "Windows warnings-as-errors for WallSprint; portable ASan/UBSan; full Wine hook/ABI/lifecycle/lock-free A-B/metadata/retention suites; actual hash-verified writer444/caller128 reproduces old c1 failure and passes full Capstone proof + production installer; mutations, missing/duplicate/outside pairs, decode failures and caller/stack negatives. Actual c4 process enumeration and threshold retention passed; early lifecycle exit remains. c5 exact old reader collision reproduction, real 4-second native token stress and multi-second MinHook A/B hold/Deinit and negative gates pass on owned data. Full-lifecycle game hold remains pending.",
+  "validation": "Windows warnings-as-errors for WallSprint; portable ASan/UBSan; full Wine hook/ABI/lifecycle/lock-free A-B/metadata/retention suites; actual hash-verified writer444/caller128 reproduces old c1 failure and passes full Capstone proof + production installer; mutations, missing/duplicate/outside pairs, decode failures and caller/stack negatives. Actual c5 lifecycle-wide orientation passed. c6 complete Position candidate inspection/negative/cap tests and read-only A-E planar math/runtime telemetry/Deinit tests pass on owned inputs. Position permission remains denied; real c6 telemetry and orientation regression require the human run.",
   "limitations": [
-    "Actual c4 threshold retention passed; c5 full-lifecycle hold requires the large-A 3-4s run",
+    "Actual c5 full-WallRun orientation passed on A; c6 is Position read-only, pending whole-path/W/exclusive-effects proof and real plane telemetry",
     "Coverage is a bounded eligible-thread snapshot; caps, foreign DR, drops and later-created threads may miss writes",
     "Before Up is previous observation, not atomic pre-instruction",
     "A short already-admitted guarded store may finish concurrently with F8",
@@ -227,7 +227,7 @@
   },
   "v01c4_gate": "REAL_ENUMERATION_AND_RETENTION_THRESHOLD_PASS_EARLY_LIFECYCLE_EXIT",
   "real_game_retention_threshold_verified": true,
-  "real_game_lifecycle_wide_hold_verified": false,
+  "real_game_lifecycle_wide_hold_verified": true,
   "source_lifecycle_continuity": {
     "reader_locks_native_events": false,
     "bounded_atomic_read_attempts": 8,
@@ -240,7 +240,42 @@
     "exit_diagnostic_once_per_session": true,
     "verified_Deinit_summary": true,
     "diagnostic_watch_window_limits_source_ownership": false,
-    "full_WallRun_real_game_verified": false
+    "full_WallRun_real_game_verified": true
   },
-  "v01c5_gate": "PENDING_REAL_GAME_3_4S_HOLD_THROUGH_VERIFIED_DEINIT"
+  "v01c5_gate": "REAL_LIFECYCLE_WIDE_ORIENTATION_PASS_THROUGH_NATIVE_DEINIT",
+  "path_a_position_proof": {
+    "admitted": false,
+    "mode": "startup_candidate_inspection_only",
+    "original_writer_bytes": 584,
+    "original_caller_bytes": 168,
+    "original_before_owned_patch": true,
+    "complete_decode_required": true,
+    "candidate_access_cap": 24,
+    "control_edge_cap": 16,
+    "W_semantics": "unproven",
+    "whole_path_and_exclusive_effects": "unproven",
+    "runtime_source_provenance_records_per_session": 2,
+    "full_function_bytes_distributed": false,
+    "position_store_implemented": false
+  },
+  "planar_adhesion": {
+    "mode": "Position read-only",
+    "target_distance": 0.5,
+    "deadzone": 0.01,
+    "gain": 0.25,
+    "max_requested_step": 0.02,
+    "max_abs_error": 0.35,
+    "minimum_transition_t": 1.0,
+    "sample_interval_ms": 100,
+    "session_sample_cap": 64,
+    "normal_only_candidate": true,
+    "actual_position_writes": false,
+    "actual_max_step": 0,
+    "actual_max_tangent_delta": 0,
+    "source_Position_W_preserved": true,
+    "after_error_semantics": "same unmodified observation; not a post-native measurement",
+    "session_summary": true,
+    "real_game_telemetry_verified": false
+  },
+  "v01c6_gate": "POSITION_READ_ONLY_PENDING_WHOLE_PATH_W_EFFECTS_PROOF_AND_REAL_PLANE_TELEMETRY"
 }

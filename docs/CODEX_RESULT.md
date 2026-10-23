@@ -1,54 +1,58 @@
-# Codex result — WallSprint v0.1c5
+# Codex result — WallSprint v0.1c6
 
-Branch: **codex/v01c5-sustained-lifecycle**.
-Implementation commit: **1cfe3c76a5e09183757f891c5025def860ef4a88**.
-Base: published c4 **6bf7646d2aebdfda9c285b9a3ca4108760d6baa1**. The pre-created branch was used; authoritative runtime/state/task commits4b953b8/3cc38de/ef55948 were imported. PROJECT_STATE/CODEX_NEXT retain exact main handoff content. No force push or main rewrite.
+Branch: **codex/v01c6-planar-adhesion**.
+Implementation commit: **6ed21d411b8b6868185143d275c2e40486b57781**.
+Base: published c5 **4917a3af9afb683db7f7b130626f5b25e20aebca**. The pre-created branch was used; authoritative handoff commits0c7305f/ffef8bb/2d2f2be were imported. PROJECT_STATE/CODEX_NEXT retain the exact main handoff. No main rewrite or force push.
 
-## Outcome and evidence boundary
+## Outcome: permitted read-only c6 diagnostic milestone
 
-v0.1c5 / package **0.1.23** repairs two demonstrated continuity defects and adds exact exit and verified-Deinit evidence. c4 real enumeration and threshold retention are PASS; c5 real full-WallRun hold remains PENDING. The precise sub-gate behind the user's c4 collapsed exit remains UNKNOWN; no unsupported claim of private-run causality is made.
+v0.1c6 / package **0.1.24** preserves c5 orientation and implements the task's explicitly permitted Position-read-only outcome. **No Position correction is enabled or implemented.** The safe Position/W/downstream-exclusive-effects proof is incomplete. Full adhesion PASS is not claimed.
 
-Exact published c4 source reproduces a reader holding the lifecycle gate, dropping a native Update and permanently invalidating its collision epoch despite100 subsequent fresh same-owner Updates. c5 readers use bounded atomic publication and cannot prevent native event updates. Genuine event/event collision, invalid sequence and identity failures still fail closed until a clean session. Another demonstrated race sampled now before token acquisition, causing a newly published timestamp to appear in the future; now is sampled after acquisition. Neither100ms freshness limit is removed or widened.
+C5 real lifecycle-wide orientation is now authoritative PASS:3843ms WallRun, A219/B218, retained2906ms/205 updates, clean native Deinit. This permits investigating planar adhesion; it does not prove Position source ownership. The source/caller Position instruction bodies are not supplied in the checked-in runtime evidence for independent cloud replay. Instead of inferring permission from a layout/hash, c6 inspects the authenticated original functions at game startup and ships precise bounded candidates/rejection reasons plus valid-plane telemetry.
 
-## Changes and safety
+## Implementation and files
 
-- `source/src/NativeHooks/source_lifecycle.cpp`, `source/include/NativeHooks/source_lifecycle.hpp`: actual native writers retain a dedicated nonblocking gate; coherent readers use the existing AtomicPublication helper with at most8 attempts. Tokens retain native timestamps, explicit read status and accepted/collision epochs. No worker timestamp substitutes for native Update freshness.
-- `source/src/NativeHooks/native_source_override.cpp`: once-per-exit NATIVE_LIFECYCLE_EXIT_DIAG names the exact failing sub-gate and records token/context/phase/owner/thread/generation/updates/time/age, individual freshness tests, Hero/Transform match and transition state. It is emitted on the worker outside the lossy per-call ring. Real failed sessions cannot re-enter on a later Update.
-- A bounded native close notice and worker ORIENTATION_LIFECYCLE_SUMMARY retain the first exit reason, actual native WallRun duration, source-entry elapsed, A/B counts, threshold PASS/max held time/updates and last active-source dot/time/scope. until_deinit=1 requires matching fresh coherent ownership at native Deinit. An earlier exit remains0. A stop/new-session fallback has verified_deinit=0. Native close epoch wins over a worker publication racing Deinit; no stale pre-close token can adopt the new epoch.
-- `source/src/NativeHooks/source_lifecycle_smoke.cpp`, extended `source/src/msm2/native_source_override_smoke.cpp`, `tools/test_source_lifecycle.sh` / `test_native_source.sh`: real multi-second publication stress, MinHook A/B hold and negative/summary/close-race tests. Version, README_TEST (root/source), README/BUILD/WORKLOG, analysis and release recipes updated.
-- Required V01C4_RESULT, SOURCE_LIFECYCLE_CONTINUITY, V01C5_GATE and authoritative V01C4_RUNTIME_RESULT mirror are included in source and root analysis.
+- `source/include/NativeHooks/path_a_position_proof.hpp`, `source/src/NativeHooks/path_a_position_proof.cpp`: existing pinned static Capstone fully decodes584-byte original writer and168-byte original caller, never hooked bytes. Tracks exact alias/stack/move and clobber facts, exact E8 destination/return/RDX relation where supported, Position read/store candidates, component mask and branch/call targets. Access/control records cap24/16 with suppressed counts. Arithmetic/unknown effects cannot become a direct-copy proof; linear candidates are labeled not path-complete. W semantics and exclusive downstream effects remain unproven even for an apparent complete copy, so admitted stays0 in this revision.
+- `source/include/msm2/orientation_source.hpp` / `source/src/msm2/orientation_source.cpp`: one internal original-writer snapshot accessor, available only while the existing whole-writer ownership/authentication holds. The original saved body was authenticated before MinHook. No raw function bytes are logged or exported as a loader API.
+- `source/src/NativeHooks/native_source_override.cpp`: startup PATH_A_POSITION_PROOF / ACCESS / CONTROL, first2 authenticated-A source Position/W/provenance records/session, worker read-only planar samples and once-at-source-end ADHESION_SUMMARY. Plane sampling checks the existing active publication/session/generation/owner/Hero/Transform/epoch, validates P338/N398 and revalidates native identity/freshness/open epoch around the reads. Known Deinit/kill/identity loss blocks owner reads; racing closes invalidate observations. Invalid planes do not stop otherwise valid c5 orientation.
+- `source/include/Math/planar_standoff.hpp`: finite plane/normal validation and shadow request only: distance dot(Hero-P338,normalized N398), target.5, deadzone.01, gain.25, cap.02, reject abs(error)>.35, no request before t1. Candidate displacement is wall-normal; vanilla tangential motion is untouched.
+- New owned proof/math fixtures, extended actual MinHook source fixture and build/test links. Version/mod metadata and INI comment, root/source README_TEST, README/BUILD/WORKLOG and package/release manifests updated. Required V01C5_RESULT / PATH_A_POSITION_PROOF / PLANAR_ADHESION / V01C6_GATE and authoritative runtime mirror are included under root/source.
 
-Exact executable2.810.0.0/SHA, caller/writer identity, current owned patches, compact proof, Path A Position preservation, Path B first0x24-only/row-scale/metadata boundaries, raw Win64 ABI and lock-free coherent A/B snapshot remain. The c4 watcher, immediate reset coordinator, compact proof, reset-copy installer, stack-source helper and hook thunks are unchanged. Native-thread/stack/owner/session/generation/Hero/Transform/freshness/kill gates remain. No third-writer patch, direct Actor/Position write, page protection/PAGE_GUARD, extra game call/hook, adhesion, movement, animation, camera or later milestone is added. Existing4096 writes/path and5-second-from-source-entry limits remain; the3–4-second human test fits within them.
+Sampling caps64 attempts/session, >=100ms between records and distinct native updates. Actual correction/Position-write/applied-step/tangent counters remain0. The requested correction is only a candidate. Summary error_after explicitly means the same unmodified observation, not a native post-write measurement or improvement. Normalized N398 must have raw length.95..1.05, abs(y)<=.20 and match the owned surface dot>=.995. Observations are separate guarded snapshots, not atomic physics values.
+
+## Preserved safety
+
+The c5 native lifecycle implementation, source-store helper, Path B installer/compact proof, hardware watcher/coordinator and raw hook/source thunks are unchanged. C5 orientation rows/interpolation/lock-free publication/retention/lifecycle-summary semantics are retained; new evidence is layered alongside them. Path A still writes48 orientation bytes and verifies Position16 unchanged; Path B still writes only36 bytes with scale/later metadata preserved. Exact executable/SHA, caller/writer/current patch, native thread, owner/session/generation/epoch/Hero/Transform/stack/freshness/kill gates remain.
+
+No Position store helper, direct Actor write, page protection/PAGE_GUARD, new game call to set Position, typed unknown native ABI, extra hook or vendor copy is added. No movement/input/animation/camera/gravity/jump/corner/swing/combat work. INI cannot enable a Position writer that does not exist. Existing5-second-from-source-entry and4096-write/path limits remain.
 
 ## Validation
 
 Completed exit0:
 
-- Windows x64 build, WallSprint warnings as errors.
-- Portable ASan/UBSan: **11 PASS**.
+- Windows x64 build with WallSprint warnings as errors.
+- Portable ASan/UBSan: **12 PASS**.
 - DLL smoke: **4 PASS**.
-- Full hook/offline/actual-byte/native-thread suite: **36 PASS**, **4 explicit historical private-fixture SKIPs**. Final lifecycle/clock/summary changes were followed by a fresh Windows build, DLL smoke and the complete affected native-source/publication suite, all PASS.
-- Actual accepted-build writer444/caller128 proof/production installer replay ran and passed all9 pairs, authenticated installation/owned restoration and mutation negatives. Original game code is not executed.
-- Exact c4 reader collision mechanism reproduced against its published source/header using owned tokens.
-- Production publication sustained >=4 real seconds with4 concurrent OS readers: coherent monotonically advancing native updates, zero reader-induced event collisions, LastError preserved. Genuine native collision, owner mismatch, Deinit and disable fail closed.
-- Real MinHook A/B fixture reached4.114s native elapsed with186 writes per path; held Surface Up for3006ms/186 updates, then clean Deinit summary until_deinit=1. Its existing setup backdates Init by800ms; the sustained commit loop itself spans roughly3 real seconds. A separate publication fixture runs>=4 actual seconds. Diagnostic committed status becomes false after1.50 while orientation continues.
-- Real>100ms stale publication returns exact fresh_update_age; another Update cannot revive the failed session, and eventual native Deinit summary remains until_deinit=0. Native collision and Hero mismatch produce exact once-per-exit diagnostics. Future timestamps remain refused. Deinit injected during the worker Hero read cannot reopen A/B publication. Existing wrong-thread/caller/stack/auth/metadata/Position/A-E retention gates remain PASS.
-- An initial time-order test assumed Sleep2 crossed GetTickCount64 granularity; it now awaits an actual bounded tick advance. Its time-order assertions were retained and pass.
+- Full hooks/offline/actual-byte/native-thread suite: **38 PASS**, **4 explicit historical private-input SKIPs**.
+- Actual accepted-build B writer444/caller128 regression executed: nine-pair full proof, authenticated production installer/owned restoration and mutation negatives remain PASS; no original game code executes. This is not a claim of an actual A Position proof replay.
+- Owned584/168 Position fixtures cover complete decode, exact call/stack, direct/computed/conditional map, mutated call/stack, incomplete VEX/span and both evidence caps. Every case remains denied for Position, including a perfect-looking copy.
+- A/E standoff math covers gain/deadzone/range/step/t1, tangent translation/projection and invalid/nonfinite/nonunit/steep controls. A translation check initially straddled the exact0.35 float discontinuity; test points now cover both sides away from that ambiguity. Production limits were not widened.
+- Actual owned MinHook source session reached4.118s native elapsed, A186/B186, retained2995ms/186 updates and clean until-Deinit orientation summary. It produced28 valid plane samples and one clean read-only adhesion summary with zero corrections/Position writes. Existing fixture Init is backdated800ms; sustained commit loop spans about3 real seconds. Separate native publication fixture runs>=4 actual seconds with4 concurrent readers.
+- Unreadable P338 and out-of-range distances refuse candidate correction while orientation stays active; valid requested step<=.02. Position16 remains byte-identical; no additional plane reads after Deinit/kill. Existing ABI/vector/stack/metadata/retention/negative/debug-restore tests remain PASS.
+- One standalone fixture initially missed the new static inspector object; its link dependencies were corrected before the successful full run.
 
-A fresh standalone source ZIP extraction rebuilt the Windows DLL successfully with private captures absent. Final archive/privacy validation passes ZIP CRC, complete current source/docs/licenses and source-byte/proof/watch preservation, nested script contents/hash and private full-function byte exclusion. Only selected independent validation summaries are distributed; no raw game log/video or synthetic full-function trace is packaged.
+A fresh standalone source ZIP extraction rebuilt the Windows DLL successfully with private captures absent. Final archive/privacy validation passes ZIP CRC, complete current source/docs/licenses, nested script contents/hash, Position-disabled manifest and private full-function byte exclusion. Only selected independent validation summaries are distributed; no raw user log/video or synthetic full-function trace is packaged.
 
 ## Outputs and next human test
 
-- **WallSprint_v0.1c5_sustained_lifecycle.zip**
-- **WallSprint_v0.1c5_source.zip**
+- **WallSprint_v0.1c6_planar_adhesion.zip**
+- **WallSprint_v0.1c6_source.zip**
 - refreshed root **WallSprint.script** / **BUILD_MANIFEST.json**
 
-Confirm exact startup proof/admission, then use the same large unobstructed A-direction wall for one continuous left-to-right WallRun around3–4 seconds. Require A and B commits after elapsed2.0, retained-threshold PASS, no early inactive/stale exit, and one verified native Deinit summary with source_active_until_deinit=1. Check last active observations remain Surface Up and its timestamp reaches the run's end; summary counts alone do not prove every unobserved frame. Report rotation, whole-run hold, crash/Position corruption and return the complete private log through normal ChatGPT handoff. E is unnecessary unless A passes and a specific angle regression needs checking.
+Use the same large A-direction planar wall for one continuous left-to-right3–4-second WallRun. Preserve startup build/B proof/dual admission; Position admitted=0 is expected. Return the complete PRIVATE log including startup Position proof/candidates, first A provenance, ADHESION_SAMPLE/SUMMARY and ORIENTATION_LIFECYCLE_SUMMARY. Require valid plausible plane/distance telemetry, Position writes0, orientation retained through verified native Deinit and cleanup_pending=0. Report visible hold plus new snap/jitter/penetration/outward pop/crash/Position corruption. E is not needed. Natural distance≈.5/deadzone with no request is valid; do not force movement.
 
-If the issue remains, the diagnostic names the actual failed sub-gate; no raw-log prerequisite blocked this implementation. c4 capped thread-watch diagnostics remain available, with cleanup_pending=0 required; no captured third writer is not proof of absence. Raw game logs/video/full function capture must remain out of Git/ZIP.
-
-Only a subsequent handoff after real lifecycle-wide hold may authorize adhesion or later milestones.
+Real c6 diagnostic telemetry and c5-orientation regression remain PENDING. Full adhesion remains blocked by Position whole-path/caller construction/W/downstream-exclusive-effect proof. The new offsets/control/entry records identify the precise missing slice for the next handoff. No raw log or full function was required to proceed with the explicitly allowed diagnostic outcome, and none is committed or packaged.
 
 ## Persistence
 
-Implementation is in the exact SHA above. This result, release artifacts and machine-readable hash record are committed afterward on the same branch, then pushed and checked by authenticated Git retrieval. User links point at that delivery commit: GitHub raw ZIP for direct download, GitHub blob README_TEST for the test page.
+Implementation is in the exact SHA above. This result, refreshed ZIP/script/manifest and machine-readable release hashes are committed afterward on the same branch, then pushed and verified via authenticated Git retrieval. Final user links use that delivery commit: GitHub raw ZIP for direct download and GitHub blob README_TEST for the test page.
