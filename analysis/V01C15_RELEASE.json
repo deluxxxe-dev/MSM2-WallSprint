@@ -1,0 +1,127 @@
+{
+  "version": "v0.1c15",
+  "package_version": "0.1.33",
+  "branch": "codex/v01c15-writer-branch-contract",
+  "base_handoff_commit": "7514c9c39b4c5fdfddbae35509ab80c225acc925",
+  "implementation_commit": "0efd13924426b1c96247ff35577f7f323c934b97",
+  "outputs": [
+    {
+      "path": "WallSprint_v0.1c15_writer_branch_contract.zip",
+      "bytes": 3081191,
+      "sha256": "e1deebbaa72515a19453eec27d18a8eeeb5c0071c295975c7dea3bd69846d9c9"
+    },
+    {
+      "path": "WallSprint_v0.1c15_source.zip",
+      "bytes": 657249,
+      "sha256": "5597d35653f247bec5c2ea5223e960728a672678c90ea359ac55edd33af4654a"
+    }
+  ],
+  "public_test_pass_records": {
+    "portable": 13,
+    "smoke": 4,
+    "hooks": 67
+  },
+  "total_public_pass_records": 84,
+  "public_private_input_skip_records": 5,
+  "separate_private_replay_pass_records": 4,
+  "private_replay_duplicate_baseline_record": 1,
+  "optional_public_replay_skip_resolved_separately": true,
+  "historical_other_private_input_skips": 4,
+  "focused_entry_pass_records_included": 8,
+  "focused_contract_pass_records_included": 4,
+  "focused_branch_pass_records_included": 6,
+  "final_complete_suite_execution": "PASS_serial",
+  "standalone_source_build": "PASS_private_captures_absent",
+  "archives_CRC_current_complete_sources_docs_script_hash_licenses_private_body_exclusion": "PASS",
+  "c12_native_source_lifecycle_static_analyzer_byte_identical": true,
+  "c13_raw_thunk_and_executable_stop_original_ownership_cleanup_unchanged": true,
+  "cancel_reporting_finalized_flag_only": true,
+  "c14_final_lineage_accounting_and_producer_boundary_unchanged": true,
+  "CODEX_NEXT_preserved": true,
+  "PROJECT_STATE_updated_as_required": true,
+  "bounded_branch_owned": {
+    "all_reaching_RDX_XYZ_and_independent_W": "PASS",
+    "one_leg_component_conflicts_and_bypass": "PASS",
+    "nested4_all16_paths_31_states": "PASS",
+    "caps_loops_control_memory_exact_site_refusal": "PASS",
+    "independent_computed_conflicting_W": "PASS",
+    "producer_expansion": false
+  },
+  "final_summary_early_drain_stop_only_once": "PASS",
+  "owned_hardware": {
+    "true_entry_snapshots": 8,
+    "complete_distinct_invocation_maps": 7,
+    "hardware_store_events_paired": 28,
+    "concurrent_writer_threads": 2,
+    "reentrant_writer_test": true,
+    "pointer20_xyz_mask7_matches": 7,
+    "source_W_bits": "0x0",
+    "destination_W_bits": "0x3f800000",
+    "XYZ_stability_independent_of_W": true,
+    "ABI_gates_and_cleanup": "PASS"
+  },
+  "owned_A_E_orientation": [
+    {
+      "session": "1",
+      "wallrun_duration_ms": "4100",
+      "source_active_until_deinit": "1",
+      "verified_deinit": "1",
+      "path_a_writes": "175",
+      "path_b_writes": "175",
+      "max_held_ms": "2118",
+      "max_held_updates": "131",
+      "retention_pass": "1",
+      "last_actor_up_dot_surface": "1",
+      "first_hard_kill": "none",
+      "hard_kill_calls": "0"
+    },
+    {
+      "session": "2",
+      "wallrun_duration_ms": "4110",
+      "source_active_until_deinit": "1",
+      "verified_deinit": "1",
+      "path_a_writes": "177",
+      "path_b_writes": "177",
+      "max_held_ms": "2110",
+      "max_held_updates": "131",
+      "retention_pass": "1",
+      "last_actor_up_dot_surface": "1",
+      "first_hard_kill": "none",
+      "hard_kill_calls": "0"
+    }
+  ],
+  "owned_A_E_position_watch": [
+    {
+      "session": "1",
+      "watch_armed": "1",
+      "threads_seen": "2",
+      "threads_installed": "1",
+      "unique_writers": "1",
+      "total_write_events": "12",
+      "dropped": "0",
+      "cleanup_restored": "1",
+      "cleanup_pending": "0",
+      "Position_writes_by_mod": "0"
+    },
+    {
+      "session": "2",
+      "watch_armed": "1",
+      "threads_seen": "2",
+      "threads_installed": "1",
+      "unique_writers": "1",
+      "total_write_events": "12",
+      "dropped": "0",
+      "cleanup_restored": "1",
+      "cleanup_pending": "0",
+      "Position_writes_by_mod": "0"
+    }
+  ],
+  "human_c13": "ACCEPTED_compact_A_E_true_entry_RDX_stack_XYZ_mask7_sourceW0_destW1",
+  "actual_c15_writer_branch_XYZ_W_A_E": "PENDING_human_run",
+  "human_c14": "ACCEPTED_A4453_E4172_orientation_entry_accounting_PASS_writer_JNE_0x2CFC91F_barrier",
+  "safe_upstream_writable_source_authenticated": false,
+  "Position_writes_by_mod": 0,
+  "source_input_movement_mutation": false,
+  "private_full_game_bodies_distributed": false,
+  "exact_next_edge": "Actual runtime local branch-aware writer XYZ/W proof or precise next writer RVA/mnemonic/edge after accepted JNE0x2CFC91F. Producer0x351EB00 deferred; ownership/lifetime/downstream/exclusive effects unproven; no movement."
+}

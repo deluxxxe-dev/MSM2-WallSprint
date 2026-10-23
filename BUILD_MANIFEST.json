@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c14",
-  "package_version": "0.1.32",
+  "version": "v0.1c15",
+  "package_version": "0.1.33",
   "artifact": "WallSprint.script",
-  "sha256": "ff572b4560b2fae4c562abd6ee49f4de65d4d6d1a04693ef585702b458089df8",
-  "dll_sha256": "394f69b6613ac19f4d28ec6ef346da72b6663883b58d21d3b391ffd6ceb3b6be",
+  "sha256": "95cf397c98b9eb7d8f84caf0956ed8aa3af95ef7281b5bef596600e332f340e1",
+  "dll_sha256": "d51a3354960251c96ee691d984646bb27b13c6b9a083373daff6c91ccc094f41",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -128,14 +128,14 @@
     "original_capture": "private PATH_B_FUNCTION/PATH_B_CODE before hook; never redistributed",
     "caller_original_sha256": "1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d"
   },
-  "validation": "Windows warnings-as-errors; portable sanitizer and DLL/full hooks/native regression suite; independent scalar/AVX/shuffle/double-lane XYZ/W, storage/producer/refusal fixtures; real concurrent/nested hardware XYZ mask7 with sourceW0/destW1; session/partial/duplicate/mismatch accounting. Exact results in CODEX_RESULT. Actual c14 A/E source contract pending.",
+  "validation": "Windows warnings-as-errors; portable sanitizer/DLL/full c14 regression suite, plus owned183-byte reconvergence/component-conflict/bypass/nested/cap/loop/control/exact-store/W tests and real entry preactivation/stop-only final summary. Exact results in CODEX_RESULT. Actual c15 A/E writer proof or next blocker pending.",
   "limitations": [
-    "Historical c13 A/E exact bit equality does not supply the current private writer body or prove decoded causality",
-    "Actual c14 decoded XYZ/W/storage/producer result requires human A/E logs",
-    "Straight-line prefix is not a whole CFG, atomic state, return or exclusive translation certificate",
-    "Caller2 direct/jump/indirect classification may remain unresolved at an exact named edge; inherited RDX is not assumed caller-owned",
-    "Source type, lifetime, producer provenance, downstream conflict and exclusive intended effects remain unproven; no source/Position/input/movement writes",
-    "Existing bounded incomplete watch coverage, admitted-orientation-store/close overlap and c10 single-refresh limits remain"
+    "Accepted c14 A/E equality does not prove writer branch dataflow; c15 actual result pending",
+    "The bounded local target-store slice is not a whole-function return, downstream/exclusive-effect or source-type certificate",
+    "Unknown relevant instruction/memory effects, bad transfers or caps refuse with one precise local writer barrier",
+    "Producer0x351EB00 remains deferred; no new producer hook, read expansion or movement/source mutation",
+    "Source lifetime/ownership/semantics/downstream/exclusive effects remain unproven; writable_source_proven0",
+    "Existing incomplete watch coverage, admitted-orientation-store/close overlap and c10 refresh limits remain"
   ],
   "source_directory": "source",
   "path_b_override": true,
@@ -516,7 +516,7 @@
     "PAGE_GUARD_changes": false,
     "private_full_game_bodies_distributed": false
   },
-  "v01c14_gate": "CLOUD_READ_ONLY_RDX_CONTRACT_DIAGNOSTICS_ACTUAL_A_E_PENDING",
+  "v01c14_gate": "REAL_A_E_DIAGNOSTIC_PASS_EXACT_WRITER_JNE_0x2CFC91F_BLOCKER_NO_WRITE_CONTRACT",
   "historical_c13_A_E_orientation_entry_XYZ_verified": true,
   "rdx_source_contract": {
     "diagnostic_only": true,
@@ -547,5 +547,47 @@
     "input_mutation": false,
     "data_page_protection_changes": false,
     "full_private_game_bodies_distributed": false
+  },
+  "v01c15_gate": "CLOUD_BOUNDED_BRANCH_IMPLEMENTATION_PASS_ACTUAL_A_E_PENDING",
+  "historical_c14_A_E_orientation_entry_accounting_verified": true,
+  "writer_branch_contract": {
+    "diagnostic_only": true,
+    "writer_bytes": 183,
+    "block_cap": 16,
+    "edge_cap": 24,
+    "branch_cap": 4,
+    "path_cap": 16,
+    "state_cap": 31,
+    "instruction_visit_cap": 4096,
+    "exact_store_offsets": [
+      "0x36",
+      "0x3c",
+      "0x42",
+      "0x45"
+    ],
+    "all_relevant_reaching_provenance_required": true,
+    "condition_values_not_assumed": true,
+    "forward_local_only": true,
+    "loops_backedges_refused": true,
+    "indirect_or_foreign_branch_refused": true,
+    "new_instruction_semantics": false,
+    "new_game_calls": 0,
+    "new_hooks": 0,
+    "producer_traversal_expanded": false,
+    "producer_edge_deferred": "0x351eb00",
+    "W_independent": true,
+    "homogeneous_coordinate_semantics": "unknown",
+    "capture_summary_phase": "finalized_cancelled_scope_and_quiescent_drain",
+    "preactivation_summary_refused": true,
+    "actual_c15_writer_contract_proven": false,
+    "caller_ownership_proven": false,
+    "source_lifetime_exclusive": false,
+    "downstream_conflicts_proven_absent": false,
+    "writable_source_proven": false,
+    "Position_writes_by_mod": 0,
+    "source_mutation": false,
+    "input_mutation": false,
+    "data_page_protection_changes": false,
+    "private_full_game_bodies_distributed": false
   }
 }
