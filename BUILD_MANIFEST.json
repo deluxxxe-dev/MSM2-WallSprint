@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c13",
-  "package_version": "0.1.31",
+  "version": "v0.1c14",
+  "package_version": "0.1.32",
   "artifact": "WallSprint.script",
-  "sha256": "a3b811934420c001f4341c85a6482129892d36c08b0818865712fcc148bc9478",
-  "dll_sha256": "514640c908a52c0db52eec0684fd4b7607fca5cfa9d59c658a2e532f84c4dc95",
+  "sha256": "ff572b4560b2fae4c562abd6ee49f4de65d4d6d1a04693ef585702b458089df8",
+  "dll_sha256": "394f69b6613ac19f4d28ec6ef346da72b6663883b58d21d3b391ffd6ceb3b6be",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -128,16 +128,14 @@
     "original_capture": "private PATH_B_FUNCTION/PATH_B_CODE before hook; never redistributed",
     "caller_original_sha256": "1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d"
   },
-  "validation": "Windows warnings-as-errors; portable sanitizers; full c12 DLL/ABI/MinHook/native/Position suite plus c13 raw entry transparency, actual owned concurrent+nested hardware invocation/source-bit pairing, identity/hash/call/stale/guard/candidate/chain and cancellation/unhook/foreign-ownership fixtures. Actual c13 A/E pending.",
+  "validation": "Windows warnings-as-errors; portable sanitizer and DLL/full hooks/native regression suite; independent scalar/AVX/shuffle/double-lane XYZ/W, storage/producer/refusal fixtures; real concurrent/nested hardware XYZ mask7 with sourceW0/destW1; session/partial/duplicate/mismatch accounting. Exact results in CODEX_RESULT. Actual c14 A/E source contract pending.",
   "limitations": [
-    "Actual c13 game installation/entry/store/candidate/hitch/cleanup evidence remains pending",
-    "True entry reads and post-store target snapshots are separate guarded observations, not atomic engine state or whole-function return",
-    "Eight snapshots/session and incomplete bounded hardware coverage can leave partial/no-event records",
-    "Candidate exact bits/delta-like labels and repeated matches do not prove causal source semantics or stable ownership",
-    "XYZW producer lifetime/W/downstream conflicts/exclusive intended effects remain unproven; writable source denied",
-    "Only the explicitly requested MinHook entry install/restore changes executable target code; no data protection/PAGE_GUARD/movement/input/source writes",
-    "Pinned module and retained trampolines/records protect inflight callbacks; foreign patch or cleanup failure stops future capture",
-    "Existing c12 admitted-orientation-store/close overlap and bounded refresh limits remain"
+    "Historical c13 A/E exact bit equality does not supply the current private writer body or prove decoded causality",
+    "Actual c14 decoded XYZ/W/storage/producer result requires human A/E logs",
+    "Straight-line prefix is not a whole CFG, atomic state, return or exclusive translation certificate",
+    "Caller2 direct/jump/indirect classification may remain unresolved at an exact named edge; inherited RDX is not assumed caller-owned",
+    "Source type, lifetime, producer provenance, downstream conflict and exclusive intended effects remain unproven; no source/Position/input/movement writes",
+    "Existing bounded incomplete watch coverage, admitted-orientation-store/close overlap and c10 single-refresh limits remain"
   ],
   "source_directory": "source",
   "path_b_override": true,
@@ -479,7 +477,7 @@
     "actual_c12_direct_call_verified": true,
     "actual_c12_source_prefix_proven": false
   },
-  "v01c13_gate": "CLOUD_ENTRY_DIAGNOSTIC_IMPLEMENTATION_PASS_ACTUAL_A_E_PENDING",
+  "v01c13_gate": "REAL_A_E_TRUE_ENTRY_AND_RDX_STACK_XYZ_CORRELATION_PASS_NO_WRITE_CONTRACT",
   "historical_c12_A_E_orientation_verified": true,
   "writer_entry_snapshot": {
     "diagnostic_only": true,
@@ -507,7 +505,7 @@
     "written_bits_from_captured_source_register_or_immediate": true,
     "target_after_snapshot_atomic": false,
     "entry_values_captured_in_owned_fixture": true,
-    "actual_game_entry_values_captured": false,
+    "actual_game_entry_values_captured": true,
     "source_stability_proven": false,
     "typed_source_semantics_proven": false,
     "writable_source_proven": false,
@@ -517,5 +515,37 @@
     "data_page_protection_changes": false,
     "PAGE_GUARD_changes": false,
     "private_full_game_bodies_distributed": false
+  },
+  "v01c14_gate": "CLOUD_READ_ONLY_RDX_CONTRACT_DIAGNOSTICS_ACTUAL_A_E_PENDING",
+  "historical_c13_A_E_orientation_entry_XYZ_verified": true,
+  "rdx_source_contract": {
+    "diagnostic_only": true,
+    "independent_c12_analyzer": true,
+    "writer_span_cap": 1024,
+    "caller_span_cap": 8192,
+    "complete_decode_required": true,
+    "proof_scope": "entry_to_exact_stores_NOT_whole_CFG",
+    "XYZ_source": "decoded_entry_RDX_0_4_8",
+    "W_independent": true,
+    "current_thread_TEB_storage_bounds": true,
+    "caller_owned_requires_static_allocation_and_RDX_assignment": true,
+    "producer_jump_hop_cap": 2,
+    "producer_read_bytes_per_jump": 5,
+    "producer_code_scope": "startup_and_worker_recheck_NOT_atomic_entry",
+    "per_session_true_entry_summary": true,
+    "XYZ_matches_do_not_require_W_match": true,
+    "stability_scope": "observed_session_XYZ_bit_pattern_NOT_storage_or_cross_surface",
+    "actual_c14_causality_proven": false,
+    "source_lifetime_proven": false,
+    "typed_source_semantics_proven": false,
+    "downstream_exclusive_effects_proven": false,
+    "writable_source_proven": false,
+    "new_hooks": 0,
+    "new_game_calls": 0,
+    "Position_writes_by_mod": 0,
+    "source_mutation": false,
+    "input_mutation": false,
+    "data_page_protection_changes": false,
+    "full_private_game_bodies_distributed": false
   }
 }

@@ -1,0 +1,114 @@
+{
+  "version": "v0.1c14",
+  "package_version": "0.1.32",
+  "branch": "codex/v01c14-rdx-source-contract",
+  "base_handoff_commit": "4cbdc3ae0de317dfc958e5642fa62ce1b7a7d81e",
+  "implementation_commit": "617d7b6a84f752582aebd7be8a766c5ef02e476a",
+  "outputs": [
+    {
+      "path": "WallSprint_v0.1c14_rdx_source_contract.zip",
+      "bytes": 3041560,
+      "sha256": "d25829b31bb2b857ffaff08eed5e11afb7eabab250ab24b74590406e7c844ecf"
+    },
+    {
+      "path": "WallSprint_v0.1c14_source.zip",
+      "bytes": 643141,
+      "sha256": "9c3ae334192231fbb2d1493dd3deedfa4d02136c894fb1a730bae2b41e59e264"
+    }
+  ],
+  "public_test_pass_records": {
+    "portable": 13,
+    "smoke": 4,
+    "hooks": 60
+  },
+  "total_public_pass_records": 77,
+  "public_private_input_skip_records": 5,
+  "separate_private_replay_pass_records": 4,
+  "private_replay_duplicate_baseline_record": 1,
+  "optional_public_replay_skip_resolved_separately": true,
+  "historical_other_private_input_skips": 4,
+  "focused_entry_pass_records_included": 7,
+  "focused_contract_pass_records_included": 4,
+  "final_complete_suite_execution": "PASS_serial",
+  "standalone_source_build": "PASS_private_captures_absent",
+  "archives_CRC_current_complete_sources_docs_script_hash_licenses_private_body_exclusion": "PASS",
+  "c12_native_source_lifecycle_static_analyzer_byte_identical": true,
+  "c13_raw_thunk_and_cancel_stop_original_ownership_cleanup_unchanged": true,
+  "CODEX_NEXT_preserved": true,
+  "PROJECT_STATE_updated_as_required": true,
+  "owned_hardware": {
+    "true_entry_snapshots": 8,
+    "complete_distinct_invocation_maps": 7,
+    "hardware_store_events_paired": 28,
+    "concurrent_writer_threads": 2,
+    "reentrant_writer_test": true,
+    "pointer20_xyz_mask7_matches": 7,
+    "source_W_bits": "0x0",
+    "destination_W_bits": "0x3f800000",
+    "XYZ_stability_independent_of_W": true,
+    "ABI_gates_and_cleanup": "PASS"
+  },
+  "owned_A_E_orientation": [
+    {
+      "session": "1",
+      "wallrun_duration_ms": "4102",
+      "source_active_until_deinit": "1",
+      "verified_deinit": "1",
+      "path_a_writes": "176",
+      "path_b_writes": "176",
+      "max_held_ms": "2105",
+      "max_held_updates": "130",
+      "retention_pass": "1",
+      "last_actor_up_dot_surface": "1",
+      "first_hard_kill": "none",
+      "hard_kill_calls": "0"
+    },
+    {
+      "session": "2",
+      "wallrun_duration_ms": "4100",
+      "source_active_until_deinit": "1",
+      "verified_deinit": "1",
+      "path_a_writes": "179",
+      "path_b_writes": "179",
+      "max_held_ms": "2133",
+      "max_held_updates": "133",
+      "retention_pass": "1",
+      "last_actor_up_dot_surface": "1",
+      "first_hard_kill": "none",
+      "hard_kill_calls": "0"
+    }
+  ],
+  "owned_A_E_position_watch": [
+    {
+      "session": "1",
+      "watch_armed": "1",
+      "threads_seen": "2",
+      "threads_installed": "1",
+      "unique_writers": "1",
+      "total_write_events": "12",
+      "dropped": "0",
+      "cleanup_restored": "1",
+      "cleanup_pending": "0",
+      "Position_writes_by_mod": "0"
+    },
+    {
+      "session": "2",
+      "watch_armed": "1",
+      "threads_seen": "2",
+      "threads_installed": "1",
+      "unique_writers": "1",
+      "total_write_events": "12",
+      "dropped": "0",
+      "cleanup_restored": "1",
+      "cleanup_pending": "0",
+      "Position_writes_by_mod": "0"
+    }
+  ],
+  "human_c13": "ACCEPTED_compact_A_E_true_entry_RDX_stack_XYZ_mask7_sourceW0_destW1",
+  "actual_c14_decoded_XYZ_W_storage_producer_A_E": "PENDING_human_run",
+  "safe_upstream_writable_source_authenticated": false,
+  "Position_writes_by_mod": 0,
+  "source_input_movement_mutation": false,
+  "private_full_game_bodies_distributed": false,
+  "exact_next_edge": "Actual runtime decoded entry-to-store XYZ/W prefix; inherited RDX ownership versus proved caller allocation; exact anchored parent call/direct target/next jump destination and constructor/barrier RVAs. Typed semantics, producer/lifetime/downstream/exclusive intended translation remain unproven."
+}
