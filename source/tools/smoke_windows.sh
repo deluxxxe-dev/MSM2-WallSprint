@@ -2,6 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 root=$(pwd)
+mkdir -p logs
 wine_root=/workspace/toolchains/wine
 if [[ ! -x "$wine_root/usr/lib/wine/wine64" ]]; then
  WALLSPRINT_WITH_WINE=1 bash tools/setup_cloud.sh
