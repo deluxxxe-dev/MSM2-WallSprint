@@ -1,337 +1,314 @@
-# Next task — WallSprint v0.1c2 Real-Runtime Compact Proof Repair
+# Next task — WallSprint v0.1c3 Third Reset Writer Multithread Trace
 
-## Objective
+## Implementation base
 
-v0.1c1 implemented the intended lock-free dual-source orientation ownership path, but the real game never reached either source override because the new Path-B compact-3x3 startup proof failed closed.
+Do not rebuild from old main source.
 
-The target executable itself is still the verified build. Do not change or weaken exact-build safety. Fix the proof implementation so it can correctly decode the real accepted-build Path-B caller/writer and recover the already-characterized nine compact copy pairs.
-
-This remains orientation-only. Do not add adhesion, movement, animation, camera, physics, gravity, parkour, swing or combat.
-
-## Implementation base — IMPORTANT
-
-Do **not** start from main source alone.
-
-The v0.1c1 implementation is published at:
+Use the published c2 implementation:
 
 ```text
-branch: codex/v01c1-compact-path-b
-commit: 71437fac6c0640af01725a46e1b49c5627c739bb
+base branch: codex/v01c2-proof-fix
+implementation commit: 2d26710034dcf695fa7bb2da763f117faf6171db
+published c2 head: 727fcdc1594e36e6a1ffaabf5569eee89375b871
 ```
 
-Use that branch/commit as the implementation base, then read the latest handoff docs from `origin/main`:
+A branch has already been created from the c2 head:
 
-- `AGENTS.md`
+```text
+codex/v01c3-third-writer-trace
+```
+
+Work on that branch (or an equivalent descendant of the exact c2 head). Preserve all c2 A/B behavior.
+
+Read first:
+
+- `analysis/V01C2_RUNTIME_RESULT.md`
 - `docs/PROJECT_STATE.md`
-- `analysis/V01C1_RUNTIME_RESULT.md`
-- this `docs/CODEX_NEXT.md`
+- `docs/CODEX_RESULT.md` from `codex/v01c2-proof-fix`
 
-Preserve all c1 lock-free snapshot, Path-A, Path-B write-boundary and retention logic unless runtime evidence here specifically requires a correction.
+## New authoritative c2 runtime result
 
-## Authoritative v0.1c1 runtime result
-
-User report: no visible orientation change.
-
-The package was correct:
-
-```text
-WallSprint v0.1c1 package_version=0.1.19
-scope=shared_orientation_source_snapshot
-path_b_override=1
-```
-
-The executable itself passed:
-
-```text
-Spider-Man2.exe 2.810.0.0
-exe_file_sha256=c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9
-target_build_gate=ACCEPTED
-```
-
-But the new proof failed:
-
-```text
-PATH_B_COMPACT3X3_PROOF
-admitted=0
-caller_verified=0
-writer_verified=1
-rdx_to_rcx_map_verified=0
-source_bytes=0x24
-decoded_prefix_bytes=5
-pairs=0
-reason=instruction_or_dataflow_not_proven
-```
-
-Then all source ownership was correctly disabled:
-
-```text
-native_source_config admitted=0 caller_body_hash_verified=0
-DUAL_SOURCE_ADMISSION admitted=0 copy_hook_authenticated=0
-PATH_B_LAYOUT_CONFIG enabled=0 path_b_override=0
-RESET_TRACE_CONFIG admitted=0
-PATH_A_OVERRIDE_COUNT=0
-PATH_B_OVERRIDE_COUNT=0
-```
-
-The existing path-A writer itself still authenticated and installed:
-
-```text
-orientation_source_hook installed=1
-writer_rva=0x2cfc580
-exact_hash=3aae659545a606d36c0f9bf39eb773e09f1b091ff8ae139e72709c13688e6cd6
-unique_AOB=1
-known_prefix=1
-runtime_boundary=1
-```
-
-Therefore this is a c1 proof-decoder/self-check bug, not a changed game build and not evidence against the b9 compact source characterization.
-
-Detailed runtime handoff: `analysis/V01C1_RUNTIME_RESULT.md`.
-
-## Ground-truth Path-B map from b9
-
-Writer:
-
-```text
-RVA 0x2CFC3C0 .. 0x2CFC57C
-size 444
-SHA256 ee33ad96fb1834f9977621ea988f7667f0eb3e47166a7115ba262072ebc50196
-```
-
-Caller:
-
-```text
-function 0x2CFC7D0 .. 0x2CFC850
-call return RVA 0x2CFC84B
-```
-
-Exact runtime source provenance on A and E:
-
-```text
-RDX = writer-entry RSP + 0x28
-RDX inside current-thread stack
-[RDX,RDX+0x24) inside stack
-```
-
-Nine direct-copy pairs to prove from authenticated original writer bytes:
-
-```text
-RDX + 0x00 -> RCX + 0x00
-RDX + 0x04 -> RCX + 0x04
-RDX + 0x08 -> RCX + 0x08
-RDX + 0x0C -> RCX + 0x10
-RDX + 0x10 -> RCX + 0x14
-RDX + 0x14 -> RCX + 0x18
-RDX + 0x18 -> RCX + 0x20
-RDX + 0x1C -> RCX + 0x24
-RDX + 0x20 -> RCX + 0x28
-```
-
-Do not hard-code admission solely from this list. The startup proof must independently recover and verify it from the exact accepted-build original bytes.
-
-## Required implementation
-
-### 1. Diagnose why the real decoder stops at 5 bytes
-
-Instrument the compact proof parser/decoder so failure reports at least:
-
-```text
-PATH_B_PROOF_DECODE_FAILURE
-role=caller|writer
-function_rva=
-byte_offset=
-absolute_rva=
-remaining_bytes=
-first_bytes_hex=
-decoder_backend=
-decoder_status=
-reason=
-```
-
-The current `decoded_prefix_bytes=5` is insufficient.
-
-Use the actual unhooked accepted-build bytes, not a synthetic fixture, for the startup proof.
-
-### 2. Use a decoder that fully supports the real instruction stream
-
-The proof must decode the complete instruction sequences needed to authenticate:
-
-- caller construction of the local compact source and the direct call returning at `0x2CFC84B`;
-- writer direct loads from RDX and stores to RCX for all nine orientation floats.
-
-If the c1 custom/minimal decoder cannot reliably handle the real instruction set/prefixes, replace that proof path with an already-vendored/runtime-safe decoder that supports the encountered x64 instructions, or use the project's existing proven Capstone-based offline/static decoder where appropriate.
-
-Do not simply skip undecodable instructions. A proof that silently skips bytes must not admit writes.
-
-### 3. Separate build identity from proof identity in diagnostics
-
-Do not report the verified executable as `exact_build=0` merely because a later proof component failed.
-
-Log distinct fields, for example:
-
-```text
-exe_build_verified=1
-path_a_writer_verified=1
-path_b_writer_verified=1
-path_b_caller_verified=0|1
-path_b_map_verified=0|1
-dual_source_admitted=0|1
-```
-
-Fail closed remains mandatory; this is a diagnostic clarity fix, not a safety relaxation.
-
-### 4. Recover all nine pairs from real bytes
-
-Successful startup must log:
-
-```text
-PATH_B_COMPACT3X3_PROOF
-admitted=1
-caller_verified=1
-writer_verified=1
-rdx_to_rcx_map_verified=1
-source_bytes=0x24
-decoded_prefix_bytes=<complete required span>
-pairs=9
-```
-
-Additionally emit a bounded one-time map summary containing the nine recovered source/destination offsets. Do not log/package full private game-function captures.
-
-### 5. Preserve the c1 lock-free shared snapshot
-
-Once proof admission succeeds, retain c1 behavior:
-
-- no worker-state mutex/try-lock dependency inside Path A or Path B native hot hooks;
-- one coherent shared session/generation/Transform/Right/Up/Forward/N398 snapshot;
-- exact lifecycle/thread/target/stack/staleness/kill gates;
-- `PATH_A_STATE_LOCK_CONTENTION=0` should remain true.
-
-Do not regress to the b9 state-lock design.
-
-### 6. Preserve exact Path-B write boundary
-
-For admitted exact calls after elapsed >= 0.70:
-
-- RDX must equal entry RSP+0x28;
-- source/target/current Hero/lifecycle must verify;
-- validate sane finite row magnitudes;
-- write exactly `[RDX+0x00,RDX+0x24)`;
-- preserve all bytes at and after `RDX+0x24`;
-- preserve row magnitudes while replacing directions with the shared WallSprint Right/Up/Forward basis;
-- verify metadata remains unchanged.
-
-Do not write Actor Transform directly.
-
-### 7. Preserve Path-A every-call override
-
-For exact qualifying `0x2CFC8F3 -> 0x2CFC580` current-Hero calls after elapsed >= 0.70:
-
-- use the same lock-free shared orientation snapshot;
-- modify only Right/Up/Forward source rows;
-- preserve Position;
-- override every qualifying invocation, including late World-Up source calls;
-- bounded reject diagnostics must explain real gate failures.
-
-### 8. Runtime verification
-
-Keep the bounded prearmed Hero Up hardware watch.
-
-If both source paths commit and another writer resets Up, log:
-
-```text
-NEW_RESET_AFTER_DUAL_OVERRIDE
-writer_rva=
-caller_rva=
-latency_ms=
-up_before=
-up_after=
-```
-
-Do not compensate with direct Actor spam writes.
-
-### 9. Retention gate
-
-Require:
-
-```text
-dot(ActorUp,N398) >= 0.98
-```
-
-for either >=0.30 s or >=20 distinct native updates in the same active WallRun session.
-
-Log:
-
-```text
-ORIENTATION_RETENTION_PASS=1
-held_ms=
-held_updates=
-```
-
-Only this gate can authorize the later adhesion milestone.
-
-## Tests
-
-Add a regression using the **actual accepted-build byte sequences already independently captured/represented by project analysis**, sufficient to reproduce the c1 runtime decode failure. The test must fail under the old c1 proof decoder and pass after the repair.
-
-Also retain negative tests:
-
-- byte mutation / hash mismatch;
-- wrong caller return;
-- missing one of nine pairs;
-- duplicate/ambiguous pair;
-- source/destination offset outside expected orientation region;
-- decoder failure mid-stream;
-- stack relation mismatch;
-- metadata boundary write attempt.
-
-Synthetic fixtures alone are not sufficient for this bug.
-
-## Human test
-
-After startup proof is confirmed admitted, test:
-
-A Control:
-- one left-to-right WallRun, about 1.5 s.
-
-E diagonal:
-- same known diagonal face;
-- one left-to-right WallRun, about 2 s.
-
-Expected visible success: Spider-Man clearly rotates sideways relative to world/screen because the camera remains world-up.
-
-## PASS criteria
-
-Implementation gate:
+The real-game startup proof now passes:
 
 ```text
 PATH_B_COMPACT3X3_PROOF admitted=1
 caller_verified=1
 writer_verified=1
 rdx_to_rcx_map_verified=1
+decoded_prefix_bytes=444
+caller_decoded_bytes=128
 pairs=9
 ```
 
-and no state-lock dependency in the hot hooks.
+Both known orientation source paths also work in the real game.
 
-Runtime primary gate:
+A control wall reaches:
 
 ```text
-PATH_A_OVERRIDE_COUNT > 0
-PATH_B_OVERRIDE_COUNT > 0
-ORIENTATION_RETENTION_PASS=1
+Path A applied_up=(0,0,1)
+Path B applied_up=(0,0,1)
+actor_up=(0,0,1)
+actor_up_dot_surface=1
 ```
 
-No adhesion yet even if runtime retention succeeds.
+Diagonal E similarly reaches approximately:
+
+```text
+N398=(-0.707107,0,+0.707107)
+Path B applied_up~=N398
+actor_up_dot_surface~=1
+```
+
+The user reports an obvious visible change, but normal WallRun and surface-relative WallRun orientations rapidly alternate.
+
+The log shows the same failure: after valid A/B Surface Up commits, Actor Up abruptly becomes World Up again.
+
+Representative pattern:
+
+```text
+actor_up=(surface Up) dot_surface=1
+...
+actor_up=(0,1,0) dot_surface=0
+```
+
+Retention resets after only a few native updates / tens of milliseconds and never reaches the gate.
+
+Path A lock contention is no longer the problem:
+
+```text
+PATH_A_STATE_LOCK_CONTENTION=0
+```
+
+Late WorldUp inputs to known path A are detected and overridden (`LATE_COMMON_WORLDUP_OVERRIDE=1`), but Actor Up still returns to World Up afterward.
+
+## Why `NEW_RESET_AFTER_DUAL_OVERRIDE` did not identify the writer
+
+The c2 Up hardware watch was primary-thread-only:
+
+```text
+threads_enumerated=0
+installed=1
+complete_thread_coverage=0
+primary_only=1
+primary_native_thread=<runtime thread>
+```
+
+Captured primary-thread writer events are the already-known `0x2CFC580 / 0x2CFC8F3` path and they write the requested Surface Up.
+
+At multiple SurfaceUp -> WorldUp transitions, worker observation changes to World Up without a corresponding hardware writer event.
+
+The strongest current hypothesis is a third writer on another process thread or otherwise outside the currently armed thread set.
+
+## Objective
+
+Identify the exact remaining writer. This package is diagnostic-first.
+
+**Do not modify a third writer/source path in c3.**
+
+Keep c2 Path A and Path B overrides enabled so the unknown writer has a clear Surface Up state to overwrite.
+
+No adhesion, movement, animation, camera, physics, gravity, parkour, swing or combat.
+
+## Required implementation
+
+### 1. Preserve c2 exact-build and A/B gates
+
+Do not weaken:
+
+- exact exe version/SHA gate;
+- c2 Capstone compact proof;
+- writer/caller identity;
+- lifecycle / Hero / Transform / thread / stack / freshness / kill gates;
+- Path A Position preservation;
+- Path B exact `[RDX,RDX+0x24)` boundary and metadata preservation;
+- direct Actor Transform writes remain disabled.
+
+Startup must still show the c2 compact proof PASS.
+
+### 2. Add bounded process-thread Hero-Up write watch
+
+The current `primary_only=1` watch is insufficient.
+
+For a verified active WallRun session, enumerate the threads belonging to the current Spider-Man2 process and arm the Hero Transform Up range on every safely eligible thread for a bounded diagnostic window.
+
+Watch the same 12 bytes:
+
+```text
+Transform + 0x10 .. +0x1B
+```
+
+using two hardware write breakpoints where possible (8 bytes + 4 bytes), preserving each thread's existing debug-register state.
+
+Requirements:
+
+- do not overwrite foreign/in-use DR slots;
+- do not leave a thread suspended if any operation fails;
+- restore each modified thread's exact previous debug-register state when the window ends, session closes, Hero/Transform changes, kill occurs, DLL shutdown occurs, or an exception path aborts setup;
+- no PAGE_GUARD and no page-protection changes;
+- no direct game calls;
+- cap enumeration/installation to a conservative finite maximum (e.g. 128 process threads) and log if the cap is exceeded;
+- log skipped/failed thread IDs and reasons only in bounded summary form;
+- keep the window short enough for diagnosis, approximately from before final interpolation completion through the first repeated reset period (target roughly elapsed 0.85 to 1.50 s, or equivalent bounded trigger tied to the first near-surface Up observation).
+
+If a new process thread appears during the diagnostic window, one bounded rescan is acceptable, but do not poll continuously.
+
+Startup/runtime summary:
+
+```text
+MULTITHREAD_UP_WATCH
+session=
+process_threads_seen=
+eligible=
+installed=
+skipped_foreign_dr=
+failed=
+complete_thread_coverage=0|1
+window_start_elapsed=
+window_end_elapsed=
+```
+
+### 3. Classify every captured Up write
+
+For each breakpoint hit, capture at least:
+
+```text
+thread_id=
+rip=
+module=
+module_offset_after=
+return_address=
+caller_rva=
+caller2_rva=
+up_before=
+up_after=
+dot_before_surface=
+dot_after_surface=
+relative_us_from_last_path_a_override=
+relative_us_from_last_path_b_override=
+```
+
+Classify known writers:
+
+```text
+KNOWN_PATH_A    writer function 0x2CFC580
+KNOWN_PATH_B    writer function 0x2CFC3C0
+UNKNOWN_WRITER  anything else that actually changes current Hero Up
+```
+
+Do not assume the return address is valid until bounded stack/readability checks pass.
+
+### 4. Emit a dedicated first unexplained reset event
+
+When current Hero Up was sufficiently surface-relative immediately beforehand and a captured write moves it materially toward World Up, emit once per session:
+
+```text
+THIRD_WRITER_EVENT
+session=
+thread_id=
+rip=
+writer_rva=
+caller=
+caller_rva=
+caller2=
+caller2_rva=
+up_before=
+up_after=
+dot_before_surface=
+dot_after_surface=
+dot_before_world=
+dot_after_world=
+relative_us_from_last_path_a_override=
+relative_us_from_last_path_b_override=
+```
+
+Suggested trigger semantics (adjust conservatively if needed):
+
+```text
+dot_before_surface >= 0.90
+AND dot_after_surface <= 0.50
+AND dot_after_world > dot_before_world
+```
+
+The event is evidence only. Do not patch that writer in c3.
+
+### 5. Capture enough static context for the next task
+
+Once an unknown writer RIP is found, capture bounded identifying information sufficient for offline decode without committing full private game functions:
+
+```text
+THIRD_WRITER_IDENTITY
+rip_after=
+function_begin_rva=
+function_end_rva=
+function_size=
+function_sha256=
+caller_rva=
+caller2_rva=
+thread_id=
+```
+
+If needed, write the raw function bytes only to the local private runtime log marked `private_do_not_distribute=1`; do not commit them or include them in ZIPs.
+
+Prefer hashes, RVAs and a small instruction window in Git analysis documents.
+
+### 6. Do not let the old trace deadline hide later resets
+
+c2's primary watch stops around the early retention period. The c3 multithread watch must remain armed long enough to cover the repeated visible flicker after interpolation reaches `t=1`.
+
+The purpose is not a longer general profiler. It is a short bounded window specifically around the first post-dual-override WorldUp transition.
+
+### 7. Keep retention measurement
+
+Continue measuring:
+
+```text
+dot(ActorUp,N398) >= 0.98
+```
+
+for >=300 ms or >=20 distinct native updates.
+
+c3 is allowed to retain the existing gate, but do not expect PASS until the third writer is owned. Do not authorize adhesion merely because brief Surface Up observations occur.
+
+## Human test
+
+A Control is sufficient for the primary c3 capture:
+
+- one left-to-right WallRun, ~1.5-2 s.
+
+If no `THIRD_WRITER_EVENT` is captured on A, test E once.
+
+The visible rapid alternating orientation is useful confirmation, but the runtime event is authoritative.
+
+## PASS criteria
+
+Primary c3 success:
+
+```text
+c2 compact proof still PASS
+Path A override count > 0
+Path B override count > 0
+MULTITHREAD_UP_WATCH installed > 1 thread
+THIRD_WRITER_EVENT captured
+```
+
+Strong success:
+
+- exact third writer function boundaries/RVA/hash identified;
+- caller/caller2 and executing thread identified;
+- same unknown writer repeats across A/E or repeated A runs;
+- all modified debug-register states restored cleanly;
+- no crash, transform corruption, position corruption or metadata write.
+
+If multithread coverage is incomplete and the reset remains uncaptured, report exact skipped thread reasons and design the next read-only capture strategy. Do not fall back to direct Actor spam writes.
 
 ## Required outputs
 
 Update/create:
 
 ```text
-analysis/V01C1_RESULT.md
-analysis/PATH_B_PROOF_DECODER_FIX.md
-analysis/DUAL_SOURCE_RETENTION.md
-analysis/V01C2_GATE.md
+analysis/V01C2_RESULT.md
+analysis/THIRD_WRITER_TRACE.md
+analysis/V01C3_GATE.md
 README_TEST.md
 docs/CODEX_RESULT.md
 ```
@@ -339,13 +316,11 @@ docs/CODEX_RESULT.md
 Package:
 
 ```text
-WallSprint_v0.1c2_real_runtime_proof_fix.zip
+WallSprint_v0.1c3_third_writer_trace.zip
 ```
-
-Persist implementation on a new pushed branch based on c1, e.g. `codex/v01c2-proof-fix`, and record exact branch/commit SHA in `docs/CODEX_RESULT.md`.
 
 ## Distribution / provenance
 
 Follow `AGENTS.md` and `docs/DEV_RULES.md`.
 
-Use only WallSprint-owned source plus independent runtime/static analysis of Spider-Man2.exe. Do not copy reference-mod code, binaries or assets.
+Do not commit user raw logs, video, full captured game functions, or private runtime byte dumps. Keep the implementation independently derived and suitable for eventual Nexus Mods distribution.
