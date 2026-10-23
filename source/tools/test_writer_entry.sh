@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
+mkdir -p build/windows logs
 toolchain_root=${WALLSPRINT_TOOLCHAIN_ROOT:-/workspace/toolchains/windows}
 gpp=$toolchain_root/usr/bin/x86_64-w64-mingw32-g++-posix
 gcc=$toolchain_root/usr/bin/x86_64-w64-mingw32-gcc-posix
