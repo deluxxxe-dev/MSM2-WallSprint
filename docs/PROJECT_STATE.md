@@ -41,32 +41,23 @@ Verified on cardinal and diagonal planar vertical walls:
 - `P320 - P338 ≈ 0.5 * N398`
 - `dot(HeroPosition - P338, N398) ≈ 0.5 m`
 
-Face E repeatedly produces approximately `N398 = (-0.707107, 0, +0.707107)`.
-
 The current preferred control surface is a large unobstructed A-direction wall.
 
-## Orientation Path A
+## Orientation ownership
+
+Path A:
 
 - writer RVA `0x2CFC580`
 - WallRun caller return RVA `0x2CFC8F3`
-- caller-local source contains padded Right / Up / Forward plus Position
-- orientation source range currently owned is `[source+0x00, source+0x30)`
-- Position remains unchanged
-- lock-free shared WallSprint snapshot active
-- real runtime confirms SurfaceFrame orientation writes
-- `PATH_A_STATE_LOCK_CONTENTION=0`
+- caller-local source Right / Up / Forward / Position
+- orientation owns `[source+0x00, source+0x30)`; Position remains unchanged
 
-## Orientation Path B
+Path B:
 
 - writer RVA `0x2CFC3C0..0x2CFC57C`, size 444
-- writer SHA256 `ee33ad96fb1834f9977621ea988f7667f0eb3e47166a7115ba262072ebc50196`
-- caller `0x2CFC7D0..0x2CFC850`, size 128
-- caller SHA256 `1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d`
 - return RVA `0x2CFC84B`
-- runtime source provenance: `RDX = writer-entry RSP + 0x28`
-- compact 3x3 payload `[RDX+0x00,RDX+0x24)`
-
-Real-game compact proof passes and Path B writes the intended surface-relative basis.
+- compact 3x3 source at `RDX = writer-entry RSP + 0x28`
+- real-game compact proof passes
 
 ## Orientation history
 
@@ -74,16 +65,15 @@ Real-game compact proof passes and Path B writes the intended surface-relative b
 - c3: multithread writer tracing attempted; production expansion failed.
 - c4: thread-watch repaired; first retention PASS, but source ownership ended early.
 - c5: lifecycle continuity repaired; real full-WallRun orientation hold passed.
-- c6: Position/adhesion remained read-only, but a real ~250 ms native Update gap caused `fresh_update_age` to permanently end source ownership while the same verified WallRun later continued.
+- c6: Position/adhesion remained read-only; a real ~250 ms native Update gap caused `fresh_update_age` to permanently end source ownership.
+- c7: added transient stale suspend/resume, but real run hard-killed orientation after only two Path A writes / ~16 ms, before the recovery logic could matter.
 
-## v0.1c5 authoritative full-WallRun PASS
+## Last authoritative real PASS: c5
 
 ```text
 wallrun_duration_ms=3843
-source_entry_elapsed=0.687000
 source_exit_reason=verified_native_Deinit
 source_active_until_deinit=1
-verified_deinit=1
 path_a_writes=219
 path_b_writes=218
 retention_pass=1
@@ -92,60 +82,44 @@ max_held_updates=205
 last_actor_up_dot_surface=1
 ```
 
-## v0.1c6 real-game regression
+## c6 regression
+
+The same verified WallRun survived a ~250 ms native Update gap, but c6 permanently closed source ownership on `fresh_update_age`. Adhesion was read-only (`corrections_applied=0`, `source_position_writes=0`).
+
+## c7 real-game FAIL
 
 Implementation:
 
 ```text
-branch: codex/v01c6-planar-adhesion
-implementation commit: 6ed21d411b8b6868185143d275c2e40486b57781
-published head: db874c74cc14f361a2ceb5e15647910e06ebfb84
-version: v0.1c6 / package 0.1.24
+branch: codex/v01c7-transient-freshness-recovery
+implementation commit: 93d7887e8ba8cb04e38473a0a821077ee8fc9efb
+published head: 466f0ab237faccd8c769d17fedd66a42138a7829
+version: v0.1c7 / package 0.1.25
 ```
 
-Adhesion was read-only as intended:
+User observation: actor stayed visually in vanilla orientation.
+
+Runtime sequence:
 
 ```text
-position_proof_admitted=0
-corrections_applied=0
-source_position_writes=0
-mode=position_read_only
+elapsed=0.703  Path A write #1  t=0.000
+elapsed=0.719  Path A write #2  t=0.064
+NATIVE_SOURCE_EXIT reason=disabled_kill_or_patch_gate
 ```
 
-Therefore the visible mid-run release was not caused by Position correction.
+The verified WallRun continued after the hard close. Therefore this was not a normal WallRun end and was not the c6 `fresh_update_age` path.
 
-Exact failing gate:
+Immediately after the first write, the bounded orientation/reset watch reported:
 
 ```text
-failing_sub_gate=fresh_update_age
-update_age_ms=250
-fresh_update_age_ok=0
-ctx_wallrun_active=1
-owner_matches_ctx=1
-hero_matches=1
-transform_matches=1
-accepted_event_epoch=0
-native_collision_epoch=0
+stop_reason=observation_guards_lost
 ```
 
-Final session summary:
+This is temporally adjacent but not yet proven to be the first kill cause.
 
-```text
-wallrun_duration_ms=4078
-source_exit_reason=native_lifecycle_inactive_or_stale
-source_active_until_deinit=0
-verified_deinit=1
-path_a_writes=132
-path_b_writes=130
-retention_pass=1
-max_held_ms=1422
-max_held_updates=114
-last_actor_up_dot_surface=1
-```
+Code review shows the worker currently hard-kills `native_source` whenever the broad `observationPlanAuthenticated()` boolean becomes false. That boolean combines verified hook availability, observation `fieldPlanEnabled`, and byte ownership of all four WallRun hook patches. Path A/B also contain separate hard-kill sites. The log does not currently identify which one fired first.
 
-The same verified WallRun continued for about 1.4 s after source ownership was permanently closed.
-
-Detailed result: `analysis/V01C6_RUNTIME_RESULT.md`.
+Detailed result: `analysis/V01C7_RUNTIME_RESULT.md`.
 
 ## Current blocker / stage
 
@@ -158,38 +132,36 @@ Detailed result: `analysis/V01C6_RUNTIME_RESULT.md`.
 7. Path B discovery / compact layout ✅
 8. real-runtime Path B proof ✅
 9. Path A + Path B SurfaceFrame writes ✅
-10. visible surface-relative rotation ✅
-11. multithread watch real-game enumeration ✅
-12. retention threshold ✅
-13. lifecycle-wide hold under normal cadence ✅ c5
-14. transient native-update hitch recovery ▶ CURRENT
-15. planar adhesion / safe Position-source ownership ⏸ resume after 14
+10. visible surface-relative rotation ✅ historical
+11. lifecycle-wide hold under normal cadence ✅ c5 historical
+12. transient freshness recovery implementation ✅ synthetic / real pending
+13. exact c7 hard-kill attribution ▶ CURRENT
+14. lifecycle-wide real orientation hold ⬜ revalidate
+15. planar adhesion / safe Position-source ownership ⏸
 16. surface-relative movement ⬜
 17. animation integration ⬜
 18. camera and later roadmap ⬜
 
 ## Current implementation base
 
-Use the published c6 implementation as the base so the Position diagnostics are retained but still read-only:
+Use published c7 so its stale suspend/resume code is preserved:
 
 ```text
-branch: codex/v01c6-planar-adhesion
-implementation commit: 6ed21d411b8b6868185143d275c2e40486b57781
-published head: db874c74cc14f361a2ceb5e15647910e06ebfb84
+branch: codex/v01c7-transient-freshness-recovery
+implementation commit: 93d7887e8ba8cb04e38473a0a821077ee8fc9efb
+published head: 466f0ab237faccd8c769d17fedd66a42138a7829
 ```
 
 Pre-created next branch:
 
 ```text
-codex/v01c7-transient-freshness-recovery
+codex/v01c8-kill-cause-attribution
 ```
 
 ## Current objective
 
-Repair lifecycle semantics for a transient stale-update interval without weakening hard identity/integrity gates.
+Identify and record the exact first hard-kill cause from c7, then fix only the demonstrated coupling/false failure.
 
-The existing ~100 ms freshness condition must continue to prevent source writes while the token is stale. However, `fresh_update_age` alone must not permanently destroy an otherwise coherent matching WallRun session. When a fresh verified native Update resumes for the same session/owner/generation/native thread and identities remain valid, source ownership should resume using the existing SurfaceFrame target without restarting the WallRun session or interpolation.
+Do not simply remove integrity checks. If the failure is only a diagnostic/observation-plan condition that is not required for authenticated Path A/B ownership, decouple it from source hard-kill. If any actual WallRun hook patch, Path A/B caller/writer, thread/stack, Hero/Transform, epoch, rollback or build identity is corrupted, remain fail-closed.
 
-Permanent close must remain fail-closed for verified Deinit, owner/session/generation change, Hero/Transform identity change, native collision/epoch failure, wrong thread/caller/stack/integrity state, kill/F8/shutdown, or other hard invalidation.
-
-Do not advance adhesion Position writes until real-game full-WallRun orientation passes again with this recovery behavior.
+Do not advance Position writes/adhesion until real-game full-WallRun orientation passes again.
