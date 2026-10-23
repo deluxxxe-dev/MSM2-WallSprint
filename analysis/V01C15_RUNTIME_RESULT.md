@@ -108,3 +108,7 @@ Position/source/input/movement writes=0
 ```
 
 C16 resolves only the effect contract of writer call `0x2CFC927` before any producer or movement work.
+
+## c16 handoff consumption
+
+C16 consumes this compact result without requesting/distributing raw logs. Its sole new edge is call0x2CFC927; no producer/movement authorization is inferred. Actual c16 target/effect remains pending.

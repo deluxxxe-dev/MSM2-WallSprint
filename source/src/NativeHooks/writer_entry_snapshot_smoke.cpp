@@ -643,8 +643,66 @@ static void finalization() {
        "early; stop publishes actual captured count once and never-activated "
        "stop publishes honest zero without changing capture or cleanup policy");
 }
+static void callIntegrity() {
+  auto memory = static_cast<unsigned char *>(VirtualAlloc(
+      nullptr, 4096, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+  assert(memory);
+  std::memset(memory + 0x100, 0x90, 32);
+  memory[0x100] = 0xc3;
+  memory[0x200] = 1; // independently authored empty unwind record
+  RUNTIME_FUNCTION function{0x100, 0x120, 0x200};
+  imageBase = reinterpret_cast<std::uintptr_t>(memory);
+  assert(RtlAddFunctionTable(&function, 1, imageBase));
+  std::array<unsigned char, 183> writer{};
+  writer.fill(0x90);
+  writer[0x27] = 0xe8;
+  std::int32_t delta = 0x100 - 0x102c;
+  std::memcpy(writer.data() + 0x28, &delta, 4);
+  writerCall = ws::rdx::exactCall(writer.data(), writer.size(), 0x1000,
+                                  4096 + 183, 0x27, 0x2c);
+  writerCalleeSize = 32;
+  std::memcpy(writerCallee.data(), memory + 0x100, writerCalleeSize);
+  assert(digest(writerCallee.data(), writerCalleeSize, writerCalleeHash));
+  ws::rdx::classifyCallee(writerCall, writerCallee.data(), writerCalleeSize,
+                          0x100, 0x120);
+  assert(writerCall.noWrite && writerCallCurrent());
+  writerCall.relevant = true;
+  contractWriter.callStackLow = -32;
+  decltype(records[0].snapshot) stack{};
+  stack.stackLow = 0x1000;
+  stack.stackHigh = 0x2000;
+  stack.rsp = 0x1800;
+  assert(callStackFits(stack));
+  stack.rsp = stack.stackLow + 31;
+  assert(!callStackFits(stack));
+  stack.rsp = stack.stackLow + 32;
+  assert(callStackFits(stack));
+  stack.rsp = stack.stackLow - 1;
+  assert(!callStackFits(stack));
+  memory[0x110] = 0xcc; // full body identity, even beyond the analyzed RET
+  assert(!writerCallCurrent());
+  memory[0x110] = 0x90;
+  assert(writerCallCurrent());
+  writerCall.end++;
+  assert(!writerCallCurrent());
+  writerCall.end--;
+  writerCalleeHash[0] ^= 1;
+  assert(!writerCallCurrent());
+  writerCalleeHash[0] ^= 1;
+  assert(writerCallCurrent());
+  assert(RtlDeleteFunctionTable(&function));
+  assert(!writerCallCurrent());
+  assert(VirtualFree(memory, 0, MEM_RELEASE));
+  puts("PASS: c16 real owned runtime-function/full target hash and bytes "
+       "recheck "
+       "rejects changed suffix, boundary, digest, removed unwind table and "
+       "out-of-TEB private-stack footprint; "
+       "no game call executed or observation hook installed");
+}
 int main(int argc, char **argv) {
-  if (argc > 1 && std::string(argv[1]) == "--finalization")
+  if (argc > 1 && std::string(argv[1]) == "--call-integrity")
+    callIntegrity();
+  else if (argc > 1 && std::string(argv[1]) == "--finalization")
     finalization();
   else if (argc > 1 && std::string(argv[1]) == "--accounting")
     accounting();
@@ -658,6 +716,8 @@ int main(int argc, char **argv) {
     guards();
   auto f = std::fopen(argc > 1 && std::string(argv[1]) == "--pair"
                           ? "logs/windows_writer_entry_pair_synthetic.log"
+                      : argc > 1 && std::string(argv[1]) == "--call-integrity"
+                          ? "logs/windows_writer_call_integrity_synthetic.log"
                           : "logs/windows_writer_entry_other_synthetic.log",
                       "wb");
   assert(f);

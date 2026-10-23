@@ -134,3 +134,7 @@ next branch: codex/v01c16-writer-call-effect
 
 ## Current objective
 Resolve only the exact call effect at writer `0x2CFC927`: authenticate the call target/form, determine whether the call can alter the entry-RDX XYZ source or the provenance required by the later exact Position stores, and then either continue the bounded branch proof or report the next exact local/callee blocker. No movement/source/input writes and no producer `0x351EB00` work in c16.
+
+## c16 cloud implementation
+
+Version v0.1c16 / package0.1.34 on codex/v01c16-writer-call-effect authenticates exact call0x2CFC927/return92C and its bounded current runtime-function target. A conservative no-write leaf classifier can resume the existing branch proof only after volatile and explicit nonvolatile carrier invalidation, saved-stack exclusion and per-invocation code/alias checks. Unsupported effects report the exact callee target/RVA/mnemonic; no observation hook added. Actual c16 target/effect/next blocker is PENDING A/E. C15 human evidence above stays accepted. Producer0x351EB00 and ownership/lifetime/exclusivity/downstream0 remain deferred; writable_source_proven0/Position-source-input-movement writes0.

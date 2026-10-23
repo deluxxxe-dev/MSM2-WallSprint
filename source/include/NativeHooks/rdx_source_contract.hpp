@@ -8,10 +8,29 @@ namespace ws::rdx {
 inline constexpr unsigned writerByteCap = 183, blockCap = 16, edgeCap = 24,
                           branchCap = 4, pathCap = 16, stateCap = 31,
                           visitCap = 4096;
+inline constexpr unsigned calleeByteCap = 1024;
+// One exact call only. Target bytes are supplied by the authenticated runtime
+// owner; this offline API never reads process memory or follows another edge.
+struct CallEffect {
+  bool instructionVerified{}, boundaryVerified{}, decoded{}, noWrite{},
+      relevant{};
+  std::uintptr_t writer{}, call{}, ret{}, target{}, begin{}, end{}, barrier{};
+  unsigned gprClobber{}, xmmClobber{};
+  std::int64_t privateStackLow{};
+  const char *kind = "malformed/unresolved";
+  const char *effect = "source_span_effect_unknown";
+  const char *reason = "exact_call_not_authenticated";
+  char mnemonic[32] = "none";
+};
+CallEffect exactCall(const unsigned char *, std::size_t,
+                     std::uintptr_t writerRva, std::size_t imageSize,
+                     unsigned callOffset, unsigned returnOffset) noexcept;
+void classifyCallee(CallEffect &, const unsigned char *, std::size_t,
+                    std::uintptr_t begin, std::uintptr_t end) noexcept;
 struct Writer {
   bool decoded{}, prefix{}, xyz{}, w{}, wConstant{};
   int wSourceReg{};
-  std::int64_t wSourceOffset{};
+  std::int64_t wSourceOffset{}, callStackLow{};
   unsigned mask{}, barrier{}, prefixEnd{};
   std::array<unsigned, 4> stores{};
   const char *wKind = "unknown";
@@ -29,10 +48,13 @@ struct Writer {
 Writer writer(const unsigned char *,
               std::size_t) noexcept; // retained c14 straight-line API
 // Enumerates every relevant forward local path under hard caps. Never reads
-// process memory, follows calls, narrows branches from equality or runs a
-// fixpoint.
+// process memory, follows new call edges, narrows branches from equality or
+// runs a fixpoint. Optional call summary is conditional on the per-invocation
+// entry RDX==entry RSP+0x28, nonstack Transform and callStackLow within
+// the captured current-thread TEB stack bounds.
 Writer branchWriter(const unsigned char *, std::size_t,
-                    const std::array<unsigned, 4> &exactStores) noexcept;
+                    const std::array<unsigned, 4> &exactStores,
+                    CallEffect *call = nullptr) noexcept;
 struct Caller {
   bool decoded{}, prefix{}, rdxLocal{}, owned{}, constructed{};
   std::int64_t rspOffset{}, rdxOffset{};

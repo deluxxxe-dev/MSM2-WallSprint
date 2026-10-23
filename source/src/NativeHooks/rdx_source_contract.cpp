@@ -458,8 +458,207 @@ void classifyW(Writer &r, Value w, bool consistent) {
                                  : "unknown";
 }
 } // namespace
+CallEffect exactCall(const unsigned char *b, std::size_t n,
+                     std::uintptr_t writerRva, std::size_t imageSize,
+                     unsigned offset, unsigned returnOffset) noexcept {
+  CallEffect r{};
+  r.writer = writerRva;
+  r.call = writerRva + offset;
+  r.ret = writerRva + returnOffset;
+  Decode d;
+  if (offset >= n || returnOffset > n || writerRva > imageSize ||
+      n > imageSize - writerRva || n > writerByteCap || !d.run(b, n, writerRva))
+    return r;
+  for (unsigned i = 0; i < d.n; ++i) {
+    const auto &ins = d.p[i];
+    if (ins.address != r.call)
+      continue;
+    const auto &x = ins.detail->x86;
+    if (ins.id != X86_INS_CALL || x.op_count != 1 ||
+        ins.address + ins.size != r.ret) {
+      r.reason = "exact_callsite_or_return_mismatch";
+      return r;
+    }
+    if (x.operands[0].type != X86_OP_IMM) {
+      r.kind = "indirect_call";
+      r.reason = x.operands[0].type == X86_OP_REG
+                     ? "indirect_register_operand_unresolved_no_pointer_chase"
+                     : "indirect_memory_operand_unresolved_no_pointer_chase";
+      return r;
+    }
+    r.kind = "direct_call";
+    r.target = std::uintptr_t(x.operands[0].imm);
+    if (!r.target || r.target >= imageSize ||
+        (r.target >= writerRva && r.target < writerRva + n)) {
+      r.reason = "direct_target_outside_image_or_recursive_writer";
+      return r;
+    }
+    r.instructionVerified = true;
+    r.reason = "exact_direct_call_requires_runtime_boundary_and_current_code";
+    return r;
+  }
+  r.reason = "exact_call_not_instruction_boundary";
+  return r;
+}
+void classifyCallee(CallEffect &r, const unsigned char *b, std::size_t n,
+                    std::uintptr_t begin, std::uintptr_t end) noexcept {
+  r.begin = begin;
+  r.end = end;
+  r.noWrite = r.decoded = r.boundaryVerified = false;
+  r.gprClobber = r.xmmClobber = 0;
+  r.privateStackLow = 0;
+  r.barrier = 0;
+  std::memset(r.mnemonic, 0, sizeof(r.mnemonic));
+  std::memcpy(r.mnemonic, "none", 4);
+  r.effect = "source_span_effect_unknown";
+  if (!r.instructionVerified || begin != r.target || end <= begin ||
+      n != end - begin || n > calleeByteCap) {
+    r.reason = "callee_exact_entry_boundary_or_1024_byte_cap_refused";
+    return;
+  }
+  r.boundaryVerified = true;
+  Decode d;
+  if (!d.run(b, n, begin)) {
+    r.barrier = d.n ? d.p[d.n - 1].address + d.p[d.n - 1].size : begin;
+    std::memcpy(r.mnemonic, "decode_failure", 15);
+    r.reason = "callee_complete_decode_failed";
+    return;
+  }
+  r.decoded = true;
+  auto stop = [&](const cs_insn &ins, const char *why) {
+    r.barrier = ins.address;
+    std::memcpy(r.mnemonic, ins.mnemonic, sizeof(r.mnemonic) - 1);
+    r.mnemonic[sizeof(r.mnemonic) - 1] = 0;
+    r.reason = why;
+  };
+  Slice state;
+  const State initial;
+  for (unsigned k = 0; k < d.n; ++k) {
+    const auto &ins = d.p[k];
+    const auto &x = ins.detail->x86;
+    if (ins.id == X86_INS_RET && x.op_count == 0) {
+      if (!equal(state.s.g[4], initial.g[4])) {
+        stop(ins, "callee_return_stack_pointer_not_restored");
+        return;
+      }
+      // Restoration is decoded, never assumed from a guessed native ABI.
+      for (unsigned j = 0; j < 16; ++j) {
+        if (!equal(state.s.g[j], initial.g[j]))
+          r.gprClobber |= 1u << j;
+        for (unsigned lane = 0; lane < 4; ++lane)
+          if (!equal(state.s.x[j * 4 + lane], initial.x[j * 4 + lane]))
+            r.xmmClobber |= 1u << j;
+      }
+      r.gprClobber |= 0xf07; // RAX/RCX/RDX/R8..R11
+      r.xmmClobber |= 0x3f;  // XMM0..5, all four tracked lanes
+      r.noWrite = true;      // SOURCE span; private stack effects are separate.
+      r.effect = "source_span_no_write_proven";
+      r.reason = "bounded_leaf_source_disjoint_private_stack_and_decoded_"
+                 "register_effects";
+      return;
+    }
+    if (group(ins, CS_GRP_CALL) || group(ins, CS_GRP_JUMP) ||
+        group(ins, CS_GRP_RET) || group(ins, CS_GRP_INT) ||
+        group(ins, CS_GRP_IRET)) {
+      if (k == 0 && ins.id == X86_INS_JMP)
+        r.kind = "thunk/wrapper";
+      stop(ins, "callee_control_effect_unresolved_no_expansion");
+      return;
+    }
+    bool pure = ins.id == X86_INS_NOP || ins.id == X86_INS_ENDBR64 ||
+                ins.id == X86_INS_MOV || ins.id == X86_INS_LEA ||
+                ins.id == X86_INS_MOVSS || ins.id == X86_INS_MOVSD ||
+                ins.id == X86_INS_MOVAPS || ins.id == X86_INS_MOVUPS ||
+                ins.id == X86_INS_MOVDQA || ins.id == X86_INS_MOVDQU ||
+                ins.id == X86_INS_VMOVSS || ins.id == X86_INS_VMOVSD ||
+                ins.id == X86_INS_VMOVAPS || ins.id == X86_INS_VMOVUPS ||
+                ins.id == X86_INS_VMOVDQA || ins.id == X86_INS_VMOVDQU ||
+                ins.id == X86_INS_XOR || ins.id == X86_INS_XORPS ||
+                ins.id == X86_INS_PXOR || ins.id == X86_INS_ADD ||
+                ins.id == X86_INS_SUB || ins.id == X86_INS_CMP ||
+                ins.id == X86_INS_TEST || ins.id == X86_INS_ADDSS ||
+                ins.id == X86_INS_SUBSS || ins.id == X86_INS_MULSS;
+    bool push = ins.id == X86_INS_PUSH && x.op_count == 1 &&
+                x.operands[0].type == X86_OP_REG && x.operands[0].size == 8;
+    bool pop = ins.id == X86_INS_POP && x.op_count == 1 &&
+               x.operands[0].type == X86_OP_REG && x.operands[0].size == 8;
+    auto sp = state.s.g[4];
+    auto privateWrite = [&](Value a, unsigned width) {
+      if (a.kind != pointer || a.root != 4 || sp.kind != pointer ||
+          sp.root != 4 || a.off < sp.off || a.off < -4096 ||
+          a.off + width > 0 || !width)
+        return false;
+      r.privateStackLow = std::min(r.privateStackLow, a.off);
+      return true;
+    };
+    if (push) {
+      // PUSH allocates exactly its own eight bytes below the current SP.
+      auto next = plus(sp, -8);
+      if (next.kind != pointer || next.root != 4 || next.off < -4096 ||
+          next.off + 8 > 0) {
+        stop(ins, "callee_push_outside_bounded_private_stack");
+        return;
+      }
+      r.privateStackLow = std::min(r.privateStackLow, next.off);
+    }
+    bool memoryWrite = false;
+    for (unsigned j = 0; j < x.op_count; ++j)
+      if (x.operands[j].type == X86_OP_MEM &&
+          ((x.operands[j].access & CS_AC_WRITE) ||
+           (j == 0 && ins.id != X86_INS_CMP && ins.id != X86_INS_TEST &&
+            ins.id != X86_INS_NOP))) {
+        memoryWrite = true;
+        if (j != 0 ||
+            !privateWrite(state.s.address(x.operands[j]), x.operands[j].size)) {
+          stop(ins, "callee_memory_write_alias_to_source_stack_or_destination_"
+                    "unresolved");
+          return;
+        }
+      }
+    if (!pure && !push && !pop) {
+      stop(ins, "callee_implicit_or_unsupported_effect_unresolved");
+      return;
+    }
+    if (pop && (sp.kind != pointer || sp.root != 4 || sp.off < -4096 ||
+                sp.off + 8 > 0)) {
+      stop(ins, "callee_pop_outside_bounded_private_stack");
+      return;
+    }
+    cs_regs reads{}, writes{};
+    uint8_t nr{}, nw{};
+    if (cs_regs_access(d.h, &ins, reads, &nr, writes, &nw) != CS_ERR_OK) {
+      stop(ins, "callee_register_effect_decode_failed");
+      return;
+    }
+    bool modeled = state.step(ins, false);
+    for (unsigned j = 0; j < nw; ++j) {
+      if (writes[j] == X86_REG_EFLAGS)
+        continue;
+      auto g = reg(writes[j]), v = xmm(writes[j]);
+      if ((g < 0 && v < 0) || (g == 4 && !modeled)) {
+        stop(ins, "callee_stack_pointer_or_unmodeled_register_effect");
+        return;
+      }
+      if (!modeled) {
+        if (g >= 0)
+          state.s.g[g] = {};
+        if (v >= 0)
+          for (unsigned lane = 0; lane < 4; ++lane)
+            state.s.x[v * 4 + lane] = {};
+      }
+    }
+    auto after = state.s.g[4];
+    if (after.kind != pointer || after.root != 4 || after.off < -4096 ||
+        after.off > 0 || ((memoryWrite || push || pop) && !modeled)) {
+      stop(ins, "callee_stack_or_memory_effect_not_bounded_and_modeled");
+      return;
+    }
+  }
+  r.reason = "callee_no_bounded_plain_return";
+}
 Writer branchWriter(const unsigned char *b, std::size_t n,
-                    const std::array<unsigned, 4> &sites) noexcept {
+                    const std::array<unsigned, 4> &sites,
+                    CallEffect *call) noexcept {
   Writer r{};
   r.branchAware = true;
   Decode d;
@@ -656,7 +855,45 @@ Writer branchWriter(const unsigned char *b, std::size_t n,
         continue;
       }
       auto old = work.slice.mask;
-      if (!work.slice.step(ins, true)) {
+      bool callApplied = false;
+      if (group(ins, CS_GRP_CALL) && call && call->call == call->writer + at) {
+        call->relevant = true;
+        const auto &x = ins.detail->x86;
+        bool exact =
+            call->instructionVerified && call->boundaryVerified &&
+            call->decoded && call->noWrite && x.op_count == 1 &&
+            x.operands[0].type == X86_OP_IMM &&
+            call->writer + ins.address + ins.size == call->ret &&
+            call->writer + std::uintptr_t(x.operands[0].imm) == call->target;
+        auto sp = work.slice.s.g[4];
+        // Natural CALL pushes its return in the writer's stack. The existing
+        // per-invocation TEB proof binds source to entry RSP+0x28; neither that
+        // span nor any modeled saved carrier may overlap return/shadow space.
+        bool stackSafe = sp.kind == pointer && sp.root == 4 && sp.off <= 0 &&
+                         sp.off >= -4096;
+        if (stackSafe)
+          for (auto &slot : work.slice.s.stack)
+            if (slot.used && slot.off < sp.off + 32 &&
+                slot.off + slot.width > sp.off - 8 + call->privateStackLow)
+              stackSafe = false;
+        if (!exact || !stackSafe) {
+          fail(at, ins.mnemonic,
+               !stackSafe ? "call_stack_return_or_shadow_alias_unresolved"
+                          : call->reason);
+          return r;
+        }
+        r.callStackLow =
+            std::min(r.callStackLow, sp.off - 8 + call->privateStackLow);
+        for (unsigned reg = 0; reg < 16; ++reg) {
+          if (call->gprClobber & (1u << reg))
+            work.slice.s.g[reg] = {};
+          if (call->xmmClobber & (1u << reg))
+            for (unsigned lane = 0; lane < 4; ++lane)
+              work.slice.s.x[reg * 4 + lane] = {};
+        }
+        callApplied = true;
+      }
+      if (!callApplied && !work.slice.step(ins, true)) {
         fail(at, ins.mnemonic,
              "unsupported_relevant_writer_instruction_or_memory_effect");
         return r;

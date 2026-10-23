@@ -46,6 +46,7 @@ struct Snapshot {
   bool stackRead{}, beforeRead{}, chainVerified{};
   ws::diag::ActorAxes basis{};
 };
+bool callStackFits(const Snapshot &v) noexcept;
 struct Record {
   std::atomic<unsigned> state{0};
   Snapshot snapshot{};
@@ -69,6 +70,11 @@ struct Evidence {
 };
 std::array<Evidence, windows> evidence;
 ws::rdx::Writer contractWriter{};
+ws::rdx::CallEffect writerCall{};
+std::array<unsigned char, ws::rdx::calleeByteCap> writerCallee{};
+unsigned writerCalleeSize{};
+char writerCalleeHash[65]{};
+bool writerCallCurrent() noexcept;
 ws::rdx::Caller contractCaller{}, contractParent{};
 ws::rdx::Relation contractProducer{};
 std::array<unsigned char, 8192> producerCode{};
@@ -132,6 +138,29 @@ bool bytesEqual(const std::array<unsigned char, 1024> &expected) {
   return functionSize &&
          writer_entry::guardedRead(target, current, functionSize) &&
          !std::memcmp(current, expected.data(), functionSize);
+}
+bool writerCallCurrent() noexcept {
+  if (!writerCall.instructionVerified || !writerCall.boundaryVerified ||
+      !writerCall.noWrite || !writerCalleeSize)
+    return false;
+  DWORD64 module{};
+  auto f =
+      RtlLookupFunctionEntry(imageBase + writerCall.target, &module, nullptr);
+  unsigned char code[ws::rdx::calleeByteCap]{};
+  char hash[65]{};
+  return f && module == imageBase && f->BeginAddress == writerCall.begin &&
+         f->EndAddress == writerCall.end &&
+         writer_entry::guardedRead(imageBase + writerCall.begin, code,
+                                   writerCalleeSize) &&
+         !std::memcmp(code, writerCallee.data(), writerCalleeSize) &&
+         digest(code, writerCalleeSize, hash) &&
+         !std::strcmp(hash, writerCalleeHash);
+}
+bool callStackFits(const Snapshot &v) noexcept {
+  return !writerCall.relevant ||
+         (contractWriter.callStackLow < 0 && v.rsp >= v.stackLow &&
+          v.rsp <= v.stackHigh &&
+          v.rsp - v.stackLow >= std::uint64_t(-contractWriter.callStackLow));
 }
 bool callIntact() {
   unsigned char current[5]{};
@@ -494,17 +523,29 @@ void finish(unsigned slot) {
     std::memcpy(b, v.pointed[0].data(), 16);
     xyz = matchMask(b, a.values, 15) & 7;
   }
-  bool causal = contractConfigured && contractWriter.branchAware &&
-                contractWriter.bounded && contractWriter.exactSites &&
-                contractWriter.allRelevant && contractWriter.xyz && complete &&
-                a.ordered && sites && storage.sameBytes && distinctTarget &&
-                xyz == 7;
+  const bool calleeCodeVerified = writerCall.noWrite && writerCallCurrent();
+  const bool callCodeVerified = !writerCall.relevant || calleeCodeVerified;
+  const bool callStackVerified = callStackFits(v);
+  bool causal = callCodeVerified && callStackVerified && contractConfigured &&
+                contractWriter.branchAware && contractWriter.bounded &&
+                contractWriter.exactSites && contractWriter.allRelevant &&
+                contractWriter.xyz && complete && a.ordered && sites &&
+                storage.sameBytes && distinctTarget && xyz == 7;
   std::uint32_t w{};
   std::memcpy(&w, a.values + 3, 4);
-  bool wCausal = contractConfigured && contractWriter.branchAware &&
-                 contractWriter.bounded && contractWriter.exactSites &&
-                 contractWriter.w && complete && a.ordered && sites &&
-                 (!contractWriter.wConstant || w == contractWriter.wBits);
+  writeLog(
+      "MOVEMENT_WRITER_CALL_INTEGRITY session=%llu invocation_id=%llu "
+      "relevant_call=%u current_code_verified=%u stack_footprint_verified=%u "
+      "writer_entry_stack_low_offset=%lld writable_source_proven=0",
+      (unsigned long long)v.session, (unsigned long long)v.id,
+      unsigned(writerCall.relevant), unsigned(calleeCodeVerified),
+      unsigned(callStackVerified), (long long)contractWriter.callStackLow);
+  bool wCausal =
+      (!writerCall.relevant || (storage.sameBytes && distinctTarget)) &&
+      callCodeVerified && callStackVerified && contractConfigured &&
+      contractWriter.branchAware && contractWriter.bounded &&
+      contractWriter.exactSites && contractWriter.w && complete && a.ordered &&
+      sites && (!contractWriter.wConstant || w == contractWriter.wBits);
   writeLog(
       "MOVEMENT_RDX_XYZ_PROOF session=%llu invocation_id=%llu "
       "writer_rva=0x2cfc900 source_register=RDX source_offsets=0,4,8 "
@@ -523,6 +564,8 @@ void finish(unsigned slot) {
       unsigned(causal), xyz,
       !contractConfigured   ? "contract_not_admitted"
       : !contractWriter.xyz ? contractWriter.reason
+      : !callCodeVerified   ? "callee_code_identity_changed_or_unavailable"
+      : !callStackVerified  ? "call_stack_footprint_outside_entry_TEB_bounds"
       : !complete           ? "partial_or_rejected_invocation"
       : !a.ordered          ? "store_order_or_missing_first_event"
       : !sites              ? "store_site_mismatch"
@@ -545,13 +588,15 @@ void finish(unsigned slot) {
       unsigned(contractWriter.wConstant || (a.mask & 8)),
       unsigned((a.mask & 8) != 0), contractWriter.wSourceReg,
       (long long)contractWriter.wSourceOffset, w, unsigned(wCausal),
-      !contractConfigured ? "contract_not_admitted"
-      : !contractWriter.w ? contractWriter.reason
-      : !complete         ? "partial_or_rejected_invocation"
-      : !sites            ? "store_site_mismatch"
-      : !wCausal          ? "executed_W_bits_do_not_match_decoded_constant"
-                          : "decoded_store_operand_and_invocation_verified_NOT_"
-                            "coordinate_type");
+      !contractConfigured  ? "contract_not_admitted"
+      : !contractWriter.w  ? contractWriter.reason
+      : !callCodeVerified  ? "callee_code_identity_changed_or_unavailable"
+      : !callStackVerified ? "call_stack_footprint_outside_entry_TEB_bounds"
+      : !complete          ? "partial_or_rejected_invocation"
+      : !sites             ? "store_site_mismatch"
+      : !wCausal           ? "executed_W_bits_do_not_match_decoded_constant"
+                 : "decoded_store_operand_and_invocation_verified_NOT_"
+                   "coordinate_type");
   writeLog(
       "MOVEMENT_RDX_STORAGE_PROOF session=%llu invocation_id=%llu "
       "call_rva=0x351eeab rdx_relation=%s stack_object_begin=0x%llx "
@@ -789,7 +834,74 @@ void configure(const Spec &s, Gate validate) noexcept {
     std::memcpy(callerCode.data(), callerBytes, 30);
     contractImageSize = s.imageSize;
     const std::array<unsigned, 4> sites{0x36, 0x3c, 0x42, 0x45};
-    contractWriter = ws::rdx::branchWriter(code, functionSize, sites);
+    writerCall = ws::rdx::exactCall(code, functionSize, s.begin, s.imageSize,
+                                    0x27, 0x2c);
+    bool calleeCurrent = false;
+    if (writerCall.instructionVerified) {
+      DWORD64 calleeImage{};
+      auto cf = RtlLookupFunctionEntry(s.base + writerCall.target, &calleeImage,
+                                       nullptr);
+      if (cf && calleeImage == s.base) {
+        writerCall.begin = cf->BeginAddress;
+        writerCall.end = cf->EndAddress;
+        const auto cb = writerCall.begin, ce = writerCall.end;
+        // This task does not authorize inspecting the deferred producer or
+        // recursive/overlapping writer code, even if a call unexpectedly lands
+        // there.
+        if (cb == writerCall.target && ce > cb && ce <= s.imageSize &&
+            ce - cb <= writerCallee.size() &&
+            !(cb <= 0x351eb00 && 0x351eb00 < ce) &&
+            !(cb < s.end && s.begin < ce)) {
+          writerCalleeSize = unsigned(ce - cb);
+          unsigned char recheck[ws::rdx::calleeByteCap]{};
+          calleeCurrent =
+              guardedRead(s.base + cb, writerCallee.data(), writerCalleeSize) &&
+              digest(writerCallee.data(), writerCalleeSize, writerCalleeHash) &&
+              guardedRead(s.base + cb, recheck, writerCalleeSize) &&
+              !std::memcmp(recheck, writerCallee.data(), writerCalleeSize);
+          if (calleeCurrent)
+            ws::rdx::classifyCallee(writerCall, writerCallee.data(),
+                                    writerCalleeSize, cb, ce);
+          else
+            writerCall.reason =
+                "callee_guarded_current_code_hash_or_recheck_failed";
+        } else
+          writerCall.reason =
+              "callee_exact_boundary_cap_overlap_or_deferred_producer_refused";
+      } else
+        writerCall.reason = "callee_in_image_runtime_function_boundary_missing";
+    }
+    contractWriter =
+        ws::rdx::branchWriter(code, functionSize, sites, &writerCall);
+    writeLog(
+        "MOVEMENT_WRITER_CALL_CONTRACT writer_rva=0x2cfc900 call_rva=0x2cfc927 "
+        "call_kind=%s target_rva=0x%llx target_boundary_begin=0x%llx "
+        "target_boundary_end=0x%llx target_code_hash=%s return_rva=0x2cfc92c "
+        "exact_build_verified=1 current_code_verified=%u "
+        "target_boundary_verified=%u target_complete_decode=%u "
+        "relevant_to_xyz_paths=%u effect=%s source_span_no_write_proven=%u "
+        "source_span_may_write=0 source_span_effect_unknown=%u "
+        "entry_RDX_identity=volatile_clobbered "
+        "source_reload_requires_preserved_alias=1 "
+        "RCX_destination_identity=volatile_clobbered "
+        "gpr_clobber_mask=0x%x xmm_clobber_mask=0x%x "
+        "callee_private_stack_low=%lld private_stack_byte_cap=4096 "
+        "stack_alias_policy=return_shadow_disjoint_saved_slots "
+        "W_independent=1 next_callee_barrier_rva=0x%llx "
+        "next_callee_instruction=%s callee_byte_cap=1024 expansion_depth=0 "
+        "runtime_call_observation=0 new_hooks=0 writable_source_proven=0 "
+        "full_bytes_logged=0 reason=%s",
+        writerCall.kind, (unsigned long long)writerCall.target,
+        (unsigned long long)writerCall.begin,
+        (unsigned long long)writerCall.end,
+        calleeCurrent ? writerCalleeHash : "unavailable",
+        unsigned(calleeCurrent), unsigned(writerCall.boundaryVerified),
+        unsigned(writerCall.decoded), unsigned(writerCall.relevant),
+        writerCall.effect, unsigned(writerCall.noWrite),
+        unsigned(!writerCall.noWrite), writerCall.gprClobber,
+        writerCall.xmmClobber, (long long)writerCall.privateStackLow,
+        (unsigned long long)writerCall.barrier, writerCall.mnemonic,
+        writerCall.reason);
     contractCaller = ws::rdx::caller(callerBytes, sizeof(callerBytes),
                                      0x351eeab - s.callerBegin);
     contractConfigured = true;

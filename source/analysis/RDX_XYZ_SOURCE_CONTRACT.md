@@ -1,4 +1,4 @@
-# c15 bounded writer branch / RDX XYZ contract
+# RDX XYZ writer contract history and c16 call effect
 
 ## Evidence boundary
 
@@ -31,3 +31,7 @@ No producer hook, new producer reads or traversal beyond the existing c14 bounde
 A reporting-only finalized flag is set when the existing cancel path detaches the active scope. Worker drain requires that finalization plus no inflight callback; its existing caller still checks hardware-event queue/inflight conditions. Installation publishes an inactive scope before activation, so inactive alone cannot indicate completion. Early drains do not print/mark a summary. After cancellation/drain, final actual counts/W/XYZ evidence print once with phase=finalized/summary_final=1. Never-activated windows can honestly report zero at stop. No8-entry cap/watch timing/freshness/install/hardware/cleanup policy is changed.
 
 Actual c15 A/E will decide either all-relevant XYZ plus separate W proof or the next exact local blocker. Even a successful writer contract does not prove source lifetime/type/downstream/exclusivity or authorize a rewrite. Producer investigation is a separate next task only after writer evidence is adjudicated.
+
+## c16 current evidence / contract
+
+C15 human A3860ms/E4297ms diagnostic PASS supersedes the earlier pending c15 notes above. JNE0x2CFC91F is crossed; next exact actual barrier is CALL0x2CFC927. Final entry capture summaries are accepted. C16 adds only exact target/form/boundary/hash authentication and a bounded conservative no-write leaf summary; unsupported memory/control effects report an exact callee blocker. Call-dependent certificates require source==entryRSP+0x28, bounded TEB samples and nonstack destination. All volatile carriers and explicitly modified nonvolatiles are invalidated; only restored/reloaded origins may continue the c15 path proof. W remains independent. See V01C16_WRITER_CALL_EFFECT.md for precise assumptions, limitations and runtime-code rechecks. Actual c16 target/effect/proof remains PENDING;0x351EB00 and all write permissions stay deferred/0.

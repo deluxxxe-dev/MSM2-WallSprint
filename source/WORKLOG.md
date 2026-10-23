@@ -317,3 +317,7 @@ Standalone source verification found that direct focused test invocation assumed
 ## v0.1c15 writer branch-aware RDX contract
 
 Consumed compact accepted c14 real A4453ms/E4172ms evidence and exact0x2CFC91F JNE blocker from pre-created c15 handoff7514c9c; source base preserves c14 delivery5fd2cdf. Added bounded forward local paths (183bytes/blocks16/edges24/branches4/paths16/states31/visits4096), exact store-RVA/provenance checks and separate W. Added only a reporting finalized flag to cancellation/drain, preserving capture/cleanup policy and preventing preactivation zero summaries. Producer0x351EB00 remains deferred. Cloud owned/offline/finalization and full regressions, standalone rebuild and archives are recorded in CODEX_RESULT/V01C15_RELEASE.json; actual c15 A/E pending, all movement/source/Position permissions0.
+
+## v0.1c16 writer-local call effect
+
+Consumed compact accepted c15 A3860/E4297ms evidence and exact call0x2CFC927 barrier from pre-created c16 handoff9eab142. Added exact single-call authentication and <=1024byte no-write leaf classification with conservative volatile/explicit nonvolatile clobbers and precise callee blockers. No new hook or producer traversal. Real c16 target/effect pending; all writes remain0. Validation/artifacts in CODEX_RESULT/V01C16_RELEASE.json.

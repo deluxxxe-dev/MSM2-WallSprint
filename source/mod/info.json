@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.33",
-  "description": "WallSprint v0.1c15 Writer Branch-Aware RDX Contract. Exact 183-byte bounded local forward-path proof, independent W and final capture summaries. Position/source/input/movement writes remain disabled; producer edge is deferred.",
+  "version": "0.1.34",
+  "description": "WallSprint v0.1c16 Writer Call-Effect Contract. Exact writer-local call authentication, bounded leaf effect classification and conservative register clobbers. Position/source/input/movement writes remain disabled; producer edge is deferred.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1
