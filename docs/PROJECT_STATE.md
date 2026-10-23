@@ -102,3 +102,7 @@ version: v0.1c14 / package 0.1.32
 
 ## Current objective
 Resolve only the authenticated writer control-flow barrier beginning at `0x2CFC91F` and prove/reject the RDX XYZ path through the known stores. Do not jump ahead to producer mutation or movement. Keep W separate and keep all Position/source/input writes at zero.
+
+## c15 implementation status
+
+v0.1c15 / package0.1.33 adds a bounded forward local branch proof for the exact183-byte writer, with exact-store/RDX provenance and independent W, plus a reporting-only finalized state so capture summaries cannot be consumed before activation. Existing native policies, c12 analyzer, c14 caller/producer analysis and c13 raw thunk/install/cleanup remain. Implementation SHA/tests/archive evidence are in CODEX_RESULT / V01C15_RELEASE.json. Actual c15 A/E writer proof or exact next local blocker remains PENDING. Producer0x351EB00 remains deferred, ownership/lifetime/downstream/exclusive effects unproven, writable_source_proven0 and Position/source/input/movement writes0. CODEX_NEXT preserved.

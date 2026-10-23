@@ -104,6 +104,8 @@ static void abi() {
           reinterpret_cast<void *>(ret));
   assert(msm2::writer_entry::start(expected));
   assert(!ws_movement_entry_enabled);
+  msm2::writer_entry::drain();
+  assert(!evidence[usedScopes.load() - 1].summarized);
   assert(msm2::writer_entry::activate());
   clobber = true;
   auto csr = _mm_getcsr();
@@ -281,6 +283,8 @@ static void pairing() {
   nativeMs = GetTickCount64();
   assert(msm2::writer_entry::start(expected));
   assert(!ws_movement_entry_enabled);
+  msm2::writer_entry::drain();
+  assert(!evidence[usedScopes.load() - 1].summarized);
   assert(msm2::writer_entry::activate());
   auto veh = AddVectoredExceptionHandler(1, watched);
   assert(veh);
@@ -461,6 +465,8 @@ static void cleanup() {
   expected.transform = reinterpret_cast<std::uintptr_t>(storage);
   assert(msm2::writer_entry::start(expected));
   assert(!ws_movement_entry_enabled);
+  msm2::writer_entry::drain();
+  assert(!evidence[usedScopes.load() - 1].summarized);
   assert(msm2::writer_entry::activate());
   directCall[0] ^= 1;
   assert(!owned());
@@ -472,6 +478,8 @@ static void cleanup() {
   nativeMs = GetTickCount64();
   assert(msm2::writer_entry::start(expected));
   assert(!ws_movement_entry_enabled);
+  msm2::writer_entry::drain();
+  assert(!evidence[usedScopes.load() - 1].summarized);
   assert(msm2::writer_entry::activate());
   auto *active = activeScope.load();
   msm2::writer_entry::cancel();
@@ -484,6 +492,8 @@ static void cleanup() {
   nativeMs = GetTickCount64();
   assert(msm2::writer_entry::start(expected));
   assert(!ws_movement_entry_enabled);
+  msm2::writer_entry::drain();
+  assert(!evidence[usedScopes.load() - 1].summarized);
   assert(msm2::writer_entry::activate());
   DWORD old{};
   assert(VirtualProtect(reinterpret_cast<void *>(target), 5,
@@ -571,6 +581,8 @@ static void accounting() {
                               0, 0, false);
   msm2::writer_entry::storeComponent(18, 0, 0, targetPosition, 0, 0, 0);
   assert(aggregates[17].rejected && aggregates[17].events == 0);
+  for (unsigned i = 0; i < 4; ++i)
+    scopes[i].finalized = true;
   msm2::writer_entry::drain();
   auto q = msm2::writer_entry::summary(3);
   assert(q.snapshots == 2 && q.complete == 0 && q.xyzMatches == 0 &&
@@ -593,8 +605,48 @@ static void accounting() {
        "stability after a later XYZ mismatch; drain is idempotent and "
        "zero-capture remains zero");
 }
+static void finalization() {
+  float storage[32]{}, input[4]{10, 20, 30, 0};
+  prepare(reinterpret_cast<void *>(ws_owned_entry_writer),
+          reinterpret_cast<void *>(ws_owned_entry_return));
+  expected.transform = reinterpret_cast<std::uintptr_t>(storage);
+  assert(msm2::writer_entry::start(expected));
+  msm2::writer_entry::drain();
+  msm2::writer_entry::drain();
+  assert(!evidence[0].summarized &&
+         output.find("MOVEMENT_ENTRY_CAPTURE_SUMMARY") == std::string::npos);
+  assert(msm2::writer_entry::activate());
+  nativeMs = GetTickCount64();
+  ws_owned_entry_caller(storage, input, 0);
+  assert(scopes[0].reserved == 1);
+  msm2::writer_entry::drain();
+  assert(!evidence[0].summarized && !aggregates[0].printed);
+  msm2::writer_entry::stop();
+  msm2::writer_entry::drain();
+  assert(evidence[0].summarized && scopes[0].finalized);
+  assert(output.find("session=1 capture_activated=1 true_entry_snapshots=1 "
+                     "complete_invocation_maps=0") != std::string::npos);
+  auto before = output.size();
+  msm2::writer_entry::drain();
+  assert(before == output.size());
+  ++expected.session;
+  nativeMs = GetTickCount64();
+  assert(msm2::writer_entry::start(expected));
+  msm2::writer_entry::drain();
+  assert(!evidence[1].summarized);
+  msm2::writer_entry::stop();
+  msm2::writer_entry::drain();
+  assert(output.find("session=2 capture_activated=0 true_entry_snapshots=0 "
+                     "complete_invocation_maps=0") != std::string::npos);
+  assert(output.find("phase=finalized summary_final=1") != std::string::npos);
+  puts("PASS: c15 real entry-hook preactivation/active drain cannot finalize "
+       "early; stop publishes actual captured count once and never-activated "
+       "stop publishes honest zero without changing capture or cleanup policy");
+}
 int main(int argc, char **argv) {
-  if (argc > 1 && std::string(argv[1]) == "--accounting")
+  if (argc > 1 && std::string(argv[1]) == "--finalization")
+    finalization();
+  else if (argc > 1 && std::string(argv[1]) == "--accounting")
     accounting();
   else if (argc > 1 && std::string(argv[1]) == "--abi")
     abi();

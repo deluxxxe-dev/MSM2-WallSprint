@@ -418,6 +418,314 @@ Writer writer(const unsigned char *b, std::size_t n) noexcept {
                    : "XYZ_not_exact_RDX_0_4_8_bitcopy";
   return r;
 }
+namespace {
+bool conditional(unsigned id) {
+  switch (id) {
+  case X86_INS_JA:
+  case X86_INS_JAE:
+  case X86_INS_JB:
+  case X86_INS_JBE:
+  case X86_INS_JE:
+  case X86_INS_JNE:
+  case X86_INS_JG:
+  case X86_INS_JGE:
+  case X86_INS_JL:
+  case X86_INS_JLE:
+  case X86_INS_JO:
+  case X86_INS_JNO:
+  case X86_INS_JP:
+  case X86_INS_JNP:
+  case X86_INS_JS:
+  case X86_INS_JNS:
+    return true;
+  default:
+    return false;
+  }
+}
+void classifyW(Writer &r, Value w, bool consistent) {
+  r.w =
+      consistent && (w.kind == constant || w.kind == memory || w.kind == entry);
+  r.wConstant = r.w && w.kind == constant;
+  r.wBits = w.bits;
+  r.wSourceReg = w.root;
+  r.wSourceOffset = w.off;
+  r.wKind = !consistent ? "unknown"
+            : w.kind == constant
+                ? (w.bits == 0x3f800000 ? "constant_one" : "computed")
+            : w.kind == memory   ? "independent_memory"
+            : w.kind == entry    ? "independent_register"
+            : w.kind == computed ? "computed"
+                                 : "unknown";
+}
+} // namespace
+Writer branchWriter(const unsigned char *b, std::size_t n,
+                    const std::array<unsigned, 4> &sites) noexcept {
+  Writer r{};
+  r.branchAware = true;
+  Decode d;
+  if (n > writerByteCap || !d.run(b, n)) {
+    r.reason = "complete_decode_failed_or_exact_writer_span_over_183";
+    return r;
+  }
+  r.decoded = true;
+  auto fail = [&](unsigned at, const char *mnemonic, const char *reason,
+                  unsigned edge = 0, bool hasEdge = false) {
+    r.barrier = at;
+    r.barrierValid = true;
+    r.barrierEdge = edge;
+    r.barrierHasEdge = hasEdge;
+    std::memset(r.barrierMnemonic, 0, sizeof(r.barrierMnemonic));
+    for (unsigned i = 0; i + 1 < sizeof(r.barrierMnemonic) && mnemonic[i]; ++i)
+      r.barrierMnemonic[i] = mnemonic[i];
+    r.xyz = false;
+    r.w = false;
+    r.allRelevant = false;
+    r.reason = reason;
+  };
+  struct Node {
+    std::array<int, 2> next{{-1, -1}};
+    unsigned count{}, relevant{}, block{};
+    bool jump{}, cond{}, ret{};
+  };
+  std::array<Node, writerByteCap> graph{};
+  std::array<int, writerByteCap + 1> boundary{};
+  boundary.fill(-1);
+  std::array<bool, writerByteCap> leader{};
+  leader[0] = true;
+  for (unsigned i = 0; i < d.n; ++i)
+    boundary[unsigned(d.p[i].address)] = int(i);
+  // Decode the entire local graph first; every jump stays forward, local and
+  // instruction-aligned. Unknown indirect transfers cannot hide a backedge.
+  for (unsigned i = 0; i < d.n; ++i) {
+    auto &ins = d.p[i];
+    auto &x = ins.detail->x86;
+    auto &g = graph[i];
+    auto at = unsigned(ins.address);
+    if (group(ins, CS_GRP_JUMP)) {
+      g.jump = true;
+      g.cond = conditional(ins.id);
+      if (!r.branches)
+        r.firstBranch = at;
+      if (++r.branches > branchCap) {
+        fail(at, ins.mnemonic, "local_branch_cap_exceeded");
+        return r;
+      }
+      if ((ins.id != X86_INS_JMP && !g.cond) || x.op_count != 1 ||
+          x.operands[0].type != X86_OP_IMM) {
+        fail(at, ins.mnemonic, "unsupported_or_indirect_local_control_flow");
+        return r;
+      }
+      auto dest = x.operands[0].imm;
+      if (dest < 0 || std::uint64_t(dest) >= n) {
+        fail(at, ins.mnemonic, "branch_leaves_exact_writer", unsigned(dest),
+             true);
+        return r;
+      }
+      if (dest <= std::int64_t(at)) {
+        fail(at, ins.mnemonic, "loop_or_backedge_refused", unsigned(dest),
+             true);
+        return r;
+      }
+      if (boundary[unsigned(dest)] < 0) {
+        fail(at, ins.mnemonic, "branch_target_not_instruction_boundary",
+             unsigned(dest), true);
+        return r;
+      }
+      auto target = unsigned(boundary[unsigned(dest)]);
+      g.next[g.count++] = int(target);
+      leader[target] = true;
+      if (g.cond) {
+        if (i + 1 == d.n) {
+          fail(at, ins.mnemonic, "conditional_fallthrough_leaves_writer");
+          return r;
+        }
+        g.next[g.count++] = int(i + 1);
+      }
+      if (i + 1 < d.n)
+        leader[i + 1] = true;
+    } else if (ins.id == X86_INS_RET && x.op_count == 0) {
+      g.ret = true;
+      if (i + 1 < d.n)
+        leader[i + 1] = true;
+    } else if (group(ins, CS_GRP_RET) || group(ins, CS_GRP_IRET)) {
+      fail(at, ins.mnemonic, "unsupported_local_return");
+      return r;
+    } else if (i + 1 < d.n) {
+      g.next[g.count++] = int(i + 1);
+    }
+  }
+  for (unsigned i = 0; i < d.n; ++i) {
+    if (leader[i])
+      ++r.blocks;
+    graph[i].block = r.blocks - 1;
+  }
+  for (unsigned i = 0; i < d.n; ++i)
+    if (i + 1 == d.n || leader[i + 1] || graph[i].jump || graph[i].ret)
+      r.edges += graph[i].count;
+  if (r.blocks > blockCap || r.edges > edgeCap) {
+    fail(0, "graph_caps", "local_block_or_edge_cap_exceeded");
+    return r;
+  }
+  for (unsigned c = 0; c < 4; ++c) {
+    if (sites[c] >= n || boundary[sites[c]] < 0) {
+      fail(sites[c], "site_boundary", "exact_store_not_instruction_boundary");
+      return r;
+    }
+    auto &ins = d.p[unsigned(boundary[sites[c]])];
+    auto &x = ins.detail->x86;
+    if ((ins.id != X86_INS_MOV && ins.id != X86_INS_MOVSS &&
+         ins.id != X86_INS_VMOVSS) ||
+        x.op_count != 2 || x.operands[0].type != X86_OP_MEM ||
+        x.operands[0].size != 4) {
+      fail(sites[c], ins.mnemonic, "exact_site_is_not_supported_dword_store");
+      return r;
+    }
+    for (unsigned other = 0; other < c; ++other)
+      if (sites[other] == sites[c]) {
+        fail(sites[c], ins.mnemonic, "duplicate_expected_store_site");
+        return r;
+      }
+    r.stores[c] = sites[c];
+    graph[unsigned(boundary[sites[c]])].relevant |= 1u << c;
+  }
+  r.exactSites = true;
+  // Forward edges make one reverse pass sufficient. Suffix effects that
+  // cannot reach a named store are outside this certificate, not certified.
+  for (unsigned i = unsigned(d.n); i > 0; --i) {
+    auto &g = graph[i - 1];
+    for (unsigned e = 0; e < g.count; ++e)
+      g.relevant |= graph[unsigned(g.next[e])].relevant;
+  }
+  struct Work {
+    Slice slice{};
+    unsigned pc{};
+  };
+  std::array<Work, pathCap> todo{};
+  unsigned pending = 1;
+  r.statesScheduled = 1;
+  std::array<Value, 4> origins{};
+  std::array<bool, 4> consistent{{true, true, true, true}};
+  std::array<bool, blockCap> visitedBlocks{};
+  std::array<std::array<bool, 2>, writerByteCap> visitedEdges{};
+  while (pending) {
+    auto work = todo[--pending];
+    for (;;) {
+      if (++r.visits > visitCap) {
+        fail(unsigned(d.p[work.pc].address), "visit_cap",
+             "local_instruction_visit_cap_exceeded");
+        return r;
+      }
+      auto index = work.pc;
+      auto &g = graph[index];
+      auto &ins = d.p[index];
+      auto at = unsigned(ins.address);
+      if (!visitedBlocks[g.block]) {
+        visitedBlocks[g.block] = true;
+        ++r.blocksVisited;
+      }
+      if (!g.relevant) {
+        if (++r.pathsExamined > pathCap) {
+          fail(at, ins.mnemonic, "local_path_cap_exceeded");
+          return r;
+        }
+        break;
+      }
+      auto edge = [&](unsigned e) {
+        if (g.jump || index + 1 == d.n || leader[index + 1])
+          if (!visitedEdges[index][e]) {
+            visitedEdges[index][e] = true;
+            ++r.edgesVisited;
+          }
+      };
+      if (g.jump) {
+        if (g.cond) {
+          if (pending == todo.size() || r.statesScheduled + 2 > stateCap) {
+            fail(at, ins.mnemonic, "local_state_cap_exceeded");
+            return r;
+          }
+          todo[pending] = work;
+          todo[pending++].pc = unsigned(g.next[0]);
+          r.statesScheduled += 2;
+          edge(0);
+          edge(1);
+          work.pc = unsigned(g.next[1]);
+          continue;
+        }
+        edge(0);
+        work.pc = unsigned(g.next[0]);
+        continue;
+      }
+      auto old = work.slice.mask;
+      if (!work.slice.step(ins, true)) {
+        fail(at, ins.mnemonic,
+             "unsupported_relevant_writer_instruction_or_memory_effect");
+        return r;
+      }
+      auto added = work.slice.mask & ~old;
+      for (unsigned c = 0; c < 4; ++c)
+        if (added & (1u << c)) {
+          if (at != sites[c]) {
+            fail(at, ins.mnemonic,
+                 "store_RVA_or_destination_component_mismatch");
+            return r;
+          }
+          auto value = work.slice.out[c];
+          if (!r.reachingStates[c])
+            origins[c] = value;
+          else
+            consistent[c] &= equal(origins[c], value);
+          ++r.reachingStates[c];
+          r.mask |= 1u << c;
+          r.prefixEnd = std::max(r.prefixEnd, unsigned(ins.address + ins.size));
+        }
+      // A named site must actually write its required target on every reaching
+      // path. Merely visiting a same-RVA stack/foreign-target write is not
+      // proof.
+      for (unsigned c = 0; c < 4; ++c)
+        if (at == sites[c] && !(added & (1u << c))) {
+          fail(at, ins.mnemonic, "exact_store_target_not_entry_RCX_component");
+          return r;
+        }
+      if (!g.count) {
+        fail(at, ins.mnemonic, "relevant_path_terminated_without_store");
+        return r;
+      }
+      edge(0);
+      work.pc = unsigned(g.next[0]);
+    }
+  }
+  r.bounded = true;
+  r.prefix = r.mask == 15;
+  for (unsigned c = 0; c < 3; ++c) {
+    bool good = r.reachingStates[c] && consistent[c] &&
+                equal(origins[c], {memory, 2, std::int64_t(c * 4)});
+    if (good) {
+      r.componentProofMask |= 1u << c;
+      r.paths[c] = "all_reaching_states_entry_RDX_bitcopy";
+    } else
+      r.paths[c] = !r.reachingStates[c] ? "no_entry_path_reaches_store"
+                   : !consistent[c]     ? "conflicting_reaching_provenance"
+                                        : "not_exact_entry_RDX_origin";
+  }
+  r.xyz = r.componentProofMask == 7;
+  r.allRelevant = r.xyz;
+  classifyW(r, origins[3], r.reachingStates[3] && consistent[3]);
+  if (!r.xyz)
+    for (unsigned c = 0; c < 3; ++c)
+      if (!(r.componentProofMask & (1u << c))) {
+        r.barrierValid = true;
+        r.barrier = sites[c];
+        std::memcpy(r.barrierMnemonic,
+                    d.p[unsigned(boundary[sites[c]])].mnemonic,
+                    sizeof(r.barrierMnemonic) - 1);
+        break;
+      }
+  r.reason =
+      r.xyz ? "all_relevant_local_paths_prove_exact_RDX_XYZ_NOT_whole_function_"
+              "or_write_permission"
+            : "exact_store_reachable_provenance_conflict_or_missing_RDX_origin";
+  return r;
+}
 Caller caller(const unsigned char *b, std::size_t n,
               unsigned callOffset) noexcept {
   Caller r{};

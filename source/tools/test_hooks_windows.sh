@@ -49,3 +49,5 @@ bash tools/test_movement_lineage.sh
 bash tools/test_writer_entry.sh
 
 bash tools/test_rdx_contract.sh
+
+bash tools/test_writer_branch.sh

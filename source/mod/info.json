@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.32",
-  "description": "WallSprint v0.1c14 RDX Stack-Local Source Contract. Read-only decoded XYZ/W, bounded caller/producer proofs and corrected entry/XYZ summaries. Accepted orientation unchanged; Position/source/input/movement writes remain disabled.",
+  "version": "0.1.33",
+  "description": "WallSprint v0.1c15 Writer Branch-Aware RDX Contract. Exact 183-byte bounded local forward-path proof, independent W and final capture summaries. Position/source/input/movement writes remain disabled; producer edge is deferred.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

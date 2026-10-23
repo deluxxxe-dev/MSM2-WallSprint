@@ -29,7 +29,7 @@ struct Scope {
   std::atomic<unsigned> reserved{0};
   std::atomic<bool> active{false};
   unsigned index{};
-  std::atomic<bool> activated{false};
+  std::atomic<bool> activated{false}, finalized{false};
 };
 struct Snapshot {
   std::uint64_t id{}, session{}, generation{};
@@ -494,38 +494,42 @@ void finish(unsigned slot) {
     std::memcpy(b, v.pointed[0].data(), 16);
     xyz = matchMask(b, a.values, 15) & 7;
   }
-  bool causal = contractConfigured && contractWriter.xyz && complete &&
+  bool causal = contractConfigured && contractWriter.branchAware &&
+                contractWriter.bounded && contractWriter.exactSites &&
+                contractWriter.allRelevant && contractWriter.xyz && complete &&
                 a.ordered && sites && storage.sameBytes && distinctTarget &&
                 xyz == 7;
   std::uint32_t w{};
   std::memcpy(&w, a.values + 3, 4);
-  bool wCausal = contractConfigured && contractWriter.w && complete &&
-                 a.ordered && sites &&
+  bool wCausal = contractConfigured && contractWriter.branchAware &&
+                 contractWriter.bounded && contractWriter.exactSites &&
+                 contractWriter.w && complete && a.ordered && sites &&
                  (!contractWriter.wConstant || w == contractWriter.wBits);
-  writeLog("MOVEMENT_RDX_XYZ_PROOF session=%llu invocation_id=%llu "
-           "writer_rva=0x2cfc900 source_register=RDX source_offsets=0,4,8 "
-           "position_offsets=0x30,0x34,0x38 "
-           "component_paths=%s "
-           "static_prefix_proven=%u prefix_end_rva=0x%llx "
-           "xyz_causality_proven=%u entry_store_xyz_match_mask=0x%x "
-           "scope=entry_through_sampled_stores_NOT_whole_CFG "
-           "writable_source_proven=0 reason=%s",
-           (unsigned long long)v.session, (unsigned long long)v.id,
-           contractWriter.xyz ? "decoded_RDX_0_4_8_to_Position_30_34_38"
-                              : "unresolved",
-           unsigned(contractWriter.xyz),
-           (unsigned long long)(target - imageBase + contractWriter.prefixEnd),
-           unsigned(causal), xyz,
-           !contractConfigured   ? "contract_not_admitted"
-           : !contractWriter.xyz ? contractWriter.reason
-           : !complete           ? "partial_or_rejected_invocation"
-           : !a.ordered          ? "store_order_or_missing_first_event"
-           : !sites              ? "store_site_mismatch"
-           : !storage.sameBytes  ? "bounded_equal_RDX_stack_snapshot_missing"
-           : !distinctTarget     ? "stack_target_alias_not_excluded"
-           : xyz != 7
-               ? "entry_XYZ_store_bits_mismatch"
-               : "decoded_causal_path_and_same_invocation_bits_verified");
+  writeLog(
+      "MOVEMENT_RDX_XYZ_PROOF session=%llu invocation_id=%llu "
+      "writer_rva=0x2cfc900 source_register=RDX source_offsets=0,4,8 "
+      "position_offsets=0x30,0x34,0x38 "
+      "component_paths=%s "
+      "static_prefix_proven=%u prefix_end_rva=0x%llx "
+      "xyz_causality_proven=%u entry_store_xyz_match_mask=0x%x "
+      "scope=entry_through_sampled_stores_NOT_whole_CFG "
+      "writable_source_proven=0 reason=%s",
+      (unsigned long long)v.session, (unsigned long long)v.id,
+      contractWriter.xyz
+          ? "all_relevant_local_branch_paths_RDX_0_4_8_to_Position_30_34_38"
+          : "unresolved",
+      unsigned(contractWriter.xyz),
+      (unsigned long long)(target - imageBase + contractWriter.prefixEnd),
+      unsigned(causal), xyz,
+      !contractConfigured   ? "contract_not_admitted"
+      : !contractWriter.xyz ? contractWriter.reason
+      : !complete           ? "partial_or_rejected_invocation"
+      : !a.ordered          ? "store_order_or_missing_first_event"
+      : !sites              ? "store_site_mismatch"
+      : !storage.sameBytes  ? "bounded_equal_RDX_stack_snapshot_missing"
+      : !distinctTarget     ? "stack_target_alias_not_excluded"
+      : xyz != 7            ? "entry_XYZ_store_bits_mismatch"
+                 : "decoded_causal_path_and_same_invocation_bits_verified");
   writeLog(
       "MOVEMENT_POSITION_W_PROOF session=%llu invocation_id=%llu "
       "store_rva=0x2cfc945 decoded_store_offset=0x%x decoded_site_verified=%u "
@@ -784,16 +788,10 @@ void configure(const Spec &s, Gate validate) noexcept {
     callerCodeSize = 30;
     std::memcpy(callerCode.data(), callerBytes, 30);
     contractImageSize = s.imageSize;
-    contractWriter = ws::rdx::writer(code, functionSize);
+    const std::array<unsigned, 4> sites{0x36, 0x3c, 0x42, 0x45};
+    contractWriter = ws::rdx::branchWriter(code, functionSize, sites);
     contractCaller = ws::rdx::caller(callerBytes, sizeof(callerBytes),
                                      0x351eeab - s.callerBegin);
-    const std::array<unsigned, 4> sites{0x36, 0x3c, 0x42, 0x45};
-    if (contractWriter.stores != sites) {
-      contractWriter.xyz = false;
-      contractWriter.w = false;
-      contractWriter.reason =
-          "exact_position_store_sites_mismatch_or_prefix_incomplete";
-    }
     contractConfigured = true;
     if (s.caller2Original && s.caller2End > s.caller2Begin &&
         s.caller2End - s.caller2Begin <= producerCode.size() &&
@@ -833,9 +831,7 @@ void configure(const Spec &s, Gate validate) noexcept {
              unsigned(contractWriter.decoded), unsigned(contractWriter.prefix),
              unsigned(contractWriter.xyz), contractWriter.wKind,
              unsigned(contractWriter.w),
-             contractWriter.decoded && !contractWriter.prefix
-                 ? s.begin + contractWriter.barrier
-                 : 0,
+             contractWriter.barrierValid ? s.begin + contractWriter.barrier : 0,
              contractWriter.barrierMnemonic, unsigned(contractCaller.prefix),
              unsigned(contractCaller.rdxLocal), unsigned(contractCaller.owned),
              contractProducer.kind,
@@ -843,6 +839,35 @@ void configure(const Spec &s, Gate validate) noexcept {
                                       ? contractProducer.next - imageBase
                                       : 0),
              contractWriter.reason);
+    writeLog(
+        "MOVEMENT_RDX_BRANCH_CONTRACT writer_rva=0x2cfc900 writer_bytes=%u "
+        "blocks_visited=%u edges_visited=%u blocks_total=%u edges_total=%u "
+        "branches_seen=%u first_branch_rva=0x%x "
+        "all_relevant_store_paths_proven=%u component_scope=XYZ x_path=%s "
+        "y_path=%s z_path=%s proven_component_mask=0x%x "
+        "reaching_states_X_Y_Z_W=%u,%u,%u,%u paths_examined=%u "
+        "states_scheduled=%u instruction_visits=%u "
+        "exact_store_sites_verified=%u next_barrier_rva=0x%x "
+        "next_barrier_instruction=%s next_edge_rva=0x%x max_writer_bytes=183 "
+        "block_cap=16 edge_cap=24 branch_cap=4 path_cap=16 state_cap=31 "
+        "instruction_visit_cap=4096 W_independent=1 "
+        "homogeneous_coordinate_semantics=unknown writable_source_proven=0 "
+        "full_bytes_logged=0 reason=%s",
+        functionSize, contractWriter.blocksVisited, contractWriter.edgesVisited,
+        contractWriter.blocks, contractWriter.edges, contractWriter.branches,
+        contractWriter.branches ? s.begin + contractWriter.firstBranch : 0,
+        unsigned(contractWriter.allRelevant), contractWriter.paths[0],
+        contractWriter.paths[1], contractWriter.paths[2],
+        contractWriter.componentProofMask, contractWriter.reachingStates[0],
+        contractWriter.reachingStates[1], contractWriter.reachingStates[2],
+        contractWriter.reachingStates[3], contractWriter.pathsExamined,
+        contractWriter.statesScheduled, contractWriter.visits,
+        unsigned(contractWriter.exactSites),
+        contractWriter.barrierValid ? s.begin + contractWriter.barrier : 0,
+        contractWriter.barrierMnemonic,
+        contractWriter.barrierHasEdge ? s.begin + contractWriter.barrierEdge
+                                      : 0,
+        contractWriter.reason);
     configured = true;
     reason = "exact_build_runtime_boundary_and_c12_baseline_hash_direct_call_"
              "verified";
@@ -926,8 +951,12 @@ bool activate() noexcept {
 void cancel() noexcept {
   ws_movement_entry_enabled = 0;
   auto *s = activeScope.exchange(nullptr);
-  if (s)
+  if (s) {
     s->active = false;
+    s->finalized.store(
+        true, std::memory_order_release); // reporting only; install/cleanup
+                                          // policy unchanged
+  }
 }
 void stop() noexcept {
   cancel();
@@ -1161,7 +1190,7 @@ CaptureSummary summary(std::uint64_t session) noexcept {
 void drain() noexcept {
   for (unsigned i = 0; i < usedScopes; ++i) {
     auto &scope = scopes[i];
-    if (scope.active.load() || callbacks.load())
+    if (!scope.finalized.load(std::memory_order_acquire) || callbacks.load())
       continue;
     for (unsigned j = 0; j < scope.reserved.load(); ++j)
       finish(i * perSession + j);
@@ -1178,7 +1207,7 @@ void drain() noexcept {
           "source_w_bits=0x%x destination_w_pattern=%s destination_w_bits=0x%x "
           "stability_scope=session_XYZ_match_pattern storage_lifetime_proven=0 "
           "stable_across_surfaces=0 writable_source_proven=0 "
-          "Position_writes_by_mod=0",
+          "Position_writes_by_mod=0 phase=finalized summary_final=1",
           (unsigned long long)scope.request.session, unsigned(result.activated),
           result.snapshots, result.complete, id, result.xyzMatches,
           result.xyzMatches ? 7 : 0,
