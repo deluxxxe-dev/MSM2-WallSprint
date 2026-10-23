@@ -43,117 +43,94 @@ Verified on cardinal and diagonal planar vertical walls:
 
 Face E repeatedly produces approximately `N398 = (-0.707107, 0, +0.707107)`.
 
-## Orientation source path A — common writer
-
-Known writer:
+## Orientation path A
 
 - writer RVA `0x2CFC580`
 - WallRun caller return RVA `0x2CFC8F3`
+- padded Right / Up / Forward plus Position source
+- lock-free shared WallSprint snapshot is active
+- c2 runtime confirms qualifying calls can write the SurfaceFrame basis
+- `PATH_A_STATE_LOCK_CONTENTION=0`
 
-For relevant Hero calls its RDX source layout is verified as:
+## Orientation path B
 
-- `+0x00` Right
-- `+0x10` Up
-- `+0x20` Forward
-- `+0x30` Position
+- writer RVA `0x2CFC3C0..0x2CFC57C`, size 444
+- writer SHA256 `ee33ad96fb1834f9977621ea988f7667f0eb3e47166a7115ba262072ebc50196`
+- caller `0x2CFC7D0..0x2CFC850`, size 128
+- caller SHA256 `1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d`
+- return RVA `0x2CFC84B`
+- runtime source provenance: `RDX = writer-entry RSP + 0x28`
+- compact 3x3 payload `[RDX+0x00,RDX+0x24)`
 
-WallSprint can override this caller-local source and briefly change the real Hero Actor Up toward Surface Up without direct Actor writes.
-
-v0.1b9 exposed frequent `COMMON_OVERRIDE_REJECT reason=state_lock_contention`. v0.1c1 implemented a lock-free shared orientation snapshot to remove that hot-hook dependency, but the real runtime never reached the override stage because the new Path-B proof failed during startup admission.
-
-## Orientation reset path B
-
-Verified immediate reset path:
-
-- writer RVA `0x2CFC3C0`
-- range `0x2CFC3C0..0x2CFC57C`
-- size 444 bytes
-- captured SHA256 `ee33ad96fb1834f9977621ea988f7667f0eb3e47166a7115ba262072ebc50196`
-- caller return RVA `0x2CFC84B`
-- caller function `0x2CFC7D0..0x2CFC850`
-- caller2 RVA `0x35184A5`
-
-It acts roughly 0.8–1.4 ms after representative path-A source commits and restores Hero orientation toward World Up.
-
-## v0.1b9 result — path-B compact 3x3 layout characterized
-
-The b9 diagnostic milestone succeeded.
-
-On A and E, exact path-B entries repeatedly proved:
+Direct map:
 
 ```text
-RDX = RSP + 0x28
-rdx_inside_stack_bounds=1
-source_span_inside_stack_bounds=1
-expected_rsp_relation_match=1
-source_readable=1
+RDX+00 -> RCX+00
+RDX+04 -> RCX+04
+RDX+08 -> RCX+08
+RDX+0C -> RCX+10
+RDX+10 -> RCX+14
+RDX+14 -> RCX+18
+RDX+18 -> RCX+20
+RDX+1C -> RCX+24
+RDX+20 -> RCX+28
 ```
 
-Authenticated caller/writer bytes and runtime values support a compact 3x3 basis in `[RDX+0x00,RDX+0x24)` with direct copies into Hero orientation slots:
+c2 startup proof passes on the real accepted build:
 
 ```text
-RDX + 0x00 -> RCX + 0x00
-RDX + 0x04 -> RCX + 0x04
-RDX + 0x08 -> RCX + 0x08
-RDX + 0x0C -> RCX + 0x10
-RDX + 0x10 -> RCX + 0x14
-RDX + 0x14 -> RCX + 0x18
-RDX + 0x18 -> RCX + 0x20
-RDX + 0x1C -> RCX + 0x24
-RDX + 0x20 -> RCX + 0x28
-```
-
-Detailed evidence: `analysis/V01B9_RUNTIME_RESULT.md`.
-
-## v0.1c1 runtime result — startup proof failed closed
-
-User again reported no visible orientation change. This time the package was the expected c1 build:
-
-```text
-WallSprint v0.1c1 package_version=0.1.19
-path_b_override=1
-```
-
-The executable itself still passed the normal target build gate for Spider-Man2.exe 2.810.0.0 and the expected SHA256.
-
-However the new c1 compact Path-B startup proof failed before either source path was admitted:
-
-```text
-PATH_B_COMPACT3X3_PROOF
-admitted=0
-caller_verified=0
+PATH_B_COMPACT3X3_PROOF admitted=1
+caller_verified=1
 writer_verified=1
-rdx_to_rcx_map_verified=0
-source_bytes=0x24
-decoded_prefix_bytes=5
-pairs=0
-reason=instruction_or_dataflow_not_proven
+rdx_to_rcx_map_verified=1
+decoded_prefix_bytes=444
+caller_decoded_bytes=128
+pairs=9
 ```
 
-Consequently:
+c2 runtime confirms Path B writes the intended SurfaceFrame Up on both A and diagonal E.
+
+## v0.1c2 real-game result — visible rotation but rapid flicker
+
+Human observation: visible change is now obvious. Normal vanilla WallRun orientation and the intended surface-relative orientation switch rapidly back and forth.
+
+Authoritative log confirms the visual symptom.
+
+Representative A-wall state:
 
 ```text
-native_source_config admitted=0
-DUAL_SOURCE_ADMISSION admitted=0
-PATH_B_LAYOUT_CONFIG enabled=0 path_b_override=0
-PATH_A_OVERRIDE_COUNT=0
-PATH_B_OVERRIDE_COUNT=0
+Path A applied_up=(0,0,1)
+Path B applied_up=(0,0,1)
+actor_up=(0,0,1) dot_surface=1
+...
+actor_up=(0,1,0) dot_surface=0
 ```
 
-Therefore c1 produced no visible change because no orientation override executed at all.
+The same failure reproduces on diagonal E, where the desired Up is approximately `(-0.707107,0,+0.707107)`.
 
-Important: this is not evidence of a changed game build or a disproven compact-3x3 runtime model. The existing path-A common writer still authenticated/installed. The blocker is the new c1 proof decoder/self-check, which decoded only 5 bytes of the real accepted-build instruction stream and recovered zero copy pairs.
+Both verified source paths therefore work, but another writer resets Actor Up to World Up shortly afterward.
 
-Detailed result: `analysis/V01C1_RUNTIME_RESULT.md`.
+Retention repeatedly resets after only a few distinct updates / a few tens of milliseconds. `ORIENTATION_RETENTION_PASS=1` is absent.
 
-c1 implementation provenance:
+Late path-A WorldUp inputs are detected and converted (`LATE_COMMON_WORLDUP_OVERRIDE=1`), so those known calls do not fully explain the surviving WorldUp reset.
+
+## Critical diagnostic gap
+
+The current hardware Up watch is not process-thread complete:
 
 ```text
-branch: codex/v01c1-compact-path-b
-commit: 71437fac6c0640af01725a46e1b49c5627c739bb
+threads_enumerated=0
+installed=1
+complete_thread_coverage=0
+primary_only=1
+primary_native_thread=8968
 ```
 
-The next task must use that branch/commit as the implementation base; main currently carries handoff state but is not guaranteed to contain the c1 implementation source.
+During the armed window, captured primary-thread events are the already-known path-A writer and show Surface Up writes. The actual SurfaceUp -> WorldUp transition appears in worker observations without a corresponding hardware writer event.
+
+Strongest current hypothesis: a third orientation writer runs on another game thread (or otherwise outside the primary-only watch coverage).
+
+Detailed runtime result: `analysis/V01C2_RUNTIME_RESULT.md`.
 
 ## Current blocker / stage
 
@@ -162,32 +139,44 @@ The next task must use that branch/commit as the implementation base; main curre
 3. surface normal ✅
 4. planar surface point / standoff data ✅
 5. SurfaceFrame basis ✅
-6. path-A native orientation source injection ✅
-7. reset writer discovery ✅
-8. path-B hook/authentication ✅
-9. path-B source provenance / compact 3x3 layout ✅
-10. real-runtime compact-3x3 proof admission ▶ CURRENT
-11. dual-source retained orientation ⬜
-12. adhesion ⬜
-13. surface-relative movement ⬜
-14. animation integration ⬜
-15. camera and later roadmap ⬜
+6. path-A source injection ✅
+7. path-B discovery / compact layout ✅
+8. real-runtime path-B proof ✅
+9. path-A + path-B SurfaceFrame writes ✅
+10. visible surface-relative rotation ✅ intermittent
+11. third reset writer identification ▶ CURRENT
+12. retained orientation ⬜
+13. adhesion ⬜
+14. surface-relative movement ⬜
+15. animation integration ⬜
+16. camera and later roadmap ⬜
 
-## Current implementation objective
+## Current implementation base
 
-Repair the c1 proof implementation without weakening safety:
+Use c2, not main's older source, as the code base:
 
-1. Start from `codex/v01c1-compact-path-b` commit `71437fac6c0640af01725a46e1b49c5627c739bb`.
-2. Make the anchored decoder consume the complete authenticated real-game Path-B caller/writer instruction streams rather than stopping after 5 bytes.
-3. Independently recover and verify all nine RDX-to-RCX compact basis copy pairs.
-4. Log the first failed decode offset/opcode/reason if proof cannot complete.
-5. Keep the lock-free path-A/path-B shared orientation implementation from c1.
-6. Keep exact-build, target, stack, lifecycle and metadata-preservation fail-closed gates.
-7. Re-run the same A/E test only after startup logs `PATH_B_COMPACT3X3_PROOF admitted=1`.
-8. Do not authorize adhesion until retained orientation passes `dot(ActorUp,N398) >= 0.98` for >=0.30 s or >=20 distinct native updates.
+```text
+branch: codex/v01c2-proof-fix
+implementation commit: 2d26710034dcf695fa7bb2da763f117faf6171db
+published branch head: 727fcdc1594e36e6a1ffaabf5569eee89375b871
+```
+
+A working c3 branch has been pre-created from that base:
+
+```text
+codex/v01c3-third-writer-trace
+```
+
+## Current objective
+
+Preserve the working c2 A/B overrides. Expand the bounded Hero Up write-watch to enough process-thread coverage to identify the first unexplained SurfaceUp -> WorldUp write after both overrides are active.
+
+Do not modify a third path yet. First capture its exact RIP/function/caller/thread and timing.
+
+Do not add adhesion, movement, animation or camera until retained orientation passes `dot(ActorUp,N398) >= 0.98` for >=300 ms or >=20 distinct native updates.
 
 ## Human test locations
 
-A Control: current flat unobstructed vertical control wall near Face E. Do not hard-code +Z; use measured N398.
+A Control: same flat unobstructed vertical wall.
 
-E: same known physical diagonal wall used in prior tests.
+E: same known physical diagonal wall.
