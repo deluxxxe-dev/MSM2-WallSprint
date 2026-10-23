@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c11",
-  "package_version": "0.1.29",
+  "version": "v0.1c12",
+  "package_version": "0.1.30",
   "artifact": "WallSprint.script",
-  "sha256": "0188455698002d4a749186a41f89737ea9beb14bf6889dc4f7d2abbd0e3e81b1",
-  "dll_sha256": "20eb0a48b3cd46d4c9c547fc08cf09f204afc6d378e0471aa5143558aa9ebb52",
+  "sha256": "e162e5460f090c9eb6055dd03f354723c74e6c81a80c70173801b08ad9175aea",
+  "dll_sha256": "cc768a92c1bb44a5f17796649c9b9a45837e8cff395baca272064720d7f9e983",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -128,14 +128,14 @@
     "original_capture": "private PATH_B_FUNCTION/PATH_B_CODE before hook; never redistributed",
     "caller_original_sha256": "1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d"
   },
-  "validation": "Windows warnings-as-errors, portable sanitizer and complete Wine DLL/ABI/MinHook/proof/watch suites. Owned real Position hardware/foreign DR/4-record writer aggregation/raw256 cap/restore and anchored store identity; production c10 A/B with late Position watch on A/E through Deinit; strict complete direct-row certificate and computed/partial/control/W/overwrite negatives; finite-difference A/E math. Actual c11 writer/upstream proof awaits human log.",
+  "validation": "Windows warnings-as-errors; portable sanitizers; DLL/native/MinHook/ABI/proof/watch/c7-c11 regressions; independent complete scalar XYZ/W and pointer/register/stack/caller/CFG/effect/overwrite/W tests; real owned scalar hardware-context reconstruction and guard-page preservation. Actual c12 A/E source lineage pending.",
   "limitations": [
-    "Actual c11 game Position writer identities/caller/source lineage not yet measured; no upstream writable movement source authenticated",
-    "Position watch is one bounded incomplete-coverage snapshot; absence of a writer is not proof of absence",
-    "Position before/after are serialized watch snapshots/post instruction, not atomic pre-state or whole-function return",
-    "Runtime hash/decode of an unknown writer is not original-body authentication or movement permission",
-    "Position W/caller construction/full CFG/downstream/exclusive effects remain unproven; body lean/foot floating deferred",
-    "c10 bounded refresh and admitted-store/close overlap limits remain unchanged"
+    "C11 measured writer/caller chain does not supply the complete body or upstream semantics; c12 runtime proof pending",
+    "Trap-time surviving aliases/pointed reads are not an actual entry or atomic return snapshot",
+    "Supported prefix map does not certify subsequent unsupported effects/CFG",
+    "Caller arithmetic shape does not authenticate Position/dt/velocity/direction/speed/root motion",
+    "W semantics, source lifetime, downstream/exclusive effects and safe upstream vector remain unproven",
+    "Existing bounded incomplete hardware coverage, source-store/close overlap and c10 single-refresh limits remain"
   ],
   "source_directory": "source",
   "path_b_override": true,
@@ -400,7 +400,7 @@
     "real_c10_E_zero_WorldUp_verified": true,
     "natural_real_refresh_observed": false
   },
-  "v01c11_gate": "SYNTHETIC_READ_ONLY_DIAGNOSTICS_PASS_REAL_WRITER_ATTRIBUTION_PENDING",
+  "v01c11_gate": "REAL_A_E_ORIENTATION_AND_POSITION_WRITER_ATTRIBUTION_PASS_NO_WRITABLE_SOURCE",
   "historical_c10_A_E_orientation_verified": true,
   "position_writer_watch": {
     "diagnostic_only": true,
@@ -427,7 +427,7 @@
     "runtime_function_decode_cap_bytes": 1024,
     "full_game_bytes_logged": false,
     "watch_coverage_complete": false,
-    "real_game_writer_identity_verified": false
+    "real_game_writer_identity_verified": true
   },
   "movement_delta": {
     "read_only": true,
@@ -443,8 +443,36 @@
     "admitted": false,
     "write_permission": false,
     "strict_complete_direct_copy_certificate": true,
-    "runtime_source_post_instruction_match_observed": false,
+    "runtime_source_post_instruction_match_observed": true,
     "actual_game_CFG_W_exclusive_effects_proven": false,
     "real_game_upstream_movement_source_authenticated": false
+  },
+  "v01c12_gate": "CLOUD_DIAGNOSTIC_IMPLEMENTATION_PASS_REAL_LINEAGE_PENDING",
+  "historical_c11_A_E_orientation_verified": true,
+  "movement_source_lineage": {
+    "read_only": true,
+    "writer_rva": "0x2cfc900",
+    "return_rva": "0x351eeb0",
+    "caller2_return_rva": "0x351a020",
+    "runtime_writer_span_cap": 1024,
+    "runtime_caller_span_cap": 8192,
+    "complete_decode_required": true,
+    "supported_prefix_separate_from_whole_function": true,
+    "direct_E8_boundary_and_destination_required": true,
+    "current_writer_and_direct_call_bytes_rechecked": true,
+    "expression_node_cap": 256,
+    "expression_visit_cap_per_attempt": 64,
+    "reconstruction_attempt_cap_per_window": 16,
+    "new_reads_refuse_PAGE_GUARD": true,
+    "entry_snapshot_captured": false,
+    "source_identity_stable": false,
+    "typed_caller_semantics_proven": false,
+    "W_semantics_proven": false,
+    "exclusive_effects_proven": false,
+    "writable_source_proven": false,
+    "input_observation": false,
+    "full_game_bytes_logged": false,
+    "new_hooks": 0,
+    "Position_writes_by_mod": 0
   }
 }

@@ -1,0 +1,96 @@
+{
+  "version": "v0.1c12",
+  "package_version": "0.1.30",
+  "branch": "codex/v01c12-movement-source-lineage",
+  "base_delivery_commit": "9593f0230e220770f2b34faf512ca4108c1825cc",
+  "precreated_handoff_commit": "fe557ec9b615f1a2d90af7814a8a3fe0e1317560",
+  "implementation_commit": "4c84d634df4d629b237d4cc311d5e5cd6de4398c",
+  "outputs": [
+    {
+      "path": "WallSprint_v0.1c12_movement_source_lineage.zip",
+      "bytes": 2801619,
+      "sha256": "e03b6a604152084ca091ccdfa360a3fdb2489311d0cb83f5b5acba2cd13731b3"
+    },
+    {
+      "path": "WallSprint_v0.1c12_source.zip",
+      "bytes": 588238,
+      "sha256": "91b47d0797ab08ab279c797d449f9a3b19b0108ca5ea66462a197bd5b6875be4"
+    }
+  ],
+  "test_pass_counts": {
+    "portable": 13,
+    "smoke": 4,
+    "hooks": 53
+  },
+  "total_pass": 70,
+  "historical_private_skips": 4,
+  "final_added_thread_restore_confirmation_pass_records": 2,
+  "standalone_source_build": "PASS_private_game_captures_absent",
+  "archive_current_source_docs_CRC_script_hash_license_private_body_exclusion": "PASS",
+  "c11_native_source_orientation_lifecycle_and_handoff_byte_identical": true,
+  "owned_A_E_orientation": [
+    {
+      "session": "1",
+      "wallrun_duration_ms": "4111",
+      "source_active_until_deinit": "1",
+      "verified_deinit": "1",
+      "path_a_writes": "178",
+      "path_b_writes": "178",
+      "max_held_ms": "2146",
+      "max_held_updates": "133",
+      "retention_pass": "1",
+      "last_actor_up_dot_surface": "1",
+      "first_hard_kill": "none",
+      "hard_kill_calls": "0"
+    },
+    {
+      "session": "2",
+      "wallrun_duration_ms": "4153",
+      "source_active_until_deinit": "1",
+      "verified_deinit": "1",
+      "path_a_writes": "165",
+      "path_b_writes": "165",
+      "max_held_ms": "1734",
+      "max_held_updates": "104",
+      "retention_pass": "1",
+      "last_actor_up_dot_surface": "1",
+      "first_hard_kill": "none",
+      "hard_kill_calls": "0"
+    }
+  ],
+  "owned_A_E_position_watch": [
+    {
+      "session": "1",
+      "watch_armed": "1",
+      "threads_seen": "2",
+      "threads_installed": "1",
+      "unique_writers": "1",
+      "total_write_events": "12",
+      "dropped": "0",
+      "cleanup_restored": "1",
+      "cleanup_pending": "0",
+      "Position_writes_by_mod": "0"
+    },
+    {
+      "session": "2",
+      "watch_armed": "1",
+      "threads_seen": "2",
+      "threads_installed": "1",
+      "unique_writers": "1",
+      "total_write_events": "12",
+      "dropped": "0",
+      "cleanup_restored": "1",
+      "cleanup_pending": "0",
+      "Position_writes_by_mod": "0"
+    }
+  ],
+  "actual_c11_A_E_orientation_and_measured_writer_chain": "VERIFIED_compact_human_handoff",
+  "actual_c12_writer_callsite_source_lineage": "PENDING_game_records",
+  "actual_entry_snapshot_captured": false,
+  "typed_caller_semantics_proven": false,
+  "safe_upstream_writable_source_authenticated": false,
+  "Position_writes_by_mod": 0,
+  "movement_input_adhesion_injection": false,
+  "private_full_game_bytes_distributed": false,
+  "exact_blocker": "Actual c12 writer/callsite/caller-slice proof records; true entry values may be unrecoverable from post-store context; typed producer/W/storage lifetime/downstream/exclusive effects unproven"
+}
