@@ -29,3 +29,5 @@ THIRD_WRITER_IDENTITY logs module/RIP/function bounds/size/SHA and callers. At m
 Owned native-thread hardware fixtures cover a second-thread unknown writer, actual function hash/caller evidence, once/session reporting, sequential resets after the old1.10 deadline, foreign DR0 refusal, coexistence/restoration of foreign DR2, diagnostic contention, invalid stack refusal, timeout/Deinit/identity/F8/shutdown cleanup and unchanged Position/page protection. Existing c2 ABI/source/proof/reset regressions remain required.
 
 Actual third-writer identity is still UNKNOWN until the human c3 run. Snapshot gaps, foreign slots, caps, read/drop/setup failures and no event never prove absence. Retention remains dot>=.98 for300ms or20 distinct native updates; no later milestone is authorized here.
+
+Other watched threads continue executing while a VEH reads Up. Both before and after are observations, not an atomic instruction transaction. Concurrent writes can race that read; treat the selected event as candidate evidence and confirm repeated function/caller/thread and static context before declaring the remaining owner.

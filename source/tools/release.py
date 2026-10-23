@@ -12,7 +12,7 @@ for name in ['V01B8_RUNTIME_RESULT.md', 'V01B8_RESULT.md', 'PATH_B_CALLER_DECODE
  shutil.copy2(root/'analysis'/name,out/'analysis'/name)
 (out/'logs').mkdir(exist_ok=True)
 # Only known independent cloud validation logs; no raw private game logs.
-for name in ['v01c3_build.log','v01c3_portable.log','v01c3_smoke.log','v01c3_hooks.log','v01c3_third.log','package_check.log']:
+for name in ['v01c3_build.log','v01c3_portable.log','v01c3_smoke.log','v01c3_hooks.log','v01c3_third.log','v01c3_public_build.log','package_check.log']:
  if (root/'logs'/name).exists():shutil.copy2(root/'logs'/name,out/'logs'/name)
  else:print('SKIP: optional maintainer validation log',name)
 if (root.parent/'docs/CODEX_RESULT.md').exists():

@@ -1,0 +1,28 @@
+{
+  "branch": "codex/v01c3-third-writer-trace",
+  "implementation_commit": "fd105be35a12c4a4ba8b8a72c3f75a4bcf49ff82",
+  "version": "v0.1c3",
+  "package_version": "0.1.21",
+  "artifacts": [
+    {
+      "file": "WallSprint_v0.1c3_third_writer_trace.zip",
+      "bytes": 2306508,
+      "sha256": "29f9e237f9e71997078284839c5cd213a27e17ad08fb095ed95360bac14775a5"
+    },
+    {
+      "file": "WallSprint_v0.1c3_source.zip",
+      "bytes": 434589,
+      "sha256": "d16cce05d860614847112b7ca33bf2cc25cbb655f5d19c86e1be5437419d90ce"
+    }
+  ],
+  "portable_pass": 11,
+  "windows_smoke_pass": 4,
+  "hook_actual_proof_multithread_pass": 32,
+  "historical_private_skips": 4,
+  "second_thread_hardware_fixture": "PASS",
+  "standalone_source_build": "PASS",
+  "actual_game_third_writer": "PENDING",
+  "actual_c2_retention": "FAILED_PER_RUNTIME_HANDOFF",
+  "third_path_modified": false,
+  "private_game_bytes_distributed": false
+}

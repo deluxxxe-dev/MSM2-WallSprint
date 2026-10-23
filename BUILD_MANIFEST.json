@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c2",
-  "package_version": "0.1.20",
+  "version": "v0.1c3",
+  "package_version": "0.1.21",
   "artifact": "WallSprint.script",
-  "sha256": "56f18ffea382357718195bd35fbca7576ea15651b48bfe12675fb0900738b717",
-  "dll_sha256": "80f80c86a4124ad470834bb5f5e984c0987f40ff4b08cee0e0a04c4e85c17986",
+  "sha256": "09aa6a55cd1881927afadb2ff5c3dc98930b592637c89a4e92b08732a5ce0a84",
+  "dll_sha256": "7467bc320a387700afc1422350496ffbd3ab36a24b89e546d96df69a7932fbe8",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -89,8 +89,8 @@
     "unchanged_Up_records_suppressed": true,
     "primary_first": true,
     "max_sessions": 8,
-    "max_events": 256,
-    "max_threads": 1,
+    "max_events": 512,
+    "max_threads": 128,
     "common_record_ring": 1024,
     "callback_wait": false,
     "new_hook_targets": 1,
@@ -102,7 +102,11 @@
     "zero_events_prove_absence": false,
     "continue_after_first_reset": true,
     "path_b_write": true,
-    "entry_link": "own B entry/current-thread serial, session/generation/owner/target/caller/QPC<=5ms; anchored original decode required"
+    "entry_link": "own B entry/current-thread serial, session/generation/owner/target/caller/QPC<=5ms; anchored original decode required",
+    "primary_only": false,
+    "process_expand_elapsed": 0.85,
+    "snapshot_scans": 1,
+    "late_thread_rescans": 0
   },
   "reset_copy_source": {
     "writer_rva": "0x2cfc3c0",
@@ -124,10 +128,10 @@
     "original_capture": "private PATH_B_FUNCTION/PATH_B_CODE before hook; never redistributed",
     "caller_original_sha256": "1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d"
   },
-  "validation": "Windows warnings-as-errors for WallSprint; portable ASan/UBSan; full Wine hook/ABI/lifecycle/lock-free A-B/metadata/retention suites; actual hash-verified writer444/caller128 reproduces old c1 failure and passes full Capstone proof + production installer; mutations, missing/duplicate/outside pairs, decode failures and caller/stack negatives. Game c2 retention remains pending.",
+  "validation": "Windows warnings-as-errors for WallSprint; portable ASan/UBSan; full Wine hook/ABI/lifecycle/lock-free A-B/metadata/retention suites; actual hash-verified writer444/caller128 reproduces old c1 failure and passes full Capstone proof + production installer; mutations, missing/duplicate/outside pairs, decode failures and caller/stack negatives. Actual c2 retention failed; c3 observes the remaining writer without patching it.",
   "limitations": [
-    "Accepted-build c2 A/E retention and visible rotation require the human run",
-    "Hardware primary-thread-only and bounded; missing events do not prove absence",
+    "Actual c3 unknown writer identity requires human A run; E only if missed",
+    "Coverage is a bounded eligible-thread snapshot; caps, foreign DR, drops and later-created threads may miss writes",
     "Before Up is previous observation, not atomic pre-instruction",
     "A short already-admitted guarded store may finish concurrently with F8",
     "No adhesion or later milestone is enabled"
@@ -138,7 +142,7 @@
   "lock_free_shared_snapshot": true,
   "v01b9_gate": "COMPACT_3X3_LAYOUT_AND_A_E_SEMANTICS_VERIFIED_FROM_CHECKED_IN_RUNTIME_RESULT",
   "v01c1_gate": "ACTUAL_STARTUP_PROOF_FAILED_ZERO_SOURCE_WRITES",
-  "v01c2_gate": "ACTUAL_BYTE_PROOF_PASS_RUNTIME_RETENTION_PENDING",
+  "v01c2_gate": "REAL_A_B_SOURCE_AND_VISIBLE_ROTATION_PASS_RETENTION_FAILED_THIRD_RESET_UNCAPTURED",
   "PATH_B_FIELDS_VERIFIED": true,
   "PATH_B_WRITE_PERMISSION": true,
   "path_b_layout": {
@@ -167,5 +171,31 @@
     "actual_byte_regression": "PASS: exact c1 failure reproduced; c2 proof and production installer passed with authenticated original inputs, no game code executed",
     "failure_diagnostic_max_bytes": 16,
     "full_function_capture_logging": false
-  }
+  },
+  "third_writer_trace": {
+    "diagnostic_only": true,
+    "third_path_override": false,
+    "watch_bytes": 12,
+    "range": "Transform+[0x10,0x1c)",
+    "hardware_slots": "DR0 8 bytes + DR1 4 bytes",
+    "process_thread_cap": 128,
+    "skipped_id_summary_cap": 16,
+    "foreign_enabled_slots_preserved": true,
+    "saved_debug_state_restored": true,
+    "PAGE_GUARD": false,
+    "page_protection_changes": false,
+    "direct_game_calls": false,
+    "function_capture_max_bytes": 16384,
+    "raw_function_capture": "one selected function per session; private local runtime log only; never release ZIP",
+    "first_reset_once_per_session": true,
+    "classification": [
+      "KNOWN_PATH_A",
+      "KNOWN_PATH_B",
+      "UNKNOWN_WRITER"
+    ],
+    "independent_last_A_B_timestamps": true,
+    "real_game_third_writer_verified": false
+  },
+  "v01c3_gate": "PENDING_REAL_MULTITHREAD_THIRD_WRITER_EVENT",
+  "v01c2_real_source_override_verified": true
 }
