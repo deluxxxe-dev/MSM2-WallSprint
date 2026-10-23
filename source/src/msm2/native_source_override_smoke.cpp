@@ -30,8 +30,15 @@ namespace msm2::reset_copy {
 bool authenticated() noexcept {unsigned char b[32]{};return copyAuth&&msm2::readMemory(reinterpret_cast<std::uintptr_t>(&ws_test_copy_writer),b,32)&&!std::memcmp(b,copyInstalledBytes,32);}
 bool compactProofAuthenticated() noexcept {return compactAuth&&authenticated();}
 }
+// Test-only interposition in the existing guarded reader: pause the real hook
+// after it built the first compact payload, while the main owner republishes.
+static std::atomic<std::uintptr_t> raceSource{0};static std::atomic<unsigned> raceThread{0};static HANDLE racePaused{},raceResume{};static unsigned racePauseAt=2;static bool racePauseTwice=false;
+static thread_local unsigned raceGuardReads{};
 namespace msm2 {
-bool readMemory(std::uintptr_t p,void* out,std::size_t n){if(causeState.load()==1)assert(!msm2::native_source::active()&&(killed.load()||!lifecycleOpen.load()));if(p==token.owner+0x338){++planeReads;if(!pointReadable)return false;}SIZE_T done=0;return ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void*>(p),out,n,&done)&&done==n;}
+bool readMemory(std::uintptr_t p,void* out,std::size_t n){
+ if(raceThread.load()==GetCurrentThreadId()&&p==imageBase+callBegin){++raceGuardReads;if(raceGuardReads==racePauseAt||(racePauseTwice&&raceGuardReads==racePauseAt+1)){raceSource=entryEvidence.rdx;SetEvent(racePaused);assert(WaitForSingleObject(raceResume,2000)==WAIT_OBJECT_0);}}
+ if(causeState.load()==1){assert(!msm2::native_source::active()&&(killed.load()||!lifecycleOpen.load()));}
+ if(p==token.owner+0x338){++planeReads;if(!pointReadable)return false;}SIZE_T done=0;return ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void*>(p),out,n,&done)&&done==n;}
 bool sample(Snapshot& s){s=fakeHero;if(!sdkAvailable)return false;if(deinitOnSample){deinitOnSample=false;ws::native_source::event(3,token.owner);}return readMemory(s.transform,s.prefix,48);}
 void writeLog(const char* fmt,...){char b[4096];va_list a;va_start(a,fmt);vsnprintf(b,sizeof(b),fmt,a);va_end(a);output+=b;output+='\n';}
 }
@@ -45,6 +52,7 @@ static msm2::guards::ObservationStatus observationStatus();
 static void workerTick(bool advance=true){if(advance)ws::native_source::event(2,owner);context.wallRunUpdateCalls=token.updates;context.elapsed=double(GetTickCount64()-token.initMs)/1000.;WorkerEvidence w{};w.available=true;w.context=context;w.observation=observationStatus();w.inputAuthenticated=sourceAuth;workerEvidence.publish(w);msm2::native_source::tick(context,"none",true);}
 static void prepare(ws::Vec3 normal,bool full=true,unsigned backdate=800){
  secondary.seen=0;secondary.admitted=0;secondary.overridden=0;secondary.rejected=0;secondary.firstThread=0;secondary.lastThread=0;secondary.overflowEvents=0;secondary.inflight=0;for(auto& id:secondary.threads)id=0;
+ secondary.refreshSeen=0;secondary.refreshAdmitted=0;secondary.refreshIdentity=0;secondary.refreshStale=0;secondary.refreshIntegrity=0;secondary.refreshOther=0;firstSecondaryRefresh.ready=0;
  firstSecondaryOverride.ready=0;firstSecondaryReject.ready=0;pathBReservations=0;compactAuth=true;
  causeState=0;killCalls=0;workerEvidence.publish({});identityPublication.publish({});firstCause={};
  killed=false;admitted=true;ws_native_source_enabled=1;config={};config.dualSource=true;state={};pathAWrites=0;pathBWrites=0;pathARejects=0;pathBRejects=0;resetRequested=false;publishInactive();
@@ -77,10 +85,10 @@ static void assertFirst(const char* reason,const char* origin){
  msm2::native_source::kill("script_stop","shutdown");msm2::native_source::drainLogs();assert(countText(output,key)==1&&firstCause.reason==std::string(reason));
 }
 struct SecondaryJob {
- HANDLE ready{},go{};std::uintptr_t target{};unsigned mode{},thread{};bool changed{};ws::source_math::CompactBlock before{},after{};
+ HANDLE ready{},go{};std::uintptr_t target{};unsigned mode{},thread{};bool changed{},race{};ws::source_math::CompactBlock before{},after{};
 };
 static DWORD WINAPI secondaryJob(void* raw){
- auto& j=*static_cast<SecondaryJob*>(raw);j.thread=GetCurrentThreadId();alignas(16) ws::source_math::CompactBlock local=j.before;
+ auto& j=*static_cast<SecondaryJob*>(raw);j.thread=GetCurrentThreadId();if(j.race){raceGuardReads=0;raceThread=j.thread;}alignas(16) ws::source_math::CompactBlock local=j.before;
  SetEvent(j.ready);assert(WaitForSingleObject(j.go,2000)==WAIT_OBJECT_0);
  SetLastError(0x12345);
  if(j.mode==0||j.mode==1){
@@ -103,6 +111,16 @@ static SecondaryJob secondaryCall(unsigned mode=0,bool refresh=true,const ws::so
  if(beforeGo)beforeGo();
  SetEvent(job.go);assert(WaitForSingleObject(th,2000)==WAIT_OBJECT_0);
  CloseHandle(th);CloseHandle(job.go);CloseHandle(job.ready);return job;
+}
+static SecondaryJob publicationRace(const std::function<void()>& during,const std::function<void()>& second={},const ws::source_math::CompactBlock* input=nullptr){
+ SecondaryJob job{};job.target=fakeHero.transform;job.before=input?*input:compact;job.race=true;job.ready=CreateEventW(nullptr,TRUE,FALSE,nullptr);job.go=CreateEventW(nullptr,TRUE,FALSE,nullptr);
+ racePaused=CreateEventW(nullptr,FALSE,FALSE,nullptr);raceResume=CreateEventW(nullptr,FALSE,FALSE,nullptr);assert(job.ready&&job.go&&racePaused&&raceResume);racePauseTwice=bool(second);
+ auto th=CreateThread(nullptr,0,secondaryJob,&job,0,nullptr);assert(th&&WaitForSingleObject(job.ready,2000)==WAIT_OBJECT_0);workerTick();SetEvent(job.go);
+ assert(WaitForSingleObject(racePaused,2000)==WAIT_OBJECT_0);during();SetEvent(raceResume);
+ if(second){assert(WaitForSingleObject(racePaused,2000)==WAIT_OBJECT_0);second();SetEvent(raceResume);}
+ assert(WaitForSingleObject(th,2000)==WAIT_OBJECT_0);raceThread=0;racePauseTwice=false;
+ for(auto handle:{th,job.ready,job.go,racePaused,raceResume})CloseHandle(handle);
+ return job;
 }
 int main(){
  alignas(16) ws::source_math::CompactBlock local{},changed{};local.rows[0]=local.rows[4]=local.rows[8]=1;changed=local;changed.metadata[0]=1;
@@ -177,6 +195,81 @@ int main(){
  // Shared partial interpolation is applied directly, no new delay/transition.
  prepare({0,0,1},false);waitMs(65);workerTick();Published partial{};assert(publication.read(partial)&&partial.t>0&&partial.t<1);auto c9PartialEntry=state.transition.entryMs;
  job=secondaryCall(0,false);assert(job.changed&&std::abs(job.after.rows[4]-partial.basis.up.y)<.0001f&&std::abs(job.after.rows[5]-partial.basis.up.z)<.0001f&&state.lastT==partial.t&&state.transition.entryMs==c9PartialEntry&&state.expectedThread==GetCurrentThreadId());
+ // c10 exact diagonal race: a real primary Update/worker publication occurs
+ // between the secondary's computed old payload and final publication read.
+ const ws::Vec3 diagonal{-.70710678f,0,.70710678f};
+ prepare(diagonal);auto raceSession=state.session;
+ while(context.elapsed<1.75){callA();callB();waitMs(16);workerTick();msm2::native_source::drainLogs();}
+ assert(state.pass&&state.lastT==1);auto raceEntry=state.transition.entryMs;auto raceTarget=state.transition.targetQ;auto raceThreadOwner=state.expectedThread;auto raceA=pathAWrites.load(),raceB=pathBWrites.load();Published newest{};
+ job=publicationRace([&]{waitMs(2);workerTick();assert(publication.read(newest));});
+ assert(job.changed&&ws::dot(ws::Vec3{job.after.rows[3],job.after.rows[4],job.after.rows[5]},diagonal)>.9999f&&job.after.metadata==compact.metadata);
+ assert(causeState==0&&secondary.refreshSeen==1&&secondary.refreshAdmitted==1&&secondary.refreshIdentity==0&&pathAWrites==raceA&&pathBWrites==raceB+1);
+ assert(state.expectedThread==raceThreadOwner&&token.thread==raceThreadOwner&&token.updates==newest.nativeUpdate&&state.transition.entryMs==raceEntry&&!std::memcmp(&state.transition.targetQ,&raceTarget,sizeof(raceTarget)));
+ do {waitMs(16);workerTick();callA();callB();assert(ws::dot(ws::Vec3{ws_test_copy_received[3],ws_test_copy_received[4],ws_test_copy_received[5]},diagonal)>.9999f);msm2::native_source::drainLogs();}while(context.elapsed<4.2);
+ assert(pathAWrites>raceA+100&&pathBWrites>raceB+100&&state.pass);
+ ws::native_source::event(3,owner);context.wallRunActive=false;msm2::native_source::tick(context,"verified_deinit",true);msm2::native_source::drainLogs();
+ auto c10Key="ORIENTATION_LIFECYCLE_SUMMARY session="+std::to_string(raceSession)+" ";auto c10Summary=output.substr(output.find(c10Key));assert(c10Summary.find("source_active_until_deinit=1 verified_deinit=1")!=std::string::npos&&c10Summary.find("first_hard_kill=none")!=std::string::npos);
+ assert(output.find("result=secondary_publication_refresh_admitted")!=std::string::npos);
+ auto raceStart=output.find("PATH_B_SECONDARY_THREAD_EVENT session="+std::to_string(raceSession)+" ");auto raceEnd=output.find(c10Key);
+ assert(raceStart<raceEnd&&output.substr(raceStart,raceEnd-raceStart).find("actor_up=(0,1,0)")==std::string::npos);
+ // New partial basis (not old p.basis) must be used after refresh. Scales and
+ // all 28 metadata bytes survive the same production replacement/store helper.
+ prepare(diagonal,false);waitMs(35);workerTick();Published oldPartial{};assert(publication.read(oldPartial));
+ auto refreshScaled=compact;for(unsigned i=0;i<3;++i){refreshScaled.rows[i]*=.75f;refreshScaled.rows[3+i]*=1.25f;refreshScaled.rows[6+i]*=1.5f;}
+ job=publicationRace([&]{waitMs(45);workerTick();assert(publication.read(newest));},{},&refreshScaled);
+ assert(job.changed&&newest.t>oldPartial.t&&newest.t<1&&std::abs(job.after.rows[4]-newest.basis.up.y*1.25f)<.0001f&&std::abs(job.after.rows[4]-oldPartial.basis.up.y*1.25f)>.01f&&job.after.metadata==compact.metadata);
+ // The revalidation rereads this callback's current stack block, including new
+ // metadata, rather than keeping the initial expected block for guarded store.
+ prepare(diagonal);auto latestIncoming=compact;for(unsigned i=0;i<3;++i)latestIncoming.rows[3+i]*=1.25f;latestIncoming.metadata[12]^=0x55;
+ job=publicationRace([&]{waitMs(1);workerTick();std::memcpy(reinterpret_cast<void*>(raceSource.load()),&latestIncoming,64);});
+ assert(job.changed&&job.after.metadata==latestIncoming.metadata&&std::abs(job.after.rows[3]-diagonal.x*1.25f)<.0001f);
+ // Even equal timestamps cannot hide an advancing update/basis payload.
+ prepare(diagonal);job=publicationRace([&]{Published next{};assert(publication.read(next));++next.nativeUpdate;publication.publish(next);});assert(job.changed&&secondary.refreshAdmitted==1);
+ // Strict one-refresh bound: a second genuine refresh rejects without a store.
+ prepare(diagonal);job=publicationRace([&]{waitMs(1);workerTick();},[&]{waitMs(1);workerTick();});
+ assert(!job.changed&&pathBWrites==0&&pathBReservations==0&&causeState==0&&secondary.refreshOther==1);workerTick();callA();callB();assert(pathAWrites==1&&pathBWrites==1);
+ // Real changes during the same validation window never receive orientation.
+ // Direct publication mutations isolate each field; token mutations isolate
+ // live native checks. Every executed function is still an owned fixture.
+ for(unsigned faultCase=0;faultCase<26;++faultCase){
+  prepare(diagonal);auto savedHero=fakeHero.hero,savedTransform=fakeHero.transform;unsigned char* mutatedPatch=nullptr;
+  job=publicationRace([&]{
+   waitMs(1);workerTick();Published next{};assert(publication.read(next));
+   if(faultCase==0)++next.session;
+   if(faultCase==1)next.owner+=16;
+   if(faultCase==2)next.hero+=16;
+   if(faultCase==3)next.transform+=64;
+   if(faultCase==4)++next.generation;
+   if(faultCase==5)++next.lifecycleEpoch;
+   if(faultCase==6)++next.acceptedEpoch;
+   if(faultCase==7)++next.thread;
+   if(faultCase==8)++next.initMs;
+   if(faultCase==9)next.active=false;
+   if(faultCase<=9)publication.publish(next);
+   if(faultCase==10)ws::native_source::event(3,owner);
+   if(faultCase>=11&&faultCase<=16){auto changed=token;if(faultCase==11)++changed.thread;if(faultCase==12)changed.owner+=16;if(faultCase==13)++changed.generation;if(faultCase==14)++changed.acceptedEventEpoch;if(faultCase==15)changed.phase=2;if(faultCase==16){assert(!lifecycleWriteGate.test_and_set());ws::native_source::event(2,owner);lifecycleWriteGate.clear();}else lifecyclePublication.publish(changed);}
+
+   if(faultCase==19){waitMs(130);}
+   if(faultCase==20){waitMs(130);ws::native_source::event(2,owner);}
+   if(faultCase==21)msm2::native_source::kill("F8_kill_switch","shutdown");
+   if(faultCase==22)fakeHero.hero+=16;
+   if(faultCase==23)fakeHero.transform+=64;
+   if(faultCase>=24){WorkerEvidence w{};assert(workerEvidence.read(w));if(faultCase==24)++w.context.wallRunSessionId;else w.context.wallRunOwner+=16;workerEvidence.publish(w);}
+  },(faultCase==17||faultCase==18)?std::function<void()>([&]{if(faultCase==17){mutatedPatch=reinterpret_cast<unsigned char*>(lifecyclePatches[2].address);mutatedPatch[9]^=1;}else compactAuth=false;}):std::function<void()>{});
+  if(faultCase==17||faultCase==18)assert(secondary.refreshSeen==1&&secondary.refreshIntegrity==1);
+  assert(!job.changed&&pathBWrites==0&&pathBReservations==0&&state.expectedThread==GetCurrentThreadId());
+  if(faultCase==19||faultCase==20){assert(!killed.load()&&causeState==0&&secondary.refreshStale==1);workerTick(false);workerTick();job=secondaryCall();assert(job.changed);}
+  else {if(faultCase==10)assert(causeState==0);else assert(killed.load()&&causeState.load()>=2);}
+  if(mutatedPatch)mutatedPatch[9]^=1;
+  compactAuth=true;fakeHero.hero=savedHero;fakeHero.transform=savedTransform;
+  if(faultCase!=19&&faultCase!=20){workerTick();callA();callB();assert(pathAWrites==0&&pathBWrites==0);}
+  msm2::native_source::drainLogs();
+ }
+ // Refresh evidence is separately capped; first survives a full shared ring.
+ prepare(diagonal);head=tail+capacity;
+ job=publicationRace([&]{waitMs(1);workerTick();});assert(job.changed&&firstSecondaryRefresh.ready==2);tail=head.load();msm2::native_source::drainLogs();assert(firstSecondaryRefresh.ready==3);
+ prepare(diagonal);for(unsigned i=0;i<20;++i){job=publicationRace([&]{waitMs(1);workerTick();});assert(job.changed);}
+ msm2::native_source::drainLogs();auto refreshKey="PATH_B_SECONDARY_PUBLICATION_REFRESH_EVENT session="+std::to_string(state.session)+" ";assert(countText(output,refreshKey)==16&&secondary.refreshSeen==20&&secondary.refreshAdmitted==20);
  // Foreign target/caller/relation/span/layout rejects never kill or migrate.
  for(unsigned mode=1;mode<=5;++mode){
   prepare({0,0,1});auto input=compact;if(mode==5)input.rows[4]=0;job=secondaryCall(mode,false,&input);
@@ -254,6 +347,7 @@ int main(){
  workerTick();assert(state.ownership==Ownership::Active&&state.session==recoveredSession&&state.lastT==1&&state.transition.entryMs==originalEntry&&!std::memcmp(&originalTarget,&state.transition.targetQ,sizeof(originalTarget)));
  callA();callB();assert(pathAWrites==beforeA+1&&pathBWrites==beforeB+1&&ws_test_source_received[6]>.999f&&ws_test_copy_received[6]>.999f);
  do {Sleep(16);workerTick();callA();callB();msm2::native_source::drainLogs();}while(context.elapsed<4.1);
+ if(!state.pass||state.staleSuspends!=1||state.staleResumes!=1||state.maxStaleMs<150)std::fprintf(stderr,"recovery failed: pass=%u suspends=%u resumes=%u max_stale_ms=%llu owner_state=%u first_reason=%s\n",unsigned(state.pass),state.staleSuspends,state.staleResumes,(unsigned long long)state.maxStaleMs,unsigned(state.ownership),firstCause.reason);
  assert(state.pass&&state.staleSuspends==1&&state.staleResumes==1&&state.maxStaleMs>=150);
  auto recoveredExit="NATIVE_SOURCE_EXIT session="+std::to_string(recoveredSession)+" ";msm2::native_source::drainLogs();assert(output.find(recoveredExit)==std::string::npos);
  ws::native_source::event(3,owner);context.wallRunActive=false;msm2::native_source::tick(context,"verified_deinit",true);
@@ -324,6 +418,7 @@ int main(){
  auto f=std::fopen("logs/windows_native_source_synthetic.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);
  puts("PASS: lock-free coherent A/B shared basis, A exact stack source, B compact36-only scale/metadata preservation, contended worker lock cannot reject hooks, A/E retention, identity/thread/lifecycle/auth/kill/degenerate gates; independent MinHook fixtures only");
  puts("PASS: production native publication/worker and real MinHook A/B commits persist beyond2s through a >=4s WallRun with concurrent reader, SurfaceUp and sustained retention; synchronous Deinit passthrough and once/session lifecycle summary; hard collision/Hero/time-order gates diagnose and remain closed");
+ puts("PASS: c10 deterministic secondary publication refresh at diagonal t1/retention and latest partial basis, fixed native ownership with primary continuation/clean4.2s Deinit; same-ms update, one-refresh bound, 26 ownership/token/Deinit/integrity/stale/kill/context races, no hard revival, first ring-independent refresh event and16-record cap");
  puts("PASS: c9 real secondary-thread MinHook B at1.75s after full retention, unchanged native thread/token/session/transition, primary A-B continue to clean4.4s Deinit; partial progress, foreign negatives, proof/four-patch/Hero/Transform/session/owner/generation/epoch/collision hard gates, stale recovery, scale/metadata, bounded32 events and shared B budget; Path A wrong-thread still fatal");
  puts("PASS: c8 production worker diagnostic-only field-plan loss at first0.7s A/B interpolation stops diagnostics without killing source, reaches t1 and retention; four independent real patch mutations stop A/B with precise first hook/offset, hot-entry and input attribution, immutable/racing first cause and no hard-close revival");
  puts("PASS: c7 real270ms stale gap blocks A/B before and after worker poll, same-session real Update resumes full target through verified Deinit; fresh-worker/stale-native gate and missed-worker signal; partial transition freeze/continue, bounded18 episodes/16 pairs, eleven stale-to-hard invalidations never revive");
