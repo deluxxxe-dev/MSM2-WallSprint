@@ -41,8 +41,6 @@ Verified on cardinal and diagonal planar vertical walls:
 - `P320 - P338 ≈ 0.5 * N398`
 - `dot(HeroPosition - P338, N398) ≈ 0.5 m`
 
-A wall c9 full lifecycle retention passed. E-wall c9 confirmed generic diagonal Surface Up but exposed a small remaining publication race.
-
 ## Orientation ownership
 
 Path A:
@@ -59,6 +57,7 @@ Path B:
 - compact 3x3 source at `RDX = writer-entry RSP + 0x28`
 - real-game compact proof passes
 - valid active-Hero Path B calls may occur on multiple secondary threads; per-call provenance is used instead of a fatal equality-to-native-thread invariant
+- c10 adds one bounded semantic-publication refresh/revalidation path for identity-preserving concurrent updates
 
 ## Orientation history
 
@@ -70,95 +69,75 @@ Path B:
 - c7: added transient stale suspend/resume, but real run hard-killed orientation after only two Path A writes / ~16 ms.
 - c8: exact first-cause attribution succeeded; a healthy secondary-thread Path B call was falsely treated as fatal `path_b_wrong_thread`.
 - c9 A wall: secondary-thread Path B admission passed real runtime with 193/193 secondary overrides and clean Deinit.
-- c9 E wall: diagonal Surface Up and Deinit lifecycle passed, but two secondary calls were rejected on `secondary_source_publication_changed`; each rejection correlated with a one-observation WorldUp flash.
+- c9 E wall: diagonal Surface Up passed, but two `secondary_source_publication_changed` rejects produced two ~10 ms WorldUp observations.
+- c10: one bounded publication-refresh/revalidation path implemented. Human cardinal/diagonal regression produced clean full-lifecycle orientation with no WorldUp observations, no secondary rejects and no hard kill. The natural refresh path itself did not fire in that human run; deterministic c10 fixtures cover the actual race branch.
 
-## Authoritative c9 A-wall PASS
-
-Implementation:
-
-```text
-branch: codex/v01c9-secondary-path-b-thread-admission
-implementation commit: 0c276126ccac8e3bd2a6dd1d850da63e80bc35ce
-published head: b865dabfa81626248ea8a8ae56a1dd1c992d7301
-version: v0.1c9 / package 0.1.27
-```
-
-Real A runtime:
+## Authoritative c10 implementation
 
 ```text
-wallrun_duration_ms=3844
-source_exit_reason=verified_native_Deinit
-source_active_until_deinit=1
-path_a_writes=239
-path_b_writes=238
-retention_pass=1
-max_held_ms=2859
-max_held_updates=221
-last_actor_up_dot_surface=1
-first_hard_kill=none
-hard_kill_calls=0
-secondary seen/admitted/overridden/rejected=193/193/193/0
+branch: codex/v01c10-secondary-publication-race
+implementation commit: 609fdf935e40947d7aad29fea4bed5f2cf3d0e2e
+published/delivery head: 6246fd6d2e52cf81e18e6ff8ffd4d8ee4d863aa1
+version: v0.1c10 / package 0.1.28
 ```
 
-Detailed result: `analysis/V01C9_RUNTIME_RESULT.md`.
+## Authoritative c10 human regression
 
-## c9 diagonal E-wall result
+The private runtime log contains two clean WallRun sessions.
 
-The tested surface was genuinely diagonal:
+### Session 1 — diagonal planar surface
 
 ```text
 N398 ≈ (-0.70710677, 0, +0.70710677)
-```
-
-The target and actor reached the matching Surface Up:
-
-```text
-target_up ≈ (-0.70710671, 0, +0.70710683)
-actor_up_dot_surface=1
-```
-
-Lifecycle summary:
-
-```text
-wallrun_duration_ms=4157
-source_entry_elapsed=0.703000
+wallrun_duration_ms=4172
+source_entry_elapsed=0.719000
 source_exit_reason=verified_native_Deinit
 source_active_until_deinit=1
 verified_deinit=1
-path_a_writes=231
-path_b_writes=228
+path_a_writes=221
+path_b_writes=220
 retention_pass=1
-max_held_ms=1391
-max_held_updates=90
+max_held_ms=3187
+max_held_updates=204
 last_actor_up_dot_surface=1
 first_hard_kill=none
 hard_kill_calls=0
+secondary seen/admitted/overridden/rejected=102/102/102/0
 ```
 
-However, exactly two short WorldUp observations occurred while source ownership remained active. Both directly followed the only two secondary-thread Path B rejects:
+### Session 2 — cardinal planar surface
 
 ```text
-action=reject
-reason=secondary_source_publication_changed
+wallrun_duration_ms=3421
+source_entry_elapsed=0.718000
+source_exit_reason=verified_native_Deinit
+source_active_until_deinit=1
+verified_deinit=1
+path_a_writes=151
+path_b_writes=152
+retention_pass=1
+max_held_ms=2453
+max_held_updates=140
+last_actor_up_dot_surface=1
+first_hard_kill=none
+hard_kill_calls=0
+secondary seen/admitted/overridden/rejected=161/161/161/0
 ```
 
-Secondary summary:
+Across the human c10 log:
 
 ```text
-seen=112
-admitted=110
-overridden=110
-rejected=2
-unique_threads=16
+actor_up=(0,1,0) after full transition: 0 observed
+secondary_source_publication_changed: 0 observed
+secondary publication refresh events: 0 observed
+Position writes: 0
 ```
 
-At each rejection, the vanilla Path B payload had WorldUp. About 10 ms later Actor Up was observed as `(0,1,0)`, then the next common Path A/source call detected `late_worldup_source_detected=1` and restored diagonal Surface Up. The human tester did not notice these visually.
+Interpretation: real planar orientation stability is accepted. The c9 failure did not recur. Do not claim that a natural real-game c10 refresh race was observed; it was not.
 
-This is strong evidence that c9's exact `publishedMs` snapshot equality is too strict for a concurrent identity-preserving publication refresh. It should not be relaxed across real identity/lifecycle changes.
+Detailed result: `analysis/V01C10_RUNTIME_RESULT.md`.
 
-Detailed result: `analysis/V01C9_E_RUNTIME_RESULT.md`.
-
-## Planar standoff status
+## Planar standoff / visual alignment
 
 Position remains read-only:
 
@@ -168,7 +147,20 @@ corrections_applied=0
 source_position_writes=0
 ```
 
-A wall showed essentially exact 0.5 m standoff. E wall showed small natural variation, roughly 0.479–0.511 m in sampled examples. Therefore active adhesion correction remains deferred/observational; do not add it before movement unless later evidence requires it.
+Measured root standoff is centered around the vanilla ~0.5 m relation. The user visually identified two remaining presentation issues:
+
+1. the wall-running body appears leaned toward the apparent ground side compared with ordinary ground-running animation;
+2. feet/body appear too far from the wall and therefore visually float despite the diagnostic root standoff being stable.
+
+These are **deferred visual-alignment tasks**, not current orientation blockers. Later create a dedicated pass for root/surface offset, contact appearance and animation/root lean. Do not add active normal-direction adhesion merely from the current root-distance metric.
+
+## Previous Position proof status
+
+The c6 Path A Position proof remains **NOT ADMITTED**. Known source layout has a candidate Position Vec4 at `source+0x30`, but accepted-build complete causal propagation, destination W semantics and exclusive side effects were not proven. Equal source/Hero coordinates are not enough.
+
+This unresolved proof is directly relevant to the next movement-path task and should be revisited using bounded runtime position-writer attribution rather than assumed safe.
+
+See `analysis/PATH_A_POSITION_PROOF.md`.
 
 ## Current blocker / stage
 
@@ -183,39 +175,45 @@ A wall showed essentially exact 0.5 m standoff. E wall showed small natural vari
 9. Path A + Path B SurfaceFrame writes ✅
 10. visible surface-relative rotation ✅
 11. retention threshold ✅
-12. transient freshness recovery implementation ✅ synthetic
+12. transient freshness recovery ✅ synthetic + later stable runtime
 13. exact hard-kill attribution ✅ c8
 14. secondary-thread Path B admission ✅ c9
-15. lifecycle-wide real orientation hold on A wall ✅ c9
-16. diagonal E-wall Surface Up generality ✅ c9
-17. eliminate secondary publication-race WorldUp flash ▶ CURRENT
-18. active planar adhesion correction ⏸ optional/deferred
-19. surface-relative movement ⬜
-20. animation integration ⬜
-21. camera and later roadmap ⬜
+15. diagonal/general Surface Up ✅ c9/c10
+16. publication-race regression clean ✅ c10 human A/E; natural refresh branch not exercised
+17. planar orientation-stability milestone ✅ COMPLETE
+18. safe movement-path / Position-writer ownership ▶ CURRENT
+19. surface-relative movement input ⬜
+20. visual alignment / contact / standoff refinement ⏸ deferred
+21. animation integration ⬜
+22. camera and later roadmap ⬜
 
 ## Current implementation base
 
-Use published c9 exactly:
+Use c10 delivery head exactly:
 
 ```text
-branch: codex/v01c9-secondary-path-b-thread-admission
-implementation commit: 0c276126ccac8e3bd2a6dd1d850da63e80bc35ce
-published head: b865dabfa81626248ea8a8ae56a1dd1c992d7301
+branch: codex/v01c10-secondary-publication-race
+implementation commit: 609fdf935e40947d7aad29fea4bed5f2cf3d0e2e
+published head: 6246fd6d2e52cf81e18e6ff8ffd4d8ee4d863aa1
 ```
 
 Pre-created next branch:
 
 ```text
-codex/v01c10-secondary-publication-race
+codex/v01c11-movement-path-ownership
 ```
 
 ## Current objective
 
-Repair only the demonstrated c9 secondary Path B publication race.
+Discover and authenticate the native/caller-local path that actually advances Hero translation during verified WallRun, so later surface-relative input can be implemented upstream without direct Actor Position spam.
 
-A secondary call must not be rejected merely because the lock-free source publication advanced to a newer snapshot during its validation when the newer snapshot is still the same active WallRun ownership identity. Use a bounded refresh/revalidation approach, recomputing the secondary applied orientation from the latest admitted basis before store.
+c11 is primarily diagnostic/read-only. Prefer proving a safe movement source over modifying movement. In particular:
 
-Real changes to session, owner, Hero, Transform, generation, lifecycle epoch, native token identity/thread, accepted/collision epoch, source integrity, caller, stack provenance, compact proof, stale/close/F8/shutdown must remain fail-closed or rejected as appropriate.
+- reuse c10 orientation behavior unchanged;
+- use bounded Position-writer observation and complete static/runtime attribution;
+- decompose observed translation deltas in the SurfaceFrame (`normal`, tangent-forward, tangent-right);
+- revisit the Path A `source+0x30` Position candidate only with actual causal/post-writer evidence;
+- identify any safer velocity/displacement/input source upstream if present;
+- do not write Position or movement unless the task independently proves a safe caller-local/native source and the handoff explicitly permits a minimal bounded proof write.
 
-Do not begin surface-relative movement until the same E-wall regression produces no WorldUp actor observations after full Surface Up is reached.
+No camera, animation, wall jump, corners/ceilings, swing reconnect or combat yet.
