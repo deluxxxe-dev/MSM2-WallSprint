@@ -9,15 +9,13 @@ Convert vanilla WallRun into surface-relative locomotion. Do not advance movemen
 - WallRun Init `0x14233C0`, Entry `0x14235C0`, Update `0x1424530`, Deinit `0x1416660`
 - Preserve fail-closed exact-build behavior, `AGENTS.md` / `docs/DEV_RULES.md`, independent implementation, and no raw user logs/full private game bodies in public artifacts.
 
-## Accepted orientation / c13 runtime evidence
+## Accepted orientation
 Planar Surface Up is accepted on cardinal and diagonal walls through verified Deinit.
 
-Latest human c13 combined A -> fast travel -> E log:
-- A/session1: 3875 ms, verified Deinit, retention pass, final Up dot surface=1, stale0, hard kill0, Position writes0
-- E/session2: 4281 ms, verified Deinit, retention pass, final Up dot surface=1, stale0, hard kill0, Position writes0
-- no visible anomaly reported
-
-C13 captured 16 true writer-entry snapshots, eight per surface. Every sampled invocation paired to all four Position stores. On all 16, `RDX = entry RSP+0x28`; guarded `[RDX]` and stack `RSP+0x28` matched executed Position XYZ bits (`mask=0x7`), with source W=0 and destination W=1. This is correlation, not a writable contract.
+Latest human c14 A/E log:
+- A/session1: 4453 ms, verified Deinit, retention pass, final Up dot surface=1, stale0, hard kill0, Position writes0
+- E/session2: 4172 ms, verified Deinit, retention pass, final Up dot surface=1.00000012, stale0, hard kill0, Position writes0
+- entry-hook / Position-watch cleanup restored normally
 
 ## Verified movement chain
 ```text
@@ -29,39 +27,51 @@ return=0x351EEB0
 observed second return=0x351A020
 ```
 
-## c14 implementation handoff
+## c13/c14 runtime source evidence
+C13 captured 16 true writer-entry snapshots, eight per surface. C14 preserves the same real relation:
 ```text
-branch: codex/v01c14-rdx-source-contract
-implementation commit: 617d7b6a84f752582aebd7be8a766c5ef02e476a
-delivery head: 5fd2cdff9ae6732cf0eaa53fec02253c4d6ae25c
-version: v0.1c14 / package 0.1.32
+RDX = entry RSP+0x28
+[RDX] XYZ == executed Position XYZ store bits
+entry_store_xyz_match_mask=0x7
+source W observed 0
+destination W observed 1
+```
+This is still correlation until writer-side decoded causality is proven.
+
+C14 also repairs the c13 final aggregate: both sessions report `source_capture_ready=1`, `true_entry_snapshot=1`, `true_entry_snapshots=8`, `complete_invocation_maps=8`.
+
+## c14 actual-game verdict
+**Diagnostic PASS / exact local blocker identified.** See `analysis/V01C14_RUNTIME_RESULT.md`.
+
+Independent static contract result:
+```text
+writer_complete_decode=1
+entry_store_prefix=0
+xyz_RDX_0_4_8_paths=0
+W_kind=unknown
+W_classified=0
+first_barrier_rva=0x2CFC91F
+first_barrier_instruction=jne
+caller_prefix=1
+caller_RDX_local=0
+caller_allocation_owned=0
+caller2_relation=unresolved
+exact_next_producer_rva=0x351EB00
+writable_source_proven=0
+reason=exact_position_store_sites_mismatch_or_prefix_incomplete
 ```
 
-C14 implements a separate read-only bounded decoder/contract diagnostic for the exact RDX XYZ path, independent W, caller stack ownership, and bounded producer relation. It also repairs c13 true-entry/XYZ aggregate accounting. The c12 analyzer and c13 raw entry hook/cleanup remain unchanged.
+Thus actual entries still match XYZ bits, but `xyz_causality_proven=0`. W remains unclassified because the same writer-prefix proof stops first.
 
-Cloud validation reported by Codex:
-```text
-Windows x64 build: PASS
-Portable ASan/UBSan: 13 PASS
-DLL smoke: 4 PASS
-Full public hooks/native: 60 PASS / 5 private-input SKIP
-Public-source total: 77 PASS
-Separate accepted private-byte replay: 4 PASS records
-Focused entry: 7 PASS
-Focused contract: 4 PASS
-```
+Storage is narrowed to a 16-byte TEB-bounded current-invocation stack object with `RDX == entry RSP+0x28 == precall RSP+0x20`, but caller ownership/exclusivity is unproven. Parent anchor `0x351A01B` points to exact next producer edge `0x351EB00`; do not chase/mutate it until writer causality is proven.
 
-Owned fixtures cover scalar/packed SSE/AVX/shuffle/double-lane XYZ/W paths, conservative refusal, stack ownership/bounds, direct/wrapper/tail/indirect producer edges, concurrent/reentrant invocation pairing, partial/unreadable records, and cleanup. Synthetic A/E orientation/Position-watch regressions remain PASS with Position writes0. These fixtures do not establish actual-game c14 causality or ownership.
+`MOVEMENT_ENTRY_CAPTURE_SUMMARY` is still emitted before capture activation and reports zero; final `MOVEMENT_LINEAGE_SUMMARY` and actual entry records are authoritative. C15 should re-emit the capture summary at finalization.
 
-## Current evidence boundary
-C14 actual-game diagnostics are still pending. In particular, cloud tests do not prove the private runtime writer prefix, W behavior, RDX stack ownership, producer provenance, source lifetime, downstream conflict absence, typed semantics, or exclusive intended Hero translation effect.
-
+## Current gate
 ```text
 writable_source_proven=0
 Position/source/input/movement writes=0
 ```
-
-Do not infer velocity, displacement, desired direction, root motion, or writable movement semantics from c13 equality or c14 owned fixtures.
 
 ## Current stage
 1. lifecycle / SurfaceFrame ✅
@@ -70,16 +80,23 @@ Do not infer velocity, displacement, desired direction, root motion, or writable
 4. Position writer attribution ✅
 5. SurfaceFrame translation decomposition ✅
 6. exact `0x351EEAB -> 0x2CFC900` callsite ✅
-7. true writer-entry capture ✅ c13 actual game
-8. RDX stack-local XYZ correlation ✅ c13 actual game
-9. c14 RDX XYZ/W/storage/producer diagnostics implementation ✅ cloud validated
-10. c14 actual-game source-contract gate ▶ CURRENT
-11. safe writable upstream movement source ⬜ NOT AUTHORIZED
-12. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-13. adhesion/contact refinement ⏸ deferred
-14. animation/camera/later traversal ⬜
+7. true writer-entry capture ✅ c13 real
+8. RDX stack-local XYZ bit correlation ✅ c13/c14 real
+9. c14 final entry accounting repair ✅
+10. writer branch-aware RDX->Position causal proof ▶ CURRENT c15
+11. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+12. safe writable upstream movement source ⬜ NOT AUTHORIZED
+13. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+14. adhesion/contact refinement ⏸ deferred
+15. animation/camera/later traversal ⬜
+
+## Current implementation base / next branch
+```text
+c14 branch: codex/v01c14-rdx-source-contract
+c14 implementation: 617d7b6a84f752582aebd7be8a766c5ef02e476a
+c14 published delivery before human result: 5fd2cdff9ae6732cf0eaa53fec02253c4d6ae25c
+c15 branch: codex/v01c15-writer-branch-contract
+```
 
 ## Current action
-Run `WallSprint_v0.1c14_rdx_source_contract.zip` in the actual game using ordinary input: A/cardinal ~4 s, fully end WallRun, move or fast-travel to E, E/diagonal ~4 s, then return one complete startup-through-cleanup WallSprint log. Video is optional unless a visible anomaly occurs.
-
-Adjudicate `MOVEMENT_STATIC_CONTRACT`, `MOVEMENT_RDX_XYZ_PROOF`, `MOVEMENT_POSITION_W_PROOF`, `MOVEMENT_RDX_STORAGE_PROOF`, `MOVEMENT_RDX_PRODUCER_PROOF`, and `MOVEMENT_ENTRY_CAPTURE_SUMMARY`. Refusal/partial/unresolved records are exact blockers and must not be bypassed by weakening gates.
+Run Codex on `docs/CODEX_NEXT.md`. C15 is read-only and limited to the authenticated writer control-flow/dataflow barrier beginning at `0x2CFC91F`; no movement/source mutation is authorized.
