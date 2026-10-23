@@ -1,0 +1,26 @@
+{
+  "branch": "codex/v01c2-proof-fix",
+  "implementation_commit": "2d26710034dcf695fa7bb2da763f117faf6171db",
+  "version": "v0.1c2",
+  "package_version": "0.1.20",
+  "artifacts": [
+    {
+      "file": "WallSprint_v0.1c2_real_runtime_proof_fix.zip",
+      "bytes": 2264526,
+      "sha256": "86a09c30877eb1bec325dcf96972b32f7ce8d4cc7751769f9a369b804a861cc7"
+    },
+    {
+      "file": "WallSprint_v0.1c2_source.zip",
+      "bytes": 418676,
+      "sha256": "85eddb91eba7a955c79e3085610928afeef066c51381559f5542e97598e24ba1"
+    }
+  ],
+  "actual_byte_startup_proof": "PASS",
+  "actual_game_retention": "PENDING",
+  "portable_pass": 11,
+  "windows_smoke_pass": 4,
+  "hook_and_actual_replay_pass": 31,
+  "historical_private_skips": 4,
+  "standalone_source_build": "PASS",
+  "private_game_bytes_distributed": false
+}

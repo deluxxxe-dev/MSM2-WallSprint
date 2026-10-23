@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c1",
-  "package_version": "0.1.19",
+  "version": "v0.1c2",
+  "package_version": "0.1.20",
   "artifact": "WallSprint.script",
-  "sha256": "64cb53745cf2d4468e662f7abf9b4b84f7f47d6ab8473ca4b853c99d4eb245a1",
-  "dll_sha256": "830f0aec745ec3b85126d7dfbb36b2e014a0f1cb7dfc1798b68bf4a35efa2df8",
+  "sha256": "56f18ffea382357718195bd35fbca7576ea15651b48bfe12675fb0900738b717",
+  "dll_sha256": "80f80c86a4124ad470834bb5f5e984c0987f40ff4b08cee0e0a04c4e85c17986",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -121,11 +121,12 @@
     "path_b_override": true,
     "row_scale_preserved": true,
     "metadata_untouched": true,
-    "original_capture": "private PATH_B_FUNCTION/PATH_B_CODE before hook; never redistributed"
+    "original_capture": "private PATH_B_FUNCTION/PATH_B_CODE before hook; never redistributed",
+    "caller_original_sha256": "1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d"
   },
-  "validation": "Windows warnings-as-errors; ASan/UBSan portable; Wine ABI/MinHook, full-function compact-map decoder, lock-free A/B source overrides, 36-byte metadata boundary, row-scale preservation, lifecycle/identity/kill gates, dual retention and hardware reset continuation. Synthetic tests never game evidence.",
+  "validation": "Windows warnings-as-errors for WallSprint; portable ASan/UBSan; full Wine hook/ABI/lifecycle/lock-free A-B/metadata/retention suites; actual hash-verified writer444/caller128 reproduces old c1 failure and passes full Capstone proof + production installer; mutations, missing/duplicate/outside pairs, decode failures and caller/stack negatives. Game c2 retention remains pending.",
   "limitations": [
-    "Accepted-build c1 A/E retention and visible rotation require the human run",
+    "Accepted-build c2 A/E retention and visible rotation require the human run",
     "Hardware primary-thread-only and bounded; missing events do not prove absence",
     "Before Up is previous observation, not atomic pre-instruction",
     "A short already-admitted guarded store may finish concurrently with F8",
@@ -136,7 +137,8 @@
   "path_b_characterization_active": true,
   "lock_free_shared_snapshot": true,
   "v01b9_gate": "COMPACT_3X3_LAYOUT_AND_A_E_SEMANTICS_VERIFIED_FROM_CHECKED_IN_RUNTIME_RESULT",
-  "v01c1_gate": "PENDING_ACCEPTED_BUILD_A_E_RETENTION",
+  "v01c1_gate": "ACTUAL_STARTUP_PROOF_FAILED_ZERO_SOURCE_WRITES",
+  "v01c2_gate": "ACTUAL_BYTE_PROOF_PASS_RUNTIME_RETENTION_PENDING",
   "PATH_B_FIELDS_VERIFIED": true,
   "PATH_B_WRITE_PERMISSION": true,
   "path_b_layout": {
@@ -153,5 +155,17 @@
     "layout": "COMPACT3X3_PROVEN",
     "unknown_layout_aborts_path_b": true,
     "unknown_layout_aborts_path_a": false
+  },
+  "startup_decoder": {
+    "backend": "Capstone 5.0.6 x86-64, full ISA, static",
+    "upstream_archive_sha256": "240ebc834c51aae41ca9215d3190cc372fd132b9c5c8aa2d5f19ca0c325e28f9",
+    "skipdata": false,
+    "runs_in_hot_hook": false,
+    "writer_decoded_bytes": 444,
+    "caller_decoded_bytes": 128,
+    "recovered_pairs": 9,
+    "actual_byte_regression": "PASS: exact c1 failure reproduced; c2 proof and production installer passed with authenticated original inputs, no game code executed",
+    "failure_diagnostic_max_bytes": 16,
+    "full_function_capture_logging": false
   }
 }
