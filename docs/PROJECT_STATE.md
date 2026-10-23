@@ -1,247 +1,105 @@
 # WallSprint project state
 
 ## Goal
+Convert vanilla WallRun into surface-relative locomotion. Architecture is surface-relative locomotion, not an extended vanilla WallRun. Do not advance to camera until planar v0.1 locomotion is robust.
 
-Convert vanilla WallRun into a surface-relative locomotion mode. The architecture is surface-relative locomotion, not an extended vanilla WallRun.
-
-## Roadmap
-
-- v0.0 reference analysis / instrumentation
-- v0.1 locomotion MVP
-- v0.2 surface-relative camera
-- v0.3 wall jump / wall-to-wall
-- v0.4 corners / ceilings / continuous surfaces
-- v0.5 parkour
-- v0.6 web swing
-- v0.7+ combat
-
-Do not advance to camera until planar v0.1 movement is robust.
-
-## Verified build / lifecycle
-
-Target:
-
+## Exact target / fail-closed gate
 - Spider-Man2.exe 2.810.0.0
 - SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`
+- WallRun Init `0x14233C0`, Entry `0x14235C0`, Update `0x1424530`, Deinit `0x1416660`
+- Preserve `AGENTS.md` and `docs/DEV_RULES.md`; no private game bodies/raw user logs in public source/package; implementation remains independent and suitable for Nexus Mods distribution.
 
-Verified WallRun lifecycle RVAs:
+## Verified orientation state
+Planar Surface Up/orientation is accepted from the human c10/c11 A/E runs. c11 A/cardinal (4125 ms) and E/diagonal (4063 ms) both reached verified Deinit with `retention_pass=1`, no hard kill and `Position_writes_by_mod=0`. c12 does not modify the c10/c11 orientation admission/hot paths.
 
-- Init `0x14233C0`
-- Entry `0x14235C0`
-- Update `0x1424530`
-- Deinit `0x1416660`
-
-## Surface data
-
-Verified on cardinal and diagonal planar vertical walls:
-
-- `WallRun.this + 0x398` = outward surface normal candidate `N398`
-- `WallRun.this + 0x338` = surface-plane point candidate `P338`
-- `WallRun.this + 0x320` = hero-side WallRun reference candidate `P320`
-- `P320 - P338 ≈ 0.5 * N398`
-- `dot(HeroPosition - P338, N398) ≈ 0.5 m`
-
-## Orientation ownership
-
-Path A:
-
-- writer RVA `0x2CFC580`
-- WallRun caller return RVA `0x2CFC8F3`
-- caller-local source Right / Up / Forward / Position candidate
-- orientation owns `[source+0x00, source+0x30)`; Position remains unchanged by the mod
-
-Path B:
-
-- writer RVA `0x2CFC3C0..0x2CFC57C`, size 444
-- return RVA `0x2CFC84B`
-- compact 3x3 source at `RDX = writer-entry RSP + 0x28`
-- valid active-Hero calls can occur on multiple secondary threads
-- c10 supports one bounded identity-preserving publication refresh/revalidation
-
-## Orientation status
-
-Planar orientation stability is accepted.
-
-History:
-
-- c2: visible surface-relative rotation, rapid WorldUp/SurfaceUp flicker.
-- c3/c4: multithread writer tracing and first retention pass.
-- c5: lifecycle-wide orientation hold through verified Deinit.
-- c6/c7: transient native Update gap / over-broad kill regressions exposed.
-- c8: exact first-cause attribution.
-- c9: valid secondary-thread Path B calls admitted; A wall full hold passed.
-- c9 E: diagonal Surface Up passed but two short publication-race WorldUp flashes remained.
-- c10: bounded publication refresh/revalidation implemented; human A/E regression had zero observed WorldUp flashes, zero hard kill, clean Deinit.
-- c11: Position-writer diagnostics did not regress orientation; A and E both held through Deinit.
-
-## Authoritative c11 implementation
-
-```text
-branch: codex/v01c11-movement-path-ownership
-implementation commit: 2129e69fe003e71bf705fb67f723b447cf3e3764
-published/delivery head: 9593f0230e220770f2b34faf512ca4108c1825cc
-version: v0.1c11 / package 0.1.29
-```
-
-## Authoritative c11 human A -> E result
-
-### Session 1 — A/cardinal
-
-```text
-N398 ≈ (+1,0,0)
-wallrun_duration_ms=4125
-source_active_until_deinit=1
-verified_deinit=1
-retention_pass=1
-max_held_ms=3157
-max_held_updates=185
-last_actor_up_dot_surface=1
-first_hard_kill=none
-hard_kill_calls=0
-Position_writes_by_mod=0
-```
-
-### Session 2 — E/diagonal
-
-```text
-N398 ≈ (-0.7071068,0,+0.7071068)
-wallrun_duration_ms=4063
-source_active_until_deinit=1
-verified_deinit=1
-retention_pass=1
-max_held_ms=3093
-max_held_updates=189
-last_actor_up_dot_surface≈0.99999994
-first_hard_kill=none
-hard_kill_calls=0
-Position_writes_by_mod=0
-```
-
-Detailed result: `analysis/V01C11_RUNTIME_RESULT.md`.
-
-## c11 Position writer attribution
-
-Both Position-watch windows armed and restored cleanly:
-
-```text
-watch_armed=1
-threads_seen=128
-threads_installed=126
-unique_writers=14
-total_write_events=256
-cleanup_restored=1
-cleanup_pending=0
-Position_writes_by_mod=0
-```
-
-The main Transform Position writer family observed during the movement window is:
+## Verified c11 movement diagnostics
+The human c11 A -> E run established:
 
 ```text
 writer_function_rva=0x2CFC900
-store RVAs=0x2CFC936 / 0x2CFC93C / 0x2CFC942 / 0x2CFC945
+Position stores=0x2CFC936 / 0x2CFC93C / 0x2CFC942 / 0x2CFC945
 Transform destinations=+0x30 / +0x34 / +0x38 / +0x3C
+caller return=0x351EEB0
+caller2 return≈0x351A020
 ```
 
-The call chain that produced real translation on both A and E is centered on:
+This chain correlates with real Hero translation on both surfaces. Path A `source+0x30` can match the Position row but is still denied because downstream writers and exclusive semantics are not proven. No c11 candidate reached `writable_source_proven=1`.
+
+## c12 implementation handoff
 
 ```text
-caller return RVA=0x351EEB0
-caller2 return RVA=0x351A020
-consumer writer=0x2CFC900
+branch: codex/v01c12-movement-source-lineage
+implementation commit: 4c84d634df4d629b237d4cc311d5e5cd6de4398c
+published/delivery head: c966d233787504dda88f65d1825c5c1c408a2d67
+version: v0.1c12 / package 0.1.30
 ```
 
-Runtime examples show this path changing actual Hero XYZ and correlating with surface-tangent translation. Finite-difference movement samples on both A and E remain predominantly tangent to the wall, with small normal drift on E.
+Cloud implementation/diagnostic validation: PASS. Actual-game c12 lineage gate: PENDING HUMAN A/E RUN.
 
-## Path A Position status
+c12 adds read-only, bounded diagnostics for the measured `0x351EEB0 -> 0x2CFC900` chain:
+- exact runtime function boundary/hash/full decode and Position-store expressions;
+- exact direct E8 callsite verification and caller/caller2 attribution;
+- conservative caller-side symbolic source slice;
+- bounded trap-time reconstruction/correlation using existing hardware-watch infrastructure;
+- explicit unsupported-edge/reason reporting;
+- no Position/source/input/movement/gravity/adhesion/camera/animation writes.
 
-Path A `source+0x30` is now stronger than a mere layout guess: runtime observed Path A touching the Position row, and some events produced full-row post-writer equality with the caller-local candidate.
-
-However **Path A Position is still NOT ADMITTED for modification**:
+Validation reported by Codex:
 
 ```text
-writer_verified=1
-caller_verified=1
-stack_relation_verified=1
-post_writer_match=1
-position_w_observed=1
-exclusive_effects_proven=0
-write_permission=0
-reason=whole_function_CFG_caller_construction_W_and_exclusive_effects_not_proven
+Windows x64 warnings-as-errors: PASS
+Portable ASan/UBSan: 13 PASS
+DLL smoke: 4 PASS
+Full hooks/native/offline: 53 PASS / 4 historical private-input SKIP
+Total unique: 70 PASS / 4 SKIP
 ```
 
-Downstream Position writes are observed after Path A. Therefore Path A Position is not yet proven to be the correct locomotion ownership point.
+Owned fixture orientation regressions remained clean through Deinit with Position writes 0. These fixtures are not actual-game c12 source-lineage evidence.
 
-## Safe movement source status
-
-No real c11 candidate reached:
+## c12 proof limits
+c12 intentionally does NOT authenticate a writable locomotion source in cloud validation:
 
 ```text
-writable_source_proven=1
+entry_snapshot_captured=0
+source_identity_stable=0
+writable_source_proven=0
 ```
 
-Current strongest runtime target for lineage work:
+Still unproven until the actual game supplies the new c12 records:
+- exact actual-game writer/caller source map and surviving aliases;
+- true entry value where post-store observation cannot recover it;
+- typed meaning of Position/delta/dt/direction/speed/root-motion candidates;
+- W semantics;
+- source lifetime/ownership;
+- downstream and exclusive intended translation effects.
 
-```text
-0x351EEB0 -> 0x2CFC900
-caller2 ≈ 0x351A020
-```
+Arithmetic resemblance alone must not be promoted to velocity, displacement, direction, root motion or a writable contract.
 
-c11 proves writer identity and translation correlation only. It does not yet prove whether the upstream payload is target Position, displacement, velocity, desired direction, root motion or another movement vector.
+## Deferred visual alignment
+The user observed body/root lean toward apparent ground and excessive apparent wall standoff/floating feet. These remain later visual/contact tasks and are not grounds for active adhesion now.
 
-## Planar standoff / visual alignment
-
-Deferred presentation issues remain:
-
-1. apparent wall standoff / floating feet;
-2. body/root lean relative to the apparent surface.
-
-These are not current movement-ownership blockers. Do not solve them in the next lineage task.
-
-## Current blocker / stage
-
-1. WallRun detection ✅
-2. Actor position/orientation observation ✅
-3. surface normal ✅
-4. planar surface point / standoff data ✅
-5. SurfaceFrame basis ✅
-6. Path A source injection ✅
-7. Path B discovery / compact layout ✅
-8. real-runtime Path B proof ✅
-9. Path A + Path B SurfaceFrame writes ✅
-10. visible surface-relative rotation ✅
-11. retention / lifecycle stability ✅
-12. secondary-thread Path B admission ✅
-13. diagonal/general Surface Up ✅
-14. publication-race repair/regression ✅
-15. planar orientation milestone ✅ COMPLETE
-16. bounded Hero Position writer attribution ✅ c11
-17. SurfaceFrame translation decomposition ✅ c11
-18. safe upstream movement-source lineage ▶ CURRENT
-19. surface-relative input rewrite ⬜
-20. visual alignment / contact refinement ⏸ deferred
-21. animation integration ⬜
-22. camera and later roadmap ⬜
+## Current stage
+1. WallRun lifecycle / surface data / SurfaceFrame ✅
+2. Path A/B orientation ownership and stabilization ✅
+3. planar A/E orientation milestone ✅ COMPLETE
+4. bounded Hero Position writer attribution ✅ c11
+5. SurfaceFrame translation decomposition ✅ c11
+6. c12 read-only lineage instrumentation ✅ IMPLEMENTED
+7. c12 actual-game lineage gate ▶ CURRENT — human A then E log required
+8. safe upstream writable movement source ⬜ NOT AUTHORIZED
+9. surface-relative input rewrite ⬜ NOT AUTHORIZED
+10. adhesion / visual contact refinement ⏸ deferred
+11. animation / camera / later traversal ⬜
 
 ## Current implementation base
-
-Use c11 delivery head exactly:
-
-```text
-branch: codex/v01c11-movement-path-ownership
-implementation commit: 2129e69fe003e71bf705fb67f723b447cf3e3764
-published head: 9593f0230e220770f2b34faf512ca4108c1825cc
-```
-
-Pre-created next branch:
+Use c12 delivery head exactly:
 
 ```text
-codex/v01c12-movement-source-lineage
+branch: codex/v01c12-movement-source-lineage
+implementation commit: 4c84d634df4d629b237d4cc311d5e5cd6de4398c
+published head: c966d233787504dda88f65d1825c5c1c408a2d67
+package: 0.1.30
 ```
 
-## Current objective
-
-Authenticate the real movement-producing caller/source chain centered on `0x351EEB0 -> 0x2CFC900`.
-
-The next revision remains read-only with respect to movement unless it independently proves an upstream source contract strong enough for a future bounded source rewrite. Determine exact writer-entry/caller-local provenance, full XYZ/W semantics, caller construction, upstream producer and whether a tangent displacement/velocity/direction/root-motion vector exists before final Transform Position.
-
-Do not begin direct Position writes, input rewriting, custom gravity, camera, animation, wall jump, corners/ceilings, swing reconnect or combat yet.
+## Current blocker
+The next evidence must come from an actual-game c12 A/cardinal then E/diagonal run. Until those records are adjudicated, do not create a movement rewrite, input hook, adhesion system or camera task. A diagnostic PASS with an exact missing edge is acceptable; do not weaken gates to force `writable_source_proven=1`.
