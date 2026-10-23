@@ -4,6 +4,7 @@
 #include <atomic>
 #include "msm2/actor_writer.hpp"
 #include "NativeHooks/source_lifecycle.hpp"
+#include "NativeHooks/immediate_reset_trace.hpp"
 namespace msm2::native_source {
 struct Config {bool enabled=true,sourceOverride=true,debug=true,dualSource=true;float delay=.70f,rotateTime=.25f;};
 void configure(Config,bool verified,std::uintptr_t gameBase,std::size_t gameSize,const std::array<msm2::writer::Patch,4>&);
@@ -20,5 +21,7 @@ void stop();
 bool active() noexcept;
 bool observationGuardsAuthenticated() noexcept;
 bool entryOverridden() noexcept;
+// Diagnostic-only, never grants a source store or kills orientation.
+bool diagnosticIdentity(const msm2::reset_trace::Request&) noexcept;
 }
 extern "C" {extern std::atomic<unsigned> ws_native_source_enabled;}

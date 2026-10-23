@@ -18,6 +18,7 @@ void nativeEvent(const ws::native_source::Token& token) noexcept {
 bool live(const msm2::reset_trace::Request& r,msm2::Snapshot& s,const char** reason=nullptr){
  ws::native_source::Token token{};
  const char* failure=disabled.load()?"helper_disabled":!msm2::native_source::observationGuardsAuthenticated()?"observation_guards_lost":
+  r.position&&!msm2::native_source::diagnosticIdentity(r)?"position_source_identity_or_freshness_lost":
   !ws::native_source::lifecycle(token)?"lifecycle_unavailable":token.phase!=3?"lifecycle_not_active":
   GetTickCount64()<token.updateMs||GetTickCount64()-token.updateMs>100?"native_update_not_fresh":
   token.generation!=r.generation?"generation_changed":token.owner!=r.owner?"owner_changed":
@@ -31,8 +32,8 @@ DWORD WINAPI run(void*){
   if(WaitForMultipleObjects(2,handles,FALSE,INFINITE)!=WAIT_OBJECT_0+1)break;
   if(pending.load(std::memory_order_acquire)!=2)continue;
   auto r=slot;pending.store(0,std::memory_order_release);msm2::Snapshot s{};const char* reason=nullptr;
-  if(!live(r,s,&reason)){msm2::writeLog("RESET_TRACE_SKIPPED session=%llu reason=%s",static_cast<unsigned long long>(r.session),reason);continue;}
-  if(!msm2::trace::beginReset(r,s))continue;
+  if(!live(r,s,&reason)){if(r.position)msm2::writeLog("POSITION_WRITER_SUMMARY session=%llu watch_armed=0 unique_writers=0 reason=%s cleanup_state=not_armed Position_writes_by_mod=0",(unsigned long long)r.session,reason);msm2::writeLog("RESET_TRACE_SKIPPED session=%llu reason=%s",static_cast<unsigned long long>(r.session),reason);continue;}
+  if(!(r.position?msm2::trace::beginPosition(r,s):msm2::trace::beginReset(r,s))){if(r.position)msm2::writeLog("POSITION_WRITER_SUMMARY session=%llu watch_armed=0 unique_writers=0 cleanup_restored=0 reason=arm_rejected_or_previous_Up_cleanup_pending no_Position_write=1",(unsigned long long)r.session);continue;}
   do {if(WaitForSingleObject(stopped,1)==WAIT_OBJECT_0)break;bool valid=live(r,s,&reason);if(!msm2::trace::pollReset(valid,valid?"none":reason))break;}while(true);
   msm2::trace::pollReset(false,"helper_stop");
  }
@@ -58,6 +59,11 @@ void request(const Request& r) noexcept {
  if(disabled.load()||(!r.prearmed&&!r.commitQpc))return;
  unsigned expected=0;if(!pending.compare_exchange_strong(expected,1,std::memory_order_acq_rel))return;
  slot=r;slot.multithread=processWatch;pending.store(2,std::memory_order_release);SetEvent(wake);
+}
+bool requestPosition(const Request& r) noexcept {
+ if(disabled.load()||!r.position)return false;
+ unsigned expected=0;if(!pending.compare_exchange_strong(expected,1,std::memory_order_acq_rel))return false;
+ slot=r;slot.multithread=true;pending.store(2,std::memory_order_release);SetEvent(wake);return true;
 }
 bool committed(const Request& r) noexcept {return !disabled.load()&&trace::resetCommitted(r);}
 void writerEntry(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t caller,bool overridden) noexcept {

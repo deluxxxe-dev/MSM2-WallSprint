@@ -8,10 +8,13 @@
 #include <string>
 #include <functional>
 static unsigned diagnosticStops{},inputStops{};
+#ifndef WALLSPRINT_REAL_POSITION_WATCH_TEST
 namespace msm2::trace {void kill() noexcept {++diagnosticStops;} void beginResetCopyEntry() noexcept {} void resetCopyEntry(const path_b::Entry&) noexcept {}}
+#endif
 static unsigned resetRequests{},prearmRequests{};
 namespace msm2::reset_trace {
 void kill() noexcept {++diagnosticStops;}
+bool requestPosition(const Request& r) noexcept {assert(r.position&&r.basis.valid);return true;}
 void request(const Request& r) noexcept {assert(r.prearmed&&!r.commitQpc);++prearmRequests;}
 bool committed(const Request& r) noexcept {assert(r.commitQpc);++resetRequests;auto now=GetTickCount64();return now>=r.initMs&&now-r.initMs<1500;} // Model the bounded diagnostic ending; source ownership must continue.
 }
@@ -24,8 +27,16 @@ alignas(16) float ws_test_source_received[16];std::uint64_t ws_test_source_calls
 std::uint64_t ws_test_stack_caller(void*,const void*);void ws_test_native_source_writer();void ws_source_thunk();void* ws_source_original{};std::atomic<unsigned> ws_source_recording{0};
 }
 struct CaptureFrame {std::uintptr_t r11,r10,r9,r8,rdx,rcx,rax,flags,ret;};
-extern "C" void ws_source_capture(const CaptureFrame* f) noexcept {msm2::native_source::capture(f->rcx,f->rdx,f->r8,f->r9,f->ret,reinterpret_cast<std::uintptr_t>(&f->ret));}
-extern "C" void ws_reset_copy_capture(const CaptureFrame* f) noexcept {msm2::native_source::captureCopy(f->rcx,f->rdx,f->r8,f->r9,f->ret,reinterpret_cast<std::uintptr_t>(&f->ret));}
+extern "C" void ws_source_capture(const CaptureFrame* f) noexcept {msm2::native_source::capture(f->rcx,f->rdx,f->r8,f->r9,f->ret,reinterpret_cast<std::uintptr_t>(&f->ret));
+#ifdef WALLSPRINT_REAL_POSITION_WATCH_TEST
+ msm2::trace::resetEntry(f->rcx,f->rdx,f->r8,f->r9,f->ret,msm2::native_source::entryOverridden(),token.updates,token.generation,token.owner);
+#endif
+}
+extern "C" void ws_reset_copy_capture(const CaptureFrame* f) noexcept {msm2::native_source::captureCopy(f->rcx,f->rdx,f->r8,f->r9,f->ret,reinterpret_cast<std::uintptr_t>(&f->ret));
+#ifdef WALLSPRINT_REAL_POSITION_WATCH_TEST
+ if(msm2::native_source::entryOverridden())msm2::trace::positionCopyCommit(f->rcx);
+#endif
+}
 namespace msm2::reset_copy {
 bool authenticated() noexcept {unsigned char b[32]{};return copyAuth&&msm2::readMemory(reinterpret_cast<std::uintptr_t>(&ws_test_copy_writer),b,32)&&!std::memcmp(b,copyInstalledBytes,32);}
 bool compactProofAuthenticated() noexcept {return compactAuth&&authenticated();}
@@ -132,6 +143,25 @@ int main(){
  imageBase=reinterpret_cast<std::uintptr_t>(&ws_test_stack_caller)-callBegin;assert(msm2::readMemory(imageBase+callBegin,callerOriginal,168));
  for(unsigned i=0;i<4;++i){lifecyclePatches[i].address=reinterpret_cast<std::uintptr_t>(mem+4096+i*64);for(unsigned j=0;j<32;++j)lifecyclePatches[i].bytes[j]=static_cast<unsigned char>(i*32+j);std::memcpy(reinterpret_cast<void*>(lifecyclePatches[i].address),lifecyclePatches[i].bytes.data(),32);}
  msm2::path_b::configure(true,true);
+#ifdef WALLSPRINT_REAL_POSITION_WATCH_TEST
+ auto base=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));auto* dos=reinterpret_cast<IMAGE_DOS_HEADER*>(base);auto* nt=reinterpret_cast<IMAGE_NT_HEADERS64*>(base+dos->e_lfanew);assert(msm2::trace::configureReset(true,base,nt->OptionalHeader.SizeOfImage,true,true));
+ ws::native_source::setObserver([](const Token& t) noexcept {if(t.phase!=3){msm2::native_source::lifecycleClosed(t);msm2::trace::cancelReset();}});
+ for(ws::Vec3 normal:{ws::Vec3{0,0,1},ws::Vec3{-.70710678f,0,.70710678f}}){
+  prepare(normal);while(context.elapsed<1.60){callA();callB();waitMs(16);workerTick();}
+  assert(state.pass&&state.positionRequested);Published p{};assert(publication.read(p));msm2::reset_trace::Request r{};r.position=r.prearmed=r.multithread=true;r.session=p.session;r.generation=p.generation;r.initMs=p.initMs;r.hero=p.hero;r.transform=p.transform;r.owner=p.owner;r.thread=p.thread;r.normal=p.surface;r.basis=p.basis;r.acceptedEpoch=p.acceptedEpoch;r.permissionEpoch=p.lifecycleEpoch;assert(msm2::native_source::diagnosticIdentity(r));
+  struct Arm {msm2::reset_trace::Request request;bool ok{};} arm{r};
+  auto helper=CreateThread(nullptr,0,[](void* raw)->DWORD {auto& a=*static_cast<Arm*>(raw);msm2::Snapshot hero{};assert(msm2::sample(hero));a.ok=msm2::trace::beginPosition(a.request,hero);return 0;},&arm,0,nullptr);assert(helper&&WaitForSingleObject(helper,2000)==WAIT_OBJECT_0&&arm.ok);CloseHandle(helper);
+  auto beforeA=pathAWrites.load();for(unsigned i=0;i<12;++i){callA();callB();waitMs(16);workerTick();msm2::Snapshot actual{};assert(msm2::sample(actual)&&ws::dot(ws::diag::actorAxes(actual.prefix).up,normal)>.999f);msm2::trace::drainLogs();}
+  assert(pathAWrites>beforeA+10&&causeState==0);auto closer=CreateThread(nullptr,0,[](void*)->DWORD {msm2::trace::pollReset(false,"fixture_end");return 0;},nullptr,0,nullptr);assert(closer&&WaitForSingleObject(closer,2000)==WAIT_OBJECT_0);CloseHandle(closer);msm2::trace::drainLogs();
+  for(unsigned fault=0;fault<7;++fault){auto wrong=r;if(fault==0)++wrong.session;if(fault==1)wrong.owner+=16;if(fault==2)wrong.hero+=16;if(fault==3)wrong.transform+=16;if(fault==4)++wrong.thread;if(fault==5)++wrong.generation;if(fault==6)++wrong.permissionEpoch;assert(!msm2::native_source::diagnosticIdentity(wrong));}
+  waitMs(130);assert(!msm2::native_source::diagnosticIdentity(r));workerTick();callA();callB();
+  do{waitMs(16);workerTick();callA();callB();msm2::trace::drainLogs();}while(context.elapsed<4.1);assert(state.pass&&causeState==0);
+  ws::native_source::event(3,owner);assert(!msm2::native_source::diagnosticIdentity(r));context.wallRunActive=false;msm2::native_source::tick(context,"verified_deinit",true);assert(state.summaryEmitted);
+ }
+ assert(output.find("POSITION_WRITE_EVENT ")!=std::string::npos&&output.find("POSITION_WRITER_SUMMARY ")!=std::string::npos&&output.find("cleanup_restored=1 cleanup_pending=0")!=std::string::npos);
+ {auto f=std::fopen("logs/windows_position_orientation_integration.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);}
+ puts("PASS: c11 production c10 primary A/B orientation retains cardinal/diagonal SurfaceUp with real Position hardware watch active, observed unchanged Position rows; diagnostic identity/session/owner/Hero/Transform/thread/generation/epoch/stale/Deinit rejects and normal close, zero Position source writes");return 0;
+#endif
  for(ws::Vec3 n:{ws::Vec3{0,0,1},ws::Vec3{-.70710678f,0,.70710678f}}){
   prepare(n);callA();assert(pathAWrites==1);auto a=ws::diag::actorAxes(ws_test_source_received);assert(a.valid&&ws::dot(a.up,n)>.999f);
   auto metadata=compact.metadata;callB();assert(pathBWrites==1&&compact.metadata==metadata);msm2::sample(fakeHero);auto b=ws::diag::actorAxes(fakeHero.prefix);assert(b.valid&&ws::dot(b.up,n)>.999f);

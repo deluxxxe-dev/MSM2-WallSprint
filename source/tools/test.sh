@@ -29,3 +29,5 @@ g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -
 
 g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -Iinclude src/NativeHooks/planar_standoff_smoke.cpp -o build/planar_standoff_smoke
 ./build/planar_standoff_smoke | tee logs/planar_standoff_tests.log
+g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -Iinclude src/movement_delta_tests.cpp -o build/movement_delta_tests
+./build/movement_delta_tests | tee logs/movement_delta_tests.log

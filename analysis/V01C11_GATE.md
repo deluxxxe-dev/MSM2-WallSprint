@@ -1,0 +1,9 @@
+# v0.1c11 gate
+
+Version v0.1c11/package0.1.29, dedicated codex/v01c11-movement-path-ownership branch based on c10 delivery6246fd6d2e52cf81e18e6ff8ffd4d8ee4d863aa1 plus the pre-created c11 handoff commits05c12e4/e27ab26/4d78695. Handoff files stay unchanged. Historical c10 human A/E orientation: VERIFIED PASS; natural real refresh branch did not occur, deterministic tests cover it.
+
+C11 scope is DIAGNOSTIC ONLY for movement/Position. Existing A/B source policy, c7 stale recovery, c8 cause, c9 secondary admission, c10 bounded refresh and native lifecycle/ABI/store helpers remain. Position+0x30..0x3f watch uses the original engine only after prior Up lease cleanup/full pose/retention,600ms/one snapshot/no rescan/8 sessions,256 raw events/16 identities/4 records each. All foreign debug-state ownership/restoration and failure reasons are explicit. No Position/input/movement/adhesion/gravity/camera/animation write or new hook/native ABI/protection change.
+
+Cloud gate requires Windows warnings-as-errors, portable sanitizers, full DLL/hook/compact/watch/native suites, real owned Position hardware/foreign restore/caps/anchored instruction tests, production c10 orientation with Position watch active on A/E, finite-difference math and conservative complete-copy positive/negative fixtures. Exact final counts/package hashes/implementation SHA are in docs/CODEX_RESULT.md / analysis/V01C11_RELEASE.json.
+
+Actual c11 game writer identities, causal post-instruction matches and upstream source: PENDING human A/E logs. Path A Position proof/write permission stays0; no safe upstream vector is claimed. A DIAGNOSTIC PASS is acceptable with an exact blocker, as specified by CODEX_NEXT. Full game proof PASS needs clean c10 orientation/untilDeinit1/retention1, Position writes0, actual bounded writer evidence, valid cardinal/diagonal delta decomposition and restored watch/no foreign corruption. No movement rewrite follows automatically.

@@ -85,3 +85,32 @@ Result analyze(const unsigned char* writer,std::size_t ws,const unsigned char* c
 }
 Result inspect(const unsigned char* w,std::size_t ws,const unsigned char* c,std::size_t cs) noexcept {try{return analyze(w,ws,c,cs);}catch(...){Result r{};r.reason="position_inspection_internal_failure";return r;}}
 }
+namespace ws::position_proof {
+Causal causal(const unsigned char* bytes,std::size_t n,const unsigned char* caller,std::size_t cn) noexcept {
+ Causal r{};try{
+  auto base=inspect(bytes,n,caller,cn);if(!base.writerDecoded||!base.callerDecoded||!base.callVerified||!base.stackRelation){r.reason=base.reason;return r;}
+  Decode d;unsigned failure{};r.complete=d.run(bytes,n,r.decoded,failure);if(!r.complete){r.reason="complete_decode_failed";return r;}
+  bool loaded=false,stored=false,returned=false;unsigned vectorReg{};
+  for(std::size_t i=0;i<d.count;++i){auto& p=d.ins[i];auto& x=p.detail->x86;if(p.id==X86_INS_NOP)continue;
+   bool load=!returned&&!loaded&&p.id==X86_INS_MOVUPS&&x.op_count==2&&x.operands[0].type==X86_OP_REG&&x.operands[0].size==16&&x.operands[1].type==X86_OP_MEM&&x.operands[1].size==16&&x.operands[1].mem.base==X86_REG_RDX&&x.operands[1].mem.index==X86_REG_INVALID&&x.operands[1].mem.segment==X86_REG_INVALID&&x.operands[1].mem.disp==48;
+   if(load){loaded=true;vectorReg=x.operands[0].reg;continue;}
+   bool store=!returned&&loaded&&!stored&&p.id==X86_INS_MOVUPS&&x.op_count==2&&x.operands[0].type==X86_OP_MEM&&x.operands[0].size==16&&x.operands[0].mem.base==X86_REG_RCX&&x.operands[0].mem.index==X86_REG_INVALID&&x.operands[0].mem.segment==X86_REG_INVALID&&x.operands[0].mem.disp==48&&x.operands[1].type==X86_OP_REG&&x.operands[1].reg==vectorReg;
+   if(store){stored=true;continue;}
+   if(!returned&&stored&&p.id==X86_INS_RET&&x.op_count==0){returned=true;continue;}
+   r.firstUnsupported=unsigned(p.address);r.reason="whole_function_effect_or_control_not_certified";return r;
+  }
+  r.directRowOnly=loaded&&stored&&returned;r.reason=r.directRowOnly?"complete_direct_Vec4_copy_only_certificate":"incomplete_direct_row";
+ }catch(...){r.reason="causal_inspection_failed";}return r;
+}
+Store positionStore(const unsigned char* bytes,std::size_t n,unsigned afterOffset) noexcept {
+ Store r{};try{Decode d;unsigned decoded{},failure{};r.decoded=n<=4096&&d.run(bytes,n,decoded,failure);if(!r.decoded)return r;
+ for(std::size_t i=0;i<d.count;++i){auto& p=d.ins[i];auto& x=p.detail->x86;if(group(p,CS_GRP_CALL))++r.calls;if(group(p,CS_GRP_JUMP))++r.branches;
+  if(p.address+p.size!=afterOffset)continue;
+  for(unsigned j=0;j<x.op_count;++j){auto& op=x.operands[j];if(op.type!=X86_OP_MEM||op.mem.index!=X86_REG_INVALID||op.mem.segment!=X86_REG_INVALID||!((op.access&CS_AC_WRITE)||(j==0&&move(p.id))))continue;
+   auto g=reg(op.mem.base);if(g<0||op.mem.base==X86_REG_RIP)continue;
+   r.matched=true;r.instruction=unsigned(p.address);r.width=op.size;r.displacement=op.mem.disp;r.baseRegister=unsigned(g);if(x.op_count==2&&x.operands[1].type==X86_OP_REG)r.sourceRegister=x.operands[1].reg;break;
+  }
+ }
+ }catch(...){r.decoded=false;}return r;
+}
+}

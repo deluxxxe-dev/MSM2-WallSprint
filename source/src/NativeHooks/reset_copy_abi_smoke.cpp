@@ -15,7 +15,9 @@ namespace msm2 {
 bool readMemory(std::uintptr_t p,void* out,std::size_t n){++reads;SIZE_T got=0;return ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void*>(p),out,n,&got)&&got==n;}
 void writeLog(const char* fmt,...){char buffer[2048]{};va_list args;va_start(args,fmt);vsnprintf(buffer,sizeof(buffer),fmt,args);va_end(args);proofLog+=buffer;proofLog+='\n';}
 }
+namespace msm2::trace {void positionCopyCommit(std::uintptr_t) noexcept {}}
 namespace msm2::native_source {
+bool entryOverridden() noexcept {return false;}
 void captureCopy(std::uintptr_t,std::uintptr_t,std::uintptr_t,std::uintptr_t,std::uintptr_t,std::uintptr_t) noexcept {++callbacks;__asm__ volatile("vzeroall" ::: "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7","xmm8","xmm9","xmm10","xmm11","xmm12","xmm13","xmm14","xmm15");std::fesetround(FE_DOWNWARD);}
 }
 extern "C" {

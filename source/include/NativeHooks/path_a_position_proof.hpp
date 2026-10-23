@@ -14,3 +14,12 @@ struct Result {
 };
 Result inspect(const unsigned char*,std::size_t,const unsigned char*,std::size_t) noexcept;
 }
+namespace ws::position_proof {
+struct Causal {bool complete{},directRowOnly{};unsigned decoded{},firstUnsupported{};const char* reason="original_identity_unavailable";};
+// Strong but deliberately narrow whole-function certificate: one direct Vec4
+// row copy, no other effects/control flow. Everything unsupported is rejected.
+Causal causal(const unsigned char*,std::size_t,const unsigned char*,std::size_t) noexcept;
+struct Store {bool decoded{},matched{};unsigned instruction{},width{};long long displacement{};unsigned baseRegister{},sourceRegister{};unsigned calls{},branches{};};
+Store positionStore(const unsigned char*,std::size_t,unsigned afterOffset) noexcept;
+inline bool causalMatch(const Causal& c,bool caller,bool stack,bool identity,bool allFourEqual,bool wObserved,bool overwrite){return c.directRowOnly&&caller&&stack&&identity&&allFourEqual&&wObserved&&!overwrite;}
+}

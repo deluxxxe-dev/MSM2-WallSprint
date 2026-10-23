@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.28",
-  "description": "WallSprint v0.1c10 Secondary Publication Race Repair. One bounded refresh revalidates unchanged active ownership and recomputes the latest compact basis on the current secondary stack. Native owner/Path A, c7 recovery/c8 attribution/c9 guards and shared budget remain fixed. Position read-only; no direct Actor/movement/camera/physics writes.",
+  "version": "0.1.29",
+  "description": "WallSprint v0.1c11 Movement Path Ownership. c10 orientation unchanged; bounded read-only Position writer watch after Up cleanup/retention, SurfaceFrame translation diagnostics and conservative causality inspection. No Position/movement/input/adhesion injection.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

@@ -16,6 +16,7 @@
 #include "msm2/orientation_source.hpp"
 #include "NativeHooks/path_a_position_proof.hpp"
 #include "Math/planar_standoff.hpp"
+#include "Math/movement_delta.hpp"
 namespace {
 using ws::Vec3;using ws::source_math::Matrix;using ws::native_source::Token;using msm2::writeLog;
 constexpr std::uintptr_t callReturn=0x2cfc8f3,callBegin=0x2cfc850;constexpr unsigned callSize=168,capacity=1024;
@@ -58,6 +59,7 @@ struct Shared {
  Ownership ownership{Ownership::Dormant};unsigned expectedThread{},staleSuspends{},staleResumes{};
  std::uint64_t permissionEpoch{},acceptedEpoch{},staleStart{},staleUpdate{},staleAge{},maxStaleMs{},handledStaleUpdate{};
  double pausedTransitionMs{},frozenTransitionMs{};
+ bool positionRequested{};unsigned movementSamples{},movementEmitted{};std::uint64_t movementMs{},movementUpdate{};Vec3 movementPosition{};
  Adhesion adhesion{};
 } state;
 struct Record {
@@ -251,6 +253,7 @@ bool suspendStale(const Token& t,std::uint64_t detected){
  state.staleStart=t.updateMs+100;state.staleUpdate=t.updates;state.handledStaleUpdate=t.updates;
  state.staleAge=detected>=t.updateMs?detected-t.updateMs:0;
  state.frozenTransitionMs=state.transition.entryMs+double(state.lastT)*config.rotateTime*1000.;
+ state.movementMs=0; // Diagnostic finite differences never bridge a stale lease.
  state.firstHeld=0;state.heldUpdates=0;state.lastObserveMs=0;
  if(state.staleSuspends<=16)writeLog("NATIVE_SOURCE_STALE_SUSPEND session=%llu elapsed=%.6f update_age_ms=%llu last_native_update=%u last_native_update_ms=%llu owner=0x%llx generation=%llu thread=%u actor_up_dot_surface=%.9g actor_observation_valid=%u t=%.6f episode=%u",
   (unsigned long long)state.session,state.elapsed,(unsigned long long)state.staleAge,t.updates,(unsigned long long)t.updateMs,(unsigned long long)state.owner,(unsigned long long)state.generation,state.expectedThread,state.lastActorDot,unsigned(state.lastActorValid),state.lastT,state.staleSuspends);
@@ -261,6 +264,9 @@ void configurePositionEvidence(bool verified,bool callerVerified){
  if(callerVerified&&writerVerified)positionProof=ws::position_proof::inspect(original.data(),original.size(),callerOriginal,sizeof(callerOriginal));
  writeLog("PATH_A_POSITION_PROOF admitted=0 caller_verified=%u writer_verified=%u writer_decoded_bytes=%u caller_decoded_bytes=%u exact_direct_call_verified=%u source_offsets=%s destination_offsets=%s stack_relation_verified=%u target_relation_verified=0 target_relation_scope=runtime_exact_Hero_RCX_only position_w_semantics=unproven candidate_direct_component_mask=0x%x source_position_reads=%u target_position_stores=%u branches=%u calls=%u failure_offset=0x%x reason=%s position_source_write=0",
   unsigned(callerVerified),unsigned(writerVerified),positionProof.writerBytes,positionProof.callerBytes,unsigned(positionProof.callVerified),positionProof.sourceReads?"candidate_[0x30,0x40)":"unproven",positionProof.targetStores?"candidate_[0x30,0x40)":"unproven",unsigned(positionProof.stackRelation),positionProof.directMask,positionProof.sourceReads,positionProof.targetStores,positionProof.branches,positionProof.calls,positionProof.failureOffset,positionProof.reason);
+ auto causal=writerVerified&&callerVerified?ws::position_proof::causal(original.data(),original.size(),callerOriginal,sizeof(callerOriginal)):ws::position_proof::Causal{};
+ writeLog("PATH_A_POSITION_CAUSALITY_PROOF admitted=0 writer_verified=%u caller_verified=%u stack_relation_verified=%u source_offsets=candidate_[0x30,0x40) destination_offsets=unproven post_writer_match=0 position_w_observed=0 downstream_overwrite_observed=0 exclusive_effects_proven=0 whole_function_decoded=%u direct_row_only_certificate=%u first_unsupported_offset=0x%x reason=%s write_permission=0",unsigned(writerVerified),unsigned(callerVerified),unsigned(positionProof.stackRelation),unsigned(causal.complete),unsigned(causal.directRowOnly),causal.firstUnsupported,causal.reason);
+ writeLog("MOVEMENT_SOURCE_CANDIDATE candidate_id=0 producer_rva=0x2cfc850 consumer_rva=0x2cfc580 source_kind=position storage_or_stack_location=caller_local_source_plus_0x30 wallrun_owned=0 hero_target_verified=0 correlates_with_translation=0 surface_tangent_relation=unknown writable_source_proven=0 reason=caller_construction_full_CFG_W_and_downstream_effects_missing");
  for(unsigned i=0;i<positionProof.accessCount;++i){auto& a=positionProof.accesses[i];writeLog("PATH_A_POSITION_ACCESS index=%u instruction_offset=0x%x base=%s displacement=0x%llx width=%u direction=%s source_offset_candidate=%lld direct_copy_candidate=%u after_control_flow=%u proof_status=CANDIDATE_LINEAR_SCAN_NOT_PATH_COMPLETE suppressed=%u",i,a.offset,a.target?"entry_RCX_alias_candidate":"entry_RDX_alias_candidate",(unsigned long long)a.displacement,a.width,a.write?"write":"read",a.sourceOffset,unsigned(a.directCandidate),unsigned(a.afterControlFlow),positionProof.suppressed);}
  for(unsigned i=0;i<positionProof.controlCount;++i){auto& c=positionProof.controls[i];writeLog("PATH_A_POSITION_CONTROL index=%u instruction_offset=0x%x kind=%s direct=%u target_rva=0x%llx effects_verified=0 suppressed=%u",i,c.offset,c.call?"call":"branch",unsigned(c.direct),(unsigned long long)(c.direct?c.targetRva:0),positionProof.suppressedControls);}
 }
@@ -295,6 +301,8 @@ void exitDiagnostic(const ws::observed::VerifiedWallContext& ctx,const Token& t,
 void lifecycleSummary(std::uint64_t finish,bool verifiedDeinit,bool untilDeinit){
  if(!state.entered||state.summaryEmitted)return;
  state.summaryEmitted=true;secondarySummary(state.session,false);
+ writeLog("MOVEMENT_DELTA_SUMMARY session=%llu emitted=%u attempts=%u sample_cap=40 Position_writes=0 velocity_semantics=finite_difference_only",(unsigned long long)state.session,state.movementEmitted,state.movementSamples);
+ if(!state.positionRequested)writeLog("POSITION_WRITER_SUMMARY session=%llu watch_armed=0 unique_writers=0 cleanup_restored=1 reason=retention_start_window_or_helper_not_available Position_writes_by_mod=0",(unsigned long long)state.session);
  writeLog("ORIENTATION_LIFECYCLE_SUMMARY session=%llu wallrun_duration_ms=%llu source_entry_elapsed=%.6f source_exit_reason=%s source_active_until_deinit=%u verified_deinit=%u path_a_writes=%u path_b_writes=%u retention_pass=%u max_held_ms=%llu max_held_updates=%u last_actor_up_dot_surface=%.9g last_actor_observation_valid=%u last_actor_observation_ms=%llu last_actor_observation_scope=active_source_worker_snapshot stale_suspend_count=%u stale_resume_count=%u max_stale_duration_ms=%llu stale_log_pair_cap=16 first_hard_kill=%s hard_kill_calls=%u",
   (unsigned long long)state.session,(unsigned long long)(finish>=state.initMs?finish-state.initMs:0),double(state.transition.entryMs-state.initMs)/1000.,state.exitReason,unsigned(verifiedDeinit&&untilDeinit),unsigned(verifiedDeinit),pathAWrites.load(),pathBWrites.load(),unsigned(state.pass),(unsigned long long)state.maxHeldMs,state.maxHeldUpdates,state.lastActorDot,unsigned(state.lastActorValid),(unsigned long long)state.lastObserveMs,state.staleSuspends,state.staleResumes,(unsigned long long)state.maxStaleMs,causeState.load(std::memory_order_acquire)>=2?firstCause.reason:"none",killCalls.load());
 }
@@ -349,6 +357,12 @@ void configure(Config c,bool verified,std::uintptr_t base,std::size_t size,const
  path_b::configure(admitted,true);
  if(!admitted)return;
  state={};pathAWrites=0;pathBWrites=0;pathBReservations=0;pathARejects=0;pathBRejects=0;resetRequested=false;lifecycleOpen=false;publishInactive();killed=false;ws::native_source::armLifecycle(true);ws_native_source_enabled=1;
+}
+bool diagnosticIdentity(const msm2::reset_trace::Request& r) noexcept {
+ Published p{};Token token{};WorkerEvidence worker{};
+ if(!r.position||killed.load()||!lifecycleOpen.load()||!publication.read(p)||!ws::native_source::lifecycle(token))return false;
+ auto now=GetTickCount64(); // Clock follows both coherent publications.
+ return p.active&&p.session==r.session&&p.generation==r.generation&&p.lifecycleEpoch==r.permissionEpoch&&p.lifecycleEpoch==lifecycleEpoch.load()&&p.acceptedEpoch==r.acceptedEpoch&&p.owner==r.owner&&p.hero==r.hero&&p.transform==r.transform&&p.thread==r.thread&&p.initMs==r.initMs&&p.t>=1&&now>=p.publishedMs&&now-p.publishedMs<=100&&workerEvidence.read(worker)&&worker.available&&worker.context.lifecycleVerified&&worker.context.wallRunActive&&worker.context.wallRunSessionId==p.session&&worker.context.wallRunOwner==p.owner&&currentGuards()&&freshToken(token,GetTickCount64())&&token.owner==p.owner&&token.thread==p.thread&&token.generation==p.generation&&token.initMs==p.initMs&&token.acceptedEventEpoch==p.acceptedEpoch&&token.collisionEpoch==p.acceptedEpoch&&!killed.load()&&lifecycleOpen.load()&&lifecycleEpoch.load()==p.lifecycleEpoch;
 }
 void prearm(const Token& token) noexcept {
  if(killed.load()||!admitted)return;
@@ -454,6 +468,15 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
  state.commonWrites=pathAWrites.load();state.copyWrites=pathBWrites.load();state.writes=state.commonWrites+state.copyWrites;
  if(p.active&&p.t>=1&&state.commonWrites&&(!config.dualSource||state.copyWrites))observe(s,token,now,true);
  adhesionSample(p,s,now);
+ if(p.active&&p.t>=1&&state.movementSamples<40&&p.nativeUpdate!=state.movementUpdate&&(!state.movementMs||now-state.movementMs>=100)){
+  Vec3 position{s.position[0],s.position[1],s.position[2]};auto dt=state.movementMs&&now>=state.movementMs?float(now-state.movementMs):0.f;auto delta=ws::movement::decompose(state.movementPosition,position,p.basis,dt);float w{};bool wRead=lifecycleOpen.load()&&!killed.load()&&lifecycleEpoch.load()==p.lifecycleEpoch&&msm2::readMemory(p.transform+0x3c,&w,4);unsigned bits{};std::memcpy(&bits,&w,4);
+  if(state.movementMs){++state.movementEmitted;writeLog("MOVEMENT_DELTA_SAMPLE session=%llu native_update=%u dt_ms=%.3f delta_world=(%.9g,%.9g,%.9g) delta_normal=%.9g delta_forward=%.9g delta_right=%.9g velocity_estimate=(%.9g,%.9g,%.9g) speed_estimate=%.9g valid=%u N398=(%.9g,%.9g,%.9g) position_w_read=%u position_w_bits=0x%x sampling=worker_finite_difference_not_physics_claim Position_writes=0",(unsigned long long)p.session,p.nativeUpdate,dt,delta.world.x,delta.world.y,delta.world.z,delta.normal,delta.forward,delta.right,delta.velocity.x,delta.velocity.y,delta.velocity.z,delta.speed,unsigned(delta.valid),p.surface.x,p.surface.y,p.surface.z,unsigned(wRead),bits);}
+  state.movementMs=now;state.movementPosition=position;state.movementUpdate=p.nativeUpdate;++state.movementSamples;
+ }
+ if(p.active&&p.t>=1&&state.pass&&!state.positionRequested&&p.elapsed>=1.55f&&p.elapsed<=3.f){
+  msm2::reset_trace::Request request{};request.position=true;request.prearmed=true;request.session=p.session;request.generation=p.generation;request.nativeUpdate=p.nativeUpdate;request.initMs=p.initMs;request.hero=p.hero;request.transform=p.transform;request.owner=p.owner;request.thread=p.thread;request.normal=p.surface;request.basis=p.basis;request.acceptedEpoch=p.acceptedEpoch;request.permissionEpoch=p.lifecycleEpoch;
+  state.positionRequested=msm2::reset_trace::requestPosition(request);
+ }
  stateLock.clear(std::memory_order_release);
 }
 void capturePath(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t originalRsp) noexcept {

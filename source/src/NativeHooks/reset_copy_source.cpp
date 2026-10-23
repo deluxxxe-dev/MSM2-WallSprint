@@ -10,6 +10,7 @@
 #include "NativeHooks/compact_map_proof.hpp"
 #include "NativeHooks/native_source_override.hpp"
 #include "msm2/sdk_bridge.hpp"
+#include "msm2/orientation_trace.hpp"
 extern "C" {
 void ws_reset_copy_thunk();void* ws_reset_copy_original{};std::atomic<unsigned> ws_reset_copy_recording{0};
 }
@@ -63,6 +64,7 @@ static_assert(offsetof(Frame,rcx)==40&&offsetof(Frame,ret)==64);
 }
 extern "C" void ws_reset_copy_capture(const Frame* f) noexcept {
  msm2::native_source::captureCopy(f->rcx,f->rdx,f->r8,f->r9,f->ret,reinterpret_cast<std::uintptr_t>(&f->ret));
+ if(msm2::native_source::entryOverridden())msm2::trace::positionCopyCommit(f->rcx);
 }
 namespace msm2::reset_copy {
 ProofStatus proofStatus() noexcept {return ::proofStatus;}
