@@ -25,6 +25,8 @@ struct Published {
  unsigned thread{},nativeUpdate{};float elapsed{},t{};bool active{};ws::diag::ActorAxes basis{};Vec3 surface{};
 };
 ws::interop::AtomicPublication<Published> publication;
+struct NativeClose {Token token{};Published source{};bool wasOpen{},sourceRead{};};
+ws::interop::AtomicPublication<NativeClose> deinitPublication;
 std::atomic<unsigned> pathAWrites{0},pathBWrites{0},pathARejects{0},pathBRejects{0};
 std::atomic<bool> resetRequested{false},lifecycleOpen{false};std::atomic<std::uint64_t> lifecycleEpoch{0};
 struct Shared {
@@ -32,6 +34,7 @@ struct Shared {
  ws::source_math::Transition transition;std::uint64_t blocked{},lastWrite{},lastUpdate{},firstHeld{},lastObserveUpdate{};
  Matrix entryBasis{},currentBasis{};Vec3 entryForward{};std::uint64_t lastCommonUpdate{},lastObserveMs{},lastMetricMs{};
  unsigned writes{},commonWrites{},copyWrites{},heldUpdates{},otherWriters{};float elapsed{},lastT{},bestSurface{};unsigned rejects{};bool pass{};
+ std::uint64_t initMs{},maxHeldMs{};unsigned maxHeldUpdates{};float lastActorDot{};bool entered{},summaryEmitted{},exitDiagEmitted{},lastActorValid{};const char* exitReason="not_entered";
 } state;
 struct Record {
  unsigned kind{},gateMask{};const char* reason="none";std::uint64_t session{},ms{},generation{},nativeUpdate{},heldMs{},commitQpc{};
@@ -48,6 +51,8 @@ void emit(const Record& r){
 }
 void publishInactive() noexcept {Published p{};publication.publish(p);}
 void end(const char* reason,std::uint64_t now){
+ state.commonWrites=pathAWrites.load();state.copyWrites=pathBWrites.load();state.writes=state.commonWrites+state.copyWrites;
+ if(state.transition.active)state.exitReason=reason;
  if(state.transition.active&&room()){Record r{};r.kind=2;r.reason=reason;r.session=state.session;r.generation=state.generation;r.ms=now;r.elapsed=float(now-state.transition.entryMs)/1000;r.writes=state.writes;r.heldUpdates=state.heldUpdates;r.heldMs=state.firstHeld?now-state.firstHeld:0;r.success=state.pass;emit(r);}
  state.transition.active=false;state.blocked=state.generation;isActive=false;
  lifecycleOpen=false;++lifecycleEpoch;
@@ -86,11 +91,30 @@ void prearmPublished(const Token& token,std::uint64_t now){
 }
 
 bool freshToken(const Token& t,std::uint64_t now){return t.phase==3&&t.owner&&t.updates&&now>=t.initMs&&now>=t.updateMs&&now-t.updateMs<=100;}
+void exitDiagnostic(const ws::observed::VerifiedWallContext& ctx,const Token& t,bool native,std::uint64_t now,const char* gate){
+ if(!state.transition.active||state.exitDiagEmitted)return;
+ state.exitDiagEmitted=true;msm2::Snapshot s{};bool sampled=msm2::sample(s);
+ writeLog("NATIVE_LIFECYCLE_EXIT_DIAG session=%llu elapsed=%.6f failing_sub_gate=%s ctx_wallrun_active=%u ctx_wallrun_session=%llu ctx_wallrun_owner=0x%llx lifecycle_return_native=%u token_observed=%u lifecycle_read_status=%s token_phase=%u token_last_kind=%u token_owner=0x%llx token_thread=%u token_updates=%u token_generation=%llu token_init_ms=%llu token_update_ms=%llu now_ms=%llu update_age_ms=%llu update_age_valid=%u fresh_phase_ok=%u fresh_owner_ok=%u fresh_updates_ok=%u fresh_time_order_ok=%u fresh_update_age_ok=%u owner_matches_ctx=%u hero_matches=%u transform_matches=%u hero_sample_valid=%u source_transition_active=%u accepted_event_epoch=%llu native_collision_epoch=%llu",
+  (unsigned long long)state.session,ctx.elapsed,gate,unsigned(ctx.wallRunActive),(unsigned long long)ctx.wallRunSessionId,(unsigned long long)ctx.wallRunOwner,unsigned(native),unsigned(t.observed),ws::native_source::lifecycleReadName(t.readStatus),t.phase,t.lastKind,(unsigned long long)t.owner,t.thread,t.updates,(unsigned long long)t.generation,(unsigned long long)t.initMs,(unsigned long long)t.updateMs,(unsigned long long)now,(unsigned long long)(now>=t.updateMs?now-t.updateMs:0),unsigned(now>=t.updateMs),unsigned(t.phase==3),unsigned(t.owner!=0),unsigned(t.updates!=0),unsigned(now>=t.initMs&&now>=t.updateMs),unsigned(now>=t.updateMs&&now-t.updateMs<=100),unsigned(t.owner==ctx.wallRunOwner),unsigned(sampled&&s.hero==state.hero),unsigned(sampled&&s.transform==state.transform),unsigned(sampled),unsigned(state.transition.active),(unsigned long long)t.acceptedEventEpoch,(unsigned long long)t.collisionEpoch);
+}
+void lifecycleSummary(std::uint64_t finish,bool verifiedDeinit,bool untilDeinit){
+ if(!state.entered||state.summaryEmitted)return;
+ state.summaryEmitted=true;
+ writeLog("ORIENTATION_LIFECYCLE_SUMMARY session=%llu wallrun_duration_ms=%llu source_entry_elapsed=%.6f source_exit_reason=%s source_active_until_deinit=%u verified_deinit=%u path_a_writes=%u path_b_writes=%u retention_pass=%u max_held_ms=%llu max_held_updates=%u last_actor_up_dot_surface=%.9g last_actor_observation_valid=%u last_actor_observation_ms=%llu last_actor_observation_scope=active_source_worker_snapshot",
+  (unsigned long long)state.session,(unsigned long long)(finish>=state.initMs?finish-state.initMs:0),double(state.transition.entryMs-state.initMs)/1000.,state.exitReason,unsigned(verifiedDeinit&&untilDeinit),unsigned(verifiedDeinit),pathAWrites.load(),pathBWrites.load(),unsigned(state.pass),(unsigned long long)state.maxHeldMs,state.maxHeldUpdates,state.lastActorDot,unsigned(state.lastActorValid),(unsigned long long)state.lastObserveMs);
+}
+void drainVerifiedDeinit(){
+ if(!state.entered||state.summaryEmitted)return;
+ NativeClose closed{};if(!deinitPublication.read(closed)||closed.token.lastKind!=3||closed.token.phase!=0||closed.token.generation!=state.generation+1||closed.token.owner!=state.owner||closed.token.initMs!=state.initMs)return;
+ bool until=closed.token.acceptedEventEpoch==closed.token.collisionEpoch&&state.transition.active&&closed.wasOpen&&closed.sourceRead&&closed.source.active&&closed.source.session==state.session&&closed.source.generation==state.generation&&closed.source.owner==state.owner&&closed.source.hero==state.hero&&closed.source.transform==state.transform&&closed.token.eventMs>=closed.source.publishedMs&&closed.token.eventMs-closed.source.publishedMs<=100;
+ end("verified_native_Deinit",closed.token.eventMs);lifecycleSummary(closed.token.eventMs,true,until);
+}
 bool observe(const msm2::Snapshot& s,const Token& token,std::uint64_t now,bool mayAbort){
  if(!state.transition.active||!state.writes)return true;
  auto axes=ws::diag::actorAxes(s.prefix);Vec3 up{};
  bool valid=axes.valid&&ws::unit(axes.up,up);
  float ds=valid?ws::dot(up,state.transition.surface):0,dw=valid?up.y:0;state.bestSurface=std::max(state.bestSurface,ds);
+ state.lastActorDot=ds;state.lastActorValid=valid;
  bool distinct=token.updates!=state.lastObserveUpdate;
  // Any observed loss breaks continuity, even between two calls in the SAME
  // update. Only good distinct native updates are allowed to increment it.
@@ -108,6 +132,7 @@ bool observe(const msm2::Snapshot& s,const Token& token,std::uint64_t now,bool m
    }
   }
  }
+ state.maxHeldMs=std::max(state.maxHeldMs,state.firstHeld?now-state.firstHeld:std::uint64_t(0));state.maxHeldUpdates=std::max(state.maxHeldUpdates,state.heldUpdates);
  // An observed reset invalidates retention, NOT source ownership. The old
  // abort here allowed subsequent exact valid WorldUp calls through untouched.
  if(room()&&(distinct||!valid||ds<.98f||now-state.lastMetricMs>=50)){state.lastMetricMs=now;Record r{};r.kind=3;r.reason=mayAbort?"verified_native_update_worker":"supplementary_worker";r.session=state.session;r.generation=state.generation;r.ms=now;r.nativeUpdate=token.updates;r.actorUp=up;r.n=state.transition.surface;r.actorDotSurface=ds;r.actorDotWorld=dw;r.heldMs=state.firstHeld?now-state.firstHeld:0;r.heldUpdates=state.heldUpdates;r.success=state.pass;emit(r);}
@@ -122,6 +147,7 @@ void configure(Config c,bool verified,std::uintptr_t base,std::size_t size,const
  admitted=verified&&c.enabled&&c.sourceOverride&&callerVerified&&std::isfinite(c.delay)&&c.delay>=.7f&&c.delay<=5&&std::isfinite(c.rotateTime)&&c.rotateTime>=.2f&&c.rotateTime<=1&&currentGuards()&&(!c.dualSource||msm2::reset_copy::compactProofAuthenticated());
  writeLog("native_source_config enabled=%u requested_override=%u admitted=%u direct_actor_transform_write=0 adhesion=0 movement=0 camera=0 animation=0 source_write_range=[0x00,0x30) position_write=0 caller_rva=0x2cfc8f3 caller_body_hash_verified=%u source_stack_relation=writer_entry_RSP+0x28 delay=%.3f rotate_time=%.3f",unsigned(c.enabled),unsigned(c.sourceOverride),unsigned(admitted),unsigned(callerVerified),c.delay,c.rotateTime);
  writeLog("DUAL_SOURCE_ADMISSION admitted=%u dual_source_required=%u common_caller=0x2cfc8f3 copy_caller=0x2cfc84b copy_hook_authenticated=%u",unsigned(admitted),unsigned(c.dualSource),unsigned(msm2::reset_copy::authenticated()));
+ writeLog("SOURCE_LIFECYCLE_CONTRACT readers_lock_native_events=0 native_event_collision_fail_closed=1 native_update_freshness_ms=100 worker_publication_freshness_ms=100 clock_sample=after_token_acquisition verified_Deinit_summary=1 diagnostic_window_limits_source_ownership=0");
  path_b::configure(admitted,true);
  if(!admitted)return;
  state={};pathAWrites=0;pathBWrites=0;pathARejects=0;pathBRejects=0;resetRequested=false;lifecycleOpen=false;publishInactive();killed=false;ws::native_source::armLifecycle(true);ws_native_source_enabled=1;
@@ -130,7 +156,11 @@ void prearm(const Token& token) noexcept {
  if(killed.load()||!admitted)return;
  auto now=GetTickCount64();if(freshToken(token,now))prearmPublished(token,now);
 }
-void lifecycleClosed(const Token&) noexcept {lifecycleOpen=false;++lifecycleEpoch;publishInactive();isActive=false;}
+void lifecycleClosed(const Token& t) noexcept {
+ NativeClose closed{};closed.token=t;closed.wasOpen=lifecycleOpen.exchange(false);auto epoch=lifecycleEpoch.fetch_add(1);
+ if(t.lastKind==3){closed.sourceRead=publication.read(closed.source)&&closed.source.lifecycleEpoch==epoch;deinitPublication.publish(closed);}
+ publishInactive();isActive=false;
+}
 void kill() noexcept{path_b::kill();killed=true;lifecycleOpen=false;++lifecycleEpoch;ws_native_source_enabled=0;isActive=false;publishInactive();ws::native_source::armLifecycle(false);}
 bool active() noexcept{return isActive.load();}
 bool observationGuardsAuthenticated() noexcept{return !killed.load()&&admitted&&currentGuards();}
@@ -138,27 +168,39 @@ bool entryOverridden() noexcept{return didOverride;}
 void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool authenticated){
  if(!authenticated){kill();}
  if(stateLock.test_and_set(std::memory_order_acquire))return;
- auto now=GetTickCount64(),epoch=lifecycleEpoch.load();
+ auto now=GetTickCount64();drainVerifiedDeinit();auto epoch=lifecycleEpoch.load();
  if(killed.load()||!admitted){end("disabled_kill_or_patch_gate",now);state.published=0;stateLock.clear(std::memory_order_release);return;}
- Token token{};bool native=ws::native_source::lifecycle(token);
- if(!native&&!token.observed){stateLock.clear(std::memory_order_release);return;} // contention is missing evidence, not Deinit
- if(!ctx.lifecycleVerified||!ctx.wallRunActive||!native||!freshToken(token,now)||token.owner!=ctx.wallRunOwner){end(!ctx.wallRunActive?reason:token.lastKind==3?"native_verified_Deinit_before_worker_drain":"native_lifecycle_inactive_or_stale",now);state.published=0;stateLock.clear(std::memory_order_release);return;}
+ Token token{};bool native=ws::native_source::lifecycle(token);now=GetTickCount64(); // Age is measured AFTER acquiring the token, never before a concurrent Update.
+ if(!native&&!token.observed){
+  // A bounded coherent-read miss cannot renew the snapshot. Existing writes
+  // expire at100ms; a sustained miss is diagnosed and closes ownership.
+  if(state.entered&&state.published&&now>=state.published&&now-state.published>100){exitDiagnostic(ctx,token,native,now,"lifecycle_publication_unavailable_over_100ms");end("native_lifecycle_publication_unavailable",now);state.published=0;}
+  stateLock.clear(std::memory_order_release);return;
+ }
+ const char* failed=!ctx.lifecycleVerified?"ctx_lifecycle_unverified":!ctx.wallRunActive?"ctx_wallrun_inactive":!native?ws::native_source::lifecycleReadName(token.readStatus):
+  token.phase!=3?"fresh_phase":!token.owner?"fresh_owner":!token.updates?"fresh_updates":now<token.initMs||now<token.updateMs?"fresh_time_order":now-token.updateMs>100?"fresh_update_age":token.owner!=ctx.wallRunOwner?"owner_matches_ctx":nullptr;
+ if(failed){exitDiagnostic(ctx,token,native,now,failed);end(!ctx.wallRunActive?reason:token.lastKind==3?"native_verified_Deinit_before_worker_drain":"native_lifecycle_inactive_or_stale",now);state.published=0;stateLock.clear(std::memory_order_release);return;}
  msm2::Snapshot s{};
- if(!msm2::sample(s)){end("fresh_Hero_snapshot_invalid",now);state.published=0;stateLock.clear(std::memory_order_release);return;}
- if(state.generation!=token.generation||state.session!=ctx.wallRunSessionId){end("new_native_session",now);state={};state.generation=token.generation;state.session=ctx.wallRunSessionId;state.hero=s.hero;state.transform=s.transform;state.owner=token.owner;pathAWrites=0;pathBWrites=0;pathARejects=0;pathBRejects=0;resetRequested=false;}
- if(s.hero!=state.hero||s.transform!=state.transform){end("Hero_Transform_identity_changed",now);state.published=0;stateLock.clear(std::memory_order_release);return;}
+ if(!msm2::sample(s)){exitDiagnostic(ctx,token,native,now,"hero_snapshot_invalid");end("fresh_Hero_snapshot_invalid",now);state.published=0;stateLock.clear(std::memory_order_release);return;}
+ if(state.session&&state.session==ctx.wallRunSessionId&&(state.generation!=token.generation||state.owner!=token.owner)){exitDiagnostic(ctx,token,native,now,"same_session_native_generation_or_owner_changed");end("native_generation_or_owner_changed",now);state.published=0;stateLock.clear(std::memory_order_release);return;}
+ if(state.generation!=token.generation||state.session!=ctx.wallRunSessionId){end("new_native_session",now);++epoch;lifecycleSummary(now,false,false);state={};state.generation=token.generation;state.session=ctx.wallRunSessionId;state.initMs=token.initMs;state.hero=s.hero;state.transform=s.transform;state.owner=token.owner;pathAWrites=0;pathBWrites=0;pathARejects=0;pathBRejects=0;resetRequested=false;}
+ if(s.hero!=state.hero||s.transform!=state.transform){exitDiagnostic(ctx,token,native,now,s.hero!=state.hero?"hero_identity_changed":"transform_identity_changed");end("Hero_Transform_identity_changed",now);state.published=0;stateLock.clear(std::memory_order_release);return;}
+ if(state.blocked==state.generation){stateLock.clear(std::memory_order_release);return;}
  state.published=now;state.elapsed=float(ctx.elapsed);Vec3 n{};
  bool normalOk=token.owner<=UINTPTR_MAX-0x3a4&&msm2::readMemory(token.owner+0x398,&n,12)&&ws::finite(n);
  if(!state.transition.active&&ctx.elapsed>=config.delay&&normalOk){
   Matrix baseline{};std::memcpy(baseline.v,s.prefix,48);baseline.v[12]=s.position[0];baseline.v[13]=s.position[1];baseline.v[14]=s.position[2];baseline.v[15]=1;
   if(!state.transition.enter(baseline,n,double(now))){end("invalid_entry_normal_or_forward",now);stateLock.clear(std::memory_order_release);return;}
-  state.entryBasis=baseline;state.lastObserveUpdate=token.updates;isActive=true;
+  state.entryBasis=baseline;state.lastObserveUpdate=token.updates;state.entered=true;state.exitReason="active";isActive=true;
  }
  Published p{};p.session=state.session;p.generation=state.generation;p.lifecycleEpoch=epoch;p.publishedMs=now;p.initMs=token.initMs;p.hero=state.hero;p.transform=state.transform;p.owner=state.owner;p.thread=token.thread;p.nativeUpdate=token.updates;p.elapsed=float(now-token.initMs)/1000.f;
  if(state.transition.active&&normalOk){Matrix sampled{};float t{};Matrix incoming=state.entryBasis;
   if(now-state.transition.entryMs>=5000){end("bounded_test_window_5seconds",now);}
   else if(state.transition.sample(incoming,n,double(now),config.rotateTime,sampled,t)){p.active=true;p.t=t;p.surface=state.transition.surface;p.basis=ws::diag::actorAxes(sampled.v);state.currentBasis=sampled;state.lastT=t;lifecycleOpen=true;}
  }
+ // A synchronous native close racing this worker must win. Its epoch cannot
+ // be adopted for a token acquired before the close, even on first entry.
+ if(lifecycleEpoch.load()!=epoch){publishInactive();isActive=false;stateLock.clear(std::memory_order_release);return;}
  publication.publish(p);
  // Retention is sampled only from a fresh verified lifecycle update after both
  // source paths have committed. Distinct native updates cannot be inflated by calls.
@@ -227,5 +269,5 @@ void drainLogs(){
   else if(r.kind==4)writeLog("NATIVE_SOURCE_OTHER_WRITER session=%llu caller_return_rva=0x%llx source_up=(%.9g,%.9g,%.9g) override=0",static_cast<unsigned long long>(r.session),static_cast<unsigned long long>(r.caller),r.original.v[4],r.original.v[5],r.original.v[6]);
  }
 }
-void stop(){kill();if(!stateLock.test_and_set(std::memory_order_acquire)){end("script_stop",GetTickCount64());stateLock.clear(std::memory_order_release);}drainLogs();writeLog("PATH_A_OVERRIDE_COUNT=%u PATH_A_REJECT_COUNT=%u PATH_A_STATE_LOCK_CONTENTION=0 PATH_B_OVERRIDE_COUNT=%u PATH_B_REJECT_COUNT=%u final=1",pathAWrites.load(),pathARejects.load(),pathBWrites.load(),pathBRejects.load());writeLog("native_source_stop source_override=OFF direct_actor_transform_write=0 vanilla_passthrough=1");}
+void stop(){kill();if(!stateLock.test_and_set(std::memory_order_acquire)){drainVerifiedDeinit();end("script_stop",GetTickCount64());lifecycleSummary(GetTickCount64(),false,false);stateLock.clear(std::memory_order_release);}drainLogs();writeLog("PATH_A_OVERRIDE_COUNT=%u PATH_A_REJECT_COUNT=%u PATH_A_STATE_LOCK_CONTENTION=0 PATH_B_OVERRIDE_COUNT=%u PATH_B_REJECT_COUNT=%u final=1",pathAWrites.load(),pathARejects.load(),pathBWrites.load(),pathBRejects.load());writeLog("native_source_stop source_override=OFF direct_actor_transform_write=0 vanilla_passthrough=1");}
 }

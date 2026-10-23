@@ -1,6 +1,6 @@
-# v0.1c4 real process-thread enumeration fix
+# v0.1c5 sustained native lifecycle
 
-Current version0.1.22: exact-build Path A and compact Path B consume one lock-free coherent orientation snapshot. Path B writes only its first nine floats and preserves row scale and all later metadata. See README_TEST.md and analysis/V01C4_GATE.md. Build with tools/build_windows.sh; run tools/test.sh, tools/smoke_windows.sh, tools/test_hooks_windows.sh and tools/release.py. c4 keeps the bounded coordinator alive under record pressure, reserves expanded-watch evidence, and exposes real Toolhelp attempt/filter/errors at elapsed>=0.85..1.50; third paths remain unmodified. Original game captures stay private.
+Current version0.1.23: exact-build Path A and compact Path B consume one lock-free coherent orientation snapshot. Path B writes only its first nine floats and preserves row scale and all later metadata. See README_TEST.md and analysis/V01C5_GATE.md. Build with tools/build_windows.sh; run tools/test.sh, tools/smoke_windows.sh, tools/test_hooks_windows.sh and tools/release.py. c5 removes lifecycle reader/native-writer interference while preserving100ms freshness and genuine collision refusal. Full-WallRun ownership is checked through verified Deinit; c4 diagnostic watch remains bounded and independent; third paths remain unmodified. Original game captures stay private.
 
 # WallSprint v0.1b8 — Dual-Source Orientation Ownership
 

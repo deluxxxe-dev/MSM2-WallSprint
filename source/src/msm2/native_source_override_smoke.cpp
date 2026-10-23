@@ -10,9 +10,9 @@ namespace msm2::trace {void beginResetCopyEntry() noexcept {} void resetCopyEntr
 static unsigned resetRequests{},prearmRequests{};
 namespace msm2::reset_trace {
 void request(const Request& r) noexcept {assert(r.prearmed&&!r.commitQpc);++prearmRequests;}
-bool committed(const Request& r) noexcept {assert(r.commitQpc);++resetRequests;return true;}
+bool committed(const Request& r) noexcept {assert(r.commitQpc);++resetRequests;auto now=GetTickCount64();return now>=r.initMs&&now-r.initMs<1500;} // Model the bounded diagnostic ending; source ownership must continue.
 }
-static msm2::Snapshot fakeHero;static std::string output;static bool sdkAvailable=true,sourceAuth=true,copyAuth=true;
+static msm2::Snapshot fakeHero;static std::string output;static bool sdkAvailable=true,sourceAuth=true,copyAuth=true,deinitOnSample=false;
 static unsigned char installedBytes[32]{},copyInstalledBytes[32]{};
 extern "C" {
 alignas(16) float ws_test_copy_received[16];std::uint64_t ws_test_copy_calls{};
@@ -29,7 +29,7 @@ bool compactProofAuthenticated() noexcept {return authenticated();}
 }
 namespace msm2 {
 bool readMemory(std::uintptr_t p,void* out,std::size_t n){SIZE_T done=0;return ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void*>(p),out,n,&done)&&done==n;}
-bool sample(Snapshot& s){s=fakeHero;if(!sdkAvailable)return false;return readMemory(s.transform,s.prefix,48);}
+bool sample(Snapshot& s){s=fakeHero;if(!sdkAvailable)return false;if(deinitOnSample){deinitOnSample=false;ws::native_source::event(3,token.owner);}return readMemory(s.transform,s.prefix,48);}
 void writeLog(const char* fmt,...){char b[4096];va_list a;va_start(a,fmt);vsnprintf(b,sizeof(b),fmt,a);va_end(a);output+=b;output+='\n';}
 }
 namespace msm2::input {bool authenticated(){unsigned char b[32]{};return sourceAuth&&msm2::readMemory(reinterpret_cast<std::uintptr_t>(&ws_test_native_source_writer),b,32)&&!std::memcmp(b,installedBytes,32);}}
@@ -48,6 +48,7 @@ static void prepare(ws::Vec3 normal){
 }
 static void callA(){auto original=vanilla;auto result=ws_test_stack_caller(reinterpret_cast<void*>(fakeHero.transform),&vanilla);assert(result==0xabcdef0011223344ull);assert(!std::memcmp(&original,&vanilla,64));}
 static void callB(){auto original=compact;auto result=ws_test_copy_caller(reinterpret_cast<void*>(fakeHero.transform),&compact);assert(result==0xabcdef0011223344ull);assert(!std::memcmp(&original,&compact,64));assert(!std::memcmp(reinterpret_cast<unsigned char*>(ws_test_copy_received)+36,compact.metadata.data(),28));}
+static unsigned countText(const std::string& text,const std::string& key){unsigned count=0;std::size_t pos=0;while((pos=text.find(key,pos))!=std::string::npos){++count;pos+=key.size();}return count;}
 int main(){
  alignas(16) ws::source_math::CompactBlock local{},changed{};local.rows[0]=local.rows[4]=local.rows[8]=1;changed=local;changed.metadata[0]=1;
  auto localBefore=local;assert(!ws::interop::writeStackCompact(reinterpret_cast<std::uintptr_t>(&local),local,changed).success&&!std::memcmp(&local,&localBefore,64));
@@ -66,6 +67,31 @@ int main(){
   assert(state.pass&&state.heldUpdates>=20);msm2::native_source::drainLogs();
   assert(output.find("PATH_A_LOCKFREE_SNAPSHOT_READ")!=std::string::npos&&output.find("PATH_B_COMPACT3X3_OVERRIDE")!=std::string::npos&&output.find("bytes_written=0x24 metadata_untouched=1")!=std::string::npos&&output.find("PATH_A_STATE_LOCK_CONTENTION=0")!=std::string::npos&&output.find("ORIENTATION_RETENTION_PASS=1")!=std::string::npos);
  }
+ // The production source token/worker/A-B path runs through a real multi-second
+ // interval; diagnostic lifetime is not consulted by this orientation contract.
+ ws::native_source::setObserver([](const Token& t) noexcept {if(t.phase!=3)msm2::native_source::lifecycleClosed(t);});
+ prepare({0,0,1});auto sustainedSession=state.session;std::atomic<bool> readerDone{false};
+ auto reader=CreateThread(nullptr,0,[](void* raw)->DWORD{auto& done=*static_cast<std::atomic<bool>*>(raw);while(!done.load()){Token t{};ws::native_source::lifecycle(t);Sleep(0);}return 0;},&readerDone,0,nullptr);assert(reader);
+ unsigned atTwoSeconds=0;do {
+  callA();callB();Sleep(16);workerTick();assert(state.transition.active&&msm2::native_source::active());msm2::Snapshot actual{};assert(msm2::sample(actual)&&ws::dot(ws::diag::actorAxes(actual.prefix).up,ws::Vec3{0,0,1})>.999f);
+  if(context.elapsed>=2&&atTwoSeconds==0)atTwoSeconds=pathAWrites.load();
+  msm2::native_source::drainLogs();
+ }while(context.elapsed<4.1);
+ readerDone=true;assert(WaitForSingleObject(reader,2000)==WAIT_OBJECT_0);CloseHandle(reader);
+ assert(state.pass&&state.maxHeldMs>2000&&state.maxHeldUpdates>=100&&pathAWrites.load()>atTwoSeconds+80&&pathBWrites.load()==pathAWrites.load());
+ auto heldA=pathAWrites.load(),heldB=pathBWrites.load();ws::native_source::event(3,owner);assert(!msm2::native_source::active());callA();callB();assert(pathAWrites==heldA&&pathBWrites==heldB);
+ context.wallRunActive=false;msm2::native_source::tick(context,"verified_deinit",true);msm2::native_source::tick(context,"verified_deinit",true);
+ auto summaryKey="ORIENTATION_LIFECYCLE_SUMMARY session="+std::to_string(sustainedSession)+" ";assert(countText(output,summaryKey)==1);auto summary=output.substr(output.find(summaryKey));assert(summary.find("source_exit_reason=verified_native_Deinit source_active_until_deinit=1 verified_deinit=1")!=std::string::npos&&state.summaryEmitted);
+ // A genuinely stale timestamp still closes the same session permanently and
+ // exposes the precise sub-gate, even when a new native Update later arrives.
+ prepare({0,0,1});auto staleSession=state.session;Sleep(125);workerTick(false);assert(!state.transition.active);callA();callB();assert(pathAWrites==0&&pathBWrites==0);
+ workerTick();assert(!state.transition.active);auto staleKey="NATIVE_LIFECYCLE_EXIT_DIAG session="+std::to_string(staleSession)+" ";assert(countText(output,staleKey)==1&&output.find(staleKey+"elapsed=")!=std::string::npos&&output.find("failing_sub_gate=fresh_update_age")!=std::string::npos);
+ ws::native_source::event(3,owner);context.wallRunActive=false;msm2::native_source::tick(context,"verified_deinit",true);assert(state.summaryEmitted&&output.find("source_exit_reason=native_lifecycle_inactive_or_stale source_active_until_deinit=0 verified_deinit=1")!=std::string::npos);
+ prepare({0,0,1});assert(!lifecycleWriteGate.test_and_set());ws::native_source::event(2,owner);lifecycleWriteGate.clear();workerTick();assert(!state.transition.active&&output.find("failing_sub_gate=native_event_collision")!=std::string::npos);
+ Token future{};future.phase=3;future.owner=owner;future.updates=1;future.initMs=future.updateMs=GetTickCount64()+1000;assert(!freshToken(future,GetTickCount64()));
+ prepare({0,0,1});auto beforeTokenRead=GetTickCount64();for(unsigned i=0;i<100&&GetTickCount64()==beforeTokenRead;++i)Sleep(1);ws::native_source::event(2,owner);Token later{};assert(ws::native_source::lifecycle(later)&&later.updateMs>beforeTokenRead);assert(!freshToken(later,beforeTokenRead)&&freshToken(later,GetTickCount64()));workerTick(false);assert(state.transition.active);
+ prepare({0,0,1});deinitOnSample=true;workerTick();assert(!msm2::native_source::active());callA();callB();assert(pathAWrites==0&&pathBWrites==0);context.wallRunActive=false;msm2::native_source::tick(context,"verified_deinit",true);assert(state.summaryEmitted&&state.exitReason==std::string("verified_native_Deinit"));
+ prepare({0,0,1});auto oldHero=fakeHero.hero;fakeHero.hero+=16;workerTick();assert(!state.transition.active&&output.find("failing_sub_gate=hero_identity_changed")!=std::string::npos);fakeHero.hero=oldHero;
  prepare({0,0,1});compact.rows[4]=0;auto before=compact;callB();assert(pathBWrites==0&&!std::memcmp(&before,&compact,64));compact=before;compact.rows[4]=3;before=compact;callB();assert(pathBWrites==0&&!std::memcmp(&before,&compact,64));
  auto ptr=reinterpret_cast<std::uintptr_t>(&compact);msm2::native_source::captureCopy(fakeHero.transform+16,ptr,0,0,imageBase+0x2cfc84b,ptr-0x28);msm2::native_source::captureCopy(fakeHero.transform,ptr,0,0,imageBase+0x2cfc84c,ptr-0x28);assert(pathBWrites==0);
  copyAuth=false;callB();copyAuth=true;assert(pathBWrites==0);sdkAvailable=false;callA();sdkAvailable=true;assert(pathAWrites==0);
@@ -75,4 +101,5 @@ int main(){
  assert(MH_DisableHook(reinterpret_cast<void*>(&ws_test_copy_writer))==MH_OK);assert(MH_RemoveHook(reinterpret_cast<void*>(&ws_test_copy_writer))==MH_OK);assert(MH_DisableHook(reinterpret_cast<void*>(&ws_test_native_source_writer))==MH_OK);assert(MH_RemoveHook(reinterpret_cast<void*>(&ws_test_native_source_writer))==MH_OK);assert(MH_Uninitialize()==MH_OK);assert(VirtualFree(mem,0,MEM_RELEASE));
  auto f=std::fopen("logs/windows_native_source_synthetic.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);
  puts("PASS: lock-free coherent A/B shared basis, A exact stack source, B compact36-only scale/metadata preservation, contended worker lock cannot reject hooks, A/E retention, identity/thread/lifecycle/auth/kill/degenerate gates; independent MinHook fixtures only");
+ puts("PASS: production native publication/worker and real MinHook A/B commits persist beyond2s through a >=4s WallRun with concurrent reader, SurfaceUp and sustained retention; synchronous Deinit passthrough and once/session lifecycle summary; real stale100ms/collision/Hero/time-order gates diagnose and remain closed");
 }

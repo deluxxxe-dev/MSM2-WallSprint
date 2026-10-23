@@ -8,11 +8,11 @@ out=root/'output'/('WallSprint_'+label)
 for name in ['LICENSE.txt','THIRD_PARTY_NOTICES.md']:
  shutil.copy2(root/name,out/name)
 (out/'analysis').mkdir(exist_ok=True)
-for name in ['V01B8_RUNTIME_RESULT.md', 'V01B8_RESULT.md', 'PATH_B_CALLER_DECODE.md', 'PATH_B_SOURCE_LAYOUT.md', 'PATH_B_STORE_MAP.md', 'V01B9_GATE.md', 'V01B9_RESULT.md', 'PATH_B_COMPACT3X3_PROOF.md', 'DUAL_SOURCE_RETENTION.md', 'V01C1_GATE.md', 'V01C1_RUNTIME_RESULT.md', 'V01C1_RESULT.md', 'PATH_B_PROOF_DECODER_FIX.md', 'V01C2_GATE.md', 'V01C2_RUNTIME_RESULT.md', 'V01C2_RESULT.md', 'THIRD_WRITER_TRACE.md', 'V01C3_GATE.md', 'V01C3_RUNTIME_RESULT.md', 'V01C3_RESULT.md', 'REAL_THREAD_ENUM_FIX.md', 'V01C4_GATE.md']+['V01B5_RESULT.md','V01B5_RESET_SUMMARY.json','IMMEDIATE_RESET_TRACE.md','RESET_WRITER_CANDIDATES.md','V01B6_GATE.md','V01B6_RESULT.md','PREARMED_RESET_TRACE.md','COMMON_WRITER_RESET_CALLS.md','RESET_WRITER_VERIFICATION.md','V01B7_GATE.md','V01B7_RUNTIME_RESULT.md','V01B7_RESULT.md','RESET_COPY_WRITER_ANALYSIS.md','DUAL_SOURCE_OWNERSHIP.md','V01B8_GATE.md']:
+for name in ['V01B8_RUNTIME_RESULT.md', 'V01B8_RESULT.md', 'PATH_B_CALLER_DECODE.md', 'PATH_B_SOURCE_LAYOUT.md', 'PATH_B_STORE_MAP.md', 'V01B9_GATE.md', 'V01B9_RESULT.md', 'PATH_B_COMPACT3X3_PROOF.md', 'DUAL_SOURCE_RETENTION.md', 'V01C1_GATE.md', 'V01C1_RUNTIME_RESULT.md', 'V01C1_RESULT.md', 'PATH_B_PROOF_DECODER_FIX.md', 'V01C2_GATE.md', 'V01C2_RUNTIME_RESULT.md', 'V01C2_RESULT.md', 'THIRD_WRITER_TRACE.md', 'V01C3_GATE.md', 'V01C3_RUNTIME_RESULT.md', 'V01C3_RESULT.md', 'REAL_THREAD_ENUM_FIX.md', 'V01C4_GATE.md', 'V01C4_RUNTIME_RESULT.md', 'V01C4_RESULT.md', 'SOURCE_LIFECYCLE_CONTINUITY.md', 'V01C5_GATE.md']+['V01B5_RESULT.md','V01B5_RESET_SUMMARY.json','IMMEDIATE_RESET_TRACE.md','RESET_WRITER_CANDIDATES.md','V01B6_GATE.md','V01B6_RESULT.md','PREARMED_RESET_TRACE.md','COMMON_WRITER_RESET_CALLS.md','RESET_WRITER_VERIFICATION.md','V01B7_GATE.md','V01B7_RUNTIME_RESULT.md','V01B7_RESULT.md','RESET_COPY_WRITER_ANALYSIS.md','DUAL_SOURCE_OWNERSHIP.md','V01B8_GATE.md']:
  shutil.copy2(root/'analysis'/name,out/'analysis'/name)
 (out/'logs').mkdir(exist_ok=True)
 # Only known independent cloud validation logs; no raw private game logs.
-for name in ['v01c4_build.log','v01c4_portable.log','v01c4_smoke.log','v01c4_hooks.log','v01c4_third.log','v01c4_baseline.log','v01c4_public_build.log','package_check.log']:
+for name in ['v01c5_build.log','v01c5_portable.log','v01c5_smoke.log','v01c5_hooks.log','v01c5_native.log','v01c5_baseline.log','v01c5_public_build.log','package_check.log']:
  if (root/'logs'/name).exists():shutil.copy2(root/'logs'/name,out/'logs'/name)
  else:print('SKIP: optional maintainer validation log',name)
 if (root.parent/'docs/CODEX_RESULT.md').exists():
@@ -21,12 +21,12 @@ shutil.copy2(out/'WallSprint.script',root.parent/'WallSprint.script')
 shutil.copy2(out/'BUILD_MANIFEST.json',root.parent/'BUILD_MANIFEST.json')
 # All corresponding tools, fixtures and license copies remain in source/.
 result=[]
-for name,folder in [('WallSprint_'+label+'_real_thread_enum_fix.zip',out),('WallSprint_'+label+'_source.zip',out/'source')]:
+for name,folder in [('WallSprint_'+label+'_sustained_lifecycle.zip',out),('WallSprint_'+label+'_source.zip',out/'source')]:
  path=root.parent/name
  with zipfile.ZipFile(path,'w',zipfile.ZIP_DEFLATED) as z:
   for p in sorted(folder.rglob('*')):
    if p.is_file():z.write(p,p.relative_to(folder.parent))
  with zipfile.ZipFile(path) as z:assert z.testzip() is None
  result.append({'path':str(path),'bytes':path.stat().st_size,'sha256':hashlib.sha256(path.read_bytes()).hexdigest()})
-(root/'logs/v01c4_release.json').write_text(json.dumps(result,indent=2)+'\n')
+(root/'logs/v01c5_release.json').write_text(json.dumps(result,indent=2)+'\n')
 print(json.dumps(result,indent=2))
