@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c7",
-  "package_version": "0.1.25",
+  "version": "v0.1c8",
+  "package_version": "0.1.26",
   "artifact": "WallSprint.script",
-  "sha256": "7651b7e735e6dc461182e0d61701c7e8097a1bcce71e436ee9092c84055eca29",
-  "dll_sha256": "4391650a6e4726032a397e370d1a70295045124ad12505561e0b0f6f45bcad89",
+  "sha256": "5b5f2de6e4139ab22cf79dd210273bc3d3aaf1e07afaf8db926e30f199541caf",
+  "dll_sha256": "9b9111fbb70393c2c31e14dd6b5fd4a767930e48f732905e309fd47b105abb6a",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -128,13 +128,13 @@
     "original_capture": "private PATH_B_FUNCTION/PATH_B_CODE before hook; never redistributed",
     "caller_original_sha256": "1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d"
   },
-  "validation": "Windows warnings-as-errors; portable ASan/UBSan; Wine ABI/MinHook/source/lifecycle/compact proof tests; native real270ms gap blocks A/B and same-identity real Update resumes preserved full/partial transition through clean Deinit; stale-to-hard controls; read-only Position preserved. Synthetic c7 PASS, real-game c7 PENDING.",
+  "validation": "Windows warnings-as-errors; portable ASan/UBSan; complete Wine ABI/MinHook/source/lifecycle/compact/watch/Position suites. Real detailed status API and production worker guard tests at first0.7s interpolation distinguish diagnostic-only loss from all four actual patch mutations; immutable/racing/hot cause attribution. c7 real270ms recovery and eleven stale-hard controls retained. c8 real-game hold/first real kill cause pending.",
   "limitations": [
-    "c6 real250ms transient gap caused early source close; c7 real-game recovery/visual hold still pending",
-    "During suspension vanilla orientation can change; no promise to remove every hitch flash without human verification",
-    "A short already-admitted guarded store may finish concurrently with close/kill",
-    "Bounded diagnostic thread coverage remains incomplete; no third-path patch",
-    "Position whole-path/W/exclusive-effects proof incomplete; no Position correction/later milestone"
+    "Real c7 source hard-closed after two writes; exact first caller remains unknown until c8 log",
+    "Only diagnostic field-plan runtime dependency is decoupled; all real source identities remain required",
+    "First-claim context consists of separate guarded reads; concurrent closers can affect sampled status",
+    "An already-admitted guarded store can overlap close/kill",
+    "c8 visual hold/flash/crash/Position requires human verification; Position whole-path/W/effects proof remains incomplete"
   ],
   "source_directory": "source",
   "path_b_override": true,
@@ -293,7 +293,38 @@
     "session_summary": true,
     "real_game_telemetry_verified": true
   },
-  "v01c7_gate": "SYNTHETIC_RECOVERY_PASS_REAL_LIFECYCLE_HOLD_PENDING",
+  "v01c7_gate": "REAL_HARD_KILL_AFTER_TWO_PATH_A_WRITES_FIRST_CALLER_UNKNOWN",
   "v01c6_gate": "REAL_POSITION_READ_ONLY_CONFIRMED_ORIENTATION_EARLY_EXIT_ON_TRANSIENT_250MS_UPDATE_GAP",
-  "historical_c5_full_WallRun_hold_verified": true
+  "historical_c5_full_WallRun_hold_verified": true,
+  "v01c8_gate": "SYNTHETIC_GUARD_AND_ATTRIBUTION_PASS_REAL_ROTATION_HOLD_PENDING",
+  "hard_kill_attribution": {
+    "first_cause_scope": "process",
+    "immutable": true,
+    "hot_log_deferred_to_worker": true,
+    "lossy_ring_independent": true,
+    "reason_and_origin_required": true,
+    "winner_thread_context_and_native_token": true,
+    "source_guard_subgates": true,
+    "caller_first_difference": true,
+    "four_patch_first_differences": true,
+    "raw_function_bytes_logged": false,
+    "normal_verified_Deinit": "explicit normal session close, not abnormal process kill",
+    "F8_shutdown_explicit": true,
+    "configure_cleanup_consumes_first_cause": false,
+    "production_reset_API": false
+  },
+  "observation_authentication": {
+    "side_effect_free_detailed_status": true,
+    "all_four_hooks_enabled_read_match": true,
+    "patch_bytes": 32,
+    "first_difference_sentinel": 32,
+    "status_transition_log_cap": 16,
+    "verified_available_required_for_source": true,
+    "startup_field_plan_required": true,
+    "runtime_diagnostic_field_plan_required_for_source": false,
+    "diagnostic_only_loss_stops_trace": true,
+    "actual_patch_loss_kills_source": true,
+    "input_auth_rechecked_after_tick": true,
+    "real_c7_first_cause": "UNKNOWN_PENDING_C8_LOG"
+  }
 }

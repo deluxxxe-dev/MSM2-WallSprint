@@ -1,0 +1,81 @@
+{
+  "version": "v0.1c8",
+  "package_version": "0.1.26",
+  "branch": "codex/v01c8-kill-cause-attribution",
+  "implementation_commit": "98c1d45108c89262750616c7258414cf762cac55",
+  "outputs": [
+    {
+      "path": "WallSprint_v0.1c8_kill_cause_attribution.zip",
+      "bytes": 2550134,
+      "sha256": "6e8076f4fb05108e4fd93f5c0cdf89b9c3be6f868ed402c2e9cf280bcb4c6a4f"
+    },
+    {
+      "path": "WallSprint_v0.1c8_source.zip",
+      "bytes": 510403,
+      "sha256": "3d8f0adbcaaf5f6f9b3cf324b85fff75801bad41028d07f8d9f5c3d6d43598cd"
+    }
+  ],
+  "test_pass_counts": {
+    "portable": 12,
+    "smoke": 4,
+    "hooks": 41
+  },
+  "total_pass": 57,
+  "historical_private_skips": 4,
+  "final_affected_native_publication_pass": 6,
+  "post_final_metadata_Dll_smoke_pass": 4,
+  "diagnostic_only_worker_loss_at_activation": "PASS_continued_A_B_full_transition_retention",
+  "independent_patch_mutation_results": [
+    {
+      "hook": "Init",
+      "first_difference": 7,
+      "first_reason": "worker_observation_plan_lost",
+      "origin": "worker"
+    },
+    {
+      "hook": "Entry",
+      "first_difference": 8,
+      "first_reason": "worker_observation_plan_lost",
+      "origin": "worker"
+    },
+    {
+      "hook": "Update",
+      "first_difference": 9,
+      "first_reason": "worker_observation_plan_lost",
+      "origin": "worker"
+    },
+    {
+      "hook": "Deinit",
+      "first_difference": 10,
+      "first_reason": "worker_observation_plan_lost",
+      "origin": "worker"
+    }
+  ],
+  "immutable_racing_first_cause": "PASS",
+  "real_gap_test_min_ms": 270,
+  "recovered_owned_native_summary": {
+    "wallrun_duration_ms": "4107",
+    "source_exit_reason": "verified_native_Deinit",
+    "source_active_until_deinit": "1",
+    "verified_deinit": "1",
+    "path_a_writes": "174",
+    "path_b_writes": "174",
+    "retention_pass": "1",
+    "max_held_ms": "1404",
+    "max_held_updates": "88",
+    "last_actor_up_dot_surface": "1",
+    "stale_suspend_count": "1",
+    "stale_resume_count": "1",
+    "max_stale_duration_ms": "176",
+    "first_hard_kill": "none"
+  },
+  "hard_stale_controls": 11,
+  "position_permission": false,
+  "actual_A_Position_bytes_replayed": false,
+  "standalone_source_build": "PASS_private_captures_absent",
+  "private_game_function_bytes_distributed": false,
+  "real_game_c5_normal_cadence_hold": "PASS",
+  "real_game_c7_early_hard_kill": "VERIFIED_FIRST_CALLER_UNKNOWN",
+  "real_game_c8_rotation_hold_and_first_cause": "PENDING",
+  "actual_position_writes": 0
+}
