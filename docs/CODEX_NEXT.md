@@ -1,218 +1,133 @@
-# Next task — WallSprint v0.1c12 Movement Source Lineage / Upstream Translation Ownership
+# Next task — WallSprint v0.1c13 Writer Entry Snapshot
 
 ## Base
 ```text
-base branch: codex/v01c11-movement-path-ownership
-implementation commit: 2129e69fe003e71bf705fb67f723b447cf3e3764
-published c11 head: 9593f0230e220770f2b34faf512ca4108c1825cc
-version: v0.1c11 / package 0.1.29
-branch: codex/v01c12-movement-source-lineage
+base branch: codex/v01c12-movement-source-lineage
+implementation: 4c84d634df4d629b237d4cc311d5e5cd6de4398c
+published head: c966d233787504dda88f65d1825c5c1c408a2d67
+version: v0.1c12 / package 0.1.30
+branch: codex/v01c13-writer-entry-snapshot
 ```
 
-Read first:
-- `analysis/V01C11_RUNTIME_RESULT.md`
-- `analysis/POSITION_WRITER_ATTRIBUTION.md`
-- `analysis/PATH_A_POSITION_CAUSALITY.md`
-- `analysis/MOVEMENT_SOURCE_OWNERSHIP.md`
-- `docs/PROJECT_STATE.md`
-- c11 `docs/CODEX_RESULT.md`
+Read `AGENTS.md`, `docs/DEV_RULES.md`, `docs/PROJECT_STATE.md`, `analysis/V01C12_RUNTIME_RESULT.md`, c12 `docs/CODEX_RESULT.md`, `analysis/MOVEMENT_WRITER_2CFC900.md`, and `analysis/MOVEMENT_CALLER_351EEB0.md`.
 
-## Real c11 evidence
-Human sequence: A/cardinal then E/diagonal.
+## Authoritative real result
+c12 A/cardinal and E/diagonal both preserve Surface Up through verified Deinit with hard kill 0 and `Position_writes_by_mod=0`.
 
-Both sessions preserved Surface Up through verified Deinit; Position writes by mod remained zero.
-
-Bounded Position watch captured real Transform Position writers on both runs:
+Verified chain:
 ```text
-writer_function_rva=0x2CFC900
-store RVAs=0x2CFC936/0x2CFC93C/0x2CFC942/0x2CFC945
-Transform destinations=+0x30/+0x34/+0x38/+0x3C
+writer 0x2CFC900..0x2CFC9B7
+stores 0x2CFC936/93C/942/945 -> Transform +0x30/+0x34/+0x38/+0x3C
+exact direct call 0x351EEAB -> 0x2CFC900
+return 0x351EEB0
+observed second return 0x351A020
 ```
 
-The caller chain correlated with actual translation on both walls:
+Both surfaces end at the same blocker:
 ```text
-caller return RVA=0x351EEB0
-caller2 return RVA≈0x351A020
-consumer writer=0x2CFC900
+first_unsupported_offset=0xA
+complete_writer_CFG=0
+source_prefix_proven=0
+source_capture_ready=0
+eligible_hits=0
+attempts=0
+true_entry_snapshot=0
+caller2_direct_relation_verified=0
+writable_source_proven=0
 ```
-
-Path A `0x2CFC580` also touches Position and can produce post-writer equality with its `source+0x30` candidate, but downstream Position writes are observed and exclusive effects are unproven. Path A Position remains denied.
-
-No c11 runtime candidate reached `writable_source_proven=1`.
 
 ## Objective
-Authenticate the movement-producing source lineage centered on:
-```text
-0x351EEB0 -> 0x2CFC900
-caller2≈0x351A020
-```
+Resolve the smallest missing edge: capture **true entry-time state** for verified Hero-targeted invocations of writer `0x2CFC900`, then pair each invocation with the existing Position-store hardware-watch events.
 
-Determine whether the upstream payload is final target Position, displacement, velocity, desired direction, root-motion translation or another locomotion vector.
+Answer only:
+1. Which entry register/pointer/stack value supplies values later written to +0x30/+0x34/+0x38/+0x3C?
+2. Is that source stable on A and E?
+3. What exact upstream producer edge remains if not writable?
 
-The preferred result is a caller-local/native source contract that a later revision can rewrite in SurfaceFrame coordinates without direct Actor Position spam.
+c13 remains read-only for movement and Position.
 
-**c12 is diagnostic/read-only for movement. Do not rewrite input or Position.**
-
-## Required work
-
-### 1. Preserve c10/c11 orientation and diagnostics
-Keep all existing build/lifecycle/orientation guards, c7-c10 safety logic, c11 Position watch and Position_writes_by_mod=0.
-
-### 2. Authenticate the 0x2CFC900 writer function
-Establish exact runtime-function boundary, complete decode, current code hash, the four Position stores and their source data lineage.
+## Implementation requirements
+- Preserve every c12 orientation/lifecycle/watch/build gate unchanged.
+- Add the smallest exact-build diagnostic that observes `0x2CFC900` at actual entry before its body mutates source registers.
+- Preferred: verified diagnostic detour/raw thunk at exact writer boundary/hash, transparent to ABI/flags/arguments/return. No typed game signature. Fail closed if transparency cannot be proven.
+- Filter to active verified WallRun + current verified Hero Transform. Generic Transform calls must not enter the evidence set.
+- Hard-cap eligible snapshots, e.g. <=32/session.
+- Capture only bounded GPR/XMM state, return address, RSP and a small stack-argument window. No arbitrary memory dump or full game body.
+- Guarded reads only; no PAGE_GUARD/protection changes or broad pointer chasing.
 
 Emit:
 ```text
-MOVEMENT_WRITER_PROOF
-writer_rva=0x2cfc900
-function_begin=
-function_end=
-function_size=
-complete_decode=
-current_code_hash=
-position_store_offsets=
-position_destination_offsets=
-entry_target_relation=
+MOVEMENT_WRITER_ENTRY_SNAPSHOT
+session= invocation_id= thread_id= elapsed=
+target_transform= return_rva= caller2_observed_rva=
+rcx= rdx= r8= r9= rsp=
+selected_gpr_state= selected_xmm_state= stack_arg_snapshot=
+entry_target_verified= code_integrity_verified=
+```
+
+## Pair exact invocation to Position stores
+Use an explicit per-thread/invocation token so an entry snapshot pairs only with its own `POSITION_WRITE_EVENT`s.
+
+Emit:
+```text
+MOVEMENT_WRITER_INVOCATION_MAP
+session= invocation_id= thread_id= target_transform=
+store_30_seen= store_34_seen= store_38_seen= store_3c_seen=
+position_before=(...) position_after=(...)
+entry_source_match_mask= entry_pointer_candidate_mask=
+source_stable=
+delta_normal= delta_forward= delta_right=
 reason=
 ```
 
-Do not commit/log the full private body.
-
-### 3. Prove the 0x351EEB0 callsite
-Find the exact call whose return address is `0x351EEB0`, prove target `0x2CFC900`, derive containing caller boundary and attribute the observed caller2 chain.
+## Entry source candidates
+Test only bounded candidates from GPR values, XMM lanes, readable 16-byte argument pointers, and bounded stack args.
 
 Emit:
 ```text
-MOVEMENT_CALLSITE_PROOF
-return_rva=0x351eeb0
-call_rva=
-target_rva=0x2cfc900
-direct_call_verified=
-caller_function_begin=
-caller_function_end=
-caller_hash=
-caller2_return_rva=
+MOVEMENT_ENTRY_SOURCE_CANDIDATE
+session= invocation_id= candidate_id=
+origin=GPR|XMM|pointer|stack
+origin_register_or_offset=
+value4=(...)
+relationship=current_position|final_position|delta_like|partial|none
+exact_store_match_mask=
+stable_across_invocations=
+stable_across_surfaces=
+typed_semantics=unknown
+writable_source_proven=0
 reason=
 ```
 
-### 4. Capture writer-entry source provenance
-For exact Hero-target calls from the verified callsite only, capture bounded read-only entry registers/stack/source values needed to explain Transform +0x30/+0x34/+0x38/+0x3C.
+`delta_like` is correlation only. Do not rename it velocity/displacement/root-motion without independent proof.
 
-Use complete instruction/data-flow analysis across 0x2CFC900.
+## Caller2 relation
+c12 proved direct `0x351EEAB -> 0x2CFC900`, but second return `0x351A020` failed a *direct* static relation check. Classify runtime relation conservatively as direct/indirect/wrapper/unresolved using stack/return evidence; do not force direct E8.
 
-Emit:
-```text
-MOVEMENT_WRITER_SOURCE_MAP
-caller_rva=0x351eeb0
-source_component_x=
-source_component_y=
-source_component_z=
-source_component_w=
-source_kind=register|stack|pointer|computed|unknown
-source_span=
-source_readable=
-source_identity_stable=
-post_store_match=
-position_w_semantics_observed=
-```
+## Write gate
+Do not set `writable_source_proven=1` unless real evidence proves exact source storage/range, true pre-mutation values, causal feed including W, Hero/session/thread lifetime, stable producer provenance, no relevant downstream conflict, and exclusive intended translation effect. Otherwise keep 0 and name the next exact edge.
 
-### 5. Backtrace construction in the caller
-Walk backward from the writer-entry payload through the verified caller and classify the nearest meaningful layer:
-```text
-final_target_position
-position_plus_delta
-displacement
-velocity_times_dt
-root_motion_delta
-desired_direction_times_speed
-unknown
-```
-
-Emit:
-```text
-MOVEMENT_CALLER_SOURCE_PROOF
-caller_rva=0x351eeb0
-source_storage=
-construction_kind=
-producer_rva=
-producer_caller_rva=
-uses_current_position=
-uses_dt=
-uses_direction_like_vector=
-uses_speed_like_scalar=
-surface_tangent_correlation=
-exclusive_to_hero_translation=
-writable_source_proven=
-reason=
-```
-
-### 6. Runtime source-to-translation correlation
-For bounded sampled calls, compare source/predicted XYZ with observed Hero translation and SurfaceFrame components.
-
-Emit:
-```text
-MOVEMENT_SOURCE_CORRELATION
-session=
-elapsed=
-source_payload=(...)
-observed_position_before=(...)
-observed_position_after=(...)
-predicted_delta=(...)
-observed_delta=(...)
-delta_error=
-delta_normal=
-delta_forward=
-delta_right=
-```
-
-Finite differences are correlation only, not physics velocity.
-
-### 7. Keep Path A Position as comparison only
-Do not upgrade `source+0x30` unless caller construction, W, downstream/exclusive effects and intended locomotion ownership are independently proven.
-
-### 8. Prefer a safer upstream tangent vector
-Search the authenticated caller/producer chain for displacement, velocity, desired direction or root-motion delta earlier than final Position. For each candidate emit the existing `MOVEMENT_SOURCE_CANDIDATE` fields and set `writable_source_proven=1` only with exact provenance and exclusive intended effect.
-
-If one is proven, document the future write contract but do not write it in c12.
-
-### 9. Optional read-only input correlation only after source proof
-No input hook/rewrite. If a direction-like source is authenticated, read-only correlation with already-known control data is allowed; no speculative ABI/game call.
-
-## Safety
-No direct Actor/Transform Position write, Path A Position write, 0x351EEB0/0x2CFC900 source write, input rewrite, custom gravity/velocity, active adhesion, PAGE_GUARD/protection mutation, camera/animation/traversal extensions.
-
-If full source lineage cannot be proven, ship diagnostic PASS with the exact missing edge.
+## No scope expansion
+No Position/source modification, input hook/rewrite, custom movement/gravity, active adhesion, camera/animation/traversal work, PAGE_GUARD mutation or unbounded tracing. Do not expand into a general CFG project merely to force success.
 
 ## Tests
-Add offline/native coverage for callsite verification, source-lineage variants, computed target Position/displacement/velocity*dt patterns, multi-writer/overwrite/W mismatch negatives, wrong identity/lifecycle cases, A/E correlation, and unchanged c10/c11 behavior.
+Cover transparent entry thunk state preservation, exact build/writer gate, Hero filtering, invocation pairing, concurrent/reentrant calls, wrong lifecycle identity, guarded read refusal, candidate false-positive rejection, caller2 relation classification, c12 regressions, and cleanup/unhook.
 
 ## Human test
-Preferred:
 ```text
-1. A/cardinal ~4 s continuous WallRun
-2. E/diagonal ~4 s continuous WallRun
+A/cardinal ~4 s
+E/diagonal ~4 s
 ```
-No special stick pattern unless README_TEST explicitly adds a read-only correlation pattern based on a source c12 actually authenticates.
+Ordinary input. No visible movement change expected. Full private logs. Video optional backup; logs authoritative.
 
-Return complete private log and note any crash/hitch/freeze or posture regression. No visible movement change is expected.
-
-## PASS
-Full PASS requires writer/callsite/source lineage/caller construction and A/E runtime correlation, plus at least one safe upstream source with `writable_source_proven=1`, while Position writes stay zero and orientation remains stable.
-
-Diagnostic PASS is acceptable if the exact remaining blocker is isolated.
-
-Only after a safe source is admitted should the next handoff authorize a minimal surface-relative movement/source rewrite.
-
-## Outputs
+## Required outputs
 ```text
-analysis/V01C11_RUNTIME_RESULT.md
-analysis/MOVEMENT_WRITER_2CFC900.md
-analysis/MOVEMENT_CALLER_351EEB0.md
-analysis/MOVEMENT_SOURCE_LINEAGE.md
-analysis/V01C12_GATE.md
+analysis/V01C12_RUNTIME_RESULT.md
+analysis/MOVEMENT_WRITER_ENTRY_SNAPSHOT.md
+analysis/MOVEMENT_ENTRY_SOURCE_CANDIDATES.md
+analysis/V01C13_GATE.md
 README_TEST.md
+docs/PROJECT_STATE.md
 docs/CODEX_RESULT.md
-WallSprint_v0.1c12_movement_source_lineage.zip
+WallSprint_v0.1c13_writer_entry_snapshot.zip
 ```
-
-Follow `AGENTS.md` / `docs/DEV_RULES.md`. Do not commit raw user logs/video/screenshots or private full captured game-function bytes.
