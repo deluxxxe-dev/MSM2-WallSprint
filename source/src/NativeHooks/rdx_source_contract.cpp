@@ -656,9 +656,360 @@ void classifyCallee(CallEffect &r, const unsigned char *b, std::size_t n,
   }
   r.reason = "callee_no_bounded_plain_return";
 }
+const char *aliasKindName(AliasKind k) noexcept {
+  constexpr const char *names[] = {
+      "callee_private_stack", "caller_shadow_or_return_area",
+      "source_span_exact",    "source_span_possible_alias",
+      "hero_transform_exact", "hero_transform_possible_alias",
+      "rip_relative_global",  "known_disjoint_object",
+      "unknown_pointer"};
+  return k < aliasKinds ? names[k] : "unknown_pointer";
+}
+namespace {
+constexpr int globalRoot = 16;
+Value aliasAddress(const State &s, const cs_insn &ins, const cs_x86_op &op,
+                   std::uintptr_t base) {
+  if (ins.detail->x86.addr_size != 8)
+    return {};
+  if (op.type == X86_OP_MEM && op.mem.base == X86_REG_RIP &&
+      op.mem.index == X86_REG_INVALID && op.mem.segment == X86_REG_INVALID &&
+      ins.detail->x86.addr_size == 8)
+    return {pointer, globalRoot,
+            std::int64_t(base + ins.address + ins.size) + op.mem.disp};
+  return s.address(op);
+}
+bool globalLea(Slice &s, const cs_insn &ins, std::uintptr_t base,
+               std::size_t imageSize) {
+  const auto &x = ins.detail->x86;
+  if (ins.id != X86_INS_LEA || x.op_count != 2 ||
+      x.operands[0].type != X86_OP_REG || x.operands[0].size != 8 ||
+      reg(x.operands[0].reg) < 0 || x.operands[1].type != X86_OP_MEM ||
+      x.operands[1].mem.base != X86_REG_RIP)
+    return false;
+  auto a = aliasAddress(s.s, ins, x.operands[1], base);
+  if (a.kind != pointer || a.root != globalRoot || a.off <= 0 ||
+      std::uint64_t(a.off) >= imageSize)
+    return false;
+  s.s.g[reg(x.operands[0].reg)] = a;
+  return true;
+}
+bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
+  a.resolved = a.sourceNoWrite = a.transformNoWrite = false;
+  auto fail = [&](std::uintptr_t at, const char *mnemonic, const char *effect,
+                  const char *reason) {
+    a.barrier = at;
+    std::memset(a.mnemonic, 0, sizeof(a.mnemonic));
+    for (unsigned i = 0; i + 1 < sizeof(a.mnemonic) && mnemonic[i]; ++i)
+      a.mnemonic[i] = mnemonic[i];
+    a.barrierEffect = effect;
+    a.reason = reason;
+    call.noWrite = false;
+    call.barrier = at;
+    call.reason = reason;
+    std::memcpy(call.mnemonic, a.mnemonic, sizeof(call.mnemonic));
+    return false;
+  };
+  if (!a.authenticated || !call.instructionVerified || !call.boundaryVerified ||
+      call.begin != call.target || call.end - call.begin != a.size ||
+      a.size > aliasByteCap || ++a.analyses > 16)
+    return fail(call.target, "identity", "identity_or_analysis_cap",
+                "exact_callee_identity_or_call_analysis_cap_refused");
+  auto sp = writer.s.g[4];
+  if (sp.kind != pointer || sp.root != 4 || sp.off > 0 || sp.off < -3960)
+    return fail(call.call, "call", "caller_stack",
+                "writer_precall_stack_provenance_unresolved");
+  const std::int64_t entrySp = sp.off - 8;
+  // The natural CALL push itself must not destroy a tracked caller carrier.
+  for (const auto &slot : writer.s.stack)
+    if (slot.used && slot.off < sp.off && slot.off + slot.width > entrySp)
+      return fail(call.call, "call", "return_area",
+                  "natural_call_return_overlaps_writer_saved_slot");
+  const unsigned argRegs[] = {1, 2, 8, 9};
+  for (unsigned i = 0; i < 4; ++i) {
+    auto v = writer.s.g[argRegs[i]];
+    const char *origin =
+        v.kind == pointer && v.root == 1   ? "entry_writer_RCX_transform"
+        : v.kind == pointer && v.root == 2 ? "entry_writer_RDX_source"
+        : v.kind == pointer && v.root == 4 ? "writer_entry_RSP_relative"
+        : v.kind == pointer && v.root == globalRoot ? "exact_image_RIP_relative"
+        : v.kind == constant ? "constant_bits_NOT_pointer"
+                             : "unknown_argument";
+    if (a.analyses == 1) {
+      a.argumentOrigins[i] = origin;
+      a.argumentOffsets[i] = v.off;
+    } else if (std::strcmp(a.argumentOrigins[i], origin) ||
+               a.argumentOffsets[i] != v.off) {
+      a.argumentOrigins[i] = "conflicting_writer_path_origins";
+      a.argumentsComplete = false;
+      return fail(call.call, "call", "argument_provenance_conflict",
+                  "writer_paths_disagree_on_exact_call_argument_origin");
+    }
+    if (v.kind == pointer &&
+        (v.root == 2 || (v.root == 4 && v.off < 0x38 && v.off + 16 > 0x28)))
+      a.sourceArgMask |= 1u << i;
+    if (v.kind == pointer && v.root == 1)
+      a.transformArgMask |= 1u << i;
+  }
+  a.argumentsComplete = true;
+  Decode d;
+  if (!d.run(a.code, a.size, call.begin))
+    return fail(call.begin, "decode_failure", "decode",
+                "callee_alias_complete_decode_failed");
+  struct Node {
+    std::array<int, 2> next{{-1, -1}};
+    unsigned count{};
+    bool branch{}, cond{}, ret{};
+  };
+  std::array<Node, aliasByteCap> nodes{};
+  std::array<int, aliasByteCap> boundaries{};
+  boundaries.fill(-1);
+  for (unsigned i = 0; i < d.n; ++i)
+    boundaries[d.p[i].address - call.begin] = int(i);
+  unsigned branches = 0;
+  for (unsigned i = 0; i < d.n; ++i) {
+    auto &ins = d.p[i];
+    auto &g = nodes[i];
+    const auto &x = ins.detail->x86;
+    if (group(ins, CS_GRP_JUMP)) {
+      g.branch = true;
+      g.cond = conditional(ins.id);
+      if (++branches > 4 || (ins.id != X86_INS_JMP && !g.cond) ||
+          x.op_count != 1 || x.operands[0].type != X86_OP_IMM)
+        return fail(ins.address, ins.mnemonic, "indirect_or_branch_cap",
+                    "callee_indirect_transfer_or_branch_cap_refused");
+      auto dest = x.operands[0].imm;
+      if (dest <= std::int64_t(ins.address) ||
+          dest < std::int64_t(call.begin) || dest >= std::int64_t(call.end) ||
+          boundaries[dest - call.begin] < 0)
+        return fail(
+            ins.address, ins.mnemonic, "nonlocal_backedge_or_boundary",
+            "callee_nonforward_or_nonlocal_or_mid_instruction_branch_refused");
+      g.next[g.count++] = boundaries[dest - call.begin];
+      if (g.cond) {
+        if (i + 1 == d.n)
+          return fail(ins.address, ins.mnemonic, "fallthrough",
+                      "callee_conditional_leaves_boundary");
+        g.next[g.count++] = int(i + 1);
+      }
+    } else if (ins.id == X86_INS_RET && x.op_count == 0)
+      g.ret = true;
+    else if (i + 1 < d.n)
+      g.next[g.count++] = int(i + 1);
+  }
+  struct Work {
+    Slice slice{};
+    unsigned pc{};
+  };
+  std::array<Work, 16> todo{};
+  unsigned pending = 1, states = 1;
+  todo[0].slice = writer;
+  todo[0].slice.s.g[4] = plus(sp, -8);
+  const auto initial = todo[0].slice.s;
+  a.stackLow = std::min(a.stackLow, entrySp);
+  unsigned gpr = 0xf07, xmmMask = 0x3f;
+  auto recordWrite = [&](const cs_insn &ins, Value addr, unsigned width,
+                         const State &state) {
+    AliasKind kind = unknownPointer;
+    Value normalized = addr;
+    if (normalized.kind == pointer && normalized.root == 2) {
+      normalized.root = 4;
+      normalized.off += 0x28;
+    }
+    auto overlap = [](std::int64_t at, unsigned n, std::int64_t lo,
+                      std::int64_t hi) {
+      return at < hi && at + std::int64_t(n) > lo;
+    };
+    bool safe = false;
+    if (normalized.kind == pointer && normalized.root == 4) {
+      if (overlap(normalized.off, width, 0x28, 0x38))
+        kind = sourceExact;
+      else if (overlap(normalized.off, width, 0, 8))
+        kind = callerArea; // writer entry return slot is also protected
+      else if (overlap(normalized.off, width, entrySp, entrySp + 8))
+        kind = callerArea;
+      else if (normalized.off >= entrySp + 8 &&
+               normalized.off + width <= entrySp + 40) {
+        kind = callerArea;
+        safe = true;
+      } else if (state.g[4].kind == pointer && state.g[4].root == 4 &&
+                 normalized.off >= state.g[4].off &&
+                 normalized.off + width <= entrySp) {
+        kind = privateStack;
+        safe = true;
+      } else if (addr.kind == pointer && addr.root == 2 &&
+                 normalized.off >= -4096 && normalized.off + width <= 4096) {
+        kind = otherDisjoint;
+        safe = true;
+      }
+      if (safe && (normalized.off < -4096 || normalized.off + width > 4096))
+        safe = false;
+    } else if (addr.kind == pointer && addr.root == 1)
+      kind =
+          overlap(addr.off, width, 0, 64) ? transformExact : transformPossible;
+    else if (addr.kind == pointer && addr.root == globalRoot && addr.off > 0 &&
+             std::uint64_t(addr.off) < a.imageSize &&
+             width <= a.imageSize - std::uint64_t(addr.off)) {
+      kind = imageGlobal;
+      safe = true;
+      a.usesGlobals = true;
+    }
+    a.barrierRoot = addr.kind == pointer ? addr.root : -1;
+    a.barrierOffset = addr.off;
+    a.barrierWidth = width;
+    bool found = false;
+    for (unsigned j = 0; j < a.writes; ++j)
+      if (a.writeSites[j].at == ins.address) {
+        auto &old = a.writeSites[j];
+        found = true;
+        if (old.root != normalized.root || old.offset != normalized.off ||
+            old.width != width || old.kind != kind) {
+          --a.counts[old.kind];
+          old.kind = unknownPointer;
+          ++a.counts[unknownPointer];
+          return fail(ins.address, ins.mnemonic,
+                      "conflicting_address_provenance",
+                      "callee_write_address_differs_across_reaching_states");
+        }
+        break;
+      }
+    if (!found) {
+      if (a.writes == aliasWriteCap)
+        return fail(ins.address, ins.mnemonic, "write_cap",
+                    "callee_unique_write_cap_exceeded");
+      a.writeSites[a.writes++] = {ins.address, width, normalized.root,
+                                  normalized.off, kind};
+      ++a.counts[kind];
+    }
+    if (!safe)
+      return fail(
+          ins.address, ins.mnemonic, aliasKindName(kind),
+          "callee_write_not_proven_disjoint_from_both_protected_objects");
+    if (normalized.root == 4) {
+      a.stackLow = std::min(a.stackLow, normalized.off);
+      a.stackHigh = std::max(a.stackHigh, normalized.off + width);
+      for (const auto &slot : writer.s.stack)
+        if (slot.used &&
+            overlap(normalized.off, width, slot.off, slot.off + slot.width))
+          return fail(ins.address, ins.mnemonic, "writer_saved_slot_alias",
+                      "callee_write_overlaps_precall_writer_saved_carrier");
+    }
+    return true;
+  };
+  while (pending) {
+    auto work = todo[--pending];
+    for (;;) {
+      auto &ins = d.p[work.pc];
+      auto &g = nodes[work.pc];
+      const auto &x = ins.detail->x86;
+      if (++a.visits > 4096)
+        return fail(ins.address, ins.mnemonic, "visit_cap",
+                    "callee_total_instruction_visit_cap_exceeded");
+      if (g.branch) {
+        if (g.cond) {
+          if (pending == todo.size() || states + 2 > 31)
+            return fail(ins.address, ins.mnemonic, "state_cap",
+                        "callee_local_state_cap_exceeded");
+          todo[pending] = work;
+          todo[pending++].pc = unsigned(g.next[0]);
+          states += 2;
+          work.pc = unsigned(g.next[1]);
+        } else
+          work.pc = unsigned(g.next[0]);
+        continue;
+      }
+      if (g.ret) {
+        if (!equal(work.slice.s.g[4], initial.g[4]))
+          return fail(ins.address, ins.mnemonic, "stack_return",
+                      "callee_stack_not_restored_at_return");
+        for (unsigned j = 0; j < 16; ++j) {
+          if (!equal(work.slice.s.g[j], initial.g[j]))
+            gpr |= 1u << j;
+          for (unsigned lane = 0; lane < 4; ++lane)
+            if (!equal(work.slice.s.x[j * 4 + lane], initial.x[j * 4 + lane]))
+              xmmMask |= 1u << j;
+        }
+        if (++a.paths > 64)
+          return fail(ins.address, ins.mnemonic, "path_cap",
+                      "callee_total_return_path_cap_exceeded");
+        break;
+      }
+      if (group(ins, CS_GRP_CALL) || group(ins, CS_GRP_RET) ||
+          group(ins, CS_GRP_IRET) || group(ins, CS_GRP_INT))
+        return fail(ins.address, ins.mnemonic, "nested_or_unsupported_control",
+                    "callee_nested_call_or_unsupported_transfer_no_expansion");
+      bool move = ins.id == X86_INS_MOV || ins.id == X86_INS_MOVSS ||
+                  ins.id == X86_INS_VMOVSS || ins.id == X86_INS_MOVSD ||
+                  ins.id == X86_INS_VMOVSD || ins.id == X86_INS_MOVAPS ||
+                  ins.id == X86_INS_MOVUPS || ins.id == X86_INS_MOVDQA ||
+                  ins.id == X86_INS_MOVDQU || ins.id == X86_INS_VMOVAPS ||
+                  ins.id == X86_INS_VMOVUPS || ins.id == X86_INS_VMOVDQA ||
+                  ins.id == X86_INS_VMOVDQU;
+      bool memoryWrite = false, globalWrite = false;
+      if (ins.id == X86_INS_PUSH && x.op_count == 1 &&
+          x.operands[0].type == X86_OP_REG && x.operands[0].size == 8) {
+        auto next = plus(work.slice.s.g[4], -8);
+        auto allocated = work.slice.s;
+        allocated.g[4] = next;
+        if (!recordWrite(ins, next, 8, allocated))
+          return false;
+      }
+      for (unsigned j = 0; j < x.op_count; ++j)
+        if (x.operands[j].type == X86_OP_MEM &&
+            ((x.operands[j].access & CS_AC_WRITE) || (j == 0 && move))) {
+          memoryWrite = true;
+          auto address = aliasAddress(work.slice.s, ins, x.operands[j], 0);
+          if (!recordWrite(ins, address, x.operands[j].size, work.slice.s))
+            return false;
+          if (!move || j != 0 || x.op_count != 2)
+            return fail(ins.address, ins.mnemonic, "unsupported_write_effect",
+                        "callee_write_instruction_semantics_not_supported");
+          globalWrite = address.root == globalRoot;
+        }
+      bool modeled = false;
+      if (globalWrite)
+        modeled = true; // Explicit store only; no registers change.
+      else if (globalLea(work.slice, ins, 0, a.imageSize))
+        modeled = true;
+      else
+        modeled = work.slice.step(ins, false);
+      if (!modeled)
+        return fail(ins.address, ins.mnemonic,
+                    memoryWrite ? "unsupported_write_effect"
+                                : "unsupported_instruction_effect",
+                    "callee_exact_relevant_instruction_effect_unresolved");
+      auto currentSp = work.slice.s.g[4];
+      if (currentSp.kind != pointer || currentSp.root != 4 ||
+          currentSp.off < -4096 || currentSp.off > entrySp)
+        return fail(ins.address, ins.mnemonic, "stack_bounds",
+                    "callee_stack_outside_bounded_frame");
+      if (!g.count)
+        return fail(ins.address, ins.mnemonic, "fallthrough",
+                    "callee_path_has_no_authenticated_return");
+      work.pc = unsigned(g.next[0]);
+    }
+  }
+  call.gprClobber |= gpr;
+  call.xmmClobber |= xmmMask;
+  call.privateStackLow = std::min(call.privateStackLow, a.stackLow - entrySp);
+  call.noWrite = true;
+  call.effect = "source_span_no_write_proven";
+  call.barrier = 0;
+  std::memset(call.mnemonic, 0, sizeof(call.mnemonic));
+  std::memcpy(call.mnemonic, "none", 4);
+  call.reason = "all_bounded_callee_paths_source_and_transform_disjoint_"
+                "conditional_on_runtime_regions";
+  a.resolved = a.sourceNoWrite = a.transformNoWrite = true;
+  a.barrier = 0;
+  a.barrierEffect = "none";
+  std::memset(a.mnemonic, 0, sizeof(a.mnemonic));
+  std::memcpy(a.mnemonic, "none", 4);
+  a.reason = call.reason;
+  return true;
+}
+} // namespace
 Writer branchWriter(const unsigned char *b, std::size_t n,
-                    const std::array<unsigned, 4> &sites,
-                    CallEffect *call) noexcept {
+                    const std::array<unsigned, 4> &sites, CallEffect *call,
+                    CalleeAlias *alias) noexcept {
   Writer r{};
   r.branchAware = true;
   Decode d;
@@ -859,19 +1210,35 @@ Writer branchWriter(const unsigned char *b, std::size_t n,
       if (group(ins, CS_GRP_CALL) && call && call->call == call->writer + at) {
         call->relevant = true;
         const auto &x = ins.detail->x86;
-        bool exact =
+        bool anchor =
             call->instructionVerified && call->boundaryVerified &&
-            call->decoded && call->noWrite && x.op_count == 1 &&
+            call->decoded && x.op_count == 1 &&
             x.operands[0].type == X86_OP_IMM &&
             call->writer + ins.address + ins.size == call->ret &&
             call->writer + std::uintptr_t(x.operands[0].imm) == call->target;
+        if (alias && !alias->authenticated) {
+          fail(at, ins.mnemonic, alias->reason);
+          return r;
+        }
+        if (alias && !anchor) {
+          alias->resolved = alias->sourceNoWrite = alias->transformNoWrite =
+              false;
+          alias->reason = "exact_writer_callsite_return_or_target_mismatch";
+          fail(at, ins.mnemonic, alias->reason);
+          return r;
+        }
+        if (alias && !aliasCallee(*alias, *call, work.slice)) {
+          fail(at, ins.mnemonic, alias->reason);
+          return r;
+        }
+        bool exact = anchor && call->noWrite;
         auto sp = work.slice.s.g[4];
         // Natural CALL pushes its return in the writer's stack. The existing
         // per-invocation TEB proof binds source to entry RSP+0x28; neither that
         // span nor any modeled saved carrier may overlap return/shadow space.
         bool stackSafe = sp.kind == pointer && sp.root == 4 && sp.off <= 0 &&
                          sp.off >= -4096;
-        if (stackSafe)
+        if (stackSafe && !alias)
           for (auto &slot : work.slice.s.stack)
             if (slot.used && slot.off < sp.off + 32 &&
                 slot.off + slot.width > sp.off - 8 + call->privateStackLow)
@@ -884,6 +1251,10 @@ Writer branchWriter(const unsigned char *b, std::size_t n,
         }
         r.callStackLow =
             std::min(r.callStackLow, sp.off - 8 + call->privateStackLow);
+        if (alias) {
+          r.callStackLow = std::min(r.callStackLow, alias->stackLow);
+          r.callStackHigh = std::max(r.callStackHigh, alias->stackHigh);
+        }
         for (unsigned reg = 0; reg < 16; ++reg) {
           if (call->gprClobber & (1u << reg))
             work.slice.s.g[reg] = {};
@@ -893,7 +1264,10 @@ Writer branchWriter(const unsigned char *b, std::size_t n,
         }
         callApplied = true;
       }
-      if (!callApplied && !work.slice.step(ins, true)) {
+      if (!callApplied &&
+          !(alias && globalLea(work.slice, ins, call ? call->writer : 0,
+                               alias->imageSize)) &&
+          !work.slice.step(ins, true)) {
         fail(at, ins.mnemonic,
              "unsupported_relevant_writer_instruction_or_memory_effect");
         return r;

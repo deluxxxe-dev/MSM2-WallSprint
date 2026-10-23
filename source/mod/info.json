@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.34",
-  "description": "WallSprint v0.1c16 Writer Call-Effect Contract. Exact writer-local call authentication, bounded leaf effect classification and conservative register clobbers. Position/source/input/movement writes remain disabled; producer edge is deferred.",
+  "version": "0.1.35",
+  "description": "WallSprint v0.1c17 Callee Alias Contract. Exact callee identity and bounded write-address provenance relative to entry source and Transform. Position/source/input/movement writes remain disabled; producer edge is deferred.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

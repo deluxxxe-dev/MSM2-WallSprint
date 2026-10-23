@@ -27,10 +27,54 @@ CallEffect exactCall(const unsigned char *, std::size_t,
                      unsigned callOffset, unsigned returnOffset) noexcept;
 void classifyCallee(CallEffect &, const unsigned char *, std::size_t,
                     std::uintptr_t begin, std::uintptr_t end) noexcept;
+inline constexpr unsigned aliasByteCap = 137, aliasWriteCap = 24;
+enum AliasKind {
+  privateStack,
+  callerArea,
+  sourceExact,
+  sourcePossible,
+  transformExact,
+  transformPossible,
+  imageGlobal,
+  otherDisjoint,
+  unknownPointer,
+  aliasKinds
+};
+struct AliasWrite {
+  std::uintptr_t at{};
+  unsigned width{};
+  int root{};
+  std::int64_t offset{};
+  AliasKind kind = unknownPointer;
+};
+struct CalleeAlias {
+  // Only authenticated current target bytes; never dereferenced process
+  // pointers.
+  const unsigned char *code{};
+  std::size_t size{}, imageSize{};
+  bool authenticated{}, argumentsComplete{}, resolved{}, sourceNoWrite{},
+      transformNoWrite{}, usesGlobals{};
+  unsigned analyses{}, visits{}, paths{}, writes{}, sourceArgMask{},
+      transformArgMask{};
+  std::array<const char *, 4> argumentOrigins{
+      {"unknown", "unknown", "unknown", "unknown"}};
+  std::array<std::int64_t, 4> argumentOffsets{};
+  std::array<unsigned, aliasKinds> counts{};
+  std::array<AliasWrite, aliasWriteCap> writeSites{};
+  std::int64_t stackLow{}, stackHigh{};
+  std::uintptr_t barrier{};
+  int barrierRoot{};
+  std::int64_t barrierOffset{};
+  unsigned barrierWidth{};
+  const char *barrierEffect = "none";
+  const char *reason = "callee_alias_identity_not_authenticated";
+  char mnemonic[32] = "none";
+};
+const char *aliasKindName(AliasKind) noexcept;
 struct Writer {
   bool decoded{}, prefix{}, xyz{}, w{}, wConstant{};
   int wSourceReg{};
-  std::int64_t wSourceOffset{}, callStackLow{};
+  std::int64_t wSourceOffset{}, callStackLow{}, callStackHigh{};
   unsigned mask{}, barrier{}, prefixEnd{};
   std::array<unsigned, 4> stores{};
   const char *wKind = "unknown";
@@ -54,7 +98,8 @@ Writer writer(const unsigned char *,
 // the captured current-thread TEB stack bounds.
 Writer branchWriter(const unsigned char *, std::size_t,
                     const std::array<unsigned, 4> &exactStores,
-                    CallEffect *call = nullptr) noexcept;
+                    CallEffect *call = nullptr,
+                    CalleeAlias *alias = nullptr) noexcept;
 struct Caller {
   bool decoded{}, prefix{}, rdxLocal{}, owned{}, constructed{};
   std::int64_t rspOffset{}, rdxOffset{};

@@ -74,3 +74,7 @@ downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
 Do not investigate or mutate upstream producer `0x351EB00` until this writer-local callee alias contract is resolved.
+
+## c17 handoff consumption
+
+C17 consumes this compact result and pins its exact measured callee boundary/hash. No private full body/raw log is requested or published; new address classifications await actual c17 A/E.

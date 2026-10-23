@@ -71,6 +71,14 @@ struct Evidence {
 std::array<Evidence, windows> evidence;
 ws::rdx::Writer contractWriter{};
 ws::rdx::CallEffect writerCall{};
+ws::rdx::CalleeAlias writerAlias{};
+constexpr const char *calleeAliasHash =
+    "2d62e54b270c46f4babc8120a7e56123e3fe467ca383895d57a989f853095a9d";
+bool calleeAliasIdentity(std::uintptr_t t, std::uintptr_t b, std::uintptr_t e,
+                         const char *hash) noexcept {
+  return t == 0x2b23560 && b == 0x2b23560 && e == 0x2b235e9 && hash &&
+         !std::strcmp(hash, calleeAliasHash);
+}
 std::array<unsigned char, ws::rdx::calleeByteCap> writerCallee{};
 unsigned writerCalleeSize{};
 char writerCalleeHash[65]{};
@@ -160,7 +168,18 @@ bool callStackFits(const Snapshot &v) noexcept {
   return !writerCall.relevant ||
          (contractWriter.callStackLow < 0 && v.rsp >= v.stackLow &&
           v.rsp <= v.stackHigh &&
-          v.rsp - v.stackLow >= std::uint64_t(-contractWriter.callStackLow));
+          v.rsp - v.stackLow >= std::uint64_t(-contractWriter.callStackLow) &&
+          contractWriter.callStackHigh >= 0 &&
+          v.stackHigh - v.rsp >= std::uint64_t(contractWriter.callStackHigh));
+}
+bool aliasRegionsFit(const Snapshot &v) noexcept {
+  return !writerAlias.usesGlobals ||
+         (imageBase <= UINTPTR_MAX - contractImageSize &&
+          v.target <= UINTPTR_MAX - 64 && v.stackLow <= v.stackHigh &&
+          (v.stackHigh <= imageBase ||
+           v.stackLow >= imageBase + contractImageSize) &&
+          (v.target + 64 <= imageBase ||
+           v.target >= imageBase + contractImageSize));
 }
 bool callIntact() {
   unsigned char current[5]{};
@@ -523,10 +542,16 @@ void finish(unsigned slot) {
     std::memcpy(b, v.pointed[0].data(), 16);
     xyz = matchMask(b, a.values, 15) & 7;
   }
-  const bool calleeCodeVerified = writerCall.noWrite && writerCallCurrent();
+  const bool calleeCodeVerified =
+      writerAlias.authenticated && writerAlias.resolved &&
+      calleeAliasIdentity(writerCall.target, writerCall.begin, writerCall.end,
+                          writerCalleeHash) &&
+      writerCall.noWrite && writerCallCurrent();
   const bool callCodeVerified = !writerCall.relevant || calleeCodeVerified;
   const bool callStackVerified = callStackFits(v);
-  bool causal = callCodeVerified && callStackVerified && contractConfigured &&
+  const bool globalRegionsVerified = aliasRegionsFit(v);
+  bool causal = callCodeVerified && callStackVerified &&
+                globalRegionsVerified && contractConfigured &&
                 contractWriter.branchAware && contractWriter.bounded &&
                 contractWriter.exactSites && contractWriter.allRelevant &&
                 contractWriter.xyz && complete && a.ordered && sites &&
@@ -536,16 +561,19 @@ void finish(unsigned slot) {
   writeLog(
       "MOVEMENT_WRITER_CALL_INTEGRITY session=%llu invocation_id=%llu "
       "relevant_call=%u current_code_verified=%u stack_footprint_verified=%u "
-      "writer_entry_stack_low_offset=%lld writable_source_proven=0",
+      "writer_entry_stack_low_offset=%lld global_regions_verified=%u "
+      "writable_source_proven=0",
       (unsigned long long)v.session, (unsigned long long)v.id,
       unsigned(writerCall.relevant), unsigned(calleeCodeVerified),
-      unsigned(callStackVerified), (long long)contractWriter.callStackLow);
+      unsigned(callStackVerified), (long long)contractWriter.callStackLow,
+      unsigned(globalRegionsVerified));
   bool wCausal =
       (!writerCall.relevant || (storage.sameBytes && distinctTarget)) &&
-      callCodeVerified && callStackVerified && contractConfigured &&
-      contractWriter.branchAware && contractWriter.bounded &&
-      contractWriter.exactSites && contractWriter.w && complete && a.ordered &&
-      sites && (!contractWriter.wConstant || w == contractWriter.wBits);
+      callCodeVerified && callStackVerified && globalRegionsVerified &&
+      contractConfigured && contractWriter.branchAware &&
+      contractWriter.bounded && contractWriter.exactSites && contractWriter.w &&
+      complete && a.ordered && sites &&
+      (!contractWriter.wConstant || w == contractWriter.wBits);
   writeLog(
       "MOVEMENT_RDX_XYZ_PROOF session=%llu invocation_id=%llu "
       "writer_rva=0x2cfc900 source_register=RDX source_offsets=0,4,8 "
@@ -566,12 +594,14 @@ void finish(unsigned slot) {
       : !contractWriter.xyz ? contractWriter.reason
       : !callCodeVerified   ? "callee_code_identity_changed_or_unavailable"
       : !callStackVerified  ? "call_stack_footprint_outside_entry_TEB_bounds"
-      : !complete           ? "partial_or_rejected_invocation"
-      : !a.ordered          ? "store_order_or_missing_first_event"
-      : !sites              ? "store_site_mismatch"
-      : !storage.sameBytes  ? "bounded_equal_RDX_stack_snapshot_missing"
-      : !distinctTarget     ? "stack_target_alias_not_excluded"
-      : xyz != 7            ? "entry_XYZ_store_bits_mismatch"
+      : !globalRegionsVerified
+          ? "RIP_global_not_excluded_from_protected_regions"
+      : !complete          ? "partial_or_rejected_invocation"
+      : !a.ordered         ? "store_order_or_missing_first_event"
+      : !sites             ? "store_site_mismatch"
+      : !storage.sameBytes ? "bounded_equal_RDX_stack_snapshot_missing"
+      : !distinctTarget    ? "stack_target_alias_not_excluded"
+      : xyz != 7           ? "entry_XYZ_store_bits_mismatch"
                  : "decoded_causal_path_and_same_invocation_bits_verified");
   writeLog(
       "MOVEMENT_POSITION_W_PROOF session=%llu invocation_id=%llu "
@@ -592,11 +622,13 @@ void finish(unsigned slot) {
       : !contractWriter.w  ? contractWriter.reason
       : !callCodeVerified  ? "callee_code_identity_changed_or_unavailable"
       : !callStackVerified ? "call_stack_footprint_outside_entry_TEB_bounds"
-      : !complete          ? "partial_or_rejected_invocation"
-      : !sites             ? "store_site_mismatch"
-      : !wCausal           ? "executed_W_bits_do_not_match_decoded_constant"
-                 : "decoded_store_operand_and_invocation_verified_NOT_"
-                   "coordinate_type");
+      : !globalRegionsVerified
+          ? "RIP_global_not_excluded_from_protected_regions"
+      : !complete ? "partial_or_rejected_invocation"
+      : !sites    ? "store_site_mismatch"
+      : !wCausal  ? "executed_W_bits_do_not_match_decoded_constant"
+                  : "decoded_store_operand_and_invocation_verified_NOT_"
+                    "coordinate_type");
   writeLog(
       "MOVEMENT_RDX_STORAGE_PROOF session=%llu invocation_id=%llu "
       "call_rva=0x351eeab rdx_relation=%s stack_object_begin=0x%llx "
@@ -837,7 +869,7 @@ void configure(const Spec &s, Gate validate) noexcept {
     writerCall = ws::rdx::exactCall(code, functionSize, s.begin, s.imageSize,
                                     0x27, 0x2c);
     bool calleeCurrent = false;
-    if (writerCall.instructionVerified) {
+    if (writerCall.instructionVerified && writerCall.target == 0x2b23560) {
       DWORD64 calleeImage{};
       auto cf = RtlLookupFunctionEntry(s.base + writerCall.target, &calleeImage,
                                        nullptr);
@@ -848,7 +880,7 @@ void configure(const Spec &s, Gate validate) noexcept {
         // This task does not authorize inspecting the deferred producer or
         // recursive/overlapping writer code, even if a call unexpectedly lands
         // there.
-        if (cb == writerCall.target && ce > cb && ce <= s.imageSize &&
+        if (cb == 0x2b23560 && ce == 0x2b235e9 && ce <= s.imageSize &&
             ce - cb <= writerCallee.size() &&
             !(cb <= 0x351eb00 && 0x351eb00 < ce) &&
             !(cb < s.end && s.begin < ce)) {
@@ -859,6 +891,9 @@ void configure(const Spec &s, Gate validate) noexcept {
               digest(writerCallee.data(), writerCalleeSize, writerCalleeHash) &&
               guardedRead(s.base + cb, recheck, writerCalleeSize) &&
               !std::memcmp(recheck, writerCallee.data(), writerCalleeSize);
+          calleeCurrent =
+              calleeCurrent &&
+              calleeAliasIdentity(writerCall.target, cb, ce, writerCalleeHash);
           if (calleeCurrent)
             ws::rdx::classifyCallee(writerCall, writerCallee.data(),
                                     writerCalleeSize, cb, ce);
@@ -871,8 +906,62 @@ void configure(const Spec &s, Gate validate) noexcept {
       } else
         writerCall.reason = "callee_in_image_runtime_function_boundary_missing";
     }
-    contractWriter =
-        ws::rdx::branchWriter(code, functionSize, sites, &writerCall);
+    writerAlias.code = writerCallee.data();
+    writerAlias.size = writerCalleeSize;
+    writerAlias.imageSize = s.imageSize;
+    writerAlias.authenticated = calleeCurrent;
+    writerAlias.reason =
+        calleeCurrent ? "writer_call_not_reached_in_bounded_prefix"
+                      : "exact_c17_target_boundary_hash_not_authenticated";
+    contractWriter = ws::rdx::branchWriter(code, functionSize, sites,
+                                           &writerCall, &writerAlias);
+    writeLog(
+        "MOVEMENT_WRITER_CALL_ARGUMENT_CONTRACT call_rva=0x2cfc927 "
+        "arg_rcx_origin=%s arg_rdx_origin=%s arg_r8_origin=%s arg_r9_origin=%s "
+        "argument_offsets=%lld,%lld,%lld,%lld source_span_alias_mask=0x%x "
+        "transform_alias_mask=0x%x proof_complete=%u call_states=%u "
+        "writable_source_proven=0 reason=%s",
+        writerAlias.argumentOrigins[0], writerAlias.argumentOrigins[1],
+        writerAlias.argumentOrigins[2], writerAlias.argumentOrigins[3],
+        (long long)writerAlias.argumentOffsets[0],
+        (long long)writerAlias.argumentOffsets[1],
+        (long long)writerAlias.argumentOffsets[2],
+        (long long)writerAlias.argumentOffsets[3], writerAlias.sourceArgMask,
+        writerAlias.transformArgMask, unsigned(writerAlias.argumentsComplete),
+        writerAlias.analyses, writerAlias.reason);
+    const auto &ac = writerAlias.counts;
+    writeLog(
+        "MOVEMENT_CALLEE_ALIAS_CONTRACT target_rva=0x2b23560 "
+        "target_end=0x2b235e9 "
+        "identity_authenticated=%u memory_writes_seen=%u "
+        "writes_proven_private_stack=%u "
+        "writes_proven_global_disjoint=%u writes_proven_other_disjoint=%u "
+        "writes_caller_shadow_or_return=%u writes_source_exact=%u "
+        "writes_source_possible_alias=%u "
+        "writes_transform_exact=%u writes_transform_possible_alias=%u "
+        "writes_unknown=%u "
+        "source_span_no_write_proven=%u transform_no_write_proven=%u "
+        "all_relevant_write_aliases_resolved=%u next_barrier_rva=0x%llx "
+        "next_barrier_instruction=%s next_barrier_effect=%s address_root=%d "
+        "address_offset=%lld write_width=%u callee_byte_cap=137 branch_cap=4 "
+        "path_cap_per_call=16 state_cap_per_call=31 call_state_cap=16 "
+        "total_path_cap=64 "
+        "total_visit_cap=4096 unique_write_cap=24 instruction_visits=%u "
+        "return_paths=%u "
+        "RIP_disjoint_conditional_on_runtime_regions=1 runtime_observation=0 "
+        "writable_source_proven=0 full_bytes_logged=0 reason=%s",
+        unsigned(writerAlias.authenticated), writerAlias.writes,
+        ac[ws::rdx::privateStack], ac[ws::rdx::imageGlobal],
+        ac[ws::rdx::callerArea] + ac[ws::rdx::otherDisjoint],
+        ac[ws::rdx::callerArea], ac[ws::rdx::sourceExact],
+        ac[ws::rdx::sourcePossible], ac[ws::rdx::transformExact],
+        ac[ws::rdx::transformPossible], ac[ws::rdx::unknownPointer],
+        unsigned(writerAlias.sourceNoWrite),
+        unsigned(writerAlias.transformNoWrite), unsigned(writerAlias.resolved),
+        (unsigned long long)writerAlias.barrier, writerAlias.mnemonic,
+        writerAlias.barrierEffect, writerAlias.barrierRoot,
+        (long long)writerAlias.barrierOffset, writerAlias.barrierWidth,
+        writerAlias.visits, writerAlias.paths, writerAlias.reason);
     writeLog(
         "MOVEMENT_WRITER_CALL_CONTRACT writer_rva=0x2cfc900 call_rva=0x2cfc927 "
         "call_kind=%s target_rva=0x%llx target_boundary_begin=0x%llx "

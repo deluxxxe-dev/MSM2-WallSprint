@@ -103,3 +103,7 @@ c17 branch: codex/v01c17-callee-alias-contract
 
 ## Current objective
 Resolve only callee `0x2B23560..0x2B235E9` memory-write address provenance relative to the entry-RDX 16-byte source object and Hero Transform destination. If all relevant writes are proven disjoint, resume the existing writer proof from `0x2CFC92C`; otherwise emit one exact narrower callee blocker. No producer traversal and no movement/source/input mutation in c17.
+
+## c17 cloud implementation
+
+v0.1c17/package0.1.35 pins the measured137byte callee identity and analyzes write-address origins using every relevant writer pre-call state. Source/Transform writes, unknown/conflicting addresses and nested/unsupported effects refuse exactly. Private-stack/home/global separation requires per-invocation TEB/source/nonstack Transform/image checks. Only both protected no-write certificates plus all-resolved can resume writer exact XYZ/W stores. Actual c17 alias result or next blocker is pending A/E. Producer0x351EB00 and all upstream mutation/ownership/lifetime/exclusive/downstream gates remain0/deferred; no new hook or movement/source/input writes.

@@ -321,3 +321,7 @@ Consumed compact accepted c14 real A4453ms/E4172ms evidence and exact0x2CFC91F J
 ## v0.1c16 writer-local call effect
 
 Consumed compact accepted c15 A3860/E4297ms evidence and exact call0x2CFC927 barrier from pre-created c16 handoff9eab142. Added exact single-call authentication and <=1024byte no-write leaf classification with conservative volatile/explicit nonvolatile clobbers and precise callee blockers. No new hook or producer traversal. Real c16 target/effect pending; all writes remain0. Validation/artifacts in CODEX_RESULT/V01C16_RELEASE.json.
+
+## v0.1c17 callee alias contract
+
+Consumed accepted compact c16 A3875/E4203ms, exact137byte target/hash and first MOV alias blocker from handoff74a4c494. Added bounded all-local-path write-address analysis with pre-call writer arguments and conditional stack/global separation, preserving c16 generic classifier and all native capture/cleanup paths. New owned tests and package validation are recorded in CODEX_RESULT/V01C17_RELEASE.json. Actual c17 result pending; no producer or movement work.

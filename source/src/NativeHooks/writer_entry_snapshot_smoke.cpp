@@ -699,8 +699,54 @@ static void callIntegrity() {
        "out-of-TEB private-stack footprint; "
        "no game call executed or observation hook installed");
 }
+static void aliasGates() {
+  assert(calleeAliasIdentity(0x2b23560, 0x2b23560, 0x2b235e9, calleeAliasHash));
+  assert(
+      !calleeAliasIdentity(0x2b23561, 0x2b23560, 0x2b235e9, calleeAliasHash));
+  assert(
+      !calleeAliasIdentity(0x2b23560, 0x2b23561, 0x2b235e9, calleeAliasHash));
+  assert(
+      !calleeAliasIdentity(0x2b23560, 0x2b23560, 0x2b235ea, calleeAliasHash));
+  assert(!calleeAliasIdentity(0x2b23560, 0x2b23560, 0x2b235e9, "bad"));
+  writerCall.relevant = true;
+  contractWriter.callStackLow = -80;
+  contractWriter.callStackHigh = 32;
+  decltype(records[0].snapshot) v{};
+  v.stackLow = 0x300000;
+  v.stackHigh = 0x400000;
+  v.rsp = 0x380000;
+  v.target = 0x500000;
+  imageBase = 0x100000;
+  contractImageSize = 0x10000;
+  writerAlias.usesGlobals = true;
+  assert(callStackFits(v) && aliasRegionsFit(v));
+  v.rsp = v.stackHigh - 31;
+  assert(!callStackFits(v));
+  v.rsp = v.stackHigh - 32;
+  assert(callStackFits(v));
+  v.target = imageBase + 100;
+  assert(!aliasRegionsFit(v));
+  v.target = imageBase - 32;
+  assert(!aliasRegionsFit(v));
+  v.target = UINTPTR_MAX - 1;
+  assert(!aliasRegionsFit(v));
+  v.target = 0x500000;
+  v.stackLow = imageBase - 100;
+  assert(!aliasRegionsFit(v));
+  v.stackLow = 0x300000;
+  imageBase = UINTPTR_MAX - 10;
+  contractImageSize = 100;
+  assert(!aliasRegionsFit(v));
+  puts("PASS: c17 pinned target/begin/end/full hash refuses mismatches; TEB "
+       "lower/upper "
+       "footprint and complete source-stack/Transform image exclusion refuse "
+       "overlaps/overflow; "
+       "different pointer values alone never prove global disjointness");
+}
 int main(int argc, char **argv) {
-  if (argc > 1 && std::string(argv[1]) == "--call-integrity")
+  if (argc > 1 && std::string(argv[1]) == "--alias-gates")
+    aliasGates();
+  else if (argc > 1 && std::string(argv[1]) == "--call-integrity")
     callIntegrity();
   else if (argc > 1 && std::string(argv[1]) == "--finalization")
     finalization();
@@ -718,6 +764,8 @@ int main(int argc, char **argv) {
                           ? "logs/windows_writer_entry_pair_synthetic.log"
                       : argc > 1 && std::string(argv[1]) == "--call-integrity"
                           ? "logs/windows_writer_call_integrity_synthetic.log"
+                      : argc > 1 && std::string(argv[1]) == "--alias-gates"
+                          ? "logs/windows_callee_alias_gates_synthetic.log"
                           : "logs/windows_writer_entry_other_synthetic.log",
                       "wb");
   assert(f);
