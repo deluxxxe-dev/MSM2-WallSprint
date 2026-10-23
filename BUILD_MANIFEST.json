@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c8",
-  "package_version": "0.1.26",
+  "version": "v0.1c9",
+  "package_version": "0.1.27",
   "artifact": "WallSprint.script",
-  "sha256": "5b5f2de6e4139ab22cf79dd210273bc3d3aaf1e07afaf8db926e30f199541caf",
-  "dll_sha256": "9b9111fbb70393c2c31e14dd6b5fd4a767930e48f732905e309fd47b105abb6a",
+  "sha256": "e12b87928d35a2022f2a67559c3b6498c51b0e4a0a802b47cf186ea9c4931815",
+  "dll_sha256": "6e008a79bb2dee16362f8425a741dfcb569a9bfe0a946cc9c8c1bcee578648f4",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -38,7 +38,7 @@
     "current4ownedpatches and writer-ownedpatch",
     "caller168byte integrity",
     "fresh native activeWallRun>=.70s; worker identity/freshness retained",
-    "same owner/generation/native thread",
+    "same owner/generation/accepted/collision epoch; native token thread fixed; secondary B current-thread provenance independently verified",
     "worker context<=100ms/nativeUpdate<=100ms",
     "fresh existing read-only Hero accessor/Transform==RCX",
     "R8null",
@@ -56,7 +56,7 @@
   "max_override_seconds": 5,
   "log_ring_records": 1024,
   "write_helper": "currentthreadstack check,64byte expected reread,SEH48byte store,64byte full readback including untouched Position16; best-effort48byte rollback on failure, abort no directActor recovery",
-  "stop": "Hard Deinit/identity/epoch/collision/thread/provenance/integrity/kill/rollback/budget close; time-only native stale suspends and same-identity later real accepted Update resumes; no same-session hard-close recovery",
+  "stop": "Hard: source code/build/proof/patch/identity/epoch/collision/native owner-thread/A-thread/rollback/F8/shutdown failure; secondary B thread mismatch starts per-call verification; foreign target/caller/stack/layout rejects without payload; time-only stale suspends then later same-identity real Update resumes",
   "overwrite_observation": "bounded hardware Up watch after both source commits; retention requires dot>=.98 for >=20 distinct updates or >=300ms",
   "unknown_game_function_calls": 0,
   "fresh_Hero_lookup": "reuse existing verified read-only SDK getter; no new vendor file or typed writer signature",
@@ -128,13 +128,13 @@
     "original_capture": "private PATH_B_FUNCTION/PATH_B_CODE before hook; never redistributed",
     "caller_original_sha256": "1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d"
   },
-  "validation": "Windows warnings-as-errors; portable ASan/UBSan; complete Wine ABI/MinHook/source/lifecycle/compact/watch/Position suites. Real detailed status API and production worker guard tests at first0.7s interpolation distinguish diagnostic-only loss from all four actual patch mutations; immutable/racing/hot cause attribution. c7 real270ms recovery and eleven stale-hard controls retained. c8 real-game hold/first real kill cause pending.",
+  "validation": "Windows warnings-as-errors; portable ASan/UBSan; full Wine ABI/MinHook/lifecycle/compact/watch/Position suites; production secondary B exact caller/own stack at1.75s after retention with fixed native thread/token/transition and primary continuation to4.4s Deinit; partial shared basis, foreign/hard identity/integrity negatives, stale recovery, bounded events and8-thread shared-budget race. Real c9 full hold pending.",
   "limitations": [
-    "Real c7 source hard-closed after two writes; exact first caller remains unknown until c8 log",
-    "Only diagnostic field-plan runtime dependency is decoupled; all real source identities remain required",
-    "First-claim context consists of separate guarded reads; concurrent closers can affect sampled status",
+    "Real c8 proved B thread inequality alone was falsely fatal; real c9 visual full hold/flash/crash/Position still pending",
+    "Foreign B calls remain vanilla and receive no injected payload",
     "An already-admitted guarded store can overlap close/kill",
-    "c8 visual hold/flash/crash/Position requires human verification; Position whole-path/W/effects proof remains incomplete"
+    "Secondary telemetry counts are separately sampled atomics; inflight/unique-ID saturation/drop telemetry bound interpretation",
+    "Position whole-path/W/exclusive-effects proof remains incomplete; no adhesion/later milestone"
   ],
   "source_directory": "source",
   "path_b_override": true,
@@ -296,7 +296,7 @@
   "v01c7_gate": "REAL_HARD_KILL_AFTER_TWO_PATH_A_WRITES_FIRST_CALLER_UNKNOWN",
   "v01c6_gate": "REAL_POSITION_READ_ONLY_CONFIRMED_ORIENTATION_EARLY_EXIT_ON_TRANSIENT_250MS_UPDATE_GAP",
   "historical_c5_full_WallRun_hold_verified": true,
-  "v01c8_gate": "SYNTHETIC_GUARD_AND_ATTRIBUTION_PASS_REAL_ROTATION_HOLD_PENDING",
+  "v01c8_gate": "REAL_ATTRIBUTION_PASS_RETENTION_PASS_EARLY_HARD_CLOSE_SECONDARY_PATH_B_THREAD",
   "hard_kill_attribution": {
     "first_cause_scope": "process",
     "immutable": true,
@@ -325,6 +325,40 @@
     "diagnostic_only_loss_stops_trace": true,
     "actual_patch_loss_kills_source": true,
     "input_auth_rechecked_after_tick": true,
-    "real_c7_first_cause": "UNKNOWN_PENDING_C8_LOG"
+    "real_c7_first_cause": "UNKNOWN_FOR_C7_C8_IDENTIFIES_FALSE_SECONDARY_B_THREAD_RULE"
+  },
+  "v01c9_gate": "SYNTHETIC_SECONDARY_B_PASS_REAL_LIFECYCLE_HOLD_PENDING",
+  "secondary_path_b": {
+    "enabled": true,
+    "per_call_only": true,
+    "native_expected_thread_migration": false,
+    "secondary_lifecycle_publication": false,
+    "path_a_expected_thread_required": true,
+    "native_token_expected_thread_required": true,
+    "same_worker_session_owner_required": true,
+    "current_thread_TEB_stack_required": true,
+    "exact_return_rva": "0x2cfc84b",
+    "source_relation": "entry RDX=entry RSP+0x28",
+    "shared_existing_validators": true,
+    "write_bytes": 36,
+    "metadata_bytes_preserved": 28,
+    "row_scale_preserved": true,
+    "secondary_wrong_target_caller_stack_layout": "reject_no_payload_no_session_kill",
+    "actual_integrity_identity_collision_rollback_failure": "hard_close_no_revival",
+    "native_freshness_ms": 100,
+    "worker_freshness_ms": 100,
+    "event_cap_per_action": 16,
+    "first_override_and_reject_records_ring_independent": true,
+    "unique_thread_id_table_cap": 16,
+    "thread_overflow_labeled": true,
+    "summary_scope": "process",
+    "old_hardware_watch_extended": false,
+    "primary_watch_owner_changed": false
+  },
+  "path_b_attempt_budget": {
+    "atomic_shared_primary_secondary": true,
+    "per_session_cap": 4096,
+    "failed_guarded_attempts_consume_slot": true,
+    "foreign_or_stale_rejections_consume_slot": false
   }
 }

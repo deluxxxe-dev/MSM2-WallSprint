@@ -1,0 +1,83 @@
+{
+  "version": "v0.1c9",
+  "package_version": "0.1.27",
+  "branch": "codex/v01c9-secondary-path-b-thread-admission",
+  "implementation_commit": "0c276126ccac8e3bd2a6dd1d850da63e80bc35ce",
+  "outputs": [
+    {
+      "path": "WallSprint_v0.1c9_secondary_path_b_thread.zip",
+      "bytes": 2587990,
+      "sha256": "94264b420cd791a9d8cf70ddfb0b87102d9eefd7da4d2064db253d992ae54172"
+    },
+    {
+      "path": "WallSprint_v0.1c9_source.zip",
+      "bytes": 527030,
+      "sha256": "f77c5da1714c851499b2801402e8f44549b75f1a7b2d8f3bf3a96b9d6eb006d0"
+    }
+  ],
+  "test_pass_counts": {
+    "portable": 12,
+    "smoke": 4,
+    "hooks": 42
+  },
+  "total_pass": 58,
+  "historical_private_skips": 4,
+  "secondary_owned_native_event": {
+    "elapsed": "1.752000",
+    "rdx_minus_rsp": "40",
+    "stack_verified": "1",
+    "compact_verified": "1",
+    "token_status": "coherent_active",
+    "identity_verified": "1",
+    "source_up_before": "(0,1,0)",
+    "target_up": "(0,0,1)",
+    "action": "override",
+    "reason": "secondary_verified",
+    "expected_native_thread_unchanged": "1",
+    "position_source_write": "0"
+  },
+  "secondary_process_summary": {
+    "scope": "process",
+    "seen": "1",
+    "admitted": "1",
+    "overridden": "1",
+    "rejected": "0",
+    "unique_threads": "1",
+    "inflight": "0",
+    "unique_thread_cap": "16",
+    "thread_table_saturated": "0",
+    "overflow_events": "0",
+    "event_cap_per_action": "16"
+  },
+  "owned_native_lifecycle_summary": {
+    "wallrun_duration_ms": "4409",
+    "source_exit_reason": "verified_native_Deinit",
+    "source_active_until_deinit": "1",
+    "verified_deinit": "1",
+    "path_a_writes": "207",
+    "path_b_writes": "208",
+    "retention_pass": "1",
+    "max_held_ms": "3335",
+    "max_held_updates": "207",
+    "last_actor_up_dot_surface": "1",
+    "stale_suspend_count": "0",
+    "stale_resume_count": "0",
+    "max_stale_duration_ms": "0",
+    "first_hard_kill": "none"
+  },
+  "native_owner_thread_unchanged": true,
+  "primary_A_B_continued_after_secondary": "PASS",
+  "partial_shared_transition_no_restart": "PASS",
+  "foreign_reject_primary_continuation": "PASS",
+  "genuine_integrity_identity_hard_close_no_revival": "PASS",
+  "secondary_real_270ms_stale_and_later_primary_Update_recovery": "PASS",
+  "eight_secondary_threads_one_shared_budget_slot": "PASS_1_override_7_reject_8_unique",
+  "bounded_secondary_events": "PASS_16_per_action_full_counters",
+  "position_permission": false,
+  "actual_A_Position_bytes_replayed": false,
+  "standalone_source_build": "PASS_private_captures_absent",
+  "private_game_function_bytes_distributed": false,
+  "real_game_c8_false_thread_rule": "VERIFIED",
+  "real_game_c9_rotation_hold_flash_crash_Position": "PENDING",
+  "actual_position_writes": 0
+}
