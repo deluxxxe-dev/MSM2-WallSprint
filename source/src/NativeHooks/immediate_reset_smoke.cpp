@@ -10,7 +10,7 @@
 #include <string>
 #include <mutex>
 static std::string output;static std::mutex outputLock;
-static bool prearmTest{};static msm2::reset_trace::Request testRequest;static ws::native_source::Observer lifecycleObserver{};
+static bool prearmTest{};static msm2::reset_trace::Request testRequest;static ws::native_source::Observer lifecycleObserver{};static HANDLE expandSignal{},traceStoppedSignal{},writerReady{};
 static ws::native_source::Token fakeToken;static std::atomic<bool> fakeGuard{true};static HANDLE armedSignal{};
 namespace msm2::native_source {void prearm(const ws::native_source::Token&) noexcept {}
 void lifecycleClosed(const ws::native_source::Token&) noexcept {}
@@ -25,7 +25,7 @@ extern "C" void ws_source_capture(const Frame* f) noexcept {msm2::trace::resetEn
 namespace msm2 {
 bool readMemory(std::uintptr_t p,void* out,std::size_t n){SIZE_T done=0;return ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void*>(p),out,n,&done)&&done==n;}
 bool sample(Snapshot& s){s=hero;return readMemory(s.transform,s.prefix,48);}
-void writeLog(const char* f,...){char b[4096];va_list a;va_start(a,f);vsnprintf(b,sizeof(b),f,a);va_end(a);std::lock_guard<std::mutex> lock(outputLock);output+=b;output+='\n';if(armedSignal&&std::strstr(b,"RESET_TRACE_WINDOW")&&std::strstr(b," armed=1"))SetEvent(armedSignal);}
+void writeLog(const char* f,...){char b[4096];va_list a;va_start(a,f);vsnprintf(b,sizeof(b),f,a);va_end(a);std::lock_guard<std::mutex> lock(outputLock);output+=b;output+='\n';if(armedSignal&&std::strstr(b,"RESET_TRACE_WINDOW")&&std::strstr(b," armed=1"))SetEvent(armedSignal);if(expandSignal&&std::strstr(b,"MULTITHREAD_EXPAND_STATE")&&std::strstr(b,"phase=armed"))SetEvent(expandSignal);if(traceStoppedSignal&&std::strstr(b,"MULTITHREAD_EXPAND_STATE")&&std::strstr(b,"phase=stopped"))SetEvent(traceStoppedSignal);}
 }
 __attribute__((noinline,noclone)) void commonWriter(float* target,const float* source,std::uintptr_t,std::uintptr_t){
  auto u=_mm_loadu_ps(source+4);_mm_storeu_ps(target+4,u);__asm__ volatile("" ::: "memory");
@@ -38,6 +38,7 @@ __attribute__((noinline,noclone)) void sequentialWriter(float* target){
 }
 static std::atomic<unsigned> entryAssociationTest{0};
 DWORD WINAPI writerThread(void*){
+ if(writerReady)SetEvent(writerReady);
  while(WaitForSingleObject(go,INFINITE)==WAIT_OBJECT_0){if(finish.load())break;
   if(auto stage=entryAssociationTest.load()){
    msm2::trace::beginResetCopyEntry();
@@ -52,6 +53,7 @@ DWORD WINAPI writerThread(void*){
  }return 0;
 }
 static CONTEXT debug(HANDLE thread){assert(SuspendThread(thread)!=DWORD(-1));CONTEXT c{};c.ContextFlags=CONTEXT_DEBUG_REGISTERS;assert(GetThreadContext(thread,&c));assert(ResumeThread(thread)!=DWORD(-1));return c;}
+static DWORD WINAPI idleThread(void* end){WaitForSingleObject(static_cast<HANDLE>(end),INFINITE);return 0;}
 int main(int argc,char** argv){
  bool sequence=argc>1&&std::strcmp(argv[1],"--sequence")==0;
  auto* memory=static_cast<float*>(VirtualAlloc(nullptr,4096,MEM_COMMIT|MEM_RESERVE,PAGE_READWRITE));assert(memory);
@@ -59,8 +61,28 @@ int main(int argc,char** argv){
  hero.hero=reinterpret_cast<std::uintptr_t>(memory+64);hero.transform=reinterpret_cast<std::uintptr_t>(memory);
  auto base=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));auto* dos=reinterpret_cast<IMAGE_DOS_HEADER*>(base);auto* nt=reinterpret_cast<IMAGE_NT_HEADERS64*>(base+dos->e_lfanew);
  assert(MH_Initialize()==MH_OK);assert(MH_CreateHook(reinterpret_cast<void*>(&commonWriter),reinterpret_cast<void*>(&ws_source_thunk),&ws_source_original)==MH_OK);assert(MH_EnableHook(reinterpret_cast<void*>(&commonWriter))==MH_OK);
- go=CreateEventW(nullptr,FALSE,FALSE,nullptr);done=CreateEventW(nullptr,FALSE,FALSE,nullptr);DWORD tid=0;auto thread=CreateThread(nullptr,0,writerThread,nullptr,0,&tid);assert(thread);
+ go=CreateEventW(nullptr,FALSE,FALSE,nullptr);done=CreateEventW(nullptr,FALSE,FALSE,nullptr);writerReady=CreateEventW(nullptr,TRUE,FALSE,nullptr);DWORD tid=0;auto thread=CreateThread(nullptr,0,writerThread,nullptr,0,&tid);assert(thread&&WaitForSingleObject(writerReady,1000)==WAIT_OBJECT_0);
  auto original=debug(thread);
+ if(argc>1&&std::strcmp(argv[1],"--multithread")==0){
+  prearmTest=true;std::memcpy(memory,world,64);fakeToken.phase=3;fakeToken.generation=1;fakeToken.owner=hero.hero;fakeToken.updates=77;fakeToken.thread=tid;
+  auto idleEnd=CreateEventW(nullptr,TRUE,FALSE,nullptr);auto idle=CreateThread(nullptr,0,idleThread,idleEnd,0,nullptr);assert(idle);auto idleOriginal=debug(idle);
+  armedSignal=CreateEventW(nullptr,FALSE,FALSE,nullptr);expandSignal=CreateEventW(nullptr,FALSE,FALSE,nullptr);traceStoppedSignal=CreateEventW(nullptr,FALSE,FALSE,nullptr);
+  msm2::reset_trace::configure(true,base,nt->OptionalHeader.SizeOfImage,true,true);
+  testRequest.prearmed=testRequest.verifyDual=testRequest.characterize=true;testRequest.generation=1;testRequest.hero=hero.hero;testRequest.transform=hero.transform;testRequest.owner=hero.hero;testRequest.thread=tid;testRequest.normal={0,0,1};
+  testRequest.session=1;testRequest.initMs=GetTickCount64()-600;msm2::reset_trace::request(testRequest);assert(WaitForSingleObject(armedSignal,1000)==WAIT_OBJECT_0);
+  fakeGuard=false;assert(WaitForSingleObject(traceStoppedSignal,1000)==WAIT_OBJECT_0);assert(!windows[0].expandAttempted&&!activeLeases());
+  fakeGuard=true;testRequest.session=2;testRequest.initMs=GetTickCount64()-600;msm2::reset_trace::request(testRequest);assert(WaitForSingleObject(armedSignal,1000)==WAIT_OBJECT_0);
+  assert(WaitForSingleObject(expandSignal,50)==WAIT_TIMEOUT);assert(WaitForSingleObject(expandSignal,1000)==WAIT_OBJECT_0);
+  msm2::reset_trace::stop();msm2::trace::stop();auto& w=windows[1];
+  assert(w.expandRequested&&w.expandAttempted&&w.expanded&&!w.expandFailed&&w.entriesTotal>1&&w.ownerMatches>1&&w.installedThreads>1&&w.selfSkipped==1&&!activeLeases());
+  assert(output.find("stop_reason=observation_guards_lost")!=std::string::npos&&output.find("win32_error_stage=none win32_error_code=0")!=std::string::npos);
+  assert(output.find("MULTITHREAD_EXPAND_ATTEMPT session=1 ")==std::string::npos);auto p=output.find("MULTITHREAD_EXPAND_ATTEMPT session=2 ");assert(p!=std::string::npos&&output.find("MULTITHREAD_EXPAND_ATTEMPT session=2 ",p+1)==std::string::npos);
+  auto restored=debug(thread);auto idleRestored=debug(idle);assert(restored.Dr0==original.Dr0&&restored.Dr1==original.Dr1&&restored.Dr7==original.Dr7&&idleRestored.Dr0==idleOriginal.Dr0&&idleRestored.Dr1==idleOriginal.Dr1&&idleRestored.Dr7==idleOriginal.Dr7);
+  assert(memory[12]==0&&memory[13]==0&&memory[14]==0);MEMORY_BASIC_INFORMATION page{};assert(VirtualQuery(memory,&page,sizeof(page))&&page.Protect==PAGE_READWRITE);
+  auto f=std::fopen("logs/windows_real_thread_enum_synthetic.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);
+  SetEvent(idleEnd);assert(WaitForSingleObject(idle,1000)==WAIT_OBJECT_0);CloseHandle(idle);CloseHandle(idleEnd);finish=true;SetEvent(go);assert(WaitForSingleObject(thread,1000)==WAIT_OBJECT_0);CloseHandle(thread);MH_Uninitialize();VirtualFree(memory,0,MEM_RELEASE);
+  puts("PASS: production async helper crosses .60 to >=.85 once and uses real Toolhelp enumeration/filter/install on owned process threads: entries_total>1 owner_pid_matches>1 installed>1; helper excluded, guard loss before threshold has explicit stop reason and no expansion, stop/join/DR cleanup; no game evidence");return 0;
+ }
  if(argc>1&&(std::strcmp(argv[1],"--prearm")==0||sequence)){
   if(sequence){float e[16]={.70710678f,0,.70710678f,0,-.70710678f,0,.70710678f,0,0,-1,0,0,0,0,0,1};std::memcpy(tilted,e,64);}
   prearmTest=true;std::memcpy(memory,world,64);fakeToken.phase=3;fakeToken.generation=1;fakeToken.owner=hero.hero;fakeToken.updates=77;fakeToken.thread=tid;

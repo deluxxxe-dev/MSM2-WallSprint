@@ -15,22 +15,26 @@ void nativeEvent(const ws::native_source::Token& token) noexcept {
  if(token.phase!=3){msm2::native_source::lifecycleClosed(token);msm2::trace::cancelReset();}
  else msm2::native_source::prearm(token);
 }
-bool live(const msm2::reset_trace::Request& r,msm2::Snapshot& s){
+bool live(const msm2::reset_trace::Request& r,msm2::Snapshot& s,const char** reason=nullptr){
  ws::native_source::Token token{};
- return !disabled.load()&&msm2::native_source::observationGuardsAuthenticated()&&
-  ws::native_source::lifecycle(token)&&token.phase==3&&GetTickCount64()>=token.updateMs&&GetTickCount64()-token.updateMs<=100&&token.generation==r.generation&&token.owner==r.owner&&
-  msm2::sample(s)&&s.hero==r.hero&&s.transform==r.transform;
+ const char* failure=disabled.load()?"helper_disabled":!msm2::native_source::observationGuardsAuthenticated()?"observation_guards_lost":
+  !ws::native_source::lifecycle(token)?"lifecycle_unavailable":token.phase!=3?"lifecycle_not_active":
+  GetTickCount64()<token.updateMs||GetTickCount64()-token.updateMs>100?"native_update_not_fresh":
+  token.generation!=r.generation?"generation_changed":token.owner!=r.owner?"owner_changed":
+  !msm2::sample(s)?"hero_sample_failed":s.hero!=r.hero?"hero_changed":s.transform!=r.transform?"transform_changed":nullptr;
+ if(reason)*reason=failure;
+ return !failure;
 }
 DWORD WINAPI run(void*){
  HANDLE handles[]={stopped,wake};
  for(;;){
   if(WaitForMultipleObjects(2,handles,FALSE,INFINITE)!=WAIT_OBJECT_0+1)break;
   if(pending.load(std::memory_order_acquire)!=2)continue;
-  auto r=slot;pending.store(0,std::memory_order_release);msm2::Snapshot s{};
-  if(!live(r,s)){msm2::writeLog("RESET_TRACE_SKIPPED session=%llu reason=inactive_or_identity_or_guard_loss",static_cast<unsigned long long>(r.session));continue;}
+  auto r=slot;pending.store(0,std::memory_order_release);msm2::Snapshot s{};const char* reason=nullptr;
+  if(!live(r,s,&reason)){msm2::writeLog("RESET_TRACE_SKIPPED session=%llu reason=%s",static_cast<unsigned long long>(r.session),reason);continue;}
   if(!msm2::trace::beginReset(r,s))continue;
-  do {if(WaitForSingleObject(stopped,1)==WAIT_OBJECT_0)break;}while(msm2::trace::pollReset(live(r,s)));
-  msm2::trace::pollReset(false);
+  do {if(WaitForSingleObject(stopped,1)==WAIT_OBJECT_0)break;bool valid=live(r,s,&reason);if(!msm2::trace::pollReset(valid,valid?"none":reason))break;}while(true);
+  msm2::trace::pollReset(false,"helper_stop");
  }
  msm2::trace::pollReset(false);return 0;
 }

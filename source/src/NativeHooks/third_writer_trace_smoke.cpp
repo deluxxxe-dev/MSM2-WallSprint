@@ -22,7 +22,7 @@ __attribute__((noinline,noclone)) void unknownWriter(float* t){_mm_storeu_ps(t+4
 __attribute__((noinline,noclone)) void sequentialUnknown(float* t){auto* p=static_cast<volatile float*>(t+4);p[0]=0;p[1]=1;p[2]=0;__asm__ volatile("" ::: "memory");}
 static DWORD WINAPI loop(void* raw){auto& worker=*static_cast<Worker*>(raw);SetEvent(worker.ready);
  while(WaitForSingleObject(worker.go,INFINITE)==WAIT_OBJECT_0){if(finish.load())break;
-  if(worker.role==0){for(unsigned i=0;i<2;++i){auto r=request;LARGE_INTEGER q{};QueryPerformanceCounter(&q);r.resetCopy=i;r.commitQpc=r.overrideBeginQpc=q.QuadPart;msm2::trace::resetCommitted(r);}surfaceWriter(reinterpret_cast<float*>(hero.transform));}
+  if(worker.role==0){for(unsigned i=0;i<2;++i){auto r=request;LARGE_INTEGER q{};QueryPerformanceCounter(&q);r.resetCopy=i;r.commitQpc=r.overrideBeginQpc=q.QuadPart;msm2::trace::resetCommitted(r);}surfaceWriter(reinterpret_cast<float*>(hero.transform));if(mode.load()==2)for(unsigned i=0;i<140;++i){unknownWriter(reinterpret_cast<float*>(hero.transform));surfaceWriter(reinterpret_cast<float*>(hero.transform));}}
   else if(worker.role==1){if(mode.load())sequentialUnknown(reinterpret_cast<float*>(hero.transform));else unknownWriter(reinterpret_cast<float*>(hero.transform));}
   SetEvent(worker.done);
  }return 0;
@@ -43,11 +43,11 @@ int main(){
  auto foreign=workers[2].previous;foreign.Dr0=base;foreign.Dr7=(foreign.Dr7&~ownMask)|0x90001;setDebug(workers[2].thread,foreign);foreign=debug(workers[2].thread);
  assert(msm2::trace::configureReset(true,base,nt->OptionalHeader.SizeOfImage,true,true));
  assert(!std::strcmp(writerClass(base,0x2cfc580),"KNOWN_PATH_A")&&!std::strcmp(writerClass(base,0x2cfc3c0),"KNOWN_PATH_B")&&!std::strcmp(writerClass(base+1,0x2cfc580),"UNKNOWN_WRITER"));
- auto arm=[&](unsigned session,unsigned elapsed){
+ auto arm=[&](unsigned session,unsigned elapsed,bool expand=true){
   request={};request.prearmed=request.verifyDual=request.characterize=request.multithread=true;request.session=session;request.generation=1;request.hero=hero.hero;request.transform=hero.transform;request.owner=hero.hero;request.thread=workers[0].tid;request.normal={0,0,1};request.initMs=GetTickCount64()-elapsed;
-  Snapshot s{};assert(msm2::sample(s));assert(msm2::trace::beginReset(request,s));assert(msm2::trace::pollReset(true));assert(windows[unsigned(current)].expanded&&windows[unsigned(current)].installedThreads>=2);
+  Snapshot s{};assert(msm2::sample(s));assert(msm2::trace::beginReset(request,s));assert(msm2::trace::pollReset(true));auto& w=windows[unsigned(current)];assert(w.expanded==expand);if(expand)assert(w.expandAttempted&&w.entriesTotal>1&&w.ownerMatches>1&&w.installedThreads>=2);
  };
- arm(1,900);assert(windows[0].foreignThreads>=1);assert(!std::strcmp(installProcessThread(windows[0],0xfffffffe),"open_thread_failed"));
+ arm(1,900);assert(windows[0].foreignThreads>=1);DWORD error{};assert(!std::strcmp(installProcessThread(windows[0],0xfffffffe,&error),"open_thread_failed")&&error!=ERROR_SUCCESS);
  run(workers[0]);run(workers[1]);msm2::trace::drainLogs();assert(windows[0].thirdReported);
  assert(output.find("THIRD_WRITER_EVENT session=1 classification=UNKNOWN_WRITER thread_id="+std::to_string(workers[1].tid))!=std::string::npos);
  assert(output.find("THIRD_WRITER_IDENTITY session=1")!=std::string::npos&&output.find("function_boundary_verified=1")!=std::string::npos&&output.find("caller_valid=1")!=std::string::npos);
@@ -68,11 +68,23 @@ int main(){
  arm(5,900);assert(!msm2::trace::pollReset(false)&&!activeLeases());
  auto primaryForeign=workers[0].previous;primaryForeign.Dr0=base;primaryForeign.Dr7|=1;setDebug(workers[0].thread,primaryForeign);primaryForeign=debug(workers[0].thread);
  arm(6,900);assert(!windows[5].primaryInstalled&&windows[5].foreignThreads>=1);msm2::trace::pollReset(false);assert(!activeLeases()&&equalDebug(debug(workers[0].thread),primaryForeign));setDebug(workers[0].thread,workers[0].previous);
- arm(7,900);msm2::trace::kill();assert(!msm2::trace::pollReset(true)&&!activeLeases());msm2::trace::stop();
+ // Production threshold leap and realistic record pressure BEFORE enumeration.
+ // c3 closes capture on the first common-ring overflow and skips expansion.
+ msm2::trace::drainLogs();arm(7,600,false);auto& pressure=windows[6];
+ for(unsigned i=0;i<1100;++i)msm2::trace::resetEntry(hero.transform,hero.transform,0,0,base,false,1,1,hero.hero);
+ assert(pressure.commonDrops>0&&pressure.capture&&!pressure.expandAttempted);
+ mode=2;run(workers[0]);assert(pressure.budgetDrops>0&&pressure.capture&&pressure.hits==config.maxEvents/4);mode=0;
+ auto elapsed=GetTickCount64()-request.initMs;if(elapsed<930)Sleep(DWORD(930-elapsed));
+ assert(msm2::trace::pollReset(true)&&pressure.expandRequested&&pressure.expandAttempted&&pressure.expanded&&pressure.entriesTotal>1&&pressure.ownerMatches>1&&pressure.installedThreads>1);
+ assert(msm2::trace::pollReset(true));assert(occurrences(output,"MULTITHREAD_EXPAND_ATTEMPT session=7 ")==1);
+ run(workers[0]);run(workers[1]);msm2::trace::drainLogs();assert(pressure.thirdReported);
+ msm2::trace::pollReset(false);assert(!activeLeases());
+ arm(8,900);msm2::trace::kill();assert(!msm2::trace::pollReset(true)&&!activeLeases());msm2::trace::stop();
  for(auto& w:workers)assert(equalDebug(debug(w.thread),w.previous));
  assert(memory[12]==17&&memory[13]==23&&memory[14]==42);MEMORY_BASIC_INFORMATION page{};assert(VirtualQuery(memory,&page,sizeof(page))&&page.Protect==PAGE_READWRITE);
  assert(output.find("reason=foreign_dr")!=std::string::npos&&output.find("cleanup_pending=0")!=std::string::npos&&output.find("complete_thread_coverage=0")!=std::string::npos);
  auto file=std::fopen("logs/windows_third_writer_synthetic.log","wb");assert(file);std::fwrite(output.data(),1,output.size(),file);std::fclose(file);
  finish=true;for(auto& w:workers){SetEvent(w.go);assert(WaitForSingleObject(w.thread,1000)==WAIT_OBJECT_0);CloseHandle(w.thread);CloseHandle(w.go);CloseHandle(w.done);CloseHandle(w.ready);}assert(VirtualFree(memory,0,MEM_RELEASE));
  std::puts("PASS: process-thread Up watch captures a second-thread unknown writer after dual commits, bounded identity/hash/caller evidence and once/session trigger; sequential reset after1.10s; foreign DR and all prior debug state preserved; timeout/Deinit/identity/F8/shutdown cleanup; Position/page protection unchanged; owned fixtures only");
+ std::puts("PASS: production Toolhelp enumeration and >=0.85 transition after sparse samples; entries_total>1 owner_pid_matches>1 installed>1; pre-expansion common-ring overflow and event budget pressure preserve coordinator and reserve post-expansion evidence; one attempt only; explicit OpenThread OS error");
 }

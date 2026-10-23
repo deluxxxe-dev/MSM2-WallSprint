@@ -24,11 +24,15 @@ struct Window {
  msm2::reset_trace::Request reset{};double firstSurface{},surfaceAnchorTime{};ws::Vec3 surfaceAnchor{};
  std::atomic<std::uint64_t> lastOverride{0},commonCommit{0},copyCommit{0};std::atomic<bool> primaryInstalled{false};double primaryArmedAt{};
  double start{},end{};std::atomic<unsigned> hits{0},drops{0};std::atomic_flag cache=ATOMIC_FLAG_INIT;
- bool expanded{},thirdReported{};unsigned seen{},eligible{},installedThreads{},foreignThreads{},failedThreads{},selfSkipped{},capExceeded{};
- struct Skip {DWORD tid{};const char* reason{};};std::array<Skip,16> skipSummary{};unsigned skips{};double expandedElapsed{};
+ bool expandRequested{},expanded{},expandFailed{},thirdReported{};std::atomic<bool> expandAttempted{false};
+ unsigned entriesTotal{},ownerMatches{},seen{},eligible{},installedThreads{},foreignThreads{},failedThreads{},selfSkipped{},capExceeded{};
+ bool snapshotCreated{},firstOk{};const char* enumStage{"not_attempted"};DWORD enumError{};
+ std::atomic<const char*> stopReason{nullptr};std::atomic<unsigned> commonDrops{0},budgetDrops{0};
+ struct Skip {DWORD tid{};const char* reason{};DWORD error{};unsigned count{};};std::array<Skip,16> skipSummary{};unsigned skips{},skipKinds{},suppressedSkips{};double expandedElapsed{};
+ const char* firstInstallFailure{"none"};DWORD firstInstallError{};
 };
 struct Lease {
- std::atomic<DWORD> tid{0};unsigned window{};HANDLE handle{};bool installed{},suspended{};
+ std::atomic<DWORD> tid{0};unsigned window{};HANDLE handle{};bool installed{},suspended{};DWORD resumeError{};
  Entry entry{};path_b::Entry copyEntry{};DWORD64 old0{},old1{},old6{},old7{},up{};
 };
 struct Event {
@@ -48,6 +52,7 @@ std::array<Event,ringCap> events;std::atomic<unsigned> head{0},tail{0};std::atom
 PVOID veh{};double lastSample{},deinitMs{};std::uint64_t lastSession{},runTraced{},crawlTraced{};
 Snapshot lastHero{};ws::Vec3 lastNormal{};bool normalValid{};unsigned crawlStable{};
 double now(){LARGE_INTEGER q{};if(!QueryPerformanceCounter(&q)||!frequency.QuadPart)return 0;return 1000.*double(q.QuadPart)/double(frequency.QuadPart);}
+void closeCapture(Window& w,const char* reason){const char* empty=nullptr;w.stopReason.compare_exchange_strong(empty,reason);w.capture=false;}
 unsigned own(const CONTEXT& c,const Lease& l){
  unsigned mask=0;
  if(c.Dr0==l.up&&(c.Dr7&0xf0003ull)==0x90001ull)mask|=1;
@@ -84,13 +89,17 @@ LONG CALLBACK handler(EXCEPTION_POINTERS* e){
  for(unsigned i=leasesCap;i>0;--i){auto& l=leases[i-1];if(l.tid.load(std::memory_order_acquire)!=tid)continue;auto bits=own(c,l)&mask&~claimed;if(!bits)continue;if(lease&&lease->up!=l.up)mixed=true;if(!lease)lease=&l;claimed|=bits;}
  if(!lease)return EXCEPTION_CONTINUE_SEARCH;
  auto& w=windows[lease->window];double time=now();
- if(mixed){killed=true;for(unsigned i=leasesCap;i>0;--i){auto& l=leases[i-1];if(l.tid.load()==tid&&own(c,l))restore(c,l);}}
- else if(own(c,*lease)!=3||killed.load()||!w.capture.load(std::memory_order_acquire)||(time<=0||time>w.end)){w.capture=false;restore(c,*lease);}
- else if(w.hits.load()>=config.maxEvents){w.capture=false;restore(c,*lease);}
+ if(mixed){closeCapture(w,"mixed_watch_identity");killed=true;for(unsigned i=leasesCap;i>0;--i){auto& l=leases[i-1];if(l.tid.load()==tid&&own(c,l))restore(c,l);}}
+ else if(own(c,*lease)!=3||killed.load()||!w.capture.load(std::memory_order_acquire)||(time<=0||time>w.end)){closeCapture(w,own(c,*lease)!=3?"debug_slot_ownership_lost":killed.load()?"killed":time<=0?"qpc_failed":time>w.end?"deadline":"capture_closed");restore(c,*lease);}
+ // Reserve three quarters of the event budget for the expanded watch. Record
+ // pressure must never cancel the coordinator before its threshold transition.
+ else if(w.hits.load()>=(w.reset.multithread&&!w.expandAttempted.load()?config.maxEvents/4:config.maxEvents)){
+  if(w.reset.multithread){++w.drops;++w.budgetDrops;}else {w.capture=false;restore(c,*lease);}
+ }
  else if(eventLock.test_and_set(std::memory_order_acquire)){++w.drops;if(!w.reset.multithread){w.capture=false;restore(c,*lease);}}
  else {
   auto h=head.load(std::memory_order_relaxed);auto t=tail.load(std::memory_order_acquire);
-  if(h-t>=ringCap){++w.drops;w.capture=false;restore(c,*lease);}
+  if(h-t>=ringCap){++w.drops;if(!w.reset.multithread){w.capture=false;restore(c,*lease);}}
   else {
    Event r{};r.window=lease->window;r.slotMask=claimed;r.thread=tid;r.timestamp=time;r.ripAfter=c.Rip;r.rsp=c.Rsp;
    DWORD64 regs[]={c.Rax,c.Rcx,c.Rdx,c.Rbx,c.Rsp,c.Rbp,c.Rsi,c.Rdi,c.R8,c.R9,c.R10,c.R11,c.R12,c.R13,c.R14,c.R15};std::memcpy(r.gpr,regs,sizeof(regs));r.xmmValid=(c.ContextFlags&CONTEXT_FLOATING_POINT)==CONTEXT_FLOATING_POINT;if(r.xmmValid)std::memcpy(r.xmm,&c.Xmm0,256);
@@ -129,7 +138,7 @@ LONG CALLBACK handler(EXCEPTION_POINTERS* e){
 }
 bool resume(Lease& l){
  if(!l.suspended)return true;
- for(unsigned i=0;i<3;++i)if(ResumeThread(l.handle)!=DWORD(-1)){l.suspended=false;return true;}
+ for(unsigned i=0;i<3;++i){if(ResumeThread(l.handle)!=DWORD(-1)){l.suspended=false;return true;}l.resumeError=GetLastError();}
  if(WaitForSingleObject(l.handle,0)==WAIT_OBJECT_0){l.suspended=false;return true;}
  killed=true;return false; // Retain handle and retry without adding suspension counts.
 }
@@ -152,59 +161,78 @@ void release(Window& w){
 }
 bool activeLeases(){for(unsigned i=0;i<usedLeases;++i)if(leases[i].installed||leases[i].suspended)return true;return false;}
 void watchSummary(const Window& w,const char* phase){
- bool complete=w.expanded&&w.eligible>0&&!w.capExceeded&&!w.failedThreads&&!w.foreignThreads&&w.installedThreads==w.eligible&&w.drops.load()==0;
- writeLog("MULTITHREAD_UP_WATCH session=%llu phase=%s process_threads_seen=%u eligible=%u installed=%u skipped_foreign_dr=%u failed=%u complete_thread_coverage=%u window_start_elapsed=%.6f window_end_elapsed=1.500 cap=128 cap_exceeded=%u coordinator_self_excluded=%u coverage_scope=snapshot_eligible_threads_only rescan_count=0 dropped=%u",(unsigned long long)w.session,phase,w.seen,w.eligible,w.installedThreads,w.foreignThreads,w.failedThreads,unsigned(complete),w.expandedElapsed,w.capExceeded,w.selfSkipped,w.drops.load());
- for(unsigned i=0;i<std::min(w.skips,unsigned(w.skipSummary.size()));++i)writeLog("MULTITHREAD_UP_WATCH_SKIP session=%llu thread_id=%lu reason=%s summary_index=%u suppressed=%u",(unsigned long long)w.session,w.skipSummary[i].tid,w.skipSummary[i].reason,i,unsigned(w.skips>w.skipSummary.size()?w.skips-w.skipSummary.size():0));
+ bool complete=w.expanded&&!w.expandFailed&&w.eligible>0&&!w.capExceeded&&!w.failedThreads&&!w.foreignThreads&&w.installedThreads==w.eligible&&w.drops.load()==0;
+ writeLog("MULTITHREAD_UP_WATCH session=%llu phase=%s process_threads_seen=%u eligible=%u installed=%u skipped_foreign_dr=%u failed=%u complete_thread_coverage=%u window_start_elapsed=%.6f window_end_elapsed=1.500 cap=128 cap_exceeded=%u coordinator_self_excluded=%u coverage_scope=snapshot_eligible_threads_only rescan_count=0 dropped=%u expand_requested=%u expand_attempted=%u expand_completed=%u expand_failed=%u",(unsigned long long)w.session,phase,w.seen,w.eligible,w.installedThreads,w.foreignThreads,w.failedThreads,unsigned(complete),w.expandedElapsed,w.capExceeded,w.selfSkipped,w.drops.load(),unsigned(w.expandRequested),unsigned(w.expandAttempted.load()),unsigned(w.expanded),unsigned(w.expandFailed));
+ writeLog("MULTITHREAD_EXPAND_STATE session=%llu phase=%s expand_requested=%u expand_attempted=%u expand_completed=%u expand_failed=%u entries_total=%u owner_pid_matches=%u win32_error_stage=%s win32_error_code=%lu stop_reason=%s common_record_drops=%u event_budget_drops=%u rescan_count=0",(unsigned long long)w.session,phase,unsigned(w.expandRequested),unsigned(w.expandAttempted.load()),unsigned(w.expanded),unsigned(w.expandFailed),w.entriesTotal,w.ownerMatches,w.enumStage,w.enumError,w.stopReason.load()?w.stopReason.load():"none",w.commonDrops.load(),w.budgetDrops.load());
+ for(unsigned i=0;i<w.skipKinds;++i)writeLog("MULTITHREAD_UP_WATCH_SKIP session=%llu thread_id=%lu reason=%s win32_error_code=%lu count=%u thread_id_semantics=first_example summary_index=%u suppressed=%u",(unsigned long long)w.session,w.skipSummary[i].tid,w.skipSummary[i].reason,w.skipSummary[i].error,w.skipSummary[i].count,i,w.suppressedSkips);
 }
-struct Install {Window* window;Lease* lease;CONTEXT previous{};bool got{},ok{},foreign{};};
+struct Install {Window* window;Lease* lease;CONTEXT previous{};bool got{},ok{},foreign{};DWORD error{};const char* failure{"get_context_failed"};};
 void installSuspended(void* raw){
  auto& p=*static_cast<Install*>(raw);auto& l=*p.lease;auto& w=*p.window;p.previous.ContextFlags=CONTEXT_DEBUG_REGISTERS;
- p.got=GetThreadContext(l.handle,&p.previous);if(!p.got)return;
+ p.got=GetThreadContext(l.handle,&p.previous);if(!p.got){p.error=GetLastError();return;}
  p.foreign=(p.previous.Dr7&0xf)||(p.previous.Dr7&(1ull<<13));if(p.foreign)return;
  auto c=p.previous;l.old0=c.Dr0;l.old1=c.Dr1;l.old6=c.Dr6;l.old7=c.Dr7;l.up=w.transform+0x10;
  // Publish immutable ownership before a successful SetThreadContext can be
  // resumed. No allocation/log/SDK/user lock occurs in this suspended region.
  l.tid.store(GetThreadId(l.handle),std::memory_order_release);
  c.Dr0=l.up;c.Dr1=l.up+8;c.Dr6&=~DWORD64(3);c.Dr7=(c.Dr7&~ownMask)|watchBits;
- l.installed=true;bool changed=SetThreadContext(l.handle,&c);CONTEXT readback{};readback.ContextFlags=CONTEXT_DEBUG_REGISTERS;
- p.ok=changed&&GetThreadContext(l.handle,&readback)&&own(readback,l)==3;
+ l.installed=true;bool changed=SetThreadContext(l.handle,&c);if(!changed){p.error=GetLastError();p.failure="set_context_failed";}CONTEXT readback{};readback.ContextFlags=CONTEXT_DEBUG_REGISTERS;
+ bool read=changed&&GetThreadContext(l.handle,&readback);if(changed&&!read){p.error=GetLastError();p.failure="readback_context_failed";}
+ p.ok=read&&own(readback,l)==3;if(read&&!p.ok){p.error=ERROR_INVALID_DATA;p.failure="readback_ownership_mismatch";}
  if(p.ok&&l.tid.load()==w.reset.thread){w.primaryArmedAt=now();w.primaryInstalled.store(true,std::memory_order_release);}
  if(!p.ok){CONTEXT rollback{};rollback.ContextFlags=CONTEXT_DEBUG_REGISTERS;if(GetThreadContext(l.handle,&rollback)){restore(rollback,l,true);if(SetThreadContext(l.handle,&rollback))l.installed=false;}}
 }
-const char* installProcessThread(Window& w,DWORD tid){
+const char* installProcessThread(Window& w,DWORD tid,DWORD* osError=nullptr){
+ auto error=[&](DWORD code){if(osError)*osError=code;};error(ERROR_SUCCESS);
  for(unsigned i=0;i<usedLeases;++i){auto& l=leases[i];if(l.window+1==w.id&&l.tid.load()==tid&&l.installed&&l.handle&&WaitForSingleObject(l.handle,0)!=WAIT_OBJECT_0)return nullptr;}
  if(usedLeases>=leasesCap)return "lease_cap";
- HANDLE thread=OpenThread(THREAD_SUSPEND_RESUME|THREAD_GET_CONTEXT|THREAD_SET_CONTEXT|THREAD_QUERY_LIMITED_INFORMATION|SYNCHRONIZE,FALSE,tid);if(!thread)return "open_thread_failed";
- if(GetProcessIdOfThread(thread)!=GetCurrentProcessId()){CloseHandle(thread);return "process_identity_mismatch";}
- auto depth=SuspendThread(thread);if(depth==DWORD(-1)){CloseHandle(thread);return "suspend_failed";}
+ HANDLE thread=OpenThread(THREAD_SUSPEND_RESUME|THREAD_GET_CONTEXT|THREAD_SET_CONTEXT|THREAD_QUERY_LIMITED_INFORMATION|SYNCHRONIZE,FALSE,tid);if(!thread){error(GetLastError());return "open_thread_failed";}
+ auto pid=GetProcessIdOfThread(thread);if(pid!=GetCurrentProcessId()){error(pid?ERROR_INVALID_DATA:GetLastError());CloseHandle(thread);return "process_identity_mismatch";}
+ auto depth=SuspendThread(thread);if(depth==DWORD(-1)){error(GetLastError());CloseHandle(thread);return "suspend_failed";}
  auto& l=leases[usedLeases++];l.window=w.id-1;l.handle=thread;l.suspended=true;Install install{&w,&l};
  bool protectedOk=true;
  if(depth==0&&w.capture.load())protectedOk=ws_guarded_call(installSuspended,&install);
  bool resumed=resume(l);
  if(!l.installed&&resumed){CloseHandle(l.handle);l.handle=nullptr;}
- if(!resumed){w.capture=false;return "resume_failed_cleanup_retained";}
- if(!protectedOk){w.capture=false;return "setup_exception_cleanup_retained";}
+ if(!resumed){error(l.resumeError);closeCapture(w,"resume_failed_cleanup_retained");return "resume_failed_cleanup_retained";}
+ if(!protectedOk){error(ERROR_UNHANDLED_EXCEPTION);closeCapture(w,"setup_exception_cleanup_retained");return "setup_exception_cleanup_retained";}
  if(install.ok)return nullptr;
- return depth?"already_suspended":install.foreign?"foreign_dr":!w.capture.load()?"window_closed":!install.got?"get_context_failed":"set_context_or_readback_failed";
+ error(install.error);
+ return depth?"already_suspended":install.foreign?"foreign_dr":!w.capture.load()?"window_closed":install.failure;
 }
 void expandProcessWatch(Window& w){
- w.expanded=true;w.expandedElapsed=double(GetTickCount64()-w.reset.initMs)/1000.;
- auto skip=[&](DWORD tid,const char* reason){if(w.skips<w.skipSummary.size())w.skipSummary[w.skips]={tid,reason};++w.skips;};
+ w.expandAttempted.store(true);w.expandedElapsed=double(GetTickCount64()-w.reset.initMs)/1000.;
+ writeLog("MULTITHREAD_EXPAND_ATTEMPT session=%llu elapsed=%.6f process_id=%lu coordinator_tid=%lu primary_tid=%u trigger_seen=1",(unsigned long long)w.session,w.expandedElapsed,GetCurrentProcessId(),GetCurrentThreadId(),w.reset.thread);
+ auto skip=[&](DWORD tid,const char* reason,DWORD error=ERROR_SUCCESS){
+  ++w.skips;for(unsigned i=0;i<w.skipKinds;++i)if(w.skipSummary[i].error==error&&!std::strcmp(w.skipSummary[i].reason,reason)){++w.skipSummary[i].count;return;}
+  if(w.skipKinds<w.skipSummary.size())w.skipSummary[w.skipKinds++]={tid,reason,error,1};else ++w.suppressedSkips;
+ };
+ // The production and Windows regression use this exact snapshot/filter path.
+ std::array<DWORD,threadsCap> ids{};unsigned count=0;
  HANDLE snapshot=CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD,0);
- if(snapshot==INVALID_HANDLE_VALUE){++w.failedThreads;skip(0,"thread_snapshot_failed");watchSummary(w,"armed");return;}
+ w.snapshotCreated=snapshot!=INVALID_HANDLE_VALUE;
+ if(!w.snapshotCreated){w.enumStage="CreateToolhelp32Snapshot";w.enumError=GetLastError();++w.failedThreads;skip(0,"thread_snapshot_failed",w.enumError);}
  // Snapshot into a fixed local list BEFORE suspending anyone; the helper is
  // excluded because its code only observes Hero memory and cannot suspend itself.
- std::array<DWORD,threadsCap> ids{};unsigned count=0;THREADENTRY32 te{};te.dwSize=sizeof(te);
- if(!Thread32First(snapshot,&te)){++w.failedThreads;skip(0,"thread_enumeration_failed");}
- else {do {if(te.th32OwnerProcessID!=GetCurrentProcessId())continue;
-  if(++w.seen>threadsCap){w.capExceeded=1;break;}
-  if(te.th32ThreadID==GetCurrentThreadId()){++w.selfSkipped;continue;}
-  ids[count++]=te.th32ThreadID;
- }while(Thread32Next(snapshot,&te));if(!w.capExceeded&&GetLastError()!=ERROR_NO_MORE_FILES){++w.failedThreads;skip(0,"thread_enumeration_incomplete");}}
- CloseHandle(snapshot);w.eligible=count;
- for(unsigned i=0;i<count;++i){if(!w.capture.load()||now()>=w.end){w.failedThreads+=count-i;skip(ids[i],"window_or_setup_deadline");break;}
-  const char* reason=installProcessThread(w,ids[i]);if(!reason)++w.installedThreads;else {if(!std::strcmp(reason,"foreign_dr"))++w.foreignThreads;else ++w.failedThreads;skip(ids[i],reason);}
+ if(w.snapshotCreated){
+  THREADENTRY32 te{};te.dwSize=sizeof(te);w.firstOk=Thread32First(snapshot,&te);
+  if(!w.firstOk){w.enumStage="Thread32First";w.enumError=GetLastError();++w.failedThreads;skip(0,"thread_enumeration_failed",w.enumError);}
+  else {w.enumStage="none";do {++w.entriesTotal;if(te.th32OwnerProcessID!=GetCurrentProcessId())continue;
+   ++w.ownerMatches;if(w.seen==threadsCap){w.capExceeded=1;break;}++w.seen;
+   if(te.th32ThreadID==GetCurrentThreadId()){++w.selfSkipped;continue;}
+   ids[count++]=te.th32ThreadID;
+  }while(Thread32Next(snapshot,&te));
+  if(!w.capExceeded){auto code=GetLastError();if(code!=ERROR_NO_MORE_FILES){w.enumStage="Thread32Next";w.enumError=code;++w.failedThreads;skip(0,"thread_enumeration_incomplete",code);}}
+  }
+  CloseHandle(snapshot);
  }
+ w.eligible=count;
+ writeLog("MULTITHREAD_ENUM_RESULT session=%llu snapshot_created=%u thread32first_ok=%u entries_total=%u owner_pid_matches=%u cap_reached=%u win32_error_stage=%s win32_error_code=%lu coordinator_tid=%lu coordinator_self_excluded=%u",(unsigned long long)w.session,unsigned(w.snapshotCreated),unsigned(w.firstOk),w.entriesTotal,w.ownerMatches,w.capExceeded,w.enumStage,w.enumError,GetCurrentThreadId(),w.selfSkipped);
+ for(unsigned i=0;i<count;++i){if(!w.capture.load()||now()>=w.end){w.failedThreads+=count-i;if(!std::strcmp(w.firstInstallFailure,"none"))w.firstInstallFailure="window_or_setup_deadline";for(unsigned n=i;n<count;++n)skip(ids[n],"window_or_setup_deadline");break;}
+  DWORD code{};const char* reason=installProcessThread(w,ids[i],&code);if(!reason)++w.installedThreads;else {if(!std::strcmp(reason,"foreign_dr"))++w.foreignThreads;else {++w.failedThreads;if(!std::strcmp(w.firstInstallFailure,"none")){w.firstInstallFailure=reason;w.firstInstallError=code;}}skip(ids[i],reason,code);}
+ }
+ w.expanded=true;w.expandFailed=!w.snapshotCreated||!w.firstOk||w.enumError||!count||w.failedThreads||w.capExceeded;
+ writeLog("MULTITHREAD_EXPAND_RESULT session=%llu expand_completed=1 expand_failed=%u failure_stage=%s first_install_failure_stage=%s first_install_win32_error_code=%lu skip_total=%u skip_reason_groups=%u skip_summary_suppressed=%u",(unsigned long long)w.session,unsigned(w.expandFailed),!w.snapshotCreated||!w.firstOk||w.enumError?w.enumStage:!count?"no_eligible_process_threads":w.capExceeded?"process_thread_cap":w.failedThreads?"thread_installation":"none",w.firstInstallFailure,w.firstInstallError,w.skips,w.skipKinds,w.suppressedSkips);
  watchSummary(w,"armed");
 }
 bool begin(const Snapshot& s,unsigned state,std::uint64_t session,std::uintptr_t owner,ws::Vec3 normal,unsigned primary){
@@ -222,10 +250,11 @@ bool begin(const Snapshot& s,unsigned state,std::uint64_t session,std::uintptr_t
  auto index=usedWindows++;auto& w=windows[index];w.id=index+1;w.state=state;w.session=session;w.hero=s.hero;w.transform=s.transform;w.owner=owner;w.normal=normal;auto axes=ws::diag::actorAxes(s.prefix);w.startUp=w.oldObserved=axes.up;w.start=now();w.end=w.start+config.windowMs;
  if(state>=3){w.reset=nextReset;w.lastOverride=w.reset.commitQpc;double commit=1000.*double(w.reset.commitQpc)/double(frequency.QuadPart);w.end=state==4?w.start+std::max(0.,(w.reset.verifyDual?1500.:1100.)-double(GetTickCount64()-w.reset.initMs)):commit+30.;ws::Vec3 u{};if(ws::unit(axes.up,u)&&ws::dot(u,normal)>=.5f)w.firstSurface=w.start;}
  w.capture=w.start<w.end;
+ if(w.reset.multithread)writeLog("MULTITHREAD_EXPAND_SCHEDULED session=%llu elapsed=%.6f threshold_elapsed=0.850 deadline_elapsed=1.500 expand_requested=0 expand_attempted=0 process_id=%lu coordinator_tid=%lu primary_tid=%u",(unsigned long long)w.session,double(GetTickCount64()-w.reset.initMs)/1000.,GetCurrentProcessId(),self,primary);
  if(state==4)publishedReset.store(int(index),std::memory_order_release);
  unsigned installed=0,busy=0,failed=0;
  for(unsigned n=0;n<count&&usedLeases<leasesCap&&w.capture.load()&&now()<w.end;++n){
-  if(w.reset.multithread){const char* reason=installProcessThread(w,candidates[n]);if(!reason)++installed;else if(!std::strcmp(reason,"foreign_dr"))++busy;else ++failed;continue;}
+  if(w.reset.multithread){DWORD code{};const char* reason=installProcessThread(w,candidates[n],&code);if(!reason)++installed;else if(!std::strcmp(reason,"foreign_dr"))++busy;else ++failed;writeLog("MULTITHREAD_PRIMARY_RESULT session=%llu thread_id=%lu installed=%u failure_stage=%s win32_error_code=%lu",(unsigned long long)w.session,candidates[n],unsigned(!reason),reason?reason:"none",code);continue;}
   HANDLE thread=OpenThread(THREAD_SUSPEND_RESUME|THREAD_GET_CONTEXT|THREAD_SET_CONTEXT|THREAD_QUERY_LIMITED_INFORMATION|SYNCHRONIZE,FALSE,candidates[n]);if(!thread){++failed;continue;}
   if(GetProcessIdOfThread(thread)!=GetCurrentProcessId()){CloseHandle(thread);++failed;continue;}
   if(SuspendThread(thread)==DWORD(-1)){CloseHandle(thread);++failed;continue;}
@@ -301,7 +330,7 @@ void configure(Config c,bool verified,std::uintptr_t base,std::size_t size){
  config=c;admitted=verified&&base&&size&&c.enabled&&c.windowMs>=100&&c.windowMs<=500&&c.maxWindows<=windowsCap&&c.maxEvents>=1&&c.maxEvents<=256&&c.maxThreads>=1&&c.maxThreads<=threadsCap;gameBase=base;gameSize=size;QueryPerformanceFrequency(&frequency);killed=!admitted;
  writeLog("orientation_trace_config enabled=%u admitted=%u diagnostic_only=1 window_ms=%u max_windows=%u max_events=%u max_threads=%u actor_writes=0 unknown_game_calls=0 PAGE_GUARD=0 coverage=current_threads_bounded_NOT_complete",unsigned(c.enabled),unsigned(admitted),c.windowMs,c.maxWindows,c.maxEvents,c.maxThreads);
 }
-void kill() noexcept{killed=true;for(auto& w:windows)w.capture=false;}
+void kill() noexcept{killed=true;for(auto& w:windows)closeCapture(w,"kill_or_shutdown");}
 void tick(const ws::observed::VerifiedWallContext& ctx,unsigned nativeThread,const char* exitReason){
  if(externalReset)return; // Dedicated helper is the sole owner of external windows.
  double time=now();
@@ -402,14 +431,19 @@ bool beginReset(const reset_trace::Request& r,const Snapshot& s){
  if(!ok)pollReset(false);
  return ok;
 }
-bool pollReset(bool valid){
+bool pollReset(bool valid,const char* invalidReason){
  if(current<0){if(activeLeases())for(unsigned i=0;i<usedWindows;++i)release(windows[i]);return false;}
- auto& w=windows[unsigned(current)];if(!valid||killed.load()||!w.capture.load()||now()<=0||now()>=w.end){publishedReset=-1;release(w);current=-1;return false;}
- if(w.reset.multithread&&!w.expanded&&GetTickCount64()>=w.reset.initMs&&GetTickCount64()-w.reset.initMs>=850)expandProcessWatch(w);
+ auto& w=windows[unsigned(current)];auto tick=GetTickCount64();double time=now();
+ const char* reason=!valid?invalidReason:killed.load()?"killed":time<=0?"qpc_failed":time>=w.end?"deadline":tick<w.reset.initMs?"tick_before_init":nullptr;
+ if(reason)closeCapture(w,reason);
+ // >= handles sparse/coalesced samples. Only verified live windows expand;
+ // cancellation/identity/guard/kill/deadline never reopens capture.
+ if(w.capture.load()&&w.reset.multithread&&!w.expandAttempted.load()&&tick-w.reset.initMs>=850){w.expandRequested=true;expandProcessWatch(w);}
+ if(!w.capture.load()){publishedReset=-1;release(w);current=-1;return false;}
  return true;
 }
 void cancelReset() noexcept {
- auto index=publishedReset.load(std::memory_order_acquire);if(index>=0)windows[unsigned(index)].capture=false;
+ auto index=publishedReset.load(std::memory_order_acquire);if(index>=0)closeCapture(windows[unsigned(index)],"lifecycle_cancel");
 }
 bool resetCommitted(const reset_trace::Request& r) noexcept {
  auto index=publishedReset.load(std::memory_order_acquire);if(index<0)return false;
@@ -423,7 +457,7 @@ bool resetCommitted(const reset_trace::Request& r) noexcept {
  bool armed=w.capture.load()&&!killed.load()&&w.primaryInstalled.load()&&w.reset.thread==GetCurrentThreadId()&&now()<w.end&&r.overrideBeginQpc&&w.primaryArmedAt<1000.*double(r.overrideBeginQpc)/double(frequency.QuadPart);
  w.lastOverride=r.commitQpc;
  if(r.resetCopy)w.copyCommit=r.commitQpc;else w.commonCommit=r.commitQpc;
- auto h=commonHead.load();if(h-commonTail.load()<commonRecords.size()){CommonRecord record{};record.window=unsigned(index);record.status=true;record.armed=armed;record.elapsed=double(GetTickCount64()-w.reset.initMs)/1000.;commonRecords[h%commonRecords.size()]=record;commonHead.store(h+1,std::memory_order_release);}else{++w.drops;w.capture=false;}
+ auto h=commonHead.load();if(h-commonTail.load()<commonRecords.size()){CommonRecord record{};record.window=unsigned(index);record.status=true;record.armed=armed;record.elapsed=double(GetTickCount64()-w.reset.initMs)/1000.;commonRecords[h%commonRecords.size()]=record;commonHead.store(h+1,std::memory_order_release);}else{++w.drops;++w.commonDrops;if(!w.reset.multithread)w.capture=false;}
  eventLock.clear(std::memory_order_release);return armed;
 }
 void beginResetCopyEntry() noexcept {currentCopyEntry=0;}
@@ -447,7 +481,7 @@ void resetEntry(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uin
  if(eventLock.test_and_set(std::memory_order_acquire)){++w.drops;if(!w.reset.multithread)w.capture=false;return;}
  e.id=++entrySerial;
  for(unsigned i=leasesCap;i>0;--i){auto& l=leases[i-1];if(l.tid.load(std::memory_order_acquire)==tid&&l.window==unsigned(index)){l.entry=e;break;}}
- if(w.state==4){auto h=commonHead.load();if(h-commonTail.load()<commonRecords.size()){CommonRecord record{};record.window=unsigned(index);record.entry=e;record.elapsed=double(GetTickCount64()-w.reset.initMs)/1000.;commonRecords[h%commonRecords.size()]=record;commonHead.store(h+1,std::memory_order_release);}else{++w.drops;w.capture=false;}}
+ if(w.state==4){auto h=commonHead.load();if(h-commonTail.load()<commonRecords.size()){CommonRecord record{};record.window=unsigned(index);record.entry=e;record.elapsed=double(GetTickCount64()-w.reset.initMs)/1000.;commonRecords[h%commonRecords.size()]=record;commonHead.store(h+1,std::memory_order_release);}else{++w.drops;++w.commonDrops;if(!w.reset.multithread)w.capture=false;}}
  eventLock.clear(std::memory_order_release);
 }
 

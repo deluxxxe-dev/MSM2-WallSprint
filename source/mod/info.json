@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.21",
-  "description": "WallSprint v0.1c3 Third Reset Writer Multithread Trace. Retains verified A/B source overrides and adds a bounded process-thread Hero Up watch. Diagnostic only for other writers; no direct Actor/Position/adhesion/movement/camera/animation/physics writes.",
+  "version": "0.1.22",
+  "description": "WallSprint v0.1c4 Real-Game Thread Enumeration Fix. Retains verified A/B source overrides and repairs bounded process-thread watch expansion and reports explicit stage/errors. Diagnostic only for other writers; no direct Actor/Position/adhesion/movement/camera/animation/physics writes.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

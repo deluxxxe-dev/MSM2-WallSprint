@@ -15,7 +15,7 @@ bool configureReset(bool verified,std::uintptr_t base,std::size_t size,bool prea
 void cancelReset() noexcept;
 bool resetCommitted(const reset_trace::Request&) noexcept;
 bool beginReset(const reset_trace::Request&,const Snapshot&);
-bool pollReset(bool valid);
+bool pollReset(bool valid,const char* invalidReason="inactive_or_identity_or_guard_loss");
 void beginResetCopyEntry() noexcept;
 void resetCopyEntry(const path_b::Entry&) noexcept;
 void resetEntry(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t caller,bool overridden,std::uint64_t nativeUpdate=0,std::uint64_t generation=0,std::uintptr_t owner=0) noexcept;
