@@ -1,6 +1,6 @@
 # Codex result — WallSprint v0.1b9
 
-Branch: **codex/v01b9-path-b-layout**. Implementation commit: **PENDING_COMMIT**. Baseline preserved from b8 branch28910fb; latest main task/runtime instructions cherry-picked without discarding b7/b8 implementation. No main rewrite or force push.
+Branch: **codex/v01b9-path-b-layout**. Implementation commit: **b89b05bb89f4c0cbd0ffa18e45bfef6e7f5baa1a**. Baseline preserved from b8 branch28910fb; latest main task/runtime instructions cherry-picked without discarding b7/b8 implementation. No main rewrite or force push.
 
 ## Changes and files
 
