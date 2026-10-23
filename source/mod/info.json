@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.24",
-  "description": "WallSprint v0.1c6 Planar Adhesion Diagnostics. Retains verified A/B source overrides and retains c5 orientation; inspects authenticated Position data-flow candidates and samples planar standoff. Position remains read-only until whole-path/W/exclusive-effect proof. Diagnostic only for other writers; no direct Actor/Position/adhesion/movement/camera/animation/physics writes.",
+  "version": "0.1.25",
+  "description": "WallSprint v0.1c7 Transient Freshness Recovery. Stale native Updates suspend A/B writes at100ms; a fresh same-identity verified Update resumes the preserved orientation transition. Hard identity/integrity/Deinit/kill gates stay closed. Position diagnostics remain read-only; no direct Actor/Position/movement/camera/animation/physics writes.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

@@ -23,10 +23,14 @@ constexpr unsigned char callerDigest[32]={0x88,0x50,0x29,0x96,0xd3,0x91,0x73,0xb
 std::array<msm2::writer::Patch,4> lifecyclePatches;unsigned char callerOriginal[168]{};
 msm2::native_source::Config config;std::uintptr_t imageBase{};std::atomic<bool> killed{true},isActive{false};bool admitted{},configured{};std::atomic_flag stateLock=ATOMIC_FLAG_INIT;thread_local bool inside{},didOverride{};
 struct Published {
- std::uint64_t session{},generation{},lifecycleEpoch{},publishedMs{},initMs{};std::uintptr_t hero{},transform{},owner{};
+ std::uint64_t session{},generation{},lifecycleEpoch{},acceptedEpoch{},publishedMs{},initMs{};std::uintptr_t hero{},transform{},owner{};
  unsigned thread{},nativeUpdate{};float elapsed{},t{};bool active{};ws::diag::ActorAxes basis{};Vec3 surface{};
 };
 ws::interop::AtomicPublication<Published> publication;
+// Hooks report an expired native token without touching the worker-owned state.
+struct StaleSignal {Token token{};std::uint64_t session{},detectedMs{};};
+ws::interop::AtomicPublication<StaleSignal> stalePublication;
+enum class Ownership {Dormant,Active,StaleSuspended,HardClosed};
 struct NativeClose {Token token{};Published source{};bool wasOpen{},sourceRead{};};
 ws::interop::AtomicPublication<NativeClose> deinitPublication;
 std::atomic<unsigned> pathAWrites{0},pathBWrites{0},pathARejects{0},pathBRejects{0};
@@ -39,6 +43,9 @@ struct Shared {
  Matrix entryBasis{},currentBasis{};Vec3 entryForward{};std::uint64_t lastCommonUpdate{},lastObserveMs{},lastMetricMs{};
  unsigned writes{},commonWrites{},copyWrites{},heldUpdates{},otherWriters{};float elapsed{},lastT{},bestSurface{};unsigned rejects{};bool pass{};
  std::uint64_t initMs{},maxHeldMs{};unsigned maxHeldUpdates{};float lastActorDot{};bool entered{},summaryEmitted{},exitDiagEmitted{},lastActorValid{};const char* exitReason="not_entered";
+ Ownership ownership{Ownership::Dormant};unsigned expectedThread{},staleSuspends{},staleResumes{};
+ std::uint64_t permissionEpoch{},acceptedEpoch{},staleStart{},staleUpdate{},staleAge{},maxStaleMs{},handledStaleUpdate{};
+ double pausedTransitionMs{},frozenTransitionMs{};
  Adhesion adhesion{};
 } state;
 struct Record {
@@ -61,11 +68,12 @@ void adhesionSummary(const char* reason){
   (unsigned long long)state.session,a.samples,a.attempts,a.maxError,a.maxError,a.failClosed,a.maxRequested,a.maxCandidateTangent,reason);
 }
 void end(const char* reason,std::uint64_t now){
+ if(state.ownership==Ownership::StaleSuspended&&now>=state.staleStart)state.maxStaleMs=std::max(state.maxStaleMs,now-state.staleStart);
  if(state.transition.active)adhesionSummary(reason);
  state.commonWrites=pathAWrites.load();state.copyWrites=pathBWrites.load();state.writes=state.commonWrites+state.copyWrites;
  if(state.transition.active)state.exitReason=reason;
  if(state.transition.active&&room()){Record r{};r.kind=2;r.reason=reason;r.session=state.session;r.generation=state.generation;r.ms=now;r.elapsed=float(now-state.transition.entryMs)/1000;r.writes=state.writes;r.heldUpdates=state.heldUpdates;r.heldMs=state.firstHeld?now-state.firstHeld:0;r.success=state.pass;emit(r);}
- state.transition.active=false;state.blocked=state.generation;isActive=false;
+ state.transition.active=false;state.ownership=Ownership::HardClosed;state.blocked=state.generation;isActive=false;
  lifecycleOpen=false;++lifecycleEpoch;
  publishInactive();
 }
@@ -102,6 +110,32 @@ void prearmPublished(const Token& token,std::uint64_t now){
 }
 
 bool freshToken(const Token& t,std::uint64_t now){return t.phase==3&&t.owner&&t.updates&&now>=t.initMs&&now>=t.updateMs&&now-t.updateMs<=100;}
+// Every owned entry checks the native publication, including immediately before
+// the stack store. Worker publication age alone cannot establish native freshness.
+bool entryToken(const Published& p) noexcept {
+ Token t{};bool coherent=ws::native_source::lifecycle(t);auto now=GetTickCount64();
+ if(!coherent){if(t.observed)msm2::native_source::kill();return false;}
+ if(t.owner!=p.owner||t.generation!=p.generation||t.initMs!=p.initMs||t.thread!=p.thread||
+    t.acceptedEventEpoch!=p.acceptedEpoch||t.collisionEpoch!=p.acceptedEpoch||now<t.initMs||now<t.updateMs){msm2::native_source::kill();return false;}
+ if(!freshToken(t,now)){stalePublication.publish({t,p.session,now});return false;}
+ return now>=p.publishedMs&&now-p.publishedMs<=100&&!killed.load()&&lifecycleOpen.load()&&p.lifecycleEpoch==lifecycleEpoch.load();
+}
+bool suspendStale(const Token& t,std::uint64_t detected){
+ if(state.ownership!=Ownership::Active)return state.ownership==Ownership::StaleSuspended;
+ // Only our own soft close can advance the permission epoch. Never adopt a
+ // concurrent native Deinit/invalid sequence epoch as permission to resume.
+ auto expected=state.permissionEpoch;
+ if(!lifecycleEpoch.compare_exchange_strong(expected,expected+1))return false;
+ ++state.permissionEpoch;lifecycleOpen=false;publishInactive();isActive=false;
+ state.ownership=Ownership::StaleSuspended;++state.staleSuspends;
+ state.staleStart=t.updateMs+100;state.staleUpdate=t.updates;state.handledStaleUpdate=t.updates;
+ state.staleAge=detected>=t.updateMs?detected-t.updateMs:0;
+ state.frozenTransitionMs=state.transition.entryMs+double(state.lastT)*config.rotateTime*1000.;
+ state.firstHeld=0;state.heldUpdates=0;state.lastObserveMs=0;
+ if(state.staleSuspends<=16)writeLog("NATIVE_SOURCE_STALE_SUSPEND session=%llu elapsed=%.6f update_age_ms=%llu last_native_update=%u last_native_update_ms=%llu owner=0x%llx generation=%llu thread=%u actor_up_dot_surface=%.9g actor_observation_valid=%u t=%.6f episode=%u",
+  (unsigned long long)state.session,state.elapsed,(unsigned long long)state.staleAge,t.updates,(unsigned long long)t.updateMs,(unsigned long long)state.owner,(unsigned long long)state.generation,state.expectedThread,state.lastActorDot,unsigned(state.lastActorValid),state.lastT,state.staleSuspends);
+ return true;
+}
 void configurePositionEvidence(bool verified,bool callerVerified){
  std::array<unsigned char,584> original{};bool writerVerified=verified&&msm2::input::originalWriterForPositionProof(original);positionProof={};
  if(callerVerified&&writerVerified)positionProof=ws::position_proof::inspect(original.data(),original.size(),callerOriginal,sizeof(callerOriginal));
@@ -141,13 +175,13 @@ void exitDiagnostic(const ws::observed::VerifiedWallContext& ctx,const Token& t,
 void lifecycleSummary(std::uint64_t finish,bool verifiedDeinit,bool untilDeinit){
  if(!state.entered||state.summaryEmitted)return;
  state.summaryEmitted=true;
- writeLog("ORIENTATION_LIFECYCLE_SUMMARY session=%llu wallrun_duration_ms=%llu source_entry_elapsed=%.6f source_exit_reason=%s source_active_until_deinit=%u verified_deinit=%u path_a_writes=%u path_b_writes=%u retention_pass=%u max_held_ms=%llu max_held_updates=%u last_actor_up_dot_surface=%.9g last_actor_observation_valid=%u last_actor_observation_ms=%llu last_actor_observation_scope=active_source_worker_snapshot",
-  (unsigned long long)state.session,(unsigned long long)(finish>=state.initMs?finish-state.initMs:0),double(state.transition.entryMs-state.initMs)/1000.,state.exitReason,unsigned(verifiedDeinit&&untilDeinit),unsigned(verifiedDeinit),pathAWrites.load(),pathBWrites.load(),unsigned(state.pass),(unsigned long long)state.maxHeldMs,state.maxHeldUpdates,state.lastActorDot,unsigned(state.lastActorValid),(unsigned long long)state.lastObserveMs);
+ writeLog("ORIENTATION_LIFECYCLE_SUMMARY session=%llu wallrun_duration_ms=%llu source_entry_elapsed=%.6f source_exit_reason=%s source_active_until_deinit=%u verified_deinit=%u path_a_writes=%u path_b_writes=%u retention_pass=%u max_held_ms=%llu max_held_updates=%u last_actor_up_dot_surface=%.9g last_actor_observation_valid=%u last_actor_observation_ms=%llu last_actor_observation_scope=active_source_worker_snapshot stale_suspend_count=%u stale_resume_count=%u max_stale_duration_ms=%llu stale_log_pair_cap=16",
+  (unsigned long long)state.session,(unsigned long long)(finish>=state.initMs?finish-state.initMs:0),double(state.transition.entryMs-state.initMs)/1000.,state.exitReason,unsigned(verifiedDeinit&&untilDeinit),unsigned(verifiedDeinit),pathAWrites.load(),pathBWrites.load(),unsigned(state.pass),(unsigned long long)state.maxHeldMs,state.maxHeldUpdates,state.lastActorDot,unsigned(state.lastActorValid),(unsigned long long)state.lastObserveMs,state.staleSuspends,state.staleResumes,(unsigned long long)state.maxStaleMs);
 }
 void drainVerifiedDeinit(){
  if(!state.entered||state.summaryEmitted)return;
  NativeClose closed{};if(!deinitPublication.read(closed)||closed.token.lastKind!=3||closed.token.phase!=0||closed.token.generation!=state.generation+1||closed.token.owner!=state.owner||closed.token.initMs!=state.initMs)return;
- bool until=closed.token.acceptedEventEpoch==closed.token.collisionEpoch&&state.transition.active&&closed.wasOpen&&closed.sourceRead&&closed.source.active&&closed.source.session==state.session&&closed.source.generation==state.generation&&closed.source.owner==state.owner&&closed.source.hero==state.hero&&closed.source.transform==state.transform&&closed.token.eventMs>=closed.source.publishedMs&&closed.token.eventMs-closed.source.publishedMs<=100;
+ bool until=closed.token.acceptedEventEpoch==state.acceptedEpoch&&closed.token.collisionEpoch==state.acceptedEpoch&&closed.token.thread==state.expectedThread&&closed.token.eventMs>=closed.token.updateMs&&closed.token.eventMs-closed.token.updateMs<=100&&state.transition.active&&closed.wasOpen&&closed.sourceRead&&closed.source.active&&closed.source.session==state.session&&closed.source.generation==state.generation&&closed.source.owner==state.owner&&closed.source.hero==state.hero&&closed.source.transform==state.transform&&closed.token.eventMs>=closed.source.publishedMs&&closed.token.eventMs-closed.source.publishedMs<=100;
  end("verified_native_Deinit",closed.token.eventMs);lifecycleSummary(closed.token.eventMs,true,until);
 }
 bool observe(const msm2::Snapshot& s,const Token& token,std::uint64_t now,bool mayAbort){
@@ -189,7 +223,7 @@ void configure(Config c,bool verified,std::uintptr_t base,std::size_t size,const
  admitted=verified&&c.enabled&&c.sourceOverride&&callerVerified&&std::isfinite(c.delay)&&c.delay>=.7f&&c.delay<=5&&std::isfinite(c.rotateTime)&&c.rotateTime>=.2f&&c.rotateTime<=1&&currentGuards()&&(!c.dualSource||msm2::reset_copy::compactProofAuthenticated());
  writeLog("native_source_config enabled=%u requested_override=%u admitted=%u direct_actor_transform_write=0 adhesion=0 movement=0 camera=0 animation=0 source_write_range=[0x00,0x30) position_write=0 caller_rva=0x2cfc8f3 caller_body_hash_verified=%u source_stack_relation=writer_entry_RSP+0x28 delay=%.3f rotate_time=%.3f",unsigned(c.enabled),unsigned(c.sourceOverride),unsigned(admitted),unsigned(callerVerified),c.delay,c.rotateTime);
  writeLog("DUAL_SOURCE_ADMISSION admitted=%u dual_source_required=%u common_caller=0x2cfc8f3 copy_caller=0x2cfc84b copy_hook_authenticated=%u",unsigned(admitted),unsigned(c.dualSource),unsigned(msm2::reset_copy::authenticated()));
- writeLog("SOURCE_LIFECYCLE_CONTRACT readers_lock_native_events=0 native_event_collision_fail_closed=1 native_update_freshness_ms=100 worker_publication_freshness_ms=100 clock_sample=after_token_acquisition verified_Deinit_summary=1 diagnostic_window_limits_source_ownership=0");
+ writeLog("SOURCE_LIFECYCLE_CONTRACT readers_lock_native_events=0 native_event_collision_fail_closed=1 native_update_freshness_ms=100 worker_publication_freshness_ms=100 stale_policy=suspend_until_same_identity_real_Update transition_recovery=freeze_last_published_progress stale_episode_log_cap=16 clock_sample=after_token_acquisition verified_Deinit_summary=1 diagnostic_window_limits_source_ownership=0");
  path_b::configure(admitted,true);
  if(!admitted)return;
  state={};pathAWrites=0;pathBWrites=0;pathARejects=0;pathBRejects=0;resetRequested=false;lifecycleOpen=false;publishInactive();killed=false;ws::native_source::armLifecycle(true);ws_native_source_enabled=1;
@@ -208,6 +242,7 @@ bool active() noexcept{return isActive.load();}
 bool observationGuardsAuthenticated() noexcept{return !killed.load()&&admitted&&currentGuards();}
 bool entryOverridden() noexcept{return didOverride;}
 void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool authenticated){
+ (void)reason;
  if(!authenticated){kill();}
  if(stateLock.test_and_set(std::memory_order_acquire))return;
  auto now=GetTickCount64();drainVerifiedDeinit();auto epoch=lifecycleEpoch.load();
@@ -220,25 +255,60 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
   stateLock.clear(std::memory_order_release);return;
  }
  const char* failed=!ctx.lifecycleVerified?"ctx_lifecycle_unverified":!ctx.wallRunActive?"ctx_wallrun_inactive":!native?ws::native_source::lifecycleReadName(token.readStatus):
-  token.phase!=3?"fresh_phase":!token.owner?"fresh_owner":!token.updates?"fresh_updates":now<token.initMs||now<token.updateMs?"fresh_time_order":now-token.updateMs>100?"fresh_update_age":token.owner!=ctx.wallRunOwner?"owner_matches_ctx":nullptr;
- if(failed){exitDiagnostic(ctx,token,native,now,failed);end(!ctx.wallRunActive?reason:token.lastKind==3?"native_verified_Deinit_before_worker_drain":"native_lifecycle_inactive_or_stale",now);state.published=0;stateLock.clear(std::memory_order_release);return;}
+  token.phase!=3?"fresh_phase":!token.owner?"fresh_owner":!token.updates?"fresh_updates":now<token.initMs||now<token.updateMs?"fresh_time_order":token.owner!=ctx.wallRunOwner?"owner_matches_ctx":nullptr;
+ auto hardClose=[&](const char* gate){exitDiagnostic(ctx,token,native,now,gate);end(gate,now);state.published=0;stateLock.clear(std::memory_order_release);};
+ if(failed){hardClose(failed);return;}
  msm2::Snapshot s{};
- if(!msm2::sample(s)){exitDiagnostic(ctx,token,native,now,"hero_snapshot_invalid");end("fresh_Hero_snapshot_invalid",now);state.published=0;stateLock.clear(std::memory_order_release);return;}
- if(state.session&&state.session==ctx.wallRunSessionId&&(state.generation!=token.generation||state.owner!=token.owner)){exitDiagnostic(ctx,token,native,now,"same_session_native_generation_or_owner_changed");end("native_generation_or_owner_changed",now);state.published=0;stateLock.clear(std::memory_order_release);return;}
- if(state.generation!=token.generation||state.session!=ctx.wallRunSessionId){end("new_native_session",now);++epoch;lifecycleSummary(now,false,false);state={};state.generation=token.generation;state.session=ctx.wallRunSessionId;state.initMs=token.initMs;state.hero=s.hero;state.transform=s.transform;state.owner=token.owner;pathAWrites=0;pathBWrites=0;pathARejects=0;pathBRejects=0;resetRequested=false;}
- if(s.hero!=state.hero||s.transform!=state.transform){exitDiagnostic(ctx,token,native,now,s.hero!=state.hero?"hero_identity_changed":"transform_identity_changed");end("Hero_Transform_identity_changed",now);state.published=0;stateLock.clear(std::memory_order_release);return;}
- if(state.blocked==state.generation){stateLock.clear(std::memory_order_release);return;}
- state.published=now;state.elapsed=float(ctx.elapsed);Vec3 n{};
- bool normalOk=token.owner<=UINTPTR_MAX-0x3a4&&msm2::readMemory(token.owner+0x398,&n,12)&&ws::finite(n);
+ if(!msm2::sample(s)){hardClose("hero_snapshot_invalid");return;}
+ if(state.session&&state.session==ctx.wallRunSessionId&&(state.generation!=token.generation||state.owner!=token.owner)){hardClose("same_session_native_generation_or_owner_changed");return;}
+ if(state.session&&state.session!=ctx.wallRunSessionId&&state.generation==token.generation){hardClose("worker_session_changed_without_native_generation");return;}
+ if(state.session!=ctx.wallRunSessionId){
+  end("new_native_session",now);++epoch;lifecycleSummary(now,false,false);state={};
+  state.generation=token.generation;state.session=ctx.wallRunSessionId;state.initMs=token.initMs;state.hero=s.hero;state.transform=s.transform;state.owner=token.owner;
+  state.permissionEpoch=epoch;state.acceptedEpoch=token.acceptedEventEpoch;state.expectedThread=token.thread;
+  pathAWrites=0;pathBWrites=0;pathARejects=0;pathBRejects=0;resetRequested=false;
+ }
+ if(state.ownership==Ownership::HardClosed){stateLock.clear(std::memory_order_release);return;}
+ if(s.hero!=state.hero||s.transform!=state.transform){hardClose(s.hero!=state.hero?"hero_identity_changed":"transform_identity_changed");return;}
+ if(token.acceptedEventEpoch!=state.acceptedEpoch||token.collisionEpoch!=state.acceptedEpoch||token.thread!=state.expectedThread||token.initMs!=state.initMs){hardClose("native_epoch_thread_or_init_changed");return;}
+ if(lifecycleEpoch.load()!=state.permissionEpoch){drainVerifiedDeinit();if(state.summaryEmitted){stateLock.clear(std::memory_order_release);return;}hardClose("native_permission_epoch_changed");return;}
+ if(!currentGuards()){hardClose("current_hook_or_caller_integrity_lost");return;}
+ Vec3 n{};bool normalOk=token.owner<=UINTPTR_MAX-0x3a4&&msm2::readMemory(token.owner+0x398,&n,12)&&ws::finite(n);
+ if(state.entered){float length=normalOk?std::sqrt(ws::dot(n,n)):0;
+  if(length<.95f||length>1.05f||std::abs(n.y)>length*.20f||ws::dot(n,state.transition.surface)<length*.995f){hardClose("invalid_owned_surface_normal");return;}}
+ state.elapsed=float(ctx.elapsed);
+ StaleSignal signal{};
+ if(state.ownership==Ownership::Active&&stalePublication.read(signal)&&signal.session==state.session&&signal.token.owner==state.owner&&signal.token.generation==state.generation&&signal.token.updates>state.handledStaleUpdate&&signal.token.acceptedEventEpoch==state.acceptedEpoch&&signal.token.thread==state.expectedThread){
+  if(!suspendStale(signal.token,signal.detectedMs)){hardClose("native_permission_epoch_changed");return;}
+ }
+ if(now-token.updateMs>100){
+  if(state.ownership==Ownership::Active&&!suspendStale(token,now)){hardClose("native_permission_epoch_changed");return;}
+  if(state.ownership==Ownership::StaleSuspended){state.staleAge=std::max(state.staleAge,now-token.updateMs);state.maxStaleMs=std::max(state.maxStaleMs,now-state.staleStart);}
+  stateLock.clear(std::memory_order_release);return;
+ }
+ if(state.ownership==Ownership::StaleSuspended){
+  if(token.lastKind!=2||token.updates<=state.staleUpdate){stateLock.clear(std::memory_order_release);return;}
+  auto duration=now-state.staleStart;state.maxStaleMs=std::max(state.maxStaleMs,duration);++state.staleResumes;
+  // Preserve the last interpolation output; only its virtual clock pauses.
+  // Original entry/session timing and the real 5s budget remain unchanged.
+  state.pausedTransitionMs=double(now)-state.frozenTransitionMs;
+  state.ownership=Ownership::Active;isActive=true;
+  if(state.staleResumes<=16)writeLog("NATIVE_SOURCE_STALE_RESUME session=%llu stale_duration_ms=%llu previous_update_age_ms=%llu new_update_age_ms=%llu native_update=%u native_gap_ms=%llu owner_match=1 hero_match=1 transform_match=1 generation_match=1 thread_match=1 accepted_epoch_match=1 transition_restarted=0 t=%.6f episode=%u",
+   (unsigned long long)state.session,(unsigned long long)duration,(unsigned long long)state.staleAge,(unsigned long long)(now-token.updateMs),token.updates,(unsigned long long)(token.updateMs-(state.staleStart-100)),state.lastT,state.staleResumes);
+ }
+ epoch=state.permissionEpoch;
+ state.published=now;state.elapsed=float(ctx.elapsed);
  if(!state.transition.active&&ctx.elapsed>=config.delay&&normalOk){
   Matrix baseline{};std::memcpy(baseline.v,s.prefix,48);baseline.v[12]=s.position[0];baseline.v[13]=s.position[1];baseline.v[14]=s.position[2];baseline.v[15]=1;
   if(!state.transition.enter(baseline,n,double(now))){end("invalid_entry_normal_or_forward",now);stateLock.clear(std::memory_order_release);return;}
-  state.entryBasis=baseline;state.lastObserveUpdate=token.updates;state.entered=true;state.exitReason="active";isActive=true;
+  state.entryBasis=baseline;state.lastObserveUpdate=token.updates;state.entered=true;state.ownership=Ownership::Active;state.exitReason="active";isActive=true;
  }
- Published p{};p.session=state.session;p.generation=state.generation;p.lifecycleEpoch=epoch;p.publishedMs=now;p.initMs=token.initMs;p.hero=state.hero;p.transform=state.transform;p.owner=state.owner;p.thread=token.thread;p.nativeUpdate=token.updates;p.elapsed=float(now-token.initMs)/1000.f;
+ Published p{};p.session=state.session;p.generation=state.generation;p.lifecycleEpoch=epoch;p.acceptedEpoch=state.acceptedEpoch;p.publishedMs=now;p.initMs=token.initMs;p.hero=state.hero;p.transform=state.transform;p.owner=state.owner;p.thread=token.thread;p.nativeUpdate=token.updates;p.elapsed=float(now-token.initMs)/1000.f;
+ if(state.transition.active&&!normalOk){end("owned_surface_normal_unreadable",now);}
  if(state.transition.active&&normalOk){Matrix sampled{};float t{};Matrix incoming=state.entryBasis;
   if(now-state.transition.entryMs>=5000){end("bounded_test_window_5seconds",now);}
-  else if(state.transition.sample(incoming,n,double(now),config.rotateTime,sampled,t)){p.active=true;p.t=t;p.surface=state.transition.surface;p.basis=ws::diag::actorAxes(sampled.v);state.currentBasis=sampled;state.lastT=t;lifecycleOpen=true;}
+  else if(state.transition.sample(incoming,n,double(now)-state.pausedTransitionMs,config.rotateTime,sampled,t)){p.active=true;p.t=t;p.surface=state.transition.surface;p.basis=ws::diag::actorAxes(sampled.v);state.currentBasis=sampled;state.lastT=t;lifecycleOpen=true;}
+  else {end("invalid_owned_surface_or_transition",now);}
  }
  // A synchronous native close racing this worker must win. Its epoch cannot
  // be adopted for a token acquired before the close, even on first entry.
@@ -254,18 +324,26 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
 void capturePath(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t originalRsp) noexcept {
  didOverride=false;if(inside||killed.load()||!ws_native_source_enabled.load())return;
  auto error=GetLastError();inside=true;auto release=[&]{inside=false;SetLastError(error);};auto now=GetTickCount64();Published p{};
- if(ret!=imageBase+callReturn){release();return;}
+ if(ret!=imageBase+callReturn){
+  if(ret>=imageBase+callBegin&&ret<imageBase+callBegin+callSize&&publication.read(p)&&p.active&&rcx==p.transform)kill();
+  release();return;
+ }
  auto rejectEntry=[&](const char* reason,unsigned mask){auto count=pathARejects.fetch_add(1);if(count<64){Record r{};r.kind=10;r.reason=reason;r.session=p.session;r.elapsed=p.elapsed;r.gateMask=mask;emit(r);}};
- if(!lifecycleOpen.load()||!publication.read(p)||p.lifecycleEpoch!=lifecycleEpoch.load()||!p.active||now<p.publishedMs||now-p.publishedMs>100||p.thread!=GetCurrentThreadId()){rejectEntry("lockfree_snapshot_inactive_stale_or_incoherent",1);release();return;}
+ if(!lifecycleOpen.load()||!publication.read(p)||!p.active){++pathARejects;release();return;}
+ if(rcx!=p.transform){release();return;}
+ if(p.thread!=GetCurrentThreadId()){kill();release();return;}
+ if(!entryToken(p)){++pathARejects;release();return;}
+ if(p.lifecycleEpoch!=lifecycleEpoch.load()||now<p.publishedMs||now-p.publishedMs>100){++pathARejects;release();return;}
  if(pathAWrites.load()>=4096){rejectEntry("path_A_write_budget_exhausted",1|16|32);release();return;}
  if(rcx!=p.transform){rejectEntry("current_Hero_target_mismatch",1|16|32);release();return;}
- if(r8!=0){rejectEntry("unexpected_R8_not_null",1|2|16|32);release();return;}
- msm2::Snapshot hero{};if(!msm2::sample(hero)||hero.hero!=p.hero||hero.transform!=p.transform){rejectEntry("fresh_Hero_identity_unavailable_or_changed",1|2|16|32);release();return;}
+ if(r8!=0){kill();rejectEntry("unexpected_R8_not_null",1|2|16|32);release();return;}
+ msm2::Snapshot hero{};if(!msm2::sample(hero)||hero.hero!=p.hero||hero.transform!=p.transform){kill();rejectEntry("fresh_Hero_identity_unavailable_or_changed",1|2|16|32);release();return;}
  if(!currentGuards()){rejectEntry("entry_hook_or_caller_integrity_lost",1|2|16|32);kill();release();return;}
- Matrix incoming{};auto stack=ws::interop::currentStack();if(!ws::interop::stackMatrix(rdx,originalRsp,stack,incoming)||!(rdx+64<=rcx||rcx+64<=rdx)){rejectEntry("path_A_stack_provenance_or_source_layout_failed",1|2|16|32);release();return;}
+ Matrix incoming{};auto stack=ws::interop::currentStack();if(!ws::interop::stackMatrix(rdx,originalRsp,stack,incoming)||!(rdx+64<=rcx||rcx+64<=rdx)){kill();rejectEntry("path_A_stack_provenance_or_source_layout_failed",1|2|16|32);release();return;}
  Matrix applied=incoming;Vec3 rows[]={p.basis.right,p.basis.up,p.basis.forward};for(unsigned i=0;i<3;++i){applied.v[4*i]=rows[i].x;applied.v[4*i+1]=rows[i].y;applied.v[4*i+2]=rows[i].z;applied.v[4*i+3]=0;}
  if(!ws::source_math::valid(applied)){rejectEntry("published_basis_invalid",1|2|4|8|16|32);release();return;}
- Published final{};if(!publication.read(final)||final.session!=p.session||final.generation!=p.generation||final.lifecycleEpoch!=p.lifecycleEpoch||final.lifecycleEpoch!=lifecycleEpoch.load()||final.publishedMs!=p.publishedMs||!final.active||!currentGuards()){rejectEntry("lockfree_snapshot_or_integrity_changed_before_commit",1|2|4|8|16|32);release();return;}
+ if(!currentGuards()){kill();release();return;}
+ Published final{};if(!publication.read(final)||final.session!=p.session||final.generation!=p.generation||final.lifecycleEpoch!=p.lifecycleEpoch||final.lifecycleEpoch!=lifecycleEpoch.load()||final.publishedMs!=p.publishedMs||!final.active||!currentGuards()||!entryToken(final)){rejectEntry("lockfree_snapshot_or_integrity_changed_before_commit",1|2|4|8|16|32);release();return;}
  LARGE_INTEGER begin{};QueryPerformanceCounter(&begin);auto result=ws::interop::writeStackOrientation(rdx,incoming,applied);
  if(!result.success){rejectEntry(result.rollbackFailed?"path_A_write_failed_rollback_failed":"path_A_write_failed_restored_or_untouched",1|2|4|8|16|32);if(result.rollbackFailed)kill();release();return;}
  didOverride=true;auto count=pathAWrites.fetch_add(1)+1;Vec3 appliedUp{applied.v[4],applied.v[5],applied.v[6]};
@@ -276,15 +354,25 @@ void capture(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintpt
 void captureCopy(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t rsp) noexcept {
  auto error=GetLastError();trace::beginResetCopyEntry();if(inside||killed.load()||!ws_native_source_enabled.load()){SetLastError(error);return;}
  inside=true;auto release=[&]{inside=false;SetLastError(error);};auto now=GetTickCount64();Published p{};
- if(ret!=imageBase+0x2cfc84b){release();return;}
+ if(ret!=imageBase+0x2cfc84b){
+  if(ret>=imageBase+0x2cfc7d0&&ret<imageBase+0x2cfc850&&publication.read(p)&&p.active&&rcx==p.transform)kill();
+  release();return;
+ }
  auto rejectEntry=[&]{pathBRejects.fetch_add(1);};
- if(!lifecycleOpen.load()||!publication.read(p)||p.lifecycleEpoch!=lifecycleEpoch.load()||!p.active||now<p.publishedMs||now-p.publishedMs>100||p.thread!=GetCurrentThreadId()||rcx!=p.transform||!msm2::reset_copy::compactProofAuthenticated()||!currentGuards()){rejectEntry();release();return;}
+ if(!lifecycleOpen.load()||!publication.read(p)||!p.active){rejectEntry();release();return;}
+ if(rcx!=p.transform){release();return;}
+ if(p.thread!=GetCurrentThreadId()){kill();release();return;}
+ if(!entryToken(p)){rejectEntry();release();return;}
+ if(p.lifecycleEpoch!=lifecycleEpoch.load()||now<p.publishedMs||now-p.publishedMs>100){rejectEntry();release();return;}
+ if(!msm2::reset_copy::compactProofAuthenticated()||!currentGuards()){kill();rejectEntry();release();return;}
  if(pathBWrites.load()>=4096){rejectEntry();release();return;}
- msm2::Snapshot hero{};if(!msm2::sample(hero)||hero.hero!=p.hero||hero.transform!=p.transform){rejectEntry();release();return;}
+ msm2::Snapshot hero{};if(!msm2::sample(hero)||hero.hero!=p.hero||hero.transform!=p.transform){kill();rejectEntry();release();return;}
  auto stack=ws::interop::currentStack();ws::source_math::CompactBlock incoming{},applied{};Vec3 lengths{};
- if(!ws::interop::stackCompact(rdx,rsp,stack,incoming)||!ws::source_math::compactReplacement(incoming,p.basis,applied,lengths)){rejectEntry();release();return;}
+ if(!ws::interop::stackCompact(rdx,rsp,stack,incoming)){kill();rejectEntry();release();return;}
+ if(!ws::source_math::compactReplacement(incoming,p.basis,applied,lengths)){kill();rejectEntry();release();return;}
  path_b::Entry e{};e.session=p.session;e.generation=p.generation;e.update=p.nativeUpdate;e.owner=p.owner;e.thread=p.thread;e.elapsed=p.elapsed;e.rcx=rcx;e.rdx=rdx;e.r8=r8;e.r9=r9;e.rsp=rsp;e.caller=0x2cfc84b;e.stackLimit=stack.limit;e.stackBase=stack.base;e.normal=p.surface;e.actorBefore={hero.prefix[4],hero.prefix[5],hero.prefix[6]};e.referenceValid=pathAWrites.load()>0;e.pathAUp=p.basis.up;e.readable=path_b::readBounded(rdx,e.raw,128);
- Published final{};if(!publication.read(final)||final.session!=p.session||final.generation!=p.generation||final.lifecycleEpoch!=p.lifecycleEpoch||final.lifecycleEpoch!=lifecycleEpoch.load()||final.publishedMs!=p.publishedMs||!final.active||!currentGuards()){path_b::capture(e);rejectEntry();release();return;}
+ if(!currentGuards()){kill();release();return;}
+ Published final{};if(!publication.read(final)||final.session!=p.session||final.generation!=p.generation||final.lifecycleEpoch!=p.lifecycleEpoch||final.lifecycleEpoch!=lifecycleEpoch.load()||final.publishedMs!=p.publishedMs||!final.active||!currentGuards()||!entryToken(final)){path_b::capture(e);rejectEntry();release();return;}
  LARGE_INTEGER begin{};QueryPerformanceCounter(&begin);auto result=ws::interop::writeStackCompact(rdx,incoming,applied);e.overridden=result.success;path_b::capture(e);
  if(!result.success){rejectEntry();if(result.rollbackFailed)kill();release();return;}
  didOverride=true;auto count=pathBWrites.fetch_add(1)+1;msm2::reset_trace::Request committed{};committed.prearmed=true;committed.resetCopy=true;committed.verifyDual=true;committed.characterize=true;committed.initMs=p.initMs;committed.session=p.session;committed.generation=p.generation;committed.nativeUpdate=p.nativeUpdate;committed.commitQpc=result.commitQpc;committed.overrideBeginQpc=begin.QuadPart;committed.hero=p.hero;committed.transform=p.transform;committed.owner=p.owner;committed.thread=p.thread;committed.normal=p.surface;committed.appliedUp=p.basis.up;msm2::reset_trace::committed(committed);
