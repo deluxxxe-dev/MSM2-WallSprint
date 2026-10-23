@@ -21,6 +21,29 @@ Before starting any implementation task, read these files in order:
 - Do not package raw user logs, full captured game functions, or unnecessary game binary fragments in release ZIPs.
 - Treat each cloud task as isolated. Never assume an uncommitted working tree from a previous task still exists.
 
+## Runtime-log handoff
+
+The user normally sends game runtime logs to ChatGPT, not directly to Codex.
+
+ChatGPT will analyze those logs and write the implementation-relevant evidence into repository files such as:
+
+```text
+analysis/V01B8_RUNTIME_RESULT.md
+analysis/V01B9_RUNTIME_RESULT.md
+```
+
+`docs/CODEX_NEXT.md` will reference the latest relevant runtime-result file.
+
+When starting a task:
+
+1. read the runtime-result files referenced by `docs/CODEX_NEXT.md`;
+2. treat their measured RVAs, timings, register values, admission failures, A/E comparisons and reproduced behaviors as the runtime evidence supplied for that task;
+3. preserve the distinction between measured facts, static-analysis conclusions and hypotheses;
+4. do not require the full raw `.log` file unless the task explicitly says a missing detail cannot be resolved from the extracted evidence;
+5. if more raw evidence is required, state the exact event, field, timestamp window or log key needed instead of asking for an undirected full re-analysis.
+
+Do not commit full raw runtime logs to GitHub by default. Keep the repository clean for eventual public/Nexus distribution. Compact, task-specific runtime excerpts and derived analysis belong under `analysis/`.
+
 ## Persistence is mandatory
 
 A task is not complete merely because a ZIP/artifact was generated.
