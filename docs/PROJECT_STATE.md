@@ -43,7 +43,7 @@ Verified on cardinal and diagonal planar vertical walls:
 
 Face E repeatedly produces approximately `N398 = (-0.707107, 0, +0.707107)`.
 
-The current preferred control surface is a large unobstructed A-direction wall. The successful c5 run measured effectively `N398 = (0,0,+1)` and sustained a ~3.85 s WallRun.
+The current preferred control surface is a large unobstructed A-direction wall.
 
 ## Orientation Path A
 
@@ -51,7 +51,7 @@ The current preferred control surface is a large unobstructed A-direction wall. 
 - WallRun caller return RVA `0x2CFC8F3`
 - caller-local source contains padded Right / Up / Forward plus Position
 - orientation source range currently owned is `[source+0x00, source+0x30)`
-- Position has intentionally remained unchanged so far
+- Position remains unchanged
 - lock-free shared WallSprint snapshot active
 - real runtime confirms SurfaceFrame orientation writes
 - `PATH_A_STATE_LOCK_CONTENTION=0`
@@ -66,44 +66,19 @@ The current preferred control surface is a large unobstructed A-direction wall. 
 - runtime source provenance: `RDX = writer-entry RSP + 0x28`
 - compact 3x3 payload `[RDX+0x00,RDX+0x24)`
 
-Direct map:
-
-```text
-RDX+00 -> RCX+00
-RDX+04 -> RCX+04
-RDX+08 -> RCX+08
-RDX+0C -> RCX+10
-RDX+10 -> RCX+14
-RDX+14 -> RCX+18
-RDX+18 -> RCX+20
-RDX+1C -> RCX+24
-RDX+20 -> RCX+28
-```
-
 Real-game compact proof passes and Path B writes the intended surface-relative basis.
 
 ## Orientation history
 
-- c2: visible surface-relative rotation, but rapid WorldUp/SurfaceUp flicker.
-- c3: attempted multithread writer tracing; production thread expansion failed.
-- c4: production multithread watch repaired; first real orientation retention PASS, but source ownership ended early around 1.95 s while WallRun continued.
-- c5: native lifecycle continuity repaired and real full-WallRun hold passed.
+- c2: visible surface-relative rotation, rapid WorldUp/SurfaceUp flicker.
+- c3: multithread writer tracing attempted; production expansion failed.
+- c4: thread-watch repaired; first retention PASS, but source ownership ended early.
+- c5: lifecycle continuity repaired; real full-WallRun orientation hold passed.
+- c6: Position/adhesion remained read-only, but a real ~250 ms native Update gap caused `fresh_update_age` to permanently end source ownership while the same verified WallRun later continued.
 
-## v0.1c5 real-game result — lifecycle-wide orientation PASS
-
-Implementation:
-
-```text
-branch: codex/v01c5-sustained-lifecycle
-implementation commit: 1cfe3c76a5e09183757f891c5025def860ef4a88
-published head: 4917a3af9afb683db7f7b130626f5b25e20aebca
-version: v0.1c5 / package 0.1.23
-```
-
-Authoritative runtime summary:
+## v0.1c5 authoritative full-WallRun PASS
 
 ```text
-ORIENTATION_LIFECYCLE_SUMMARY
 wallrun_duration_ms=3843
 source_entry_elapsed=0.687000
 source_exit_reason=verified_native_Deinit
@@ -117,11 +92,60 @@ max_held_updates=205
 last_actor_up_dot_surface=1
 ```
 
-The retained threshold passed at 20 updates / 297 ms and the source then remained Surface Up through the verified native Deinit.
+## v0.1c6 real-game regression
 
-No premature `native_lifecycle_inactive_or_stale` exit occurred.
+Implementation:
 
-Detailed result: `analysis/V01C5_RUNTIME_RESULT.md`.
+```text
+branch: codex/v01c6-planar-adhesion
+implementation commit: 6ed21d411b8b6868185143d275c2e40486b57781
+published head: db874c74cc14f361a2ceb5e15647910e06ebfb84
+version: v0.1c6 / package 0.1.24
+```
+
+Adhesion was read-only as intended:
+
+```text
+position_proof_admitted=0
+corrections_applied=0
+source_position_writes=0
+mode=position_read_only
+```
+
+Therefore the visible mid-run release was not caused by Position correction.
+
+Exact failing gate:
+
+```text
+failing_sub_gate=fresh_update_age
+update_age_ms=250
+fresh_update_age_ok=0
+ctx_wallrun_active=1
+owner_matches_ctx=1
+hero_matches=1
+transform_matches=1
+accepted_event_epoch=0
+native_collision_epoch=0
+```
+
+Final session summary:
+
+```text
+wallrun_duration_ms=4078
+source_exit_reason=native_lifecycle_inactive_or_stale
+source_active_until_deinit=0
+verified_deinit=1
+path_a_writes=132
+path_b_writes=130
+retention_pass=1
+max_held_ms=1422
+max_held_updates=114
+last_actor_up_dot_surface=1
+```
+
+The same verified WallRun continued for about 1.4 s after source ownership was permanently closed.
+
+Detailed result: `analysis/V01C6_RUNTIME_RESULT.md`.
 
 ## Current blocker / stage
 
@@ -136,53 +160,36 @@ Detailed result: `analysis/V01C5_RUNTIME_RESULT.md`.
 9. Path A + Path B SurfaceFrame writes ✅
 10. visible surface-relative rotation ✅
 11. multithread watch real-game enumeration ✅
-12. retention threshold (>=300 ms or >=20 updates) ✅
-13. lifecycle-wide retained orientation through verified Deinit ✅
-14. planar adhesion / safe Position-source ownership ▶ CURRENT
-15. surface-relative movement ⬜
-16. animation integration ⬜
-17. camera and later roadmap ⬜
+12. retention threshold ✅
+13. lifecycle-wide hold under normal cadence ✅ c5
+14. transient native-update hitch recovery ▶ CURRENT
+15. planar adhesion / safe Position-source ownership ⏸ resume after 14
+16. surface-relative movement ⬜
+17. animation integration ⬜
+18. camera and later roadmap ⬜
 
 ## Current implementation base
 
-Use c5 as the implementation base:
+Use the published c6 implementation as the base so the Position diagnostics are retained but still read-only:
 
 ```text
-branch: codex/v01c5-sustained-lifecycle
-implementation commit: 1cfe3c76a5e09183757f891c5025def860ef4a88
-published head: 4917a3af9afb683db7f7b130626f5b25e20aebca
+branch: codex/v01c6-planar-adhesion
+implementation commit: 6ed21d411b8b6868185143d275c2e40486b57781
+published head: db874c74cc14f361a2ceb5e15647910e06ebfb84
 ```
 
 Pre-created next branch:
 
 ```text
-codex/v01c6-planar-adhesion
+codex/v01c7-transient-freshness-recovery
 ```
 
 ## Current objective
 
-Implement the first planar adhesion milestone while preserving c5 orientation behavior.
+Repair lifecycle semantics for a transient stale-update interval without weakening hard identity/integrity gates.
 
-The adhesion model is based on the verified plane data:
+The existing ~100 ms freshness condition must continue to prevent source writes while the token is stale. However, `fresh_update_age` alone must not permanently destroy an otherwise coherent matching WallRun session. When a fresh verified native Update resumes for the same session/owner/generation/native thread and identities remain valid, source ownership should resume using the existing SurfaceFrame target without restarting the WallRun session or interpolation.
 
-```text
-distance = dot(HeroPosition - P338, N398)
-target_distance ~= 0.5 m
-error = target_distance - distance
-```
+Permanent close must remain fail-closed for verified Deinit, owner/session/generation change, Hero/Transform identity change, native collision/epoch failure, wrong thread/caller/stack/integrity state, kill/F8/shutdown, or other hard invalidation.
 
-Before any Position write, authenticate the exact caller-local Position source/data flow and prove that changing it reaches only the intended Hero Position for the current verified target.
-
-Preferred implementation is a bounded source-level wall-normal correction. Do not fall back to direct Actor Transform teleports or per-frame transform spam.
-
-For c6:
-
-- correct only along `N398`;
-- preserve tangent position components;
-- remain bounded to the verified active WallRun lifecycle;
-- keep Path A/B orientation ownership unchanged;
-- fail closed on owner/Hero/Transform/session/generation/stack/source identity failures;
-- no surface-relative input movement yet;
-- no animation, camera, gravity replacement, parkour, swing or combat yet.
-
-If safe Position-source ownership cannot be independently proven, c6 must remain Position read-only and produce the exact proof/diagnostic needed for the next step.
+Do not advance adhesion Position writes until real-game full-WallRun orientation passes again with this recovery behavior.
