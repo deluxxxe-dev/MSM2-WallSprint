@@ -41,7 +41,7 @@ Verified on cardinal and diagonal planar vertical walls:
 - `P320 - P338 ≈ 0.5 * N398`
 - `dot(HeroPosition - P338, N398) ≈ 0.5 m`
 
-The current preferred control surface is a large unobstructed A-direction wall.
+The current A-direction control wall has now passed full lifecycle retention with c9.
 
 ## Orientation ownership
 
@@ -58,6 +58,7 @@ Path B:
 - return RVA `0x2CFC84B`
 - compact 3x3 source at `RDX = writer-entry RSP + 0x28`
 - real-game compact proof passes
+- c9 proves valid active-Hero Path B calls may occur on multiple secondary threads; per-call provenance is used instead of a fatal equality-to-native-thread invariant
 
 ## Orientation history
 
@@ -67,85 +68,83 @@ Path B:
 - c5: lifecycle continuity repaired; real full-WallRun orientation hold passed.
 - c6: Position/adhesion remained read-only; a real ~250 ms native Update gap caused `fresh_update_age` to permanently end source ownership.
 - c7: added transient stale suspend/resume, but real run hard-killed orientation after only two Path A writes / ~16 ms.
-- c8: exact first-cause attribution succeeded. Real run reached Surface Up and retention PASS, then hard-killed at 1.750 s because a verified Path B call for the active Hero Transform arrived on a secondary thread.
+- c8: exact first-cause attribution succeeded; a healthy secondary-thread Path B call was falsely treated as fatal `path_b_wrong_thread`.
+- c9: secondary-thread Path B per-call admission implemented and real-game full lifecycle retention passed.
 
-## Last authoritative full-WallRun PASS: c5
-
-```text
-wallrun_duration_ms=3843
-source_exit_reason=verified_native_Deinit
-source_active_until_deinit=1
-path_a_writes=219
-path_b_writes=218
-retention_pass=1
-max_held_ms=2906
-max_held_updates=205
-last_actor_up_dot_surface=1
-```
-
-## c8 real-game result
+## Authoritative c9 real A-wall PASS
 
 Implementation:
 
 ```text
-branch: codex/v01c8-kill-cause-attribution
-implementation commit: 98c1d45108c89262750616c7258414cf762cac55
-published head: 75af734d4d32d5e3a77087cbee6b2247b9617ced
-version: v0.1c8 / package 0.1.26
+branch: codex/v01c9-secondary-path-b-thread-admission
+implementation commit: 0c276126ccac8e3bd2a6dd1d850da63e80bc35ce
+published head: b865dabfa81626248ea8a8ae56a1dd1c992d7301
+version: v0.1c9 / package 0.1.27
 ```
 
-The target build and all normal source/integrity gates were accepted. Orientation reached full Surface Up and passed retention:
+Real runtime:
 
 ```text
-ORIENTATION_RETENTION_PASS=1
-held_ms=312
-held_updates=20
+wallrun_duration_ms=3844
+source_entry_elapsed=0.719000
+source_exit_reason=verified_native_Deinit
+source_active_until_deinit=1
+verified_deinit=1
+path_a_writes=239
+path_b_writes=238
+retention_pass=1
+max_held_ms=2859
+max_held_updates=221
+last_actor_up_dot_surface=1
+stale_suspend_count=0
+stale_resume_count=0
+first_hard_kill=none
+hard_kill_calls=0
 ```
 
-At elapsed `1.750000`, c8 latched the exact first abnormal close:
-
-```text
-NATIVE_SOURCE_HARD_KILL
-reason=path_b_wrong_thread
-origin=path_b
-thread_id=35948
-native_thread=10680
-expected_thread=10680
-wallrun_active=1
-wallrun_session=1
-```
-
-All other detailed guards were healthy:
-
-```text
-input_auth=1
-copy_auth=1
-compact_proof=1
-caller_read_ok=1
-caller_patch_match=1
-source_failed_gate=none
-observation_failed_hook=none
-observation_failure_mask=0x0
-```
-
-The secondary-thread Path B entry still targeted the current Hero Transform, returned through verified caller RVA `0x2CFC84B`, and had `RDX-RSP=0x28`. The native lifecycle token was coherent and the same session/owner/generation/epoch remained active.
-
-The source exited only because of the thread equality rule. The independently verified WallRun then continued to normal Deinit:
+Independent WallRun lifecycle:
 
 ```text
 Init=1
 Entry=1
-Update=279
+Update=300
 Deinit=1
-duration=4.405647 s
+duration=3.836902 s
 end_reason=verified_deinit
 ```
 
-Therefore the invariant “every Path B call for active WallSprint must execute on the verified WallRun/native thread” is false in real runtime.
+Secondary-thread Path B was heavily exercised:
 
-No stale-suspend event occurred. Position/adhesion remained read-only (`corrections_applied=0`, `source_position_writes=0`).
+```text
+seen=193
+admitted=193
+overridden=193
+rejected=0
+unique_threads=16
+```
 
-Detailed result: `analysis/V01C8_RUNTIME_RESULT.md`.
+A Path B override near elapsed 3.813 s still executed on a secondary thread while the expected native thread remained unchanged. The session continued cleanly to verified Deinit.
+
+Detailed result: `analysis/V01C9_RUNTIME_RESULT.md`.
+
+## Planar standoff status
+
+Position remains read-only:
+
+```text
+position_proof_admitted=0
+corrections_applied=0
+source_position_writes=0
+```
+
+On the current large A wall, 29 samples showed essentially exact vanilla standoff:
+
+```text
+target_distance=0.5 m
+max_abs_error_before=2.98023224e-08 m
+```
+
+Therefore active normal-direction adhesion correction is not currently justified for this planar control case. Keep it deferred/optional unless movement work later introduces measurable standoff drift.
 
 ## Current blocker / stage
 
@@ -160,36 +159,45 @@ Detailed result: `analysis/V01C8_RUNTIME_RESULT.md`.
 9. Path A + Path B SurfaceFrame writes ✅
 10. visible surface-relative rotation ✅
 11. retention threshold ✅
-12. lifecycle-wide hold under normal cadence ✅ c5 historical
-13. transient freshness recovery implementation ✅ synthetic / real no-gap run pending
-14. exact hard-kill attribution ✅ c8
-15. secondary-thread Path B admission ▶ CURRENT
-16. lifecycle-wide real orientation hold ⬜ revalidate
-17. planar adhesion / safe Position-source ownership ⏸
+12. transient freshness recovery implementation ✅ synthetic; no-gap real c9 did not need recovery
+13. exact hard-kill attribution ✅ c8
+14. secondary-thread Path B admission ✅ c9 real
+15. lifecycle-wide real orientation hold on A wall ✅ c9
+16. diagonal E-wall orientation regression ▶ CURRENT
+17. active planar adhesion correction ⏸ optional/deferred; current standoff already stable
 18. surface-relative movement ⬜
 19. animation integration ⬜
 20. camera and later roadmap ⬜
 
 ## Current implementation base
 
-Use published c8 so exact first-cause attribution and c7 stale recovery remain available:
+Keep c9 as the runtime base:
 
 ```text
-branch: codex/v01c8-kill-cause-attribution
-implementation commit: 98c1d45108c89262750616c7258414cf762cac55
-published head: 75af734d4d32d5e3a77087cbee6b2247b9617ced
-```
-
-Pre-created next branch:
-
-```text
-codex/v01c9-secondary-path-b-thread-admission
+branch: codex/v01c9-secondary-path-b-thread-admission
+implementation commit: 0c276126ccac8e3bd2a6dd1d850da63e80bc35ce
+published head: b865dabfa81626248ea8a8ae56a1dd1c992d7301
 ```
 
 ## Current objective
 
-Repair the false `path_b_wrong_thread` fatal invariant without weakening Path B provenance globally.
+Do not create another implementation version yet.
 
-A secondary-thread Path B call may use the already-published WallSprint compact orientation basis only when it still targets the active Hero Transform and independently passes exact verified caller, current-thread stack relation, compact-layout, lifecycle identity/freshness and source-integrity checks. This is per-call Path B admission only; it must not migrate the expected native WallRun thread or weaken Path A ownership.
+Use the same c9 build on a diagonal E-type planar wall. The next gate is to verify that the now-stable orientation lifecycle is surface-normal-generic rather than accidentally A-specific.
 
-Do not advance Position writes/adhesion until real-game full-WallRun orientation passes again.
+Required E-wall evidence:
+
+```text
+N398 diagonal / non-cardinal
+rotation reaches the corresponding Surface Up
+ORIENTATION_RETENTION_PASS=1
+source_active_until_deinit=1
+verified Deinit clean final close
+first_hard_kill=none
+Position writes=0
+no visible upright flash/snap/crash
+```
+
+A shorter wall is acceptable if it still gives enough time to complete the ~0.7 s delay + 0.25 s transition and retain orientation before Deinit. Prefer a wider diagonal wall if available.
+
+After the E regression passes, proceed to the next planar locomotion milestone. Do not add active adhesion correction merely because it was on the old roadmap; current measured A-wall standoff gives no evidence it is necessary yet.
