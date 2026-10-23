@@ -1,294 +1,279 @@
-# Next task — WallSprint v0.1c7 Transient Freshness Recovery
+# Next task — WallSprint v0.1c8 Exact Hard-Kill Attribution / Observation Guard Decoupling
 
 ## Implementation base
 
-Use the published c6 implementation:
+Use published c7:
 
 ```text
-base branch: codex/v01c6-planar-adhesion
-implementation commit: 6ed21d411b8b6868185143d275c2e40486b57781
-published c6 head: db874c74cc14f361a2ceb5e15647910e06ebfb84
+base branch: codex/v01c7-transient-freshness-recovery
+implementation commit: 93d7887e8ba8cb04e38473a0a821077ee8fc9efb
+published c7 head: 466f0ab237faccd8c769d17fedd66a42138a7829
 ```
 
-A next branch already exists from that exact c6 head:
+Pre-created branch:
 
 ```text
-codex/v01c7-transient-freshness-recovery
+codex/v01c8-kill-cause-attribution
 ```
 
 Read first:
 
-- `analysis/V01C6_RUNTIME_RESULT.md`
+- `analysis/V01C7_RUNTIME_RESULT.md`
+- `analysis/TRANSIENT_FRESHNESS_RECOVERY.md`
 - `docs/PROJECT_STATE.md`
-- `docs/CODEX_RESULT.md` on `codex/v01c6-planar-adhesion`
-- c5 lifecycle continuity analysis/tests
+- c7 `docs/CODEX_RESULT.md`
 
-## Authoritative c6 real-game result
+## Authoritative c7 real-game failure
 
-The user visually observed the actor release from surface-relative orientation partway through a long A-wall WallRun. The private runtime log confirms it.
+The user reported no visible surface-relative rotation; the actor stayed effectively vanilla.
 
-Adhesion was not responsible. c6 stayed Position-read-only:
-
-```text
-position_proof_admitted=0
-corrections_applied=0
-source_position_writes=0
-mode=position_read_only
-```
-
-The exact source-lifecycle exit was:
+The source override actually started but was hard-closed after only two Path A commits:
 
 ```text
-NATIVE_LIFECYCLE_EXIT_DIAG
-session=1
-elapsed=2.642367
-failing_sub_gate=fresh_update_age
-ctx_wallrun_active=1
-ctx_wallrun_session=1
-lifecycle_read_status=coherent_active
-token_phase=3
-token_updates=191
-token_update_ms=483447203
-now_ms=483447453
-update_age_ms=250
-fresh_phase_ok=1
-fresh_owner_ok=1
-fresh_updates_ok=1
-fresh_time_order_ok=1
-fresh_update_age_ok=0
-owner_matches_ctx=1
-hero_matches=1
-transform_matches=1
-source_transition_active=1
-accepted_event_epoch=0
-native_collision_epoch=0
+elapsed=0.703  Path A write #1  t=0.000
+elapsed=0.719  Path A write #2  t=0.064
+NATIVE_SOURCE_EXIT reason=disabled_kill_or_patch_gate
 ```
 
-Then:
+The verified WallRun continued after that close. This happened before any meaningful c7 stale-suspend/resume episode.
+
+Immediately after the first Path A write, the bounded reset/orientation watch stopped with:
 
 ```text
-NATIVE_SOURCE_EXIT reason=native_lifecycle_inactive_or_stale
+stop_reason=observation_guards_lost
 ```
 
-The independently verified WallRun remained active and the next verified Update arrived immediately afterward. Final summary:
+Do not assume that trace stop itself caused the kill. It is only temporal evidence until the first kill caller is identified.
+
+## Code-level issue already identified
+
+The c7 telemetry worker contains a broad coupling:
+
+```cpp
+if(!msm2::hooks::observationPlanAuthenticated()) {
+    msm2::reset_trace::kill();
+    msm2::trace::kill();
+    msm2::input::kill();
+    msm2::native_source::kill();
+}
+```
+
+and later:
+
+```cpp
+msm2::native_source::tick(...,
+    msm2::hooks::observationPlanAuthenticated() &&
+    msm2::input::authenticated());
+```
+
+`tick()` itself hard-kills if that combined boolean is false.
+
+`observationPlanAuthenticated()` currently collapses multiple conditions:
 
 ```text
-wallrun_duration_ms=4078
-source_exit_reason=native_lifecycle_inactive_or_stale
-source_active_until_deinit=0
-verified_deinit=1
-path_a_writes=132
-path_b_writes=130
-retention_pass=1
-max_held_ms=1422
-max_held_updates=114
-last_actor_up_dot_surface=1
+verifiedAvailable
+msm2::source::fieldPlanEnabled
+WallRun Init enabled/readable/patch bytes match
+WallRun Entry enabled/readable/patch bytes match
+WallRun Update enabled/readable/patch bytes match
+WallRun Deinit enabled/readable/patch bytes match
 ```
 
-The same WallRun continued roughly 1.4 s after source ownership was permanently closed.
-
-There was no owner/session/Hero/Transform mismatch and no reported native event collision. The runtime evidence therefore demonstrates a transient native Update gap/hitch that exceeds the current 100 ms freshness bound and is incorrectly treated as a permanent session end.
+There are also independent `kill()` sites in Path A/B entry validation. Therefore the generic runtime reason `disabled_kill_or_patch_gate` is insufficient to establish the first cause.
 
 ## Objective
 
-Keep freshness fail-closed for each individual source write, but distinguish **transient stale suspension** from **hard lifecycle termination**.
+First attribute the exact first hard-kill source. Then repair only a proven false coupling or false integrity failure while preserving every genuine fail-closed condition.
 
-A `fresh_update_age` failure by itself must temporarily suspend A/B source writes, not permanently destroy an otherwise coherent matching verified WallRun session.
-
-When a later fresh verified native Update arrives for the same WallRun session/owner/generation/native thread and all hard identity/integrity gates still pass, WallSprint must resume source ownership without:
-
-- creating a new WallRun session;
-- restarting the 0.7 s delay;
-- restarting/interpolating orientation from World Up;
-- changing Hero Position;
-- weakening Deinit/identity/integrity gates.
-
-This task is still orientation/lifecycle only. c6 Position diagnostics may remain read-only.
+This task is orientation/lifecycle only. Do not progress adhesion Position writes.
 
 ## Required work
 
-### 1. Split soft stale from hard close
+### 1. Replace anonymous hard kill with a first-cause latch
 
-Audit the c5/c6 path that currently maps `fresh_update_age` to `native_lifecycle_inactive_or_stale` and permanent `NATIVE_SOURCE_EXIT`.
+Add an internal kill reason/context API so every hard-kill call has an explicit reason. Preserve one immutable first cause per process/session and bounded later counters if useful.
 
-Introduce explicit state semantics such as:
+Required categories should distinguish at least:
 
 ```text
-ACTIVE
-STALE_SUSPENDED
-HARD_CLOSED
+worker_observation_plan_lost
+worker_input_auth_lost
+path_a_wrong_thread
+path_a_known_caller_mismatch
+path_a_hero_transform_mismatch
+path_a_current_guards_lost
+path_a_stack_or_source_layout_failed
+path_a_rollback_failed
+path_b_wrong_thread
+path_b_compact_or_guard_lost
+path_b_hero_transform_mismatch
+path_b_stack_or_source_layout_failed
+path_b_rollback_failed
+entry_token_incoherent
+token_identity_epoch_mismatch
+F8_or_script_stop
+verified_Deinit
 ```
 
-Equivalent implementation is fine.
+Equivalent names are fine, but the next real log must identify the exact first hard-kill caller and condition.
 
-The exact 100 ms freshness test may remain unchanged initially. The important change is that a time-only freshness failure does not destroy session ownership state.
-
-### 2. While stale, block writes
-
-When `update_age_ms > native_update_freshness_ms`:
-
-- Path A source write must not commit;
-- Path B source write must not commit;
-- no direct Actor write;
-- no Position write;
-- no synthetic Update;
-- no game call merely to keep the session alive.
-
-Emit bounded evidence once per stale episode, e.g.:
+Emit once per first kill, e.g.:
 
 ```text
-NATIVE_SOURCE_STALE_SUSPEND
+NATIVE_SOURCE_HARD_KILL
 session=
 elapsed=
-update_age_ms=
-last_native_update=
+reason=
+origin=worker|path_a|path_b|entry_token|shutdown
+thread_id=
+wallrun_active=
+wallrun_session=
 owner=
-generation=
-thread=
-actor_up_dot_surface=
-```
-
-Do not spam every rejected source call.
-
-### 3. Resume only on a fresh verified native Update
-
-A stale-suspended session may resume only after a real accepted native WallRun Update produces a coherent token satisfying all normal gates for the same ownership identity.
-
-Required resume checks include at least:
-
-```text
-same verified WallRun session
-same WallRun owner
-same generation / accepted event epoch
-same expected native thread where required
-same Hero
-same Transform
-fresh phase
-fresh time order
-fresh update age
-no native collision epoch change
-no kill/shutdown
-current hook/patch integrity still admitted
-```
-
-Emit once per recovery:
-
-```text
-NATIVE_SOURCE_STALE_RESUME
-session=
-stale_duration_ms=
-previous_update_age_ms=
-new_update_age_ms=
+hero=
+transform=
 native_update=
-owner_match=1
-hero_match=1
-transform_match=1
 ```
 
-### 4. Do not restart orientation transition
+Do not log private raw game-function bytes.
 
-If the orientation transition had already reached `t=1`, recovery must continue with the existing SurfaceFrame orientation target.
+### 2. Decompose `observationPlanAuthenticated()`
 
-Do not rotate from World Up again or reset the 0.7/0.25 timing simply because the stale episode occurred.
-
-If the stale episode occurs before the transition completes, preserve the existing transition state/timing in a way that does not create a visible snap. Document the chosen semantics and test them.
-
-### 5. Keep hard-invalid conditions permanent
-
-The following remain hard close / fail-closed and must not auto-resume inside the same session:
-
-- verified native Deinit;
-- WallRun session/owner change;
-- generation/accepted event epoch change not explained by the same accepted Update sequence;
-- Hero/Transform identity change;
-- genuine native event collision / collision epoch invalidation;
-- wrong native thread/caller/stack provenance;
-- failed exact build/caller/writer/patch integrity;
-- kill/F8/shutdown;
-- source rollback failure or other existing fatal integrity condition.
-
-A later Update must not revive these hard-closed states.
-
-### 6. Preserve c6 Position work as read-only
-
-Do not advance adhesion Position ownership in c7.
-
-Retain:
+Add a side-effect-free detailed status structure/function. It must report, at minimum:
 
 ```text
-PATH_A_POSITION_PROOF admitted=0
-ADHESION_SAMPLE read-only
-ADHESION_SUMMARY read-only
-corrections_applied=0
-source_position_writes=0
+verified_available
+field_plan_enabled
+init_enabled
+init_read_ok
+init_patch_match
+entry_enabled
+entry_read_ok
+entry_patch_match
+update_enabled
+update_read_ok
+update_patch_match
+deinit_enabled
+deinit_read_ok
+deinit_patch_match
 ```
 
-The current real A wall naturally measured about 0.5 m standoff with negligible error, so no artificial displacement is needed.
-
-### 7. Add tests that reproduce the real failure
-
-Add a native lifecycle/source test with a continuous same-owner WallRun sequence that:
-
-1. enters source ownership and reaches full Surface Up;
-2. publishes normal Updates;
-3. pauses accepted Update publication for roughly 250–300 ms;
-4. verifies A/B writes are blocked while stale;
-5. publishes the next real same-session native Update;
-6. verifies source ownership resumes without a new WallRun session or transition restart;
-7. continues to verified Deinit;
-8. verifies final `source_active_until_deinit=1` or equivalent successful lifecycle-wide result.
-
-Also test >100 ms stale followed by hard owner/identity/Deinit change and verify it does **not** resume.
-
-### 8. Runtime summary
-
-Extend or preserve the lifecycle summary with bounded stale episode metrics:
+When a state first changes from all-good to bad, emit a bounded record such as:
 
 ```text
-ORIENTATION_LIFECYCLE_SUMMARY
-...
-stale_suspend_count=
-stale_resume_count=
-max_stale_duration_ms=
-source_active_until_deinit=
+OBSERVATION_PLAN_AUTH_FAILURE ...
 ```
 
-A recovered stale episode must not be reported as `NATIVE_SOURCE_EXIT`.
+Include expected-vs-current mismatch identity in a safe form such as first differing byte offset / hashes; do not dump full functions.
 
-## Human test
+### 3. Separate diagnostic viability from source ownership where proven safe
 
-Use the same large A-direction wall.
+Do not make a blanket change before the detailed cause exists.
 
-Perform one continuous WallRun around 4 s. A small frame hitch is acceptable; do not intentionally induce one.
+If the real/synthetic reproduced failure is only an observation/diagnostic condition that is not semantically necessary for already-authenticated Path A/B source ownership, stop the diagnostic component without killing `native_source`.
 
-Report:
+Examples that may be decouplable only if proven:
 
-- whether surface-relative orientation stays visually active for the whole WallRun;
-- whether there is any brief snap/upright flash after a hitch;
-- crash/Position corruption.
+- diagnostic field-plan state used only for observation;
+- bounded reset trace/watch availability;
+- diagnostic trace cleanup/coverage state.
 
-Return the complete private WallSprint log.
+Conditions that must remain hard kill include actual modification/loss of any code/patch/caller/writer identity that Path A/B ownership depends on, wrong native thread, wrong stack provenance, Hero/Transform/session/owner/epoch mismatch, genuine collision, rollback failure, build mismatch, F8/shutdown.
+
+### 4. Preserve c7 stale suspend/resume
+
+Do not regress the c7 behavior:
+
+```text
+>100 ms time-only freshness gap
+-> block A/B writes
+-> STALE_SUSPENDED
+-> later real same-identity Update
+-> resume without session/transition restart
+```
+
+Its synthetic 250–300 ms recovery tests must still pass.
+
+### 5. Add the missing real-failure-style test
+
+Create a test that reproduces the worker/observation guard transition near first source activation (~0.7 s) while Path A/B are beginning interpolation.
+
+It must prove one of two outcomes:
+
+A. If the changed guard is diagnostic-only:
+
+```text
+diagnostic shuts down
+native source remains alive
+Path A/B continue
+transition reaches t=1
+```
+
+B. If a real source-integrity patch is changed:
+
+```text
+first hard-kill reason identifies exact patch/integrity failure
+A/B stop immediately
+no auto-resume
+```
+
+Also test all four WallRun hook patch mismatches independently so the log/status says which hook failed.
+
+### 6. Preserve safety / scope
+
+Keep unchanged unless directly required by the proven fix:
+
+- exact executable/SHA admission;
+- c7 transient freshness recovery;
+- Path A caller/writer/stack/thread/Hero/Transform gates;
+- Path B compact proof and metadata boundary;
+- no direct Actor Transform writes;
+- Position proof remains not admitted/read-only;
+- adhesion corrections = 0;
+- no PAGE_GUARD/page-protection changes;
+- no extra game call merely to keep ownership alive.
+
+### 7. Human runtime evidence
+
+Use the same large A-direction wall for one continuous ~4 s WallRun.
+
+Required observations:
+
+- does actor start rotating after ~0.7 s;
+- does it reach Surface Up;
+- does it remain there until verified Deinit;
+- any upright flash/snap/crash.
+
+Return the complete private log.
+
+The log must include the new first-cause and observation-plan diagnostics even if no failure occurs (an all-good startup/summary record is sufficient for the no-failure case).
 
 ## PASS criteria
 
+Primary success:
+
 ```text
+Path A/B continue beyond the first ~0.7 s transition
 ORIENTATION_RETENTION_PASS=1
-no permanent fresh_update_age exit while same verified WallRun later continues
-if stale gap occurs: NATIVE_SOURCE_STALE_SUSPEND then NATIVE_SOURCE_STALE_RESUME
-A/B writes resume after fresh accepted Update
-no transition restart / no WorldUp snap attributable to recovery
-verified Deinit remains the clean final close
+no anonymous disabled_kill_or_patch_gate close
+verified Deinit is final clean close
 source_active_until_deinit=1
 Position writes=0
 ```
 
-If the human run contains no >100 ms gap, normal c5-style full-WallRun hold still must pass. The native test must independently cover the 250–300 ms recovery case.
+If a hard kill still occurs, c8 is at least a diagnostic success only if:
+
+```text
+NATIVE_SOURCE_HARD_KILL identifies exact first cause
+OBSERVATION_PLAN_AUTH_FAILURE identifies exact failed sub-gate/patch
+```
+
+and no broad unsupported weakening is applied.
 
 ## Non-goals
 
 Do not add:
 
-- Position correction;
+- Position correction / adhesion writes;
 - surface-relative movement input;
 - gravity replacement;
 - animation;
@@ -299,16 +284,14 @@ Do not add:
 - swing reconnect;
 - combat.
 
-After real c7 lifecycle-wide retention passes, return to the c6 Position-proof / planar adhesion milestone.
-
 ## Required outputs
 
 Update/create:
 
 ```text
-analysis/V01C6_RESULT.md
-analysis/TRANSIENT_FRESHNESS_RECOVERY.md
-analysis/V01C7_GATE.md
+analysis/V01C7_RESULT.md
+analysis/HARD_KILL_ATTRIBUTION.md
+analysis/V01C8_GATE.md
 README_TEST.md
 docs/CODEX_RESULT.md
 ```
@@ -316,7 +299,7 @@ docs/CODEX_RESULT.md
 Package:
 
 ```text
-WallSprint_v0.1c7_transient_freshness_recovery.zip
+WallSprint_v0.1c8_kill_cause_attribution.zip
 ```
 
-Follow `AGENTS.md` / `docs/DEV_RULES.md`. Do not commit raw user logs/video or private full game-function bytes.
+Follow `AGENTS.md` / `docs/DEV_RULES.md`. Do not commit raw user logs/video or private full captured game-function bytes.
