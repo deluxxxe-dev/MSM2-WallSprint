@@ -1,367 +1,314 @@
-# Next task — WallSprint v0.1c6 Planar Adhesion / Safe Position-Source Ownership
+# Next task — WallSprint v0.1c7 Transient Freshness Recovery
 
 ## Implementation base
 
-Use the published c5 implementation:
+Use the published c6 implementation:
 
 ```text
-base branch: codex/v01c5-sustained-lifecycle
-implementation commit: 1cfe3c76a5e09183757f891c5025def860ef4a88
-published c5 head: 4917a3af9afb683db7f7b130626f5b25e20aebca
+base branch: codex/v01c6-planar-adhesion
+implementation commit: 6ed21d411b8b6868185143d275c2e40486b57781
+published c6 head: db874c74cc14f361a2ceb5e15647910e06ebfb84
 ```
 
-A next branch already exists from that exact c5 head:
+A next branch already exists from that exact c6 head:
 
 ```text
-codex/v01c6-planar-adhesion
+codex/v01c7-transient-freshness-recovery
 ```
 
 Read first:
 
-- `analysis/V01C5_RUNTIME_RESULT.md`
+- `analysis/V01C6_RUNTIME_RESULT.md`
 - `docs/PROJECT_STATE.md`
-- `docs/CODEX_RESULT.md` on `codex/v01c5-sustained-lifecycle`
-- existing surface/Path-A/Path-B analysis documents
+- `docs/CODEX_RESULT.md` on `codex/v01c6-planar-adhesion`
+- c5 lifecycle continuity analysis/tests
 
-## Authoritative c5 real-game result
+## Authoritative c6 real-game result
 
-The large unobstructed A-direction control wall produced a lifecycle-wide orientation PASS.
+The user visually observed the actor release from surface-relative orientation partway through a long A-wall WallRun. The private runtime log confirms it.
 
-Runtime surface:
+Adhesion was not responsible. c6 stayed Position-read-only:
 
 ```text
-N398 ~= (0,0,+1)
+position_proof_admitted=0
+corrections_applied=0
+source_position_writes=0
+mode=position_read_only
 ```
 
-Authoritative summary:
+The exact source-lifecycle exit was:
 
 ```text
-ORIENTATION_LIFECYCLE_SUMMARY
-wallrun_duration_ms=3843
-source_entry_elapsed=0.687000
-source_exit_reason=verified_native_Deinit
-source_active_until_deinit=1
+NATIVE_LIFECYCLE_EXIT_DIAG
+session=1
+elapsed=2.642367
+failing_sub_gate=fresh_update_age
+ctx_wallrun_active=1
+ctx_wallrun_session=1
+lifecycle_read_status=coherent_active
+token_phase=3
+token_updates=191
+token_update_ms=483447203
+now_ms=483447453
+update_age_ms=250
+fresh_phase_ok=1
+fresh_owner_ok=1
+fresh_updates_ok=1
+fresh_time_order_ok=1
+fresh_update_age_ok=0
+owner_matches_ctx=1
+hero_matches=1
+transform_matches=1
+source_transition_active=1
+accepted_event_epoch=0
+native_collision_epoch=0
+```
+
+Then:
+
+```text
+NATIVE_SOURCE_EXIT reason=native_lifecycle_inactive_or_stale
+```
+
+The independently verified WallRun remained active and the next verified Update arrived immediately afterward. Final summary:
+
+```text
+wallrun_duration_ms=4078
+source_exit_reason=native_lifecycle_inactive_or_stale
+source_active_until_deinit=0
 verified_deinit=1
-path_a_writes=219
-path_b_writes=218
+path_a_writes=132
+path_b_writes=130
 retention_pass=1
-max_held_ms=2906
-max_held_updates=205
+max_held_ms=1422
+max_held_updates=114
 last_actor_up_dot_surface=1
 ```
 
-The retained threshold passed at:
+The same WallRun continued roughly 1.4 s after source ownership was permanently closed.
 
-```text
-ORIENTATION_RETENTION_PASS=1
-held_updates=20
-held_ms=297
-```
-
-and remained valid through the real native Deinit.
-
-No premature `native_lifecycle_inactive_or_stale` exit occurred.
-
-This satisfies the project rule blocking adhesion until orientation retention was proven.
+There was no owner/session/Hero/Transform mismatch and no reported native event collision. The runtime evidence therefore demonstrates a transient native Update gap/hitch that exceeds the current 100 ms freshness bound and is incorrectly treated as a permanent session end.
 
 ## Objective
 
-Implement the first planar adhesion milestone while preserving c5 orientation behavior.
+Keep freshness fail-closed for each individual source write, but distinguish **transient stale suspension** from **hard lifecycle termination**.
 
-This is **not** surface-relative locomotion yet.
+A `fresh_update_age` failure by itself must temporarily suspend A/B source writes, not permanently destroy an otherwise coherent matching verified WallRun session.
 
-The goal is only to own and stabilize Hero wall-normal standoff on the verified planar WallRun surface.
+When a later fresh verified native Update arrives for the same WallRun session/owner/generation/native thread and all hard identity/integrity gates still pass, WallSprint must resume source ownership without:
 
-Verified plane relationship:
+- creating a new WallRun session;
+- restarting the 0.7 s delay;
+- restarting/interpolating orientation from World Up;
+- changing Hero Position;
+- weakening Deinit/identity/integrity gates.
 
-```text
-N = N398 = WallRun.this + 0x398
-P = P338 = WallRun.this + 0x338
-Hero-side reference P320 = WallRun.this + 0x320
-P320 - P338 ~= 0.5 * N398
-
-distance = dot(HeroPosition - P338, N398)
-target_distance ~= 0.5 m
-error = target_distance - distance
-```
-
-## Critical safety rule
-
-Do **not** add a direct Actor Transform / Position spam writer.
-
-Before modifying Position, independently prove a safe source-level Position path associated with the already-authenticated Path A caller/target.
-
-If that proof cannot be completed, c6 must remain read-only for Position and ship diagnostic evidence rather than guessing.
+This task is still orientation/lifecycle only. c6 Position diagnostics may remain read-only.
 
 ## Required work
 
-### 1. Preserve c5 orientation unchanged
+### 1. Split soft stale from hard close
 
-Do not regress:
+Audit the c5/c6 path that currently maps `fresh_update_age` to `native_lifecycle_inactive_or_stale` and permanent `NATIVE_SOURCE_EXIT`.
 
-- exact exe version/SHA gate;
-- verified WallRun lifecycle;
-- source-active-until-Deinit behavior;
-- Path A orientation ownership;
-- Path B compact 3x3 ownership;
-- lock-free publication;
-- retention metric;
-- c4/c5 hardware-watch diagnostics;
-- no direct Actor Transform write.
-
-The c6 Position work must be layered on top of c5, not replace its orientation logic.
-
-### 2. Authenticate the Path A Position source/data flow
-
-Current verified Path A caller-local source layout is:
+Introduce explicit state semantics such as:
 
 ```text
-source+0x00 Right Vec4
-source+0x10 Up Vec4
-source+0x20 Forward Vec4
-source+0x30 Position Vec4
+ACTIVE
+STALE_SUSPENDED
+HARD_CLOSED
 ```
 
-Orientation currently owns only `[source+0x00, source+0x30)` and deliberately leaves Position unchanged.
+Equivalent implementation is fine.
 
-Decode/authenticate the exact accepted-build data flow for the Position row from the WallRun caller through the known writer at `0x2CFC580` to the current verified Hero transform.
+The exact 100 ms freshness test may remain unchanged initially. The important change is that a time-only freshness failure does not destroy session ownership state.
 
-Required proof should answer:
+### 2. While stale, block writes
 
-- exact source Position offsets;
-- exact destination Position offsets;
-- whether any component is transformed/computed rather than directly copied;
-- whether the same caller/target/thread/stack provenance used by Path A orientation applies;
-- whether Position metadata/W are preserved;
-- whether modifying this caller-local Position changes only the intended Hero transform Position.
+When `update_age_ms > native_update_freshness_ms`:
 
-Add a startup proof record such as:
+- Path A source write must not commit;
+- Path B source write must not commit;
+- no direct Actor write;
+- no Position write;
+- no synthetic Update;
+- no game call merely to keep the session alive.
 
-```text
-PATH_A_POSITION_PROOF
-admitted=0|1
-caller_verified=
-writer_verified=
-source_offsets=
-destination_offsets=
-stack_relation_verified=
-target_relation_verified=
-position_w_semantics=
-reason=
-```
-
-Equivalent names are fine.
-
-Do not enable Position writes unless this proof passes on the exact accepted build.
-
-### 3. Add read-only planar standoff telemetry first
-
-For each bounded WallSprint session, sample:
+Emit bounded evidence once per stale episode, e.g.:
 
 ```text
-HeroPosition
-P338
-N398
-distance = dot(HeroPosition - P338, N398)
-error = 0.5 - distance
-```
-
-Validate:
-
-- `N398` finite and approximately unit length;
-- `abs(N398.y)` remains appropriate for current planar vertical-wall scope;
-- `P338` finite/readable;
-- same verified WallRun owner/session/generation;
-- same Hero/Transform identity;
-- no stale object reads after Deinit.
-
-Bound logging. Do not emit every call unboundedly.
-
-Suggested record:
-
-```text
-ADHESION_SAMPLE
+NATIVE_SOURCE_STALE_SUSPEND
 session=
 elapsed=
-distance=
-target_distance=0.5
-error=
-correction_requested=
-correction_applied=
-position_source_write=0|1
+update_age_ms=
+last_native_update=
+owner=
+generation=
+thread=
+actor_up_dot_surface=
 ```
 
-### 4. If Position proof passes, implement bounded source-level correction
+Do not spam every rejected source call.
 
-Correction must be wall-normal only:
+### 3. Resume only on a fresh verified native Update
+
+A stale-suspended session may resume only after a real accepted native WallRun Update produces a coherent token satisfying all normal gates for the same ownership identity.
+
+Required resume checks include at least:
 
 ```text
-correction_vector = scalar_correction * N398
+same verified WallRun session
+same WallRun owner
+same generation / accepted event epoch
+same expected native thread where required
+same Hero
+same Transform
+fresh phase
+fresh time order
+fresh update age
+no native collision epoch change
+no kill/shutdown
+current hook/patch integrity still admitted
 ```
 
-Do not intentionally modify tangent components.
-
-Conservative initial control:
+Emit once per recovery:
 
 ```text
-target_distance = 0.5 m
-deadzone = 0.01 m
-max_abs_step_per_qualifying_update = 0.02 m
-candidate_step = error * 0.25
-applied_step = clamp(candidate_step, -0.02, +0.02)
-```
-
-These values may be made constants/configurable for the diagnostic build, but do not silently increase them.
-
-Additional fail-closed bound:
-
-```text
-if abs(error) > 0.35 m:
-    do not correct
-    record out_of_range
-```
-
-The goal is smooth standoff stabilization, not snapping the actor to the wall.
-
-### 5. Source write boundary
-
-If Position is proven safe, extend only the authenticated caller-local source write to the Position components that are actually required.
-
-Requirements:
-
-- orientation rows retain c5 semantics;
-- Position W/metadata preserved exactly unless static proof establishes the required semantic value;
-- tangent displacement introduced by the adhesion code should be near zero within float tolerance;
-- no Path B Position write (Path B remains compact orientation-only);
-- no direct Actor memory write from the worker/diagnostic thread;
-- no page-protection/PAGE_GUARD changes;
-- no new game calls merely to set Position.
-
-### 6. Only correct during valid WallSprint ownership
-
-Position correction may run only when all of these hold:
-
-```text
-verified WallRun active
-matching session / owner / generation
-fresh Hero + Transform identity
-c5 source lifecycle active
-authenticated Path A call
-valid P338 / N398
-orientation transition has reached t >= 1.0
-```
-
-Stop Position ownership on verified Deinit or any existing c5 fail-closed identity/integrity/kill condition.
-
-Do not retain Position control outside the verified WallRun in c6.
-
-### 7. Preserve natural tangential motion
-
-c6 must not implement movement input.
-
-The vanilla WallRun may continue moving the Hero tangentially/up-down according to its own behavior. Adhesion should only correct wall-normal distance.
-
-Log/verify that the Position source change introduced by adhesion satisfies approximately:
-
-```text
-dot(delta_position, tangent_right) ~= 0
-dot(delta_position, tangent_forward) ~= 0
-```
-
-where the tangent basis is derived from the current surface frame.
-
-### 8. Add bounded session summary
-
-Add:
-
-```text
-ADHESION_SUMMARY
+NATIVE_SOURCE_STALE_RESUME
 session=
-position_proof_admitted=
-samples=
-corrections_applied=
-max_abs_error_before=
-max_abs_error_after=
-max_abs_step=
-max_abs_tangent_delta=
-source_position_writes=
-fail_closed_events=
-end_reason=
+stale_duration_ms=
+previous_update_age_ms=
+new_update_age_ms=
+native_update=
+owner_match=1
+hero_match=1
+transform_match=1
 ```
 
-Continue the existing `ORIENTATION_LIFECYCLE_SUMMARY` unchanged.
+### 4. Do not restart orientation transition
+
+If the orientation transition had already reached `t=1`, recovery must continue with the existing SurfaceFrame orientation target.
+
+Do not rotate from World Up again or reset the 0.7/0.25 timing simply because the stale episode occurred.
+
+If the stale episode occurs before the transition completes, preserve the existing transition state/timing in a way that does not create a visible snap. Document the chosen semantics and test them.
+
+### 5. Keep hard-invalid conditions permanent
+
+The following remain hard close / fail-closed and must not auto-resume inside the same session:
+
+- verified native Deinit;
+- WallRun session/owner change;
+- generation/accepted event epoch change not explained by the same accepted Update sequence;
+- Hero/Transform identity change;
+- genuine native event collision / collision epoch invalidation;
+- wrong native thread/caller/stack provenance;
+- failed exact build/caller/writer/patch integrity;
+- kill/F8/shutdown;
+- source rollback failure or other existing fatal integrity condition.
+
+A later Update must not revive these hard-closed states.
+
+### 6. Preserve c6 Position work as read-only
+
+Do not advance adhesion Position ownership in c7.
+
+Retain:
+
+```text
+PATH_A_POSITION_PROOF admitted=0
+ADHESION_SAMPLE read-only
+ADHESION_SUMMARY read-only
+corrections_applied=0
+source_position_writes=0
+```
+
+The current real A wall naturally measured about 0.5 m standoff with negligible error, so no artificial displacement is needed.
+
+### 7. Add tests that reproduce the real failure
+
+Add a native lifecycle/source test with a continuous same-owner WallRun sequence that:
+
+1. enters source ownership and reaches full Surface Up;
+2. publishes normal Updates;
+3. pauses accepted Update publication for roughly 250–300 ms;
+4. verifies A/B writes are blocked while stale;
+5. publishes the next real same-session native Update;
+6. verifies source ownership resumes without a new WallRun session or transition restart;
+7. continues to verified Deinit;
+8. verifies final `source_active_until_deinit=1` or equivalent successful lifecycle-wide result.
+
+Also test >100 ms stale followed by hard owner/identity/Deinit change and verify it does **not** resume.
+
+### 8. Runtime summary
+
+Extend or preserve the lifecycle summary with bounded stale episode metrics:
+
+```text
+ORIENTATION_LIFECYCLE_SUMMARY
+...
+stale_suspend_count=
+stale_resume_count=
+max_stale_duration_ms=
+source_active_until_deinit=
+```
+
+A recovered stale episode must not be reported as `NATIVE_SOURCE_EXIT`.
 
 ## Human test
 
-Primary c6 test should use the same large A-direction control wall.
+Use the same large A-direction wall.
 
-Perform one continuous left-to-right WallRun around 3–4 seconds.
+Perform one continuous WallRun around 4 s. A small frame hitch is acceptable; do not intentionally induce one.
 
 Report:
 
-- whether the existing surface-relative rotation still occurs and stays stable;
-- whether there is any visible snap, jitter, wall penetration or sudden outward pop;
-- crash/position corruption if any.
+- whether surface-relative orientation stays visually active for the whole WallRun;
+- whether there is any brief snap/upright flash after a hitch;
+- crash/Position corruption.
 
 Return the complete private WallSprint log.
 
-No E/diagonal test is required until the A-wall adhesion path is proven safe.
-
 ## PASS criteria
 
-### Minimum diagnostic PASS
-
-If Position writes remain disabled:
-
 ```text
-PATH_A_POSITION_PROOF provides an exact admitted/rejected reason
-P338/N398/distance telemetry is valid for the active session
-c5 orientation retention remains PASS through verified Deinit
+ORIENTATION_RETENTION_PASS=1
+no permanent fresh_update_age exit while same verified WallRun later continues
+if stale gap occurs: NATIVE_SOURCE_STALE_SUSPEND then NATIVE_SOURCE_STALE_RESUME
+A/B writes resume after fresh accepted Update
+no transition restart / no WorldUp snap attributable to recovery
+verified Deinit remains the clean final close
+source_active_until_deinit=1
+Position writes=0
 ```
 
-This is acceptable if source Position ownership is not yet proven.
+If the human run contains no >100 ms gap, normal c5-style full-WallRun hold still must pass. The native test must independently cover the 250–300 ms recovery case.
 
-### Full c6 PASS
+## Non-goals
 
-```text
-PATH_A_POSITION_PROOF admitted=1
-c5 orientation retention still PASS through verified Deinit
-Position writes occur only through the authenticated caller-local source
-all applied correction is wall-normal only
-max_abs_step <= 0.02 m
-no out-of-range snap
-no Position metadata corruption
-no crash
-no wall penetration/outward pop attributable to the mod
-ADHESION_SUMMARY end_reason=verified_native_Deinit or equivalent clean lifecycle end
-```
+Do not add:
 
-A session with naturally tiny error may legitimately apply few/no corrections; in that case static/runtime Position proof plus stable distance telemetry must clearly show why no correction was necessary. Do not add an artificial large displacement merely to force visible movement.
-
-## Explicit non-goals
-
-Do not add in c6:
-
-- surface-relative WASD/input movement;
-- custom gravity replacement;
-- WallRun extension beyond verified Deinit;
-- animation changes;
-- camera rotation;
-- wall jump / wall-to-wall;
-- corner/ceiling traversal;
+- Position correction;
+- surface-relative movement input;
+- gravity replacement;
+- animation;
+- camera;
+- wall jump;
+- corners/ceilings;
 - parkour;
 - swing reconnect;
 - combat.
+
+After real c7 lifecycle-wide retention passes, return to the c6 Position-proof / planar adhesion milestone.
 
 ## Required outputs
 
 Update/create:
 
 ```text
-analysis/V01C5_RESULT.md
-analysis/PATH_A_POSITION_PROOF.md
-analysis/PLANAR_ADHESION.md
-analysis/V01C6_GATE.md
+analysis/V01C6_RESULT.md
+analysis/TRANSIENT_FRESHNESS_RECOVERY.md
+analysis/V01C7_GATE.md
 README_TEST.md
 docs/CODEX_RESULT.md
 ```
@@ -369,9 +316,7 @@ docs/CODEX_RESULT.md
 Package:
 
 ```text
-WallSprint_v0.1c6_planar_adhesion.zip
+WallSprint_v0.1c7_transient_freshness_recovery.zip
 ```
 
-Follow `AGENTS.md` / `docs/DEV_RULES.md`.
-
-Do not commit raw user logs/video or private full captured game-function bytes.
+Follow `AGENTS.md` / `docs/DEV_RULES.md`. Do not commit raw user logs/video or private full game-function bytes.
