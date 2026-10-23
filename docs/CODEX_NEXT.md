@@ -1,4 +1,4 @@
-# Next task — WallSprint v0.1c17 Callee Alias Contract
+# Next task — WallSprint v0.1c17 Callee Alias Contract + isolated logging
 
 ## Base
 ```text
@@ -9,10 +9,9 @@ next branch: codex/v01c17-callee-alias-contract
 version target: v0.1c17
 ```
 
-Read `AGENTS.md`, `docs/DEV_RULES.md`, `docs/PROJECT_STATE.md`, `analysis/V01C16_RUNTIME_RESULT.md`, `analysis/V01C16_WRITER_CALL_EFFECT.md`, `analysis/RDX_XYZ_SOURCE_CONTRACT.md`, and c16 `docs/CODEX_RESULT.md` first.
+Read `AGENTS.md`, `docs/DEV_RULES.md`, `docs/PROJECT_STATE.md`, `docs/LOGGING_CONVENTION.md`, `analysis/V01C16_RUNTIME_RESULT.md`, `analysis/V01C16_WRITER_CALL_EFFECT.md`, `analysis/RDX_XYZ_SOURCE_CONTRACT.md`, and c16 `docs/CODEX_RESULT.md` first.
 
-## Accepted c16 actual-game result
-Regression gate passed:
+## Accepted c16 actual-game evidence
 ```text
 A/session1 3875 ms
 E/session2 4203 ms
@@ -46,25 +45,16 @@ reason=callee_memory_write_alias_to_source_stack_or_destination_unresolved
 ```
 Actual `[entryRDX] XYZ == Position XYZ` remains corroboration only; `xyz_causality_proven=0`.
 
-## Objective
+## Objective A — callee alias contract
 Resolve only memory-write aliasing inside authenticated callee `0x2B23560..0x2B235E9` as used by writer call `0x2CFC927`.
 
 For every relevant callee memory write, prove or reject disjointness from:
-1. `[entryRDX, entryRDX+0x10)` — the 16-byte source object / writer-entry stack object;
+1. `[entryRDX, entryRDX+0x10)` — the 16-byte source object;
 2. the Hero Transform destination object/range needed by exact Position stores.
 
-If all relevant writes are proven disjoint, resume the existing writer proof from `0x2CFC92C`. Otherwise report one exact callee RVA/mnemonic/address-provenance blocker and stop.
+Preserve exact executable/SHA, writer/current-code identity, exact call/return, target boundary and target hash. Extend the c16 effect classifier only enough to classify effective-address provenance for writes in this exact 137-byte callee.
 
-Do not inspect/mutate upstream producer `0x351EB00`. Do not implement movement.
-
-## Required implementation
-### Exact callee identity
-Preserve exact executable/SHA, writer hash/current bytes, exact call/return, target boundary and target hash. Any mismatch fails closed. Do not log/package full private callee bytes.
-
-### Bounded address provenance
-Extend the c16 effect classifier only enough to classify effective addresses of callee memory writes. Track exact/simple provenance from call-time arguments, preserved aliases, callee RSP/allocation, RIP-relative addresses, LEA/MOV/add/sub/copy chains and bounded local branches.
-
-Classify writes as:
+Allowed classes:
 ```text
 callee_private_stack
 caller_shadow_or_return_area
@@ -76,55 +66,54 @@ rip_relative_global
 known_disjoint_object
 unknown_pointer
 ```
-Unknown/conflicting pointer provenance fails closed. No arbitrary interprocedural traversal, recursion, nested-call expansion or open-ended fixpoint. If a nested call/indirect/unsupported effect is encountered, emit its exact blocker.
+Unknown/conflicting pointer provenance fails closed. No arbitrary interprocedural traversal, recursion, nested-call expansion or open-ended fixpoint. Map call-time RCX/RDX/R8/R9 and needed stack args while keeping writer-entry RDX distinct from call-time RDX.
 
-### Map call-time arguments
-At `0x2CFC927`, prove provenance of RCX/RDX/R8/R9 and needed stack args. Keep writer-entry RDX distinct from call-time RDX.
-
-Emit:
+Emit/update:
 ```text
 MOVEMENT_WRITER_CALL_ARGUMENT_CONTRACT
-...
-```
-with argument origins, source/Transform alias masks, proof completeness and reason.
-
-### Alias summary
-Emit:
-```text
 MOVEMENT_CALLEE_ALIAS_CONTRACT
-target_rva=0x2b23560
-target_end=0x2b235e9
-memory_writes_seen=
-writes_proven_private_stack=
-writes_proven_global_disjoint=
-writes_proven_other_disjoint=
-writes_source_exact=
-writes_source_possible_alias=
-writes_transform_exact=
-writes_transform_possible_alias=
-writes_unknown=
-source_span_no_write_proven=0|1
-transform_no_write_proven=0|1
-all_relevant_write_aliases_resolved=0|1
-next_barrier_rva=
-next_barrier_instruction=
-next_barrier_effect=
-reason=
+MOVEMENT_WRITER_CALL_CONTRACT
+MOVEMENT_RDX_BRANCH_CONTRACT
+MOVEMENT_RDX_XYZ_PROOF
+MOVEMENT_POSITION_W_PROOF
 ```
 
-Only set source/Transform no-write when every relevant executable write is proven disjoint.
-
-### Optional minimal runtime observation
-Only if static caller-to-callee pointer identity remains ambiguous, observe the natural call for the existing max 8 eligible invocations/session. Allowed: call-time RCX/RDX/R8/R9, source address, Transform address, RSP relation, source before/after bits, exact pointer relations, return/code integrity. Runtime equality must not be used to rule out transient writes. No PAGE_GUARD and never invoke the callee from the mod.
-
-### Resume writer proof only after alias PASS
-Require:
+Only after:
 ```text
 all_relevant_write_aliases_resolved=1
 source_span_no_write_proven=1
 transform_no_write_proven=1
 ```
-before resuming from `0x2CFC92C` to exact stores `0x2CFC936/93C/942/945`. Update CALL_CONTRACT, BRANCH_CONTRACT, XYZ_PROOF and W_PROOF. Report the next exact writer blocker if one appears. W remains independent.
+may the writer proof resume from `0x2CFC92C` toward exact stores `0x2CFC936/93C/942/945`. Otherwise report one exact callee RVA/mnemonic/address-provenance blocker and stop.
+
+Do not inspect/mutate upstream producer `0x351EB00`. Do not implement movement.
+
+## Objective B — dedicated timestamped WallSprint logging
+Implement `docs/LOGGING_CONVENTION.md` in c17.
+
+Required directory relative to the game root:
+```text
+log_wallsprint\
+```
+For the current user install this resolves to:
+```text
+C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2\log_wallsprint\
+```
+Do not hard-code that absolute path. Derive the game root and append `log_wallsprint`.
+
+If missing, attempt to create the directory safely. Do **not** silently fall back to the old shared `logs` folder.
+
+Required filename at process/run log creation:
+```text
+WallSprint_YYYYMMDD-HHMMSS.log
+```
+Example:
+```text
+WallSprint_20261024-034812.log
+```
+Use host local wall-clock time, zero-padded. Keep A→E sessions from the same run in one file. If a same-second name collision occurs, append `_01`, `_02`, etc. without losing the timestamp.
+
+Update README/README_TEST/docs/package notes so human tests use the newest file from `log_wallsprint`. Add tests for path construction, directory creation/failure, timestamp formatting, zero padding, collision handling, and explicit refusal to silently use the old shared `logs` folder.
 
 ## Safety boundary
 Even if writer causality completes:
@@ -136,26 +125,29 @@ source_lifetime_exclusive=0
 downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
-must remain. Producer `0x351EB00` is a later separate task.
+must remain.
 
 Preserve all c7-c16 lifecycle/orientation/stale/hard-kill/secondary/publication-refresh/DR-watch/direct-call/entry-pairing/accounting/branch/call-target/integrity/cleanup protections.
 
 No Position/RDX/source/input/movement/velocity/gravity/adhesion/camera/animation writes, producer traversal, PAGE_GUARD, guessed native game calls, raw user-log publication, or full private game-body distribution.
 
-## Tests
-Cover private-stack disjoint writes, source exact/possible alias, Transform exact/possible alias, argument-pointer copy chains, RIP-global writes, branch reconvergence/conflicting provenance, shadow/return area, unknown pointer, nested-call/indirect exact refusal, and owned writer continuation after an alias-safe call. Preserve all c16 regressions.
-
 ## Human test
-If needed after cloud validation:
+After installing c17:
 ```text
-A/cardinal ~4 s -> fully end WallRun -> move/fast-travel -> E/diagonal ~4 s -> one complete WallSprint.log
+1. confirm a new file appears in game-root\log_wallsprint\
+2. confirm WallSprint_YYYYMMDD-HHMMSS.log naming
+3. A/cardinal ~4 s
+4. fully end WallRun
+5. move/fast-travel
+6. E/diagonal ~4 s
+7. send that one complete timestamped log
 ```
-No special input; video only for visible anomaly.
+No special input. Video only for visible anomaly.
 
 ## PASS
-A. All callee write aliases resolved, source/Transform no-write proven, writer proof advances or reports a strictly later exact writer blocker.
+A. Callee aliases resolve and writer proof advances or reports a strictly later exact blocker, with dedicated timestamped logging working.
 
-B. One narrower exact callee address-provenance blocker is reported with all safety/regression gates preserved.
+B. One narrower exact callee blocker is reported with all safety gates preserved, with dedicated timestamped logging still working.
 
 Do not implement movement automatically.
 
@@ -166,7 +158,9 @@ analysis/V01C17_CALLEE_ALIAS_CONTRACT.md
 analysis/V01C17_GATE.md
 analysis/RDX_XYZ_SOURCE_CONTRACT.md
 README_TEST.md
+README.md
 docs/PROJECT_STATE.md
+docs/LOGGING_CONVENTION.md
 docs/CODEX_RESULT.md
 ```
 Package c17 diagnostic release/source per existing rules.
