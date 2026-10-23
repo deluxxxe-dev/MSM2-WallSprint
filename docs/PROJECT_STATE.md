@@ -43,27 +43,26 @@ Verified on cardinal and diagonal planar vertical walls:
 
 Face E repeatedly produces approximately `N398 = (-0.707107, 0, +0.707107)`.
 
-## Orientation source path A
+## Orientation path A
 
 - writer RVA `0x2CFC580`
 - WallRun caller return RVA `0x2CFC8F3`
-- source layout: padded Right/Up/Forward plus Position
+- padded Right / Up / Forward plus Position source
+- lock-free shared WallSprint snapshot is active
+- c2 runtime confirms qualifying calls can write the SurfaceFrame basis
+- `PATH_A_STATE_LOCK_CONTENTION=0`
 
-v0.1c1 introduced a lock-free shared orientation snapshot so the native hot hook no longer depends on the worker-state mutex. c2 preserves this implementation. Real c2 runtime execution remains pending.
-
-## Orientation reset path B
-
-Verified immediate reset path:
+## Orientation path B
 
 - writer RVA `0x2CFC3C0..0x2CFC57C`, size 444
 - writer SHA256 `ee33ad96fb1834f9977621ea988f7667f0eb3e47166a7115ba262072ebc50196`
 - caller `0x2CFC7D0..0x2CFC850`, size 128
 - caller SHA256 `1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d`
-- call return RVA `0x2CFC84B`
-- exact runtime source provenance: `RDX = writer-entry RSP + 0x28`
-- compact 3x3 payload occupies `[RDX+0x00,RDX+0x24)`
+- return RVA `0x2CFC84B`
+- runtime source provenance: `RDX = writer-entry RSP + 0x28`
+- compact 3x3 payload `[RDX+0x00,RDX+0x24)`
 
-Nine direct copies are verified from the authenticated bytes:
+Direct map:
 
 ```text
 RDX+00 -> RCX+00
@@ -77,48 +76,61 @@ RDX+1C -> RCX+24
 RDX+20 -> RCX+28
 ```
 
-## v0.1c1 runtime result
-
-c1 failed closed before either source override. The target executable was accepted, but the compact proof stopped after 5 bytes and recovered zero pairs. Therefore the prior no-visible-change result was caused by proof admission failure, not by a demonstrated later orientation reset.
-
-## v0.1c2 implementation handoff — proof repair PASS
-
-Published implementation:
+c2 startup proof passes on the real accepted build:
 
 ```text
-branch: codex/v01c2-proof-fix
-implementation commit: 2d26710034dcf695fa7bb2da763f117faf6171db
-published branch head: 727fcdc1594e36e6a1ffaabf5569eee89375b871
-version: v0.1c2
-package: 0.1.20
-artifact: WallSprint_v0.1c2_real_runtime_proof_fix.zip
+PATH_B_COMPACT3X3_PROOF admitted=1
+caller_verified=1
+writer_verified=1
+rdx_to_rcx_map_verified=1
+decoded_prefix_bytes=444
+caller_decoded_bytes=128
+pairs=9
 ```
 
-Verified implementation evidence:
+c2 runtime confirms Path B writes the intended SurfaceFrame Up on both A and diagonal E.
 
-- the privately supplied real writer444/caller128 reproduce the exact c1 failure under the retained old decoder;
-- c2 uses statically linked Capstone 5.0.6 for bounded startup proof only, with skipdata disabled;
-- writer decodes 444/444 bytes, 109 instructions;
-- caller decodes 128/128 bytes, 28 instructions;
-- all nine copy pairs are independently recovered;
-- caller construction, stack relation and direct E8 call are verified;
-- writer/caller byte mutation and malformed-dataflow negatives fail closed;
-- production authentication/hook installation/restoration passes on a nonexecuted owned registered image;
-- c1 lock-free A/B snapshot, exact Path-A every-call override, Path-B 0x24-byte-only write, row-scale preservation, metadata preservation, lifecycle/thread/Hero/target/stack/freshness/kill gates and bounded hardware watch are retained;
-- no direct Actor/Position, adhesion, movement, animation or camera writes were enabled;
-- private captured game bytes are excluded from distribution.
+## v0.1c2 real-game result — visible rotation but rapid flicker
 
-Validation reported by c2:
+Human observation: visible change is now obvious. Normal vanilla WallRun orientation and the intended surface-relative orientation switch rapidly back and forth.
+
+Authoritative log confirms the visual symptom.
+
+Representative A-wall state:
 
 ```text
-portable ASan/UBSan: 11 PASS
-Windows smoke: 4 PASS
-hook/offline/actual-byte replay: 31 PASS
-historical optional private-fixture SKIP: 4
-standalone source rebuild: PASS
+Path A applied_up=(0,0,1)
+Path B applied_up=(0,0,1)
+actor_up=(0,0,1) dot_surface=1
+...
+actor_up=(0,1,0) dot_surface=0
 ```
 
-This verifies the implementation/startup-proof repair only. It does not establish that c2 successfully changes or retains Actor orientation in the running game.
+The same failure reproduces on diagonal E, where the desired Up is approximately `(-0.707107,0,+0.707107)`.
+
+Both verified source paths therefore work, but another writer resets Actor Up to World Up shortly afterward.
+
+Retention repeatedly resets after only a few distinct updates / a few tens of milliseconds. `ORIENTATION_RETENTION_PASS=1` is absent.
+
+Late path-A WorldUp inputs are detected and converted (`LATE_COMMON_WORLDUP_OVERRIDE=1`), so those known calls do not fully explain the surviving WorldUp reset.
+
+## Critical diagnostic gap
+
+The current hardware Up watch is not process-thread complete:
+
+```text
+threads_enumerated=0
+installed=1
+complete_thread_coverage=0
+primary_only=1
+primary_native_thread=8968
+```
+
+During the armed window, captured primary-thread events are the already-known path-A writer and show Surface Up writes. The actual SurfaceUp -> WorldUp transition appears in worker observations without a corresponding hardware writer event.
+
+Strongest current hypothesis: a third orientation writer runs on another game thread (or otherwise outside the primary-only watch coverage).
+
+Detailed runtime result: `analysis/V01C2_RUNTIME_RESULT.md`.
 
 ## Current blocker / stage
 
@@ -127,47 +139,44 @@ This verifies the implementation/startup-proof repair only. It does not establis
 3. surface normal ✅
 4. planar surface point / standoff data ✅
 5. SurfaceFrame basis ✅
-6. path-A native orientation source injection ✅
-7. reset writer discovery ✅
-8. path-B hook/authentication ✅
-9. path-B source provenance / compact 3x3 layout ✅
-10. real-runtime compact-3x3 proof implementation ✅
-11. c2 real-game dual-source retained orientation ▶ CURRENT
-12. adhesion ⬜
-13. surface-relative movement ⬜
-14. animation integration ⬜
-15. camera and later roadmap ⬜
+6. path-A source injection ✅
+7. path-B discovery / compact layout ✅
+8. real-runtime path-B proof ✅
+9. path-A + path-B SurfaceFrame writes ✅
+10. visible surface-relative rotation ✅ intermittent
+11. third reset writer identification ▶ CURRENT
+12. retained orientation ⬜
+13. adhesion ⬜
+14. surface-relative movement ⬜
+15. animation integration ⬜
+16. camera and later roadmap ⬜
+
+## Current implementation base
+
+Use c2, not main's older source, as the code base:
+
+```text
+branch: codex/v01c2-proof-fix
+implementation commit: 2d26710034dcf695fa7bb2da763f117faf6171db
+published branch head: 727fcdc1594e36e6a1ffaabf5569eee89375b871
+```
+
+A working c3 branch has been pre-created from that base:
+
+```text
+codex/v01c3-third-writer-trace
+```
 
 ## Current objective
 
-Do not implement another ownership strategy yet. Run v0.1c2 and establish the real-game gate.
+Preserve the working c2 A/B overrides. Expand the bounded Hero Up write-watch to enough process-thread coverage to identify the first unexplained SurfaceUp -> WorldUp write after both overrides are active.
 
-Startup must first report:
+Do not modify a third path yet. First capture its exact RIP/function/caller/thread and timing.
 
-```text
-PATH_B_COMPACT3X3_PROOF admitted=1 caller_verified=1 writer_verified=1 rdx_to_rcx_map_verified=1 source_bytes=0x24 decoded_prefix_bytes=444 caller_decoded_bytes=128 pairs=9
-RESET_COPY_HOOK admitted=1 installed=1
-DUAL_SOURCE_ADMISSION admitted=1
-```
-
-Then test A Control left-to-right for about 1.5 s and E diagonal left-to-right for about 2 s.
-
-Primary runtime success requires, in the same active session:
-
-```text
-PATH_A_OVERRIDE_COUNT > 0
-PATH_B_OVERRIDE_COUNT > 0
-ORIENTATION_RETENTION_PASS=1
-```
-
-Retention threshold remains `dot(ActorUp,N398) >= 0.98` for >=300 ms or >=20 distinct native updates.
-
-If both paths commit but orientation is reset, use `NEW_RESET_AFTER_DUAL_OVERRIDE` as evidence for the next writer investigation. Do not add direct Actor spam writes.
-
-Do not authorize adhesion, movement, animation or camera until the retention gate passes in the real game.
+Do not add adhesion, movement, animation or camera until retained orientation passes `dot(ActorUp,N398) >= 0.98` for >=300 ms or >=20 distinct native updates.
 
 ## Human test locations
 
-A Control: current flat unobstructed vertical control wall near Face E. Do not hard-code +Z; use measured N398.
+A Control: same flat unobstructed vertical wall.
 
-E: same known physical diagonal wall used in prior tests.
+E: same known physical diagonal wall.
