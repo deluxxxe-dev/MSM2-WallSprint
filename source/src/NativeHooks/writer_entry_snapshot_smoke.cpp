@@ -795,6 +795,8 @@ int main(int argc, char **argv) {
                           ? "logs/windows_writer_entry_pair_synthetic.log"
                       : argc > 1 && std::string(argv[1]) == "--call-integrity"
                           ? "logs/windows_writer_call_integrity_synthetic.log"
+                      : argc > 1 && std::string(argv[1]) == "--write-gates"
+                          ? "logs/windows_transform_write_gates_synthetic.log"
                       : argc > 1 && std::string(argv[1]) == "--alias-gates"
                           ? "logs/windows_callee_alias_gates_synthetic.log"
                           : "logs/windows_writer_entry_other_synthetic.log",
