@@ -1,195 +1,98 @@
-# Next task — WallSprint v0.1c16 Writer Call-Effect Contract
+# Next task — WallSprint v0.1c16 Actual-Game Writer Call Gate
 
-## Base
+## Status
 ```text
-source branch: codex/v01c15-writer-branch-contract
-source implementation: 0efd13924426b1c96247ff35577f7f323c934b97
-source delivery head: 8e500b2e5f4967457f8652f46e18eb2c6d4fcb7d
-next branch: codex/v01c16-writer-call-effect
-version target: v0.1c16
+implementation branch: codex/v01c16-writer-call-effect
+implementation commit: 0a00bdeee05ffdae593d6963abd5c24424a2d8ef
+validated/package head: 8f66b15a109e503cdfc115eb5a48ebadd7bc4113
+version: v0.1c16 / package 0.1.34
 ```
 
-Read `AGENTS.md`, `docs/DEV_RULES.md`, `docs/PROJECT_STATE.md`, `analysis/V01C15_RUNTIME_RESULT.md`, `analysis/V01C15_WRITER_BRANCH_CONTRACT.md`, `analysis/RDX_XYZ_SOURCE_CONTRACT.md`, and c15 `docs/CODEX_RESULT.md` first.
+Read `AGENTS.md`, `docs/DEV_RULES.md`, `docs/PROJECT_STATE.md`, `analysis/V01C15_RUNTIME_RESULT.md`, `analysis/V01C16_WRITER_CALL_EFFECT.md`, `analysis/V01C16_GATE.md`, and c16 `docs/CODEX_RESULT.md` before interpreting the next log.
 
-## Accepted c15 runtime
-A/session1 3860 ms and E/session2 4297 ms both retained Surface Up through verified Deinit, with hard kill0, stale0, Position writes0 and clean entry/watch restoration.
+## Accepted evidence
+C15 actual A/E is accepted: orientation retained through verified Deinit, hard0/stale0/Position writes0, clean cleanup, 8 true entry snapshots and 8 complete maps per session. The writer branch proof crossed `0x2CFC91F jne` and stopped exactly at `0x2CFC927 call`.
 
-Finalized capture summaries are now correct in both sessions:
+C16 implementation is complete and cloud regressions pass, but the cloud does not contain the current private 183-byte writer/callee. Therefore the actual call target, runtime-function boundary/hash, effect classification, resumed writer proof and any later exact blocker remain unknown until the real-game c16 log is supplied.
+
+## Current task: human runtime gate only
+Do not implement c17 yet.
+
+Install:
 ```text
-capture_activated=1
-true_entry_snapshots=8
-complete_invocation_maps=8
-xyz_source_candidate=20
-xyz_match_count=8
-xyz_match_mask=0x7
-xyz_stable_across_invocations=1
-source_w_bits=0x0
-destination_w_bits=0x3f800000
-phase=finalized
-summary_final=1
+WallSprint_v0.1c16_writer_call_effect.zip
 ```
 
-C15 crosses the prior local branch barrier `0x2CFC91F jne`. The next exact blocker is:
+Run one private log:
 ```text
-MOVEMENT_RDX_BRANCH_CONTRACT
-first_branch_rva=0x2CFC91F
-exact_store_sites_verified=1
-all_relevant_store_paths_proven=0
-proven_component_mask=0x0
-next_barrier_rva=0x2CFC927
-next_barrier_instruction=call
-W_independent=1
-reason=unsupported_relevant_writer_instruction_or_memory_effect
+A/cardinal ~4 s
+-> fully end WallRun
+-> move or fast-travel to E
+-> E/diagonal ~4 s
+-> stop and provide the complete WallSprint.log
+```
+No special input. Video is needed only if a visible anomaly occurs.
+
+## Required runtime checks
+Confirm startup:
+```text
+v0.1c16
+package 0.1.34
+exact Spider-Man2.exe 2.810.0.0
+SHA256 c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9
+exact-build admission=1
 ```
 
-Per actual invocation:
+For `0x2CFC927`, extract and evaluate `MOVEMENT_WRITER_CALL_CONTRACT` / integrity fields:
 ```text
-RDX == entry RSP+0x28
-entry_store_xyz_match_mask=0x7
-xyz_causality_proven=0
-source W observed 0
-destination W observed 1
+call_rva=0x2cfc927
+return_rva=0x2cfc92c
+call_kind
+target_rva
+target boundary
+target code identity/hash result
+callee effect classification
+source-span effect
+clobber/preservation result
+exact callee blocker RVA/mnemonic/class if refused
 ```
-The equality is corroboration only.
 
-Historical source/storage/producer fields remain unpromoted:
+Then inspect the resumed `MOVEMENT_RDX_BRANCH_CONTRACT` / XYZ proof:
 ```text
+all_relevant_store_paths_proven
+proven_component_mask
+x_path / y_path / z_path
+next_barrier_rva / mnemonic / reason
+xyz_causality_proven
+W classification independently
+```
+
+Require per-session final capture/lineage accounting and clean lifecycle/watch cleanup. A/E orientation must remain retained and `Position_writes_by_mod=0`.
+
+## Decision after the log
+Outcome A — actual call effect is authenticated and compatible, and the writer proof reaches all XYZ stores:
+- record the actual c16 runtime result;
+- only then define a separate next task for caller/storage/producer ownership around `0x351EB00`;
+- do not mutate the producer merely because the writer certificate passes.
+
+Outcome B — c16 emits a narrower exact call/callee or later writer blocker:
+- record that exact blocker;
+- next task must address only that smallest unresolved scope;
+- do not expand to general tracing or producer traversal.
+
+Outcome C — build/hash/integrity/lifecycle/orientation/cleanup regression:
+- stop and repair the regression before any lineage work.
+
+## Unchanged safety gate
+```text
+writable_source_proven=0
+Position/source/input/movement writes=0
 caller_owned=0
 ownership_exclusive=0
 source_lifetime_exclusive=0
 downstream_conflicts_proven_absent=0
-exact_next_producer_rva=0x351EB00
-writable_source_proven=0
 ```
 
-## Objective
-Resolve **only the exact call effect at writer RVA `0x2CFC927`** so the bounded writer proof can either continue to exact Position stores or stop at a narrower exact blocker.
+No Actor/Transform Position write, RDX/stack-source mutation, Path A Position mutation, input rewrite, custom movement/velocity/gravity, active adhesion, producer hook/traversal at `0x351EB00`, camera/animation/traversal work, PAGE_GUARD/data-page protection mutation, guessed native game calls, raw-log publication, or full private game-body distribution.
 
-Do not inspect/mutate upstream producer `0x351EB00` yet. Do not implement movement.
-
-## Exact call authentication
-Under exact build/SHA/writer boundary/current-code identity, decode `0x2CFC927` and classify its form:
-```text
-direct_call | indirect_call | thunk/wrapper | unresolved
-```
-For a direct call, authenticate its exact in-image target and runtime-function boundary/hash. For indirect calls, fail closed unless the stable target can be established without arbitrary pointer chasing.
-
-Emit:
-```text
-MOVEMENT_WRITER_CALL_CONTRACT
-writer_rva=0x2cfc900
-call_rva=0x2cfc927
-call_kind=
-target_rva=
-target_boundary_begin=
-target_boundary_end=
-target_code_hash=
-return_rva=0x2cfc92c
-exact_build_verified=
-current_code_verified=
-relevant_to_xyz_paths=
-reason=
-```
-Do not publish the full private callee body.
-
-## Relevant effect contract only
-Determine whether the natural game call can affect provenance needed for:
-```text
-entry [RDX+0] -> Transform +0x30
-entry [RDX+4] -> Transform +0x34
-entry [RDX+8] -> Transform +0x38
-```
-and independently the source of `0x2CFC945 -> +0x3C`.
-
-Classify effects on:
-- entry RDX pointer identity;
-- guarded 16-byte `[entryRDX, entryRDX+0x10)` source span;
-- registers/lanes used after return to carry/reload XYZ;
-- relevant stack aliases;
-- entry RCX/Hero Transform destination identity;
-- W provenance separately.
-
-Use conservative Win64 volatile-register rules, but never infer memory safety from ABI alone.
-
-## Bounded static proof first
-If the authenticated callee is suitably bounded, implement a separate conservative effect classifier only as far as needed to answer the source-span/provenance question. Suggested cap: <=1024 bytes unless the exact runtime boundary is smaller. No recursion, no indirect-call expansion, no arbitrary interprocedural traversal, no open-ended fixpoint. Unknown memory writes refuse.
-
-Classify only with explicit evidence:
-```text
-source_span_no_write_proven
-source_span_may_write
-source_span_effect_unknown
-```
-Do not assign gameplay semantics to the helper.
-
-## Minimal runtime observation if static proof is insufficient
-Only if necessary, observe the game's natural call without changing arguments/return/flags/native behavior. Keep the existing 8 eligible invocations/session cap.
-
-Preferred bounded record:
-```text
-MOVEMENT_WRITER_CALL_OBSERVATION
-session=
-invocation_id=
-thread_id=
-call_rva=0x2cfc927
-target_rva=
-entry_rdx=
-source_before_bits=(4x32)
-source_after_bits=(4x32)
-source_span_unchanged=0|1
-selected_relevant_gpr_before/after=
-selected_relevant_xmm_before/after=
-return_observed=1
-code_integrity_verified=1
-```
-
-No arbitrary memory dump, PAGE_GUARD, or game call from the mod. A new exact callee diagnostic hook is allowed only if no safer writer-local observation works; then require return address `0x2CFC92C`, active Hero/session/thread/generation/epoch/freshness, exact code ownership/restoration and transparent ABI preservation.
-
-## Resume writer proof only after call effect is resolved
-If the call is proven compatible with the needed provenance, resume c15 branch-aware proof at return `0x2CFC92C` and require exact stores:
-```text
-0x2CFC936 -> +0x30
-0x2CFC93C -> +0x34
-0x2CFC942 -> +0x38
-0x2CFC945 -> +0x3C
-```
-XYZ is proven only if every relevant store-reaching path retains authenticated entry-RDX origin. W remains independent and must be classified from actual decoded provenance.
-
-If another writer instruction blocks, report exact RVA/mnemonic/effect and stop. If the call target itself is the smallest unresolved scope, report the exact callee barrier/effect and stop.
-
-## Preserve / prohibit
-Preserve all c7-c15 lifecycle/orientation/refresh/DR-watch/direct-call/entry-pairing/accounting/branch-proof gates and `Position_writes_by_mod=0`.
-
-No Actor/Transform Position write, RDX/stack-source mutation, Path A Position mutation, input rewrite, custom movement/velocity/gravity, active adhesion, producer hook/traversal at `0x351EB00`, camera/animation/traversal work, PAGE_GUARD/data-page protection mutation, guessed native game calls, raw user logs or full private game bodies.
-
-`writable_source_proven=0` remains unconditional in c16.
-
-## Tests
-Cover direct call/no source effect, volatile clobber followed by safe reload, source XYZ mutation rejection, unknown memory write refusal, indirect target refusal, branch+call reconvergence, callsite/return mismatch, independent W classifications, transparent observation ABI/cleanup, and all c15 regressions.
-
-## Human test
-If actual-game evidence is still required:
-```text
-A/cardinal ~4 s -> fully end -> move/fast travel -> E/diagonal ~4 s -> one complete WallSprint log
-```
-No special input. Video only for a visible anomaly.
-
-## PASS
-Diagnostic PASS is either:
-- exact call target/effect resolved and writer proof advances to exact stores or a strictly later exact writer blocker; or
-- a precise call/callee effect blocker narrower than c15, with safety preserved.
-
-Do not implement movement automatically.
-
-## Required outputs
-Update/create:
-```text
-analysis/V01C15_RUNTIME_RESULT.md
-analysis/V01C16_WRITER_CALL_EFFECT.md
-analysis/V01C16_GATE.md
-analysis/RDX_XYZ_SOURCE_CONTRACT.md
-README_TEST.md
-docs/PROJECT_STATE.md
-docs/CODEX_RESULT.md
-```
-Package the c16 diagnostic release/source per existing project rules.
+Preserve exact-build fail-closed behavior, `AGENTS.md`, `docs/DEV_RULES.md`, c7-c15 lifecycle/orientation/refresh/DR-watch/direct-call/entry-pairing/accounting/branch gates, and independent implementation suitable for Nexus Mods.
