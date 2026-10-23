@@ -43,18 +43,19 @@ Verified on cardinal and diagonal planar vertical walls:
 
 Face E repeatedly produces approximately `N398 = (-0.707107, 0, +0.707107)`.
 
-A wider wall used for the c3 test was visually the same general direction as A but measured approximately `N398 = (-0.113317, 0, +0.993559)`, so treat it as a near-+Z planar control rather than assuming exact cardinal +Z.
+The current preferred test surface is a large unobstructed A-direction control wall. The successful c4 session measured essentially `N398 = (0,0,+1)` and allowed a ~3.9 s continuous WallRun.
 
-## Orientation path A
+## Orientation Path A
 
 - writer RVA `0x2CFC580`
 - WallRun caller return RVA `0x2CFC8F3`
 - padded Right / Up / Forward plus Position source
-- lock-free shared WallSprint snapshot is active
-- real runtime confirms qualifying calls can write the SurfaceFrame basis
+- lock-free shared WallSprint snapshot active
+- real runtime confirms SurfaceFrame writes
+- Position preserved
 - `PATH_A_STATE_LOCK_CONTENTION=0`
 
-## Orientation path B
+## Orientation Path B
 
 - writer RVA `0x2CFC3C0..0x2CFC57C`, size 444
 - writer SHA256 `ee33ad96fb1834f9977621ea988f7667f0eb3e47166a7115ba262072ebc50196`
@@ -78,45 +79,81 @@ RDX+1C -> RCX+24
 RDX+20 -> RCX+28
 ```
 
-Real-game compact proof passes and both Path A and Path B can write the intended surface-relative basis.
+Real-game compact proof passes and Path B writes the intended surface-relative basis.
 
-## v0.1c2 result — visible rotation but rapid flicker
+## c2/c3 history
 
-The actor visibly reaches surface-relative orientation, then repeatedly returns to World Up. Logs confirm both known paths commit valid surface-relative Up before Actor Up abruptly returns to World Up.
+c2 achieved visible surface-relative rotation but showed rapid WorldUp / SurfaceUp flicker.
 
-Late Path-A WorldUp sources are themselves converted (`LATE_COMMON_WORLDUP_OVERRIDE=1`), so they do not explain every surviving reset.
+c3 attempted multithread writer tracing but its production expansion path never enumerated additional threads (`process_threads_seen=0`).
 
-`ORIENTATION_RETENTION_PASS=1` has not been achieved.
+## v0.1c4 real-game result — first retention PASS
 
-## v0.1c3 real-game result — multithread trace did not expand
-
-c3 was intended to identify the remaining writer by expanding the Hero Up hardware write watch from the primary native thread to other process threads.
-
-Package/runtime:
+Implementation:
 
 ```text
-v0.1c3 / package 0.1.21
-branch: codex/v01c3-third-writer-trace
-implementation commit: fd105be35a12c4a4ba8b8a72c3f75a4bcf49ff82
-published head: b05278093b6e0ad92db7dad8c51a986ba16ca872
+branch: codex/v01c4-real-thread-enum-fix
+implementation commit: cfaae52304dfa757f2098eeb63c0168151c5b755
+published head: 6bf7646d2aebdfda9c285b9a3ca4108760d6baa1
+version: v0.1c4 / package 0.1.22
 ```
 
-The real-game session still had working Path A / Path B overrides, but the new process-thread watch reported:
+### Thread-watch repair PASS
+
+Real production enumeration now works:
 
 ```text
-MULTITHREAD_UP_WATCH phase=stopped
-process_threads_seen=0
-eligible=0
-installed=0
-complete_thread_coverage=0
-rescan_count=0
+owner_pid_matches=129
+process_threads_seen=128
+eligible=127
+installed=126
+failed=1
+cap_exceeded=1
+cleanup_pending=0
 ```
 
-The primary-thread hardware watch remained functional and captured only known Path A events. No `UNKNOWN_WRITER`, `THIRD_WRITER_EVENT`, or `THIRD_WRITER_IDENTITY` was captured.
+The one failed thread was already suspended. All 126 owned watch states were restored cleanly.
 
-This does **not** disprove the third-writer hypothesis. It demonstrates that the c3 real-game thread-enumeration/expansion path failed before coverage was established.
+No `THIRD_WRITER_EVENT` / `THIRD_WRITER_IDENTITY` occurred in this run.
 
-Detailed result: `analysis/V01C3_RUNTIME_RESULT.md`.
+### Orientation retention PASS
+
+Human observation: prior rapid flicker was no longer visually apparent on the large A wall.
+
+Authoritative runtime gate:
+
+```text
+ORIENTATION_RETENTION_PASS=1
+held_ms=329
+held_updates=20
+```
+
+The same stable sequence continued to approximately 55 distinct updates / 969 ms with Actor Up at Surface Up.
+
+This proves the existing Path A + Path B ownership can retain surface-relative orientation under a stable continuous WallRun.
+
+Detailed result: `analysis/V01C4_RUNTIME_RESULT.md`.
+
+## New blocker — source lifecycle ends before verified WallRun
+
+The orientation source exited around WallRun elapsed 1.953 s:
+
+```text
+NATIVE_SOURCE_EXIT
+reason=native_lifecycle_inactive_or_stale
+applied_writes=135
+held_updates=55
+held_ms=985
+stability_observed=1
+```
+
+But the independently verified WallRun lifecycle continued to its real Deinit around 3.900 s.
+
+After the source exit, A/B override counts stopped increasing and Actor Up returned to World Up while `automatic_wallrun=Active`.
+
+Therefore the current blocker is an early/false native-source lifecycle stale/inactive decision, not a demonstrated unavoidable third-writer race.
+
+Retain the third-writer diagnostics in case unexplained resets return after lifecycle continuity is repaired.
 
 ## Current blocker / stage
 
@@ -125,14 +162,14 @@ Detailed result: `analysis/V01C3_RUNTIME_RESULT.md`.
 3. surface normal ✅
 4. planar surface point / standoff data ✅
 5. SurfaceFrame basis ✅
-6. path-A source injection ✅
-7. path-B discovery / compact layout ✅
-8. real-runtime path-B proof ✅
-9. path-A + path-B SurfaceFrame writes ✅
-10. visible surface-relative rotation ✅ intermittent
-11. multithread Up-watch real-game enumeration/installation ▶ CURRENT
-12. third reset writer identification ⬜
-13. retained orientation ⬜
+6. Path A source injection ✅
+7. Path B discovery / compact layout ✅
+8. real-runtime Path B proof ✅
+9. Path A + Path B SurfaceFrame writes ✅
+10. visible surface-relative rotation ✅
+11. multithread watch real-game enumeration ✅
+12. retention threshold (>=300 ms or >=20 updates) ✅
+13. lifecycle-wide retained orientation ▶ CURRENT
 14. adhesion ⬜
 15. surface-relative movement ⬜
 16. animation integration ⬜
@@ -140,22 +177,24 @@ Detailed result: `analysis/V01C3_RUNTIME_RESULT.md`.
 
 ## Current implementation base
 
-Use the published c3 implementation as the code base:
+Use c4 as the implementation base:
 
 ```text
-branch: codex/v01c3-third-writer-trace
-implementation commit: fd105be35a12c4a4ba8b8a72c3f75a4bcf49ff82
-published head: b05278093b6e0ad92db7dad8c51a986ba16ca872
+branch: codex/v01c4-real-thread-enum-fix
+implementation commit: cfaae52304dfa757f2098eeb63c0168151c5b755
+published head: 6bf7646d2aebdfda9c285b9a3ca4108760d6baa1
 ```
 
 Pre-created next branch:
 
 ```text
-codex/v01c4-real-thread-enum-fix
+codex/v01c5-sustained-lifecycle
 ```
 
 ## Current objective
 
-Preserve the working A/B overrides and c3 safety behavior. Repair and instrument the real-game process-thread enumeration/expansion path so the bounded Hero Up write watch actually installs on more than one eligible game thread.
+Identify the exact sub-gate causing `native_lifecycle_inactive_or_stale` while the verified WallRun remains active, then repair only that demonstrated continuity defect.
 
-Do not modify a third writer yet. Do not add adhesion, movement, animation or camera until retained orientation passes `dot(ActorUp,N398) >= 0.98` for >=300 ms or >=20 distinct native updates.
+Desired behavior: after the existing 0.7 s delay / 0.25 s transition, keep Path A + Path B ownership surface-relative continuously until the verified WallRun Deinit (or a real Hero/Transform/owner/identity/kill failure).
+
+Do not add adhesion, movement, animation or camera until this lifecycle-wide orientation hold passes on the large A control wall.
