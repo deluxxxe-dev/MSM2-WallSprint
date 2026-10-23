@@ -7,13 +7,18 @@ Convert vanilla WallRun into surface-relative locomotion. Do not advance movemen
 - Spider-Man2.exe 2.810.0.0
 - SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`
 - WallRun Init `0x14233C0`, Entry `0x14235C0`, Update `0x1424530`, Deinit `0x1416660`
-- Preserve `AGENTS.md` and `docs/DEV_RULES.md`, exact-build/fail-closed behavior, independent implementation, and Nexus-compatible distribution constraints.
+- Preserve `AGENTS.md` / `docs/DEV_RULES.md`, exact-build fail-closed behavior, independent implementation, and no private full game bodies/raw user logs in public artifacts.
 
 ## Accepted orientation state
-Planar Surface Up/orientation is accepted. Human c12 A/E preserved it through verified Deinit with hard kill 0 and `Position_writes_by_mod=0`.
+Planar Surface Up/orientation is accepted on cardinal and diagonal walls through verified Deinit.
 
-A/cardinal: 4266 ms, retention pass, final Up dot surface=1.
-E/diagonal: 4297 ms, retention pass, final Up dot surface≈1. E had one 172 ms native Update gap with a 72 ms stale suspend/resume and recovered normally.
+Latest human c13 combined A -> fast travel -> E log:
+- session 1 / A: 3875 ms, verified Deinit, retention pass, final Up dot surface=1, hard kill 0, Position writes 0
+- session 2 / E: 4281 ms, verified Deinit, retention pass, final Up dot surface=1, hard kill 0, Position writes 0
+- no stale episode in either session
+- user reported no visible anomaly
+
+Fast travel did not merge or corrupt WallRun sessions; A and E remained independently adjudicable.
 
 ## Verified movement chain
 ```text
@@ -24,42 +29,41 @@ exact callsite=0x351EEAB -> 0x2CFC900
 return=0x351EEB0
 observed second return=0x351A020
 ```
-The direct call is authenticated and correlates with real Hero translation on A and E. Path A Position remains denied.
+The direct writer call is authenticated and correlated with real Hero translation. Path A Position remains denied.
 
-## c12 actual-game verdict
-Diagnostic PASS / exact missing edge. Both surfaces ended with `first_unsupported_offset=0xA`, `source_capture_ready=0`, `true_entry_snapshot=0`, `caller2_direct_relation_verified=0`, and `writable_source_proven=0`. See `analysis/V01C12_RUNTIME_RESULT.md`.
+## c13 actual-game result
+Diagnostic PASS. See `analysis/V01C13_RUNTIME_RESULT.md`.
 
-## c13 implementation handoff
+Actual game captured 16 true writer-entry snapshots:
+- A/session1 invocation 1..8
+- E/session2 invocation 9..16
+
+Every snapshot verified the active Hero Transform, exact writer code, return `0x351EEB0`, observed caller2 `0x351A020`, and `true_entry_snapshot=1`.
+
+Every sampled invocation was linked to all four Position stores in the same invocation.
+
+### Strong RDX source evidence
+Across all 16 samples:
 ```text
-branch: codex/v01c13-writer-entry-snapshot
-implementation commit: eb257e340be347d6ac17358efeb61eaa6a83066e
-published delivery: 77c8a072c5401ced0dd427e764c142ab0780bf76
-publication refresh head: f3b34fc7a9b011fb4076c28c4134e3492246ce06
-version: v0.1c13 / package 0.1.31
+RDX = entry RSP + 0x28
+candidate 20 = pointer read at RDX
+candidate 23 = stack snapshot at RSP+0x28
+XYZ == exact executed Position XYZ store values
+source W = 0
+destination Position W = 1
+exact_store_match_mask = 0x7
+observed_store_mask = 0xF
 ```
+This is strong evidence for a caller-local stack payload feeding Position XYZ. It is not yet a writable contract. Typed semantics, lifetime, producer ownership, W causality, downstream conflicts and exclusive intended translation effect remain unproven.
 
-C13 implements a narrow diagnostic entry detour for `0x2CFC900`, true pre-body GPR/XMM/stack snapshots, explicit invocation-to-hardware-store pairing, bounded entry-source candidates, and conservative caller2 runtime classification. The detour is gated to the exact accepted build and active verified Hero/WallRun Position-watch context; guarded reads remain bounded and do not change page protection. It does not write Position, movement source, input, movement, gravity, adhesion, animation, or camera.
+C13 aggregate telemetry underreports this evidence: final `MOVEMENT_LINEAGE_SUMMARY true_entry_snapshot=0/source_capture_ready=0` contradicts the actual captured records, and candidate stability fields stay 0 because the source matches XYZ but not W. Treat this as a reporting defect to repair, not a runtime capture failure.
 
-Cloud validation reported by Codex:
-```text
-Windows x64 warnings-as-errors: PASS
-Portable ASan/UBSan: 13 PASS
-DLL smoke: 4 PASS
-Full hooks/native/offline: 58 PASS / 4 historical private-input SKIP
-Unique total: 75 PASS / 4 SKIP
-```
-Owned fixtures include concurrent/reentrant invocation pairing and cleanup. Final composed orientation/Position-watch fixtures retained verified Deinit, hard kill 0, clean debug restoration, and Position writes 0. These fixtures do not prove actual-game c13 source semantics.
-
-GitHub publication recovered after credential reconnection. A fresh HTTPS clone verified the published branch and release ZIP bytes against release metadata. The final publication refresh does not change the validated c13 code.
-
-## Current evidence boundary
-Actual-game c13 installation, true entry/caller/store/candidate association, A/E stability, hitch/crash behavior, and cleanup remain PENDING.
-
+## Current gate
 ```text
 writable_source_proven=0
 Position/source/input/movement writes=0
 ```
-A complete four-store invocation map is not yet a producer-lifetime, downstream-conflict, exclusive-effect, or writable-source certificate. Do not infer velocity, displacement, direction, or root motion from arithmetic/correlation alone.
+No surface-relative movement rewrite is authorized yet.
 
 ## Current stage
 1. lifecycle / SurfaceFrame ✅
@@ -68,13 +72,20 @@ A complete four-store invocation map is not yet a producer-lifetime, downstream-
 4. Position writer attribution ✅
 5. SurfaceFrame translation decomposition ✅
 6. exact `0x351EEAB -> 0x2CFC900` callsite ✅
-7. c12 source-lineage diagnostic ✅ exact blocker identified
-8. c13 true writer-entry diagnostic implementation ✅ cloud validated
-9. c13 actual-game A/E entry-source gate ▶ CURRENT
+7. true writer-entry capture ✅ c13 actual game
+8. RDX stack-local XYZ source correlation ✅ c13 actual game
+9. RDX source construction / W / lifetime / producer contract ▶ CURRENT c14
 10. safe writable upstream movement source ⬜ NOT AUTHORIZED
 11. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
 12. adhesion/contact refinement ⏸ deferred
 13. animation/camera/later traversal ⬜
 
-## Current action
-Run `WallSprint_v0.1c13_writer_entry_snapshot.zip` in the actual game with ordinary A/cardinal WallRun for ~4 s, fully end WallRun, then E/diagonal for ~4 s in the same log. Video is optional unless a visible anomaly occurs. Adjudicate the private startup-through-cleanup log before defining any c14 implementation.
+## Current implementation base
+Use c13 branch head used for the runtime gate as the code base for c14:
+```text
+branch: codex/v01c13-writer-entry-snapshot
+c14 branch: codex/v01c14-rdx-source-contract
+```
+
+## Current objective
+Authenticate exactly how the caller constructs the stack-local payload at entry `RSP+0x28` / `RDX`, prove its XYZ path into Transform Position, separately prove destination W behavior, and determine producer/lifetime/downstream ownership. Repair the c13 summary/candidate aggregation defects while preserving all read-only movement constraints.
