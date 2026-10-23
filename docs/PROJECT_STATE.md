@@ -9,23 +9,20 @@ Convert vanilla WallRun into surface-relative locomotion. Do not advance movemen
 - WallRun Init `0x14233C0`, Entry `0x14235C0`, Update `0x1424530`, Deinit `0x1416660`
 - Preserve exact-build fail-closed behavior, `AGENTS.md` / `docs/DEV_RULES.md`, independent implementation, and no raw user logs/full private game bodies in public artifacts.
 
-## Accepted orientation
-Planar Surface Up remains accepted through verified Deinit on cardinal and diagonal walls.
-
-Latest human c17 combined A -> E result:
+## Accepted orientation / logging
+Latest actual c18 combined A -> E:
 ```text
-A/session1: 3875 ms, verified Deinit, retention pass, Up dot surface=1, stale0, hard0, Position writes0
-E/session2: 4390 ms, verified Deinit, retention pass, Up dot surface=1, stale0, hard0, Position writes0
+A/session1: 2984 ms, verified Deinit, retention pass, Up dot surface=1, stale0, hard0, Position writes0
+E/session2: 4171 ms, verified Deinit, retention pass, Up dot surface=1.00000012, stale0, hard0, Position writes0
 ```
-Both sessions finalized 8 true entry snapshots / 8 complete maps, XYZ mask0x7, source W0 and destination W1. Entry diagnostic and Position-watch cleanup restored normally.
+Both sessions finalized 8 true entry snapshots / 8 complete maps, XYZ mask0x7, source W0 and destination W1. Entry diagnostic / Position-watch cleanup restored normally.
 
-## Logging
-Actual c17 game run verified:
+Dedicated logging remains actual-game verified:
 ```text
 game-root\log_wallsprint\WallSprint_YYYYMMDD-HHMMSS.log
 shared_logs_fallback=0
 ```
-The uploaded real file was `WallSprint_20261024-043843.log`. Preserve this behavior.
+Latest actual file: `WallSprint_20261024-051436.log`.
 
 ## Verified movement chain
 ```text
@@ -36,37 +33,63 @@ exact callsite=0x351EEAB -> 0x2CFC900
 return=0x351EEB0
 observed second return=0x351A020
 ```
-Runtime source relation remains `RDX=entry RSP+0x28`; sampled `[RDX] XYZ` equals exact Position XYZ store bits. Still correlation until writer-side causality completes.
+Runtime source relation remains `RDX=entry RSP+0x28`; sampled `[RDX] XYZ` equals exact executed Position XYZ bits. Correlation only until writer-side causality completes.
 
-## c16 actual-game result
-Authenticated writer call `0x2CFC927 -> 0x2B23560`, return `0x2CFC92C`, callee boundary `0x2B23560..0x2B235E9`, hash `2d62e54b270c46f4babc8120a7e56123e3fe467ca383895d57a989f853095a9d`.
-
-## c17 actual-game result
-**Diagnostic PASS / narrower exact callee CFG blocker.** See `analysis/V01C17_RUNTIME_RESULT.md`.
-
-Actual writer call arguments:
+## Writer-local call/callee
+Authenticated writer call:
 ```text
-arg_rcx_origin=entry_writer_RCX_transform
-arg_rdx_origin=entry_writer_RCX_transform
-arg_r8_origin=constant_bits_NOT_pointer
-arg_r9_origin=unknown_argument
+0x2CFC927 -> 0x2B23560
+return=0x2CFC92C
+callee=0x2B23560..0x2B235E9
+hash=2d62e54b270c46f4babc8120a7e56123e3fe467ca383895d57a989f853095a9d
+```
+Actual call arguments from c17:
+```text
+RCX = Transform-derived
+RDX = Transform-derived
+R8 = constant bits, not pointer
+R9 = unknown argument
 source_span_alias_mask=0x0
 transform_alias_mask=0x3
-proof_complete=1
+```
+Writer-entry RDX Position source remains distinct from call-time RDX.
+
+## c18 actual-game result
+**Diagnostic PASS / exact write blocker identified.** See `analysis/V01C18_RUNTIME_RESULT.md`.
+
+C18 resolved the former `0x2B235C1: je` branch-cap blocker and built the actual bounded local callee CFG:
+```text
+local_branch_sites=5
+conditional_branch_sites=4
+branch_cap=5
+blocks_total=8
+edges_total=10
+complete_local_cfg=1
+backedges_seen=0
+indirect_transfers_seen=0
+nested_calls_seen=2
 ```
 
-C17 alias analysis stopped before any memory write classification at:
+Reachable writes classified before the new blocker:
 ```text
-next_barrier_rva=0x2B235C1
-next_barrier_instruction=je
-next_barrier_effect=indirect_or_branch_cap
-reason=callee_indirect_transfer_or_branch_cap_refused
-memory_writes_seen=0
+0x2B23560 width8 caller_shadow_or_return_area
+0x2B23565 width8 caller_shadow_or_return_area
+0x2B2356A width8 callee_private_stack
+0x2B2358E width4 hero_transform_possible_alias address_root=1 offset=268/0x10C
+```
+The first three are disjoint from source/Transform. The fourth is the exact current blocker:
+```text
+next_barrier_rva=0x2B2358E
+next_barrier_instruction=mov
+next_barrier_effect=hero_transform_possible_alias
+may_alias_source=0
+may_alias_transform=1
+writes_transform_possible_alias=1
 source_span_no_write_proven=0
 transform_no_write_proven=0
 all_relevant_write_aliases_resolved=0
 ```
-`memory_writes_seen=0` is not proof of no writes; analysis stopped before completing the local callee CFG.
+Thus CFG coverage is no longer the problem. The next task must resolve only the exact destination/value/provenance and protected-range relevance of this 4-byte write.
 
 ## Current gate
 ```text
@@ -93,24 +116,20 @@ Upstream producer `0x351EB00` remains deferred.
 11. c16 exact call target/boundary/hash ✅
 12. c17 call argument provenance ✅
 13. c17 isolated timestamped logging ✅ actual game
-14. c18 bounded local callee CFG + write alias implementation ✅ CLOUD; actual A/E PENDING
-15. resume writer XYZ/W causal proof ⏸ after callee alias
-16. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-17. safe writable upstream movement source ⬜ NOT AUTHORIZED
-18. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-19. adhesion/contact refinement ⏸ deferred
-20. animation/camera/later traversal ⬜
+14. c18 actual callee CFG / first real writes ✅
+15. exact `0x2B2358E` Transform-alias write contract ▶ CURRENT
+16. resume writer XYZ/W causal proof ⏸ after write contract
+17. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+18. safe writable upstream movement source ⬜ NOT AUTHORIZED
+19. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+20. adhesion/contact refinement ⏸ deferred
+21. animation/camera/later traversal ⬜
 
 ## Current implementation base / next branch
 ```text
-c17 branch: codex/v01c17-callee-alias-contract
-c17 implementation: d1867bb2de42079a46ceb547f8fccc4d477ae18d
-c17 delivery head: 4f7d1590af744f449d717b8ede30400de0cef820
-c17 version: v0.1c17 / package 0.1.35
 c18 branch: codex/v01c18-callee-branch-alias
+c18 implementation: 19aa3012959bf7538df3917278dd4a97551123dd
+c18 delivery head before human result: 3ffc19b5b3b3f42c0fcbf62679fe6d9e44f92dfb
+c18 version: v0.1c18 / package 0.1.36
+next: c19 exact 0x2B2358E write contract
 ```
-
-## Current objective / c18 implementation
-Resolve only the exact local control flow in authenticated callee `0x2B23560..0x2B235E9`, beginning at blocker `0x2B235C1: je`, and feed every reachable memory write into the existing c17 address-provenance classifier. Derive a small callee-specific branch cap from the actual decoded local CFG rather than blindly raising the old cap. Resume writer proof only after source/Transform no-write certificates pass. No producer traversal or movement/source/input mutation in c18.
-
-C18 cloud implementation now counts complete authenticated local branches before deriving branch/path/state budgets, explores both successors, emits CFG and unique write metadata, and preserves c17 protected-object provenance. Exact runtime count is not available from the c17 compact excerpt; actual c18 count/write classification/next blocker remain pending. No upstream traversal or write permission is added. See V01C18_CALLEE_BRANCH_ALIAS.md and CODEX_RESULT.md. C18 target version v0.1c18/package0.1.36.
