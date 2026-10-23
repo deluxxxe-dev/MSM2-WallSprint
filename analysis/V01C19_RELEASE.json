@@ -1,0 +1,137 @@
+{
+  "version": "v0.1c19",
+  "package_version": "0.1.37",
+  "branch": "codex/v01c19-transform-write-contract",
+  "base_handoff_commit": "1754b97435c2feb54d496085c030b8e5251339ee",
+  "implementation_commit": "b3185cd240a16446a2424ecab9fa0c2605cb00e8",
+  "outputs": [
+    {
+      "path": "WallSprint_v0.1c19_transform_write_contract.zip",
+      "bytes": 3260221,
+      "sha256": "e81965e59fd6fa7e9fe52043623a239bf6b9aae1cc88675256239ed9267d50d5"
+    },
+    {
+      "path": "WallSprint_v0.1c19_source.zip",
+      "bytes": 721568,
+      "sha256": "80d933c6f8a179ee6c9eada6fd74e1c7cf994fb9135fa72f6ed0117f06c956f6"
+    }
+  ],
+  "public_test_pass_records": {
+    "portable": 13,
+    "smoke": 7,
+    "hooks": 97
+  },
+  "total_public_pass_records": 117,
+  "private_input_skips": 5,
+  "separate_historical_private_replay_records": 4,
+  "private_replay_duplicate_baseline_records": 1,
+  "focused_records_included": {
+    "entry": 11,
+    "contract": 4,
+    "branch": 6,
+    "call": 7,
+    "alias": 7,
+    "callee_branch": 6,
+    "transform_write": 7,
+    "logging": 3
+  },
+  "standalone_source": "PASS_fresh_no_build_logs_private_inputs",
+  "standalone_focused_records": 48,
+  "standalone_DLL_logger_records": 7,
+  "CRC_current_sources_docs_licenses_script_hash_private_body_exclusion": "PASS",
+  "legacy_State_Slice_c14_c16_caller_producer_native_lifecycle_entry_thunk_cleanup_logger_unchanged": true,
+  "c15_writer_CFG_setup_unchanged": true,
+  "c18_callee_CFG_caps_unchanged": true,
+  "CODEX_NEXT_preserved": true,
+  "PROJECT_STATE_updated_as_required": true,
+  "exact_write_contract": {
+    "site": "0x2b2358e",
+    "opcode": "MOV",
+    "width": 4,
+    "only_new_accepted_root": "entry_writer_RCX_transform",
+    "only_new_accepted_offset": "0x10c",
+    "exact_all_reaching_value_required": true,
+    "unknown_computed_or_conflicting_value_refused": true,
+    "protected_Transform_range": "[0,64)",
+    "modeled_write_range": "[0x10c,0x110)",
+    "literal_transform_no_write_kept_false": true,
+    "Position_and_reload_provenance_required": true,
+    "read_site_cap": 64,
+    "unknown_or_overlapping_read_refused": true,
+    "full_transform_TEB_image_exclusion_extent": 272,
+    "runtime_observation_hooks": 0,
+    "producer_traversal": false,
+    "writable_source_proven": false,
+    "Position_source_input_movement_writes": 0,
+    "actual_c19_result": "pending_A_E"
+  },
+  "read_provenance_exclusion": "conservative_all_decoded_reads_unknown_overlap_or_cap_refuses",
+  "literal_Transform_no_write_false_when_Transform_written": true,
+  "owned_A_E_orientation": [
+    {
+      "session": "1",
+      "wallrun_duration_ms": "4106",
+      "source_active_until_deinit": "1",
+      "verified_deinit": "1",
+      "path_a_writes": "176",
+      "path_b_writes": "176",
+      "max_held_ms": "2113",
+      "max_held_updates": "131",
+      "retention_pass": "1",
+      "last_actor_up_dot_surface": "1",
+      "first_hard_kill": "none",
+      "hard_kill_calls": "0"
+    },
+    {
+      "session": "2",
+      "wallrun_duration_ms": "4108",
+      "source_active_until_deinit": "1",
+      "verified_deinit": "1",
+      "path_a_writes": "178",
+      "path_b_writes": "178",
+      "max_held_ms": "2136",
+      "max_held_updates": "132",
+      "retention_pass": "1",
+      "last_actor_up_dot_surface": "1",
+      "first_hard_kill": "none",
+      "hard_kill_calls": "0"
+    }
+  ],
+  "owned_A_E_position_watch": [
+    {
+      "session": "1",
+      "watch_armed": "1",
+      "total_write_events": "12",
+      "dropped": "0",
+      "cleanup_restored": "1",
+      "cleanup_pending": "0",
+      "Position_writes_by_mod": "0"
+    },
+    {
+      "session": "2",
+      "watch_armed": "1",
+      "total_write_events": "12",
+      "dropped": "0",
+      "cleanup_restored": "1",
+      "cleanup_pending": "0",
+      "Position_writes_by_mod": "0"
+    }
+  ],
+  "owned_hardware": {
+    "entries": 8,
+    "complete_maps": 7,
+    "paired_stores": 28,
+    "threads": 2,
+    "reentrant": true,
+    "source_W": 0,
+    "destination_W": "0x3f800000",
+    "ABI_finalization_cleanup": "PASS"
+  },
+  "human_c18": "ACCEPTED_A2984_E4171_exact_MOV_0x2B2358E_root1_plus0x10C_blocker",
+  "actual_c19_exact_operands_value_effect_XYZ_W_or_next_blocker": "PENDING_human_A_E",
+  "new_runtime_observation_hooks": 0,
+  "producer_0x351EB00": "deferred",
+  "writable_source_proven": false,
+  "Position_source_input_movement_writes": 0,
+  "private_full_game_bodies_distributed": false
+}

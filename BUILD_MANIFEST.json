@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c18",
-  "package_version": "0.1.36",
+  "version": "v0.1c19",
+  "package_version": "0.1.37",
   "artifact": "WallSprint.script",
-  "sha256": "cc23970a34bd151bf45be973a68eab5bfcfecd51a7522f25f92dd9ccc1df88c8",
-  "dll_sha256": "5af0dbb409fefa10044368461c1c839161150c9c9546cfd7e68c386631fe32f3",
+  "sha256": "6362cabcb35348cb78044b3de1221a67472af484dc13dd43171763bfd21b0743",
+  "dll_sha256": "68a4f9329fb7c5cc09bd807e62400e07362dff550cbb2ad9fc59e5f1ddf0fe5a",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -128,14 +128,15 @@
     "original_capture": "private PATH_B_FUNCTION/PATH_B_CODE before hook; never redistributed",
     "caller_original_sha256": "1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d"
   },
-  "validation": "Windows warnings-as-errors; portable/DLL/full c17 regressions plus owned c18 exact CFG budgets/provenance/refusal/continuation tests and standalone source rebuild; counts in CODEX_RESULT.",
+  "validation": "Windows warnings-as-errors; portable/DLL/full c18 regressions plus owned exact write/provenance/conflict/read-dependency/region/continuation tests and standalone source rebuild; counts in CODEX_RESULT.",
   "limitations": [
-    "Actual c18 CFG counts/write addresses/alias result/XYZ/W or exact next blocker await A/E; c17 actual argument and isolated logger verified",
+    "Actual c19 exact write operands/value/all-reaching effects/XYZ/W or next blocker await A/E; c18 actual CFG/stack writes/logger verified",
     "Stack/global disjointness is conditional on per-invocation TEB/source/nonstack Transform/image region admission",
     "Unknown/conflicting pointer origins, unsupported effects and nested calls refuse at exact site",
     "Startup/current code snapshots are not atomic execution attestation; equality does not exclude transient writes",
     "Producer0x351EB00/ownership/lifetime/downstream/exclusivity remain deferred and writable_source_proven0",
-    "Prior incomplete hardware coverage, admitted-store/close overlap and bounded refresh limits remain"
+    "Prior incomplete hardware coverage, admitted-store/close overlap and bounded refresh limits remain",
+    "Read-carrier exclusion is conservative and may refuse unused reads; unknown/computed values do not receive exact-value permission"
   ],
   "source_directory": "source",
   "path_b_override": true,
@@ -634,7 +635,7 @@
     "unique_write_cap": 24,
     "exact_writer_precall_arguments": true,
     "unknown_or_conflicting_alias_refused": true,
-    "source_and_Transform_no_write_required": true,
+    "source_and_Transform_no_write_required": false,
     "stack_footprint_TEB_and_global_image_exclusion_required": true,
     "new_hooks": 0,
     "runtime_call_observation": false,
@@ -649,7 +650,9 @@
     "private_full_game_bodies_distributed": false,
     "branch_resource_ceiling": 8,
     "pending_states": 9,
-    "actual_c18_alias_proven": false
+    "actual_c18_alias_proven": false,
+    "source_and_Position_provenance_protection_required": true,
+    "actual_c19_write_contract_proven": false
   },
   "isolated_logging": {
     "directory": "game-root/log_wallsprint",
@@ -663,7 +666,7 @@
     "shared_logs_fallback": false,
     "failure_channel": "OutputDebugString_stage_path_Win32Error"
   },
-  "v01c18_gate": "CLOUD_LOCAL_CFG_ALIAS_IMPLEMENTATION_ACTUAL_A_E_PENDING",
+  "v01c18_gate": "REAL_A_E_DIAGNOSTIC_PASS_EXACT_TRANSFORM_WRITE_BLOCKER",
   "callee_cfg_contract": {
     "complete_decode_before_budget": true,
     "branch_cap_margin": 0,
@@ -673,6 +676,35 @@
     "indirect_transfers": "no_expansion",
     "nested_calls": "no_expansion",
     "runtime_actual_counts": "pending_A_E",
-    "unique_write_metadata_only": true
+    "unique_write_metadata_only": true,
+    "historical_actual_c18_counts": {
+      "branches": 5,
+      "conditional": 4,
+      "blocks": 8,
+      "edges": 10,
+      "nested_calls_seen": 2
+    }
+  },
+  "v01c19_gate": "CLOUD_EXACT_TRANSFORM_WRITE_IMPLEMENTATION_ACTUAL_A_E_PENDING",
+  "transform_write_contract": {
+    "site": "0x2b2358e",
+    "opcode": "MOV",
+    "width": 4,
+    "only_new_accepted_root": "entry_writer_RCX_transform",
+    "only_new_accepted_offset": "0x10c",
+    "exact_all_reaching_value_required": true,
+    "unknown_computed_or_conflicting_value_refused": true,
+    "protected_Transform_range": "[0,64)",
+    "modeled_write_range": "[0x10c,0x110)",
+    "literal_transform_no_write_kept_false": true,
+    "Position_and_reload_provenance_required": true,
+    "read_site_cap": 64,
+    "unknown_or_overlapping_read_refused": true,
+    "full_transform_TEB_image_exclusion_extent": 272,
+    "runtime_observation_hooks": 0,
+    "producer_traversal": false,
+    "writable_source_proven": false,
+    "Position_source_input_movement_writes": 0,
+    "actual_c19_result": "pending_A_E"
   }
 }
