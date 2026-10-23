@@ -14,6 +14,8 @@
 #include "GameInterop/atomic_publication.hpp"
 #include "msm2/sdk_bridge.hpp"
 #include "msm2/orientation_source.hpp"
+#include "NativeHooks/path_a_position_proof.hpp"
+#include "Math/planar_standoff.hpp"
 namespace {
 using ws::Vec3;using ws::source_math::Matrix;using ws::native_source::Token;using msm2::writeLog;
 constexpr std::uintptr_t callReturn=0x2cfc8f3,callBegin=0x2cfc850;constexpr unsigned callSize=168,capacity=1024;
@@ -29,16 +31,19 @@ struct NativeClose {Token token{};Published source{};bool wasOpen{},sourceRead{}
 ws::interop::AtomicPublication<NativeClose> deinitPublication;
 std::atomic<unsigned> pathAWrites{0},pathBWrites{0},pathARejects{0},pathBRejects{0};
 std::atomic<bool> resetRequested{false},lifecycleOpen{false};std::atomic<std::uint64_t> lifecycleEpoch{0};
+ws::position_proof::Result positionProof;
+struct Adhesion {unsigned attempts{},samples{},failClosed{};std::uint64_t lastMs{},lastUpdate{};float maxError{},maxRequested{},maxCandidateTangent{};bool finished{};};
 struct Shared {
  std::uintptr_t hero{},transform{},owner{};std::uint64_t session{},generation{},published{};
  ws::source_math::Transition transition;std::uint64_t blocked{},lastWrite{},lastUpdate{},firstHeld{},lastObserveUpdate{};
  Matrix entryBasis{},currentBasis{};Vec3 entryForward{};std::uint64_t lastCommonUpdate{},lastObserveMs{},lastMetricMs{};
  unsigned writes{},commonWrites{},copyWrites{},heldUpdates{},otherWriters{};float elapsed{},lastT{},bestSurface{};unsigned rejects{};bool pass{};
  std::uint64_t initMs{},maxHeldMs{};unsigned maxHeldUpdates{};float lastActorDot{};bool entered{},summaryEmitted{},exitDiagEmitted{},lastActorValid{};const char* exitReason="not_entered";
+ Adhesion adhesion{};
 } state;
 struct Record {
  unsigned kind{},gateMask{};const char* reason="none";std::uint64_t session{},ms{},generation{},nativeUpdate{},heldMs{},commitQpc{};
- std::uintptr_t source{},caller{};float elapsed{},t{},actorDotSurface{},actorDotWorld{};unsigned writes{},heldUpdates{};Matrix original{},applied{};ws::source_math::CompactBlock compactOriginal{},compactApplied{};ws::diag::ActorAxes target{};Vec3 n{},actorUp{},rowLengths{};bool positionSame{},stack{},success{},prearmed{},copy{},late{},sourceReadable{},sourceLayout{};unsigned nativeThread{};std::uintptr_t rcx{},r8{},r9{},rsp{},stackLimit{},stackBase{};
+ std::uintptr_t source{},caller{};float elapsed{},t{},actorDotSurface{},actorDotWorld{};unsigned writes{},heldUpdates{};Matrix original{},applied{};ws::source_math::CompactBlock compactOriginal{},compactApplied{};ws::diag::ActorAxes target{};Vec3 n{},actorUp{},rowLengths{},positionBefore{};bool positionSame{},stack{},success{},prearmed{},copy{},late{},sourceReadable{},sourceLayout{};unsigned nativeThread{};std::uintptr_t rcx{},r8{},r9{},rsp{},stackLimit{},stackBase{};
 };
 std::array<Record,capacity> records;std::atomic<unsigned> head{0},tail{0};
 std::atomic_flag recordLock=ATOMIC_FLAG_INIT;std::atomic<unsigned> recordDrops{0};
@@ -50,7 +55,13 @@ void emit(const Record& r){
  recordLock.clear(std::memory_order_release);
 }
 void publishInactive() noexcept {Published p{};publication.publish(p);}
+void adhesionSummary(const char* reason){
+ auto& a=state.adhesion;if(!state.entered||a.finished)return;a.finished=true;
+ writeLog("ADHESION_SUMMARY session=%llu position_proof_admitted=0 samples=%u sample_attempts=%u corrections_applied=0 max_abs_error_before=%.9g max_abs_error_after=%.9g error_after_semantics=unmodified_same_observation max_abs_step=0 max_abs_tangent_delta=0 source_position_writes=0 fail_closed_events=%u max_abs_requested_step=%.9g max_abs_candidate_tangent_delta=%.9g sample_cap=64 end_reason=%s mode=position_read_only",
+  (unsigned long long)state.session,a.samples,a.attempts,a.maxError,a.maxError,a.failClosed,a.maxRequested,a.maxCandidateTangent,reason);
+}
 void end(const char* reason,std::uint64_t now){
+ if(state.transition.active)adhesionSummary(reason);
  state.commonWrites=pathAWrites.load();state.copyWrites=pathBWrites.load();state.writes=state.commonWrites+state.copyWrites;
  if(state.transition.active)state.exitReason=reason;
  if(state.transition.active&&room()){Record r{};r.kind=2;r.reason=reason;r.session=state.session;r.generation=state.generation;r.ms=now;r.elapsed=float(now-state.transition.entryMs)/1000;r.writes=state.writes;r.heldUpdates=state.heldUpdates;r.heldMs=state.firstHeld?now-state.firstHeld:0;r.success=state.pass;emit(r);}
@@ -91,6 +102,36 @@ void prearmPublished(const Token& token,std::uint64_t now){
 }
 
 bool freshToken(const Token& t,std::uint64_t now){return t.phase==3&&t.owner&&t.updates&&now>=t.initMs&&now>=t.updateMs&&now-t.updateMs<=100;}
+void configurePositionEvidence(bool verified,bool callerVerified){
+ std::array<unsigned char,584> original{};bool writerVerified=verified&&msm2::input::originalWriterForPositionProof(original);positionProof={};
+ if(callerVerified&&writerVerified)positionProof=ws::position_proof::inspect(original.data(),original.size(),callerOriginal,sizeof(callerOriginal));
+ writeLog("PATH_A_POSITION_PROOF admitted=0 caller_verified=%u writer_verified=%u writer_decoded_bytes=%u caller_decoded_bytes=%u exact_direct_call_verified=%u source_offsets=%s destination_offsets=%s stack_relation_verified=%u target_relation_verified=0 target_relation_scope=runtime_exact_Hero_RCX_only position_w_semantics=unproven candidate_direct_component_mask=0x%x source_position_reads=%u target_position_stores=%u branches=%u calls=%u failure_offset=0x%x reason=%s position_source_write=0",
+  unsigned(callerVerified),unsigned(writerVerified),positionProof.writerBytes,positionProof.callerBytes,unsigned(positionProof.callVerified),positionProof.sourceReads?"candidate_[0x30,0x40)":"unproven",positionProof.targetStores?"candidate_[0x30,0x40)":"unproven",unsigned(positionProof.stackRelation),positionProof.directMask,positionProof.sourceReads,positionProof.targetStores,positionProof.branches,positionProof.calls,positionProof.failureOffset,positionProof.reason);
+ for(unsigned i=0;i<positionProof.accessCount;++i){auto& a=positionProof.accesses[i];writeLog("PATH_A_POSITION_ACCESS index=%u instruction_offset=0x%x base=%s displacement=0x%llx width=%u direction=%s source_offset_candidate=%lld direct_copy_candidate=%u after_control_flow=%u proof_status=CANDIDATE_LINEAR_SCAN_NOT_PATH_COMPLETE suppressed=%u",i,a.offset,a.target?"entry_RCX_alias_candidate":"entry_RDX_alias_candidate",(unsigned long long)a.displacement,a.width,a.write?"write":"read",a.sourceOffset,unsigned(a.directCandidate),unsigned(a.afterControlFlow),positionProof.suppressed);}
+ for(unsigned i=0;i<positionProof.controlCount;++i){auto& c=positionProof.controls[i];writeLog("PATH_A_POSITION_CONTROL index=%u instruction_offset=0x%x kind=%s direct=%u target_rva=0x%llx effects_verified=0 suppressed=%u",i,c.offset,c.call?"call":"branch",unsigned(c.direct),(unsigned long long)(c.direct?c.targetRva:0),positionProof.suppressedControls);}
+}
+void adhesionSample(const Published& p,const msm2::Snapshot& hero,std::uint64_t now){
+ auto& a=state.adhesion;
+ if(!p.active||!state.entered||a.finished||a.attempts>=64||(a.attempts&&(now-a.lastMs<100||p.nativeUpdate==a.lastUpdate)))return;
+ a.lastMs=now;a.lastUpdate=p.nativeUpdate;++a.attempts;
+ Vec3 point{},normal{};const char* reason="lifecycle_or_identity_changed";bool identity=false;ws::adhesion::Evaluation e{};float tangent=0;
+ auto open=[&]{return !killed.load()&&lifecycleOpen.load()&&lifecycleEpoch.load()==p.lifecycleEpoch&&hero.hero==p.hero&&hero.transform==p.transform&&p.owner==state.owner&&p.session==state.session&&p.generation==state.generation;};
+ if(open()&&p.owner<=UINTPTR_MAX-0x3a4){
+  bool pointOk=msm2::readMemory(p.owner+0x338,&point,12);bool normalOk=open()&&msm2::readMemory(p.owner+0x398,&normal,12);
+  Token checked{};identity=open()&&ws::native_source::lifecycle(checked)&&freshToken(checked,GetTickCount64())&&checked.owner==p.owner&&checked.generation==p.generation&&checked.thread==p.thread;
+  if(identity){reason=!pointOk?"P338_unreadable":!normalOk?"N398_unreadable":"invalid_plane_or_position";
+   if(pointOk&&normalOk){e=ws::adhesion::evaluate({hero.position[0],hero.position[1],hero.position[2]},point,normal,p.t);reason=e.reason;
+    if(e.valid&&ws::dot(e.normal,p.surface)<.995f){e.valid=false;reason="plane_normal_changed_from_owned_surface";}
+    if(e.valid){++a.samples;a.maxError=std::max(a.maxError,std::abs(e.error));a.maxRequested=std::max(a.maxRequested,std::abs(e.requested));
+     Vec3 forward{},right{};if(ws::unit(p.basis.forward-e.normal*ws::dot(p.basis.forward,e.normal),forward)&&ws::unit(ws::cross(e.normal,forward),right)){tangent=std::max(std::abs(ws::dot(e.delta,right)),std::abs(ws::dot(e.delta,forward)));a.maxCandidateTangent=std::max(a.maxCandidateTangent,tangent);}
+    }
+   }
+  }
+ }
+ if(!identity||!e.valid||!e.inRange)++a.failClosed;
+ writeLog("ADHESION_SAMPLE session=%llu elapsed=%.6f native_update=%u valid=%u identity_revalidated=%u HeroPosition=(%.9g,%.9g,%.9g) P338=(%.9g,%.9g,%.9g) N398=(%.9g,%.9g,%.9g) distance=%.9g target_distance=0.5 error=%.9g correction_requested=%.9g correction_applied=0 position_source_write=0 candidate_tangent_delta=%.9g reason=%s mode=position_read_only sampling=separate_guarded_observations",
+  (unsigned long long)p.session,p.elapsed,p.nativeUpdate,unsigned(identity&&e.valid),unsigned(identity),hero.position[0],hero.position[1],hero.position[2],point.x,point.y,point.z,normal.x,normal.y,normal.z,e.distance,e.error,e.valid?e.requested:0,tangent,reason);
+}
 void exitDiagnostic(const ws::observed::VerifiedWallContext& ctx,const Token& t,bool native,std::uint64_t now,const char* gate){
  if(!state.transition.active||state.exitDiagEmitted)return;
  state.exitDiagEmitted=true;msm2::Snapshot s{};bool sampled=msm2::sample(s);
@@ -144,6 +185,7 @@ namespace msm2::native_source {
 void configure(Config c,bool verified,std::uintptr_t base,std::size_t size,const std::array<msm2::writer::Patch,4>& patches){
  kill();if(configured){writeLog("native_source_rearm_refused full_game_restart_required=1");return;}configured=true;config=c;lifecyclePatches=patches;imageBase=base;
  bool callerVerified=verified&&base&&size>callReturn&&callerAuthenticated();
+ configurePositionEvidence(verified,callerVerified);
  admitted=verified&&c.enabled&&c.sourceOverride&&callerVerified&&std::isfinite(c.delay)&&c.delay>=.7f&&c.delay<=5&&std::isfinite(c.rotateTime)&&c.rotateTime>=.2f&&c.rotateTime<=1&&currentGuards()&&(!c.dualSource||msm2::reset_copy::compactProofAuthenticated());
  writeLog("native_source_config enabled=%u requested_override=%u admitted=%u direct_actor_transform_write=0 adhesion=0 movement=0 camera=0 animation=0 source_write_range=[0x00,0x30) position_write=0 caller_rva=0x2cfc8f3 caller_body_hash_verified=%u source_stack_relation=writer_entry_RSP+0x28 delay=%.3f rotate_time=%.3f",unsigned(c.enabled),unsigned(c.sourceOverride),unsigned(admitted),unsigned(callerVerified),c.delay,c.rotateTime);
  writeLog("DUAL_SOURCE_ADMISSION admitted=%u dual_source_required=%u common_caller=0x2cfc8f3 copy_caller=0x2cfc84b copy_hook_authenticated=%u",unsigned(admitted),unsigned(c.dualSource),unsigned(msm2::reset_copy::authenticated()));
@@ -206,6 +248,7 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
  // source paths have committed. Distinct native updates cannot be inflated by calls.
  state.commonWrites=pathAWrites.load();state.copyWrites=pathBWrites.load();state.writes=state.commonWrites+state.copyWrites;
  if(p.active&&p.t>=1&&state.commonWrites&&(!config.dualSource||state.copyWrites))observe(s,token,now,true);
+ adhesionSample(p,s,now);
  stateLock.clear(std::memory_order_release);
 }
 void capturePath(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t originalRsp) noexcept {
@@ -227,7 +270,7 @@ void capturePath(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::ui
  if(!result.success){rejectEntry(result.rollbackFailed?"path_A_write_failed_rollback_failed":"path_A_write_failed_restored_or_untouched",1|2|4|8|16|32);if(result.rollbackFailed)kill();release();return;}
  didOverride=true;auto count=pathAWrites.fetch_add(1)+1;Vec3 appliedUp{applied.v[4],applied.v[5],applied.v[6]};
  msm2::reset_trace::Request committed{};committed.prearmed=true;committed.verifyDual=config.dualSource;committed.characterize=true;committed.initMs=p.initMs;committed.session=p.session;committed.generation=p.generation;committed.nativeUpdate=p.nativeUpdate;committed.commitQpc=result.commitQpc;committed.overrideBeginQpc=begin.QuadPart;committed.hero=p.hero;committed.transform=p.transform;committed.owner=p.owner;committed.thread=p.thread;committed.normal=p.surface;committed.appliedUp=appliedUp;bool prearmed=msm2::reset_trace::committed(committed);
- Record r{};r.kind=1;r.late=count>1&&incoming.v[5]>=.98f;r.rcx=rcx;r.r8=r8;r.r9=r9;r.rsp=originalRsp;r.stackLimit=stack.limit;r.stackBase=stack.base;r.prearmed=prearmed;r.nativeThread=p.thread;r.commitQpc=result.commitQpc;r.session=p.session;r.generation=p.generation;r.ms=now;r.nativeUpdate=p.nativeUpdate;r.source=rdx;r.caller=callReturn;r.elapsed=p.elapsed;r.t=p.t;r.original=incoming;r.applied=applied;r.target=p.basis;r.n=p.surface;r.positionSame=result.positionUnchanged;r.stack=true;r.writes=count;emit(r);release();
+ Record r{};r.kind=1;r.late=count>1&&incoming.v[5]>=.98f;r.rcx=rcx;r.r8=r8;r.r9=r9;r.rsp=originalRsp;r.stackLimit=stack.limit;r.stackBase=stack.base;r.prearmed=prearmed;r.nativeThread=p.thread;r.commitQpc=result.commitQpc;r.session=p.session;r.generation=p.generation;r.ms=now;r.nativeUpdate=p.nativeUpdate;r.source=rdx;r.caller=callReturn;r.elapsed=p.elapsed;r.t=p.t;r.original=incoming;r.applied=applied;r.target=p.basis;r.n=p.surface;r.positionSame=result.positionUnchanged;r.stack=true;r.writes=count;r.positionBefore={hero.position[0],hero.position[1],hero.position[2]};emit(r);release();
 }
 void capture(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t rsp) noexcept {capturePath(rcx,rdx,r8,r9,ret,rsp);}
 void captureCopy(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t rsp) noexcept {
@@ -256,6 +299,8 @@ void drainLogs(){
   if(r.kind==10)writeLog("COMMON_OVERRIDE_REJECT session=%llu elapsed=%.6f reason=%s caller_ok=%u target_ok=%u stack_ok=%u source_layout_ok=%u lifecycle_ok=%u elapsed_ok=%u",(unsigned long long)r.session,r.elapsed,r.reason,unsigned(bool(r.gateMask&1)),unsigned(bool(r.gateMask&2)),unsigned(bool(r.gateMask&4)),unsigned(bool(r.gateMask&8)),unsigned(bool(r.gateMask&16)),unsigned(bool(r.gateMask&32)));
   if(r.kind==7)writeLog("ORIENTATION_RETENTION_PASS=1 session=%llu held_ms=%llu held_updates=%u game_verification=requires_accepted_build_runtime_log",(unsigned long long)r.session,(unsigned long long)r.heldMs,r.heldUpdates);
   if(r.kind==1){
+    if(r.writes<=2)writeLog("PATH_A_POSITION_RUNTIME session=%llu elapsed=%.6f native_update=%llu native_thread=%u caller_rva=0x2cfc8f3 target_transform=0x%llx runtime_target_verified=1 current_thread_stack_verified=%u rdx_minus_entry_rsp=0x%llx source_position=(%.9g,%.9g,%.9g) source_w=%.9g HeroPosition_before=(%.9g,%.9g,%.9g) position_row_preserved=%u position_source_write=0 causality_proven=0 destination_W_semantics=unproven",
+     (unsigned long long)r.session,r.elapsed,(unsigned long long)r.nativeUpdate,r.nativeThread,(unsigned long long)r.rcx,unsigned(r.stack),(unsigned long long)(r.source-r.rsp),r.original.v[12],r.original.v[13],r.original.v[14],r.original.v[15],r.positionBefore.x,r.positionBefore.y,r.positionBefore.z,unsigned(r.positionSame));
     writeLog("COMMON_SOURCE_OVERRIDE session=%llu elapsed=%.6f caller_rva=0x%llx target_transform=0x%llx source_ptr=0x%llx source_up_before=(%.9g,%.9g,%.9g) source_up_after=(%.9g,%.9g,%.9g) late_worldup_source_detected=%u position_unchanged=1",(unsigned long long)r.session,r.elapsed,(unsigned long long)r.caller,(unsigned long long)r.rcx,(unsigned long long)r.source,r.original.v[4],r.original.v[5],r.original.v[6],r.applied.v[4],r.applied.v[5],r.applied.v[6],unsigned(r.late));
     if(r.late)writeLog("LATE_COMMON_WORLDUP_OVERRIDE=1 session=%llu native_update=%llu reason=repeated_native_update_worldup_source",(unsigned long long)r.session,(unsigned long long)r.nativeUpdate);
   }

@@ -105,6 +105,7 @@ extern "C" void ws_source_capture(const Frame* f) noexcept {
 }
 namespace msm2::input {
 bool authenticated(){unsigned char body[584]{};return admitted&&!killed.load()&&ownership()&&readMemory(target,body,584)&&!std::memcmp(body,ownedWriterBody,584);}
+bool originalWriterForPositionProof(std::array<unsigned char,584>& out){if(!authenticated())return false;std::memcpy(out.data(),originalWriterBody,out.size());return true;}
 void configure(Config c,bool verified,std::uintptr_t image,std::size_t size){
  kill();if(created||used){writeLog("orientation_source_config admitted=0 reason=full_process_restart_required");return;}
  cfg=c;base=image;imageSize=size;target=base+writerRva;

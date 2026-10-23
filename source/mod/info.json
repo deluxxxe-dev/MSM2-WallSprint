@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.23",
-  "description": "WallSprint v0.1c5 Sustained Native Lifecycle. Retains verified A/B source overrides and prevents readers from dropping native lifecycle updates; adds exact exit diagnostics and full-WallRun summary. Diagnostic only for other writers; no direct Actor/Position/adhesion/movement/camera/animation/physics writes.",
+  "version": "0.1.24",
+  "description": "WallSprint v0.1c6 Planar Adhesion Diagnostics. Retains verified A/B source overrides and retains c5 orientation; inspects authenticated Position data-flow candidates and samples planar standoff. Position remains read-only until whole-path/W/exclusive-effect proof. Diagnostic only for other writers; no direct Actor/Position/adhesion/movement/camera/animation/physics writes.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

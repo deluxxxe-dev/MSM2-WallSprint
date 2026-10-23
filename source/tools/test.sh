@@ -26,3 +26,6 @@ g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -
 
 g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -Iinclude src/source_orientation_tests.cpp -o build/source_orientation_tests
 ./build/source_orientation_tests | tee logs/source_orientation_tests.log
+
+g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -Iinclude src/NativeHooks/planar_standoff_smoke.cpp -o build/planar_standoff_smoke
+./build/planar_standoff_smoke | tee logs/planar_standoff_tests.log

@@ -39,3 +39,5 @@ bash tools/test_dual_source.sh
 bash tools/test_compact_proof.sh
 
 bash tools/test_third_writer.sh
+
+bash tools/test_position_proof.sh

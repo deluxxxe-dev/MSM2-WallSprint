@@ -12,7 +12,7 @@ namespace msm2::reset_trace {
 void request(const Request& r) noexcept {assert(r.prearmed&&!r.commitQpc);++prearmRequests;}
 bool committed(const Request& r) noexcept {assert(r.commitQpc);++resetRequests;auto now=GetTickCount64();return now>=r.initMs&&now-r.initMs<1500;} // Model the bounded diagnostic ending; source ownership must continue.
 }
-static msm2::Snapshot fakeHero;static std::string output;static bool sdkAvailable=true,sourceAuth=true,copyAuth=true,deinitOnSample=false;
+static msm2::Snapshot fakeHero;static std::string output;static bool sdkAvailable=true,sourceAuth=true,copyAuth=true,deinitOnSample=false,pointReadable=true;static unsigned planeReads{};
 static unsigned char installedBytes[32]{},copyInstalledBytes[32]{};
 extern "C" {
 alignas(16) float ws_test_copy_received[16];std::uint64_t ws_test_copy_calls{};
@@ -28,11 +28,12 @@ bool authenticated() noexcept {unsigned char b[32]{};return copyAuth&&msm2::read
 bool compactProofAuthenticated() noexcept {return authenticated();}
 }
 namespace msm2 {
-bool readMemory(std::uintptr_t p,void* out,std::size_t n){SIZE_T done=0;return ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void*>(p),out,n,&done)&&done==n;}
+bool readMemory(std::uintptr_t p,void* out,std::size_t n){if(p==token.owner+0x338){++planeReads;if(!pointReadable)return false;}SIZE_T done=0;return ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void*>(p),out,n,&done)&&done==n;}
 bool sample(Snapshot& s){s=fakeHero;if(!sdkAvailable)return false;if(deinitOnSample){deinitOnSample=false;ws::native_source::event(3,token.owner);}return readMemory(s.transform,s.prefix,48);}
 void writeLog(const char* fmt,...){char b[4096];va_list a;va_start(a,fmt);vsnprintf(b,sizeof(b),fmt,a);va_end(a);output+=b;output+='\n';}
 }
 namespace msm2::input {bool authenticated(){unsigned char b[32]{};return sourceAuth&&msm2::readMemory(reinterpret_cast<std::uintptr_t>(&ws_test_native_source_writer),b,32)&&!std::memcmp(b,installedBytes,32);}}
+namespace msm2::input {bool originalWriterForPositionProof(std::array<unsigned char,584>&){return false;}} // No game bytes or false startup permission in this fixture.
 static ws::source_math::Matrix vanilla;static ws::source_math::CompactBlock compact;static std::uintptr_t owner{};static unsigned session{};
 static ws::observed::VerifiedWallContext context;
 static ws::source_math::Matrix identity(){ws::source_math::Matrix m{};m.v[0]=m.v[5]=m.v[10]=m.v[15]=1;m.v[12]=123;m.v[13]=45;m.v[14]=67;return m;}
@@ -43,6 +44,7 @@ static void prepare(ws::Vec3 normal){
  context={};context.lifecycleVerified=context.wallRunActive=true;context.wallRunOwner=owner;context.wallRunSessionId=++session;context.elapsed=.8;
  vanilla=identity();vanilla.v[0]=0;vanilla.v[2]=-1;vanilla.v[8]=1;vanilla.v[10]=0;
  compact={};compact.rows[2]=-1;compact.rows[4]=1;compact.rows[6]=1;for(unsigned i=0;i<compact.metadata.size();++i)compact.metadata[i]=static_cast<unsigned char>(0xa0+i);
+ pointReadable=true;fakeHero.position[0]=normal.x*.5f;fakeHero.position[1]=normal.y*.5f;fakeHero.position[2]=normal.z*.5f;ws::Vec3 point{};std::memcpy(reinterpret_cast<void*>(owner+0x338),&point,12);
  std::memcpy(reinterpret_cast<void*>(fakeHero.transform),&vanilla,64);std::memcpy(reinterpret_cast<void*>(owner+0x398),&normal,12);workerTick(false);Sleep(300);workerTick();
  Published p{};assert(publication.read(p)&&p.active&&p.t>=.99f&&p.generation==token.generation);
 }
@@ -80,8 +82,14 @@ int main(){
  readerDone=true;assert(WaitForSingleObject(reader,2000)==WAIT_OBJECT_0);CloseHandle(reader);
  assert(state.pass&&state.maxHeldMs>2000&&state.maxHeldUpdates>=100&&pathAWrites.load()>atTwoSeconds+80&&pathBWrites.load()==pathAWrites.load());
  auto heldA=pathAWrites.load(),heldB=pathBWrites.load();ws::native_source::event(3,owner);assert(!msm2::native_source::active());callA();callB();assert(pathAWrites==heldA&&pathBWrites==heldB);
- context.wallRunActive=false;msm2::native_source::tick(context,"verified_deinit",true);msm2::native_source::tick(context,"verified_deinit",true);
+ auto readsAtDeinit=planeReads;context.wallRunActive=false;msm2::native_source::tick(context,"verified_deinit",true);msm2::native_source::tick(context,"verified_deinit",true);assert(planeReads==readsAtDeinit);
  auto summaryKey="ORIENTATION_LIFECYCLE_SUMMARY session="+std::to_string(sustainedSession)+" ";assert(countText(output,summaryKey)==1);auto summary=output.substr(output.find(summaryKey));assert(summary.find("source_exit_reason=verified_native_Deinit source_active_until_deinit=1 verified_deinit=1")!=std::string::npos&&state.summaryEmitted);
+ auto adhesionKey="ADHESION_SUMMARY session="+std::to_string(sustainedSession)+" ";assert(countText(output,adhesionKey)==1&&state.adhesion.samples>20&&state.adhesion.attempts<=64&&output.find("mode=position_read_only")!=std::string::npos);
+ assert(output.find("PATH_A_POSITION_PROOF admitted=0")!=std::string::npos&&output.find("PATH_A_POSITION_RUNTIME")!=std::string::npos);
+ prepare({0,0,1});auto beforeInvalid=state.adhesion.failClosed;pointReadable=false;Sleep(110);workerTick();assert(state.transition.active&&state.adhesion.failClosed>beforeInvalid&&output.find("reason=P338_unreadable")!=std::string::npos);pointReadable=true;
+ fakeHero.position[2]=.1f;Sleep(110);workerTick();assert(state.transition.active&&output.find("reason=out_of_range")!=std::string::npos);
+ fakeHero.position[2]=.4f;Sleep(110);workerTick();assert(state.transition.active&&state.adhesion.maxRequested<=.02f&&state.adhesion.maxRequested>.019f);callA();callB();assert(!std::memcmp(ws_test_source_received+12,vanilla.v+12,16));
+ auto planeBeforeKill=planeReads;msm2::native_source::kill();workerTick(false);assert(planeReads==planeBeforeKill);
  // A genuinely stale timestamp still closes the same session permanently and
  // exposes the precise sub-gate, even when a new native Update later arrives.
  prepare({0,0,1});auto staleSession=state.session;Sleep(125);workerTick(false);assert(!state.transition.active);callA();callB();assert(pathAWrites==0&&pathBWrites==0);
@@ -102,4 +110,5 @@ int main(){
  auto f=std::fopen("logs/windows_native_source_synthetic.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);
  puts("PASS: lock-free coherent A/B shared basis, A exact stack source, B compact36-only scale/metadata preservation, contended worker lock cannot reject hooks, A/E retention, identity/thread/lifecycle/auth/kill/degenerate gates; independent MinHook fixtures only");
  puts("PASS: production native publication/worker and real MinHook A/B commits persist beyond2s through a >=4s WallRun with concurrent reader, SurfaceUp and sustained retention; synchronous Deinit passthrough and once/session lifecycle summary; real stale100ms/collision/Hero/time-order gates diagnose and remain closed");
+ puts("PASS: c6 Position stays read-only with explicit proof rejection, authenticated-source provenance records and bounded valid plane samples/one summary; unreadable plane/out-of-range refuse candidate correction without stopping orientation, in-range request<=0.02, Position16 preserved; no plane reads after Deinit/kill");
 }

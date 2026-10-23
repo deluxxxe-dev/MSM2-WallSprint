@@ -6,6 +6,7 @@ struct Config {bool enabled=true,otherArguments=false,observe=true;unsigned wind
 void configure(Config,bool exactAndVerified,std::uintptr_t gameBase,std::size_t gameSize);
 void tick(const ws::observed::VerifiedWallContext&,const char* exitReason,bool authenticated);
 bool authenticated();
+bool originalWriterForPositionProof(std::array<unsigned char,584>&);
 void kill() noexcept;
 void stop();
 void drainLogs();
