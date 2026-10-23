@@ -8,13 +8,13 @@
   "outputs": [
     {
       "path": "WallSprint_v0.1c13_writer_entry_snapshot.zip",
-      "bytes": 2929864,
-      "sha256": "1dfd7ba67b0abe5831027c3bbbf24bff36f73982171dc80f130c1127c2343e24"
+      "bytes": 2929898,
+      "sha256": "ff8a57dd2efc0a0449123936829f80b60375e072b37d805da7377087768fca9a"
     },
     {
       "path": "WallSprint_v0.1c13_source.zip",
-      "bytes": 618496,
-      "sha256": "34254c3a9c45e0c08719b40b6f7a119f1d7e91c33b38f55f0aac986851d8abc9"
+      "bytes": 618513,
+      "sha256": "0e330a47985b012d526ba7f83ab96f3cbcf73a3b32478af10650a55694b8a38d"
     }
   ],
   "test_pass_counts": {
@@ -108,12 +108,13 @@
   "private_full_game_bytes_distributed": false,
   "exact_next_edge": "Adjudicate actual c13 entry/store component and lane matches; trace candidate construction/lifetime in caller0x351eea7..0x351eec5 and observed caller2 chain; XYZ/W causal semantics/downstream conflicts/exclusive intended effects remain unproven",
   "publication": {
-    "status": "BLOCKED_INVALID_ENVIRONMENT_GITHUB_TOKEN",
-    "remote_push_complete": false,
-    "authenticated_remote_artifact_retrieval_verified": false,
-    "first_packaged_local_delivery_commit": "eddcdea",
-    "local_branch": "codex/v01c13-writer-entry-snapshot",
-    "recovery_bundle": "WallSprint_v0.1c13_handoff.bundle",
-    "required_action": "Reconnect GitHub authentication, push without force, fetch and compare exact ZIP bytes/hashes"
+    "status": "PUBLISHED_GIT_REMOTE_VERIFIED",
+    "remote_push_complete": true,
+    "remote_artifact_retrieval_verified": true,
+    "verified_delivery_commit": "77c8a072c5401ced0dd427e764c142ab0780bf76",
+    "method": "Fresh isolated HTTPS Git clone; exact ZIP byte/size/SHA256 comparison",
+    "branch": "codex/v01c13-writer-entry-snapshot",
+    "metadata_refresh": "Publication status and packaged result docs only; final delivery re-cloned and verified before reporting its SHA",
+    "github_rest_api_access": "Unavailable; Git transport used successfully"
   }
 }
