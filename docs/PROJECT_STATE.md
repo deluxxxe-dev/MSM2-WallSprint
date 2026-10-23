@@ -43,13 +43,15 @@ Verified on cardinal and diagonal planar vertical walls:
 
 Face E repeatedly produces approximately `N398 = (-0.707107, 0, +0.707107)`.
 
+A wider wall used for the c3 test was visually the same general direction as A but measured approximately `N398 = (-0.113317, 0, +0.993559)`, so treat it as a near-+Z planar control rather than assuming exact cardinal +Z.
+
 ## Orientation path A
 
 - writer RVA `0x2CFC580`
 - WallRun caller return RVA `0x2CFC8F3`
 - padded Right / Up / Forward plus Position source
 - lock-free shared WallSprint snapshot is active
-- c2 runtime confirms qualifying calls can write the SurfaceFrame basis
+- real runtime confirms qualifying calls can write the SurfaceFrame basis
 - `PATH_A_STATE_LOCK_CONTENTION=0`
 
 ## Orientation path B
@@ -76,61 +78,45 @@ RDX+1C -> RCX+24
 RDX+20 -> RCX+28
 ```
 
-c2 startup proof passes on the real accepted build:
+Real-game compact proof passes and both Path A and Path B can write the intended surface-relative basis.
+
+## v0.1c2 result — visible rotation but rapid flicker
+
+The actor visibly reaches surface-relative orientation, then repeatedly returns to World Up. Logs confirm both known paths commit valid surface-relative Up before Actor Up abruptly returns to World Up.
+
+Late Path-A WorldUp sources are themselves converted (`LATE_COMMON_WORLDUP_OVERRIDE=1`), so they do not explain every surviving reset.
+
+`ORIENTATION_RETENTION_PASS=1` has not been achieved.
+
+## v0.1c3 real-game result — multithread trace did not expand
+
+c3 was intended to identify the remaining writer by expanding the Hero Up hardware write watch from the primary native thread to other process threads.
+
+Package/runtime:
 
 ```text
-PATH_B_COMPACT3X3_PROOF admitted=1
-caller_verified=1
-writer_verified=1
-rdx_to_rcx_map_verified=1
-decoded_prefix_bytes=444
-caller_decoded_bytes=128
-pairs=9
+v0.1c3 / package 0.1.21
+branch: codex/v01c3-third-writer-trace
+implementation commit: fd105be35a12c4a4ba8b8a72c3f75a4bcf49ff82
+published head: b05278093b6e0ad92db7dad8c51a986ba16ca872
 ```
 
-c2 runtime confirms Path B writes the intended SurfaceFrame Up on both A and diagonal E.
-
-## v0.1c2 real-game result — visible rotation but rapid flicker
-
-Human observation: visible change is now obvious. Normal vanilla WallRun orientation and the intended surface-relative orientation switch rapidly back and forth.
-
-Authoritative log confirms the visual symptom.
-
-Representative A-wall state:
+The real-game session still had working Path A / Path B overrides, but the new process-thread watch reported:
 
 ```text
-Path A applied_up=(0,0,1)
-Path B applied_up=(0,0,1)
-actor_up=(0,0,1) dot_surface=1
-...
-actor_up=(0,1,0) dot_surface=0
-```
-
-The same failure reproduces on diagonal E, where the desired Up is approximately `(-0.707107,0,+0.707107)`.
-
-Both verified source paths therefore work, but another writer resets Actor Up to World Up shortly afterward.
-
-Retention repeatedly resets after only a few distinct updates / a few tens of milliseconds. `ORIENTATION_RETENTION_PASS=1` is absent.
-
-Late path-A WorldUp inputs are detected and converted (`LATE_COMMON_WORLDUP_OVERRIDE=1`), so those known calls do not fully explain the surviving WorldUp reset.
-
-## Critical diagnostic gap
-
-The current hardware Up watch is not process-thread complete:
-
-```text
-threads_enumerated=0
-installed=1
+MULTITHREAD_UP_WATCH phase=stopped
+process_threads_seen=0
+eligible=0
+installed=0
 complete_thread_coverage=0
-primary_only=1
-primary_native_thread=8968
+rescan_count=0
 ```
 
-During the armed window, captured primary-thread events are the already-known path-A writer and show Surface Up writes. The actual SurfaceUp -> WorldUp transition appears in worker observations without a corresponding hardware writer event.
+The primary-thread hardware watch remained functional and captured only known Path A events. No `UNKNOWN_WRITER`, `THIRD_WRITER_EVENT`, or `THIRD_WRITER_IDENTITY` was captured.
 
-Strongest current hypothesis: a third orientation writer runs on another game thread (or otherwise outside the primary-only watch coverage).
+This does **not** disprove the third-writer hypothesis. It demonstrates that the c3 real-game thread-enumeration/expansion path failed before coverage was established.
 
-Detailed runtime result: `analysis/V01C2_RUNTIME_RESULT.md`.
+Detailed result: `analysis/V01C3_RUNTIME_RESULT.md`.
 
 ## Current blocker / stage
 
@@ -144,39 +130,32 @@ Detailed runtime result: `analysis/V01C2_RUNTIME_RESULT.md`.
 8. real-runtime path-B proof ✅
 9. path-A + path-B SurfaceFrame writes ✅
 10. visible surface-relative rotation ✅ intermittent
-11. third reset writer identification ▶ CURRENT
-12. retained orientation ⬜
-13. adhesion ⬜
-14. surface-relative movement ⬜
-15. animation integration ⬜
-16. camera and later roadmap ⬜
+11. multithread Up-watch real-game enumeration/installation ▶ CURRENT
+12. third reset writer identification ⬜
+13. retained orientation ⬜
+14. adhesion ⬜
+15. surface-relative movement ⬜
+16. animation integration ⬜
+17. camera and later roadmap ⬜
 
 ## Current implementation base
 
-Use c2, not main's older source, as the code base:
+Use the published c3 implementation as the code base:
 
 ```text
-branch: codex/v01c2-proof-fix
-implementation commit: 2d26710034dcf695fa7bb2da763f117faf6171db
-published branch head: 727fcdc1594e36e6a1ffaabf5569eee89375b871
+branch: codex/v01c3-third-writer-trace
+implementation commit: fd105be35a12c4a4ba8b8a72c3f75a4bcf49ff82
+published head: b05278093b6e0ad92db7dad8c51a986ba16ca872
 ```
 
-A working c3 branch has been pre-created from that base:
+Pre-created next branch:
 
 ```text
-codex/v01c3-third-writer-trace
+codex/v01c4-real-thread-enum-fix
 ```
 
 ## Current objective
 
-Preserve the working c2 A/B overrides. Expand the bounded Hero Up write-watch to enough process-thread coverage to identify the first unexplained SurfaceUp -> WorldUp write after both overrides are active.
+Preserve the working A/B overrides and c3 safety behavior. Repair and instrument the real-game process-thread enumeration/expansion path so the bounded Hero Up write watch actually installs on more than one eligible game thread.
 
-Do not modify a third path yet. First capture its exact RIP/function/caller/thread and timing.
-
-Do not add adhesion, movement, animation or camera until retained orientation passes `dot(ActorUp,N398) >= 0.98` for >=300 ms or >=20 distinct native updates.
-
-## Human test locations
-
-A Control: same flat unobstructed vertical wall.
-
-E: same known physical diagonal wall.
+Do not modify a third writer yet. Do not add adhesion, movement, animation or camera until retained orientation passes `dot(ActorUp,N398) >= 0.98` for >=300 ms or >=20 distinct native updates.
