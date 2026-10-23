@@ -59,7 +59,7 @@ For relevant Hero calls its RDX source layout is verified as:
 
 WallSprint can override this caller-local source and briefly change the real Hero Actor Up toward Surface Up without direct Actor writes.
 
-Current remaining path-A issue: v0.1b9 logged thousands of `COMMON_OVERRIDE_REJECT reason=state_lock_contention` events. The hot hook must stop depending on a contended mutex/try-lock before orientation ownership can be considered complete.
+v0.1b9 exposed frequent `COMMON_OVERRIDE_REJECT reason=state_lock_contention`. v0.1c1 implemented a lock-free shared orientation snapshot to remove that hot-hook dependency, but the real runtime never reached the override stage because the new Path-B proof failed during startup admission.
 
 ## Orientation reset path B
 
@@ -77,18 +77,9 @@ It acts roughly 0.8–1.4 ms after representative path-A source commits and rest
 
 ## v0.1b9 result — path-B compact 3x3 layout characterized
 
-User reported no visible change. That is expected because v0.1b9 explicitly ran with:
+The b9 diagnostic milestone succeeded.
 
-```text
-path_b_override=0
-path_b_characterization_active=1
-```
-
-The diagnostic milestone succeeded.
-
-### Proven caller-local provenance
-
-On both A and E, exact path-B entries repeatedly reported:
+On A and E, exact path-B entries repeatedly proved:
 
 ```text
 RDX = RSP + 0x28
@@ -98,38 +89,71 @@ expected_rsp_relation_match=1
 source_readable=1
 ```
 
-So the old v0.1b8 `source_is_stack_local=0` result was a misleading diagnostic, not evidence against stack-local provenance.
-
-### Compact 3x3 source layout
-
-Authenticated caller bytes show nine scalar products written into a local stack buffer before the call to `0x2CFC3C0`.
-
-Authenticated writer bytes show direct copies from those nine floats into Hero orientation slots:
+Authenticated caller/writer bytes and runtime values support a compact 3x3 basis in `[RDX+0x00,RDX+0x24)` with direct copies into Hero orientation slots:
 
 ```text
 RDX + 0x00 -> RCX + 0x00
 RDX + 0x04 -> RCX + 0x04
 RDX + 0x08 -> RCX + 0x08
-
 RDX + 0x0C -> RCX + 0x10
 RDX + 0x10 -> RCX + 0x14
 RDX + 0x14 -> RCX + 0x18
-
 RDX + 0x18 -> RCX + 0x20
 RDX + 0x1C -> RCX + 0x24
 RDX + 0x20 -> RCX + 0x28
 ```
 
-Interpretation: path B uses a compact 3x3 basis payload in `[RDX+0x00, RDX+0x24)`, unlike path A's padded affine layout.
-
-Runtime values support the same interpretation on A and E:
-
-- A path-B source basis stays world-relative with Up ≈ `(0,1,0)` while path A has already tilted Hero Up toward the wall.
-- E path-B source basis has diagonal horizontal Right/Forward rows but still Up ≈ `(0,1,0)`, while path A drives Hero Up toward `(-0.707,0,+0.707)`.
-
-Path B therefore remains the immediate World-Up reset owner.
-
 Detailed evidence: `analysis/V01B9_RUNTIME_RESULT.md`.
+
+## v0.1c1 runtime result — startup proof failed closed
+
+User again reported no visible orientation change. This time the package was the expected c1 build:
+
+```text
+WallSprint v0.1c1 package_version=0.1.19
+path_b_override=1
+```
+
+The executable itself still passed the normal target build gate for Spider-Man2.exe 2.810.0.0 and the expected SHA256.
+
+However the new c1 compact Path-B startup proof failed before either source path was admitted:
+
+```text
+PATH_B_COMPACT3X3_PROOF
+admitted=0
+caller_verified=0
+writer_verified=1
+rdx_to_rcx_map_verified=0
+source_bytes=0x24
+decoded_prefix_bytes=5
+pairs=0
+reason=instruction_or_dataflow_not_proven
+```
+
+Consequently:
+
+```text
+native_source_config admitted=0
+DUAL_SOURCE_ADMISSION admitted=0
+PATH_B_LAYOUT_CONFIG enabled=0 path_b_override=0
+PATH_A_OVERRIDE_COUNT=0
+PATH_B_OVERRIDE_COUNT=0
+```
+
+Therefore c1 produced no visible change because no orientation override executed at all.
+
+Important: this is not evidence of a changed game build or a disproven compact-3x3 runtime model. The existing path-A common writer still authenticated/installed. The blocker is the new c1 proof decoder/self-check, which decoded only 5 bytes of the real accepted-build instruction stream and recovered zero copy pairs.
+
+Detailed result: `analysis/V01C1_RUNTIME_RESULT.md`.
+
+c1 implementation provenance:
+
+```text
+branch: codex/v01c1-compact-path-b
+commit: 71437fac6c0640af01725a46e1b49c5627c739bb
+```
+
+The next task must use that branch/commit as the implementation base; main currently carries handoff state but is not guaranteed to contain the c1 implementation source.
 
 ## Current blocker / stage
 
@@ -142,23 +166,25 @@ Detailed evidence: `analysis/V01B9_RUNTIME_RESULT.md`.
 7. reset writer discovery ✅
 8. path-B hook/authentication ✅
 9. path-B source provenance / compact 3x3 layout ✅
-10. dual-source retained orientation ▶ CURRENT
-11. adhesion ⬜
-12. surface-relative movement ⬜
-13. animation integration ⬜
-14. camera and later roadmap ⬜
+10. real-runtime compact-3x3 proof admission ▶ CURRENT
+11. dual-source retained orientation ⬜
+12. adhesion ⬜
+13. surface-relative movement ⬜
+14. animation integration ⬜
+15. camera and later roadmap ⬜
 
 ## Current implementation objective
 
-Next package should attempt orientation ownership only:
+Repair the c1 proof implementation without weakening safety:
 
-1. Formalize an anchored startup decode/self-check for the path-B compact 3x3 direct-copy map.
-2. For exact verified `0x2CFC84B -> 0x2CFC3C0` Hero/WallRun calls after the transition delay, replace only the first nine source floats with the shared current WallSprint basis.
-3. Preserve original row magnitudes/per-axis scale; modify orientation direction only.
-4. Do not touch anything at or after `RDX+0x24`.
-5. Replace path-A lock-dependent admission with a lock-free published orientation snapshot so qualifying `0x2CFC8F3 -> 0x2CFC580` calls do not fail because of `state_lock_contention`.
-6. Require retained `dot(ActorUp,N398) >= 0.98` for >=0.30 s or >=20 distinct native updates.
-7. Do not add adhesion until that retention gate passes.
+1. Start from `codex/v01c1-compact-path-b` commit `71437fac6c0640af01725a46e1b49c5627c739bb`.
+2. Make the anchored decoder consume the complete authenticated real-game Path-B caller/writer instruction streams rather than stopping after 5 bytes.
+3. Independently recover and verify all nine RDX-to-RCX compact basis copy pairs.
+4. Log the first failed decode offset/opcode/reason if proof cannot complete.
+5. Keep the lock-free path-A/path-B shared orientation implementation from c1.
+6. Keep exact-build, target, stack, lifecycle and metadata-preservation fail-closed gates.
+7. Re-run the same A/E test only after startup logs `PATH_B_COMPACT3X3_PROOF admitted=1`.
+8. Do not authorize adhesion until retained orientation passes `dot(ActorUp,N398) >= 0.98` for >=0.30 s or >=20 distinct native updates.
 
 ## Human test locations
 
