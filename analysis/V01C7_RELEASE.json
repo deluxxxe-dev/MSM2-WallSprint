@@ -1,0 +1,52 @@
+{
+  "version": "v0.1c7",
+  "package_version": "0.1.25",
+  "branch": "codex/v01c7-transient-freshness-recovery",
+  "implementation_commit": "93d7887e8ba8cb04e38473a0a821077ee8fc9efb",
+  "outputs": [
+    {
+      "path": "WallSprint_v0.1c7_transient_freshness_recovery.zip",
+      "bytes": 2492676,
+      "sha256": "70dcfa5e031ab7f4044e4f051fb4780ab8ed162b576006d6a3c2885b0bfa768b"
+    },
+    {
+      "path": "WallSprint_v0.1c7_source.zip",
+      "bytes": 493086,
+      "sha256": "651151a547b093d99eab140434161419189e291d8887ce16bea1c3b0735860dc"
+    }
+  ],
+  "test_pass_counts": {
+    "portable": 12,
+    "smoke": 4,
+    "hooks": 39
+  },
+  "total_pass": 55,
+  "historical_private_skips": 4,
+  "real_gap_test_min_ms": 270,
+  "recovered_owned_native_summary": {
+    "wallrun_duration_ms": "4101",
+    "source_exit_reason": "verified_native_Deinit",
+    "source_active_until_deinit": "1",
+    "verified_deinit": "1",
+    "path_a_writes": "174",
+    "path_b_writes": "174",
+    "retention_pass": "1",
+    "max_held_ms": "1401",
+    "max_held_updates": "88",
+    "last_actor_up_dot_surface": "1",
+    "stale_suspend_count": "1",
+    "stale_resume_count": "1",
+    "max_stale_duration_ms": "174"
+  },
+  "hard_stale_controls": 11,
+  "episode_pairs_logged_cap": 16,
+  "episode_pairs_tested": 18,
+  "position_permission": false,
+  "actual_A_Position_bytes_replayed": false,
+  "standalone_source_build": "PASS_private_captures_absent",
+  "private_game_function_bytes_distributed": false,
+  "real_game_c5_normal_cadence_hold": "PASS",
+  "real_game_c6_transient_gap_regression": "VERIFIED",
+  "real_game_c7_recovery_and_visual_hold": "PENDING",
+  "actual_position_writes": 0
+}
