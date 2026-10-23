@@ -66,9 +66,10 @@ Path B:
 - c4: thread-watch repaired; first retention PASS, but source ownership ended early.
 - c5: lifecycle continuity repaired; real full-WallRun orientation hold passed.
 - c6: Position/adhesion remained read-only; a real ~250 ms native Update gap caused `fresh_update_age` to permanently end source ownership.
-- c7: added transient stale suspend/resume, but real run hard-killed orientation after only two Path A writes / ~16 ms, before the recovery logic could matter.
+- c7: added transient stale suspend/resume, but real run hard-killed orientation after only two Path A writes / ~16 ms.
+- c8: exact first-cause attribution succeeded. Real run reached Surface Up and retention PASS, then hard-killed at 1.750 s because a verified Path B call for the active Hero Transform arrived on a secondary thread.
 
-## Last authoritative real PASS: c5
+## Last authoritative full-WallRun PASS: c5
 
 ```text
 wallrun_duration_ms=3843
@@ -82,44 +83,69 @@ max_held_updates=205
 last_actor_up_dot_surface=1
 ```
 
-## c6 regression
-
-The same verified WallRun survived a ~250 ms native Update gap, but c6 permanently closed source ownership on `fresh_update_age`. Adhesion was read-only (`corrections_applied=0`, `source_position_writes=0`).
-
-## c7 real-game FAIL
+## c8 real-game result
 
 Implementation:
 
 ```text
-branch: codex/v01c7-transient-freshness-recovery
-implementation commit: 93d7887e8ba8cb04e38473a0a821077ee8fc9efb
-published head: 466f0ab237faccd8c769d17fedd66a42138a7829
-version: v0.1c7 / package 0.1.25
+branch: codex/v01c8-kill-cause-attribution
+implementation commit: 98c1d45108c89262750616c7258414cf762cac55
+published head: 75af734d4d32d5e3a77087cbee6b2247b9617ced
+version: v0.1c8 / package 0.1.26
 ```
 
-User observation: actor stayed visually in vanilla orientation.
-
-Runtime sequence:
+The target build and all normal source/integrity gates were accepted. Orientation reached full Surface Up and passed retention:
 
 ```text
-elapsed=0.703  Path A write #1  t=0.000
-elapsed=0.719  Path A write #2  t=0.064
-NATIVE_SOURCE_EXIT reason=disabled_kill_or_patch_gate
+ORIENTATION_RETENTION_PASS=1
+held_ms=312
+held_updates=20
 ```
 
-The verified WallRun continued after the hard close. Therefore this was not a normal WallRun end and was not the c6 `fresh_update_age` path.
-
-Immediately after the first write, the bounded orientation/reset watch reported:
+At elapsed `1.750000`, c8 latched the exact first abnormal close:
 
 ```text
-stop_reason=observation_guards_lost
+NATIVE_SOURCE_HARD_KILL
+reason=path_b_wrong_thread
+origin=path_b
+thread_id=35948
+native_thread=10680
+expected_thread=10680
+wallrun_active=1
+wallrun_session=1
 ```
 
-This is temporally adjacent but not yet proven to be the first kill cause.
+All other detailed guards were healthy:
 
-Code review shows the worker currently hard-kills `native_source` whenever the broad `observationPlanAuthenticated()` boolean becomes false. That boolean combines verified hook availability, observation `fieldPlanEnabled`, and byte ownership of all four WallRun hook patches. Path A/B also contain separate hard-kill sites. The log does not currently identify which one fired first.
+```text
+input_auth=1
+copy_auth=1
+compact_proof=1
+caller_read_ok=1
+caller_patch_match=1
+source_failed_gate=none
+observation_failed_hook=none
+observation_failure_mask=0x0
+```
 
-Detailed result: `analysis/V01C7_RUNTIME_RESULT.md`.
+The secondary-thread Path B entry still targeted the current Hero Transform, returned through verified caller RVA `0x2CFC84B`, and had `RDX-RSP=0x28`. The native lifecycle token was coherent and the same session/owner/generation/epoch remained active.
+
+The source exited only because of the thread equality rule. The independently verified WallRun then continued to normal Deinit:
+
+```text
+Init=1
+Entry=1
+Update=279
+Deinit=1
+duration=4.405647 s
+end_reason=verified_deinit
+```
+
+Therefore the invariant “every Path B call for active WallSprint must execute on the verified WallRun/native thread” is false in real runtime.
+
+No stale-suspend event occurred. Position/adhesion remained read-only (`corrections_applied=0`, `source_position_writes=0`).
+
+Detailed result: `analysis/V01C8_RUNTIME_RESULT.md`.
 
 ## Current blocker / stage
 
@@ -132,36 +158,38 @@ Detailed result: `analysis/V01C7_RUNTIME_RESULT.md`.
 7. Path B discovery / compact layout ✅
 8. real-runtime Path B proof ✅
 9. Path A + Path B SurfaceFrame writes ✅
-10. visible surface-relative rotation ✅ historical
-11. lifecycle-wide hold under normal cadence ✅ c5 historical
-12. transient freshness recovery implementation ✅ synthetic / real pending
-13. exact c7 hard-kill attribution ▶ CURRENT
-14. lifecycle-wide real orientation hold ⬜ revalidate
-15. planar adhesion / safe Position-source ownership ⏸
-16. surface-relative movement ⬜
-17. animation integration ⬜
-18. camera and later roadmap ⬜
+10. visible surface-relative rotation ✅
+11. retention threshold ✅
+12. lifecycle-wide hold under normal cadence ✅ c5 historical
+13. transient freshness recovery implementation ✅ synthetic / real no-gap run pending
+14. exact hard-kill attribution ✅ c8
+15. secondary-thread Path B admission ▶ CURRENT
+16. lifecycle-wide real orientation hold ⬜ revalidate
+17. planar adhesion / safe Position-source ownership ⏸
+18. surface-relative movement ⬜
+19. animation integration ⬜
+20. camera and later roadmap ⬜
 
 ## Current implementation base
 
-Use published c7 so its stale suspend/resume code is preserved:
+Use published c8 so exact first-cause attribution and c7 stale recovery remain available:
 
 ```text
-branch: codex/v01c7-transient-freshness-recovery
-implementation commit: 93d7887e8ba8cb04e38473a0a821077ee8fc9efb
-published head: 466f0ab237faccd8c769d17fedd66a42138a7829
+branch: codex/v01c8-kill-cause-attribution
+implementation commit: 98c1d45108c89262750616c7258414cf762cac55
+published head: 75af734d4d32d5e3a77087cbee6b2247b9617ced
 ```
 
 Pre-created next branch:
 
 ```text
-codex/v01c8-kill-cause-attribution
+codex/v01c9-secondary-path-b-thread-admission
 ```
 
 ## Current objective
 
-Identify and record the exact first hard-kill cause from c7, then fix only the demonstrated coupling/false failure.
+Repair the false `path_b_wrong_thread` fatal invariant without weakening Path B provenance globally.
 
-Do not simply remove integrity checks. If the failure is only a diagnostic/observation-plan condition that is not required for authenticated Path A/B ownership, decouple it from source hard-kill. If any actual WallRun hook patch, Path A/B caller/writer, thread/stack, Hero/Transform, epoch, rollback or build identity is corrupted, remain fail-closed.
+A secondary-thread Path B call may use the already-published WallSprint compact orientation basis only when it still targets the active Hero Transform and independently passes exact verified caller, current-thread stack relation, compact-layout, lifecycle identity/freshness and source-integrity checks. This is per-call Path B admission only; it must not migrate the expected native WallRun thread or weaken Path A ownership.
 
 Do not advance Position writes/adhesion until real-game full-WallRun orientation passes again.
