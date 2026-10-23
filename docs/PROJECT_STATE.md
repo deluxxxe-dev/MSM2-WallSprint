@@ -7,99 +7,135 @@ Convert vanilla WallRun into surface-relative locomotion. Architecture is surfac
 - Spider-Man2.exe 2.810.0.0
 - SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`
 - WallRun Init `0x14233C0`, Entry `0x14235C0`, Update `0x1424530`, Deinit `0x1416660`
-- Preserve `AGENTS.md` and `docs/DEV_RULES.md`; no private game bodies/raw user logs in public source/package; implementation remains independent and suitable for Nexus Mods distribution.
+- Preserve `AGENTS.md` and `docs/DEV_RULES.md`; no private game bodies/raw user logs in public source/package; independent implementation only.
 
 ## Verified orientation state
-Planar Surface Up/orientation is accepted from the human c10/c11 A/E runs. c11 A/cardinal (4125 ms) and E/diagonal (4063 ms) both reached verified Deinit with `retention_pass=1`, no hard kill and `Position_writes_by_mod=0`. c12 does not modify the c10/c11 orientation admission/hot paths.
+Planar Surface Up/orientation is accepted. c12 did not regress it.
 
-## Verified c11 movement diagnostics
-The human c11 A -> E run established:
-
+Human c12 A/cardinal:
 ```text
-writer_function_rva=0x2CFC900
-Position stores=0x2CFC936 / 0x2CFC93C / 0x2CFC942 / 0x2CFC945
-Transform destinations=+0x30 / +0x34 / +0x38 / +0x3C
-caller return=0x351EEB0
-caller2 return≈0x351A020
+wallrun_duration_ms=4266
+source_active_until_deinit=1
+verified_deinit=1
+retention_pass=1
+last_actor_up_dot_surface=1
+first_hard_kill=none
+hard_kill_calls=0
+Position_writes_by_mod=0
 ```
 
-This chain correlates with real Hero translation on both surfaces. Path A `source+0x30` can match the Position row but is still denied because downstream writers and exclusive semantics are not proven. No c11 candidate reached `writable_source_proven=1`.
+Human c12 E/diagonal:
+```text
+N398≈(-0.7071068,0,+0.7071068)
+wallrun_duration_ms=4297
+source_active_until_deinit=1
+verified_deinit=1
+retention_pass=1
+last_actor_up_dot_surface=1.00000012
+first_hard_kill=none
+hard_kill_calls=0
+Position_writes_by_mod=0
+```
 
-## c12 implementation handoff
+E had one late native Update gap (`native_gap_ms=172`) producing a bounded 72 ms stale suspend/resume. Surface Up was already held; identity/generation/thread remained coherent; it resumed normally and is not a regression.
 
+## Verified movement-path evidence
+c11/c12 actual-game evidence establishes the measured translation chain:
+
+```text
+Hero Transform Position stores:
+0x2CFC936 -> +0x30
+0x2CFC93C -> +0x34
+0x2CFC942 -> +0x38
+0x2CFC945 -> +0x3C
+writer function: 0x2CFC900..0x2CFC9B7
+observed/direct return: 0x351EEB0
+exact callsite: 0x351EEAB -> 0x2CFC900
+observed second return: 0x351A020
+```
+
+The exact direct `0x351EEAB -> 0x2CFC900` relationship is authenticated in c12. On both A and E, this chain correlates with real Hero translation. On E, the measured X/Z Position component writes decompose into the expected diagonal SurfaceFrame relation.
+
+Path A `source+0x30` remains rejected as a movement write source because downstream overwrite/exclusive semantics are not proven.
+
+## c12 implementation
 ```text
 branch: codex/v01c12-movement-source-lineage
 implementation commit: 4c84d634df4d629b237d4cc311d5e5cd6de4398c
-published/delivery head: c966d233787504dda88f65d1825c5c1c408a2d67
+published head: c966d233787504dda88f65d1825c5c1c408a2d67
 version: v0.1c12 / package 0.1.30
 ```
 
-Cloud implementation/diagnostic validation: PASS. Actual-game c12 lineage gate: PENDING HUMAN A/E RUN.
+## c12 actual-game verdict
+**Diagnostic PASS / exact missing edge.**
 
-c12 adds read-only, bounded diagnostics for the measured `0x351EEB0 -> 0x2CFC900` chain:
-- exact runtime function boundary/hash/full decode and Position-store expressions;
-- exact direct E8 callsite verification and caller/caller2 attribution;
-- conservative caller-side symbolic source slice;
-- bounded trap-time reconstruction/correlation using existing hardware-watch infrastructure;
-- explicit unsupported-edge/reason reporting;
-- no Position/source/input/movement/gravity/adhesion/camera/animation writes.
-
-Validation reported by Codex:
+A and E reproduced the same blocker:
 
 ```text
-Windows x64 warnings-as-errors: PASS
-Portable ASan/UBSan: 13 PASS
-DLL smoke: 4 PASS
-Full hooks/native/offline: 53 PASS / 4 historical private-input SKIP
-Total unique: 70 PASS / 4 SKIP
-```
-
-Owned fixture orientation regressions remained clean through Deinit with Position writes 0. These fixtures are not actual-game c12 source-lineage evidence.
-
-## c12 proof limits
-c12 intentionally does NOT authenticate a writable locomotion source in cloud validation:
-
-```text
-entry_snapshot_captured=0
-source_identity_stable=0
+MOVEMENT_WRITER_PROOF
+writer_rva=0x2cfc900
+function_size=183
+complete_decode=1
+lineage_complete=0
+source_map_supported_prefix=0
+first_unsupported_offset=0xa
+unsupported=35
 writable_source_proven=0
+
+MOVEMENT_LINEAGE_SUMMARY
+source_capture_ready=0
+eligible_hits=0
+attempts=0
+complete_writer_CFG=0
+source_prefix_proven=0
+direct_call_verified=1
+caller2_direct_relation_verified=0
+true_entry_snapshot=0
+writable_source_proven=0
+reason=entry_snapshot_typed_caller_W_and_exclusive_effects_unproven
 ```
 
-Still unproven until the actual game supplies the new c12 records:
-- exact actual-game writer/caller source map and surviving aliases;
-- true entry value where post-store observation cannot recover it;
-- typed meaning of Position/delta/dt/direction/speed/root-motion candidates;
-- W semantics;
-- source lifetime/ownership;
-- downstream and exclusive intended translation effects.
+Caller2 static direct relation is not proven (`direct_target_mismatch`). This does not invalidate the observed runtime second return; it simply cannot be promoted to a direct static producer relation.
 
-Arithmetic resemblance alone must not be promoted to velocity, displacement, direction, root motion or a writable contract.
+The blocker is therefore diagnostic/semantic, not surface-specific. `writable_source_proven=0` remains authoritative.
+
+Detailed real result: `analysis/V01C12_RUNTIME_RESULT.md`.
 
 ## Deferred visual alignment
-The user observed body/root lean toward apparent ground and excessive apparent wall standoff/floating feet. These remain later visual/contact tasks and are not grounds for active adhesion now.
+The user observed body/root lean toward apparent ground and excessive apparent wall standoff/floating feet. These remain later visual/contact tasks. Do not infer an active adhesion requirement from the current root-distance metric.
 
 ## Current stage
 1. WallRun lifecycle / surface data / SurfaceFrame ✅
 2. Path A/B orientation ownership and stabilization ✅
 3. planar A/E orientation milestone ✅ COMPLETE
-4. bounded Hero Position writer attribution ✅ c11
-5. SurfaceFrame translation decomposition ✅ c11
-6. c12 read-only lineage instrumentation ✅ IMPLEMENTED
-7. c12 actual-game lineage gate ▶ CURRENT — human A then E log required
-8. safe upstream writable movement source ⬜ NOT AUTHORIZED
-9. surface-relative input rewrite ⬜ NOT AUTHORIZED
-10. adhesion / visual contact refinement ⏸ deferred
-11. animation / camera / later traversal ⬜
+4. Hero Position writer attribution ✅ c11
+5. SurfaceFrame translation decomposition ✅ c11/c12 real
+6. exact `0x351EEAB -> 0x2CFC900` direct callsite ✅ c12 real
+7. c12 true writer source lineage ❌ exact blocker identified
+8. c13 true writer-entry snapshot / invocation correlation ▶ CURRENT
+9. safe upstream writable movement source ⬜ NOT AUTHORIZED
+10. surface-relative input rewrite ⬜ NOT AUTHORIZED
+11. adhesion / visual contact refinement ⏸ deferred
+12. animation / camera / later traversal ⬜
 
 ## Current implementation base
 Use c12 delivery head exactly:
 
 ```text
-branch: codex/v01c12-movement-source-lineage
+base branch: codex/v01c12-movement-source-lineage
 implementation commit: 4c84d634df4d629b237d4cc311d5e5cd6de4398c
 published head: c966d233787504dda88f65d1825c5c1c408a2d67
 package: 0.1.30
 ```
 
-## Current blocker
-The next evidence must come from an actual-game c12 A/cardinal then E/diagonal run. Until those records are adjudicated, do not create a movement rewrite, input hook, adhesion system or camera task. A diagnostic PASS with an exact missing edge is acceptable; do not weaken gates to force `writable_source_proven=1`.
+Pre-created next branch:
+```text
+codex/v01c13-writer-entry-snapshot
+```
+
+## Current blocker / objective
+The smallest missing edge is the c12-reported `true_entry_snapshot=0` for writer `0x2CFC900`.
+
+c13 must capture the actual writer-entry state for active verified Hero Transform calls and correlate each bounded invocation with the existing Position write events. The purpose is to identify which entry register/pointer/stack value feeds the four Position stores and whether that source has stable provenance suitable for one more upstream ownership proof.
+
+Do not implement movement, input rewriting, Position injection, active adhesion, custom gravity, camera, animation or later traversal in c13. Do not loosen c12 proof gates merely to obtain `writable_source_proven=1`.
