@@ -27,6 +27,9 @@ struct Published {
  unsigned thread{},nativeUpdate{};float elapsed{},t{};bool active{};ws::diag::ActorAxes basis{};Vec3 surface{};
 };
 ws::interop::AtomicPublication<Published> publication;
+// Expected identity for attribution survives a soft-suspended empty permission.
+// This publication is diagnostic metadata only; it never grants a source store.
+ws::interop::AtomicPublication<Published> identityPublication;
 // Hooks report an expired native token without touching the worker-owned state.
 struct StaleSignal {Token token{};std::uint64_t session{},detectedMs{};};
 ws::interop::AtomicPublication<StaleSignal> stalePublication;
@@ -67,7 +70,9 @@ void adhesionSummary(const char* reason){
  writeLog("ADHESION_SUMMARY session=%llu position_proof_admitted=0 samples=%u sample_attempts=%u corrections_applied=0 max_abs_error_before=%.9g max_abs_error_after=%.9g error_after_semantics=unmodified_same_observation max_abs_step=0 max_abs_tangent_delta=0 source_position_writes=0 fail_closed_events=%u max_abs_requested_step=%.9g max_abs_candidate_tangent_delta=%.9g sample_cap=64 end_reason=%s mode=position_read_only",
   (unsigned long long)state.session,a.samples,a.attempts,a.maxError,a.maxError,a.failClosed,a.maxRequested,a.maxCandidateTangent,reason);
 }
+void latchCause(const char*,const char*,const ws::observed::VerifiedWallContext* =nullptr) noexcept;
 void end(const char* reason,std::uint64_t now){
+ if(state.entered&&state.transition.active&&std::strcmp(reason,"verified_native_Deinit")&&std::strcmp(reason,"new_native_session"))latchCause(reason,"worker");
  if(state.ownership==Ownership::StaleSuspended&&now>=state.staleStart)state.maxStaleMs=std::max(state.maxStaleMs,now-state.staleStart);
  if(state.transition.active)adhesionSummary(reason);
  state.commonWrites=pathAWrites.load();state.copyWrites=pathBWrites.load();state.writes=state.commonWrites+state.copyWrites;
@@ -91,12 +96,52 @@ bool callerAuthenticated(){
  if(ok)std::memcpy(callerOriginal,code,sizeof(code));
  return ok&&!std::memcmp(digest,callerDigest,32);
 }
-bool currentGuards(){
- unsigned char bytes[168]{};
- if((config.dualSource&&!msm2::reset_copy::authenticated())||!msm2::input::authenticated()||!msm2::readMemory(imageBase+callBegin,bytes,168)||std::memcmp(bytes,callerOriginal,168))return false;
- for(const auto& p:lifecyclePatches)if(!p.address||!msm2::readMemory(p.address,bytes,32)||std::memcmp(bytes,p.bytes.data(),32))return false;
- return true;
+struct SourceGuards {
+ bool input{},copy{},compact{},callerRead{},callerMatch{};unsigned callerDifference{168};std::array<msm2::guards::PatchStatus,4> hooks{};
+ const char* failedGate() const noexcept {
+  if(!input)return "path_a_writer_auth";
+  if(!copy)return "path_b_writer_auth";
+  if(!compact)return "path_b_compact_proof";
+  if(!callerRead)return "path_a_caller_read";
+  if(!callerMatch)return "path_a_caller_patch";
+  constexpr const char* names[]={"WallRun_Init_patch","WallRun_Entry_patch","WallRun_Update_patch","WallRun_Deinit_patch"};
+  for(unsigned i=0;i<4;++i){if(!hooks[i].good())return names[i];}
+  return "none";
+ }
+ bool good() const noexcept {return !std::strcmp(failedGate(),"none");}
+};
+SourceGuards sourceGuardStatus(){
+ SourceGuards g{};g.input=msm2::input::authenticated();g.copy=!config.dualSource||msm2::reset_copy::authenticated();g.compact=!config.dualSource||msm2::reset_copy::compactProofAuthenticated();
+ unsigned char bytes[168]{};g.callerRead=msm2::readMemory(imageBase+callBegin,bytes,sizeof(bytes));
+ if(g.callerRead){g.callerMatch=true;for(unsigned i=0;i<sizeof(bytes);++i)if(bytes[i]!=callerOriginal[i]){g.callerMatch=false;g.callerDifference=i;break;}}
+ for(unsigned i=0;i<4;++i){const auto& p=lifecyclePatches[i];g.hooks[i]=msm2::guards::inspectPatch(p.address!=0,p.address,p.bytes.data(),msm2::readMemory);}
+ return g;
 }
+bool currentGuards(){return sourceGuardStatus().good();}
+struct WorkerEvidence {ws::observed::VerifiedWallContext context{};msm2::guards::ObservationStatus observation{};bool available{},inputAuthenticated{};};
+ws::interop::AtomicPublication<WorkerEvidence> workerEvidence;
+struct EntryEvidence {std::uintptr_t rcx{},rdx{},rsp{},ret{};};
+thread_local EntryEvidence entryEvidence;
+struct HardCause {EntryEvidence entry{};const char* reason="none";const char* origin="none";std::uint64_t ms{};unsigned thread{};Published source{};Token token{};bool sourceRead{},identityRetained{},nativeRead{};WorkerEvidence worker{};SourceGuards guards{};};
+HardCause firstCause;std::atomic<unsigned> causeState{0},killCalls{0}; // 0 empty,1 claimed,2 ready,3 logged; never reused in production.
+void latchCause(const char* reason,const char* origin,const ws::observed::VerifiedWallContext* ctx) noexcept {
+ ++killCalls;unsigned expected=0;if(!causeState.compare_exchange_strong(expected,1))return;
+ HardCause c{};c.entry=(!std::strcmp(origin,"path_a")||!std::strcmp(origin,"path_b"))?entryEvidence:EntryEvidence{};c.reason=reason;c.origin=origin;c.ms=GetTickCount64();c.thread=GetCurrentThreadId();c.sourceRead=publication.read(c.source);
+ if(!c.source.session){Published retained{};if(identityPublication.read(retained)&&retained.session){c.source=retained;c.identityRetained=true;}}
+ workerEvidence.read(c.worker);if(ctx){c.worker.context=*ctx;c.worker.available=true;}
+ c.nativeRead=ws::native_source::lifecycle(c.token);c.guards=sourceGuardStatus();firstCause=c;causeState.store(2,std::memory_order_release);
+}
+void drainCause(){
+ unsigned ready=2;if(!causeState.compare_exchange_strong(ready,3,std::memory_order_acq_rel))return;
+ const auto& c=firstCause;const auto& p=c.source;const auto& w=c.worker;const auto& o=w.observation;const auto& g=c.guards;
+ auto session=p.session?p.session:w.context.wallRunSessionId;double elapsed=p.initMs&&c.ms>=p.initMs?double(c.ms-p.initMs)/1000.:w.context.elapsed;
+ writeLog("NATIVE_SOURCE_HARD_KILL session=%llu elapsed=%.6f reason=%s origin=%s thread_id=%u wallrun_active=%u wallrun_session=%llu owner=0x%llx hero=0x%llx transform=0x%llx native_update=%u native_thread=%u expected_thread=%u native_generation=%llu accepted_epoch=%llu collision_epoch=%llu token_read_status=%s source_snapshot_read=%u source_identity_retained=%u worker_context_available=%u verified_available=%u field_plan_enabled=%u observation_failed_hook=%s observation_failure_mask=0x%x input_auth=%u copy_auth=%u compact_proof=%u caller_read_ok=%u caller_patch_match=%u caller_first_difference=%u source_failed_gate=%s init_read_ok=%u init_patch_match=%u init_first_difference=%u entry_read_ok=%u entry_patch_match=%u entry_first_difference=%u update_read_ok=%u update_patch_match=%u update_first_difference=%u deinit_read_ok=%u deinit_patch_match=%u deinit_first_difference=%u native_owner=0x%llx expected_generation=%llu expected_accepted_epoch=%llu native_init_ms=%llu expected_init_ms=%llu token_phase=%u token_last_kind=%u entry_rcx=0x%llx entry_source=0x%llx entry_rsp=0x%llx entry_return=0x%llx immutable_first_cause=1 snapshot_scope=first_claim_separate_guarded_reads",
+  (unsigned long long)session,elapsed,c.reason,c.origin,c.thread,unsigned(w.available?w.context.wallRunActive:c.token.phase==3),(unsigned long long)(w.available?w.context.wallRunSessionId:session),
+  (unsigned long long)(p.owner?p.owner:c.token.owner),(unsigned long long)p.hero,(unsigned long long)p.transform,c.token.updates,c.token.thread,p.thread,(unsigned long long)c.token.generation,(unsigned long long)c.token.acceptedEventEpoch,(unsigned long long)c.token.collisionEpoch,ws::native_source::lifecycleReadName(c.token.readStatus),unsigned(c.sourceRead),unsigned(c.identityRetained),unsigned(w.available),unsigned(o.verifiedAvailable),unsigned(o.fieldPlanEnabled),w.available?o.failedHook():"unavailable",w.available?o.failureMask():0,
+  unsigned(g.input),unsigned(g.copy),unsigned(g.compact),unsigned(g.callerRead),unsigned(g.callerMatch),g.callerDifference,g.failedGate(),
+  unsigned(g.hooks[0].readOk),unsigned(g.hooks[0].match),g.hooks[0].firstDifference,unsigned(g.hooks[1].readOk),unsigned(g.hooks[1].match),g.hooks[1].firstDifference,unsigned(g.hooks[2].readOk),unsigned(g.hooks[2].match),g.hooks[2].firstDifference,unsigned(g.hooks[3].readOk),unsigned(g.hooks[3].match),g.hooks[3].firstDifference,(unsigned long long)c.token.owner,(unsigned long long)p.generation,(unsigned long long)p.acceptedEpoch,(unsigned long long)c.token.initMs,(unsigned long long)p.initMs,c.token.phase,c.token.lastKind,(unsigned long long)c.entry.rcx,(unsigned long long)c.entry.rdx,(unsigned long long)c.entry.rsp,(unsigned long long)c.entry.ret);
+}
+void disableRuntime() noexcept{msm2::path_b::kill();killed=true;lifecycleOpen=false;++lifecycleEpoch;ws_native_source_enabled=0;isActive=false;publishInactive();ws::native_source::armLifecycle(false);}
 void prearmPublished(const Token& token,std::uint64_t now){
  Published p{};if(!publication.read(p)||p.generation!=token.generation||p.owner!=token.owner||p.thread!=token.thread)return;
  if(now<token.initMs||now-token.initMs<600||now-token.initMs>=1100)return;
@@ -112,11 +157,11 @@ void prearmPublished(const Token& token,std::uint64_t now){
 bool freshToken(const Token& t,std::uint64_t now){return t.phase==3&&t.owner&&t.updates&&now>=t.initMs&&now>=t.updateMs&&now-t.updateMs<=100;}
 // Every owned entry checks the native publication, including immediately before
 // the stack store. Worker publication age alone cannot establish native freshness.
-bool entryToken(const Published& p) noexcept {
+bool entryToken(const Published& p,const char* path) noexcept {
  Token t{};bool coherent=ws::native_source::lifecycle(t);auto now=GetTickCount64();
- if(!coherent){if(t.observed)msm2::native_source::kill();return false;}
+ if(!coherent){if(t.observed)msm2::native_source::kill("entry_token_incoherent",path);return false;}
  if(t.owner!=p.owner||t.generation!=p.generation||t.initMs!=p.initMs||t.thread!=p.thread||
-    t.acceptedEventEpoch!=p.acceptedEpoch||t.collisionEpoch!=p.acceptedEpoch||now<t.initMs||now<t.updateMs){msm2::native_source::kill();return false;}
+    t.acceptedEventEpoch!=p.acceptedEpoch||t.collisionEpoch!=p.acceptedEpoch||now<t.initMs||now<t.updateMs){msm2::native_source::kill("token_identity_epoch_mismatch",path);return false;}
  if(!freshToken(t,now)){stalePublication.publish({t,p.session,now});return false;}
  return now>=p.publishedMs&&now-p.publishedMs<=100&&!killed.load()&&lifecycleOpen.load()&&p.lifecycleEpoch==lifecycleEpoch.load();
 }
@@ -175,13 +220,14 @@ void exitDiagnostic(const ws::observed::VerifiedWallContext& ctx,const Token& t,
 void lifecycleSummary(std::uint64_t finish,bool verifiedDeinit,bool untilDeinit){
  if(!state.entered||state.summaryEmitted)return;
  state.summaryEmitted=true;
- writeLog("ORIENTATION_LIFECYCLE_SUMMARY session=%llu wallrun_duration_ms=%llu source_entry_elapsed=%.6f source_exit_reason=%s source_active_until_deinit=%u verified_deinit=%u path_a_writes=%u path_b_writes=%u retention_pass=%u max_held_ms=%llu max_held_updates=%u last_actor_up_dot_surface=%.9g last_actor_observation_valid=%u last_actor_observation_ms=%llu last_actor_observation_scope=active_source_worker_snapshot stale_suspend_count=%u stale_resume_count=%u max_stale_duration_ms=%llu stale_log_pair_cap=16",
-  (unsigned long long)state.session,(unsigned long long)(finish>=state.initMs?finish-state.initMs:0),double(state.transition.entryMs-state.initMs)/1000.,state.exitReason,unsigned(verifiedDeinit&&untilDeinit),unsigned(verifiedDeinit),pathAWrites.load(),pathBWrites.load(),unsigned(state.pass),(unsigned long long)state.maxHeldMs,state.maxHeldUpdates,state.lastActorDot,unsigned(state.lastActorValid),(unsigned long long)state.lastObserveMs,state.staleSuspends,state.staleResumes,(unsigned long long)state.maxStaleMs);
+ writeLog("ORIENTATION_LIFECYCLE_SUMMARY session=%llu wallrun_duration_ms=%llu source_entry_elapsed=%.6f source_exit_reason=%s source_active_until_deinit=%u verified_deinit=%u path_a_writes=%u path_b_writes=%u retention_pass=%u max_held_ms=%llu max_held_updates=%u last_actor_up_dot_surface=%.9g last_actor_observation_valid=%u last_actor_observation_ms=%llu last_actor_observation_scope=active_source_worker_snapshot stale_suspend_count=%u stale_resume_count=%u max_stale_duration_ms=%llu stale_log_pair_cap=16 first_hard_kill=%s hard_kill_calls=%u",
+  (unsigned long long)state.session,(unsigned long long)(finish>=state.initMs?finish-state.initMs:0),double(state.transition.entryMs-state.initMs)/1000.,state.exitReason,unsigned(verifiedDeinit&&untilDeinit),unsigned(verifiedDeinit),pathAWrites.load(),pathBWrites.load(),unsigned(state.pass),(unsigned long long)state.maxHeldMs,state.maxHeldUpdates,state.lastActorDot,unsigned(state.lastActorValid),(unsigned long long)state.lastObserveMs,state.staleSuspends,state.staleResumes,(unsigned long long)state.maxStaleMs,causeState.load(std::memory_order_acquire)>=2?firstCause.reason:"none",killCalls.load());
 }
 void drainVerifiedDeinit(){
  if(!state.entered||state.summaryEmitted)return;
  NativeClose closed{};if(!deinitPublication.read(closed)||closed.token.lastKind!=3||closed.token.phase!=0||closed.token.generation!=state.generation+1||closed.token.owner!=state.owner||closed.token.initMs!=state.initMs)return;
  bool until=closed.token.acceptedEventEpoch==state.acceptedEpoch&&closed.token.collisionEpoch==state.acceptedEpoch&&closed.token.thread==state.expectedThread&&closed.token.eventMs>=closed.token.updateMs&&closed.token.eventMs-closed.token.updateMs<=100&&state.transition.active&&closed.wasOpen&&closed.sourceRead&&closed.source.active&&closed.source.session==state.session&&closed.source.generation==state.generation&&closed.source.owner==state.owner&&closed.source.hero==state.hero&&closed.source.transform==state.transform&&closed.token.eventMs>=closed.source.publishedMs&&closed.token.eventMs-closed.source.publishedMs<=100;
+ writeLog("NATIVE_SOURCE_CLOSE session=%llu reason=verified_Deinit normal_session_close=1 source_active_until_deinit=%u",(unsigned long long)state.session,unsigned(until));
  end("verified_native_Deinit",closed.token.eventMs);lifecycleSummary(closed.token.eventMs,true,until);
 }
 bool observe(const msm2::Snapshot& s,const Token& token,std::uint64_t now,bool mayAbort){
@@ -217,12 +263,13 @@ bool observe(const msm2::Snapshot& s,const Token& token,std::uint64_t now,bool m
 extern "C" {std::atomic<unsigned> ws_native_source_enabled{0};}
 namespace msm2::native_source {
 void configure(Config c,bool verified,std::uintptr_t base,std::size_t size,const std::array<msm2::writer::Patch,4>& patches){
- kill();if(configured){writeLog("native_source_rearm_refused full_game_restart_required=1");return;}configured=true;config=c;lifecyclePatches=patches;imageBase=base;
+ disableRuntime();if(configured){writeLog("native_source_rearm_refused full_game_restart_required=1");return;}configured=true;config=c;lifecyclePatches=patches;imageBase=base;
  bool callerVerified=verified&&base&&size>callReturn&&callerAuthenticated();
  configurePositionEvidence(verified,callerVerified);
  admitted=verified&&c.enabled&&c.sourceOverride&&callerVerified&&std::isfinite(c.delay)&&c.delay>=.7f&&c.delay<=5&&std::isfinite(c.rotateTime)&&c.rotateTime>=.2f&&c.rotateTime<=1&&currentGuards()&&(!c.dualSource||msm2::reset_copy::compactProofAuthenticated());
  writeLog("native_source_config enabled=%u requested_override=%u admitted=%u direct_actor_transform_write=0 adhesion=0 movement=0 camera=0 animation=0 source_write_range=[0x00,0x30) position_write=0 caller_rva=0x2cfc8f3 caller_body_hash_verified=%u source_stack_relation=writer_entry_RSP+0x28 delay=%.3f rotate_time=%.3f",unsigned(c.enabled),unsigned(c.sourceOverride),unsigned(admitted),unsigned(callerVerified),c.delay,c.rotateTime);
  writeLog("DUAL_SOURCE_ADMISSION admitted=%u dual_source_required=%u common_caller=0x2cfc8f3 copy_caller=0x2cfc84b copy_hook_authenticated=%u",unsigned(admitted),unsigned(c.dualSource),unsigned(msm2::reset_copy::authenticated()));
+ writeLog("NATIVE_SOURCE_GUARD_STATUS admitted=%u first_cause=none first_cause_scope=process source_code_integrity_required=1 diagnostic_field_plan_runtime_required=0 normal_Deinit_is_session_close=1",unsigned(admitted));
  writeLog("SOURCE_LIFECYCLE_CONTRACT readers_lock_native_events=0 native_event_collision_fail_closed=1 native_update_freshness_ms=100 worker_publication_freshness_ms=100 stale_policy=suspend_until_same_identity_real_Update transition_recovery=freeze_last_published_progress stale_episode_log_cap=16 clock_sample=after_token_acquisition verified_Deinit_summary=1 diagnostic_window_limits_source_ownership=0");
  path_b::configure(admitted,true);
  if(!admitted)return;
@@ -237,16 +284,26 @@ void lifecycleClosed(const Token& t) noexcept {
  if(t.lastKind==3){closed.sourceRead=publication.read(closed.source)&&closed.source.lifecycleEpoch==epoch;deinitPublication.publish(closed);}
  publishInactive();isActive=false;
 }
-void kill() noexcept{path_b::kill();killed=true;lifecycleOpen=false;++lifecycleEpoch;ws_native_source_enabled=0;isActive=false;publishInactive();ws::native_source::armLifecycle(false);}
+void kill(const char* reason,const char* origin,const ws::observed::VerifiedWallContext* ctx) noexcept {latchCause(reason,origin,ctx);disableRuntime();}
+bool workerGuards(const ws::observed::VerifiedWallContext& ctx,const guards::ObservationStatus& status){
+ WorkerEvidence evidence{};evidence.context=ctx;evidence.observation=status;evidence.available=true;evidence.inputAuthenticated=msm2::input::authenticated();workerEvidence.publish(evidence);
+ // Field-plan/diagnostic viability has no role in authenticated source rows.
+ // Exact original admission at startup and all runtime code identities remain.
+ if(!status.diagnosticViable()){reset_trace::kill();trace::kill();}
+ if(!status.sourceIntegrity()){kill("worker_observation_plan_lost","worker",&ctx);msm2::input::kill();return false;}
+ if(!evidence.inputAuthenticated){kill("worker_input_auth_lost","worker",&ctx);return false;}
+ return true;
+}
 bool active() noexcept{return isActive.load();}
 bool observationGuardsAuthenticated() noexcept{return !killed.load()&&admitted&&currentGuards();}
 bool entryOverridden() noexcept{return didOverride;}
 void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool authenticated){
  (void)reason;
- if(!authenticated){kill();}
+ if(!authenticated){kill("worker_tick_auth_lost","worker",&ctx);}
  if(stateLock.test_and_set(std::memory_order_acquire))return;
  auto now=GetTickCount64();drainVerifiedDeinit();auto epoch=lifecycleEpoch.load();
- if(killed.load()||!admitted){end("disabled_kill_or_patch_gate",now);state.published=0;stateLock.clear(std::memory_order_release);return;}
+ if(killed.load()&&causeState.load(std::memory_order_acquire)==1){publishInactive();stateLock.clear(std::memory_order_release);return;}
+ if(killed.load()||!admitted){end(causeState.load(std::memory_order_acquire)>=2?firstCause.reason:!admitted?"source_not_admitted":"disabled_before_cause_ready",now);state.published=0;stateLock.clear(std::memory_order_release);return;}
  Token token{};bool native=ws::native_source::lifecycle(token);now=GetTickCount64(); // Age is measured AFTER acquiring the token, never before a concurrent Update.
  if(!native&&!token.observed){
   // A bounded coherent-read miss cannot renew the snapshot. Existing writes
@@ -313,7 +370,7 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
  // A synchronous native close racing this worker must win. Its epoch cannot
  // be adopted for a token acquired before the close, even on first entry.
  if(lifecycleEpoch.load()!=epoch){publishInactive();isActive=false;stateLock.clear(std::memory_order_release);return;}
- publication.publish(p);
+ identityPublication.publish(p);publication.publish(p);
  // Retention is sampled only from a fresh verified lifecycle update after both
  // source paths have committed. Distinct native updates cannot be inflated by calls.
  state.commonWrites=pathAWrites.load();state.copyWrites=pathBWrites.load();state.writes=state.commonWrites+state.copyWrites;
@@ -323,29 +380,29 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
 }
 void capturePath(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t originalRsp) noexcept {
  didOverride=false;if(inside||killed.load()||!ws_native_source_enabled.load())return;
- auto error=GetLastError();inside=true;auto release=[&]{inside=false;SetLastError(error);};auto now=GetTickCount64();Published p{};
+ auto error=GetLastError();inside=true;auto release=[&]{inside=false;SetLastError(error);};auto now=GetTickCount64();Published p{};entryEvidence={rcx,rdx,originalRsp,ret};
  if(ret!=imageBase+callReturn){
-  if(ret>=imageBase+callBegin&&ret<imageBase+callBegin+callSize&&publication.read(p)&&p.active&&rcx==p.transform)kill();
+  if(ret>=imageBase+callBegin&&ret<imageBase+callBegin+callSize&&publication.read(p)&&p.active&&rcx==p.transform)kill("path_a_known_caller_mismatch","path_a");
   release();return;
  }
  auto rejectEntry=[&](const char* reason,unsigned mask){auto count=pathARejects.fetch_add(1);if(count<64){Record r{};r.kind=10;r.reason=reason;r.session=p.session;r.elapsed=p.elapsed;r.gateMask=mask;emit(r);}};
  if(!lifecycleOpen.load()||!publication.read(p)||!p.active){++pathARejects;release();return;}
  if(rcx!=p.transform){release();return;}
- if(p.thread!=GetCurrentThreadId()){kill();release();return;}
- if(!entryToken(p)){++pathARejects;release();return;}
+ if(p.thread!=GetCurrentThreadId()){kill("path_a_wrong_thread","path_a");release();return;}
+ if(!entryToken(p,"path_a")){++pathARejects;release();return;}
  if(p.lifecycleEpoch!=lifecycleEpoch.load()||now<p.publishedMs||now-p.publishedMs>100){++pathARejects;release();return;}
  if(pathAWrites.load()>=4096){rejectEntry("path_A_write_budget_exhausted",1|16|32);release();return;}
  if(rcx!=p.transform){rejectEntry("current_Hero_target_mismatch",1|16|32);release();return;}
- if(r8!=0){kill();rejectEntry("unexpected_R8_not_null",1|2|16|32);release();return;}
- msm2::Snapshot hero{};if(!msm2::sample(hero)||hero.hero!=p.hero||hero.transform!=p.transform){kill();rejectEntry("fresh_Hero_identity_unavailable_or_changed",1|2|16|32);release();return;}
- if(!currentGuards()){rejectEntry("entry_hook_or_caller_integrity_lost",1|2|16|32);kill();release();return;}
- Matrix incoming{};auto stack=ws::interop::currentStack();if(!ws::interop::stackMatrix(rdx,originalRsp,stack,incoming)||!(rdx+64<=rcx||rcx+64<=rdx)){kill();rejectEntry("path_A_stack_provenance_or_source_layout_failed",1|2|16|32);release();return;}
+ if(r8!=0){kill("path_a_unexpected_R8","path_a");rejectEntry("unexpected_R8_not_null",1|2|16|32);release();return;}
+ msm2::Snapshot hero{};if(!msm2::sample(hero)||hero.hero!=p.hero||hero.transform!=p.transform){kill("path_a_hero_transform_mismatch","path_a");rejectEntry("fresh_Hero_identity_unavailable_or_changed",1|2|16|32);release();return;}
+ if(!currentGuards()){rejectEntry("entry_hook_or_caller_integrity_lost",1|2|16|32);kill("path_a_current_guards_lost","path_a");release();return;}
+ Matrix incoming{};auto stack=ws::interop::currentStack();if(!ws::interop::stackMatrix(rdx,originalRsp,stack,incoming)||!(rdx+64<=rcx||rcx+64<=rdx)){kill("path_a_stack_or_source_layout_failed","path_a");rejectEntry("path_A_stack_provenance_or_source_layout_failed",1|2|16|32);release();return;}
  Matrix applied=incoming;Vec3 rows[]={p.basis.right,p.basis.up,p.basis.forward};for(unsigned i=0;i<3;++i){applied.v[4*i]=rows[i].x;applied.v[4*i+1]=rows[i].y;applied.v[4*i+2]=rows[i].z;applied.v[4*i+3]=0;}
  if(!ws::source_math::valid(applied)){rejectEntry("published_basis_invalid",1|2|4|8|16|32);release();return;}
- if(!currentGuards()){kill();release();return;}
- Published final{};if(!publication.read(final)||final.session!=p.session||final.generation!=p.generation||final.lifecycleEpoch!=p.lifecycleEpoch||final.lifecycleEpoch!=lifecycleEpoch.load()||final.publishedMs!=p.publishedMs||!final.active||!currentGuards()||!entryToken(final)){rejectEntry("lockfree_snapshot_or_integrity_changed_before_commit",1|2|4|8|16|32);release();return;}
+ if(!currentGuards()){kill("path_a_current_guards_lost","path_a");release();return;}
+ Published final{};if(!publication.read(final)||final.session!=p.session||final.generation!=p.generation||final.lifecycleEpoch!=p.lifecycleEpoch||final.lifecycleEpoch!=lifecycleEpoch.load()||final.publishedMs!=p.publishedMs||!final.active||!currentGuards()||!entryToken(final,"path_a")){rejectEntry("lockfree_snapshot_or_integrity_changed_before_commit",1|2|4|8|16|32);release();return;}
  LARGE_INTEGER begin{};QueryPerformanceCounter(&begin);auto result=ws::interop::writeStackOrientation(rdx,incoming,applied);
- if(!result.success){rejectEntry(result.rollbackFailed?"path_A_write_failed_rollback_failed":"path_A_write_failed_restored_or_untouched",1|2|4|8|16|32);if(result.rollbackFailed)kill();release();return;}
+ if(!result.success){rejectEntry(result.rollbackFailed?"path_A_write_failed_rollback_failed":"path_A_write_failed_restored_or_untouched",1|2|4|8|16|32);if(result.rollbackFailed)kill("path_a_rollback_failed","path_a");release();return;}
  didOverride=true;auto count=pathAWrites.fetch_add(1)+1;Vec3 appliedUp{applied.v[4],applied.v[5],applied.v[6]};
  msm2::reset_trace::Request committed{};committed.prearmed=true;committed.verifyDual=config.dualSource;committed.characterize=true;committed.initMs=p.initMs;committed.session=p.session;committed.generation=p.generation;committed.nativeUpdate=p.nativeUpdate;committed.commitQpc=result.commitQpc;committed.overrideBeginQpc=begin.QuadPart;committed.hero=p.hero;committed.transform=p.transform;committed.owner=p.owner;committed.thread=p.thread;committed.normal=p.surface;committed.appliedUp=appliedUp;bool prearmed=msm2::reset_trace::committed(committed);
  Record r{};r.kind=1;r.late=count>1&&incoming.v[5]>=.98f;r.rcx=rcx;r.r8=r8;r.r9=r9;r.rsp=originalRsp;r.stackLimit=stack.limit;r.stackBase=stack.base;r.prearmed=prearmed;r.nativeThread=p.thread;r.commitQpc=result.commitQpc;r.session=p.session;r.generation=p.generation;r.ms=now;r.nativeUpdate=p.nativeUpdate;r.source=rdx;r.caller=callReturn;r.elapsed=p.elapsed;r.t=p.t;r.original=incoming;r.applied=applied;r.target=p.basis;r.n=p.surface;r.positionSame=result.positionUnchanged;r.stack=true;r.writes=count;r.positionBefore={hero.position[0],hero.position[1],hero.position[2]};emit(r);release();
@@ -353,33 +410,33 @@ void capturePath(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::ui
 void capture(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t rsp) noexcept {capturePath(rcx,rdx,r8,r9,ret,rsp);}
 void captureCopy(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t rsp) noexcept {
  auto error=GetLastError();trace::beginResetCopyEntry();if(inside||killed.load()||!ws_native_source_enabled.load()){SetLastError(error);return;}
- inside=true;auto release=[&]{inside=false;SetLastError(error);};auto now=GetTickCount64();Published p{};
+ inside=true;auto release=[&]{inside=false;SetLastError(error);};auto now=GetTickCount64();Published p{};entryEvidence={rcx,rdx,rsp,ret};
  if(ret!=imageBase+0x2cfc84b){
-  if(ret>=imageBase+0x2cfc7d0&&ret<imageBase+0x2cfc850&&publication.read(p)&&p.active&&rcx==p.transform)kill();
+  if(ret>=imageBase+0x2cfc7d0&&ret<imageBase+0x2cfc850&&publication.read(p)&&p.active&&rcx==p.transform)kill("path_b_known_caller_mismatch","path_b");
   release();return;
  }
  auto rejectEntry=[&]{pathBRejects.fetch_add(1);};
  if(!lifecycleOpen.load()||!publication.read(p)||!p.active){rejectEntry();release();return;}
  if(rcx!=p.transform){release();return;}
- if(p.thread!=GetCurrentThreadId()){kill();release();return;}
- if(!entryToken(p)){rejectEntry();release();return;}
+ if(p.thread!=GetCurrentThreadId()){kill("path_b_wrong_thread","path_b");release();return;}
+ if(!entryToken(p,"path_b")){rejectEntry();release();return;}
  if(p.lifecycleEpoch!=lifecycleEpoch.load()||now<p.publishedMs||now-p.publishedMs>100){rejectEntry();release();return;}
- if(!msm2::reset_copy::compactProofAuthenticated()||!currentGuards()){kill();rejectEntry();release();return;}
+ if(!msm2::reset_copy::compactProofAuthenticated()||!currentGuards()){kill("path_b_compact_or_guard_lost","path_b");rejectEntry();release();return;}
  if(pathBWrites.load()>=4096){rejectEntry();release();return;}
- msm2::Snapshot hero{};if(!msm2::sample(hero)||hero.hero!=p.hero||hero.transform!=p.transform){kill();rejectEntry();release();return;}
+ msm2::Snapshot hero{};if(!msm2::sample(hero)||hero.hero!=p.hero||hero.transform!=p.transform){kill("path_b_hero_transform_mismatch","path_b");rejectEntry();release();return;}
  auto stack=ws::interop::currentStack();ws::source_math::CompactBlock incoming{},applied{};Vec3 lengths{};
- if(!ws::interop::stackCompact(rdx,rsp,stack,incoming)){kill();rejectEntry();release();return;}
- if(!ws::source_math::compactReplacement(incoming,p.basis,applied,lengths)){kill();rejectEntry();release();return;}
+ if(!ws::interop::stackCompact(rdx,rsp,stack,incoming)){kill("path_b_stack_or_source_layout_failed","path_b");rejectEntry();release();return;}
+ if(!ws::source_math::compactReplacement(incoming,p.basis,applied,lengths)){kill("path_b_stack_or_source_layout_failed","path_b");rejectEntry();release();return;}
  path_b::Entry e{};e.session=p.session;e.generation=p.generation;e.update=p.nativeUpdate;e.owner=p.owner;e.thread=p.thread;e.elapsed=p.elapsed;e.rcx=rcx;e.rdx=rdx;e.r8=r8;e.r9=r9;e.rsp=rsp;e.caller=0x2cfc84b;e.stackLimit=stack.limit;e.stackBase=stack.base;e.normal=p.surface;e.actorBefore={hero.prefix[4],hero.prefix[5],hero.prefix[6]};e.referenceValid=pathAWrites.load()>0;e.pathAUp=p.basis.up;e.readable=path_b::readBounded(rdx,e.raw,128);
- if(!currentGuards()){kill();release();return;}
- Published final{};if(!publication.read(final)||final.session!=p.session||final.generation!=p.generation||final.lifecycleEpoch!=p.lifecycleEpoch||final.lifecycleEpoch!=lifecycleEpoch.load()||final.publishedMs!=p.publishedMs||!final.active||!currentGuards()||!entryToken(final)){path_b::capture(e);rejectEntry();release();return;}
+ if(!currentGuards()){kill("path_b_compact_or_guard_lost","path_b");release();return;}
+ Published final{};if(!publication.read(final)||final.session!=p.session||final.generation!=p.generation||final.lifecycleEpoch!=p.lifecycleEpoch||final.lifecycleEpoch!=lifecycleEpoch.load()||final.publishedMs!=p.publishedMs||!final.active||!currentGuards()||!entryToken(final,"path_b")){path_b::capture(e);rejectEntry();release();return;}
  LARGE_INTEGER begin{};QueryPerformanceCounter(&begin);auto result=ws::interop::writeStackCompact(rdx,incoming,applied);e.overridden=result.success;path_b::capture(e);
- if(!result.success){rejectEntry();if(result.rollbackFailed)kill();release();return;}
+ if(!result.success){rejectEntry();if(result.rollbackFailed)kill("path_b_rollback_failed","path_b");release();return;}
  didOverride=true;auto count=pathBWrites.fetch_add(1)+1;msm2::reset_trace::Request committed{};committed.prearmed=true;committed.resetCopy=true;committed.verifyDual=true;committed.characterize=true;committed.initMs=p.initMs;committed.session=p.session;committed.generation=p.generation;committed.nativeUpdate=p.nativeUpdate;committed.commitQpc=result.commitQpc;committed.overrideBeginQpc=begin.QuadPart;committed.hero=p.hero;committed.transform=p.transform;committed.owner=p.owner;committed.thread=p.thread;committed.normal=p.surface;committed.appliedUp=p.basis.up;msm2::reset_trace::committed(committed);
  Record r{};r.kind=11;r.copy=true;r.session=p.session;r.generation=p.generation;r.nativeUpdate=p.nativeUpdate;r.ms=now;r.elapsed=p.elapsed;r.source=rdx;r.rcx=rcx;r.rsp=rsp;r.stackLimit=stack.limit;r.stackBase=stack.base;r.caller=0x2cfc84b;r.n=p.surface;r.compactOriginal=incoming;r.compactApplied=applied;r.rowLengths=lengths;r.writes=count;r.commitQpc=result.commitQpc;r.positionSame=result.positionUnchanged;r.stack=true;emit(r);release();
 }
 void drainLogs(){
- path_b::drainLogs();
+ drainCause();path_b::drainLogs();
  auto lost=recordDrops.exchange(0);if(lost)writeLog("NATIVE_SOURCE_LOG_DROPS count=%u writes_unaffected=1",lost);
  auto a=pathAWrites.load(),b=pathBWrites.load(),ar=pathARejects.load(),br=pathBRejects.load();
  if(reportedA==~0u||a-reportedA>=64||b-reportedB>=64||ar-reportedAR>=64||br-reportedBR>=64){writeLog("PATH_A_OVERRIDE_COUNT=%u PATH_A_REJECT_COUNT=%u PATH_A_STATE_LOCK_CONTENTION=0 PATH_B_OVERRIDE_COUNT=%u PATH_B_REJECT_COUNT=%u",a,ar,b,br);reportedA=a;reportedB=b;reportedAR=ar;reportedBR=br;}
@@ -402,5 +459,5 @@ void drainLogs(){
   else if(r.kind==4)writeLog("NATIVE_SOURCE_OTHER_WRITER session=%llu caller_return_rva=0x%llx source_up=(%.9g,%.9g,%.9g) override=0",static_cast<unsigned long long>(r.session),static_cast<unsigned long long>(r.caller),r.original.v[4],r.original.v[5],r.original.v[6]);
  }
 }
-void stop(){kill();if(!stateLock.test_and_set(std::memory_order_acquire)){drainVerifiedDeinit();end("script_stop",GetTickCount64());lifecycleSummary(GetTickCount64(),false,false);stateLock.clear(std::memory_order_release);}drainLogs();writeLog("PATH_A_OVERRIDE_COUNT=%u PATH_A_REJECT_COUNT=%u PATH_A_STATE_LOCK_CONTENTION=0 PATH_B_OVERRIDE_COUNT=%u PATH_B_REJECT_COUNT=%u final=1",pathAWrites.load(),pathARejects.load(),pathBWrites.load(),pathBRejects.load());writeLog("native_source_stop source_override=OFF direct_actor_transform_write=0 vanilla_passthrough=1");}
+void stop(){kill("script_stop","shutdown");if(!stateLock.test_and_set(std::memory_order_acquire)){drainVerifiedDeinit();end("script_stop",GetTickCount64());lifecycleSummary(GetTickCount64(),false,false);stateLock.clear(std::memory_order_release);}drainLogs();writeLog("PATH_A_OVERRIDE_COUNT=%u PATH_A_REJECT_COUNT=%u PATH_A_STATE_LOCK_CONTENTION=0 PATH_B_OVERRIDE_COUNT=%u PATH_B_REJECT_COUNT=%u final=1",pathAWrites.load(),pathARejects.load(),pathBWrites.load(),pathBRejects.load());writeLog("native_source_stop source_override=OFF direct_actor_transform_write=0 vanilla_passthrough=1");}
 }

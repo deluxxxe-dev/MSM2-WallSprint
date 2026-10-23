@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.25",
-  "description": "WallSprint v0.1c7 Transient Freshness Recovery. Stale native Updates suspend A/B writes at100ms; a fresh same-identity verified Update resumes the preserved orientation transition. Hard identity/integrity/Deinit/kill gates stay closed. Position diagnostics remain read-only; no direct Actor/Position/movement/camera/animation/physics writes.",
+  "version": "0.1.26",
+  "description": "WallSprint v0.1c8 Exact Hard-Kill Attribution. Immutable first-cause caller/context and detailed four-hook authentication diagnostics. Diagnostic-only field-plan loss stops observation; actual source integrity/identity failures still close ownership. Preserves c7 freshness recovery. Position remains read-only; no direct Actor/Position/movement/camera/physics writes.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

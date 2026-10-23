@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include "NativeHooks/ownership_guards.hpp"
 #include "msm2/actor_writer.hpp"
 #include "wallrun_observer.hpp"
 #include "msm2/sdk_bridge.hpp"
@@ -9,6 +10,8 @@ struct Options {bool enabled=true;bool objectDiagnostic=true;bool surfaceTelemet
 void start(bool targetBuild,const Options& options);
 void drain(const Snapshot* snapshot,const ws::diag::Motion& motion,std::uint64_t snapshotMs);
 ws::observed::VerifiedWallContext context(std::uint64_t now);
+guards::ObservationStatus observationPlanStatus();
+void reportObservationPlanStatus(const guards::ObservationStatus&);
 bool observationPlanAuthenticated();
 std::array<msm2::writer::Patch,4> patchSnapshot();
 unsigned nativeThreadId();

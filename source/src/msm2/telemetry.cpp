@@ -137,13 +137,17 @@ void run(){
  msm2::Snapshot recent{};ws::diag::Motion recentMotion{};bool recentAvailable=false;
  // Frequent key polling; game memory reads remain interval-bound or explicit snapshots.
  while(WaitForSingleObject(stopEvent,10)==WAIT_TIMEOUT){
-  if(pressed(VK_F8,f8)){msm2::reset_trace::kill();msm2::trace::kill();msm2::input::kill();msm2::native_source::kill();msm2::writer::kill("kill_switch_F8");msm2::writeLog("F8 ORIENTATION_TRACE_STOP=1 ALL_WRITES_DISABLED=1 latched_until_restart=1");}
-  if(!msm2::hooks::observationPlanAuthenticated()){msm2::reset_trace::kill();msm2::trace::kill();msm2::input::kill();msm2::native_source::kill();}
+  if(pressed(VK_F8,f8)){msm2::native_source::kill("F8_kill_switch","shutdown");msm2::reset_trace::kill();msm2::trace::kill();msm2::input::kill();msm2::writer::kill("kill_switch_F8");msm2::writeLog("F8 ORIENTATION_TRACE_STOP=1 ALL_WRITES_DISABLED=1 latched_until_restart=1");}
+  auto ownershipContext=msm2::hooks::context(GetTickCount64());
+  auto observationStatus=msm2::hooks::observationPlanStatus();
+  msm2::hooks::reportObservationPlanStatus(observationStatus);
+  bool sourceGuards=msm2::native_source::workerGuards(ownershipContext,observationStatus);
   msm2::trace::tick(msm2::hooks::context(GetTickCount64()),msm2::hooks::nativeThreadId(),msm2::hooks::exitReason());
   msm2::trace::drainLogs();
-  msm2::input::tick(msm2::hooks::context(GetTickCount64()),msm2::hooks::exitReason(),msm2::hooks::observationPlanAuthenticated());
+  msm2::input::tick(ownershipContext,msm2::hooks::exitReason(),observationStatus.sourceIntegrity());
   msm2::input::drainLogs();
-  msm2::native_source::tick(msm2::hooks::context(GetTickCount64()),msm2::hooks::exitReason(),msm2::hooks::observationPlanAuthenticated()&&msm2::input::authenticated());
+  if(sourceGuards&&!msm2::input::authenticated()){msm2::native_source::kill("worker_input_auth_lost","worker",&ownershipContext);sourceGuards=false;}
+  msm2::native_source::tick(ownershipContext,msm2::hooks::exitReason(),sourceGuards);
   msm2::native_source::drainLogs();
   msm2::writer::drainLogs();
   if(pressed(VK_F9,f9)){msm2::writeLog("F9 telemetry stop; all WallSprint writes stopping");break;}
@@ -206,7 +210,7 @@ extern "C" __declspec(dllexport) void script_enable(){
  ReleaseSRWLockExclusive(&lifecycle);
 }
 extern "C" __declspec(dllexport) void script_disable(){
- msm2::reset_trace::kill();msm2::trace::kill();msm2::input::kill();msm2::native_source::kill();
+ msm2::native_source::kill("script_stop","shutdown");msm2::reset_trace::kill();msm2::trace::kill();msm2::input::kill();
  msm2::writer::kill("script_disable");
  AcquireSRWLockExclusive(&lifecycle);if(stopEvent)SetEvent(stopEvent);
  if(workerHandle&&GetCurrentThreadId()!=workerId){WaitForSingleObject(workerHandle,INFINITE);CloseHandle(workerHandle);workerHandle=nullptr;if(stopEvent){CloseHandle(stopEvent);stopEvent=nullptr;}}

@@ -96,11 +96,28 @@ void stateLog(double now){auto c=observer.context(now);
 }
 namespace msm2::hooks {
 std::array<msm2::writer::Patch,4> patchSnapshot(){std::array<msm2::writer::Patch,4> result{};for(unsigned i=0;i<4;++i){result[i].address=reinterpret_cast<std::uintptr_t>(installed[i].target);std::memcpy(result[i].bytes.data(),installed[i].patch,32);}return result;}
-bool observationPlanAuthenticated(){
- if(!verifiedAvailable||!msm2::source::fieldPlanEnabled)return false;
- for(const auto& item:installed){unsigned char bytes[32]{};if(!item.enabled||!readMemory(reinterpret_cast<std::uintptr_t>(item.target),bytes,32)||std::memcmp(bytes,item.patch,32))return false;}
- return true;
+guards::ObservationStatus observationPlanStatus(){
+ guards::ObservationStatus s{};s.verifiedAvailable=verifiedAvailable;s.fieldPlanEnabled=msm2::source::fieldPlanEnabled;
+ for(unsigned i=0;i<4;++i)s.hooks[i]=guards::inspectPatch(installed[i].enabled,reinterpret_cast<std::uintptr_t>(installed[i].target),installed[i].patch,msm2::readMemory);
+ return s;
 }
+void reportObservationPlanStatus(const guards::ObservationStatus& s){
+ // Worker-only, independent of side-effect-free status reads. Log changes only.
+ static bool seen=false;static unsigned previous=0,changes=0;static std::array<unsigned,4> differences{};
+ unsigned mask=s.failureMask();std::array<unsigned,4> current{};for(unsigned i=0;i<4;++i)current[i]=s.hooks[i].firstDifference;
+ if(seen&&mask==previous&&differences==current)return;
+ bool failure=mask!=0;seen=true;previous=mask;differences=current;
+ if(changes++>=16)return;
+ auto ctx=observer.context(double(GetTickCount64()));
+ writeLog("%s verified_available=%u field_plan_enabled=%u init_enabled=%u init_read_ok=%u init_patch_match=%u init_first_difference=%u entry_enabled=%u entry_read_ok=%u entry_patch_match=%u entry_first_difference=%u update_enabled=%u update_read_ok=%u update_patch_match=%u update_first_difference=%u deinit_enabled=%u deinit_read_ok=%u deinit_patch_match=%u deinit_first_difference=%u source_integrity=%u diagnostic_viable=%u failed_hook=%s failure_mask=0x%x wallrun_active=%u wallrun_session=%llu transition_record=%u record_cap=16 mismatch_offset_sentinel=32",
+  failure?"OBSERVATION_PLAN_AUTH_FAILURE":"OBSERVATION_PLAN_AUTH_STATUS",unsigned(s.verifiedAvailable),unsigned(s.fieldPlanEnabled),
+  unsigned(s.hooks[0].enabled),unsigned(s.hooks[0].readOk),unsigned(s.hooks[0].match),s.hooks[0].firstDifference,
+  unsigned(s.hooks[1].enabled),unsigned(s.hooks[1].readOk),unsigned(s.hooks[1].match),s.hooks[1].firstDifference,
+  unsigned(s.hooks[2].enabled),unsigned(s.hooks[2].readOk),unsigned(s.hooks[2].match),s.hooks[2].firstDifference,
+  unsigned(s.hooks[3].enabled),unsigned(s.hooks[3].readOk),unsigned(s.hooks[3].match),s.hooks[3].firstDifference,
+  unsigned(s.sourceIntegrity()),unsigned(s.diagnosticViable()),s.failedHook(),mask,unsigned(ctx.wallRunActive),(unsigned long long)ctx.wallRunSessionId,changes);
+}
+bool observationPlanAuthenticated(){return observationPlanStatus().diagnosticViable();}
 const char* exitReason(){return observer.exitReason();}
 unsigned nativeThreadId(){return lastNativeThread.load();}
 void start(bool targetBuild,const Options& options){
@@ -136,6 +153,7 @@ void start(bool targetBuild,const Options& options){
  }
  verifiedAvailable=targetBuild;for(bool admitted:admittedThisStart)verifiedAvailable=verifiedAvailable&&admitted;
  observer.configure(verifiedAvailable);msm2::source::finalize(verifiedAvailable,objectEnabled);
+ reportObservationPlanStatus(observationPlanStatus());
  std::array<msm2::writer::Patch,4> writerPatches{};for(unsigned i=0;i<4;++i){writerPatches[i].address=reinterpret_cast<std::uintptr_t>(installed[i].target);std::memcpy(writerPatches[i].bytes.data(),installed[i].patch,32);}
  msm2::writer::admit(verifiedAvailable&&msm2::source::fieldPlanEnabled,writerPatches);writeLog("wallrun_lifecycle_verified=%u required=complete_four_guarded_hooks semantic_identity=%s object_diagnostic=%u",unsigned(verifiedAvailable),ws::observed::semantic,unsigned(objectEnabled));
 }
@@ -150,6 +168,7 @@ void drain(const Snapshot* snapshot,const ws::diag::Motion& motion,std::uint64_t
   lastOwnershipCheck=now;
   for(auto& item:installed)if(item.enabled){unsigned char patch[32]{};
    if(!readMemory(reinterpret_cast<std::uintptr_t>(item.target),patch,32)||std::memcmp(patch,item.patch,32)!=0){
+    reportObservationPlanStatus(observationPlanStatus());
     clearSessions("hook_ownership_lost");verifiedAvailable=false;observer.configure(false);ws_hook_recording.store(0,std::memory_order_release);stateLog(double(now));break;
    }
   }

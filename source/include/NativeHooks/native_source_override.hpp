@@ -1,5 +1,6 @@
 #pragma once
 #include "wallrun_observer.hpp"
+#include "NativeHooks/ownership_guards.hpp"
 #include <atomic>
 #include "msm2/actor_writer.hpp"
 #include "NativeHooks/source_lifecycle.hpp"
@@ -11,7 +12,9 @@ void capture(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintpt
 void captureCopy(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::uintptr_t r9,std::uintptr_t ret,std::uintptr_t originalRsp) noexcept;
 void prearm(const ws::native_source::Token&) noexcept;
 void lifecycleClosed(const ws::native_source::Token&) noexcept;
-void kill() noexcept;
+// Reason/origin must be process-lifetime literals; capture context before closing.
+void kill(const char* reason,const char* origin,const ws::observed::VerifiedWallContext* context=nullptr) noexcept;
+bool workerGuards(const ws::observed::VerifiedWallContext&,const guards::ObservationStatus&);
 void drainLogs();
 void stop();
 bool active() noexcept;

@@ -60,6 +60,19 @@ int main(){
  installed[0].enabled=true;installed[0].target=object;std::memset(installed[0].patch,0xff,32);lastOwnershipCheck=0;
  drain();assert(!observer.context(GetTickCount64()).wallRunActive&&!verifiedAvailable);
  assert(output.find("hook_ownership_lost")!=std::string::npos);installed[0].enabled=false;
+ // c8 actual production detailed API: no early exit hides another hook's state.
+ alignas(16) unsigned char ownedPatches[4][32]{};verifiedAvailable=true;msm2::source::fieldPlanEnabled=true;
+ for(unsigned i=0;i<4;++i){installed[i].enabled=true;installed[i].target=ownedPatches[i];std::memcpy(installed[i].patch,ownedPatches[i],32);}
+ auto auth=msm2::hooks::observationPlanStatus();assert(auth.diagnosticViable()&&msm2::hooks::observationPlanAuthenticated());msm2::hooks::reportObservationPlanStatus(auth);
+ for(unsigned i=0;i<4;++i){
+  ownedPatches[i][9+i]=1;auto bad=msm2::hooks::observationPlanStatus();assert(!bad.sourceIntegrity()&&bad.hooks[i].readOk&&!bad.hooks[i].match&&bad.hooks[i].firstDifference==9+i&&bad.failedHook()==std::string(names[i]));
+  msm2::hooks::reportObservationPlanStatus(bad);msm2::hooks::reportObservationPlanStatus(bad);ownedPatches[i][9+i]=0;msm2::hooks::reportObservationPlanStatus(msm2::hooks::observationPlanStatus());
+ }
+ installed[1].target=nullptr;auth=msm2::hooks::observationPlanStatus();assert(!auth.hooks[1].readOk&&!auth.hooks[1].match);installed[1].target=ownedPatches[1];
+ installed[2].enabled=false;auth=msm2::hooks::observationPlanStatus();assert(!auth.sourceIntegrity()&&auth.hooks[2].readOk&&auth.hooks[2].match);installed[2].enabled=true;
+ msm2::source::fieldPlanEnabled=false;auth=msm2::hooks::observationPlanStatus();assert(!auth.diagnosticViable()&&auth.sourceIntegrity());msm2::hooks::reportObservationPlanStatus(auth);
+ assert(output.find("OBSERVATION_PLAN_AUTH_FAILURE")!=std::string::npos&&output.find("failed_hook=Update")!=std::string::npos&&output.find("update_first_difference=11")!=std::string::npos);
+ for(auto& item:installed)item={};
  // Old enabled bookkeeping cannot bypass fresh AOB/prefix admission on restart.
  for(auto& item:installed)item.enabled=true;
  msm2::hooks::start(true,{});assert(!verifiedAvailable&&!msm2::source::enabled);
@@ -83,5 +96,6 @@ int main(){
  // Refresh the synthetic log after targeted-field/persistence assertions.
  f=std::fopen("logs/windows_surface_runtime_synthetic.log","wb");assert(f);assert(std::fwrite(output.data(),1,output.size(),f)==output.size());std::fclose(f);
  assert(VirtualFree(child,0,MEM_RELEASE));
+ std::puts("PASS: c8 actual observation-plan status API reports every verified/field/enabled/read/match gate, independent Init/Entry/Update/Deinit patch IDs/offsets, unreadable/disabled negatives, diagnostic-only field loss and bounded transition diagnostics without full code bytes");
  std::puts("PASS: production one-level source child pairing/point metrics/raw bounds/video timeline and event drain: verified Active/Inactive, Deinit/crawl isolation, bounded field summary, owner/epoch/drop/disable/ownership resets; TEST-ONLY injected events, no game execution");
 }
