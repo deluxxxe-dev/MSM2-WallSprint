@@ -30,7 +30,7 @@ bool authenticated() noexcept {unsigned char b[32]{};return copyAuth&&msm2::read
 bool compactProofAuthenticated() noexcept {return authenticated();}
 }
 namespace msm2 {
-bool readMemory(std::uintptr_t p,void* out,std::size_t n){if(p==token.owner+0x338){++planeReads;if(!pointReadable)return false;}SIZE_T done=0;return ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void*>(p),out,n,&done)&&done==n;}
+bool readMemory(std::uintptr_t p,void* out,std::size_t n){if(causeState.load()==1)assert(!msm2::native_source::active()&&(killed.load()||!lifecycleOpen.load()));if(p==token.owner+0x338){++planeReads;if(!pointReadable)return false;}SIZE_T done=0;return ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void*>(p),out,n,&done)&&done==n;}
 bool sample(Snapshot& s){s=fakeHero;if(!sdkAvailable)return false;if(deinitOnSample){deinitOnSample=false;ws::native_source::event(3,token.owner);}return readMemory(s.transform,s.prefix,48);}
 void writeLog(const char* fmt,...){char b[4096];va_list a;va_start(a,fmt);vsnprintf(b,sizeof(b),fmt,a);va_end(a);output+=b;output+='\n';}
 }

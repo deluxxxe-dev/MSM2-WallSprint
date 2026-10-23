@@ -126,6 +126,9 @@ struct HardCause {EntryEvidence entry{};const char* reason="none";const char* or
 HardCause firstCause;std::atomic<unsigned> causeState{0},killCalls{0}; // 0 empty,1 claimed,2 ready,3 logged; never reused in production.
 void latchCause(const char* reason,const char* origin,const ws::observed::VerifiedWallContext* ctx) noexcept {
  ++killCalls;unsigned expected=0;if(!causeState.compare_exchange_strong(expected,1))return;
+ // Close write permission before diagnostic reads; keep the identity snapshot
+ // intact until it has been captured. A callback never waits for this record.
+ lifecycleOpen=false;isActive=false;
  HardCause c{};c.entry=(!std::strcmp(origin,"path_a")||!std::strcmp(origin,"path_b"))?entryEvidence:EntryEvidence{};c.reason=reason;c.origin=origin;c.ms=GetTickCount64();c.thread=GetCurrentThreadId();c.sourceRead=publication.read(c.source);
  if(!c.source.session){Published retained{};if(identityPublication.read(retained)&&retained.session){c.source=retained;c.identityRetained=true;}}
  workerEvidence.read(c.worker);if(ctx){c.worker.context=*ctx;c.worker.available=true;}
@@ -284,7 +287,10 @@ void lifecycleClosed(const Token& t) noexcept {
  if(t.lastKind==3){closed.sourceRead=publication.read(closed.source)&&closed.source.lifecycleEpoch==epoch;deinitPublication.publish(closed);}
  publishInactive();isActive=false;
 }
-void kill(const char* reason,const char* origin,const ws::observed::VerifiedWallContext* ctx) noexcept {latchCause(reason,origin,ctx);disableRuntime();}
+void kill(const char* reason,const char* origin,const ws::observed::VerifiedWallContext* ctx) noexcept {
+ // Never leave source permission open while collecting a fault record.
+ killed=true;lifecycleOpen=false;isActive=false;latchCause(reason,origin,ctx);disableRuntime();
+}
 bool workerGuards(const ws::observed::VerifiedWallContext& ctx,const guards::ObservationStatus& status){
  WorkerEvidence evidence{};evidence.context=ctx;evidence.observation=status;evidence.available=true;evidence.inputAuthenticated=msm2::input::authenticated();workerEvidence.publish(evidence);
  // Field-plan/diagnostic viability has no role in authenticated source rows.
@@ -294,7 +300,7 @@ bool workerGuards(const ws::observed::VerifiedWallContext& ctx,const guards::Obs
  if(!evidence.inputAuthenticated){kill("worker_input_auth_lost","worker",&ctx);return false;}
  return true;
 }
-bool active() noexcept{return isActive.load();}
+bool active() noexcept{return !killed.load()&&isActive.load();}
 bool observationGuardsAuthenticated() noexcept{return !killed.load()&&admitted&&currentGuards();}
 bool entryOverridden() noexcept{return didOverride;}
 void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool authenticated){
@@ -302,7 +308,7 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
  if(!authenticated){kill("worker_tick_auth_lost","worker",&ctx);}
  if(stateLock.test_and_set(std::memory_order_acquire))return;
  auto now=GetTickCount64();drainVerifiedDeinit();auto epoch=lifecycleEpoch.load();
- if(killed.load()&&causeState.load(std::memory_order_acquire)==1){publishInactive();stateLock.clear(std::memory_order_release);return;}
+ if(killed.load()&&causeState.load(std::memory_order_acquire)<2){publishInactive();stateLock.clear(std::memory_order_release);return;}
  if(killed.load()||!admitted){end(causeState.load(std::memory_order_acquire)>=2?firstCause.reason:!admitted?"source_not_admitted":"disabled_before_cause_ready",now);state.published=0;stateLock.clear(std::memory_order_release);return;}
  Token token{};bool native=ws::native_source::lifecycle(token);now=GetTickCount64(); // Age is measured AFTER acquiring the token, never before a concurrent Update.
  if(!native&&!token.observed){
@@ -369,7 +375,7 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
  }
  // A synchronous native close racing this worker must win. Its epoch cannot
  // be adopted for a token acquired before the close, even on first entry.
- if(lifecycleEpoch.load()!=epoch){publishInactive();isActive=false;stateLock.clear(std::memory_order_release);return;}
+ if(killed.load()||lifecycleEpoch.load()!=epoch){publishInactive();isActive=false;stateLock.clear(std::memory_order_release);return;}
  identityPublication.publish(p);publication.publish(p);
  // Retention is sampled only from a fresh verified lifecycle update after both
  // source paths have committed. Distinct native updates cannot be inflated by calls.
