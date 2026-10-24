@@ -233,3 +233,18 @@ Classify the exact `CMP` operands/width/effects at `0x2CF7FE0` without guessing 
 Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
 
 Deferred user-facing features are tracked in `docs/FEATURE_ROADMAP.md` and remain intentionally out of scope until the movement ownership foundation is safe.
+
+## C26 prepared diagnostic handoff
+
+v0.1c26/package0.1.44 describes exact first CMP0x2CF7FE0 before any extension:
+operand classes/widths/aliases/parents/constants/access and decoded flags effects.
+Only guarded full32/64-bit GPR reg/reg or reg/imm flags-only forms are modeled;
+8/16/memory/unknown forms refuse. Stable-prefix parent tag/next Jcc condition
+metadata never grants target identity: all branches remain strict linear refusals.
+Full current snapshot/128bytes/32instructions/normal RET/coverage checks required
+before hash and c23 effects. Six owned groups added to identity suite; c25 large
+metadata and c19-c24/native/workspace contracts retained. Actual CMP form/next
+boundary remains PENDING new minimal diagnostic, not proven by fixture tests.
+See analysis/V01C26_CMP_FLAGS.md / V01C26_GATE.md and docs/CODEX_RESULT.md.
+CODEX_NEXT remains the task authority. All Position/source/input/movement writes
+and writable/ownership/exclusivity gates remain0; producer0x351EB00 deferred.

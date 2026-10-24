@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.43",
-  "description": "WallSprint v0.1c25 bounded PE runtime-table validation separating structural errors, byte/entry budgets and lookup coverage after accepted c24. Existing fail-closed effect/ownership gates and no Position/source/input/movement mutation remain.",
+  "version": "0.1.44",
+  "description": "WallSprint v0.1c26 exact pinned CMP operand/flags diagnostic and narrowly guarded full-GPR register/immediate semantics. Strict no-unwind linear leaf still refuses every branch, memory/stack/partial effect; all Position/source/input/movement and ownership gates remain closed.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

@@ -1,21 +1,21 @@
-# WallSprint v0.1c25 — runtime tableの構造・件数上限と実機A/Eテスト
+# WallSprint v0.1c26 — exact CMP形式・フラグ依存の診断
 
-Package **0.1.43**。c24では527,161件のruntime tableが旧上限262,144件を超え、全表検証の前で止まりました。今回は構造不正と上限超過を分け、60万件・8MiBの明示的上限で全entryを64件ずつ検証します。件数超過を破損やentryなしの証拠とは扱いません。全表が有効と確認できた場合だけOS lookupを行い、既存の厳格な128bytes/32命令leaf規則へ進みます。Position・source-position・入力・移動の書込みや所有権許可は追加しません。実機の表の妥当性と次の停止点は未確認です。
+Package **0.1.44**。c25実機では527,161件の全表検証とtargetのruntime entryなしを確認済みです。今回は先頭CMPのoperand数・class・width・register alias/parent・即値・メモリ有無・read/write・フラグ依存を記録します。厳密なdecoded effect確認を通る32/64bit GPR比較だけ扱い、8/16bit・memory・不明な形式は拒否します。次が分岐なら条件とフラグ依存を記録して停止し、分岐先へ進みません。実際のCMP形式と次の停止点はまだ不明です。Position・source-position・入力・移動の書込みや所有権許可は追加しません。
 
 ## 今回の更新・テスト（移行済み環境）
 
 1. ゲームと共有Overstrikeを閉じ、`MSM2-WS\Update-WS.cmd` を実行します。Git更新・既存フル試験・検証・配置を行います。
 2. 起動した共有Overstrikeで通常MOD＋SF＋WSを確認し、`Install mods` → `Run modded game`。
 3. A/cardinalの平らな壁で約3秒 → WallRunを完全終了 → 移動/ファストトラベル → E/diagonalで約3秒。各回は既存の5秒上限に達する前に終了します。
-4. `MSM2-WS\logs` の最新の完全な `MSM2-WS-v0.1c25-YYYYMMDD-HHMMSS.log` を非公開で共有してください。動画は見た目の異常時だけです。
+4. `MSM2-WS\logs` の最新の完全な `MSM2-WS-v0.1c26-YYYYMMDD-HHMMSS.log` を非公開で共有してください。動画は見た目の異常時だけです。
 
-新しい `MOVEMENT_CALLEE_READ_RUNTIME_TABLE` と既存TARGET_IDENTITY内の `runtime_lookup_queried` を確認します。directoryのRVA/bytes、12bytesでの割切れ・image内range、件数・バイト上限、capによる未検証、読取り済みbytes/検証済みentry数、guarded read失敗、全表検証とOS lookupの実施を区別します。c24のcap拒否時のlookup fieldsは未実行時の既定値で、実測したentryなし結果ではありません。表が通れば従来のTARGET_IDENTITY/READ_CALLが先の結果を報告します。従来のread/effect・Deinit/retention/Up・stale回復・Position0・entry/map/cleanupも維持します。
+新しい `MOVEMENT_CALLEE_READ_CMP` / `READ_CMP_OPERAND` / `READ_LEAF_BRANCH` と既存TARGET_IDENTITY/READ_CALLを確認します。命令定数以外の実測値・生コードは追加取得しません。親レジスタのtagsは1=selected、2=postwrite、4=other-prewriteです。未到達・未知のメモリ値・部分形式・分岐結果をtag0から推定しません。分岐拒否時のprefix分類は完全なtarget identityやeffect証明ではありません。全表検証・128bytes/32命令・次runtime領域境界・Deinit/retention/Up・stale回復・Position0・entry/map/cleanupを維持します。
 
 下の移行手順は未移行環境向けの参照です。デスクトップの `MSM2 - Overstrike` は普段の起動用で、WSの更新・ビルドは実行しません。
 
 ## 最初の移行
 
-配布 **MSM2-WS-v0.1c25.zip** を **Mods Library の外**へ展開してください。展開したフォルダ内の `Migrate-WS.cmd` と `tools` を一緒に使います。ソース ZIP は別の再現用資料で、正本 `_source` はヘルパーが GitHub から独立 clone します。コードはすべて取得し、配布アーカイブだけを Git の sparse checkout 設定で作業フォルダから除外します。ZIP本体と履歴はGitに残ります。
+配布 **MSM2-WS-v0.1c26.zip** を **Mods Library の外**へ展開してください。展開したフォルダ内の `Migrate-WS.cmd` と `tools` を一緒に使います。ソース ZIP は別の再現用資料で、正本 `_source` はヘルパーが GitHub から独立 clone します。コードはすべて取得し、配布アーカイブだけを Git の sparse checkout 設定で作業フォルダから除外します。ZIP本体と履歴はGitに残ります。
 
 Windows 側に Python 3.11+、Git for Windows、PowerShell、設定済み WSL2 が必要です。WSL 側には既存の MinGW/Clang/Wine/解析 Python のフルビルド環境が必要です。**前提が足りない場合、ビルドや試験を省略して導入することはありません。** 手順は [source/BUILD.md](source/BUILD.md) を参照してください。
 
@@ -40,7 +40,7 @@ Migrate-WS.cmd --game-root "<実際のゲームルート>" --branch codex/v01c20
 
 ```text
 <game>\Mods Library\Mods-Developing\MSM2-WS\
-├─ MSM2-WS-v0.1c25.script
+├─ MSM2-WS-v0.1c26.script
 ├─ Update-WS.cmd
 ├─ Migrate-WS.cmd        （移行用）
 ├─ logs\
@@ -76,7 +76,7 @@ Migrate-WS.cmd --game-root "<実際のゲームルート>" --branch codex/v01c20
 
 ```text
 <game>\Mods Library\Mods-Developing\MSM2-WS\logs\
-MSM2-WS-v0.1c25-YYYYMMDD-HHMMSS.log
+MSM2-WS-v0.1c26-YYYYMMDD-HHMMSS.log
 ```
 
 時刻は PC のローカル時刻です。同秒の衝突は `-01` などを付け、既存ファイルを上書きしません。同じ起動内の A→E は1本に記録します。旧 `log_wallsprint` や共有 `logs` への代替保存はありません。
@@ -89,4 +89,4 @@ MSM2-WS-v0.1c25-YYYYMMDD-HHMMSS.log
 
 通常の入力で試してください。A/E の対応、ちらつき・停止・クラッシュなどがあれば添えてください。動画は見た目の異常時だけです。生ログや private game body を GitHub へ追加しないでください。
 
-確認項目は、v0.1c25/package0.1.43、ビルドadmission、メタデータ検証coverageと実施済みlookup、Deinit/retention/Up・stale回復・Position0・entry/map・watch解除です。c24の最初のsessionは5秒の既存テスト上限で停止しており、今回は各3秒で終了します。表の通過だけでXYZ/Wや所有権を証明したとは扱わず、`writable_source_proven=0` を維持します。
+確認項目は、v0.1c26/package0.1.44、ビルドadmission、CMPの厳密な形式とflags-only判定、各operandのparent tags、次の正確な停止点と分岐条件、Deinit/retention/Up・stale回復・Position0・entry/map・watch解除です。各A/Eは約3秒、既存5秒上限未満で終了します。CMPやtableの通過だけでXYZ/Wや所有権を証明したとは扱わず、`writable_source_proven=0` を維持します。

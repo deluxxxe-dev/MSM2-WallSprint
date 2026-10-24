@@ -103,7 +103,7 @@ struct LargeImage : Image {
     return ws::rdx::authenticateReadTarget(true,target,imageSize,readLarge,lookupLarge,this);
   }
 };
-void flowThroughIdentity(Image &image,bool expectAdmission,bool expectLiveValue) {
+ws::rdx::CalleeAlias flowThroughIdentity(Image &image,bool expectAdmission,bool expectLiveValue) {
   std::array<unsigned char,183> writer{};std::array<unsigned char,137> parent{};
   writer.fill(0x90);parent.fill(0x90);
   auto put=[](auto &b,unsigned at,std::initializer_list<unsigned char> v) {
@@ -116,15 +116,17 @@ void flowThroughIdentity(Image &image,bool expectAdmission,bool expectLiveValue)
   put(writer,0x42,{0x89,0x57,0x38});put(writer,0x45,{0xc7,0x47,0x3c,0,0,0x80,0x3f});
   put(writer,0x4c,{0x48,0x83,0xc4,0x28,0xc3});
   put(parent,0,{0x48,0x89,0x7c,0x24,8,0x8b,0x81,0x0c,1,0,0});
+  put(parent,0xb,{0x44,0x8b,0x81,0x0c,1,0,0}); // other-prewrite tag4 in R8.
   put(parent,0x20,{0xbf,1,0,0,0});put(parent,0x2e,{0x89,0xb9,0x0c,1,0,0});
-  put(parent,0x34,{0xe8,0,0,0,0,0x48,0x8b,0x7c,0x24,8,0xc3});
-  Image::put32(parent,0x35,target-(0x2000+0x39));
+  put(parent,0x34,{0x8b,0x91,0x0c,1,0,0}); // postwrite tag2 in EDX.
+  put(parent,0x3c,{0xe8,0,0,0,0,0x48,0x8b,0x7c,0x24,8,0xc3});
+  Image::put32(parent,0x3d,target-(0x2000+0x41));
   auto main=ws::rdx::exactCall(writer.data(),writer.size(),0x1000,imageSize,0x27,0x2c);
   ws::rdx::classifyCallee(main,parent.data(),parent.size(),0x2000,0x2089);
   ws::rdx::CalleeAlias alias{};alias.code=parent.data();alias.size=parent.size();
   alias.imageSize=imageSize;alias.authenticated=true;alias.exactWrite.site=0x202e;
   alias.edi.enabled=true;alias.readDependency.site=0x2005;
-  auto &call=alias.readDependency.call;call.site=0x2034;call.targetIdentity=image.run();
+  auto &call=alias.readDependency.call;call.site=0x203c;call.targetIdentity=image.run();
   assert(call.targetIdentity.admitted==expectAdmission);
   call.identity.target=target;
   if (expectAdmission) {
@@ -138,6 +140,7 @@ void flowThroughIdentity(Image &image,bool expectAdmission,bool expectLiveValue)
   assert(alias.readDependency.flowComplete==expectAdmission);
   if (expectAdmission) assert(bool(alias.readDependency.returnedGpr&1)==expectLiveValue);
   else assert(!call.modeledStates && !std::strcmp(alias.readDependency.reason,call.targetIdentity.reason));
+  return alias;
 }
 int main() {
   Image safe;auto r=safe.run();
@@ -278,4 +281,111 @@ int main() {
         !std::strcmp(r.reason,"target_runtime_lookup_and_PE_table_disagree"));
   }
   std::puts("PASS: c25 fully validated large-table containing entry uses normal identity; lookup disagreement blocks fallback while validated absence keeps strict c24 proof");
+  auto code=[](Image &f,std::initializer_list<unsigned char> bytes) {
+    f.code.fill(0x90);std::copy(bytes.begin(),bytes.end(),f.code.begin());
+  };
+  {
+    for (bool wide : {false,true}) {
+      Image cmp;if (wide) code(cmp,{0x48,0x83,0xf8,0xff,0xc3});
+      else code(cmp,{0x83,0xf8,1,0xc3});
+      r=cmp.run();assert(r.admitted && r.cmp.decoded && r.cmp.flagsOnly &&
+          r.cmp.formSupported && r.cmp.modelApplied && !r.cmp.hasMemory);
+      assert(r.cmp.operandCount==2 && r.cmp.operands[0].width==(wide?8u:4u) &&
+          r.cmp.operands[0].parent==0 && !std::strcmp(r.cmp.operands[0].parentName,"rax"));
+      assert(!std::strcmp(r.cmp.operands[1].kind,"immediate") && r.cmp.operands[1].immediate==(wide?-1:1));
+      auto a=flowThroughIdentity(cmp,true,true);const auto &c=a.readDependency.call;
+      assert(c.targetIdentity.cmp.flagsTags==1 && c.returnedFlagsTags==1 &&
+          !c.clobberGpr && !c.clobberXmm && (c.returnedGpr[0]&1));
+      assert(c.targetIdentity.cmp.operands[1].parent==-1 && !c.targetIdentity.cmp.operands[1].parentTags);
+    }
+  }
+  std::puts("PASS: c26 pinned32/64-bit CMP register/immediate completes stable RET identity, models only six flags, preserves operands and treats signed instruction constants as untainted");
+
+  {
+    struct Case {std::initializer_list<unsigned char> bytes;unsigned flags;};
+    for (const auto &test : {Case{{0x83,0xf8,1,0xc3},1},Case{{0x83,0xfa,1,0xc3},2},
+         Case{{0x41,0x83,0xf8,1,0xc3},4},Case{{0x83,0xf9,1,0xc3},0},
+         Case{{0x39,0xd0,0xc3},3},Case{{0x48,0x39,0xd0,0xc3},3},Case{{0x44,0x39,0xc0,0xc3},5}}) {
+      Image cmp;code(cmp,test.bytes);auto a=flowThroughIdentity(cmp,true,true);
+      const auto &c=a.readDependency.call;
+      assert(c.targetIdentity.cmp.samples && c.targetIdentity.cmp.flagsTags==test.flags &&
+          c.returnedFlagsTags==test.flags && !c.clobberGpr && !c.clobberXmm);
+      assert(c.gpr[0].tags==1 && c.gpr[2].tags==2 && c.gpr[8].tags==4);
+    }
+    Image same;code(same,{0x39,0xc0,0xc3});auto a=flowThroughIdentity(same,true,true);
+    assert(a.readDependency.call.targetIdentity.cmp.operands[0].parentTags==1 &&
+        a.readDependency.call.targetIdentity.cmp.operands[1].parentTags==1 &&
+        !a.readDependency.call.returnedFlagsTags);
+  }
+  std::puts("PASS: c26 selected1/postwrite2/other-prewrite4/disjoint CMP flags and register pairs retain exact parent tag unions; same-alias subtraction changes flags only and never kills operands");
+
+  {
+    struct Partial {std::initializer_list<unsigned char> bytes;unsigned width;int parent;const char *name;};
+    for (const auto &test : {Partial{{0x3c,1,0xc3},1,0,"al"},Partial{{0x80,0xfc,1,0xc3},1,0,"ah"},
+         Partial{{0x66,0x83,0xf8,1,0xc3},2,0,"ax"}}) {
+      Image partial;code(partial,test.bytes);r=partial.run();
+      assert(!r.admitted && !r.size && r.cmp.decoded && r.cmp.flagsOnly &&
+          !r.cmp.formSupported && !r.cmp.modelApplied && r.barrier==target);
+      assert(r.cmp.operands[0].width==test.width && r.cmp.operands[0].parent==test.parent &&
+          r.cmp.operands[0].conservativeParent && !std::strcmp(r.cmp.operands[0].name,test.name));
+      auto a=flowThroughIdentity(partial,false,false);
+      assert(a.readDependency.call.targetIdentity.cmp.operands[0].parentTags==1 &&
+          !a.readDependency.call.targetIdentity.cmp.formSupported && !a.readDependency.call.modeledStates);
+    }
+    Image memory;code(memory,{0x83,0x38,1,0xc3});r=memory.run();
+    assert(!r.admitted && r.cmp.hasMemory && r.cmp.flagsOnly && !r.cmp.formSupported &&
+        !r.cmp.operands[0].valueTagsKnown && !std::strcmp(r.cmp.operands[0].base,"rax") &&
+        !std::strcmp(r.reason,"pinned_cmp_memory_operand_refused"));
+    flowThroughIdentity(memory,false,false);
+  }
+  std::puts("PASS: c26 low/high8 and16-bit CMP aliases are described but refused, memory value tags stay unknown and no partial/memory semantics or target identity are granted");
+
+  {
+    for (unsigned jcc : {0x74u,0x75u,0x72u,0x7fu}) {
+      Image branch;code(branch,{0x83,0xf8,1,(unsigned char)jcc,2,0xc3,0x90,0xc3});r=branch.run();
+      assert(!r.admitted && !r.size && r.cmp.modelApplied && r.barrier==target+3 &&
+          r.branch.decoded && r.branch.conditional && r.branch.flagsDependencyKnown &&
+          r.branch.flagsProducer==target && r.branch.entryCarrierMask==1 &&
+          std::strcmp(r.branch.condition,"unknown") && std::strcmp(r.branch.flagsRead,"unknown"));
+      auto a=flowThroughIdentity(branch,false,false);const auto &c=a.readDependency.call;
+      assert(!c.authenticated && !c.identity.boundaryVerified && !c.modeledStates &&
+          c.targetIdentity.branch.samples && c.targetIdentity.branch.flagsTags==1 &&
+          !std::strcmp(c.reason,"target_leaf_control_or_nested_call_refused"));
+    }
+    Image disjoint;code(disjoint,{0x83,0xf9,1,0x74,0,0xc3});auto a=flowThroughIdentity(disjoint,false,false);
+    assert(a.readDependency.call.targetIdentity.branch.flagsDependencyKnown &&
+        a.readDependency.call.targetIdentity.branch.samples && !a.readDependency.call.targetIdentity.branch.flagsTags);
+  }
+  std::puts("PASS: c26 next Jcc reports precise RVA/condition/flag-producer and actual selected/disjoint tags but refuses both paths; no target hash/effect is issued even for disjoint conditions");
+
+  {
+    Image overwritten;code(overwritten,{0x83,0xf8,1,0x31,0xc0,0x74,0,0xc3});
+    auto a=flowThroughIdentity(overwritten,false,false);const auto &b=a.readDependency.call.targetIdentity.branch;
+    assert(b.flagsProducer==target+3 && b.flagsDependencyKnown && b.samples && !b.flagsTags);
+    Image vector;code(vector,{0x83,0xf8,1,0x66,0x0f,0x6e,0xc0,0x66,0x0f,0x7e,0xc2,0x39,0xd1,0x74,0,0xc3});
+    a=flowThroughIdentity(vector,false,false);
+    assert(a.readDependency.call.targetIdentity.branch.flagsProducer==target+11 &&
+        a.readDependency.call.targetIdentity.branch.flagsTags==1);
+    Image unsupported;code(unsupported,{0x83,0xf8,1,0x0f,0x95,0xc0,0xc3});r=unsupported.run();
+    assert(!r.admitted && r.cmp.modelApplied && r.barrier==target+3);
+    Image before;code(before,{0x74,0,0xc3});r=before.run();
+    assert(!r.admitted && r.branch.decoded && !r.branch.flagsDependencyKnown);
+  }
+  std::puts("PASS: c26 branch flag provenance follows modeled overwrites and GPR/XMM copies; incoming unknown flags and unsupported flag/partial consumers never acquire false dependency proof");
+
+  {
+    Image unstableCmp;code(unstableCmp,{0x83,0xf8,1,0xc3});unstableCmp.unstable=true;r=unstableCmp.run();
+    assert(!r.admitted && !r.cmp.decoded && !r.cmp.samples);
+    Image crossingCmp;code(crossingCmp,{0x48,0x83,0xf8,1,0xc3});crossingCmp.entry(1,target+3,target+16);r=crossingCmp.run();
+    assert(!r.admitted && !r.cmp.decoded && crossingCmp.codeEndRead==target+3);
+    Image shifted;code(shifted,{0x90,0x83,0xf8,1,0xc3});r=shifted.run();
+    assert(!r.admitted && !r.cmp.decoded && r.barrier==target+1);
+    LargeImage acceptedTable(527161);code(acceptedTable,{0x83,0xf8,1,0xc3});r=acceptedTable.runLarge();
+    assert(r.admitted && r.cmp.modelApplied && r.tableReadComplete && r.lookupQueried &&
+        r.missingRuntime && r.validatedEntries==527161 && r.metadataBytesRead==6325932);
+    LargeImage badTail(527161);code(badTail,{0x83,0xf8,1,0xc3});badTail.row(527160,largeFunctionBase,largeFunctionBase+8,0x800);r=badTail.runLarge();
+    assert(!r.admitted && !r.cmp.decoded && !r.lookupQueried && !badTail.snapshots);
+  }
+  std::puts("PASS: c26 CMP extension remains pinned to exact target and stable snapshot; crossing, full large-table validation and late structural refusal preserve c24/c25 gates");
+
 }

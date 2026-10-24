@@ -1,3 +1,5 @@
+> Accepted c25 actual outcome: complete527161-entry/6325932-byte table valid, actual lookup agrees no-entry for0x2CF7FE0; stable strict fallback stops at first CMP. See V01C25_RUNTIME_RESULT.md and successor V01C26_CMP_FLAGS.md. Earlier pending statements below are preparation history.
+
 # c25 gate — finite complete runtime-table validation
 
 Accepted c24:527161 entries exceeded old262144 cap before validation/lookup.

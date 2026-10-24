@@ -87,3 +87,13 @@ v0.1c25/package0.1.43 adds6 large-table groups to test_read_target_identity.sh
 allocation. Complete table checks precede actual lookup and unchanged c24
 no-unwind proof. Cap and default lookup fields never imply corruption/absence.
 See analysis/V01C25_RUNTIME_TABLE_BUDGET.md.
+
+## Current c26 pinned CMP classification
+
+v0.1c26/package0.1.44 adds6 CMP/next-boundary groups to test_read_target_identity.sh
+(21 total), retaining21 read/call groups and full native pipeline. Complete c25
+metadata validation gates remain. Only pinned decoded32/64-bit GPR CMP can add
+reg/immediate flags-only effects; partial/memory/branch/stack/call forms still
+refuse. Compact prefix metadata is not full target identity or an effect waiver.
+See analysis/V01C26_CMP_FLAGS.md. Actual operands/next boundary pending; no raw
+private game byte fixture required or distributed.

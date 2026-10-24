@@ -1231,6 +1231,38 @@ void configure(const Spec &s, Gate validate) noexcept {
              unsigned(identity.tableBudgetAdmitted),unsigned(identity.validationSkippedByCap),
              identity.metadataBytesRead,identity.validatedEntries,unsigned(identity.tableReadFailed),
              unsigned(identity.tableReadComplete),unsigned(identity.tableValid),unsigned(identity.lookupQueried),identity.reason);
+    const auto &cmp=identity.cmp;
+    writeLog("MOVEMENT_CALLEE_READ_CMP site_rva=0x%x decoded=%u operand_count=%u "
+             "has_memory_operand=%u flags_only=%u form_supported=%u prefix_modeled=%u "
+             "decoded_eflags=0x%llx flags_written=%s GPR_XMM_memory_writes=%s "
+             "samples=%u flags_tags_known=%u flags_may_depend_tags=0x%x "
+             "reason=%s scope=stable_pinned_prefix_not_complete_target_identity "
+             "numerical_branch_outcome=unknown effect_certificate=0 full_bytes_logged=0",
+             cmp.site,unsigned(cmp.decoded),cmp.operandCount,unsigned(cmp.hasMemory),
+             unsigned(cmp.flagsOnly),unsigned(cmp.formSupported),unsigned(cmp.modelApplied),
+             (unsigned long long)cmp.decodedEflags,cmp.flagsOnly?"CF_PF_AF_ZF_SF_OF":"unproven",cmp.flagsOnly?"0":"unproven",
+             cmp.samples,unsigned(cmp.formSupported && cmp.samples!=0),cmp.flagsTags,cmp.reason);
+    for (unsigned j=0;j<std::min(cmp.operandCount,2u);++j) {
+      const auto &op=cmp.operands[j];
+      writeLog("MOVEMENT_CALLEE_READ_CMP_OPERAND site_rva=0x%x index=%u "
+               "kind=%s register=%s width=%u decoded_access=%u parent_gpr=%d parent_register=%s "
+               "value_tags_known=%u parent_may_depend_tags=0x%x conservative_parent_tags=%u "
+               "immediate=%lld base=%s memory_index=%s segment=%s scale=%u displacement=%lld "
+               "memory_value_observed=0 partial_form_semantics=0 "
+               "tags_1_selected_2_postwrite_4_other_prewrite=1 full_bytes_logged=0",
+               cmp.site,j,op.kind,op.name,op.width,op.access,op.parent,op.parentName,
+               unsigned(op.valueTagsKnown && cmp.samples!=0),op.parentTags,unsigned(op.conservativeParent),
+               (long long)op.immediate,op.base,op.index,op.segment,op.scale,(long long)op.displacement);
+    }
+    const auto &branch=identity.branch;
+    writeLog("MOVEMENT_CALLEE_READ_LEAF_BRANCH site_rva=0x%x decoded=%u instruction=%s "
+             "conditional=%u condition=%s flags_read=%s flags_producer_rva=0x%x "
+             "flags_dependency_known=%u samples=%u consumer_may_depend_tags=0x%x "
+             "control_expanded=0 numerical_outcome=unknown both_outcomes_unresolved=1 "
+             "rule=strict_linear_no_branch effect_certificate=0 full_bytes_logged=0",
+             branch.site,unsigned(branch.decoded),branch.mnemonic,unsigned(branch.conditional),
+             branch.condition,branch.flagsRead,branch.flagsProducer,
+             unsigned(branch.flagsDependencyKnown && branch.samples!=0),branch.samples,branch.flagsTags);
     writeLog("MOVEMENT_CALLEE_READ_CALL site_rva=0x2b235d4 enabled=%u decoded=%u "
              "form=%s operand=%s direct=%u target_rva=0x%llx exact_target=%u target_reason=%s "
              "target_begin_rva=0x%llx target_end_rva=0x%llx boundary_verified=%u "

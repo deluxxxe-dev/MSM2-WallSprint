@@ -1,3 +1,15 @@
+## C25 accepted / c26 prepared checkpoint
+
+VERIFIED-RUNTIME c25 directory0xC566000/6325932bytes/527161entries fully valid;
+OS lookup actually queried, target0x2CF7FE0 no containing entry, next0x2CF8020.
+Stable snapshot stops at first CMP. Exact form/width/flags/next branch UNKNOWN.
+C26 conditionally models only decoded pinned32/64-bit GPR CMP reg/reg or reg/imm
+with flags-only proof, compact parent tags and next branch condition; partial/
+memory/unknown effects and every branch refuse. No identity/hash before full
+strict128byte/32instruction stable linear RET and coverage recheck. No effect/
+ownership/writability/cross-invocation/XYZ-W inference. Producer0x351EB00 deferred.
+Sources: V01C25_RUNTIME_RESULT.md / V01C26_CMP_FLAGS.md. Prior checkpoints follow.
+
 # MSM2 Engine Internals Reference — WallSprint-derived seed
 
 Purpose: compact, reusable technical knowledge extracted from WallSprint research for future Marvel's Spider-Man 2 PC mod development, debugging, and cross-project analysis.

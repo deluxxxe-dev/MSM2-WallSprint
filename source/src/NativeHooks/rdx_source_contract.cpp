@@ -1228,6 +1228,122 @@ unsigned testBranchTags(unsigned id, unsigned tags) {
   return id == X86_INS_JB || id == X86_INS_JAE ||
          id == X86_INS_JO || id == X86_INS_JNO ? 0u : tags;
 }
+// Full parent identity is metadata for refused partial reads, not permission.
+int cmpParent(unsigned r) {
+  const int full = testParent(r);
+  if (full >= 0) return full;
+  switch (r) {
+#define P(R, I) case X86_REG_##R: return I
+    P(AX,0); P(CX,1); P(DX,2); P(BX,3); P(SP,4); P(BP,5); P(SI,6); P(DI,7);
+    P(R8W,8); P(R9W,9); P(R10W,10); P(R11W,11); P(R12W,12); P(R13W,13);
+    P(R14W,14); P(R15W,15); P(AH,0); P(CH,1); P(DH,2); P(BH,3);
+#undef P
+  default: return -1;
+  }
+}
+ReadCmpContract describeCmp(const cs_insn &ins, csh decoder) {
+  ReadCmpContract t{};
+  const auto &x = ins.detail->x86;
+  t.site = std::uint32_t(ins.address); t.decoded = ins.id == X86_INS_CMP;
+  t.operandCount = x.op_count; t.decodedEflags = x.eflags;
+  constexpr unsigned parents[] = {X86_REG_RAX,X86_REG_RCX,X86_REG_RDX,X86_REG_RBX,
+      X86_REG_RSP,X86_REG_RBP,X86_REG_RSI,X86_REG_RDI,X86_REG_R8,X86_REG_R9,
+      X86_REG_R10,X86_REG_R11,X86_REG_R12,X86_REG_R13,X86_REG_R14,X86_REG_R15};
+  for (unsigned j=0;j<std::min<unsigned>(x.op_count,2);++j) {
+    const auto &op=x.operands[j]; auto &o=t.operands[j];
+    o.width=op.size; o.access=op.access;
+    if (op.type==X86_OP_REG) {
+      copyName(o.kind,sizeof(o.kind),"register");
+      copyName(o.name,sizeof(o.name),cs_reg_name(decoder,op.reg));
+      o.parent=cmpParent(op.reg); o.conservativeParent=op.size<4 && o.parent>=0;
+      o.valueTagsKnown=o.parent>=0;
+      if (o.parent>=0) copyName(o.parentName,sizeof(o.parentName),cs_reg_name(decoder,parents[o.parent]));
+    } else if (op.type==X86_OP_IMM) {
+      copyName(o.kind,sizeof(o.kind),"immediate"); o.immediate=op.imm; o.valueTagsKnown=true;
+    } else if (op.type==X86_OP_MEM) {
+      copyName(o.kind,sizeof(o.kind),"memory"); t.hasMemory=true;
+      copyName(o.base,sizeof(o.base),cs_reg_name(decoder,op.mem.base));
+      copyName(o.index,sizeof(o.index),cs_reg_name(decoder,op.mem.index));
+      copyName(o.segment,sizeof(o.segment),cs_reg_name(decoder,op.mem.segment));
+      o.scale=op.mem.scale; o.displacement=op.mem.disp;
+    } else copyName(o.kind,sizeof(o.kind),"unsupported");
+  }
+  cs_regs reads{},writes{};std::uint8_t nr{},nw{};
+  t.flagsOnly=t.decoded && cs_regs_access(decoder,&ins,reads,&nr,writes,&nw)==CS_ERR_OK &&
+      nw==1 && writes[0]==X86_REG_EFLAGS;
+  for (unsigned j=0;j<x.op_count;++j) t.flagsOnly &= !(x.operands[j].access&CS_AC_WRITE);
+  constexpr std::uint64_t cmpFlags = X86_EFLAGS_MODIFY_CF | X86_EFLAGS_MODIFY_PF |
+      X86_EFLAGS_MODIFY_AF | X86_EFLAGS_MODIFY_ZF | X86_EFLAGS_MODIFY_SF | X86_EFLAGS_MODIFY_OF;
+  t.formSupported=t.flagsOnly && t.site==readIdentityTarget && x.op_count==2 &&
+      !x.prefix[0] && !x.prefix[1] && !x.prefix[2] && !x.prefix[3] && x.eflags==cmpFlags &&
+      x.operands[0].type==X86_OP_REG && reg(x.operands[0].reg)>=0 &&
+      (x.operands[0].size==4 || x.operands[0].size==8) &&
+      x.operands[0].size==x.operands[1].size && x.operands[0].access==CS_AC_READ &&
+      ((x.operands[1].type==X86_OP_REG && reg(x.operands[1].reg)>=0 && x.operands[1].access==CS_AC_READ) ||
+       x.operands[1].type==X86_OP_IMM);
+  for (unsigned k=0;k<nr;++k)
+    t.formSupported &= x.op_count==2 &&
+        ((x.operands[0].type==X86_OP_REG && reads[k]==x.operands[0].reg) ||
+         (x.operands[1].type==X86_OP_REG && reads[k]==x.operands[1].reg));
+  // Decoder must report every explicit register read, with no hidden inputs.
+  for (unsigned j=0;j<x.op_count;++j) if (x.operands[j].type==X86_OP_REG) {
+    bool found=false;for (unsigned k=0;k<nr;++k) found |= reads[k]==x.operands[j].reg;
+    t.formSupported &= found;
+  }
+  if (t.formSupported) {
+    t.flagsEntryGprMask=1u<<t.operands[0].parent;
+    if (x.operands[1].type==X86_OP_REG) {
+      t.flagsEntryGprMask |= 1u<<t.operands[1].parent;
+      // Identical aliases subtract identical bits: all six flags are constant.
+      if (x.operands[0].reg==x.operands[1].reg) t.flagsEntryGprMask=0;
+    }
+  }
+  t.reason=!t.decoded ? "pinned_instruction_is_not_cmp"
+      : t.hasMemory ? "pinned_cmp_memory_operand_refused"
+      : !t.formSupported ? "pinned_cmp_width_form_or_effect_refused"
+      : "pinned_cmp_full_GPR_readonly_flags_supported";
+  return t;
+}
+unsigned carrierTags(std::uint32_t mask, const ReadFlow &flow) {
+  unsigned tags=0;
+  for (unsigned k=0;k<16;++k) {
+    if (mask&(1u<<k)) tags |= flow.g[k];
+    if (mask&(1u<<(16+k))) tags |= flow.x[k];
+  }
+  return tags;
+}
+void describeLeafBranch(ReadLeafBranch &b, const cs_insn &ins, bool flagsKnown,
+                        std::uint32_t source, const ReadFlow &dependencies) {
+  b.decoded=true;b.site=std::uint32_t(ins.address);b.conditional=conditional(ins.id);
+  copyName(b.mnemonic,sizeof(b.mnemonic),ins.mnemonic);
+  b.flagsProducer=source;b.flagsDependencyKnown=b.conditional && flagsKnown;
+  b.entryCarrierMask=dependencies.logicalTestFlags
+      ? testBranchTags(ins.id,dependencies.flags) : dependencies.flags;
+  switch (ins.id) {
+#define C(ID, COND, FLAGS) case X86_INS_##ID: b.condition=COND;b.flagsRead=FLAGS;break
+    C(JA,"CF0_and_ZF0","CF_ZF"); C(JAE,"CF0","CF"); C(JB,"CF1","CF");
+    C(JBE,"CF1_or_ZF1","CF_ZF"); C(JE,"ZF1","ZF"); C(JNE,"ZF0","ZF");
+    C(JG,"ZF0_and_SF_eq_OF","ZF_SF_OF"); C(JGE,"SF_eq_OF","SF_OF");
+    C(JL,"SF_ne_OF","SF_OF"); C(JLE,"ZF1_or_SF_ne_OF","ZF_SF_OF");
+    C(JO,"OF1","OF"); C(JNO,"OF0","OF"); C(JP,"PF1","PF"); C(JNP,"PF0","PF");
+    C(JS,"SF1","SF"); C(JNS,"SF0","SF"); C(JMP,"unconditional","none");
+#undef C
+  default: break;
+  }
+}
+void sampleCmpBoundary(ReadTargetIdentity &t, const ReadFlow &flow) {
+  // Partial stable prefix evidence cannot grant identity/effect admission.
+  if (!t.enabled || t.target!=readIdentityTarget || !t.tableValid || !t.lookupQueried || !t.stable) return;
+  auto &cmp=t.cmp;
+  if (cmp.decoded && cmp.site==readIdentityTarget) {
+    ++cmp.samples;
+    for (auto &op:cmp.operands) if (op.parent>=0) op.parentTags |= flow.g[op.parent];
+    if (cmp.formSupported) cmp.flagsTags |= carrierTags(cmp.flagsEntryGprMask,flow);
+  }
+  if (t.branch.decoded && t.branch.flagsDependencyKnown) {
+    ++t.branch.samples;t.branch.flagsTags |= carrierTags(t.branch.entryCarrierMask,flow);
+  }
+}
 bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
                   ReadFlow &flow) {
   auto &c = a.readDependency.call;
@@ -1240,6 +1356,7 @@ bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
   };
   if (!c.direct || !c.identity.instructionVerified)
     return fail(call.address, call.mnemonic, "read_call_indirect_or_invalid_target_no_chase");
+  sampleCmpBoundary(c.targetIdentity,flow);
   if (c.targetIdentity.enabled && !c.targetIdentity.admitted)
     return fail(c.targetIdentity.barrier?c.targetIdentity.barrier:call.address,
                 c.targetIdentity.mnemonic,c.targetIdentity.reason);
@@ -1292,6 +1409,15 @@ bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
         group(ins, CS_GRP_RET) || group(ins, CS_GRP_INT) || group(ins, CS_GRP_IRET))
       return fail(ins.address, ins.mnemonic, "read_call_nested_or_control_depth_limit");
     if (ins.id == X86_INS_NOP || ins.id == X86_INS_ENDBR64) continue;
+    if (ins.id==X86_INS_CMP && ins.address==readIdentityTarget &&
+        c.identity.target==readIdentityTarget && c.targetIdentity.enabled && c.targetIdentity.admitted) {
+      const auto cmp=describeCmp(ins,d.h);
+      if (!cmp.formSupported) return fail(ins.address,ins.mnemonic,cmp.reason);
+      tags.flags=carrierTags(cmp.flagsEntryGprMask,tags);
+      tags.logicalTestFlags=tags.pinnedTestFlags=false;
+      // Decoded flags-only effect: leave every Slice GPR/XMM/stack and tag intact.
+      continue;
+    }
     cs_regs reads{}, writes{}; std::uint8_t nr{}, nw{};
     if (cs_regs_access(d.h, &ins, reads, &nr, writes, &nw) != CS_ERR_OK)
       return fail(ins.address, ins.mnemonic, "read_call_register_access_unknown");
@@ -2748,7 +2874,9 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
     d.p=cs_malloc(d.h);if (!d.p) return fail("target_leaf_decoder_allocation_failed",target);
     d.n=1;
     const std::uint8_t *cursor=out.snapshot.data();std::size_t left=limit;
-    std::uint64_t address=target;Slice registers;
+    std::uint64_t address=target;Slice registers;ReadFlow dependencies;
+    for (unsigned k=0;k<16;++k) { dependencies.g[k]=1u<<k;dependencies.x[k]=1u<<(16+k); }
+    bool flagsKnown=false;std::uint32_t flagsProducer=0;
     while (left) {
       const auto at=std::uint32_t(address);
       if (!cs_disasm_iter(d.h,&cursor,&left,&address,d.p))
@@ -2760,17 +2888,30 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
         out.size=unsigned(address-target);break;
       }
       if (group(ins,CS_GRP_CALL) || group(ins,CS_GRP_JUMP) || group(ins,CS_GRP_RET) ||
-          group(ins,CS_GRP_INT) || group(ins,CS_GRP_IRET))
+          group(ins,CS_GRP_INT) || group(ins,CS_GRP_IRET)) {
+        if (group(ins,CS_GRP_JUMP)) describeLeafBranch(out.branch,ins,flagsKnown,flagsProducer,dependencies);
         return fail("target_leaf_control_or_nested_call_refused",at,ins.mnemonic);
+      }
+      if (at==readIdentityTarget && ins.id==X86_INS_CMP) {
+        out.cmp=describeCmp(ins,d.h);
+        if (!out.cmp.formSupported) return fail(out.cmp.reason,at,ins.mnemonic);
+        dependencies.flags=carrierTags(out.cmp.flagsEntryGprMask,dependencies);
+        dependencies.logicalTestFlags=false;flagsKnown=true;flagsProducer=at;
+        out.cmp.modelApplied=true;
+        continue;
+      }
       for (unsigned j=0;j<x.op_count;++j) if (x.operands[j].type==X86_OP_MEM)
         return fail("target_leaf_memory_operand_refused",at,ins.mnemonic);
       if (ins.id==X86_INS_NOP || ins.id==X86_INS_ENDBR64) continue;
       cs_regs reads{},writes{};std::uint8_t nr{},nw{};
       if (cs_regs_access(d.h,&ins,reads,&nr,writes,&nw)!=CS_ERR_OK)
         return fail("target_leaf_register_effects_unknown",at,ins.mnemonic);
-      for (unsigned j=0;j<nr;++j)
+      unsigned incoming=0;
+      for (unsigned j=0;j<nr;++j) {
         if (reads[j]==X86_REG_EFLAGS || (reg(reads[j])<0 && xmm(reads[j])<0))
           return fail("target_leaf_partial_or_flag_input_refused",at,ins.mnemonic);
+        incoming |= dependencies.get(reads[j]);
+      }
       for (unsigned j=0;j<nw;++j)
         if (reg(writes[j])==4 || (writes[j]!=X86_REG_EFLAGS && reg(writes[j])<0 && xmm(writes[j])<0))
           return fail("target_leaf_stack_or_partial_register_write_refused",at,ins.mnemonic);
@@ -2784,6 +2925,15 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
       const bool flags=scalar && (ins.id==X86_INS_CMP || ins.id==X86_INS_TEST);
       if (x.prefix[0] || (!move && !zero && !flags) || !registers.step(ins,false))
         return fail("target_leaf_instruction_effect_not_admitted",at,ins.mnemonic);
+      if (zero || (flags && ins.id==X86_INS_CMP && x.operands[0].reg==x.operands[1].reg)) incoming=0;
+      for (unsigned j=0;j<nw;++j) {
+        if (!dependencies.put(writes[j],incoming))
+          return fail("target_leaf_register_effects_unknown",at,ins.mnemonic);
+        if (writes[j]==X86_REG_EFLAGS) {
+          dependencies.logicalTestFlags=ins.id==X86_INS_TEST || (zero && ins.id==X86_INS_XOR);
+          flagsKnown=true;flagsProducer=at;
+        }
+      }
     }
     if (!out.size) return fail(out.nextRuntime && target+limit==out.nextRuntime
         ? "target_leaf_no_RET_before_runtime_region" : "target_leaf_no_RET_before_code_or_byte_cap",
