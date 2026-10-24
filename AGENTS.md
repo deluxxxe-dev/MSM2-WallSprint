@@ -15,6 +15,7 @@ Before starting any implementation task, read these files in order:
 4. `docs/PROJECT_STATE.md`
 5. `docs/CODEX_NEXT.md`
 6. Relevant files under `analysis/`
+7. Relevant shared references in `deluxxxe-dev/MSM2-Wisdoms` when the environment can access that repository.
 
 `docs/DEVELOPMENT_MANUAL.md` is the operational source of truth for branch policy, local workspace invariants, Git/fetch behavior, backup/recovery, failure triage, and GPT/Codex handoff. Read it before changing repository, workspace, or recovery behavior.
 
@@ -34,9 +35,20 @@ Before starting any implementation task, read these files in order:
 
 ## Reusable MSM2 knowledge maintenance
 
-`analysis/ENGINE_INTERNALS_REFERENCE.md` is the current WallSprint-derived compact index of engine facts that may be reusable by SocialFeed or future MSM2 mods. It is not the primary proof record; detailed evidence remains in task-specific analysis/runtime-result files.
+Central shared knowledge repository:
 
-Whenever a task establishes, narrows, or disproves a reusable engine fact, update that reference in the same task when practical. Preserve the evidence labels and distinctions used there:
+`deluxxxe-dev/MSM2-Wisdoms`
+
+`analysis/ENGINE_INTERNALS_REFERENCE.md` remains the WallSprint-local derived index/seed and project-local proof pointer. The organization-level reusable knowledge is now centralized in Wisdoms, especially:
+
+- `docs/ENGINE_INTERNALS.md`
+- `docs/REVERSE_ENGINEERING_GUIDE.md`
+- `docs/WALLSPRINT.md`
+- `docs/WALLSPRINT_INTERNALS.md`
+
+Whenever a task establishes, narrows, or disproves a reusable engine fact, debugging method, tooling rule, or shared environment fact, preserve the detailed proof in WallSprint and update the relevant Wisdoms file in the same handoff when practical.
+
+Preserve these evidence distinctions:
 
 - `VERIFIED-RUNTIME`
 - `VERIFIED-STATIC`
@@ -45,9 +57,9 @@ Whenever a task establishes, narrows, or disproves a reusable engine fact, updat
 - `UNKNOWN`
 - `REJECTED`
 
-Never promote correlation to causality/ownership/writability without the required proof. If a prior shared fact is wrong, correct the canonical entry explicitly rather than leaving contradictory statements as equally current truth.
+Never promote correlation to causality/ownership/writability without the required proof. If a prior shared fact is wrong, correct the canonical Wisdoms entry explicitly rather than leaving contradictory statements as equally current truth.
 
-The owner intends to move this reusable knowledge into a dedicated organization-level repository under `deluxxxe-dev`. Until that central repository exists, `analysis/ENGINE_INTERNALS_REFERENCE.md` is the staging source for WallSprint-derived knowledge. After centralization, keep project-specific proof/history in this repository and synchronize reusable facts/corrections to the shared knowledge base rather than allowing the copies to drift.
+If Wisdoms is not accessible from the current Codex environment, do not block the bounded project task solely for that reason: record the reusable finding in WallSprint analysis/result docs and report that Wisdoms synchronization remains pending for ChatGPT/the next connected session.
 
 Do not place raw user logs, complete proprietary native function bodies, credentials, personal paths, or unnecessary game binary fragments in the reusable knowledge base.
 
@@ -82,7 +94,7 @@ Important invariants:
 - Reusable scripts must not hard-code the user's personal C-/D-drive paths and must support spaces/Unicode.
 - The old D-drive WallSprint environment must never be automatically deleted.
 
-The current infrastructure task temporarily takes priority over the prepared c20 EDI research. Preserve that research state; do not advance it unless `docs/CODEX_NEXT.md` explicitly re-authorizes it.
+The real-PC workspace/shared-Overstrike/log acceptance gate has passed. The prepared c20 EDI diagnostic work is reauthorized only to the scope explicitly defined by the current `docs/CODEX_NEXT.md`; gameplay writes and producer traversal remain unauthorized.
 
 ## Runtime-log handoff
 
