@@ -15,12 +15,30 @@ Objective: trace only EDI reaching definitions at `0x2B2358E` across the authent
 
 Do not traverse producer `0x351EB00`. Do not implement movement, Position/source writes, input rewrite, adhesion, camera, animation or traversal. Keep `writable_source_proven=0` unless a later separately authorized task changes the gate.
 
-Preserve dedicated `log_wallsprint/WallSprint_YYYYMMDD-HHMMSS.log` logging with no shared fallback.
+## Shared WS/SF development package workflow
+Use the same development-library arrangement as SF.
 
-User-facing install ZIP naming is now mandatory:
+Required local directory:
 ```text
-MSM2-WS-v0.1c20.zip
+C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2\Mods Library\Mods-Developing
 ```
-Do not append task-description suffixes. Future versions must follow `MSM2-WS-v<version>.zip` per `docs/DEV_RULES.md`.
+
+Overstrike recursively scans `Mods Library`, so all active WS development packages must live under `Mods-Developing`, not directly under the `Mods Library` root.
+
+For WS:
+- c20 install ZIP must be exactly `MSM2-WS-v0.1c20.zip`; future builds use `MSM2-WS-v<version>.zip` with no task-description suffix;
+- local helpers must create `Mods-Developing` if needed and copy/update only `MSM2-WS-*` artifacts there;
+- never move, rename, overwrite, or delete `MSM2-SF-*` files or unrelated mods;
+- separated development `Overstrike.exe` remains in the AppData-side location used by the shared SF/WS workflow, but its WorkingDirectory must be the MSM2 game root:
+```text
+C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2
+```
+- do not use the AppData folder as Overstrike WorkingDirectory; game-root dependencies such as `scripts_proxy.dll` must resolve from the game root;
+- add/update `UpdateForTest.cmd` as a double-click WS-only helper: ensure the folder exists, update only the current WS package, then launch/hand off to separated Overstrike with the game root as WorkingDirectory; fail clearly if the separated Overstrike executable path is unavailable instead of silently falling back elsewhere;
+- do not invent an unverified AppData executable path. Use an existing authenticated/configured path if available, otherwise an explicit configurable variable/path contract with fail-closed behavior.
+
+Cloud Codex cannot directly modify the user's `C:` drive; implement/package/test the helper and document local behavior. The local helper performs the actual copy/update.
+
+Preserve dedicated `log_wallsprint/WallSprint_YYYYMMDD-HHMMSS.log` logging with no shared fallback.
 
 If a human test is needed: A/cardinal ~4 s -> fully end WallRun -> move/fast-travel -> E/diagonal ~4 s; send the newest complete timestamped WallSprint log. Video only for a visible anomaly.
