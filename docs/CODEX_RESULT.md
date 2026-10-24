@@ -48,8 +48,12 @@ This delivery updates CODEX_RESULT, toolkit ZIP and MOD_TOOLS_RELEASE metadata.
 
 No main merge, SF code change or native runtime/version/binary package change.
 WS stays v0.1c20/package0.1.38; EDI remains disabled, ownership/exact-build gates
-and zero Position/source/input/movement writes are preserved. CODEX_NEXT and
-PROJECT_STATE are unchanged. No native139-suite rerun was needed for shared
+and zero Position/source/input/movement writes are preserved. During publication,
+same-branch upstream commits 013cbfa/2e7ac57 updated CODEX_NEXT/PROJECT_STATE to
+reauthorize the separate c20 diagnostic task. Those files were read and retained
+verbatim by merging only this development branch, without merging main or
+overwriting the upstream task. This user's current launcher request does not
+execute that separate native implementation. No native139-suite rerun was needed for shared
 launcher-only changes. Next human step: one-time launcher setup, then confirm
 the desktop shortcut opens the existing shared ordinary+SF+WS Overstrike UI.
 
