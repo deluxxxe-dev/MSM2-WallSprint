@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c21",
-  "package_version": "0.1.39",
-  "artifact": "MSM2-WS-v0.1c21.script.disabled",
-  "sha256": "18a8136ed00182e8133339a1d6d27a3b9a1124c32c4d119e49c6494512b8d432",
-  "dll_sha256": "8f3d1dc75ea885f4cb8c74af6abd6a71fc2f2bfcb2b1b79a7dfc439b494d1288",
+  "version": "v0.1c22",
+  "package_version": "0.1.40",
+  "artifact": "MSM2-WS-v0.1c22.script.disabled",
+  "sha256": "bcc1bdff62716f86ff4b34e2c83c9773ed5a61b11eeb7a693637b8e6f0485a70",
+  "dll_sha256": "7a3358948dd4f2b0a99ba723eb1af220f353e695d910a87c42df47b9f50547cf",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -130,7 +130,7 @@
   },
   "validation": "Warnings-as-errors cross-build; portable/DLL/native/c19/owned EDI/logger/workspace regressions and standalone source validation; exact current results in CODEX_RESULT.",
   "limitations": [
-    "C20 EDI local value origin accepted; actual c21 read address/order/carrier/next blocker pending new log; diagnostic sidecar never grants writer/ownership/writability proof",
+    "C21 exact Transform+0x10C pre-write read/control accepted; c22 TEST operands/flags/next barrier pending; diagnostic-only possible flow never grants effect/XYZ/W/ownership/writability proof",
     "Stack/global disjointness is conditional on per-invocation TEB/source/nonstack Transform/image region admission",
     "Unknown/conflicting pointer origins, unsupported effects and nested calls refuse at exact site",
     "Startup/current code snapshots are not atomic execution attestation; equality does not exclude transient writes",
@@ -656,7 +656,7 @@
   },
   "isolated_logging": {
     "directory": "game-root/Mods Library/Mods-Developing/MSM2-WS/logs",
-    "filename": "MSM2-WS-v0.1c21-YYYYMMDD-HHMMSS.log",
+    "filename": "MSM2-WS-v0.1c22-YYYYMMDD-HHMMSS.log",
     "filename_clock": "host_local_GetLocalTime",
     "line_clock": "UTC_unchanged",
     "collision_creation": "CREATE_NEW_atomic",
@@ -732,8 +732,8 @@
     "source": "_source_independent_clone",
     "archive": "_archive_disabled_only",
     "runtime_logs": "logs",
-    "active_script": "MSM2-WS-v0.1c21.script",
-    "artifact": "MSM2-WS-v0.1c21.script.disabled",
+    "active_script": "MSM2-WS-v0.1c22.script",
+    "artifact": "MSM2-WS-v0.1c22.script.disabled",
     "update_helper": "Update-WS.cmd",
     "migration_helper": "Migrate-WS.cmd",
     "overstrike": "game-root/Overstrike/Overstrike.exe",
@@ -747,7 +747,7 @@
     "build_archive_suffix": ".zip.disabled",
     "Overstrike_nested_archive_scanning": true
   },
-  "v01c21_gate": "READ_DEPENDENCY_DIAGNOSTIC_ACTUAL_CLASSIFICATION_PENDING",
+  "v01c21_gate": "ACTUAL_EXACT_TRANSFORM_10C_PREWRITE_READ_CONTROL_PASS_TEST_BLOCKER",
   "read_dependency_contract": {
     "diagnostic_only": true,
     "site": "0x2b23578",
@@ -767,7 +767,29 @@
     "selected_read_and_post_write_field_values_separate": true,
     "cross_invocation_feedback": "unknown",
     "downstream_XYZ_W_relevance": "unknown",
-    "actual_read_classification": "pending_new_game_log",
+    "actual_read_classification": "accepted_0x2b23578_MOV_Transform_plus0x10c_to_EAX_control0x2b23583_TEST_blocker0x2b235be",
+    "producer_traversal": false,
+    "Position_source_input_movement_writes": 0
+  },
+  "v01c22_gate": "PINNED_TEST_FLAGS_DIAGNOSTIC_ACTUAL_CLASSIFICATION_PENDING",
+  "read_test_contract": {
+    "site": "0x2b235be",
+    "diagnostic_only": true,
+    "authenticated_current_callee_only": true,
+    "forms": "reg32_reg32_reg64_reg64_pinned_read_only_low8_low8",
+    "low_byte_tags": "conservative_whole_parent_no_byte_value_proof",
+    "partial_register_writes": false,
+    "high8_16bit_memory_immediate_forms": "exact_refusal",
+    "flags": "AND_ZF_SF_PF_may_depend_CF0_OF0_AF_undefined",
+    "both_CFG_legs_enumerated": true,
+    "old_flags_not_read": true,
+    "operands_written": false,
+    "non_Jcc_flag_consumers": "exact_refusal",
+    "actual_operands": "pending_new_game_log",
+    "effect_certificate": false,
+    "existing_c19_c20_refusal_preserved": true,
+    "new_hooks": 0,
+    "live_memory_observation": false,
     "producer_traversal": false,
     "Position_source_input_movement_writes": 0
   }
