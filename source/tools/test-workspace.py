@@ -182,6 +182,9 @@ with fixture() as f:
  repo=f[2];p=repo/'owned.script.disabled';m=payload(p,'v0.1c20','0.1.38');bundles(repo,'v0.1c20','0.1.38',p,m,disabled=False)
  cmd('git','-C',repo,'add','.');cmd('git','-C',repo,'commit','-m','old checkout archives');cmd('git','-C',repo,'push','origin',BRANCH)
  ws=migrate(f);source=ws/'_source';cmd('git','-C',source,'sparse-checkout','disable')
+ # The active ZIP can have a different creation timestamp from the upstream
+ # fixture. Its manifest must describe its actual bytes, as the real build does.
+ m=dict(m,sha256=hashlib.sha256((ws/'MSM2-WS-v0.1c20.script').read_bytes()).hexdigest())
  old=bundles(ws/'_archive/_build','v0.1c20','0.1.38',ws/'MSM2-WS-v0.1c20.script',m,disabled=False)
  before={p.name:(p.read_bytes(),p.stat().st_mtime_ns) for p in old}
  collision=ws/'_archive'/(old[0].name+'.disabled');collision.write_bytes(b'owned previous disabled cache')
@@ -201,6 +204,12 @@ with fixture() as f:
   expect_failure(lambda:f[5].update(ws))
   assert p.read_bytes()==b'owned foreign/unverified archive; must remain'
   assert (ws/'MSM2-WS-v0.1c20.script').read_bytes()==old;p.unlink()
+ with zipfile.ZipFile(ws/'MSM2-WS-v0.1c20.script') as z:dll_hash=hashlib.sha256(z.read('WallSprint.dll')).hexdigest()
+ bad={'version':'v0.1c20','package_version':'0.1.38','sha256':'0'*64,'dll_sha256':dll_hash}
+ inconsistent=bundles(ws/'_archive/_build','v0.1c20','0.1.38',ws/'MSM2-WS-v0.1c20.script',bad,disabled=False)
+ before={p:p.read_bytes() for p in inconsistent};expect_failure(lambda:f[5].update(ws))
+ assert all(p.read_bytes()==data for p,data in before.items()) and (ws/'MSM2-WS-v0.1c20.script').read_bytes()==old
+ for p in inconsistent:p.unlink()
  print('PASS: raw/untracked/foreign/misplaced/corrupt ZIP-RAR-7z archives refuse without cleanup, movement of unrelated files, loss of old active build or sibling mutations')
 
 with fixture() as f:
