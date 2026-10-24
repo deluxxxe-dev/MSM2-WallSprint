@@ -31,6 +31,25 @@ Do not append implementation/task descriptions such as `transform_write_contract
 
 If a separate source archive is required for development/reproducibility, it may use `MSM2-WS-v<version>-source.zip`; the user-facing install ZIP must remain the plain version-only name above.
 
+## Development mod library location
+
+WallSprint and SocialFeed development packages must be kept separate from ordinary installed/mod-library packages under this local directory on the user's PC:
+
+```text
+C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2\Mods Library\Mods-Developing
+```
+
+This folder is the shared development-package library for both:
+
+```text
+MSM2-WS-*
+MSM2-SF-*
+```
+
+Do not place active WS/SF development ZIPs directly in `Mods Library` root when a local packaging/copy helper is being used. A local helper may create `Mods-Developing` if it does not exist and should place the current user-facing install ZIP there.
+
+This is only the development package storage location. It does not replace the game's actual runtime/script installation paths and it does not change WallSprint logging (`log_wallsprint`). Cloud Codex jobs cannot write to the user's `C:` drive; cloud outputs must still be packaged/published normally, while local copy/install instructions and local helper scripts must use the path above.
+
 ## Native safety
 
 - Current target build: Spider-Man2.exe 2.810.0.0.
