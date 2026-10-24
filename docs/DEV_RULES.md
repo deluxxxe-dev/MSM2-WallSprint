@@ -12,55 +12,125 @@ Do not add new vendored copies of SM2ScriptTemplate source files. Existing templ
 
 Release packages must not contain raw private user logs, full captured native game functions, unnecessary game binary fragments, or files from other mods.
 
-## Release package naming
+## User-facing release naming
 
-The user-facing install ZIP must use exactly this pattern:
+The user-facing install ZIP uses:
 
 ```text
 MSM2-WS-v<version>.zip
 ```
 
-Examples:
+Do not append implementation/task descriptions such as `transform_write_contract`, `callee_alias`, or `movement_source_lineage`.
+
+A separate source archive may use:
 
 ```text
-MSM2-WS-v0.1c20.zip
-MSM2-WS-v0.2.zip
+MSM2-WS-v<version>-source.zip
 ```
 
-Do not append implementation/task descriptions such as `transform_write_contract`, `callee_alias`, `movement_source_lineage`, or similar explanatory suffixes to the install ZIP filename.
-
-If a separate source archive is required for development/reproducibility, it may use `MSM2-WS-v<version>-source.zip`; the user-facing install ZIP must remain the plain version-only name above.
-
-## Development mod library / Overstrike workflow
-
-WS and SF development packages share this local development-only library:
+The active local Overstrike-visible script uses:
 
 ```text
-C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2\Mods Library\Mods-Developing
+MSM2-WS-v<version>.script
 ```
 
-Overstrike recursively scans `Mods Library`, so development packages may live under `Mods-Developing` and remain visible to Overstrike.
+Do not append commit SHA, Git hash, GUID, random hex, or internal task names to user-facing filenames.
 
-For WallSprint:
-- all current WS development install artifacts (`MSM2-WS-*`) must be copied/updated under `Mods Library\Mods-Developing` rather than directly under `Mods Library`;
-- do not move, rename, overwrite, delete, or otherwise modify any `MSM2-SF-*` file;
-- local update/install helpers should create `Mods-Developing` if missing;
-- when replacing an older WS development build, only replace/remove the matching WS development artifact(s), never unrelated mods.
+## Final local workspace
 
-The separated development copy of `Overstrike.exe` may remain under the AppData-side location used by the SF workflow, but its **WorkingDirectory must be the MSM2 game root**:
+`docs/LOCAL_WORKSPACE.md` is authoritative for the Windows development/test layout.
+
+The required project workspace is:
 
 ```text
-C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2
+<game>\Mods Library\Mods-Developing\MSM2-WS
 ```
 
-Do not switch its WorkingDirectory to the AppData folder. This keeps Overstrike using the game-root `Mods Library\Mods-Developing` and allows game-root dependencies such as `scripts_proxy.dll` to resolve from the intended location.
+with the steady-state top level:
 
-This development-library rule does not change WallSprint runtime logging (`log_wallsprint`) or the actual runtime/script install destination required by the game. Cloud Codex cannot directly write the user's `C:` drive; it must produce the correctly named package and any local helper/update script so the user's local execution places the WS package in the path above.
+```text
+MSM2-WS-v<version>.script
+Update-WS.cmd
+logs\
+_source\
+_archive\
+```
+
+A one-time `Migrate-WS.cmd` may exist during migration.
+
+Use hyphens in user-facing/project names (`Mods-Developing`, `MSM2-WS`, `Update-WS.cmd`). Leading underscore is reserved for internal workspace folders (`_source`, `_archive`). Do not newly create workspace aliases such as `Mods_Developing`, `MSM2_WS`, `Update_WS.cmd`, `logs_WS`, or `WS_logs`.
+
+Reusable scripts must derive the game root from the final workspace or a validated bootstrap input; do not hard-code the user's personal C- or D-drive paths.
+
+## One shared Overstrike / Mods Library
+
+There is exactly one shared Overstrike for ordinary mods, MSM2-SF, and MSM2-WS:
+
+```text
+Executable:       <game>\Overstrike\Overstrike.exe
+WorkingDirectory: <game>
+```
+
+Do not create project-specific Overstrike copies, AppData development copies, project-specific Mods Libraries/profiles, or `MSM2-WS\_tools\Overstrike`.
+
+`<game>\Overstrike\winmm.dll` must not exist. Game-wide `winmm.dll` and `scripts_proxy.dll` stay in the game root and must not be duplicated into the Overstrike directory.
+
+WallSprint update/migration tooling may validate shared infrastructure but must not treat it as WS-owned cleanup state.
+
+## Isolation from SocialFeed and ordinary mods
+
+WallSprint tooling must never delete, move, rename, overwrite, clean, archive, or back up anything beneath:
+
+```text
+<game>\Mods Library\Mods-Developing\MSM2-SF
+```
+
+It must likewise leave ordinary existing mods unchanged.
+
+Only files positively identified as WallSprint-owned under `MSM2-WS` may be archived/replaced by WS cleanup/deployment logic.
+
+## `_source` checkout invariant
+
+The authoritative local Git checkout is:
+
+```text
+MSM2-WS\_source
+```
+
+It must be an independent clone, not a worktree/junction/symlink/reparse-point dependency on the legacy D-drive checkout.
+
+Because Overstrike recursively scans `Mods Library`, a normal source checkout under `_source` must contain no active `*.script`. Generated script output must be produced outside recursively active source locations or use a non-`.script` temporary extension until final deployment.
+
+Exactly one active WallSprint `.script` may exist recursively beneath `MSM2-WS`, and it must be the versioned script at workspace root. Older versions under `_archive` must use a disabled/non-active extension such as `.script.disabled`.
+
+## Update / migration safety
+
+Normal operation is `MSM2-WS\Update-WS.cmd`. It must fail closed on invalid workspace/Git/build/test/package/Overstrike prerequisites and avoid partial replacement of a known-good active script where practical.
+
+A one-time `Migrate-WS.cmd` may create the final workspace and independent clone, but it must never automatically delete the legacy environment. Only after all required local validation passes may it state that the old WallSprint workspace can be manually removed.
+
+Cloud Codex cannot claim the user's real C-drive migration is complete. Cloud tests use owned temporary fixtures; real Overstrike recognition and local migration remain human acceptance checks.
+
+## Runtime logs
+
+WallSprint runtime logs belong only under:
+
+```text
+<game>\Mods Library\Mods-Developing\MSM2-WS\logs
+```
+
+with filenames:
+
+```text
+MSM2-WS-v<version>-YYYYMMDD-HHMMSS.log
+```
+
+See `docs/LOGGING_CONVENTION.md` for failure/collision details.
 
 ## Native safety
 
 - Current target build: Spider-Man2.exe 2.810.0.0.
-- Expected SHA256: c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9.
+- Expected SHA256: `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`.
 - Fail closed on build/signature mismatch.
 - Do not guess typed Win64 signatures for unknown game functions.
 - Preserve registers, stack alignment, shadow space, and return state when assembly thunks are required.
@@ -71,7 +141,7 @@ This development-library rule does not change WallSprint runtime logging (`log_w
 
 Work in milestones. Do not add later systems merely to mask a failure in the current one.
 
-Current order is:
+Current gameplay order is:
 
 1. orientation ownership / reset path;
 2. planar adhesion;
@@ -84,8 +154,10 @@ Current order is:
 9. web swing;
 10. combat.
 
-A failure in orientation must not be hidden by adding adhesion or movement writes.
+Infrastructure/layout tasks do not authorize advancement to a later gameplay milestone. A failure in orientation must not be hidden by adding adhesion or movement writes.
 
 ## Documentation
 
 Keep analysis files explicit about VERIFIED, CANDIDATE, and UNKNOWN findings. Do not upgrade a hypothesis into a verified field name or engine semantic without evidence.
+
+When local workspace requirements change, keep `docs/LOCAL_WORKSPACE.md`, `docs/LOGGING_CONVENTION.md`, `docs/PROJECT_STATE.md`, and the relevant tests synchronized.
