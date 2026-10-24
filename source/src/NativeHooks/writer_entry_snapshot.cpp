@@ -921,6 +921,7 @@ void configure(const Spec &s, Gate validate) noexcept {
     writerAlias.imageSize = s.imageSize;
     writerAlias.authenticated = calleeCurrent;
     writerAlias.exactWrite.site = 0x2b2358e;
+    writerAlias.edi.enabled = true;
     writerAlias.reason =
         calleeCurrent ? "writer_call_not_reached_in_bounded_prefix"
                       : "exact_c17_target_boundary_hash_not_authenticated";
@@ -1031,6 +1032,60 @@ void configure(const Spec &s, Gate validate) noexcept {
         unsigned(writerAlias.transformNoWrite),
         unsigned(writerAlias.positionProtected),
         unsigned(writerAlias.relevantEffectsResolved), writerAlias.reason);
+    const auto &ev = writerAlias.edi;
+    unsigned laterReads = 0;
+    for (unsigned i = 0; i < writerAlias.reads; ++i)
+      laterReads += writerAlias.readSites[i].at > tw.site &&
+                    writerAlias.readSites[i].at < 0x2b235e9;
+    writeLog(
+        "MOVEMENT_CALLEE_VALUE_CONTRACT site_rva=0x2b2358e value_register=edi "
+        "reaching_definition_count=%u producer_rva=0x%llx producer_kind=%s "
+        "origin_kind=%s producer_root=%d producer_offset=%lld "
+        "constant_bits=0x%x "
+        "addend_mod_2_32=0x%x all_reaching_states_examined=%u "
+        "all_reaching_states_same_value_origin=%u value_provenance_exact=%u "
+        "writer_call_states_examined=%u all_writer_call_states_examined=%u "
+        "coverage_scope=all_local_paths_for_analyzed_call_inputs "
+        "entry_register_roots=callee_entry_raw_bits_NOT_pointer_types "
+        "reaching_states=%u local_paths=%u instruction_visits=%u "
+        "later_relevant_read_count=%u later_reads_scope=analyzed_prefix "
+        "first_dependency_rva=0x%llx write_effect_relevant_to_xyz=%s "
+        "write_effect_relevant_to_w=%s first_unresolved_rva=0x%llx "
+        "first_unresolved_instruction=%s conflict_producer_rva=0x%llx "
+        "conflict_root=%d conflict_offset=%lld "
+        "definition_cap=16 copy_chain_cap=8 value_visit_cap=4096 "
+        "full_bytes_logged=0 writable_source_proven=0 reason=%s",
+        ev.definitions, (unsigned long long)ev.origin.producer,
+        ev.origin.producerKind, ws::rdx::bitKindName(ev.origin.kind),
+        ev.origin.root, (long long)ev.origin.offset, ev.origin.bits,
+        ev.origin.addend, unsigned(ev.complete),
+        unsigned(ev.complete && ev.same), unsigned(ev.exact),
+        writerAlias.analyses, unsigned(ev.writerStatesComplete),
+        ev.reachingStates, ev.paths, ev.visits, laterReads,
+        (unsigned long long)tw.dependencySite,
+        tw.reloadDependency || tw.positionOverlap || tw.carrierOverlap ? "1"
+        : writerAlias.relevantEffectsResolved && tw.complete           ? "0"
+                                                             : "unknown",
+        tw.reloadDependency || tw.positionOverlap || tw.carrierOverlap ? "1"
+        : writerAlias.relevantEffectsResolved && tw.complete           ? "0"
+                                                             : "unknown",
+        (unsigned long long)ev.barrier, ev.mnemonic,
+        (unsigned long long)ev.conflict.producer, ev.conflict.root,
+        (long long)ev.conflict.offset, ev.reason);
+    for (unsigned j = 0; j < ev.definitions; ++j) {
+      const auto &def = ev.producers[j];
+      writeLog("MOVEMENT_CALLEE_VALUE_DEFINITION index=%u producer_rva=0x%llx "
+               "producer_kind=%s origin_kind=%s root=%d offset=%lld "
+               "constant_bits=0x%x addend_mod_2_32=0x%x chain_length=%u "
+               "chain_scope=local_only full_bytes_logged=0",
+               j, (unsigned long long)def.producer, def.producerKind,
+               ws::rdx::bitKindName(def.kind), def.root, (long long)def.offset,
+               def.bits, def.addend, def.chainSize);
+      for (unsigned k = 0; k < def.chainSize; ++k)
+        writeLog("MOVEMENT_CALLEE_VALUE_CHAIN definition=%u index=%u "
+                 "producer_rva=0x%llx full_bytes_logged=0",
+                 j, k, (unsigned long long)def.chain[k]);
+    }
     const auto &ac = writerAlias.counts;
     writeLog(
         "MOVEMENT_CALLEE_ALIAS_CONTRACT target_rva=0x2b23560 "

@@ -1,0 +1,11 @@
+# c20 gate
+
+C19 actual diagnostic PASS: A3844ms/E4094ms, normal Deinit/retention/Up1/stale0/hard0/Position0,8entries/maps each; exact MOV0x2B2358E [RCX+0x10C],EDI and no direct Position/identity overlap. EDI value remained unknown. See V01C19_RUNTIME_RESULT.md.
+
+C20 implements a bounded reverse-CFG/forward-value local slice to EDI, separate raw low32 input identities and compact local producer/copy-chain metadata. Register-bit origins never become pointers. Same exact constant/input/memory/affine relation on all relevant local paths is required; partial/opaque/conflicting/capped/control effects refuse exactly. Local value coverage and complete writer-call/effect coverage are separate. Existing c19 source/Position/read dependency/TEB/image gates remain mandatory; literal Transform-no-write0 is preserved for real writes. A later CALL/read/write blocker stops whole-effect/XYZ/W proof.
+
+Outcome A: EDI local relation is exact and non-causal protected effects finish, writer advances/completes. Outcome B: exact narrower value/dependency/control blocker, all safety gates preserved. Actual c20 producers/origin/dependency/XYZ/W or next blocker PENDING A/E; owned fixtures are not actual game evidence.
+
+Package is MSM2-WS-v0.1c20.zip, optional source MSM2-WS-v0.1c20-source.zip. UpdateForTest.cmd only copies the current exact WS ZIP into game-root Mods Library/Mods-Developing and launches explicitly configured separated Overstrike.exe with game-root WorkingDirectory. No guessed AppData path/fallback, no SF/unrelated mutation/cleanup. Cloud never writes user C: drive; real cmd/copy/launch is tested using owned fixtures. Runtime log remains log_wallsprint/WallSprint_YYYYMMDD-HHMMSS.log/no shared fallback.
+
+writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/downstream_conflicts_proven_absent0; Position/source/input/movement writes0. Producer0x351EB00 and later systems deferred. No new observation, native call, PAGE_GUARD or private body publication. Human A/cardinal~4s -> fully end -> move/fast-travel -> E/diagonal~4s, privately send newest complete log. Review VALUE local coverage and full effect coverage separately, precise next blocker or XYZ/W, finalized entry/maps, orientation and cleanup. See CODEX_RESULT.md/V01C20_RELEASE.json.

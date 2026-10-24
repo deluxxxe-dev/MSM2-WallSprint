@@ -58,3 +58,7 @@ bash tools/test_callee_alias.sh
 bash tools/test_callee_branch_alias.sh
 
 bash tools/test_transform_write.sh
+
+bash tools/test_edi_value.sh
+
+bash tools/test_update_helper.sh

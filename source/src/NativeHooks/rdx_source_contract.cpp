@@ -665,6 +665,20 @@ const char *aliasKindName(AliasKind k) noexcept {
       "unknown_pointer"};
   return k < aliasKinds ? names[k] : "unknown_pointer";
 }
+const char *bitKindName(BitKind k) noexcept {
+  switch (k) {
+  case BitKind::constant:
+    return "constant";
+  case BitKind::entryRegister:
+    return "register_copy";
+  case BitKind::memoryLoad:
+    return "memory_load";
+  case BitKind::computed:
+    return "computed";
+  default:
+    return "unknown";
+  }
+}
 namespace {
 constexpr int globalRoot = 16;
 Value aliasAddress(const State &s, const cs_insn &ins, const cs_x86_op &op,
@@ -826,6 +840,275 @@ void describeWrite(CalleeAlias &a, const State &s, const cs_insn &ins, csh h) {
   // Protect the entire original Transform+[0,64), including the Position rows.
   t.carrierOverlap = !t.destinationExact || overlaps(addr.off, dst.size, 0, 64);
 }
+// Separate low32 bit identities. These never enter legacy address provenance.
+bool sameBits(const BitOrigin &a, const BitOrigin &b) {
+  return a.kind == b.kind && a.root == b.root && a.offset == b.offset &&
+         a.bits == b.bits && a.addend == b.addend;
+}
+bool exactBits(const BitOrigin &v) {
+  return v.kind == BitKind::constant || v.kind == BitKind::entryRegister ||
+         v.kind == BitKind::memoryLoad;
+}
+BitOrigin produced(BitOrigin v, const cs_insn &ins, const char *kind) {
+  v.producer = ins.address;
+  v.producerKind = kind;
+  if (v.chainSize == valueChainCap) {
+    v.kind = BitKind::unknown;
+    v.producerKind = "copy_chain_cap";
+  } else
+    v.chain[v.chainSize++] = ins.address;
+  return v;
+}
+struct BitState {
+  std::array<BitOrigin, 16> g{};
+  struct Slot {
+    BitOrigin value{};
+    std::int64_t offset{};
+    unsigned width{};
+    bool used{};
+  };
+  std::array<Slot, 128> stack{};
+  BitState() {
+    for (unsigned j = 0; j < g.size(); ++j) {
+      g[j].kind = BitKind::entryRegister;
+      g[j].root =
+          int(j); // callee-entry raw register bits, NEVER a pointer type
+      g[j].producerKind = "callee_entry_register";
+    }
+  }
+  BitOrigin load(Value a, unsigned width, std::int64_t entrySp) const {
+    if (a.kind != pointer)
+      return {};
+    if (a.root == 4) {
+      for (const auto &s : stack)
+        if (s.used && overlaps(a.off, width, s.offset, s.offset + s.width))
+          return a.off == s.offset && width <= s.width && width >= 4
+                     ? s.value
+                     : BitOrigin{};
+    }
+    BitOrigin v;
+    v.kind = BitKind::memoryLoad;
+    v.root = a.root;
+    v.offset = a.off - (a.root == 4 ? entrySp : 0);
+    return v;
+  }
+  bool save(Value a, unsigned width, BitOrigin v) {
+    if (a.kind != pointer || a.root != 4 || a.off < -4096 ||
+        a.off + width > 4096)
+      return false;
+    for (auto &slot : stack)
+      if (slot.used &&
+          overlaps(a.off, width, slot.offset, slot.offset + slot.width)) {
+        if (a.off <= slot.offset && a.off + width >= slot.offset + slot.width)
+          slot.used = false;
+        else
+          slot.value =
+              {}; // Keep an unknown tombstone for the unsaved remainder.
+      }
+    for (auto &slot : stack)
+      if (!slot.used) {
+        slot = {v, a.off, width, true};
+        return true;
+      }
+    return false;
+  }
+  BitOrigin operand(const cs_x86_op &op, const State &state, const cs_insn &ins,
+                    std::int64_t entrySp) const {
+    if (op.type == X86_OP_IMM) {
+      BitOrigin v;
+      v.kind = BitKind::constant;
+      v.bits = std::uint32_t(op.imm);
+      return v;
+    }
+    if (op.type == X86_OP_REG && reg(op.reg) >= 0 && op.size >= 4)
+      return g[reg(op.reg)];
+    if (op.type == X86_OP_MEM && op.size >= 4)
+      return load(aliasAddress(state, ins, op, 0), op.size, entrySp);
+    return {};
+  }
+  bool step(const cs_insn &ins, const State &state, std::int64_t entrySp) {
+    const auto &x = ins.detail->x86;
+    if (ins.id == X86_INS_PUSH && x.op_count == 1) {
+      if (x.operands[0].type == X86_OP_REG && reg(x.operands[0].reg) == 4)
+        return false; // Do not reuse the legacy PUSH-RSP address transfer.
+      auto value = operand(x.operands[0], state, ins, entrySp);
+      g[4].addend -= 8;
+      g[4] = produced(g[4], ins, "computed");
+      return save(plus(state.g[4], -8), 8, value);
+    }
+    if (ins.id == X86_INS_POP && x.op_count == 1 &&
+        x.operands[0].type == X86_OP_REG && reg(x.operands[0].reg) >= 0) {
+      g[reg(x.operands[0].reg)] =
+          produced(load(state.g[4], 8, entrySp), ins, "memory_load");
+      g[4].addend += 8;
+      g[4] = produced(g[4], ins, "computed");
+      return true;
+    }
+    if (x.op_count == 2 && ins.id == X86_INS_MOV) {
+      const auto &dst = x.operands[0], &src = x.operands[1];
+      auto v = operand(src, state, ins, entrySp);
+      if (dst.type == X86_OP_MEM)
+        return save(aliasAddress(state, ins, dst, 0), dst.size, v);
+      if (dst.type == X86_OP_REG && reg(dst.reg) >= 0) {
+        if (dst.size != 4 && dst.size != 8)
+          v = {};
+        g[reg(dst.reg)] = produced(v, ins,
+                                   src.type == X86_OP_IMM   ? "constant"
+                                   : src.type == X86_OP_MEM ? "memory_load"
+                                                            : "register_copy");
+        return true;
+      }
+    }
+    if (x.op_count >= 2 && x.operands[0].type == X86_OP_REG &&
+        reg(x.operands[0].reg) >= 0) {
+      auto j = reg(x.operands[0].reg);
+      if (ins.id == X86_INS_XOR && x.operands[1].type == X86_OP_REG &&
+          x.operands[0].reg == x.operands[1].reg) {
+        BitOrigin v;
+        v.kind = BitKind::constant;
+        g[j] = produced(v, ins, "constant");
+        return true;
+      }
+      if ((ins.id == X86_INS_ADD || ins.id == X86_INS_SUB) &&
+          x.operands[0].size == 8 && x.operands[1].type == X86_OP_IMM) {
+        auto v = g[j];
+        const auto delta = std::uint32_t(x.operands[1].imm) *
+                           (ins.id == X86_INS_ADD ? 1u : std::uint32_t(-1));
+        if (v.kind == BitKind::constant)
+          v.bits += delta;
+        else
+          v.addend += delta;
+        g[j] = produced(v, ins, "computed");
+        return true;
+      }
+      if (ins.id == X86_INS_LEA && x.operands[1].type == X86_OP_MEM &&
+          x.operands[1].mem.index == X86_REG_INVALID &&
+          x.operands[1].mem.segment == X86_REG_INVALID && x.addr_size == 8 &&
+          reg(x.operands[1].mem.base) >= 0 && x.operands[0].size == 8) {
+        auto v = g[reg(x.operands[1].mem.base)];
+        if (v.kind == BitKind::constant)
+          v.bits += std::uint32_t(x.operands[1].mem.disp);
+        else
+          v.addend += std::uint32_t(x.operands[1].mem.disp);
+        g[j] = produced(v, ins, "computed");
+        return true;
+      }
+    }
+    // Existing Slice decides supported instruction effects; invalidate every
+    // otherwise written GPR here rather than invent a low32 transfer function.
+    // The handle-free explicit operand fallback is conservative for all GPR
+    // destinations of currently supported Slice instructions (e.g. MOVD).
+    if (x.op_count && x.operands[0].type == X86_OP_REG &&
+        reg(x.operands[0].reg) >= 0 && ins.id != X86_INS_CMP &&
+        ins.id != X86_INS_TEST)
+      g[reg(x.operands[0].reg)] = produced({}, ins, "unknown");
+    // Other supported stores (e.g. vector saves) invalidate stack carriers.
+    for (unsigned j = 0; j < x.op_count; ++j)
+      if (x.operands[j].type == X86_OP_MEM &&
+          (x.operands[j].access & CS_AC_WRITE))
+        if (!save(aliasAddress(state, ins, x.operands[j], 0),
+                  x.operands[j].size, {}))
+          return false;
+    return true;
+  }
+};
+template <class Nodes>
+bool ediDefinitions(CalleeAlias &a, Decode &d, const Nodes &nodes,
+                    const Slice &input, unsigned targetIndex) {
+  auto &v = a.edi;
+  v.complete = v.exact = false;
+  auto fail = [&](const cs_insn &ins, const char *reason) {
+    v.barrier = ins.address;
+    copyName(v.mnemonic, sizeof(v.mnemonic), ins.mnemonic);
+    v.reason = reason;
+    return false;
+  };
+  const auto &store = d.p[targetIndex];
+  const auto &sx = store.detail->x86;
+  if (store.id != X86_INS_MOV || sx.op_count != 2 ||
+      sx.operands[0].type != X86_OP_MEM || sx.operands[0].size != 4 ||
+      sx.operands[1].type != X86_OP_REG || sx.operands[1].reg != X86_REG_EDI)
+    return fail(store, "exact_value_site_is_not_MOV_dword_from_EDI");
+  std::array<bool, aliasByteCap> relevant{};
+  relevant[targetIndex] = true;
+  for (unsigned i = unsigned(d.n); i > 0; --i)
+    for (unsigned j = 0; j < nodes[i - 1].count; ++j)
+      relevant[i - 1] = relevant[i - 1] || relevant[nodes[i - 1].next[j]];
+  if (!relevant[0])
+    return fail(store, "EDI_store_unreachable_from_callee_entry");
+  struct Work {
+    Slice slice{};
+    BitState bits{};
+    unsigned pc{};
+  };
+  std::array<Work, aliasBranchCeiling + 1> todo{};
+  todo[0].slice = input;
+  unsigned pending = 1;
+  const auto entrySp = input.s.g[4].off;
+  while (pending) {
+    auto work = todo[--pending];
+    for (;;) {
+      auto &ins = d.p[work.pc];
+      auto &node = nodes[work.pc];
+      if (++v.visits > 4096)
+        return fail(ins, "EDI_definition_visit_cap");
+      if (work.pc == targetIndex) {
+        auto bits = work.bits.g[7];
+        ++v.reachingStates;
+        if (v.reachingStates == 1)
+          v.origin = bits;
+        else if (!sameBits(v.origin, bits)) {
+          v.same = false;
+          v.conflict = bits;
+          return fail(ins, "EDI_reaching_value_origins_conflict");
+        }
+        bool seen = false;
+        for (unsigned j = 0; j < v.definitions; ++j)
+          seen |= v.producers[j].producer == bits.producer &&
+                  v.producers[j].chain == bits.chain;
+        if (!seen) {
+          if (v.definitions == valueDefinitionCap)
+            return fail(ins, "EDI_reaching_definition_cap");
+          v.producers[v.definitions++] = bits;
+        }
+        if (!exactBits(bits))
+          return fail(
+              ins, "EDI_value_unknown_or_unsupported_computation_or_chain_cap");
+        ++v.paths;
+        break;
+      }
+      if (node.branch) {
+        for (unsigned j = 1; j < node.count; ++j)
+          if (relevant[node.next[j]]) {
+            if (pending == todo.size())
+              return fail(ins, "EDI_pending_state_cap");
+            todo[pending] = work;
+            todo[pending++].pc = unsigned(node.next[j]);
+          }
+        if (relevant[node.next[0]]) {
+          work.pc = unsigned(node.next[0]);
+          continue;
+        }
+        break;
+      }
+      if (group(ins, CS_GRP_CALL) || group(ins, CS_GRP_RET) ||
+          group(ins, CS_GRP_INT) || group(ins, CS_GRP_IRET))
+        return fail(ins, "EDI_prior_control_effect_no_expansion");
+      if (!work.bits.step(ins, work.slice.s, entrySp) ||
+          !work.slice.step(ins, false))
+        return fail(ins, "EDI_prior_instruction_or_stack_effect_unresolved");
+      if (!node.count)
+        return fail(ins, "EDI_path_ends_before_store");
+      if (!relevant[node.next[0]])
+        break;
+      work.pc = unsigned(node.next[0]);
+    }
+  }
+  v.complete = v.exact = v.same && v.reachingStates;
+  v.reason =
+      "all_local_EDI_definitions_exact_conditional_on_callee_entry_raw_bits";
+  return v.complete;
+}
 bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
   a.resolved = a.sourceNoWrite = a.transformNoWrite = false;
   a.positionProtected = a.relevantEffectsResolved = false;
@@ -899,9 +1182,10 @@ bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
   boundaries.fill(-1);
   for (unsigned i = 0; i < d.n; ++i)
     boundaries[d.p[i].address - call.begin] = int(i);
-  if (a.exactWrite.site &&
-      (a.exactWrite.site < call.begin || a.exactWrite.site >= call.end ||
-       boundaries[a.exactWrite.site - call.begin] < 0))
+  if ((a.edi.enabled && !a.exactWrite.site) ||
+      (a.exactWrite.site &&
+       (a.exactWrite.site < call.begin || a.exactWrite.site >= call.end ||
+        boundaries[a.exactWrite.site - call.begin] < 0)))
     return fail(a.exactWrite.site, "instruction_boundary",
                 "exact_write_identity",
                 "exact_write_site_outside_callee_or_not_instruction_aligned");
@@ -995,6 +1279,12 @@ bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
   todo[0].slice = writer;
   todo[0].slice.s.g[4] = plus(sp, -8);
   const auto initial = todo[0].slice.s;
+  if (a.edi.enabled &&
+      !ediDefinitions(a, d, nodes, todo[0].slice,
+                      unsigned(boundaries[a.exactWrite.site - call.begin])))
+    return fail(a.edi.barrier, a.edi.mnemonic,
+                "EDI_value_provenance_unresolved", a.edi.reason);
+
   a.stackLow = std::min(a.stackLow, entrySp);
   unsigned gpr = 0xf07, xmmMask = 0x3f;
   auto recordWrite = [&](const cs_insn &ins, Value addr, unsigned width,
@@ -1188,6 +1478,22 @@ bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
         return fail(ins.address, ins.mnemonic, "nested_or_unsupported_control",
                     "callee_nested_call_or_unsupported_transfer_no_expansion");
       describeWrite(a, work.slice.s, ins, d.h);
+      if (a.edi.enabled && ins.address == a.exactWrite.site) {
+        auto &t = a.exactWrite;
+        t.valueSame = a.edi.complete && a.edi.same;
+        t.valueExact = t.valueSame && a.edi.exact;
+        t.valueKind = !std::strcmp(a.edi.origin.producerKind, "computed")
+                          ? "computed"
+                      : a.edi.origin.kind == BitKind::entryRegister ? "register"
+                      : a.edi.origin.kind == BitKind::memoryLoad
+                          ? "memory"
+                          : bitKindName(a.edi.origin.kind);
+        t.valueTag = 100 + int(a.edi.origin.kind);
+        t.valueRoot = a.edi.origin.root;
+        t.valueOffset = a.edi.origin.offset;
+        t.valueBits = a.edi.origin.bits;
+      }
+
       if (!recordRead(a, work.slice.s, ins, 0))
         return fail(ins.address, ins.mnemonic,
                     "read_provenance_dependency_or_cap",
@@ -1585,8 +1891,10 @@ Writer branchWriter(const unsigned char *b, std::size_t n,
       work.pc = unsigned(g.next[0]);
     }
   }
-  if (alias && alias->resolved)
+  if (alias && alias->resolved) {
     alias->exactWrite.complete = true;
+    alias->edi.writerStatesComplete = true;
+  }
   r.bounded = true;
   r.prefix = r.mask == 15;
   for (unsigned c = 0; c < 3; ++c) {

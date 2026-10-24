@@ -73,6 +73,28 @@ struct AliasRead {
   std::int64_t offset{};
   unsigned width{};
 };
+inline constexpr unsigned valueDefinitionCap = 16, valueChainCap = 8;
+enum class BitKind { unknown, constant, entryRegister, memoryLoad, computed };
+struct BitOrigin {
+  BitKind kind = BitKind::unknown;
+  int root = -1;
+  std::int64_t offset{};
+  std::uint32_t bits{}, addend{};
+  std::uintptr_t producer{};
+  const char *producerKind = "unknown";
+  unsigned chainSize{};
+  std::array<std::uintptr_t, valueChainCap> chain{};
+};
+struct EdiValueContract {
+  bool enabled{}, complete{}, same = true, exact{}, writerStatesComplete{};
+  unsigned paths{}, visits{}, reachingStates{}, definitions{};
+  BitOrigin origin{}, conflict{};
+  std::array<BitOrigin, valueDefinitionCap> producers{};
+  std::uintptr_t barrier{};
+  char mnemonic[32] = "none";
+  const char *reason = "EDI_trace_not_enabled";
+};
+const char *bitKindName(BitKind) noexcept;
 struct CalleeAlias {
   // Only authenticated current target bytes; never dereferenced process
   // pointers.
@@ -82,6 +104,7 @@ struct CalleeAlias {
       transformNoWrite{}, usesGlobals{}, positionProtected{},
       relevantEffectsResolved{}, transformWriteSeen{};
   ExactWriteContract exactWrite{};
+  EdiValueContract edi{};
   unsigned reads{};
   std::array<AliasRead, aliasReadCap> readSites{};
   unsigned analyses{}, visits{}, paths{}, writes{}, sourceArgMask{},

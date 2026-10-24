@@ -85,7 +85,7 @@ Producer `0x351EB00` remains deferred.
 13. c17 isolated timestamped logging ✅
 14. c18 actual callee CFG / first real writes ✅
 15. c19 exact Transform+0x10C destination ✅ actual game
-16. c20 EDI value provenance ▶ CURRENT
+16. c20 EDI value provenance implementation ✅ CLOUD; actual A/E PENDING
 17. resume writer XYZ/W causal proof ⏸ after c20 value contract
 18. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
 19. safe writable upstream movement source ⬜ NOT AUTHORIZED
@@ -110,3 +110,6 @@ No descriptive suffix such as `transform_write_contract` is allowed. See `docs/D
 
 ## Current action
 Run Codex on `docs/CODEX_NEXT.md` for c20. Resolve only EDI reaching definitions and the dependency of the exact Transform+0x10C write. Do not begin producer ownership or movement/adhesion/camera work.
+## c20 cloud implementation
+
+Version v0.1c20/package0.1.38 on codex/v01c20-edi-value-provenance. Local EDI reaching definitions and low32 copy/constant/memory/affine relations are implemented independently of pointer types. Local value coverage cannot replace the existing protected-effect/whole writer gates. Current real-game producers/value/dependency/XYZ/W or next blocker remain PENDING A/E. New version-only install/source ZIPs and WS-only UpdateForTest.cmd target Mods-Developing and explicit separated Overstrike with game-root WD; no SF or unrelated cleanup. See V01C20_EDI_VALUE_PROVENANCE.md/CODEX_RESULT.md.

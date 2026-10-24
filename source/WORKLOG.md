@@ -339,3 +339,8 @@ Run tools/build_windows.sh, tools/test.sh, tools/smoke_windows.sh and tools/test
 ## v0.1c19 exact Transform write
 
 Run build_windows.sh, test.sh, smoke_windows.sh, test_hooks_windows.sh serially. Focused test_transform_write.sh adds exact destination/value/conflict/read-dependency/continuation tests; test_writer_entry.sh includes extended Transform+[0,0x110) runtime range guards. Zero exact-site opt-in retains c18 alias behavior; no legacy State/Slice/native/logger changes. Source ZIP must rebuild from scratch and pass all focused entry/contract/branch/call/alias/write and DLL/logger tests. No private game captures are distributed. Actual c19 exact MOV operands/value/effects/next blocker pending human A/E; writable_source_proven remains0.
+
+
+## v0.1c20 EDI / development helper
+
+Run build_windows.sh, test.sh, smoke_windows.sh, test_hooks_windows.sh serially. New test_edi_value.sh covers low32 local definitions and honest coverage; test_update_helper.sh compiles an owned separated EXE/game-root DLL fixture and executes real Windows cmd/copy/start under Wine without a user C: drive or real Overstrike. tools/make_update_helper.py generates CRLF UpdateForTest.cmd from its reviewed template and current version label. release.py emits only MSM2-WS-version.zip and -source.zip current artifacts. Fresh source ZIP must rebuild and pass all focused contracts, DLL/logger and helper tests. No legacy address model, native lifecycle/logger/entry ABI/producer expansion. Actual c20 value/dependency outcome pending A/E.
