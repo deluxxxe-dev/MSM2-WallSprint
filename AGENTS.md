@@ -126,6 +126,16 @@ The next isolated Codex task must be able to reproduce the current implementatio
 
 ## After completing a task
 
+For every published version, the owner's preferred handoff is a clickable direct
+archive-download URL, not a GitHub blob/repository preview page. Pin the URL to
+the published commit/release and keep a separate GitHub link for test procedures.
+Before presenting the download as verified, GET the archive and check HTTP
+success, ZIP CRC and its recorded SHA256. Authenticated Git clone success alone
+does not prove that a browser download works. If direct access is unavailable,
+report that limitation and provide the existing updater/authenticated Git route;
+do not claim a preview link, 404 response or local file link is a working download.
+Do not change repository visibility or publish private backups to achieve this.
+
 Update `docs/CODEX_RESULT.md` with:
 
 - what changed;

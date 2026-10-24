@@ -1,3 +1,25 @@
+# Codex result — direct-download handoff preference (2026-10-25)
+
+Branch: **codex/v01c20-edi-value-provenance**; policy base **0c1b942**.
+Existing diagnostic implementation/package publication remains **cad74ab**.
+AGENTS and DEVELOPMENT_MANUAL now require direct archive-download links as the
+preferred release handoff, separate GitHub test links, and real GET/CRC/hash
+validation instead of treating a blob preview or authenticated Git read as a
+browser-download test. Failed direct access must be disclosed; the existing
+updater/authenticated Git route remains available without changing visibility.
+
+Current cad74ab install ZIP was fetched via its pinned raw.githubusercontent URL:
+HTTP200/application-zip, **3460868 bytes**, ZIP CRC PASS, SHA256
+`f64bab71482c74d47cfbb09ce0e9b02fa8602ed5461ceac9834232bc2b15007e`.
+The github.com/raw form returned404 in this environment and is not advertised
+as verified. These are current cloud observations, not proof of the user's
+browser permissions. No native/source/tool/version/package/metadata change and
+no runtime suite rerun; output is documentation only. The next user action is
+unchanged: keep public/extracted ZIPs outside Mods Library, use installed
+Update-WS.cmd for deployment, then the documented A/E capture.
+
+---
+
 # Codex result — c20 authenticated EDI diagnostics enabled for A/E (2026-10-24)
 
 Branch: **codex/v01c20-edi-value-provenance**.
