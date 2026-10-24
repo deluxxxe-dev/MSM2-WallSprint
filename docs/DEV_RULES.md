@@ -31,24 +31,33 @@ Do not append implementation/task descriptions such as `transform_write_contract
 
 If a separate source archive is required for development/reproducibility, it may use `MSM2-WS-v<version>-source.zip`; the user-facing install ZIP must remain the plain version-only name above.
 
-## Development mod library location
+## Development mod library / Overstrike workflow
 
-WallSprint and SocialFeed development packages must be kept separate from ordinary installed/mod-library packages under this local directory on the user's PC:
+WS and SF development packages share this local development-only library:
 
 ```text
 C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2\Mods Library\Mods-Developing
 ```
 
-This folder is the shared development-package library for both:
+Overstrike recursively scans `Mods Library`, so development packages under `Mods-Developing` remain visible to Overstrike.
+
+For WallSprint:
+- all current WS development install artifacts (`MSM2-WS-*`) must be copied/updated under `Mods Library\Mods-Developing`, not directly under `Mods Library`;
+- do not move, rename, overwrite, delete, or otherwise modify any `MSM2-SF-*` file;
+- a local helper may create `Mods-Developing` if missing;
+- when replacing an older WS development build, only replace/remove matching WS development artifacts and leave unrelated mods untouched.
+
+The separated development copy of `Overstrike.exe` may remain in the AppData-side location used by the shared SF/WS workflow, but its **WorkingDirectory must be the MSM2 game root**:
 
 ```text
-MSM2-WS-*
-MSM2-SF-*
+C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2
 ```
 
-Do not place active WS/SF development ZIPs directly in `Mods Library` root when a local packaging/copy helper is being used. A local helper may create `Mods-Developing` if it does not exist and should place the current user-facing install ZIP there.
+Do not use the AppData folder as Overstrike WorkingDirectory. This keeps Overstrike pointed at the game-root `Mods Library\Mods-Developing` and lets game-root dependencies such as `scripts_proxy.dll` resolve from the intended location.
 
-This is only the development package storage location. It does not replace the game's actual runtime/script installation paths and it does not change WallSprint logging (`log_wallsprint`). Cloud Codex jobs cannot write to the user's `C:` drive; cloud outputs must still be packaged/published normally, while local copy/install instructions and local helper scripts must use the path above.
+If WallSprint has or gains a double-click local test/update helper, use `UpdateForTest.cmd` as the preferred entry point. It should update only WS development artifacts in `Mods-Developing` and launch/use the separated Overstrike with the game root as WorkingDirectory. It must never touch SF artifacts.
+
+This development-library rule does not change WallSprint runtime logging (`log_wallsprint`) or the actual runtime/script install destination required by the game. Cloud Codex cannot directly write the user's `C:` drive; it must produce the correctly named package and any local helper/update script so the user's local execution performs the copy/update into the path above.
 
 ## Native safety
 
