@@ -1,0 +1,176 @@
+{
+  "version": "v0.1c20",
+  "package_version": "0.1.38",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "base_handoff_commit": "4402729a53eceeede6476c24d814bfd8469978fa",
+  "implementation_commit": "a4ec9c0f2635e9f2594bf5972d1765332de73766",
+  "prepared_research_commit": "9057d24",
+  "outputs": [
+    {
+      "path": "MSM2-WS-v0.1c20.zip",
+      "bytes": 3350738,
+      "sha256": "775e49f97f89997bfb52541153696e4cdb3f0468b2437487704ec5bf757e8d80"
+    },
+    {
+      "path": "MSM2-WS-v0.1c20-source.zip",
+      "bytes": 760413,
+      "sha256": "1130c90cfae43adf6cedf60c527d87b516f01983c6bc4399a5a7b279a0d1afed"
+    }
+  ],
+  "public_test_pass_records": {
+    "portable": 13,
+    "smoke": 7,
+    "hooks": 111
+  },
+  "total_public_pass_records": 131,
+  "private_input_skips": 5,
+  "separate_historical_private_replay_records": 4,
+  "private_replay_duplicate_baseline_records": 1,
+  "focused_records_included": {
+    "entry": 11,
+    "contract": 4,
+    "branch": 6,
+    "call": 7,
+    "alias": 7,
+    "callee_branch": 6,
+    "transform_write": 7,
+    "edi": 6,
+    "workspace": 8,
+    "logging": 3
+  },
+  "standalone_source": "PASS_fresh_no_prior_build_logs_private_inputs",
+  "standalone_focused_records": 54,
+  "standalone_DLL_logger_records": 7,
+  "standalone_workspace_records": 8,
+  "full_staging_wrapper": "PASS_full_preserved_pipeline_from_owned_Unicode_space_path_outside_scanned_source",
+  "CRC_current_sources_docs_helpers_licenses_script_DLL_hash_private_body_exclusion": "PASS",
+  "legacy_State_Slice_c14_c16_caller_producer_native_lifecycle_entry_thunk_cleanup_unchanged": true,
+  "c15_writer_CFG_setup_and_c19_read_region_gates_unchanged": true,
+  "CODEX_NEXT_preserved": true,
+  "authorized_workspace_documentation_updated": true,
+  "EDI_research": {
+    "prepared": true,
+    "production_enabled": false,
+    "preserved_commit": "9057d24",
+    "actual_EDI_value": "unresolved_c19",
+    "research_advancement_authorized": false
+  },
+  "exact_write_contract": {
+    "site": "0x2b2358e",
+    "opcode": "MOV",
+    "width": 4,
+    "only_new_accepted_root": "entry_writer_RCX_transform",
+    "only_new_accepted_offset": "0x10c",
+    "exact_all_reaching_value_required": true,
+    "unknown_computed_or_conflicting_value_refused": true,
+    "protected_Transform_range": "[0,64)",
+    "modeled_write_range": "[0x10c,0x110)",
+    "literal_transform_no_write_kept_false": true,
+    "Position_and_reload_provenance_required": true,
+    "read_site_cap": 64,
+    "unknown_or_overlapping_read_refused": true,
+    "full_transform_TEB_image_exclusion_extent": 272,
+    "runtime_observation_hooks": 0,
+    "producer_traversal": false,
+    "writable_source_proven": false,
+    "Position_source_input_movement_writes": 0,
+    "actual_c19_result": "pending_A_E"
+  },
+  "workspace": {
+    "relative_root": "Mods Library/Mods-Developing/MSM2-WS",
+    "source": "_source_independent_clone",
+    "archive": "_archive_disabled_only",
+    "runtime_logs": "logs",
+    "active_script": "MSM2-WS-v0.1c20.script",
+    "artifact": "MSM2-WS-v0.1c20.script.disabled",
+    "update_helper": "Update-WS.cmd",
+    "migration_helper": "Migrate-WS.cmd",
+    "overstrike": "game-root/Overstrike/Overstrike.exe",
+    "overstrike_working_directory": "game_root",
+    "source_live_scripts": 0,
+    "SF_or_ordinary_mod_mutation": false,
+    "legacy_workspace_auto_delete": false,
+    "real_PC_migration": "pending_local_execution"
+  },
+  "logging": {
+    "directory": "game-root/Mods Library/Mods-Developing/MSM2-WS/logs",
+    "filename": "MSM2-WS-v0.1c20-YYYYMMDD-HHMMSS.log",
+    "filename_clock": "host_local_GetLocalTime",
+    "line_clock": "UTC_unchanged",
+    "collision_creation": "CREATE_NEW_atomic",
+    "maximum_suffix": 9999,
+    "overwrite_existing": false,
+    "same_loaded_module_reenable": "append_selected_run",
+    "shared_logs_fallback": false,
+    "failure_channel": "OutputDebugString_stage_path_Win32Error"
+  },
+  "workspace_owned_Git_filesystem_fixtures": "PASS_8_groups_including_clone_ff_divergence_isolation_rollback_and_active_script_invariants",
+  "Windows_process_stop_WSL2_launcher_and_shared_Overstrike_UI": "PENDING_user_real_PC",
+  "actual_local_migration_and_new_runtime_log": "PENDING_user_execution",
+  "owned_A_E_orientation": [
+    {
+      "session": "1",
+      "wallrun_duration_ms": "4102",
+      "source_active_until_deinit": "1",
+      "verified_deinit": "1",
+      "path_a_writes": "175",
+      "path_b_writes": "175",
+      "max_held_ms": "2110",
+      "max_held_updates": "130",
+      "retention_pass": "1",
+      "last_actor_up_dot_surface": "1",
+      "first_hard_kill": "none",
+      "hard_kill_calls": "0"
+    },
+    {
+      "session": "2",
+      "wallrun_duration_ms": "4112",
+      "source_active_until_deinit": "1",
+      "verified_deinit": "1",
+      "path_a_writes": "178",
+      "path_b_writes": "178",
+      "max_held_ms": "2132",
+      "max_held_updates": "132",
+      "retention_pass": "1",
+      "last_actor_up_dot_surface": "1",
+      "first_hard_kill": "none",
+      "hard_kill_calls": "0"
+    }
+  ],
+  "owned_A_E_position_watch": [
+    {
+      "session": "1",
+      "watch_armed": "1",
+      "total_write_events": "12",
+      "dropped": "0",
+      "cleanup_restored": "1",
+      "cleanup_pending": "0",
+      "Position_writes_by_mod": "0"
+    },
+    {
+      "session": "2",
+      "watch_armed": "1",
+      "total_write_events": "12",
+      "dropped": "0",
+      "cleanup_restored": "1",
+      "cleanup_pending": "0",
+      "Position_writes_by_mod": "0"
+    }
+  ],
+  "owned_hardware": {
+    "entries": 8,
+    "complete_maps": 7,
+    "paired_stores": 28,
+    "threads": 2,
+    "reentrant": true,
+    "source_W": 0,
+    "destination_W": "0x3f800000",
+    "ABI_finalization_cleanup": "PASS"
+  },
+  "human_c19": "ACCEPTED_A3844_E4094_exact_MOV_Transform_plus0x10C_from_EDI_unknown_value",
+  "actual_c20_EDI_research": "PAUSED_production_disabled_not_advanced",
+  "producer_0x351EB00": "deferred",
+  "writable_source_proven": false,
+  "Position_source_input_movement_writes": 0,
+  "private_full_game_bodies_distributed": false
+}

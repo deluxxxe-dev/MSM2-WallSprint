@@ -1,64 +1,77 @@
-# Codex result — WallSprint v0.1c19
+# Codex result — final local WS workspace migration
 
-Branch: **codex/v01c19-transform-write-contract**.
-Implementation commit: **b3185cd240a16446a2424ecab9fa0c2605cb00e8**.
-Handoff/base: **1754b97435c2feb54d496085c030b8e5251339ee**. C18 implementation19aa301/delivery3ffc19b retained; latest human evidence in V01C18_RUNTIME_RESULT.md is authoritative. AGENTS/DEV_RULES/CODEX_NEXT/LOGGING_CONVENTION unchanged; PROJECT_STATE updated as requested. No main rewrite/force push.
+Branch: **codex/v01c20-edi-value-provenance**.
+Implementation commit: **a4ec9c0f2635e9f2594bf5972d1765332de73766**.
+Latest instruction base: **4402729a53eceeede6476c24d814bfd8469978fa**, merged without history rewrite. Prepared c20 research is preserved in **9057d24** and remains production-disabled; accepted c19 implementationb3185cd/deliveryba0b1d7/runtime evidence retained. No main changes/force push. CODEX_NEXT is preserved from the latest infrastructure task; AGENTS/DEV_RULES/LOCAL_WORKSPACE/LOGGING_CONVENTION/PROJECT_STATE updated as explicitly authorized.
 
-## Outcome / evidence
+## Outcome
 
-**v0.1c19 / package0.1.37 implements the exact MOV0x2B2358E destination/value/reaching-state contract and a one-site protected-effect model for exact Transform+0x10C dword writes. Cloud build/regressions PASS. Actual c19 instruction operands/value/all-reaching effects/next blocker/XYZ/W remain PENDING human A/E.**
+**v0.1c20 / package0.1.38 implements final local migration/update/logging infrastructure. Cloud build/regressions/owned workspace fixtures pass. Real Windows migration, WSL prerequisites, process stopping, shared Overstrike UI recognition and actual runtime logs remain PENDING user execution.**
 
-Accepted c18 actual A2984ms/E4171ms: verified Deinit/retention/Up1 and1.00000012/stale0/hard0/Position0,8true entries/8complete maps each, XYZ mask7/sourceW0/destinationW1 and clean entry/watch restoration. Timestamped dedicated log_wallsprint/no shared fallback remains verified. Actual callee5branches/4Jcc/8blocks/10edges passed;3safe stack/home writes preceded exact width4 MOV0x2B2358E/root1+268/0x10C, previously possible Transform alias. Actual RCX/RDX arguments are Transform-derived; entry-RDX source is distinct, R8 constant/nonpointer, R9 unknown. Cloud has no current private137/183byte bodies, so fixtures do not establish actual c19 operand or value facts.
+The authoritative shape is game-root Mods Library/Mods-Developing/MSM2-WS with one root MSM2-WS-v<version>.script, Update-WS.cmd, logs, independent _source clone and disabled _archive. A one-time Migrate-WS.cmd is included. Shared Overstrike is only game-root/Overstrike/Overstrike.exe with game-root WorkingDirectory. No AppData/project-specific copy/profile/library is created. No old D-drive environment, SF or ordinary mod is cleaned, backed up, moved, renamed or overwritten by WS tooling.
 
-## What changed / files
+## Changes / files
 
-- NativeHooks/rdx_source_contract.hpp/.cpp: opt-in exact site (production0x2B2358E) metadata copies authenticated destination base/index/scale/displacement, mnemonic/width and source operand/value origin. State root1 is traced from writer-entry RCX through existing exact pointer operations; not inferred from a number alone. Unknown/indexed/truncated/memory-loaded pointers cannot become Transform roots. Reaching destination/value conflicts refuse; all_reaching_states_same_* and all_reaching_states_examined only become1 after complete relevant writer traversal. Prefix counters explicitly remain prefix evidence.
-- Only a scalar MOV dword at that site, exactly original writer RCX+0x10C, with same exact modeled value origin on reaching paths can receive the new effect. Protected Transform+[0,64), including Position+[0x30,0x40), is unchanged. Other offsets/sites/widths retain c18 refusal. Constant/exact entry-register/exact memory-load values are classified; opaque computed or unknown values refuse instead of guessed provenance. No semantic label for+0x10C is invented.
-- A real Transform write keeps literal transform_no_write_proven=0. New transform_position_protected_range_unmodified and relevant_transform_effects_resolved must both pass with source_span_no_write_proven/all aliases before unchanged exact Position-store proof resumes. Existing call.noWrite means source no-write, not literal memory/Transform write-free. Telemetry reason/effect distinguish those notions.
-- New bounded64unique decoded read-address states across relevant writer and callee paths conservatively exclude earlier/later overlapping or unknown read carriers, including read cap/out-of-bounded-stack refusal. This may refuse unused reads; it is not a minimal causal slicer. No memory-value symbol is reused across a potentially overlapping write. Explicit and implicit POP stack reads contribute to the existing full TEB footprint; image-relative reads require whole-span/image exclusion. Nested/foreign calls remain exact unexpanded blockers.
-- writer_entry_snapshot.cpp: compact MOVEMENT_CALLEE_WRITE_CONTRACT, new narrow protection fields in ALIAS_CONTRACT and extended integrity gates. Runtime full Transform+[0,0x110) must exclude the TEB and, for image effects, the authenticated image; overflow/malformed/partial overlaps refuse. Existing pinned full current hash/bytes/boundary, direct-call, source=entryRSP+0x28, guarded source bytes, exact ordered store/invocation and W-independent gates retained. No new observation/hook/thunk/protection mutation.
-- New transform_write_contract_smoke.cpp/tools/test_transform_write.sh7groups, full hooks integration; writer_entry_snapshot_smoke.cpp/tools/test_writer_entry.sh adds1extended-range group with its own output file so finalized regression logs remain intact. All c18 expectations retained. Required analyses/source mirrors, README_TEST/README, PROJECT_STATE, BUILD/WORKLOG, version/mod and package/release recipes updated. No vendor/dependency/reference MOD addition.
+- New root and source/tools/windows Migrate-WS.cmd / Update-WS.cmd call repository-owned source/tools/workspace.py via Windows Python3.11+. Migration accepts an explicit validated game-root/branch, creates only WS folders and clones the intended WallSprint remote with no local/shared-object optimization. Existing correct clones are validated, never replaced by a legacy .git copy.
+- Independent clone checks reject root/nested symlink/junction/reparse points, worktree/gitdir files, external common-dir/alternates/core.worktree, wrong remote, detached/unexpected branch, dirty tree and active source scripts. Expected branch is explicit/stored in local Git config; matching upstream and git pull --ff-only are mandatory. No hard-coded future branch or personal drive dependency. Git long paths enabled for the clone.
+- Update validates the exact workspace/game/shared paths, stops only the validated game/shared Overstrike using reviewed PowerShell, and refuses a different running Overstrike instead of killing it. Shared Overstrike must exist; Overstrike/winmm.dll and scripts_proxy.dll duplicates refuse; game-root scripts_proxy.dll and winmm.dll are mandatory. Shared binaries are never repaired/copied by WS tooling.
+- WindowsSystem invokes configured WSL2 and source/tools/windows/workspace-build.sh. The same pinned Linux cross-build, portable tests, actual DLL/logger smoke, full hooks/native plus new workspace suites, and package/release validation run in a temporary WSL source copy outside Mods Library. Missing tools fail; no MSVC/CMake/prebuilt/skip-tests shortcut. Toolchain uses the existing WSL /workspace/toolchains prefix, not a legacy checkout. Inherited private capture/toolchain overrides do not become old-drive dependencies.
+- Transactional deployment stages validated .script.disabled under _archive/_build, verifies authoritative header/manifest/ZIP/DLL hashes, source cleanliness/HEAD and layout, then archives only positively WS-owned old root scripts as .script.disabled and atomically deploys one versioned root script. Postcondition asserts exactly one active script recursively, zero in _source/logs/_archive. Failed deployment/launch rolls back prior active bytes/helper where possible; failed preflight/build/test/package never starts replacement. Update lock rejects concurrent/stale update state. Source Git changes are not discarded.
+- Tracked root WallSprint.script removed without history rewrite; .gitignore/output rules prevent live script materialization. Existing generated cloud cache scripts were renamed to disabled names preserving bytes. package.py writes only versioned .script.disabled; release.py virtualizes the install ZIP's one active versioned member, never unpacking it into source. Historical ZIPs remain. Source ZIP contains no active script.
+- Runtime GameInterop/log_file.hpp now appends exact Mods Library/Mods-Developing/MSM2-WS/logs to its executable root, creates/checks each directory and rejects blocked/reparse components. Filename MSM2-WS-v<version>-YYYYMMDD-HHMMSS.log comes from authoritative version/local time, numeric -01..bounded9999 collisions use CREATE_NEW, no overwrite/fallback. Same loaded-module A/E/re-enable append retained. Errors keep stage/path/Win32 code via debug output; telemetry payload/UTC line clock/native policy unchanged.
+- log_file_smoke.cpp/smoke_windows.sh test new actual Windows Unicode/space nested directories, version/timestamp/collision/reopen/failure behavior and real DLL integration. test-workspace.py adds8groups of actual owned Git/filesystem fixtures including ff updates/divergence, independent clone, active/disabled invariants, rollback, protected siblings and alias/lock/reparse/dirty/preflight failures. Existing suites retained. New Windows wrappers, LF/CRLF attributes, source/build docs, README_TEST and audit synchronize the final workflow.
+- Prepared EDI code/offline tests remain preserved but writer_entry_snapshot.cpp explicitly leaves edi.enabled=false. No EDI/gameplay/producer advancement is claimed. Superseded UpdateForTest/AppData tooling was removed from the current tree and remains in Git history. Mod description now identifies infrastructure-only behavior.
 
 ## Validation
 
-Final Windows x64 warnings-as-errors build PASS; serial regressions:
+Final Windows x64 warnings-as-errors build PASS. Serial public results:
 
 ```text
-Portable ASan/UBSan                       13 PASS
-DLL smoke + isolated logging              7 PASS
-Full public hooks/native                 97 PASS /5 private-input SKIP
-Total public PASS records                117
-Entry/ABI/hardware/cleanup/range           11 PASS (included)
-C14 straight-line/storage                  4 PASS (included)
-C15 writer branch                         6 PASS (included)
-C16 exact call/effect                      7 PASS (included)
-C17 alias                                 7 PASS (included)
-C18 local callee CFG                      6 PASS (included)
-C19 exact write/dependency                 7 PASS (included)
-Logging                                   3 PASS (included in DLL smoke)
-Separate accepted old private replay       4 PASS records
+Portable ASan/UBSan                        13 PASS
+DLL smoke + actual Windows logger          7 PASS
+Full hooks/native/prepared/workspace      111 PASS /5 private-input SKIP
+Total public PASS records                 131
+Entry/ABI/hardware/finalization/ranges      11 PASS (included)
+C14 contract                               4 PASS (included)
+C15 writer branch                          6 PASS (included)
+C16 call/effect                            7 PASS (included)
+C17 alias                                  7 PASS (included)
+C18 local callee CFG                        6 PASS (included)
+C19 write contract                         7 PASS (included)
+Prepared EDI offline                        6 PASS (included; production disabled)
+Workspace Git/filesystem                    8 PASS (included)
+Logger filesystem                          3 PASS (included in DLL smoke)
+Separate historical private replay          4 PASS records
 ```
 
-The historical replay includes1duplicate baseline and resolves1optional public SKIP separately; other4 unavailable historical private inputs stay skipped. Those older444/128byte reset-copy functions are not the current137/183byte callee/writer. No captured body is executed/published/packaged.
+Historical replay contains1duplicate baseline and separately resolves1optional public SKIP; other4 absent historical private inputs stay skipped. Those444/128byte reset-copy functions are not the current137/183byte callee/writer. No raw capture is executed/redistributed.
 
-Owned tests cover exact+0x10C value/destination/full-path proof and literal Transform-no-write0; protected identity/XYZ/W overlaps/neighboring offset/no opt-in/auth/site boundary refusal; differing roots/displacements/value origins; constant/register/memory/computed/unknown classification; earlier/later/unknown writer read carriers, callee read-after-write, out-of-bounded-stack reads and64read cap; later safe home writes with successful XYZ/W and precise later writer BSWAP/callee CALL. Full extended272byte Transform TEB/image tests cover touching bounds/partial overlap/malformed ranges/overflow. Existing c18 branch budgets, conflicts, control and private-stack/global/source/saved-carrier tests pass.
+Workspace fixtures use temporary owned Unicode/space game/remote/legacy/SF/ordinary-mod trees. Names, hashes, sizes and mtimes of sibling SF/ordinary/legacy data remain unchanged. Fresh no-reference clone and fast-forward next-version deployment, archive collision/idempotence and exact one-active postcondition pass. Detached/dirty/unexpected/diverged/reparse/worktree/alternates/active-source/foreign-script/duplicate shared DLL/lock failures pass. Stop/build/test/package/script hash/DLL hash/launch failure leaves or restores prior active script bytes; no real game process or user C:/D: folder is touched. Real Windows OS process stopping/WSL/GUI remains a local acceptance item.
 
-Unchanged owned entry ABI preserves GPR/YMM/XMM/x87/MXCSR/flags/stack/nonvolatiles/LastError/returns; concurrent+nested8captures/7complete maps/28paired stores/two threads, XYZ7/sourceW0/destW1 and finalized cleanup. Owned production A/E orientation/watch retains >=4s verified Deinit/retention/Up1/hard0/Position0/12events and clean DR restoration; exact durations/counters recorded in V01C19_RELEASE.json. Fixtures cannot pass actual-game admission.
+Owned entry ABI still preserves GPR/YMM/XMM/x87/MXCSR/flags/stack/nonvolatiles/LastError/returns;8captures/7complete concurrent+nested maps/28paired stores/two threads, XYZ7/sourceW0/destW1 and finalized1/0 summaries. Owned A/E integration retains >=4s verified Deinit/retention/Up1/hard0/Position0/12events and clean DR restoration; measured counters in analysis/V01C20_RELEASE.json. Fixtures cannot pass actual-game admission.
 
-Standalone source ZIP: **PASS: fresh source ZIP rebuilt Windows DLL;48 focused plus7 DLL/logger records, no prior build/logs/private inputs.** Final archive CRC/current complete sources/docs/licenses/nested script/DLL hash/private-body exclusion recorded in V01C19_RELEASE.json. No browser/anonymous HTTP download check is claimed.
+Staging wrapper: **PASS: full real staging wrapper ran unchanged required build/portable/DLL/hooks/workspace/package chain from an owned Unicode/space source path and returned validated disabled payload/ZIP/manifests outside the checkout.**
 
-## Safety / limitations
+Standalone source ZIP: **PASS: fresh source ZIP rebuilt DLL and passed54 focused +7 DLL/logger +8 workspace records, preserved finalized1/0 logs; no builds/private inputs or active scripts in source.** Archive CRC/current complete code/docs/helpers/licenses, nested script/DLL hashes, no-live-source and private-body exclusion are recorded in V01C20_RELEASE.json. Published ZIP/metadata are verified through fresh GitHub clone, not an anonymous HTTP/browser test.
 
-Exact exe2.810.0.0/SHA c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9, pinned callee0x2B23560..0x2B235E9/hash2d62e54b270c46f4babc8120a7e56123e3fe467ca383895d57a989f853095a9d and full current code/boundary remain mandatory. C18 CFG/byte/branch/path/state/visit/write caps and c15 writer graph unchanged. Legacy State/Slice/straight-line writer/caller/producer/c16 classifier, native lifecycle/c12 analyzer, raw entry thunk/start/activate/cancel/stop/pair/drain/finalization and dedicated logger unchanged. No test assertion/timing/admission gate is weakened.
+## Safety / research preserved
 
-Only new read exclusion/narrow call gates are inserted in writer traversal. Unknown/conflicting/computed values, unsupported effects and conservatively possible read dependence remain exact diagnostic blockers; no claim that actual+0x10C is harmless is made before the game log. Per-invocation region conditions remain mandatory; code snapshots are not atomic execution attestation and equality never excludes transient effects. Metadata with incomplete coverage grants no all-path certificate. Existing incomplete hardware coverage/close overlap/bounded refresh limits remain.
+Accepted c19 actual A3844ms/E4094ms, normal Deinit/retention/Up1/stale0/hard0/Position0,8entries/maps each and XYZ7/sourceW0/destW1 remain authoritative. Exact blocker is still MOV0x2B2358E [RCX+0x10C],EDI with unresolved EDI provenance. Prepared research9057d24 is inactive; c20 EDI is the next gameplay-research task only after migration acceptance and explicit CODEX_NEXT reauthorization.
 
-writable_source_proven=0; caller_owned=0; ownership_exclusive=0; source_lifetime_exclusive=0; downstream_conflicts_proven_absent=0. Position/source/input/movement writes=0. Producer0x351EB00 deferred; no new runtime observation, game call, PAGE_GUARD/data-page mutation, movement/velocity/gravity/adhesion/camera/animation/traversal.
+Exact exe2.810.0.0/SHA c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9, callee0x2B23560..0x2B235E9/hash2d62e54b270c46f4babc8120a7e56123e3fe467ca383895d57a989f853095a9d/current full code/boundary and all lifecycle/orientation/stale/DR/direct-call/source/alias gates retained. Native source/lifecycle/c12 analyzer/raw thunk/ABI/pairing/stop/cleanup/old State/Slice/caller/producer are unchanged. No gate/assertion/timing weakening. Existing snapshot non-atomicity/incomplete hardware/close-overlap/bounded refresh limits remain.
 
-## Outputs / next human test
+writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/downstream_conflicts_proven_absent0; Position/source/input/movement writes0. No producer0x351EB00 traversal, new game call/observation/PAGE_GUARD/data-page mutation, movement/adhesion/camera/animation/physics work. Runtime changes are limited to log destination/name.
 
-- WallSprint_v0.1c19_transform_write_contract.zip
-- WallSprint_v0.1c19_source.zip
-- WallSprint.script / BUILD_MANIFEST.json / analysis/V01C19_RELEASE.json
+## Outputs / first local action
 
-Use fixed GitHub direct ZIP and GitHub README_TEST links. Replace old WallSprint; confirm v0.1c19/package0.1.37/exact build and a new log_wallsprint timestamped run file. Normal A/cardinal~4s -> fully end -> move/fast-travel -> E/diagonal~4s. Privately send newest complete run log to ChatGPT; video only for visible anomaly. Inspect exact MOV operands/value/root/offset/reaching coverage/dependency site, literal Transform-no-write versus narrow protection/effects, next precise blocker or XYZ/W,8finalizedentries/maps, Deinit/retention/Up and watch restoration. No automatic producer/movement follow-up authorization.
+- MSM2-WS-v0.1c20.zip (virtual versioned .script + complete migration bootstrap)
+- MSM2-WS-v0.1c20-source.zip (complete source/docs/tests; no active script)
+- Migrate-WS.cmd / Update-WS.cmd; non-active MSM2-WS-v0.1c20.script.disabled; BUILD_MANIFEST.json; analysis/V01C20_RELEASE.json
+
+Extract the install ZIP **outside Mods Library**, keep its tools directory together with Migrate-WS.cmd, prepare Windows Python/Git/PowerShell/configured WSL2 and shared game-root Overstrike/DLL prerequisites described in README_TEST/source/BUILD, then replace the placeholder with the real game root and run:
+
+```bat
+Migrate-WS.cmd --game-root "<actual game root>" --branch codex/v01c20-edi-value-provenance
+```
+
+Thereafter double-click installed MSM2-WS/Update-WS.cmd. Confirm one shared UI sees ordinary mods + SF + WS, choose Install mods -> Run modded game, and verify a new versioned log in MSM2-WS/logs. Keep the old environment until all real-PC checks pass; it is never automatically deleted. Normal human A~4s -> fully end -> move/fast-travel -> E~4s can then verify regression/new logging; privately send newest complete runtime log, video only on visible anomaly. Real migration is not claimed complete by cloud fixture success.

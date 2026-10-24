@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c19",
-  "package_version": "0.1.37",
-  "artifact": "WallSprint.script",
-  "sha256": "6362cabcb35348cb78044b3de1221a67472af484dc13dd43171763bfd21b0743",
-  "dll_sha256": "68a4f9329fb7c5cc09bd807e62400e07362dff550cbb2ad9fc59e5f1ddf0fe5a",
+  "version": "v0.1c20",
+  "package_version": "0.1.38",
+  "artifact": "MSM2-WS-v0.1c20.script.disabled",
+  "sha256": "be9acda201e3a1d7f129e1b7228a9e554c332805a901cd4dee6c104cc3cb6bf0",
+  "dll_sha256": "13367b06c33d2b3630105172c43524ea055f91aa0287fc2edfcd97cbf05f56d1",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -128,9 +128,9 @@
     "original_capture": "private PATH_B_FUNCTION/PATH_B_CODE before hook; never redistributed",
     "caller_original_sha256": "1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d"
   },
-  "validation": "Windows warnings-as-errors; portable/DLL/full c18 regressions plus owned exact write/provenance/conflict/read-dependency/region/continuation tests and standalone source rebuild; counts in CODEX_RESULT.",
+  "validation": "Existing full build/regressions preserved; owned workspace migration/Git/transaction/isolation fixtures plus new logger path/time/collision tests; counts in CODEX_RESULT.",
   "limitations": [
-    "Actual c19 exact write operands/value/all-reaching effects/XYZ/W or next blocker await A/E; c18 actual CFG/stack writes/logger verified",
+    "Real Windows migration/WSL toolchain/shared Overstrike UI recognition and new runtime log path pending local acceptance; EDI research remains paused at c19 blocker",
     "Stack/global disjointness is conditional on per-invocation TEB/source/nonstack Transform/image region admission",
     "Unknown/conflicting pointer origins, unsupported effects and nested calls refuse at exact site",
     "Startup/current code snapshots are not atomic execution attestation; equality does not exclude transient writes",
@@ -655,8 +655,8 @@
     "actual_c19_write_contract_proven": false
   },
   "isolated_logging": {
-    "directory": "game-root/log_wallsprint",
-    "filename": "WallSprint_YYYYMMDD-HHMMSS.log",
+    "directory": "game-root/Mods Library/Mods-Developing/MSM2-WS/logs",
+    "filename": "MSM2-WS-v0.1c20-YYYYMMDD-HHMMSS.log",
     "filename_clock": "host_local_GetLocalTime",
     "line_clock": "UTC_unchanged",
     "collision_creation": "CREATE_NEW_atomic",
@@ -685,7 +685,7 @@
       "nested_calls_seen": 2
     }
   },
-  "v01c19_gate": "CLOUD_EXACT_TRANSFORM_WRITE_IMPLEMENTATION_ACTUAL_A_E_PENDING",
+  "v01c19_gate": "REAL_A_E_DIAGNOSTIC_PASS_EDI_VALUE_BLOCKER",
   "transform_write_contract": {
     "site": "0x2b2358e",
     "opcode": "MOV",
@@ -706,5 +706,29 @@
     "writable_source_proven": false,
     "Position_source_input_movement_writes": 0,
     "actual_c19_result": "pending_A_E"
+  },
+  "v01c20_gate": "WORKSPACE_MIGRATION_IMPLEMENTED_EDI_RESEARCH_PAUSED",
+  "edi_value_contract": {
+    "prepared": true,
+    "production_enabled": false,
+    "preserved_commit": "9057d24",
+    "actual_EDI_value": "unresolved_c19",
+    "research_advancement_authorized": false
+  },
+  "local_workspace": {
+    "relative_root": "Mods Library/Mods-Developing/MSM2-WS",
+    "source": "_source_independent_clone",
+    "archive": "_archive_disabled_only",
+    "runtime_logs": "logs",
+    "active_script": "MSM2-WS-v0.1c20.script",
+    "artifact": "MSM2-WS-v0.1c20.script.disabled",
+    "update_helper": "Update-WS.cmd",
+    "migration_helper": "Migrate-WS.cmd",
+    "overstrike": "game-root/Overstrike/Overstrike.exe",
+    "overstrike_working_directory": "game_root",
+    "source_live_scripts": 0,
+    "SF_or_ordinary_mod_mutation": false,
+    "legacy_workspace_auto_delete": false,
+    "real_PC_migration": "pending_local_execution"
   }
 }
