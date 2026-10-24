@@ -1,77 +1,58 @@
-# Next task — bounded read-flow completion past 0x2B235BE after accepted c21
+# Next task — bounded call-effect classification at 0x2B235D4 after accepted c22
 
 ## Status
 
-The v0.1c21 actual-game A/E-style capture is accepted for the current bounded diagnostic question.
+The v0.1c22 actual-game A/E capture is accepted for the current bounded diagnostic question.
 
 Source log supplied by the owner:
 
 ```text
-MSM2-WS-v0.1c21-20261025-013952.log
+MSM2-WS-v0.1c22-20261025-021717.log
 ```
 
 Do not merge `main`. Continue from the latest `codex/v01c20-edi-value-provenance` history unless this task deliberately creates and fully hands off a successor branch.
 
-## Accepted c21 facts
+## Accepted c22 facts
 
-C21 narrows the old `0x2B23578` blocker.
-
-### Exact read address
+The previous `0x2B235BE` blocker is resolved for the authenticated analyzed state:
 
 ```text
-site_rva=0x2B23578
-instruction=mov
-operand_class=memory_read
-read_width=4
-address_class=transform
-address_root=writer-entry Hero Transform
-address_offset=0x10C
-base=RCX
-index=none
-carrier=EAX
-same exact address for analyzed states=1
+0x2B235BE: test r8b,r8b
+flags_only=1
+parent R8 selected/same-field tags=0x0
+flags_may_depend_tags=0x0
+0x2B235C1: je
+consumer_may_depend_tags=0x0
+first_possible_dependent_branch_rva=0x0
+returned_flags_tags=0x0
 ```
 
-Therefore the earlier read is an exact read of the same `Hero Transform+0x10C` field later written by:
+Therefore this exact TEST/JE pair does not carry the selected `0x2B23578` `Transform+0x10C` read value for the analyzed bounded state.
+
+The selected-read walk now stops at:
 
 ```text
-0x2B2358E: mov dword ptr [RCX+0x10C], EDI
-```
-
-### Local ordering / possible value flow
-
-C21 establishes for the bounded local CFG:
-
-```text
-first_possible_use_rva=0x2B23581
-control_may_depend=1
-first_control_rva=0x2B23583
-memory_escape=0
-same_field_order_mask includes read-before-write
-```
-
-This is a possible local control dependence, not a completed XYZ/W causal proof.
-
-### Current exact blocker
-
-The read-flow walk remains incomplete at:
-
-```text
-first_unresolved_rva=0x2B235BE
-first_unresolved_instruction=test
-reason=read_flow_partial_or_unmodeled_register
+first_unresolved_rva=0x2B235D4
+first_unresolved_instruction=call
+reason=read_flow_call_or_control_no_expansion
 ```
 
 Current unresolved outputs remain:
 
 ```text
+complete_local_flow=0
+returned_gpr_may_depend_mask=0x1
+returned_xmm_may_depend_mask=0x0
+returned_flags_may_depend=0
+returned_caller_stack_may_depend=0
+memory_escape=0
 downstream_XYZ_W_relevance=unknown
 cross_invocation_feedback=unknown
 effect_certificate=0
 writable_source_proven=0
 ```
 
-No Position/source/input/movement writes were introduced. The authenticated target build and normal lifecycle/orientation safety baseline remained intact.
+See `analysis/V01C22_RUNTIME_RESULT.md`.
 
 ## Required reading
 
@@ -80,51 +61,60 @@ Before editing code, read:
 1. `AGENTS.md`
 2. `docs/DEV_RULES.md`
 3. `docs/PROJECT_STATE.md`
-4. `analysis/V01C21_READ_DEPENDENCY.md`
-5. `analysis/V01C20_RUNTIME_RESULT.md`
-6. `analysis/V01C20_EDI_VALUE_PROVENANCE.md`
-7. `analysis/RDX_XYZ_SOURCE_CONTRACT.md`
-8. relevant `source/src/NativeHooks/rdx_source_contract.cpp/.hpp` code/tests
-9. `deluxxxe-dev/MSM2-Wisdoms/docs/WALLSPRINT_INTERNALS.md`
-10. `deluxxxe-dev/MSM2-Wisdoms/docs/ENGINE_INTERNALS.md`
+4. `analysis/V01C22_RUNTIME_RESULT.md`
+5. `analysis/V01C22_READ_TEST_FLOW.md`
+6. `analysis/V01C21_RUNTIME_RESULT.md`
+7. `analysis/V01C20_RUNTIME_RESULT.md`
+8. `analysis/RDX_XYZ_SOURCE_CONTRACT.md`
+9. relevant `source/src/NativeHooks/rdx_source_contract.cpp/.hpp` code/tests
+10. `deluxxxe-dev/MSM2-Wisdoms/docs/WALLSPRINT_INTERNALS.md`
+11. `deluxxxe-dev/MSM2-Wisdoms/docs/ENGINE_INTERNALS.md`
 
 Project-local measured evidence remains authoritative over a stale shared summary.
 
 ## Current bounded Codex task
 
-Implement the smallest evidence-preserving extension necessary to continue the c21 selected-read value flow past the exact `0x2B235BE` blocker.
+Implement the smallest evidence-preserving extension necessary to classify the exact call at `0x2B235D4` and continue the selected `Transform+0x10C` read-flow only until the next exact proof boundary.
 
-### 1. Classify the exact `test` blocker
+### 1. Classify the exact callsite
 
-For `0x2B235BE`, report compact metadata sufficient to answer:
+For `0x2B235D4`, report compact metadata sufficient to answer:
 
-- exact operands/register widths;
-- whether either operand may carry the selected `0x2B23578` read value, the later `0x2B2358E` written value, or another same-field value;
-- whether the instruction only updates flags or has any other modeled effect;
-- which subsequent local branch/use consumes those flags, if representable within the existing bounded CFG.
+- direct/indirect call form;
+- exact target RVA if statically resolvable;
+- authenticated target function boundary/hash if available under existing capture rules;
+- call arguments at the analyzed state and which may carry tag `1` selected-read, tag `2` post-write same-field, or tag `4` other-prewrite same-field dependence;
+- whether any argument may alias Hero Transform, the writer-entry RDX source span, caller/home stack, or another protected region;
+- which volatile/nonvolatile return/clobber carriers matter to the selected-read walk.
 
-Do not publish/reconstruct the whole proprietary native function body.
+Do not publish/reconstruct full proprietary native function bodies.
 
-### 2. Add only the missing semantics
+### 2. Expand only if required and bounded
 
-If `test` is the only missing local semantic needed, implement its exact bounded taint/flag semantics for the operand forms actually required by owned fixtures/current authenticated code.
+If the call target is exact, authenticated, locally bounded, and expansion is necessary to decide selected-read effect, add one narrowly scoped nested-call effect analysis for this call only.
 
-Do not add a generic CPU emulator. Preserve fail-closed behavior for partial-register, unsupported, conflicting, indexed, or unmodeled cases.
+Required questions are limited to whether selected-read dependence can:
 
-### 3. Continue only until the next exact proof boundary
+- return through GPR/XMM/flags;
+- write/escape through caller/home stack or memory;
+- reach the same Transform field or protected Position/source regions through a proven alias;
+- alter a downstream branch/data path relevant to the writer XYZ/W contract.
 
-After modeling the blocker, determine whether the selected read can affect any state relevant to the writer-call contract:
+Do not create a generic recursive interprocedural engine. Preserve strict caps and fail closed at unsupported instructions, aliases, indirect targets, recursion, nested calls beyond the explicitly admitted depth, or incomplete code identity.
 
-- returned GPR/XMM state;
-- returned flags if observable by caller flow;
-- caller/home stack state;
-- later same-field reload/new-field-value carrier;
-- a memory escape;
-- downstream branch path that changes XYZ/W-relevant behavior.
+### 3. Continue only to the next exact boundary
 
-If the local normal-return flow completes, state that explicitly. If it reaches another unsupported instruction/call/alias/cap, stop at that exact point.
+After the `0x2B235D4` call is classified, continue the selected-read walk only as far as the existing bounded flow safely permits.
 
-Do not infer cross-invocation persistence from local completion. Treat `cross_invocation_feedback` as a separate proof obligation.
+Possible acceptable outcomes:
+
+**A.** Call is proven disjoint from selected-read effect for the modeled scope; continue to the next exact blocker/return.
+
+**B.** Call carries a narrow selected-read dependence relevant to protected downstream state; record the exact causal relation and stop before ownership/mutation work.
+
+**C.** Exact target/alias/effect cannot be bounded; report the precise blocker and stop without guessing.
+
+Even local completion does not settle `cross_invocation_feedback` or authorize ownership research/mutation.
 
 ### 4. Preserve existing gates
 
@@ -134,8 +124,8 @@ Still forbidden:
 - source-position writes;
 - input/movement/adhesion/camera/animation/physics changes;
 - producer `0x351EB00` traversal;
-- guessed game ABI/type names;
-- data-page mutation/PAGE_GUARD shortcuts;
+- guessed ABI/type names;
+- arbitrary data-page mutation/PAGE_GUARD shortcuts;
 - weakening ownership/lifetime/exclusivity requirements.
 
 Safety state remains:
@@ -149,30 +139,22 @@ downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
 
-### 5. Desired bounded outcomes
+### 5. Tests / handoff
 
-**A.** Local selected-read flow completes and is proven irrelevant to protected downstream XYZ/W state for the modeled scope. Resume the existing protected writer/effect proof only until the next exact blocker.
+Add owned fixtures covering at minimum:
 
-**B.** Local flow proves a narrow dependence relevant to downstream XYZ/W. Record the causal relation and stop before ownership/mutation work.
-
-**C.** Another exact unsupported/ambiguous instruction, call, alias, cap, or cross-invocation question remains. Report that precise blocker without guessing.
-
-Even Outcome A does not authorize producer `0x351EB00` research or movement writes unless the complete writer contract later passes and a separate task explicitly advances ownership research.
-
-## Tests / handoff
-
-Add owned fixtures for at minimum:
-
-- `test reg,reg` carrying selected-read taint into flags/branch;
-- `test reg,reg` with killed/dead taint;
-- unrelated `test` operand proving disjointness;
-- partial-register/unmodeled refusal;
-- branch consuming tainted flags;
-- branch consuming untainted flags;
-- no regression of c21 same-field read address/order proof;
-- no regression of c20 EDI value proof;
+- direct-call selected-read taint in an argument;
+- direct-call disjoint arguments;
+- return GPR carrying selected-read taint;
+- clobbered/dead selected-read carrier;
+- caller/home-stack memory escape;
+- protected Transform/source-span alias refusal;
+- unsupported/indirect/nested-call refusal;
+- no regression of c22 TEST/JE disjoint classification;
+- no regression of c21 exact same-field read;
+- no regression of c20 EDI value provenance;
 - no regression of c19 Transform/Position protection.
 
-Run the relevant full build/regression chain. Update `analysis/V01C21_RUNTIME_RESULT.md` (or successor c22 result file), `docs/PROJECT_STATE.md`, `docs/CODEX_RESULT.md`, and reusable confirmed/corrected facts in `deluxxxe-dev/MSM2-Wisdoms` when accessible.
+Run the relevant full build/regression chain. Update a successor analysis/result file, `docs/PROJECT_STATE.md`, `docs/CODEX_RESULT.md`, and reusable confirmed/corrected facts in `deluxxxe-dev/MSM2-Wisdoms` when accessible.
 
-If another runtime capture is required, emit only the exact new fields needed and request the shortest A/E test necessary. Commit and push all authorized changes to the current development line.
+If current authenticated static/captured evidence suffices, do not request another runtime test merely by habit. If a new runtime capture is genuinely required, emit only the exact new fields needed and request the shortest A/E-style test necessary. Commit and push all authorized changes to the current development line.
