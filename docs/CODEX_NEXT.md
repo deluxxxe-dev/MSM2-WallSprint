@@ -1,43 +1,143 @@
-# Next task — v0.1c20 EDI value provenance runtime capture
+# Next task — bounded 0x2B23578 read-dependency classification after c20
 
 ## Status
-The real-PC local workspace/shared-Overstrike/logging acceptance gate has passed.
 
-Accepted evidence is recorded in:
-- `analysis/LOCAL_WORKSPACE_RUNTIME_ACCEPTANCE_20261024.md`
+The v0.1c20 actual-game A/E capture is accepted and recorded in:
 
-The accepted run confirms the final WS workspace/log path, shared ordinary-mod + SF + WS recognition, modded-game launch, visible WS operation, and versioned WS/SF runtime logs. The prior infrastructure-only pause is therefore complete.
+- `analysis/V01C20_RUNTIME_RESULT.md`
 
-This file explicitly reauthorizes the prepared **v0.1c20 EDI value-provenance diagnostic work** on branch `codex/v01c20-edi-value-provenance`.
-
-Do not merge `main` into this branch. This branch is the implementation source of truth.
-
-## Required reading
-Before changing code, read:
-1. `AGENTS.md`
-2. `docs/DEV_RULES.md`
-3. `docs/LOCAL_WORKSPACE.md`
-4. `docs/PROJECT_STATE.md`
-5. `analysis/V01C19_RUNTIME_RESULT.md`
-6. `analysis/V01C19_TRANSFORM_WRITE_CONTRACT.md`
-7. `analysis/V01C20_EDI_VALUE_PROVENANCE.md`
-8. `analysis/V01C20_GATE.md`
-9. `analysis/LOCAL_WORKSPACE_RUNTIME_ACCEPTANCE_20261024.md`
-
-Preserve the exact-build/fail-closed behavior and all existing lifecycle/orientation/ownership gates.
-
-## Accepted starting point
-C19 actual runtime evidence remains authoritative:
+C20 answered the immediate EDI question at `0x2B2358E`:
 
 ```text
 0x2B2358E: mov dword ptr [RCX+0x10C], EDI
-RCX = Hero Transform
-destination = Hero Transform +0x10C
+EDI local producer: 0x2B2356F
+producer kind: memory_load
+origin: exact executable-image RIP-relative global (c20 root16)
+image-relative offset: 0x0C323788
 ```
 
-The destination does not directly overlap Position `+0x30..+0x3F` or the Transform identity/pointer-carrier range.
+The local EDI reaching-definition contract succeeded for the analyzed authenticated call input, but the whole callee/writer effect contract did not. The next exact blocker is the earlier decoded read at:
 
-The unresolved research question is the **value provenance of EDI at the exact target** and, only if that value contract succeeds, the next precise blocker in the writer effect/XYZ/W causal proof.
+```text
+0x2B23578
+```
+
+with current conservative reason:
+
+```text
+earlier_read_provenance_dependency
+exact_transform_write_may_change_a_decoded_read_carrier
+```
+
+Do not merge `main`. Continue from the latest `codex/v01c20-edi-value-provenance` history unless this task deliberately creates and fully hands off a successor branch.
+
+## Required reading
+
+Before editing code, read:
+
+1. `AGENTS.md`
+2. `docs/DEV_RULES.md`
+3. `docs/PROJECT_STATE.md`
+4. `analysis/V01C20_RUNTIME_RESULT.md`
+5. `analysis/V01C20_EDI_VALUE_PROVENANCE.md`
+6. `analysis/V01C19_TRANSFORM_WRITE_CONTRACT.md`
+7. `analysis/RDX_XYZ_SOURCE_CONTRACT.md`
+8. `analysis/ENGINE_INTERNALS_REFERENCE.md`
+9. the relevant `source/src/NativeHooks/rdx_source_contract.cpp/.hpp` implementation/tests
+10. `deluxxxe-dev/MSM2-Wisdoms` technical references when accessible
+
+Project-local measured evidence remains authoritative over a stale shared summary.
+
+## Accepted c20 facts
+
+Keep these facts separate:
+
+### EDI local value proof — accepted
+
+```text
+producer_rva=0x2B2356F
+producer_kind=memory_load
+origin_kind=memory_load
+root=16 = analyzer globalRoot / exact RIP-relative image address
+origin offset=0x0C323788
+reaching definitions=1
+all local reaching states examined=1
+same local value origin=1
+value provenance exact=1
+```
+
+This is a static value-provenance result authenticated by the actual-game current callee identity. It does **not** give a semantic engine field name to the image-global value.
+
+### Whole writer/effect proof — still blocked
+
+```text
+all_writer_call_states_examined=0
+relevant_transform_effects_resolved=0
+transform_position_protected_range_unmodified=0
+source_span_no_write_proven=0
+XYZ/W causal proof incomplete
+```
+
+The current dependency site `0x2B23578` occurs before the exact write at `0x2B2358E`. The existing analyzer conservatively refuses because the write may alter a decoded read carrier. Do not resolve this by assumption in either direction.
+
+## Current bounded Codex task
+
+Implement the smallest evidence-preserving diagnostic/static-analysis extension necessary to classify the `0x2B23578` dependency precisely.
+
+### 1. Report the exact read
+
+For the authenticated current callee, emit compact metadata for the blocker at `0x2B23578`:
+
+- mnemonic/operand class without publishing the full private function body;
+- read width;
+- exact address provenance root/offset when modeled;
+- whether it is Transform/source/stack/image-global/other/unknown;
+- whether it overlaps `Transform+[0x10C,0x110)`;
+- the value carrier/register produced by the read when representable.
+
+Do not infer semantic type names from address shape.
+
+### 2. Prove ordering rather than treating all dependencies alike
+
+The dependency is currently an **earlier read** relative to the write at `0x2B2358E`.
+
+Extend the bounded local model only enough to distinguish, on every relevant local path:
+
+```text
+read-before-write
+read-after-write
+conflicting/branch-dependent order
+unresolved order
+```
+
+A read-before-write cannot be relabeled automatically as irrelevant: if its value feeds post-callee state or if the persisted field can feed later invocations, that still needs an explicit model. Conversely, do not claim causal dependence merely because the conservative c19/c20 gate stopped there.
+
+### 3. Track only the necessary value flow
+
+Determine whether the exact `0x2B23578` read can affect state that survives the callee and is relevant to the downstream writer XYZ/W proof.
+
+If necessary, distinguish:
+
+- same-invocation pre-write read value;
+- the new value written at `0x2B2358E`;
+- any later reload of the same field;
+- a possible prior-invocation -> next-invocation feedback relation.
+
+Do not add a generic interprocedural engine model or unbounded fixpoint. If cross-invocation persistence cannot be proven with existing evidence, report that exact blocker instead.
+
+### 4. Preserve all existing gates
+
+Keep fail-closed behavior and all current authenticated-build/current-code/boundary/hash checks.
+
+Still forbidden:
+
+- Position writes;
+- source-position writes;
+- input/movement/adhesion/camera/animation/physics changes;
+- producer `0x351EB00` traversal;
+- guessed game calls or ABI types;
+- PAGE_GUARD/data-page mutation as a shortcut;
+- weakening ownership/lifetime/exclusivity requirements.
 
 Current safety state remains:
 
@@ -50,93 +150,31 @@ downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
 
-Producer `0x351EB00` remains deferred.
+### 5. Desired outcome
 
-## Current bounded Codex task
-Use the c20 work already preserved in this branch (including the prepared EDI value-contract implementation/tests from commit `9057d24`) and move it from infrastructure-paused state to a **diagnostic-only production build suitable for the actual-game A/E capture**.
+The task should end in one of these bounded outcomes:
 
-### 1. Revalidate the prepared implementation
-- Inspect the current branch before editing; do not recreate work that is already present.
-- Re-run the owned EDI value-contract tests and the existing c19/native/logger/workspace regression suite relevant to the changed code.
-- Confirm the runtime path remains fail-closed on unsupported/partial/conflicting/capped/control effects.
-- Preserve the distinction between raw low32 register-input identities and pointer/address provenance.
-- Do not infer an ABI type or semantic meaning for EDI, Transform+0x10C, or any entry register without evidence.
+**A.** The `0x2B23578` read is exactly classified and proven not to make the native `+0x10C` write relevant to downstream XYZ/W for the modeled scope; resume the existing full protected-effect/writer path until the next exact blocker or XYZ/W completion.
 
-### 2. Enable only the prepared c20 diagnostic path for the test package
-Enable the already-reviewed EDI value-provenance diagnostics required to emit the c20 runtime contract described by `analysis/V01C20_EDI_VALUE_PROVENANCE.md` and `analysis/V01C20_GATE.md`.
+**B.** The read/value flow is exactly classified as relevant; record the narrow causal relationship and the next required proof.
 
-Required runtime reporting includes the bounded value-contract result needed to distinguish:
-- exact local producer/copy-chain/origin relation;
-- all-local-path coverage versus conflict/refusal;
-- first unresolved instruction/blocker when exactness fails;
-- later relevant-read/dependency status;
-- whole-writer-call/effect coverage kept separate from local EDI-value coverage.
+**C.** The analyzer reaches a narrower unsupported/ambiguous point; report that exact RVA/operand/order/value blocker without guessing.
 
-Do not add a new observation mechanism, PAGE_GUARD, data-page mutation, guessed game call, or unrelated hook.
+Even Outcome A does not authorize `0x351EB00` or movement writes unless the complete writer contract subsequently passes and a later task explicitly advances ownership research.
 
-### 3. Keep gameplay writes disabled
-This task is diagnostic only.
+## Tests / handoff
 
-Do **not** add or enable:
-- Position writes;
-- source-position writes;
-- input writes;
-- movement/adhesion/camera/animation/physics changes;
-- producer `0x351EB00` traversal;
-- any claim that the writer source is writable/owned/exclusive.
+Add owned fixtures for at minimum:
 
-Literal `transform_no_write_proven` must remain honest for the real Transform+0x10C write. A successful local EDI proof alone must not advance ownership or protected-effect gates.
+- exact same-field read-before-write with no later use;
+- read-before-write whose value survives and affects a protected downstream carrier;
+- read-after-write;
+- branch paths with differing order;
+- exact disjoint image/global/stack/source reads;
+- unknown/indexed/conflicting address refusal;
+- no regression of c20 EDI local value proof;
+- no regression of c19 Transform/Position protection.
 
-### 4. Build/test/package
-Produce the normal current WS test package through the current workspace/release tooling.
+Run the relevant full build/regression chain, update `docs/CODEX_RESULT.md`, project state/analysis as authorized by this task, commit and push. If a runtime capture is still required after the static/fixture work, specify only the exact new log fields and the shortest A/E test needed.
 
-The package must preserve the accepted local structure:
-
-```text
-<game>\Mods Library\Mods-Developing\MSM2-WS\
-├─ MSM2-WS-v<version>.script
-├─ Update-WS.cmd
-├─ logs\
-├─ _source\
-└─ _archive\
-```
-
-Do not reintroduce the old `log_wallsprint` destination or old AppData/project-specific Overstrike behavior. Do not mutate `MSM2-SF` or ordinary mods.
-
-### 5. Prepare the exact human runtime test
-After build/test/package succeeds, the next human test is:
-
-```text
-A/cardinal surface: ~4 s
-fully end WallRun
-move or fast-travel
-E/diagonal surface: ~4 s
-```
-
-The user should then return the newest complete file from:
-
-```text
-<game>\Mods Library\Mods-Developing\MSM2-WS\logs\
-```
-
-No video is required unless there is a visible regression.
-
-## Acceptance criteria for this Codex task
-Codex-side preparation is complete only when:
-- prepared c20 EDI diagnostics are production-enabled for the test build;
-- all relevant owned tests/regressions pass;
-- no gameplay/Position/source/input write capability is introduced;
-- the package uses the accepted shared-workspace/update/logging layout;
-- `docs/CODEX_RESULT.md` records exact files changed, test results, package name, branch and commit SHA, and the required A/E test;
-- the implementation is committed and pushed to `codex/v01c20-edi-value-provenance`.
-
-Do not claim the c20 EDI provenance result from offline tests. Actual producer/origin/dependency/XYZ/W conclusions remain pending the real-game A/E log.
-
-## Next step after the human log
-ChatGPT will analyze the returned c20 runtime log against the exact VALUE_CONTRACT and writer-effect coverage rules.
-
-Only that analysis may decide whether to:
-- accept an exact EDI relation and continue the writer XYZ/W causal proof; or
-- record the narrower precise blocker and design the next bounded diagnostic.
-
-Do not advance to producer ownership or movement rewrite without a later explicit authorization.
+Synchronize reusable confirmed/corrected engine facts to `deluxxxe-dev/MSM2-Wisdoms` when accessible; keep detailed proof in this repository.
