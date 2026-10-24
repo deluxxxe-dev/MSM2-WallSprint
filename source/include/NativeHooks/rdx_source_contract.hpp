@@ -95,6 +95,20 @@ struct EdiValueContract {
   const char *reason = "EDI_trace_not_enabled";
 };
 const char *bitKindName(BitKind) noexcept;
+// Diagnostic sidecar only: cannot grant any alias/effect/write certificate.
+struct ReadDependencyContract {
+  std::uintptr_t site{}, barrier{}, firstUse{}, firstControl{}, firstEscape{};
+  unsigned calls{}, visits{}, paths{}, orderVisits{}, orderPaths{}, samples{}, width{}, scale{}, operandIndex{}, orderMask{},
+      fieldOrderMask{}, returnedGpr{}, returnedXmm{}, newValueGpr{};
+  int root = -1, overlap = -1;
+  std::int64_t offset{}, displacement{};
+  bool decoded{}, sameAddress = true, addressExact{}, orderComplete{}, flowComplete{},
+      controlUse{}, memoryEscape{}, returnedFlags{}, returnedCallerStack{};
+  const char *addressClass = "unknown", *carrierKind = "unknown";
+  const char *reason = "read_dependency_not_enabled";
+  char mnemonic[32] = "none", base[32] = "none", index[32] = "none",
+       carrier[32] = "none", unresolvedMnemonic[32] = "none";
+};
 struct CalleeAlias {
   // Only authenticated current target bytes; never dereferenced process
   // pointers.
@@ -105,6 +119,7 @@ struct CalleeAlias {
       relevantEffectsResolved{}, transformWriteSeen{};
   ExactWriteContract exactWrite{};
   EdiValueContract edi{};
+  ReadDependencyContract readDependency{};
   unsigned reads{};
   std::array<AliasRead, aliasReadCap> readSites{};
   unsigned analyses{}, visits{}, paths{}, writes{}, sourceArgMask{},

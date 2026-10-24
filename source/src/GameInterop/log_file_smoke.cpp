@@ -24,13 +24,16 @@ static std::string read(const std::wstring &p) {
   return {data, n};
 }
 int main() {
+  const std::string label = ws::versionLabel;
+  const std::wstring version(label.begin(), label.end());
+  const auto stem = L"MSM2-WS-" + version + L"-20260102-030405";
   SYSTEMTIME local{2026, 1, 0, 2, 3, 4, 5, 0};
   assert(ws::logging::filename(local) ==
-         L"MSM2-WS-v0.1c20-20260102-030405.log");
+         stem + L".log");
   assert(ws::logging::filename(local, 1) ==
-         L"MSM2-WS-v0.1c20-20260102-030405-01.log");
+         stem + L"-01.log");
   assert(ws::logging::filename(local, 12) ==
-         L"MSM2-WS-v0.1c20-20260102-030405-12.log");
+         stem + L"-12.log");
   assert(
       ws::logging::rootDirectory(L"C:\\Games\\Spider Man 2\\Spider-Man2.exe") ==
       L"C:\\Games\\Spider Man 2");
@@ -61,8 +64,7 @@ int main() {
   write(f, "A_session\n");
   assert(first.path() ==
          root + L"\\Mods "
-                L"Library\\Mods-Developing\\MSM2-WS\\logs\\MSM2-WS-v0.1c20-"
-                L"20260102-030405.log");
+                L"Library\\Mods-Developing\\MSM2-WS\\logs\\" + stem + L".log");
   assert(first.openAt(exe, local) == INVALID_HANDLE_VALUE &&
          first.error() == ERROR_SHARING_VIOLATION);
   CloseHandle(f);

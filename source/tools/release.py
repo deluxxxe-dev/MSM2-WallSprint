@@ -17,6 +17,9 @@ for name in ['LOCAL_WORKSPACE_AUDIT.md', 'V01C19_RUNTIME_RESULT.md', 'V01C20_EDI
 for name in ['workspace_reset_snapshot_tests.log','workspace_reset_snapshot_full.log','workspace_reset_snapshot_helper.log','workspace_reset_arm_diagnostic.log','workspace_reset_arm_negative.log','workspace_reset_arm_helper.log','workspace_archive_full_pipeline.log','workspace_archive_tests.log','workspace_real_sparse_clone.log','workspace_tests.log','workspace_logging.log','workspace_smoke.log','v01c20_build.log','v01c20_portable.log','v01c20_smoke.log','v01c20_hooks.log','v01c20_public_build.log','v01c20_entry.log','v01c20_contract.log','v01c20_branch.log','v01c20_call.log','v01c20_alias.log','v01c20_logging.log','v01c20_callee_branch.log','v01c20_transform_write.log','v01c20_edi.log','v01c20_workspace.log','package_check.log']:
  if (root/'logs'/name).exists():shutil.copy2(root/'logs'/name,out/'logs'/name)
  else:print('SKIP: optional maintainer validation log',name)
+for phase in ['build','portable','smoke','hooks','read']:
+ name='v01c21_'+phase+'.log'
+ if (root/'logs'/name).exists():shutil.copy2(root/'logs'/name,out/'logs'/name)
 if (root.parent/'docs/CODEX_RESULT.md').exists():
  (out/'docs').mkdir(exist_ok=True);shutil.copy2(root.parent/'docs/CODEX_RESULT.md',out/'docs/CODEX_RESULT.md')
 if (root.parent/'docs/LOCAL_WORKSPACE.md').exists():
@@ -37,5 +40,5 @@ for name,folder in [('MSM2-WS-'+label+'.zip',out),('MSM2-WS-'+label+'-source.zip
     z.write(p,archive)
  with zipfile.ZipFile(path) as z:assert z.testzip() is None
  result.append({'path':str(path),'bytes':path.stat().st_size,'sha256':hashlib.sha256(path.read_bytes()).hexdigest()})
-(root/'logs/v01c20_release.json').write_text(json.dumps(result,indent=2)+'\n')
+(root/'logs'/(label.replace('.','')+'_release.json')).write_text(json.dumps(result,indent=2)+'\n')
 print(json.dumps(result,indent=2))

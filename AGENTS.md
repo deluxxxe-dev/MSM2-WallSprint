@@ -163,7 +163,7 @@ Update `docs/CODEX_RESULT.md` with:
 
 Do not overwrite `docs/PROJECT_STATE.md` or `docs/CODEX_NEXT.md` unless the task explicitly asks you to. The current workspace migration task explicitly authorizes the documentation updates listed in `docs/CODEX_NEXT.md`.
 
-Implementation note: current Windows entry points are `Migrate-WS.cmd` / `Update-WS.cmd`; the reviewed engine is `source/tools/workspace.py`. Build intermediates use `.script.disabled` and only the install ZIP virtualizes its versioned active script member. Prepared EDI research commit `9057d24` is now explicitly authorized by CODEX_NEXT for the diagnostic-only test build, gated by exact current callee authentication. Actual EDI/XYZ/W results await the dedicated game log; gameplay writes and producer traversal remain unauthorized.
+Implementation note: current Windows entry points are `Migrate-WS.cmd` / `Update-WS.cmd`; the reviewed engine is `source/tools/workspace.py`. Build intermediates use `.script.disabled` and only the install ZIP virtualizes its versioned active script member. C20 local EDI provenance is accepted. The current c21 diagnostic sidecar classifies only the pinned read/order/possible value flow, cannot issue certificates, and keeps the existing read/effect refusal. Actual c21 result remains pending; gameplay writes and producer traversal remain unauthorized.
 
 ## Shared Mod-Tools manual
 

@@ -923,6 +923,7 @@ void configure(const Spec &s, Gate validate) noexcept {
     writerAlias.exactWrite.site = 0x2b2358e;
     writerAlias.edi.enabled =
         calleeCurrent; // c20 diagnostic-only opt-in after exact current identity.
+    writerAlias.readDependency.site = calleeCurrent ? 0x2b23578 : 0;
     writerAlias.reason =
         calleeCurrent ? "writer_call_not_reached_in_bounded_prefix"
                       : "exact_c17_target_boundary_hash_not_authenticated";
@@ -1088,6 +1089,46 @@ void configure(const Spec &s, Gate validate) noexcept {
                  "producer_rva=0x%llx full_bytes_logged=0",
                  j, k, (unsigned long long)def.chain[k]);
     }
+    const auto &rd = writerAlias.readDependency;
+    const char *order = !rd.orderComplete ? "unresolved"
+        : (rd.orderMask & 3) == 3 ? "branch_dependent_order"
+        : (rd.orderMask & 12) && (rd.orderMask & 3) ? "branch_dependent_presence"
+        : rd.orderMask & 1 ? "read_before_write"
+        : rd.orderMask & 2 ? "read_after_write" : "unpaired_read_or_write";
+    writeLog("MOVEMENT_CALLEE_READ_DEPENDENCY site_rva=0x2b23578 enabled=%u "
+             "instruction_decoded=%u mnemonic=%s operand_class=memory_read "
+             "read_width=%u address_class=%s address_root=%d address_offset=%lld "
+             "address_exact=%u same_address_all_analyzed_states=%u "
+             "address_scope=last_analyzed_state operand_index=%u base=%s index=%s scale=%u displacement=%lld "
+             "overlap_transform_10c=%d overlap_unknown_minus1=1 "
+             "value_carrier_kind=%s value_carrier=%s samples=%u "
+             "order=%s order_mask=%u all_local_order_paths_examined=%u "
+             "order_paths=%u order_visits=%u "
+             "order_scope=local_CFG_CALL_normal_return_only full_bytes_logged=0",
+             unsigned(rd.site != 0), unsigned(rd.decoded), rd.mnemonic,
+             rd.width, rd.addressClass, rd.root, (long long)rd.offset,
+             unsigned(rd.addressExact), unsigned(rd.sameAddress), rd.operandIndex, rd.base,
+             rd.index, rd.scale, (long long)rd.displacement, rd.overlap, rd.carrierKind,
+             rd.carrier, rd.samples, order, rd.orderMask,
+             unsigned(rd.orderComplete), rd.orderPaths, rd.orderVisits);
+    writeLog("MOVEMENT_CALLEE_READ_FLOW site_rva=0x2b23578 "
+             "complete_local_flow=%u return_paths=%u instruction_visits=%u "
+             "returned_gpr_may_depend_mask=0x%x returned_xmm_may_depend_mask=0x%x "
+             "returned_flags_may_depend=%u returned_caller_stack_may_depend=%u "
+             "new_field_value_gpr_mask=0x%x same_field_order_mask=%u "
+             "field_order_coverage=analyzed_flow_paths "
+             "first_possible_use_rva=0x%llx control_may_depend=%u "
+             "first_control_rva=0x%llx memory_escape=%u first_escape_rva=0x%llx "
+             "first_unresolved_rva=0x%llx first_unresolved_instruction=%s "
+             "downstream_XYZ_W_relevance=unknown cross_invocation_feedback=unknown "
+             "flow_kind=conservative_possible_dependence effect_certificate=0 "
+             "full_bytes_logged=0 writable_source_proven=0 reason=%s",
+             unsigned(rd.flowComplete), rd.paths, rd.visits, rd.returnedGpr,
+             rd.returnedXmm, unsigned(rd.returnedFlags), unsigned(rd.returnedCallerStack),
+             rd.newValueGpr, rd.fieldOrderMask, (unsigned long long)rd.firstUse,
+             unsigned(rd.controlUse), (unsigned long long)rd.firstControl,
+             unsigned(rd.memoryEscape), (unsigned long long)rd.firstEscape,
+             (unsigned long long)rd.barrier, rd.unresolvedMnemonic, rd.reason);
     const auto &ac = writerAlias.counts;
     writeLog(
         "MOVEMENT_CALLEE_ALIAS_CONTRACT target_rva=0x2b23560 "

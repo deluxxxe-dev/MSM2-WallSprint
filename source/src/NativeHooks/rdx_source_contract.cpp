@@ -1109,6 +1109,278 @@ bool ediDefinitions(CalleeAlias &a, Decode &d, const Nodes &nodes,
       "all_local_EDI_definitions_exact_conditional_on_callee_entry_raw_bits";
   return v.complete;
 }
+// Tracks possible dependence on one selected read (mask1), a later field reload
+// (mask2), and other pre-write field reads (mask4). This is NOT a causal/effect
+// certificate. Unsupported effects stop the sidecar without relaxing c19/c20.
+struct ReadFlow {
+  std::array<unsigned, 16> g{}, x{};
+  unsigned flags{};
+  struct Slot { std::int64_t off{}; unsigned width{}, tags{}; bool used{}; };
+  std::array<Slot, 128> stack{};
+  unsigned load(Value at, unsigned width) const {
+    unsigned tags = 0;
+    if (at.kind == pointer && at.root == 4)
+      for (const auto &s : stack)
+        if (s.used && overlaps(at.off, width, s.off, s.off + s.width))
+          tags |= s.tags;
+    return tags;
+  }
+  bool save(Value at, unsigned width, unsigned tags) {
+    if (at.kind != pointer || at.root != 4 || at.off < -4096 ||
+        at.off + width > 4096) return false;
+    for (auto &s : stack)
+      if (s.used && at.off <= s.off && at.off + width >= s.off + s.width)
+        s.used = false;
+    // Partial overwrite retains the old tags conservatively, never clears a
+    // surviving byte. Over-approximation cannot become an effect permission.
+    for (auto &s : stack) if (!s.used) {
+      s = {at.off, width, tags, true}; return true;
+    }
+    return false;
+  }
+  unsigned get(unsigned r) const {
+    if (r == X86_REG_EFLAGS) return flags;
+    if (reg(r) >= 0) return g[reg(r)];
+    return xmm(r) >= 0 ? x[xmm(r)] : 0;
+  }
+  bool put(unsigned r, unsigned tags) {
+    if (r == X86_REG_EFLAGS) flags = tags;
+    else if (reg(r) >= 0) g[reg(r)] = tags;
+    else if (xmm(r) >= 0) x[xmm(r)] = tags;
+    else return false;
+    return true;
+  }
+};
+template <class Nodes>
+void inspectReadDependency(CalleeAlias &a, Decode &d, const Nodes &nodes,
+                           const Slice &input, unsigned writeIndex) {
+  auto &r = a.readDependency;
+  if (!r.site) return;
+  if (!a.exactWrite.site || writeIndex >= d.n) {
+    r.reason = "read_dependency_write_anchor_missing";
+    r.flowComplete = r.orderComplete = false;
+    return;
+  }
+  if (++r.calls == 1) r.flowComplete = r.orderComplete = true;
+  auto stop = [&](const cs_insn &ins, const char *why) {
+    r.flowComplete = false;
+    if (!r.barrier) {
+      r.barrier = ins.address; r.reason = why;
+      copyName(r.unresolvedMnemonic, sizeof(r.unresolvedMnemonic), ins.mnemonic);
+    }
+  };
+  unsigned readIndex = unsigned(d.n);
+  for (unsigned j = 0; j < d.n; ++j)
+    if (d.p[j].address == r.site) readIndex = j;
+  if (readIndex == d.n) {
+    r.orderComplete = false;
+    r.flowComplete = false; r.barrier = r.site;
+    r.reason = "selected_read_not_on_authenticated_instruction_boundary";
+    copyName(r.unresolvedMnemonic, sizeof(r.unresolvedMnemonic), "instruction_boundary");
+    return;
+  }
+  // Ordering is structural, over the fully checked forward local CFG, with
+  // CALL fallthrough explicitly conditional on normal return (no expansion).
+  struct Order { unsigned pc{}; bool read{}, write{}, after{}; };
+  std::array<Order, aliasBranchCeiling + 1> order{};
+  unsigned pending = 1;
+  while (pending) {
+    auto w = order[--pending];
+    for (;;) {
+      const auto &ins = d.p[w.pc]; const auto &node = nodes[w.pc];
+      if (++r.orderVisits > 4096) {
+        r.orderComplete = false; stop(ins, "read_order_visit_cap"); return;
+      }
+      if (w.pc == readIndex) { w.read = true; w.after = w.write; }
+      if (w.pc == writeIndex) w.write = true;
+      if (node.ret) {
+        ++r.orderPaths;
+        r.orderMask |= w.read && w.write ? (w.after ? 2u : 1u)
+                     : w.read ? 4u : w.write ? 8u : 16u;
+        break;
+      }
+      if (group(ins, CS_GRP_INT) || group(ins, CS_GRP_IRET) ||
+          group(ins, CS_GRP_RET) || !node.count) {
+        r.orderComplete = false; stop(ins, "read_order_control_unresolved");
+        return;
+      }
+      if (node.count == 2) {
+        if (pending == order.size()) {
+          r.orderComplete = false; stop(ins, "read_order_pending_cap"); return;
+        }
+        order[pending] = w; order[pending++].pc = unsigned(node.next[1]);
+      }
+      w.pc = unsigned(node.next[0]);
+    }
+  }
+  struct Work { Slice slice{}; ReadFlow flow{}; unsigned pc{}; bool wrote{}; };
+  std::array<Work, aliasBranchCeiling + 1> todo{};
+  todo[0].slice = input; pending = 1;
+  while (pending) {
+    auto w = todo[--pending];
+    for (;;) {
+      const auto &ins = d.p[w.pc]; const auto &node = nodes[w.pc];
+      const auto &x = ins.detail->x86;
+      if (++r.visits > 4096) { stop(ins, "read_flow_visit_cap"); return; }
+      if (node.ret) {
+        if (!equal(w.slice.s.g[4], input.s.g[4])) {
+          stop(ins, "read_flow_stack_not_restored"); break;
+        }
+        ++r.paths;
+        for (unsigned k = 0; k < 16; ++k) {
+          if (w.flow.g[k] & 1) r.returnedGpr |= 1u << k;
+          if (w.flow.x[k] & 1) r.returnedXmm |= 1u << k;
+          if (w.flow.g[k] & 2) r.newValueGpr |= 1u << k;
+        }
+        r.returnedFlags |= (w.flow.flags & 1) != 0;
+        for (const auto &s : w.flow.stack)
+          r.returnedCallerStack |= s.used && (s.tags & 1) &&
+                                  s.off + s.width > input.s.g[4].off;
+        break;
+      }
+      if (node.branch) {
+        if (node.cond && (w.flow.flags & 1)) {
+          r.controlUse = true;
+          if (!r.firstControl) r.firstControl = ins.address;
+          if (!r.firstUse) r.firstUse = ins.address;
+        }
+        if (node.count == 2) {
+          if (pending == todo.size()) { stop(ins, "read_flow_pending_cap"); return; }
+          todo[pending] = w; todo[pending++].pc = unsigned(node.next[1]);
+        }
+        w.pc = unsigned(node.next[0]); continue;
+      }
+      if (group(ins, CS_GRP_CALL) || group(ins, CS_GRP_INT) ||
+          group(ins, CS_GRP_IRET) || group(ins, CS_GRP_RET)) {
+        stop(ins, "read_flow_call_or_control_no_expansion"); break;
+      }
+      if (ins.id == X86_INS_NOP || ins.id == X86_INS_ENDBR64 ||
+          ins.id == X86_INS_VZEROUPPER) {
+        if (!node.count) { stop(ins, "read_flow_fallthrough"); break; }
+        w.pc = unsigned(node.next[0]); continue;
+      }
+      cs_regs reads{}, writes{}; std::uint8_t nr{}, nw{};
+      if (cs_regs_access(d.h, &ins, reads, &nr, writes, &nw) != CS_ERR_OK) {
+        stop(ins, "read_flow_register_access_unavailable"); break;
+      }
+      unsigned incoming = 0;
+      bool readRegsOk = true;
+      for (unsigned k = 0; k < nr; ++k) {
+        readRegsOk &= reads[k] == X86_REG_RIP || reads[k] == X86_REG_EFLAGS ||
+                      reg(reads[k]) >= 0 || xmm(reads[k]) >= 0;
+        incoming |= w.flow.get(reads[k]);
+      }
+      if (!readRegsOk) { stop(ins, "read_flow_partial_or_unmodeled_register"); break; }
+      unsigned selectedOperands = 0;
+      bool unknownRead = false;
+      for (unsigned j = 0; j < x.op_count; ++j) {
+        const auto &op = x.operands[j];
+        if (ins.id == X86_INS_LEA || op.type != X86_OP_MEM ||
+            (!(op.access & CS_AC_READ) && (op.access & CS_AC_WRITE))) continue;
+        const auto at = aliasAddress(w.slice.s, ins, op, 0);
+        const bool known = at.kind == pointer && x.addr_size == 8;
+        const bool field = known && at.root == 1 &&
+                           overlaps(at.off, op.size, 0x10c, 0x110);
+        int overlap = -1;
+        const char *cls = "unknown";
+        bool exact = known;
+        if (known && at.root == 1) { overlap = field ? 1 : 0; cls = "transform"; }
+        else if (known && (at.root == 2 || at.root == 4) &&
+                 at.off + (at.root == 2 ? 0x28 : 0) >= -4096 &&
+                 at.off + (at.root == 2 ? 0x28 : 0) + op.size <= 4096) {
+          overlap = 0; cls = at.root == 2 ? "source_conditional_TEB" : "stack_conditional_TEB";
+        } else if (known && at.root == globalRoot && at.off > 0 &&
+                   std::uint64_t(at.off) < a.imageSize &&
+                   op.size <= a.imageSize - std::uint64_t(at.off)) {
+          overlap = 0; cls = "image_conditional_regions";
+        } else { exact = false; cls = known ? "other_unproven" : "unknown"; }
+        if (field) r.fieldOrderMask |= w.wrote ? 2u : 1u;
+        unsigned tags = w.flow.load(at, op.size);
+        if (w.pc == readIndex) {
+          ++selectedOperands;
+          if (r.samples && (r.root != (known ? at.root : -1) ||
+              r.offset != at.off || r.width != op.size || r.overlap != overlap)) {
+            r.sameAddress = false; exact = false;
+          }
+          ++r.samples; r.decoded = true; r.root = known ? at.root : -1;
+          r.offset = at.off; r.width = op.size; r.overlap = overlap;
+          r.addressExact = r.sameAddress && exact; r.addressClass = cls;
+          r.displacement = op.mem.disp;
+          r.scale = op.mem.scale; r.operandIndex = j;
+          copyName(r.mnemonic, sizeof(r.mnemonic), ins.mnemonic);
+          copyName(r.base, sizeof(r.base), cs_reg_name(d.h, op.mem.base));
+          copyName(r.index, sizeof(r.index), cs_reg_name(d.h, op.mem.index));
+          if (ins.id == X86_INS_CMP || ins.id == X86_INS_TEST) {
+            r.carrierKind = "flags"; copyName(r.carrier, sizeof(r.carrier), "rflags");
+          } else if (x.op_count >= 2 && x.operands[0].type == X86_OP_REG &&
+                     (reg(x.operands[0].reg) >= 0 || xmm(x.operands[0].reg) >= 0)) {
+            r.carrierKind = "register";
+            copyName(r.carrier, sizeof(r.carrier), cs_reg_name(d.h, x.operands[0].reg));
+          } else r.carrierKind = "unsupported_read_effect";
+          tags |= 1u | (field && w.wrote ? 2u : 0u);
+        } else if (field) tags |= w.wrote ? 2u : 4u;
+        incoming |= tags;
+        unknownRead |= !exact;
+      }
+      if ((w.pc == readIndex && selectedOperands != 1) || unknownRead ||
+          (w.pc == readIndex && !r.sameAddress)) {
+        stop(ins, "read_address_unknown_indexed_conflicting_or_multiple"); break;
+      }
+      if (w.pc == readIndex && !r.decoded) {
+        stop(ins, "selected_instruction_is_not_a_modeled_read"); break;
+      }
+      // Exact zero idioms kill incoming value dependence; no flag narrowing.
+      if (x.op_count == 2 && x.operands[0].type == X86_OP_REG &&
+          x.operands[1].type == X86_OP_REG &&
+          x.operands[0].reg == x.operands[1].reg &&
+          (ins.id == X86_INS_XOR || ins.id == X86_INS_PXOR ||
+           ins.id == X86_INS_XORPS || ins.id == X86_INS_CMP)) incoming = 0;
+      if ((incoming & 1) && w.pc != readIndex && !r.firstUse) r.firstUse = ins.address;
+      const auto oldSpTags = w.flow.g[4];
+      if (ins.id == X86_INS_POP) incoming |= w.flow.load(w.slice.s.g[4], 8);
+      bool badWrite = false, fieldStore = false;
+      for (unsigned j = 0; j < x.op_count; ++j) {
+        const auto &op = x.operands[j];
+        const bool possibleStore = (op.access & CS_AC_WRITE) ||
+            (j == 0 && x.op_count > 1 && ins.id != X86_INS_CMP && ins.id != X86_INS_TEST);
+        if (op.type != X86_OP_MEM || !possibleStore) continue;
+        const auto at = aliasAddress(w.slice.s, ins, op, 0);
+        fieldStore = w.pc == writeIndex && ins.id == X86_INS_MOV &&
+                     op.size == 4 && at.kind == pointer && at.root == 1 && at.off == 0x10c;
+        if (fieldStore && (incoming & 1)) {
+          r.memoryEscape = true; if (!r.firstEscape) r.firstEscape = ins.address;
+        }
+        if (at.kind == pointer && at.root == 4) {
+          if (!w.flow.save(at, op.size, incoming)) badWrite = true;
+        } else if (!fieldStore) {
+          if (incoming & 1) {
+            r.memoryEscape = true; if (!r.firstEscape) r.firstEscape = ins.address;
+          }
+          badWrite = true;
+        }
+      }
+      if (ins.id == X86_INS_PUSH && !w.flow.save(plus(w.slice.s.g[4], -8), 8, incoming)) badWrite = true;
+      if (badWrite) { stop(ins, "read_flow_nonstack_memory_or_stack_cap_unresolved"); break; }
+      bool regsOk = true;
+      for (unsigned k = 0; k < nw; ++k) regsOk &= w.flow.put(writes[k], incoming);
+      if (ins.id == X86_INS_PUSH || ins.id == X86_INS_POP) w.flow.g[4] = oldSpTags;
+      if (!regsOk) { stop(ins, "read_flow_partial_or_unmodeled_register"); break; }
+      if (fieldStore) w.wrote = true;
+      else if (!globalLea(w.slice, ins, 0, a.imageSize) && !w.slice.step(ins, false)) {
+        stop(ins, "read_flow_instruction_or_stack_effect_unresolved"); break;
+      }
+      if (!node.count) { stop(ins, "read_flow_fallthrough"); break; }
+      w.pc = unsigned(node.next[0]);
+    }
+  }
+  if (!r.decoded) r.flowComplete = false;
+  if (r.flowComplete)
+    r.reason = r.returnedGpr || r.returnedXmm || r.returnedFlags || r.returnedCallerStack
+                 ? "surviving_carrier_writer_relevance_unresolved"
+             : r.memoryEscape ? "read_value_persisted_cross_invocation_unresolved"
+             : r.controlUse ? "read_control_flow_downstream_effect_unresolved"
+             : "local_value_dead_at_returns_cross_invocation_unresolved";
+}
 bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
   a.resolved = a.sourceNoWrite = a.transformNoWrite = false;
   a.positionProtected = a.relevantEffectsResolved = false;
@@ -1284,6 +1556,8 @@ bool aliasCallee(CalleeAlias &a, CallEffect &call, const Slice &writer) {
                       unsigned(boundaries[a.exactWrite.site - call.begin])))
     return fail(a.edi.barrier, a.edi.mnemonic,
                 "EDI_value_provenance_unresolved", a.edi.reason);
+  inspectReadDependency(a, d, nodes, todo[0].slice,
+                        unsigned(boundaries[a.exactWrite.site ? a.exactWrite.site - call.begin : 0]));
 
   a.stackLow = std::min(a.stackLow, entrySp);
   unsigned gpr = 0xf07, xmmMask = 0x3f;

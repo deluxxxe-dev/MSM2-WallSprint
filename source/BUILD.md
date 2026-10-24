@@ -38,7 +38,7 @@ The final path and update/migration protocol are in docs/LOCAL_WORKSPACE.md. Fir
 
 Capstone5.0.6 is fetched from its official source archive and SHA256-checked against `240ebc834c51aae41ca9215d3190cc372fd132b9c5c8aa2d5f19ca0c325e28f9`. Full x86 decode, no diet/reduced ISA; no external Capstone DLL. Third-party notices remain in vendor/capstone and THIRD_PARTY_NOTICES. Do not copy reference mod source/binaries.
 
-The full hooks suite retains c7-c19 lifecycle/orientation/stale/publication/ABI/DR/entry/call/alias/finalization and cleanup tests. The prepared EDI owned tests remain; CODEX_NEXT now authorizes the diagnostic build, enabled only after exact current callee identity. Actual EDI provenance still requires the dedicated in-game A/E log. `test-workspace.py` adds real owned Git/filesystem migration/update/rollback/isolation fixtures. Logger smoke uses actual Windows filesystem APIs under Wine and new versioned workspace log names; no raw user logs are packaged.
+The full hooks suite retains c7-c19 lifecycle/orientation/stale/publication/ABI/DR/entry/call/alias/finalization and cleanup tests. C20 local EDI provenance is accepted from the authenticated actual-game log. C21 adds a bounded diagnostic-only read-dependency sidecar and eight owned fixture groups; current read/order/flow classification awaits the new A/E log, and the existing effect refusal remains intact. `test-workspace.py` adds real owned Git/filesystem migration/update/rollback/isolation fixtures. Logger smoke uses actual Windows filesystem APIs under Wine and new versioned workspace log names; no raw user logs are packaged.
 
 Optional private historical replay remains optional rather than a fake PASS:
 

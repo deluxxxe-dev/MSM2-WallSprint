@@ -161,6 +161,22 @@ Shared ordinary mods + SF + WS, shared Overstrike, modded launch and versioned W
 22. adhesion/contact refinement ⏸ deferred
 23. animation/camera/later traversal ⬜
 
+## c21 diagnostic preparation
+
+v0.1c21/package0.1.39 adds compact READ_DEPENDENCY/READ_FLOW metadata for the
+pinned read0x2B23578 under unchanged current-code authentication. Structural
+local ordering and conservative possible value flow are separate; surviving
+GPR/XMM/flags/caller stack and later reload/control/unsupported points are logged.
+The sidecar does not grant an effect or writer certificate and does not bypass
+the old refusal. Cross-invocation feedback/downstream XYZ/W remain unknown.
+Actual c21 classification is pending the next game log; see
+analysis/V01C21_READ_DEPENDENCY.md and docs/CODEX_RESULT.md for preparation/results.
+
 ## Current action
 
-Follow `docs/CODEX_NEXT.md`: classify only the exact `0x2B23578` dependency and its relevant read-before-write/value-flow behavior while preserving all c20/c19 safety gates. Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable Position/source/input/movement writes.
+Run the completed diagnostic build through installed Update-WS, then shared
+Overstrike Install mods -> Run modded game. A/cardinal ~4s -> fully end WallRun
+-> move/fast-travel -> E/diagonal ~4s; return the newest complete versioned WS log.
+Use READ_DEPENDENCY/READ_FLOW with existing VALUE/WRITE/ALIAS/WRITER and safety/
+finalization summaries to adjudicate only the current exact read blocker.
+Do not merge main, traverse producer0x351EB00 or enable gameplay writes.

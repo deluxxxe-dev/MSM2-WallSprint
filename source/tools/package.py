@@ -24,6 +24,7 @@ required=['LOCAL_WORKSPACE_AUDIT.md', 'V01C19_RUNTIME_RESULT.md', 'V01C20_EDI_VA
 required.append("OVERSTRIKE_ARCHIVE_DISCOVERY.md")
 required.append("RESET_SMOKE_SNAPSHOT_TIMING.md")
 required.extend(['V01C20_DIAGNOSTIC_VALIDATION.md','LOCAL_WORKSPACE_RUNTIME_ACCEPTANCE_20261024.md'])
+required.extend(['V01C20_RUNTIME_RESULT.md','V01C21_READ_DEPENDENCY.md','V01C21_GATE.md','ENGINE_INTERNALS_REFERENCE.md'])
 # Source is complete for runtime/build. Private game captures are deliberately excluded.
 source=out/'source';source.mkdir(exist_ok=True)
 for directory in ['src','include','tools','mod','vendor']:
@@ -230,6 +231,11 @@ manifest['local_workspace']['real_PC_migration']='accepted_20261024_see_LOCAL_WO
 manifest['isolated_logging'].update({'directory':'game-root/Mods Library/Mods-Developing/MSM2-WS/logs','filename':'MSM2-WS-'+label+'-YYYYMMDD-HHMMSS.log'})
 manifest['limitations'][0]='Real-PC shared workspace/startup/log acceptance passed; actual c20 EDI producer/origin/local coverage/later dependency and XYZ/W remain pending dedicated A/E capture'
 manifest['validation']='Warnings-as-errors cross-build; portable/DLL/native/c19/owned EDI/logger/workspace regressions and standalone source validation; exact current results in CODEX_RESULT.'
+manifest['v01c20_gate']='ACTUAL_A_E_PASS_EDI_GLOBAL_ORIGIN_EARLIER_READ_BLOCKER'
+manifest['edi_value_contract']['actual_EDI_value']='accepted_local_memory_load_0x2b2356f_image_global_root16_offset0x0c323788'
+manifest['v01c21_gate']='READ_DEPENDENCY_DIAGNOSTIC_ACTUAL_CLASSIFICATION_PENDING'
+manifest['read_dependency_contract']={'diagnostic_only':True,'site':'0x2b23578','write_site':'0x2b2358e','authenticated_current_callee_only':True,'new_hooks':0,'runtime_memory_observation':False,'effect_certificate':False,'legacy_effect_refusal_preserved':True,'order_scope':'forward_local_CFG_CALL_normal_return_only','order_visits':4096,'flow_visits':4096,'pending_states':9,'stack_tags':128,'flow_semantics':'conservative_possible_dependence_not_causality','flags_and_caller_stack_included':True,'selected_read_and_post_write_field_values_separate':True,'cross_invocation_feedback':'unknown','downstream_XYZ_W_relevance':'unknown','actual_read_classification':'pending_new_game_log','producer_traversal':False,'Position_source_input_movement_writes':0}
+manifest['limitations'][0]='C20 EDI local value origin accepted; actual c21 read address/order/carrier/next blocker pending new log; diagnostic sidecar never grants writer/ownership/writability proof'
 for name in ['Migrate-WS.cmd','Update-WS.cmd']:
  shutil.copy2(root/'tools/windows'/name,out/name)
 (out/'tools/windows').mkdir(parents=True,exist_ok=True)

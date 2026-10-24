@@ -172,6 +172,21 @@ Important reusable lesson: **instruction ordering and causal relevance are separ
 
 The next bounded research must classify read address/root/offset/width, path ordering and the minimal relevant value flow.
 
+### Prepared c21 method — actual read result still UNKNOWN
+
+**VERIFIED-STATIC implementation/owned-fixture scope only:** c21 adds a bounded
+diagnostic sidecar for the selected read. It separates forward local CFG ordering
+(CALL fallthrough conditional on normal return) from conservative possible value
+flow, including GPR/XMM, flags, caller-stack survivors and later field reloads.
+Selected read and post-write field values use distinct diagnostic tags. A tainted
+carrier/control path is not a causal XYZ/W result, and a dead local value is not
+a proof against cross-invocation persistence. Partial/unknown/CALL/cap failures
+remain exact blockers. This sidecar cannot grant or relax any c19/c20 certificate.
+
+The actual0x2B23578 opcode/address/carrier/order/next blocker remain UNKNOWN until
+the new versioned game log; no engine semantic is assigned. Detailed design,
+scope and tests: analysis/V01C21_READ_DEPENDENCY.md and CODEX_RESULT.md.
+
 ## Mutation / ownership status
 
 Current gate remains:

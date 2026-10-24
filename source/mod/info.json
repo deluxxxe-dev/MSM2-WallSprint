@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.38",
-  "description": "WallSprint v0.1c20 authenticated local EDI value-provenance diagnostics for A/E capture. Accepted shared workspace and versioned logs retained; c19 gameplay guards and no Position/source/input/movement mutation remain.",
+  "version": "0.1.39",
+  "description": "WallSprint v0.1c21 bounded exact read-dependency/order/value-flow diagnostics after accepted c20 EDI provenance. Existing fail-closed effect/ownership gates and no Position/source/input/movement mutation remain.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1
