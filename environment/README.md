@@ -1,7 +1,34 @@
-# MSM2 Mod-Tools v1.0.0
+# MSM2 Mod-Tools v1.1.0
 
 今回構築した共有MOD環境の起動・バックアップ・同じ場所への復元用ツールです。
 SF/WS本体の開発・更新は、それぞれの既存アップデーターで行います。
+
+## Overstrikeをダブルクリックで開く
+
+現在の独立Git cloneを更新した後、
+`MSM2-WS\_source\environment\Start-Overstrike.cmd` をダブルクリックします。
+配置からゲームフォルダーを自動判定し、初回はツールを `<game>\Mod-Tools` に導入して
+デスクトップに **`MSM2 - Overstrike`** を作成し、そのまま共有Overstrikeを開きます。
+初回導入時だけゲームとOverstrikeを終了してください。
+
+以後はデスクトップの **`MSM2 - Overstrike`** をダブルクリックするだけです。
+共有Overstrike・ローダーの配置、MSM2プロファイル、WSの独立ソースと
+ルートの有効scriptが1つであること、WS内の重複を生むZIP等や更新ロックの不在を
+確認して、`<game>\Overstrike\Overstrike.exe` をゲームルートの作業フォルダーで開きます。
+同じOverstrikeが起動済みなら既存ウィンドウを前面に出します。
+起動時のGit更新・ビルド・バックアップは実行せず、通常MODやSF/WSのファイルも変更しません。
+配置不整合はエラーを表示して停止し、ファイルの削除・移動による修復は行いません。
+
+ソースをゲーム外へ展開した場合は初回のみゲームフォルダーを入力します。
+明示指定も可能です。
+
+```powershell
+.\Start-Overstrike.cmd --game-root "<ゲームフォルダー>"
+```
+
+バックアップ未設定ならホームの `MSM2-Mod-Backups` を既定値として登録します。
+この操作ではバックアップを作成しません。既存の保存先・プロファイル・復元後確認設定は保持します。
+保存先を変更する場合は下記の `Install-Mod-Tools.cmd --backup-dir` を使用できます。
 
 ## 最初の導入
 
@@ -23,8 +50,9 @@ Python 3.11以降とWindows標準PowerShellが必要です。現在の環境のP
 それらの外部開発ツール本体・Steam・セーブデータは、このバックアップに含めません。
 PC全体を再インストールした場合、開発の再開には別途その前提環境が必要です。
 
-導入先は `<game>\Mod-Tools` です。デスクトップに以下の2つを作成します。
+導入先は `<game>\Mod-Tools` です。デスクトップに以下の3つを作成します。
 
+- `MSM2 - Overstrike`：環境とWS配置を確認して共有Overstrikeを起動。
 - `MSM2 - Play Modded`：導入済みMODでゲームを起動。
 - `MSM2 - Backup Mods`：現在の共有環境を保存・検証。
 
@@ -37,7 +65,7 @@ PC全体を再インストールした場合、開発の再開には別途その
 ゲームEXE・作業ディレクトリ・`-scripts` 指定で起動します。Steamは通常どおり使用します。
 すでに起動している同じゲームは重複起動せず、既存のウィンドウを前面に出します。
 
-MODを追加・更新して適用するときは `<game>\Mod-Tools\Open-Overstrike.cmd` から
+MODを追加・更新して適用するときはデスクトップの `MSM2 - Overstrike` から
 共有Overstrikeを開き、`Install mods` を実行します。プロジェクトのコードを更新する
 `Update-SF.cmd` / `Update-WS.cmd` は従来どおり別操作です。
 

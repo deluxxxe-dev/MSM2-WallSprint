@@ -9,7 +9,7 @@ See [README_TEST.md](README_TEST.md), [docs/LOCAL_WORKSPACE.md](docs/LOCAL_WORKS
 
 ## Shared launch / private environment backup
 
-The separate [MSM2 Mod-Tools](environment/README.md) provide a desktop modded-game
-launcher, complete shared MOD-environment backup and verified same-path recovery
+The separate [MSM2 Mod-Tools](environment/README.md) provide checked desktop
+Overstrike/modded-game launchers, complete shared MOD-environment backup and verified same-path recovery
 onto the matching Vanilla game build. They do not change WS/SF runtime code.
 [Validation and Windows handoff](environment/TEST_REPORT.md).

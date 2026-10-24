@@ -21,13 +21,13 @@ import tempfile
 import uuid
 import zipfile
 
-VERSION = '1.0.0'
+VERSION = '1.1.0'
 FORMAT = 'msm2-mod-environment-1'
 TREES = ('Overstrike', 'Profiles', 'Mods Library', 'scripts', 'Mod-Tools')
 FILES = ('scripts_proxy.dll', 'winmm.dll', 'scripts.txt', 'commandline.txt')
 ROOTS = TREES + FILES
 KIT = ('mod_environment.py', 'windows.ps1', 'Install-Mod-Tools.cmd',
-       'Play-Modded.cmd', 'Open-Overstrike.cmd', 'Backup-Mods.cmd',
+       'Play-Modded.cmd', 'Open-Overstrike.cmd', 'Start-Overstrike.cmd', 'Backup-Mods.cmd',
        'Restore-Mods.cmd', 'Verify-Backup.cmd', 'README.md', 'LICENSE.txt')
 BUFFER = 1024 * 1024
 MAX_MANIFEST = 64 * 1024 * 1024
@@ -519,6 +519,69 @@ def open_manager(game, system=None):
         (system or Windows()).launch(game, manager=True)
 
 
+def ws_launch_ready(game):
+    """Check the accepted WS layout without building, changing Git or reading SF."""
+    workspace = game / 'Mods Library/Mods-Developing/MSM2-WS'
+    require((workspace / '_source/.git').is_dir(), 'WS independent _source clone is missing')
+    ancestors_safe(workspace)
+    require(not (workspace / '_source/.git/index.lock').exists(),
+            'WS Git index lock is present; let the current Git operation finish first')
+    def walk_error(error):
+        raise EnvironmentError('Cannot inspect WS layout: ' + str(error)) from error
+    scripts = []
+    for parent, dirs, files in os.walk(workspace, followlinks=False, onerror=walk_error):
+        folder = Path(parent)
+        for name in dirs + files:
+            item = folder / name
+            require(not linked(item), f'Linked WS path refused: {item}')
+        if folder == workspace / '_source' and '.git' in dirs:
+            dirs.remove('.git')  # Git object storage is not a deployed MOD.
+        for name in files:
+            item = folder / name
+            require(item.suffix.lower() not in ('.zip', '.rar', '.7z'),
+                    f'Overstrike-visible WS archive found; use Update-WS to validate it: {item}')
+            if item.suffix.lower() == '.script':
+                scripts.append(item)
+    require(len(scripts) == 1 and scripts[0].parent == workspace and
+            re.fullmatch(r'MSM2-WS-v[0-9A-Za-z.]+\.script', scripts[0].name),
+            'Expected exactly one versioned WS .script at workspace root; use Update-WS to validate the layout')
+    require(not (workspace / '_archive/Update-WS.lock').exists(),
+            'WS update lock is present; let Update-WS finish first')
+    return scripts[0]
+
+
+def start_manager(game, system=None):
+    """One-time toolkit/shortcut setup, then ordinary checked manager launch."""
+    game = game_root(game)
+    system = system or Windows()
+    with lock(game):
+        environment_ready(game)
+        profile(game)
+        script = ws_launch_ready(game)
+        print('PASS: shared Overstrike, game-root loaders and MSM2 profile')
+        print('PASS: one active WS script:', script.name)
+        target = game / 'Mod-Tools'
+        settings = load_settings(game)
+        require(not target.exists() or not any(target.iterdir()) or
+                settings.get('format') == 'msm2-mod-tools-1',
+                'Unrecognized Mod-Tools folder; existing files preserved')
+        home = Path(__file__).resolve().parent
+        refresh = settings.get('tool_version') != VERSION
+        for name in KIT:
+            src, dst = home / name, target / name
+            ancestors_safe(dst)
+            require(src.is_file(), 'Incomplete launcher files: ' + str(src))
+            if not dst.is_file() or (src.resolve() != dst.resolve() and sha(src) != sha(dst)):
+                refresh = True
+        if refresh:
+            # Installation preserves existing backup/profile/restore settings.
+            # Subsequent installed launches do not scan/copy the whole environment.
+            _install(game, system=system)
+            print('Installed desktop shortcut: MSM2 - Overstrike')
+        system.launch(game, manager=True)
+        print('Shared Overstrike opened. Use Install mods -> Run modded game as needed.')
+
+
 def _play(game, system=None, confirm_install=False):
     game = game_root(game)
     environment_ready(game)
@@ -552,7 +615,7 @@ def prompt_path(message, default=''):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Local shared MSM2 mod launch/backup/restore; game data excluded')
-    parser.add_argument('action', choices=['install', 'play', 'manager', 'backup', 'verify', 'restore'])
+    parser.add_argument('action', choices=['install', 'play', 'manager', 'start', 'backup', 'verify', 'restore'])
     parser.add_argument('--game-root')
     parser.add_argument('--backup-dir')
     parser.add_argument('--profile')
@@ -570,6 +633,8 @@ def main(argv=None):
         print(f'PASS: all {len(m["files"])} files verified; source game: {m["original_game_root"]}')
         return
     root = a.game_root or installed_game
+    if a.action == 'start' and not root:
+        root = next((p for p in home.parents if (p / 'Spider-Man2.exe').is_file()), None)
     if a.action == 'restore' and not root:
         m = read_manifest(archive)
         root = prompt_path('Restore game folder', m['original_game_root'])
@@ -595,6 +660,8 @@ def main(argv=None):
             open_manager(game)
     elif a.action == 'manager':
         open_manager(game)
+    elif a.action == 'start':
+        start_manager(game)
     else:
         if load_settings(game).get('restore_requires_install') and not a.confirm_installed:
             print('After restoring onto Vanilla, first complete Install mods in shared Overstrike.')

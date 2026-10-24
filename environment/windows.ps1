@@ -1,6 +1,23 @@
 param([Parameter(Mandatory=$true)][string]$Request)
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+function Set-ModShortcuts($Desktop, $GameRoot, $Shell) {
+    $links = @()
+    foreach ($item in @(@('MSM2 - Overstrike','Start-Overstrike.cmd'), @('MSM2 - Play Modded','Play-Modded.cmd'), @('MSM2 - Backup Mods','Backup-Mods.cmd'))) {
+        $path = Join-Path $Desktop ($item[0] + '.lnk')
+        $target = Join-Path $GameRoot ('Mod-Tools\' + $item[1])
+        $link = $Shell.CreateShortcut($path)
+        if ((Test-Path -LiteralPath $path) -and -not [String]::Equals($link.TargetPath, $target, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "Existing unrelated shortcut preserved: $path"
+        }
+        $link.TargetPath = $target
+        $link.WorkingDirectory = $GameRoot
+        $icon = if ($item[1] -eq 'Play-Modded.cmd') { 'Spider-Man2.exe' } else { 'Overstrike\Overstrike.exe' }
+        $link.IconLocation = (Join-Path $GameRoot $icon) + ',0'
+        $links += $link
+    }
+    foreach ($link in $links) { $link.Save() }
+}
 $r = [IO.File]::ReadAllText($Request, [Text.Encoding]::UTF8) | ConvertFrom-Json
 $game = [IO.Path]::GetFullPath([string]$r.game)
 $exe = Join-Path $game 'Spider-Man2.exe'
@@ -26,18 +43,7 @@ if ($r.action -eq 'check') {
     $desktop = [Environment]::GetFolderPath('Desktop')
     if (-not $desktop) { throw 'Desktop folder is unavailable.' }
     $shell = New-Object -ComObject WScript.Shell
-    foreach ($item in @(@('MSM2 - Play Modded','Play-Modded.cmd'), @('MSM2 - Backup Mods','Backup-Mods.cmd'))) {
-        $path = Join-Path $desktop ($item[0] + '.lnk')
-        $target = Join-Path $game ('Mod-Tools\' + $item[1])
-        $link = $shell.CreateShortcut($path)
-        if ((Test-Path -LiteralPath $path) -and -not [String]::Equals($link.TargetPath, $target, [StringComparison]::OrdinalIgnoreCase)) {
-            throw "Existing unrelated shortcut preserved: $path"
-        }
-        $link.TargetPath = $target
-        $link.WorkingDirectory = $game
-        $link.IconLocation = if ($item[1] -eq 'Play-Modded.cmd') { "$exe,0" } else { "$manager,0" }
-        $link.Save()
-    }
+    Set-ModShortcuts -Desktop $desktop -GameRoot $game -Shell $shell
 } elseif ($r.action -eq 'play' -or $r.action -eq 'manager') {
     $name = if ($r.action -eq 'play') { 'Spider-Man2' } else { 'Overstrike' }
     if ($running[$name].Count) {

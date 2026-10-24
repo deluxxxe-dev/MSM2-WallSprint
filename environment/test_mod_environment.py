@@ -125,6 +125,81 @@ class EnvironmentTests(unittest.TestCase):
             self.assertEqual((self.project(name) / '_source/code.txt').read_text(), 'uncommitted work must survive')
         self.assert_game_untouched()
 
+    def test_start_installs_launcher_preserving_settings_sources_and_restore_gate(self):
+        settings = m.load_settings(self.game)
+        settings.update(tool_version='1.0.0', restore_requires_install=True)
+        m.save_settings(self.game, settings)
+        before = tree(self.game / 'Mods Library')
+        self.system.events.clear()
+        with patch.object(m.subprocess, 'run', side_effect=AssertionError('No Git/update/build allowed')):
+            m.start_manager(self.game, self.system)
+        current = m.load_settings(self.game)
+        self.assertEqual(current['tool_version'], m.VERSION)
+        self.assertEqual(current['backup_directory'], settings['backup_directory'])
+        self.assertTrue(current['restore_requires_install'])
+        self.assertTrue((self.game / 'Mod-Tools/Start-Overstrike.cmd').is_file())
+        self.assertEqual(self.system.events, [('quiet', self.game), ('shortcuts', self.game), ('launch', self.game, True)])
+        self.assertEqual(tree(self.game / 'Mods Library'), before)
+        self.assert_game_untouched()
+
+    def test_start_installs_from_clean_game_without_backup_prompt(self):
+        m.remove_owned_tree(self.game / 'Mod-Tools')
+        with patch.object(m, 'prompt_path', side_effect=AssertionError('Unexpected prompt')):
+            m.start_manager(self.game, self.system)
+        self.assertEqual(m.load_settings(self.game)['backup_directory'], str(Path.home() / 'MSM2-Mod-Backups'))
+        self.assertEqual(self.system.events[-1], ('launch', self.game, True))
+
+    def test_daily_start_only_checks_and_launches_without_install_snapshot_or_git(self):
+        before = tree(self.game)
+        self.system.events.clear()
+        with patch.object(m, '_install', side_effect=AssertionError('No reinstall')), \
+                patch.object(m, 'scan', side_effect=AssertionError('No full backup scan')), \
+                patch.object(m.subprocess, 'run', side_effect=AssertionError('No external updater')):
+            m.start_manager(self.game, self.system)
+        self.assertEqual(self.system.events, [('launch', self.game, True)])
+        self.assertEqual(tree(self.game), before)
+
+    def test_start_refuses_duplicate_scripts_archives_and_update_lock_without_cleanup(self):
+        workspace = self.project('MSM2-WS')
+        for relative in ('_source/old.script', '_archive/nested.ZIP', '_archive/Update-WS.lock', '_source/.git/index.lock'):
+            item = workspace / relative
+            item.parent.mkdir(exist_ok=True)
+            item.write_bytes(b'preserve this conflicting file')
+            before = tree(self.game)
+            self.system.events.clear()
+            with self.assertRaises(m.EnvironmentError):
+                m.start_manager(self.game, self.system)
+            self.assertEqual(self.system.events, [])
+            self.assertEqual(tree(self.game), before)
+            item.unlink()
+
+    def test_start_refuses_missing_loader_profile_or_unrelated_toolkit(self):
+        loader = self.game / 'winmm.dll'
+        data = loader.read_bytes()
+        loader.unlink()
+        with self.assertRaises(m.EnvironmentError):
+            m.start_manager(self.game, self.system)
+        loader.write_bytes(data)
+        saved = self.game / 'Profiles/MSM2 (Steam).json'
+        data = saved.read_bytes()
+        saved.write_text(json.dumps({'game': 'MSM2', 'path': str(self.root / 'wrong game')}))
+        with self.assertRaises(m.EnvironmentError):
+            m.start_manager(self.game, self.system)
+        saved.write_bytes(data)
+        (self.game / 'Mod-Tools/mod-tools.json').unlink()
+        before = tree(self.game)
+        with self.assertRaises(m.EnvironmentError):
+            m.start_manager(self.game, self.system)
+        self.assertEqual(tree(self.game), before)
+
+    def test_start_derives_game_from_installed_toolkit_or_authoritative_source(self):
+        for home in (self.game / 'Mod-Tools', self.project('MSM2-WS') / '_source/environment'):
+            with patch.object(m, '__file__', str(home / 'mod_environment.py')), \
+                    patch.object(m, 'prompt_path', side_effect=AssertionError('Unexpected prompt')), \
+                    patch.object(m, 'start_manager') as start:
+                m.main(['start'])
+                start.assert_called_once_with(self.game)
+
     def test_full_roundtrip_git_history_dirty_work_logs_ordinary_mods_empty_dirs(self):
         original = tree(self.game)
         histories = {n: git(self.project(n) / '_source', 'log', '--format=%H') for n in ('MSM2-SF', 'MSM2-WS')}

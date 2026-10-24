@@ -4,12 +4,12 @@ This is the user's explicitly requested shared infrastructure task. SF feature/
 probe work is left to the SF Codex; WS gameplay/EDI research remains unchanged.
 
 See [user instructions](../environment/README.md) and [tests](../environment/TEST_REPORT.md).
-The toolkit version is1.0.0, independent of WSv0.1c20/package0.1.38 and SF0.1.3.
+The toolkit version is1.1.0, independent of WSv0.1c20/package0.1.38 and SF0.1.3.
 
 ## Delivered behavior
 
 Install-Mod-Tools copies only its own files/config to `<game>/Mod-Tools` and
-creates owned Play/Backup desktop shortcuts. Modded launch follows the observed
+creates owned Overstrike/Play/Backup desktop shortcuts. Modded launch follows the observed
 Overstrike LaunchGame behavior: Spider-Man2.exe, cwd=game, -scripts if not already
 in commandline.txt. It validates the chosen profile's script support and installed
 DLL list, reuses a matching running game and refuses a foreign matching-name process.
