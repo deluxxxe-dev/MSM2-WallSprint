@@ -2,27 +2,27 @@
   "version": "v0.1c20",
   "package_version": "0.1.38",
   "branch": "codex/v01c20-edi-value-provenance",
-  "base_handoff_commit": "d19fa36011c185d87da209437d055eb20b6bd2e9",
-  "implementation_commit": "a2faf166851270a78bd5ca30c67cd55bcc59cc5c",
+  "base_handoff_commit": "6547ec4c204feb1678bd444f2bff5bea94778e6b",
+  "implementation_commit": "79d2acff84574b7c794abe980560dad1e3e9052a",
   "prepared_research_commit": "9057d24",
   "outputs": [
     {
       "path": "MSM2-WS-v0.1c20.zip",
-      "bytes": 3397778,
-      "sha256": "1f7a86e4a4c8b2dd2cc888e97431db3ffde0066ceb08a323baf1526eac09d022"
+      "bytes": 3419022,
+      "sha256": "483ef19a407cce5c7c9c7009f504822b881ba23a6842c71ea1739009bfd98f3f"
     },
     {
       "path": "MSM2-WS-v0.1c20-source.zip",
-      "bytes": 774773,
-      "sha256": "18c3037b5252025404f33264811811cfa52ea52e82e2416b57d3a58ef47030f9"
+      "bytes": 778839,
+      "sha256": "08c7988d0880392ba7f97b902fe5097b3abbb255f76db22447ac712fe49a0fa3"
     }
   ],
   "public_test_pass_records": {
     "portable": 13,
     "smoke": 7,
-    "hooks": 116
+    "hooks": 119
   },
-  "total_public_pass_records": 136,
+  "total_public_pass_records": 139,
   "private_input_skips": 5,
   "separate_historical_private_replay_records": 4,
   "private_replay_duplicate_baseline_records": 1,
@@ -38,11 +38,11 @@
     "workspace": 13,
     "logging": 3
   },
-  "standalone_source": "PASS74_fresh_extraction_native61_byte_identity_then_fixture_only_corrected13_workspace",
+  "standalone_source": "HISTORICAL_890d23c_PASS74_current_snapshot_fixture_change_has_full139_and_focused12_plus_artifact_integrity",
   "standalone_focused_records": 54,
   "standalone_DLL_logger_records": 7,
   "standalone_workspace_records": 13,
-  "full_staging_wrapper": "PASS_full_preserved_pipeline_from_owned_Unicode_space_path_outside_scanned_source",
+  "full_staging_wrapper": "PASS_current_snapshot_correction_full139_5_optional_private_SKIPs_disabled_artifacts",
   "CRC_current_sources_docs_helpers_licenses_script_DLL_hash_private_body_exclusion": "PASS",
   "legacy_State_Slice_c14_c16_caller_producer_native_lifecycle_entry_thunk_cleanup_unchanged": true,
   "c15_writer_CFG_setup_and_c19_read_region_gates_unchanged": true,
@@ -313,7 +313,8 @@
     "pipeline_completed": false,
     "deployment_reached": false,
     "previous_active_script": "retained_by_helper",
-    "overall_real_PC_acceptance": "BLOCKED"
+    "overall_real_PC_acceptance": "BLOCKED",
+    "cause_followup": "VERIFIED_diagnostic6547ec4_pre_installation_setup_exceeds30ms_deadline"
   },
   "reset_arm_failure_diagnostic": {
     "implementation_commit": "6fcf33e45e49523a456a75016e267f7717713e79",
@@ -330,5 +331,35 @@
     "deadlines_assertions_and_admission_preserved": true,
     "full136_and_source74": "historical_890d23c_baseline_not_rerun_for_this_diagnostic_only_change",
     "real_PC_cause": "UNCONFIRMED_requires_focused_output"
+  },
+  "reset_snapshot_timing_correction": {
+    "implementation_commit": "79d2acff84574b7c794abe980560dad1e3e9052a",
+    "user_diagnostic_delivery": "6547ec4c204feb1678bd444f2bff5bea94778e6b",
+    "user_session": 1,
+    "window_start_from_commit_ms": 44.6926,
+    "arm_return_from_commit_ms": 44.7067,
+    "deadline_ms": 30,
+    "admission_identity_alignment_checks": "PASS",
+    "debugger_present": false,
+    "installed": 0,
+    "hits": 0,
+    "leases_after_cleanup": 0,
+    "measured_failure_phase": "thread_list_setup_before_window_start_and_before_install_loop",
+    "individual_slow_API": "UNKNOWN_not_separately_timed",
+    "test_only_real_snapshot_before_commit": true,
+    "production_DLL_adapter": false,
+    "real_QPC_hardware_VEH_and_30ms_deadline_preserved": true,
+    "required_slow_setup50ms_before_commit": "PASS_original_positive_capture_assertions",
+    "required_delayed_snapshot50ms_after_commit": "PASS_arm_refusal_zero_watch_hit_lease_unchanged_memory_DR",
+    "focused_PASS_records": 12,
+    "focused_optional_private_SKIP_records": 1,
+    "full_public_PASS_records": 139,
+    "full_optional_private_SKIP_records": 5,
+    "production_sources_headers_and_version_unchanged": true,
+    "runtime_payload": "exact_DLL_from_successful_current_full_pipeline",
+    "real_PC_corrected_focused_and_migration": "PENDING",
+    "fresh_stage_helper_PASS_records": 22,
+    "helper_optional_private_SKIP_records": 1,
+    "extra_short_fixture_repetitions": 5
   }
 }

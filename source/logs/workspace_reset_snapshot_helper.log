@@ -1,0 +1,99 @@
+Diagnostic folder: /tmp/msm2-ws-reset-diagnostic.RZoopc
+make: Entering directory '/tmp/msm2-ws-reset-diagnostic.RZoopc/build/deps/capstone-5.0.6'
+  CC      cs.o
+  CC      utils.o
+cs.c:4: warning: ignoring ‘#pragma warning ’ [-Wunknown-pragmas]
+    4 | #pragma warning(disable:4996)                   // disable MSVC's warning on strcpy()
+cs.c:5: warning: ignoring ‘#pragma warning ’ [-Wunknown-pragmas]
+    5 | #pragma warning(disable:28719)          // disable MSVC's warning on strcpy()
+  CC      SStream.o
+  CC      MCInstrDesc.o
+  CC      MCRegisterInfo.o
+  CC      MCInst.o
+  CC      Mapping.o
+  CC      arch/X86/X86DisassemblerDecoder.o
+  CC      arch/X86/X86Disassembler.o
+arch/X86/X86Disassembler.c:82: warning: ignoring ‘#pragma warning ’ [-Wunknown-pragmas]
+   82 | #pragma warning(disable:4996)                   // disable MSVC's warning on strncpy()
+arch/X86/X86Disassembler.c:83: warning: ignoring ‘#pragma warning ’ [-Wunknown-pragmas]
+   83 | #pragma warning(disable:28719)          // disable MSVC's warning on strncpy()
+  CC      arch/X86/X86InstPrinterCommon.o
+arch/X86/X86InstPrinterCommon.c:19: warning: ignoring ‘#pragma warning ’ [-Wunknown-pragmas]
+   19 | #pragma warning(disable:4996)                   // disable MSVC's warning on strncpy()
+arch/X86/X86InstPrinterCommon.c:20: warning: ignoring ‘#pragma warning ’ [-Wunknown-pragmas]
+   20 | #pragma warning(disable:28719)          // disable MSVC's warning on strncpy()
+  CC      arch/X86/X86IntelInstPrinter.o
+arch/X86/X86IntelInstPrinter.c:21: warning: ignoring ‘#pragma warning ’ [-Wunknown-pragmas]
+   21 | #pragma warning(disable:4996)                   // disable MSVC's warning on strncpy()
+arch/X86/X86IntelInstPrinter.c:22: warning: ignoring ‘#pragma warning ’ [-Wunknown-pragmas]
+   22 | #pragma warning(disable:28719)          // disable MSVC's warning on strncpy()
+  CC      arch/X86/X86Mapping.o
+  CC      arch/X86/X86Module.o
+  AR      capstone.lib
+/workspace/toolchains/windows/usr/bin/x86_64-w64-mingw32-ar: creating ./capstone.lib
+make: Leaving directory '/tmp/msm2-ws-reset-diagnostic.RZoopc/build/deps/capstone-5.0.6'
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+PASS: b9 characterization keeps hardware watch after first reset and captures second reset; cleanup restores debug registers
+PASS: b6 real hardware short watch + real MinHook raw entry; surface-to-world reset, independent second writer, raw RCX/RDX/R8/R9 and exactly64 source bytes, QPC, stop-on-reset, 30ms timeout, cancellation/F8/debug-register restoration; synthetic NEVER game verified
+PASS: b9 characterization keeps hardware watch after first reset and captures second reset; cleanup restores debug registers
+PASS: b6 real hardware short watch + real MinHook raw entry; surface-to-world reset, independent second writer, raw RCX/RDX/R8/R9 and exactly64 source bytes, QPC, stop-on-reset, 30ms timeout, cancellation/F8/debug-register restoration; synthetic NEVER game verified
+PASS: real snapshot handed to unchanged legacy engine50ms after commit refuses30ms arm; zero leases/hits, owned memory and debug registers unchanged; synthetic only
+PASS: production async reset coordinator wake/identity/native gate + actual hardware event + stop/join/DR cleanup on owned synthetic memory; no game verification
+PASS: anchored hardware store decode, raw source association, explicit A/E mapping, timing/drop/target/source negative gates; synthetic cannot promote reset writer
+SKIP: optional private584byte game-writer normalization replay; independent synthetic decoder/source tests ran
+PASS: b7 first-override prearm/missing/false/drop/session-mapping gates; synthetic never verified
+PASS: b7 .60 prearm primary-only before .70 source commit, all-caller/invalid-source trace, surface/reset hardware events, positive PREARM_STATUS, unknown-writer non-correlation, Deinit cancellation and DR cleanup; synthetic NOT game evidence
+PASS: real hardware diagonal E sequential dword reset after dual commits; previous surface anchor captures final WorldUp despite non-surface intermediate row; synthetic only
+PASS: b7 .60 prearm primary-only before .70 source commit, all-caller/invalid-source trace, surface/reset hardware events, positive PREARM_STATUS, unknown-writer non-correlation, Deinit cancellation and DR cleanup; synthetic NOT game evidence
+PASS: production async helper crosses .60 to >=.85 once and uses real Toolhelp enumeration/filter/install on owned process threads: entries_total>1 owner_pid_matches>1 installed>1; helper excluded, guard loss before threshold has explicit stop reason and no expansion, stop/join/DR cleanup; no game evidence
+Reset arm repetition 1/5
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+PASS: b9 characterization keeps hardware watch after first reset and captures second reset; cleanup restores debug registers
+PASS: b6 real hardware short watch + real MinHook raw entry; surface-to-world reset, independent second writer, raw RCX/RDX/R8/R9 and exactly64 source bytes, QPC, stop-on-reset, 30ms timeout, cancellation/F8/debug-register restoration; synthetic NEVER game verified
+Reset arm repetition 2/5
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+PASS: b9 characterization keeps hardware watch after first reset and captures second reset; cleanup restores debug registers
+PASS: b6 real hardware short watch + real MinHook raw entry; surface-to-world reset, independent second writer, raw RCX/RDX/R8/R9 and exactly64 source bytes, QPC, stop-on-reset, 30ms timeout, cancellation/F8/debug-register restoration; synthetic NEVER game verified
+Reset arm repetition 3/5
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+PASS: b9 characterization keeps hardware watch after first reset and captures second reset; cleanup restores debug registers
+PASS: b6 real hardware short watch + real MinHook raw entry; surface-to-world reset, independent second writer, raw RCX/RDX/R8/R9 and exactly64 source bytes, QPC, stop-on-reset, 30ms timeout, cancellation/F8/debug-register restoration; synthetic NEVER game verified
+Reset arm repetition 4/5
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+PASS: b9 characterization keeps hardware watch after first reset and captures second reset; cleanup restores debug registers
+PASS: b6 real hardware short watch + real MinHook raw entry; surface-to-world reset, independent second writer, raw RCX/RDX/R8/R9 and exactly64 source bytes, QPC, stop-on-reset, 30ms timeout, cancellation/F8/debug-register restoration; synthetic NEVER game verified
+Reset arm repetition 5/5
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+PASS: b9 characterization keeps hardware watch after first reset and captures second reset; cleanup restores debug registers
+PASS: b6 real hardware short watch + real MinHook raw entry; surface-to-world reset, independent second writer, raw RCX/RDX/R8/R9 and exactly64 source bytes, QPC, stop-on-reset, 30ms timeout, cancellation/F8/debug-register restoration; synthetic NEVER game verified
+Reset diagnostic exit: 0; retained folder: /tmp/msm2-ws-reset-diagnostic.RZoopc
