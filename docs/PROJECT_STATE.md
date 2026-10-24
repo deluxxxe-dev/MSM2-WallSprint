@@ -5,9 +5,10 @@ Convert vanilla WallRun into surface-relative locomotion. Do not advance movemen
 
 ## Repository / branch policy
 - Canonical remote: `https://github.com/deluxxxe-dev/MSM2-WallSprint.git`
-- Implementation source of truth: `codex/v01c20-edi-value-provenance`
+- Current implementation line: `codex/v01c20-edi-value-provenance`
 - Owner-confirmed organized baseline: `5192f05f32313919fdf4049bd734b971655d163f`
-- `main` is heavily diverged and must **not** be merged into this branch.
+- Continue from later commits on this branch; do not reset to the baseline.
+- `main` is heavily diverged and must **not** be routinely merged into this branch.
 
 ## Exact target / safety
 - Spider-Man2.exe 2.810.0.0
@@ -15,17 +16,31 @@ Convert vanilla WallRun into surface-relative locomotion. Do not advance movemen
 - WallRun Init `0x14233C0`, Entry `0x14235C0`, Update `0x1424530`, Deinit `0x1416660`
 - Preserve exact-build fail-closed behavior, `AGENTS.md` / `docs/DEV_RULES.md`, independent implementation, and no raw user logs/full private game bodies in public artifacts.
 
-## Accepted c19 runtime result
-Latest accepted A -> E:
+## Accepted c20 runtime result
+
+Evidence: `analysis/V01C20_RUNTIME_RESULT.md`.
+
+Actual A/E-style run on v0.1c20 / package0.1.38:
 
 ```text
-A/session1: 3844 ms, verified Deinit, retention pass, Up dot surface=1, stale0, hard0, Position writes0
-E/session2: 4094 ms, verified Deinit, retention pass, Up dot surface=1, stale0, hard0, Position writes0
+session1: 4219 ms orientation summary / 4.214959 s verified WallRun
+  verified Deinit, source active until Deinit, retention PASS
+  final actor Up dot surface=1
+  stale suspend/resume=1/1, max stale 103 ms, recovered
+  hard kills=0
+  Position writes by MOD=0, watch cleanup restored
+
+session2: 4390 ms orientation summary / 4.392723 s verified WallRun
+  verified Deinit, source active until Deinit, retention PASS
+  final actor Up dot surface=1.00000012
+  stale0, hard kills=0
+  Position writes by MOD=0, watch cleanup restored
 ```
 
-Both sessions finalized 8 true entry snapshots / 8 complete maps, XYZ mask0x7, source W0 and destination W1. Cleanup restored normally.
+Both sessions retained 8 true entry snapshots / 8 complete invocation maps.
 
 ## Verified movement chain
+
 ```text
 writer=0x2CFC900..0x2CFC9B7
 stores=0x2CFC936/0x2CFC93C/0x2CFC942/0x2CFC945
@@ -35,30 +50,65 @@ return=0x351EEB0
 observed second return=0x351A020
 ```
 
-Runtime source relation remains `RDX=entry RSP+0x28`; sampled `[RDX] XYZ` equals exact executed Position XYZ bits. Correlation only until writer-side causality completes.
+Runtime source relation remains `RDX=entry RSP+0x28`; sampled `[RDX] XYZ` equals exact executed Position XYZ bits. This remains correlation until the writer/effect/ownership chain completes.
 
-## Current research blocker — c20 EDI value provenance
-C19 proved:
+## c20 result — EDI local value provenance resolved
+
+C19 established:
 
 ```text
 0x2B2358E: mov dword ptr [RCX+0x10C], EDI
-RCX provenance = entry writer Hero Transform
+RCX provenance = writer-entry Hero Transform
 destination = Hero Transform +0x10C
 ```
 
-The write does not directly overlap Position `+0x30..+0x3F` or the Transform identity/pointer-carrier range. EDI value provenance remains unresolved.
+C20 now establishes the bounded local reaching definition for EDI under the authenticated actual-game callee:
 
-The prepared c20 bounded local value-provenance implementation is preserved in this branch. After the real-PC workspace acceptance passed on 2026-10-24, `docs/CODEX_NEXT.md` now explicitly reauthorizes a diagnostic-only c20 test build and actual-game A/E capture.
+```text
+producer RVA = 0x2B2356F
+producer kind = memory_load
+origin kind = memory_load
+root = 16 = analyzer globalRoot / exact RIP-relative executable-image address
+offset = 0x0C323788
+reaching definitions = 1
+all local reaching states examined = 1
+same local value origin = 1
+value provenance exact = 1
+```
 
-The current question is limited to:
-- the exact local reaching-definition/value relation of EDI at `0x2B2358E`;
-- all-local-path coverage/conflict/refusal;
-- the next precise later read/effect blocker if the local relation succeeds;
-- eventual XYZ/W writer causality only if the stricter protected-effect coverage also succeeds.
+This supersedes the old statement that EDI local provenance is unknown. It does **not** assign semantic meaning to the image-global value, EDI, or `Transform+0x10C`.
 
-No semantic ABI type is assigned to EDI or Transform+0x10C without evidence.
+## Current research blocker — exact earlier read at 0x2B23578
+
+The c20 local value proof did not finish the full callee/writer-effect proof:
+
+```text
+all_writer_call_states_examined=0
+relevant_transform_effects_resolved=0
+transform_position_protected_range_unmodified=0
+source_span_no_write_proven=0
+XYZ/W causal proof incomplete
+```
+
+The exact next dependency site is:
+
+```text
+0x2B23578
+```
+
+Current conservative classification:
+
+```text
+earlier_read_provenance_dependency
+reason=exact_transform_write_may_change_a_decoded_read_carrier
+```
+
+The read occurs before the native write at `0x2B2358E`. The next task is therefore to classify its exact address/value provenance and ordering/value-flow relationship, not to skip directly to producer ownership.
+
+Do not assume either that the earlier read is irrelevant or that it is causal. Same-invocation flow, any surviving returned carrier, and possible cross-invocation persistence must be distinguished or explicitly left unresolved.
 
 ## Current safety gate
+
 ```text
 writable_source_proven=0
 Position/source/input/movement writes=0
@@ -70,13 +120,9 @@ downstream_conflicts_proven_absent=0
 
 Producer `0x351EB00` remains deferred. No movement, adhesion, camera, animation or physics advancement is authorized.
 
-## Local workspace implementation — accepted on real PC
-Branch: `codex/v01c20-edi-value-provenance`
+## Local workspace — accepted on real PC
 
-Cloud implementation commit: `a4ec9c0f2635e9f2594bf5972d1765332de73766`.
-Real-PC acceptance evidence: `analysis/LOCAL_WORKSPACE_RUNTIME_ACCEPTANCE_20261024.md`.
-
-The final local migration/update/logging infrastructure is accepted on the user's real Windows installation:
+Canonical workspace:
 
 ```text
 <game>\Mods Library\Mods-Developing\MSM2-WS\
@@ -87,26 +133,13 @@ The final local migration/update/logging infrastructure is accepted on the user'
 └─ _archive\
 ```
 
-Verified acceptance includes:
-- final `Mods-Developing\MSM2-WS` workspace and versioned `logs` destination;
-- ordinary mods + SF + WS recognized together by the shared Overstrike;
-- modded game launch;
-- visible WS operation;
-- versioned WS and SF runtime logs from the same run;
-- no evidence that the accepted WS tooling required mutation of SF or ordinary mods.
-
-Runtime logs target:
-
-```text
-<game>\Mods Library\Mods-Developing\MSM2-WS\logs\MSM2-WS-v<version>-YYYYMMDD-HHMMSS.log
-```
-
-The acceptance smoke also preserved the c19 safety baseline (verified WallRun Deinit/retention/Surface Up and Position writes by MOD=0), but those short sessions are not a substitute for the dedicated c20 A/E provenance capture.
+Shared ordinary mods + SF + WS, shared Overstrike, modded launch and versioned WS/SF runtime logs are accepted. See `analysis/LOCAL_WORKSPACE_RUNTIME_ACCEPTANCE_20261024.md` and `docs/LOCAL_WORKSPACE.md`.
 
 ## Current stages
+
 1. lifecycle / SurfaceFrame ✅
 2. Path A/B orientation and stabilization ✅
-3. planar A/E orientation ✅ COMPLETE
+3. planar A/E orientation ✅
 4. Position writer attribution ✅
 5. SurfaceFrame translation decomposition ✅
 6. exact writer callsite ✅
@@ -117,11 +150,11 @@ The acceptance smoke also preserved the c19 safety baseline (verified WallRun De
 11. c16 exact call target/boundary/hash ✅
 12. c17 call argument provenance ✅
 13. c18 actual callee CFG / first real writes ✅
-14. c19 exact Transform+0x10C destination ✅ actual game
-15. local workspace implementation ✅
-16. real-PC workspace/shared-Overstrike/log acceptance ✅
-17. c20 EDI value provenance ▶ CURRENT — diagnostic build + actual A/E evidence
-18. resume writer XYZ/W causal proof ⏸ after EDI/value + protected-effect contract
+14. c19 exact Transform+0x10C destination ✅
+15. local/shared workspace acceptance ✅
+16. c20 EDI local value provenance ✅ actual game
+17. `0x2B23578` earlier-read dependency classification ▶ CURRENT
+18. resume full writer XYZ/W causal proof ⏸ after read/effect classification
 19. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
 20. safe writable upstream movement source ⬜ NOT AUTHORIZED
 21. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
@@ -129,6 +162,5 @@ The acceptance smoke also preserved the c19 safety baseline (verified WallRun De
 23. animation/camera/later traversal ⬜
 
 ## Current action
-Follow `docs/CODEX_NEXT.md` on `codex/v01c20-edi-value-provenance`: revalidate and production-enable only the prepared c20 EDI diagnostics, run the relevant regression suite, build/package through the accepted workspace tooling, commit/push, then perform the dedicated A/cardinal ~4 s -> fully end WallRun -> move/fast-travel -> E/diagonal ~4 s runtime capture.
 
-Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable any Position/source/input/movement writes.
+Follow `docs/CODEX_NEXT.md`: classify only the exact `0x2B23578` dependency and its relevant read-before-write/value-flow behavior while preserving all c20/c19 safety gates. Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable Position/source/input/movement writes.
