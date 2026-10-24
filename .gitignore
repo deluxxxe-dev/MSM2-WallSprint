@@ -4,3 +4,10 @@
 /source/output/
 **/__pycache__/
 *.pyc
+
+# Owner-created environment snapshots/recovery data are private, never releases.
+**/MSM2-Mod-Environment-*/
+**/.pending-*/
+**/.MSM2-rollback-*/
+**/.MSM2-restore-*/
+**/Mod-Tools/mod-tools.json

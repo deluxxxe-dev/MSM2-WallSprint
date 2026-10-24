@@ -1,3 +1,83 @@
+# Codex result — shared launch and private environment recovery
+
+Branch: **codex/v01c20-edi-value-provenance**. Toolkit implementation commit:
+**5d089e628b5eb6ef60c22e1133720abcd1e4b68e**.
+Output: **MSM2-Mod-Tools-v1.0.0.zip**, independent of unchanged WSv0.1c20/package0.1.38.
+
+The user delegated SF development back to SF Codex and explicitly requested
+simpler future startup plus a complete private shared-environment backup/restore
+for the Vanilla game at the original path. The user selected full scope including
+ordinary mods, Overstrike/settings, SF/WS source/Git histories/logs and loaders,
+excluding game data. No gameplay/EDI/SF implementation advancement is authorized.
+
+## Result
+
+`environment/` adds six CMD entry points, a standard-library Python engine and a
+small Windows host adapter. Install copies only its own toolkit/local config to
+<game>/Mod-Tools and creates owned desktop Play/Backup shortcuts. Fast launch
+validates the selected MSM2 profile, loader and installed DLL list, starts the
+game with Overstrike-equivalent CWD/-scripts behavior and reuses a matching game
+instance. Open-Overstrike uses only the existing shared manager with cwd=game.
+No normal launch pulls Git, rebuilds, updates either project or kills processes.
+
+Explicit shared backup preserves documented whole mod roots, hidden files,
+empty directories, independent Git storage, dirty/untracked work, ordinary mods
+and logs. It writes a new external timestamped folder, inventories/hash-checks
+all files and verifies the archive before publishing it. The folder includes a
+standalone recovery engine. Shared operation locking, process checks, source
+stat/list checks and external-location enforcement protect against known changing
+captures and recursively scanned backup archives. Private snapshots/rollback
+folders are also ignored by Git; the utility performs no uploads.
+
+Restore validates the original absolute game path and EXE hash, verifies/stages
+before replacing selected roots, preserves current data in a sibling rollback
+folder and reverses replacement failures. Incomplete rollback preserves both
+locations and reports failure. There is no game-EXE/asset/save/WSL/toolchain copy,
+relocation guessing or third-party content in the public toolkit ZIP. Complete
+Install mods in restored Overstrike to reapply asset modifications; one explicit
+installation confirmation then releases the fast-launch gate. No current user
+backup has been created by the cloud and no live PC restore is claimed.
+
+## Files / scope
+
+New environment/{mod_environment.py,windows.ps1, six CMD entry points,README,
+TEST_REPORT,LICENSE,build_distribution.py, two tests}; docs/MOD_ENVIRONMENT_BACKUP.
+AGENTS/DEV_RULES distinguish this explicitly user-authorized shared utility from
+WS-only updater cleanup; LOCAL_WORKSPACE/README link its optional sibling layout.
+This delivery adds private-backup Git ignores, this result and release metadata/ZIP.
+The existing source/ subtree, WS runtime/version/public WS packages,
+CODEX_NEXT/PROJECT_STATE and the SF repository are unchanged by this task.
+
+## Validation / remaining human check
+
+- **21 Python filesystem/Git tests** pass: complete dirty/history/data round trip,
+  recovery with the original game removed/recreated as Vanilla at the same path,
+  source/target/archive symlink and malformed/CRC-valid-but-hash-invalid ZIP refusals,
+  wrong build/path/process/lock refusals, concurrent change detection, synchronous
+  rollback and incomplete-rollback preservation, readonly/mtime/empty-directory
+  recovery, preserved newer work and explicit post-restore installation gate.
+- **11 PowerShell launch-contract checks** pass with owned mocked OS boundaries,
+  plus parsing; correct EXE/CWD/-scripts, commandline handling, same-instance reuse,
+  active/foreign-process protection. Actual Windows COM/shortcuts/process launch
+  and long-path restoration remain pending, not proven by Core/Linux checks.
+- Six CMD wrappers are CRLF, use absolute engine paths, forward arguments and move
+  cwd outside replaced toolkit directories. Python syntax checks pass.
+- Public ZIP CRC/full-file hashes/allowlist pass; a fresh standalone extraction
+  rebuilds the exact same37782-byte ZIP without the repository. The manifest records
+  source commit and SHA256. Only authored source/text/license/tests are included.
+- Existing WS native source and binary assets are byte-identical to the accepted
+  runtime delivery. No native139-suite rerun is justified by these separate tools.
+
+Next user step: close game/Overstrike, fast-forward the existing preparation clone
+and run environment/Install-Mod-Tools.cmd for the known game root. Choose an
+external backup folder, verify shortcut creation/ordinary launch, then create and
+verify the first real snapshot. Keep the healthy environment; do not delete it
+merely to test restoration. User-facing procedure and limitations are in
+[environment/README.md](../environment/README.md); tests are in
+[environment/TEST_REPORT.md](../environment/TEST_REPORT.md). SF work stays in SF Codex.
+
+---
+
 # Codex result — final local WS workspace migration
 
 Branch: **codex/v01c20-edi-value-provenance**.
