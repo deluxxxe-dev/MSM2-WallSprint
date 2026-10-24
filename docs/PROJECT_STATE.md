@@ -95,41 +95,77 @@ Selected `Transform+0x10C` dependence reaches the call boundary in raw GPR carri
 
 ## Accepted c24 runtime result — PE runtime-table cap blocker
 
-Evidence: `analysis/V01C24_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c24-20261025-033837.log`.
+Evidence: `analysis/V01C24_RUNTIME_RESULT.md`.
 
-Target identity now fails at a more precise metadata boundary:
+C24 reported `PE_runtime_entries=527161` against its old 262144-entry diagnostic cap. This established only a cap refusal, not table corruption or target no-entry status.
+
+## Accepted c25 runtime result — table valid, target truly lacks runtime entry
+
+Evidence: `analysis/V01C25_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c25-20261025-042121.log`.
+
+C25 fully validates the exact PE exception/runtime-function table under an explicit bounded budget:
 
 ```text
-target_rva=0x2CF7FE0
-admitted=0
-method=none
+directory_rva=0xC566000
+directory_bytes=6325932
+entry_bytes=12
+derived_entries=527161
+metadata_byte_cap=8388608
+entry_cap=600000
+byte_cap_exceeded=0
+entry_cap_exceeded=0
+entry_validation_skipped_by_cap=0
+metadata_bytes_read=6325932
+entries_validated=527161
+all_entries_read_and_validated=1
+table_structurally_valid=1
+runtime_lookup_queried=1
+```
+
+Thus c24's old-cap refusal is resolved as a budget issue rather than malformed metadata.
+
+For exact target `0x2CF7FE0`, the fully validated table and actual OS lookup agree:
+
+```text
 runtime_lookup_found=0
 runtime_lookup_same_image=1
 runtime_lookup_readable=1
-PE_runtime_table_valid=0
-PE_runtime_entries=527161
-scan_bytes=0
-admitted_bytes=0
-snapshot_stable=0
-reason=target_runtime_table_malformed_or_cap
+next_runtime_rva=0x2CF8020
+missing_runtime_entry=1
+PE_runtime_table_valid=1
 ```
 
-C24's PE runtime-function entry cap is 262144. Therefore the current result does **not** prove a malformed exception directory and does **not** prove a missing-unwind/no-entry target. It proves only that structural table validation did not complete under the configured cap.
-
-The selected-read carrier remains present at the CALL boundary; no target code span/hash/effect was admitted:
+Therefore the strict pinned no-unwind fallback legitimately starts. It immediately stops at the first decoded target instruction:
 
 ```text
-boundary_verified=0
-snapshot_authenticated=0
-snapshot_sha256=unavailable
-modeled_states=0
-effect_certificate=0
+method=strict_single_target_no_unwind_linear
+scan_bytes=64
+snapshot_stable=1
+instructions=1
+admitted=0
+admitted_bytes=0
+barrier_rva=0x2CF7FE0
+barrier_instruction=cmp
+reason=target_leaf_instruction_effect_not_admitted
+```
+
+No target begin/end/hash/effect is admitted yet. The selected-read flow's exact blocker has therefore advanced from metadata to the nested target instruction itself:
+
+```text
+complete_local_flow=0
+first_unresolved_rva=0x2CF7FE0
+first_unresolved_instruction=cmp
+returned_gpr_may_depend_mask=0x1
+memory_escape=0
 downstream_XYZ_W_relevance=unknown
 cross_invocation_feedback=unknown
+effect_certificate=0
 writable_source_proven=0
 ```
 
-Runtime safety remained closed: MOD Position writes 0. Session 1 hit the bounded 5-second diagnostic window once before verified Deinit; session 2 exited normally via verified native Deinit. This does not authorize gameplay writes.
+Do not infer CMP operands, width, branch outcome, ABI meaning or semantic target identity from the mnemonic alone.
+
+Runtime safety remained closed across two A/E-style sessions: verified native Deinit, retention pass, hard kills 0, MOD Position writes 0, source-position writes 0.
 
 ## Current safety gate
 
@@ -181,31 +217,19 @@ Shared ordinary mods + SF + WS, shared Overstrike, modded launch and versioned W
 18. c22 `0x2B235BE TEST r8b,r8b` / `0x2B235C1 JE` classification ✅ actual game
 19. c23 `0x2B235D4` direct target `0x2CF7FE0` + carrier classification ✅ actual game
 20. c24 target identity failure narrowed to PE runtime-table validation cap ✅ actual game
-21. distinguish valid-large runtime table from malformed metadata; retry exact target identity ▶ CURRENT
-22. resume full writer XYZ/W causal proof ⏸ after local effect classification
-23. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-24. safe writable upstream movement source ⬜ NOT AUTHORIZED
-25. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-26. adhesion/contact refinement ⏸ deferred
-27. animation/camera/later traversal ⬜
+21. c25 full 527161-entry table validation + genuine missing runtime entry ✅ actual game
+22. classify/model exact `0x2CF7FE0 CMP` under strict no-unwind rule ▶ CURRENT
+23. resume full writer XYZ/W causal proof ⏸ after local effect classification
+24. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+25. safe writable upstream movement source ⬜ NOT AUTHORIZED
+26. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+27. adhesion/contact refinement ⏸ deferred
+28. animation/camera/later traversal ⬜
 
 ## Current action
 
-Do not reinterpret the c24 refusal as proof of a no-unwind leaf. First separate `entry_cap_exceeded` from genuinely malformed PE exception metadata. Validate the exact exception-directory size/range/count under a justified bounded metadata budget; if structurally valid, complete the ordered/nonoverlap/runtime-RVA checks without weakening exact-build fail-closed behavior. Only after a valid table plus OS lookup establish no containing runtime-function entry may the existing strict c24 no-unwind leaf rule run.
+Classify the exact `CMP` operands/width/effects at `0x2CF7FE0` without guessing from the mnemonic. Add only the smallest read-only flag semantics needed if the exact form can be proven safe under the existing strict single-target no-unwind model. Any memory operand, unsupported partial form, branch/call/stack effect, alias ambiguity or cap remains an exact fail-closed boundary. If the target eventually reaches a fully modeled normal RET under the existing 128-byte/32-instruction rule, only then admit begin/end/hash and resume the c23 call-effect sidecar.
 
 Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
 
 Deferred user-facing features are tracked in `docs/FEATURE_ROADMAP.md` and remain intentionally out of scope until the movement ownership foundation is safe.
-
-## Prepared c25 implementation — complete table result pending
-
-v0.1c25/package0.1.43 separates directory structure from explicit byte/entry
-limits, admits up to600000 entries/8MiB in64-entry chunks, and reports read/
-validated coverage and actual lookup execution.An aligned527161-entry table would require6325932
-bytes and fit; actual directory bytes/divisibility and structure remain unproven. C24 cap refusal
-preceded lookup: found0/same_image1/readable1 were defaults, not OS evidence.
-Only fully validated metadata permits target lookup and the unchanged strict
-c24 identity/leaf path. All old effect/ownership/mutation gates remain closed.
-Actual c25 table/lookup/next boundary needs the new compact RUNTIME_TABLE record;
-shortest A/E capture is about3s each, below the unchanged5second test limit.
-See analysis/V01C25_RUNTIME_TABLE_BUDGET.md / V01C25_GATE.md.
