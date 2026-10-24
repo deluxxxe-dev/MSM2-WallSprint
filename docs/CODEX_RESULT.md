@@ -1,3 +1,112 @@
+# Codex result — c26 exact pinned CMP / strict linear next boundary
+
+Branch: **codex/v01c20-edi-value-provenance**; accepted task base **4b075c6**.
+Implementation: **53530d9db2098c34dfa6b709398d3f3f79355957**. Version **v0.1c26 / package0.1.44**.
+Outputs: **MSM2-WS-v0.1c26.zip**, **MSM2-WS-v0.1c26-source.zip**,
+**MSM2-WS-v0.1c26.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C26_RELEASE.json** (final sizes/hashes and source-snapshot commit).
+
+## Accepted evidence / outcome
+
+Read AGENTS/manual/rules/workspace/state/NEXT, referenced compact runtime evidence,
+current source/contracts and accessible Wisdoms shared references. Fetched only
+this WS development line; no main merge. Base4b075c6 accepts c25 actual evidence:
+complete directory0xC566000/6325932bytes/527161 entries structurally valid under
+unchanged600000/8MiB limits; actual OS lookup queried and agrees no containing
+entry for0x2CF7FE0, next runtime0x2CF8020. Stable64-byte snapshot stops immediately
+at CMP. C25 A/E clean native Deinit/retention, no hard kills or Position writes.
+
+**Outcome C / conditional diagnostic implementation.** Compact c25 provides no
+CMP operands/width/immediate or next instruction. Do not guess from mnemonic,
+reason or raw register index. C26 classifies exact guarded code first and may
+advance only a proven form. Owned tests establish the implementation, not actual
+CMP form, target RET/hash/effect, downstream XYZ/W or writable ownership.
+
+## Implementation / files
+
+- read_target_identity.hpp and rdx_source_contract.cpp: bounded at-most2 operand
+  descriptors for pinned0x2CF7FE0 CMP. Report class/width/access/exact alias/parent,
+  instruction immediate and memory address metadata without reading its value.
+  Check complete decoder register reads/writes, every explicit input, no hidden
+  inputs, exact CF/PF/AF/ZF/SF/OF modified set and no legacy prefixes.
+- Only full32/64-bit GPR reg/reg or reg/immediate flags-only forms are admitted at
+  this exact site. Existing full reg/reg leaf forms remain. New reg/immediate
+  semantics are not added to generic Slice/parent CFG or arbitrary sites.
+  Operands/GPR/XMM/stack remain unchanged; immediates contribute tag0. Flags carry
+  possible input-tag union; same exact aliases yield constant flags without
+  killing register provenance. No numerical branch direction is inferred.
+- Low/high8/16 aliases record conservative parent metadata but refuse semantics;
+  memory value tags remain UNKNOWN and memory forms refuse. Unknown widths,
+  prefixes/effects/aliases refuse at the exact instruction. No partial write,
+  memory observation, guessed ABI or recursive emulator added.
+- Stable-prefix symbolic GPR/XMM masks track only admitted operations and flag
+  overwrites. Map to already-analyzed parent CALL tag1/2/4 states without live
+  game calls or accepting a target span. A next Jcc reports exact RVA/mnemonic/
+  condition/read flags/producer/dependency; incoming unknown flags and samples0
+  stay unknown. All branches refuse, including tag0/constant conditions; no
+  outcome is narrowed or explored. Prefix facts never become identity/effects.
+- Unchanged c25 full-table/read/lookup and c24 exact code/snapshot/runtime-region
+  guards precede classification. The128byte/32instruction complete linear normal
+  C3 RET/coverage-recheck contract is retained. Only a fully admitted span is
+  hashed and passed to c23. No first-RET trap, branch, memory/stack/nested-call or
+  unsupported consumer can be used to force target completion.
+- writer_entry_snapshot.cpp adds compact READ_CMP / READ_CMP_OPERAND /
+  READ_LEAF_BRANCH records. No raw bytes or live CMP operand values are emitted.
+  Existing TARGET_IDENTITY/READ_CALL/runtime-table and all lifecycle logs remain.
+- Six new owned test groups in read_target_identity_smoke.cpp (21 identity groups,
+  retaining15 c24/c25); existing21 read/call groups retained. Version/info,
+  package metadata, README/README_TEST/BUILD, c25 accepted source mirror, c26 design/
+  gate, engine index and PROJECT_STATE updated. **CODEX_NEXT unchanged**.
+
+## Validation
+
+- Windows x64 warnings-as-errors build PASS.
+- Full pipeline: **13 portable + 7 DLL/logger + 161 hooks/native/contracts/workspace
+  = 181 public PASS / 5 optional private-input SKIP**, every command exit0.
+- New tests cover32/64 reg/immediate and full reg pairs, signed constant,
+  selected1/postwrite2/other-prewrite4/disjoint/self-comparison tags, flags-only
+  effect and operand preservation, low/high8/16 refusal, memory refusal/unknown,
+  exact JE/JNE/JB/JG refusal with dependency, overwritten flags/GPR-XMM copies,
+  unsupported flag consumers, stable RET, pin/stability/runtime crossing, complete
+ 527161-entry table and late-invalid-tail refusal. No private actual-body fixture.
+- Actual provisional source ZIP extracted fresh: build PASS; **96 focused
+  entry/c14-c26 + 7 DLL/logger + 13 workspace = 116 separate PASS records**, no
+  private skips; package verifier PASS separately. Do not add duplicate116 to181.
+- Static checks confirm c19-c22 models before the new helper, complete c25 table/
+  lookup/snapshot guard segment, native lifecycle/orientation/ABI/cleanup/timeouts,
+  updater and CODEX_NEXT unchanged. No main merge or SF/ordinary-mod mutation.
+- Final source reporting refresh retains byte-identical tested native/tool files,
+  rechecks its package, and checks final ZIP CRC/hash/version/DLL diagnostic markers,
+  complete source/docs/analysis/licenses/helpers, one virtual active install script,
+  no compiled/private source-archive payload and matching release metadata.
+
+Shared Wisdoms ENGINE_INTERNALS now supersedes stale prepared c25 UNKNOWN status
+with accepted complete-table/queried absence evidence; RE guide/WS internals
+record bounded CMP metadata and refused-prefix method as VERIFIED-STATIC/owned
+fixtures, actual c26 UNKNOWN. Synced commit **373516a**. Concurrent SF shared
+knowledge updates were retained during the documentation fast-forward.
+
+## Safety / next human step
+
+All writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/
+downstream_conflicts_proven_absent remain0; Position/source-position/input/movement
+writes0. Producer0x351EB00 remains deferred. No new hook/data-page/PAGE_GUARD,
+adhesion/camera/animation/physics advancement, raw private log/body publication,
+old-workspace deletion or changes to native assertions/deadlines/teardown.
+
+Current compact evidence genuinely lacks exact CMP metadata; there is no sufficient
+actual static/current-body evidence to skip the new capture. Minimum needed:
+READ_CMP/READ_CMP_OPERAND and next LEAF_BRANCH/TARGET_IDENTITY/READ_CALL, alongside
+existing safety records. No full function/memory dump or private byte copy requested.
+Close game/Overstrike, run installed **MSM2-WS/Update-WS.cmd**; shared Overstrike
+**Install mods -> Run modded game**. Test **A ~3s -> fully end WallRun -> move/
+fast-travel -> E ~3s**, each below unchanged5s limit. Return newest private complete
+**MSM2-WS/logs/MSM2-WS-v0.1c26-YYYYMMDD-HHMMSS.log**. No manual ZIP placement or
+links needed. If this supplies sufficient exact-form/next-boundary evidence,
+continue from it without a habitual repeat test.
+
+---
+
 # Codex result — c25 finite large-table validation / lookup coverage (2026-10-25)
 
 Branch: **codex/v01c20-edi-value-provenance**; accepted task base **4e4d900**.
