@@ -1,3 +1,88 @@
+# Codex result — c20 authenticated EDI diagnostics enabled for A/E (2026-10-24)
+
+Branch: **codex/v01c20-edi-value-provenance**.
+Base: **b49425e** (same branch only; no main merge).
+Implementation: **5e894c1a99932554d73f95954ae1a1becfbf6ad1**.
+Outputs: **MSM2-WS-v0.1c20.zip**, **MSM2-WS-v0.1c20-source.zip**,
+**MSM2-WS-v0.1c20.script.disabled**, **BUILD_MANIFEST.json** and
+**analysis/V01C20_RELEASE.json**. Version/package remain **v0.1c20 / 0.1.38**;
+these are new diagnostic payloads replacing the previously paused c20 artifacts.
+Exact final archive/DLL/script hashes are recorded in the release metadata.
+
+## Result and change scope
+
+Read AGENTS/DEV_RULES/LOCAL_WORKSPACE/PROJECT_STATE/CODEX_NEXT and the required
+c19 write/runtime, prepared c20 and accepted shared-runtime evidence. The current
+task explicitly reauthorizes the existing9057d24 bounded local EDI pass after
+real-PC workspace acceptance. The algorithm was already present and is retained.
+
+writer_entry_snapshot.cpp now sets writerAlias.edi.enabled to **calleeCurrent**,
+the existing complete current-code/boundary/hash authentication result, instead
+of the infrastructure pause's false. VALUE_CONTRACT reports enabled explicitly.
+All existing exact exe/callsite/callee/current-code checks still apply; local EDI
+coverage and whole-writer call/effect coverage remain separate. No native ABI
+guess, new observation, function-body publication, hook or game call was added.
+
+package.py now describes diagnostic activation, accepted workspace state, raw-bit
+versus pointer identity, exact-affine policy and pending actual-game conclusions
+honestly. It includes the current validation and derived acceptance notes.
+README/README_TEST/BUILD, the c20 analysis/gate (and source mirrors), info.json
+and AGENTS activation note are synchronized. Current public suite logs replace
+the prior selected logs. EDI implementation/legacy State/Slice, c19 read/region
+checks, native lifecycle/orientation, entry thunk/ABI/pairing/finalization/cleanup,
+current source/update/launcher/backup tooling and SF code are unchanged.
+CODEX_NEXT and PROJECT_STATE are preserved.
+
+## Validation
+
+- Windows x64 cross-build: **PASS**, warnings-as-errors.
+- Required serial chain: portable **13 PASS**, DLL/actual Windows-filesystem
+  logger smoke under Wine **7 PASS**, hooks/native/c19/EDI/workspace **119 PASS**,
+  for **139 public PASS / 5 optional private-input SKIP**. All exit0. The six
+  prepared EDI tests and13 workspace tests are included, not added again.
+- EDI tests retain exact raw32 copies/constants/memory/spills/affine relations,
+  both local branches/equal definitions, conflicting origins, partial/chain/
+  tombstone/auth/control refusals and later CALL/read blockers with honest coverage.
+- Fresh actual source-ZIP extraction: **build PASS**, **54 focused entry/c14-c20
+  records**, **7 DLL/logger**, **13 workspace**, all exit0 with no private inputs.
+  Native source is unchanged after that tested snapshot. Final packaging also
+  preserves concurrent same-branch AGENTS988a7c5, reads DEVELOPMENT_MANUAL, and
+  includes that required operational manual in the source documentation allowlist.
+  Final packaging/current source bytes are checked again; no main merge occurs.
+- Public install/source ZIP CRCs, current source/helpers/analysis/licenses,
+  enabled manifest/DLL marker, script/DLL hashes and single virtual active script
+  are verified. Source ZIP has no active script or compiled/private game-body
+  members. Install/source metadata use the Organization remote and accepted logger.
+- Owned A/E orientation fixture: sessions4102/4104ms, verified Deinit/retention/
+  Up1/stale0/hard0, Position writes0, clean watch restoration; these are synthetic
+  owner fixtures, not current game EDI evidence. The separate owned entry fixture
+  retains8entries/7complete maps/XYZ7/sourceW0/destW1 and finalized cleanup.
+
+## Safety / remaining real-game test
+
+Keep writable_source_proven/caller_owned/ownership_exclusive/
+source_lifetime_exclusive/downstream_conflicts_proven_absent at0 and
+Position/source-position/input/movement writes0. Producer0x351EB00 stays deferred;
+no movement/adhesion/camera/animation/physics work. A real Transform+0x10C write
+does not gain literal transform_no_write_proven. Unsupported/conflicting/capped
+or control effects still refuse; no gate/assertion/deadline was weakened.
+
+**Actual c20 producer/origin/dependency/XYZ/W remain PENDING.** Do not upgrade
+owned tests or enabled=1 into an actual-game value or writable-source proof.
+Existing c19 A3844ms/E4094ms and accepted shared startup/logs remain historical
+accepted evidence. No raw user log or captured game function is redistributed.
+
+Next user action: close game/shared Overstrike, run installed **MSM2-WS/Update-WS.cmd**,
+then shared Overstrike **Install mods -> Run modded game**. Desktop Mod-Tools
+launchers do not pull/rebuild the project. Run **A/cardinal ~4s -> fully end
+WallRun -> move/fast-travel -> E/diagonal ~4s**, then privately return the newest
+complete `MSM2-WS/logs/MSM2-WS-v0.1c20-YYYYMMDD-HHMMSS.log`.
+Review VALUE_CONTRACT/DEFINITION/CHAIN and exact later WRITE/ALIAS/WRITER blockers,
+local versus full coverage, retention/Deinit/Up/stale/hard kills/Position0 and
+entry/map finalization/cleanup. Video only for visible regression.
+
+---
+
 # Codex result — shared Mod-Tools manual and specifications (2026-10-24)
 
 Branch: **codex/v01c20-edi-value-provenance**.
