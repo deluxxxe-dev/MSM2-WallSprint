@@ -9,11 +9,14 @@
 
 Before starting any implementation task, read these files in order:
 
-1. `docs/DEV_RULES.md`
-2. `docs/LOCAL_WORKSPACE.md`
-3. `docs/PROJECT_STATE.md`
-4. `docs/CODEX_NEXT.md`
-5. Relevant files under `analysis/`
+1. `docs/DEVELOPMENT_MANUAL.md`
+2. `docs/DEV_RULES.md`
+3. `docs/LOCAL_WORKSPACE.md`
+4. `docs/PROJECT_STATE.md`
+5. `docs/CODEX_NEXT.md`
+6. Relevant files under `analysis/`
+
+`docs/DEVELOPMENT_MANUAL.md` is the operational source of truth for branch policy, local workspace invariants, Git/fetch behavior, backup/recovery, failure triage, and GPT/Codex handoff. Read it before changing repository, workspace, or recovery behavior.
 
 `docs/CODEX_NEXT.md` is the current highest-priority task. Do not continue to a later milestone unless it explicitly authorizes that step.
 
