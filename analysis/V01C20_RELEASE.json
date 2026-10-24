@@ -2,19 +2,19 @@
   "version": "v0.1c20",
   "package_version": "0.1.38",
   "branch": "codex/v01c20-edi-value-provenance",
-  "base_handoff_commit": "4402729a53eceeede6476c24d814bfd8469978fa",
+  "base_handoff_commit": "d50bd29afae075791717e5491b82d98bf0744588",
   "implementation_commit": "a4ec9c0f2635e9f2594bf5972d1765332de73766",
   "prepared_research_commit": "9057d24",
   "outputs": [
     {
       "path": "MSM2-WS-v0.1c20.zip",
-      "bytes": 3350738,
-      "sha256": "775e49f97f89997bfb52541153696e4cdb3f0468b2437487704ec5bf757e8d80"
+      "bytes": 3349636,
+      "sha256": "90d96ce5de6e0ed6b43e71b478ff016d91ea3d6b3df614c346aa1b2a30531c9c"
     },
     {
       "path": "MSM2-WS-v0.1c20-source.zip",
-      "bytes": 760413,
-      "sha256": "1130c90cfae43adf6cedf60c527d87b516f01983c6bc4399a5a7b279a0d1afed"
+      "bytes": 758240,
+      "sha256": "0c32523854935a32809e3a63c43b613bfc0f2071366ab401e6d10106469cec7b"
     }
   ],
   "public_test_pass_records": {
@@ -38,7 +38,7 @@
     "workspace": 8,
     "logging": 3
   },
-  "standalone_source": "PASS_fresh_no_prior_build_logs_private_inputs",
+  "standalone_source": "PASS_69_record_baseline_b191708_before_first_run_bootstrap_followup",
   "standalone_focused_records": 54,
   "standalone_DLL_logger_records": 7,
   "standalone_workspace_records": 8,
@@ -172,5 +172,19 @@
   "producer_0x351EB00": "deferred",
   "writable_source_proven": false,
   "Position_source_input_movement_writes": 0,
-  "private_full_game_bodies_distributed": false
+  "private_full_game_bodies_distributed": false,
+  "baseline_validation_delivery": "b191708c07bf8013f7a3e401a3dc2beaa09aee74",
+  "first_run_bootstrap_followup": {
+    "implementation_commit": "556e67e9404dc75fa78230ef8e19ba5710ce2e2a",
+    "documentation_base_commit": "d50bd29afae075791717e5491b82d98bf0744588",
+    "missing_NLS_link_creation": "PASS_exact_smoke_prelude",
+    "isolated_fresh_prefix_DLL_lifecycle_and_formatter_records": 2,
+    "existing_full_DLL_logger_smoke_records": 7,
+    "shell_syntax": "PASS",
+    "original_cloud_link_preserved_and_restored": true,
+    "Wine_auxiliary_process_messages": "recorded_missing_winedevice_and_rundll32_checked_programs_return_0",
+    "runtime_DLL_and_version_unchanged": true,
+    "native_gameplay_and_admission_unchanged": true,
+    "real_PC_acceptance": "PENDING_migration_shared_Overstrike_and_runtime_log"
+  }
 }
