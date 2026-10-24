@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c22",
-  "package_version": "0.1.40",
-  "artifact": "MSM2-WS-v0.1c22.script.disabled",
-  "sha256": "bcc1bdff62716f86ff4b34e2c83c9773ed5a61b11eeb7a693637b8e6f0485a70",
-  "dll_sha256": "7a3358948dd4f2b0a99ba723eb1af220f353e695d910a87c42df47b9f50547cf",
+  "version": "v0.1c23",
+  "package_version": "0.1.41",
+  "artifact": "MSM2-WS-v0.1c23.script.disabled",
+  "sha256": "22d2a1a12e9745099966d6b526efa27f358154365f6045fdc9c459d689c05600",
+  "dll_sha256": "3e35bc0eceb0757895a646f06d6ed3731d7d931e002e73470380b50e83221470",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -130,7 +130,7 @@
   },
   "validation": "Warnings-as-errors cross-build; portable/DLL/native/c19/owned EDI/logger/workspace regressions and standalone source validation; exact current results in CODEX_RESULT.",
   "limitations": [
-    "C21 exact Transform+0x10C pre-write read/control accepted; c22 TEST operands/flags/next barrier pending; diagnostic-only possible flow never grants effect/XYZ/W/ownership/writability proof",
+    "C22 TEST r8b/r8b JE disjoint classification accepted; c23 CALL target/carriers/next boundary pending. Diagnostic-only leaf analysis grants no effect/XYZ/W/ownership permission.",
     "Stack/global disjointness is conditional on per-invocation TEB/source/nonstack Transform/image region admission",
     "Unknown/conflicting pointer origins, unsupported effects and nested calls refuse at exact site",
     "Startup/current code snapshots are not atomic execution attestation; equality does not exclude transient writes",
@@ -656,7 +656,7 @@
   },
   "isolated_logging": {
     "directory": "game-root/Mods Library/Mods-Developing/MSM2-WS/logs",
-    "filename": "MSM2-WS-v0.1c22-YYYYMMDD-HHMMSS.log",
+    "filename": "MSM2-WS-v0.1c23-YYYYMMDD-HHMMSS.log",
     "filename_clock": "host_local_GetLocalTime",
     "line_clock": "UTC_unchanged",
     "collision_creation": "CREATE_NEW_atomic",
@@ -732,8 +732,8 @@
     "source": "_source_independent_clone",
     "archive": "_archive_disabled_only",
     "runtime_logs": "logs",
-    "active_script": "MSM2-WS-v0.1c22.script",
-    "artifact": "MSM2-WS-v0.1c22.script.disabled",
+    "active_script": "MSM2-WS-v0.1c23.script",
+    "artifact": "MSM2-WS-v0.1c23.script.disabled",
     "update_helper": "Update-WS.cmd",
     "migration_helper": "Migrate-WS.cmd",
     "overstrike": "game-root/Overstrike/Overstrike.exe",
@@ -771,7 +771,7 @@
     "producer_traversal": false,
     "Position_source_input_movement_writes": 0
   },
-  "v01c22_gate": "PINNED_TEST_FLAGS_DIAGNOSTIC_ACTUAL_CLASSIFICATION_PENDING",
+  "v01c22_gate": "ACTUAL_TEST_R8B_JE_DISJOINT_PASS_CALL0x2b235d4_BLOCKER",
   "read_test_contract": {
     "site": "0x2b235be",
     "diagnostic_only": true,
@@ -785,12 +785,31 @@
     "old_flags_not_read": true,
     "operands_written": false,
     "non_Jcc_flag_consumers": "exact_refusal",
-    "actual_operands": "pending_new_game_log",
+    "actual_operands": "accepted_TEST_r8b_r8b_no_selected_tags_JE_0x2b235c1",
     "effect_certificate": false,
     "existing_c19_c20_refusal_preserved": true,
     "new_hooks": 0,
     "live_memory_observation": false,
     "producer_traversal": false,
+    "Position_source_input_movement_writes": 0
+  },
+  "v01c23_gate": "PINNED_CALL_DIAGNOSTIC_ACTUAL_TARGET_EFFECT_PENDING",
+  "read_call_contract": {
+    "site": "0x2b235d4",
+    "diagnostic_only": true,
+    "raw_GPR_XMM_flags_stack_tags": true,
+    "tags": "1_selected_2_postwrite_4_other_prewrite",
+    "target_identity": "current_exact_exe_runtime_boundary_hash_double_read_snapshot",
+    "leaf_byte_cap": 128,
+    "leaf_instruction_cap": 32,
+    "cumulative_visits": 4096,
+    "expansion_depth": 1,
+    "leaf_model": "register_only_no_memory_no_branch_no_further_call",
+    "unknown_calls": "stop_never_clear_volatile_tags_and_continue",
+    "producer_0x351eb00": "metadata_only_exclusion_no_body_read",
+    "actual_target": "pending_new_log",
+    "effect_certificate": false,
+    "legacy_c19_c20_refusal_preserved": true,
     "Position_source_input_movement_writes": 0
   }
 }
