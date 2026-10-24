@@ -1,3 +1,114 @@
+# Codex result — c24 single-target boundary / no-unwind identity (2026-10-25)
+
+Branch: **codex/v01c20-edi-value-provenance**; accepted task base **432f8a1**.
+Implementation: **d9df7a4a4ec68cabdf9bbe239c9d36fbb20e3654**.
+Version: **v0.1c24 / package0.1.42**. Outputs:
+**MSM2-WS-v0.1c24.zip**, **MSM2-WS-v0.1c24-source.zip**,
+**MSM2-WS-v0.1c24.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C24_RELEASE.json**. Exact final hashes are in release metadata.
+
+## Accepted input / bounded result
+
+Read AGENTS/manual/rules/workspace/state/NEXT, accepted c23/c22/c21/c20 runtime,
+c23 call design/RDX and relevant code/tests, plus accessible Wisdoms references.
+C23 accepts direct0x2B235D4 ->0x2CF7FE0, raw GPR0 tag1/mem32 Transform+0x10C;
+target begin/end/hash unavailable, modeled_states0. The supplied acceptance does
+not establish why lookup failed. Its partial EAX return mask1 and prefix escape0
+are not complete CALL-path results. C23 A/E4078/4156ms retained verified Deinit,
+retention, Position writes0 and hard kills0; c22 TEST/JE disjointness remains.
+
+**Outcome C diagnostic preparation:** now classify the exact boundary failure,
+and only if a strict single-target proof succeeds, feed admitted bytes to the
+existing c23 effect sidecar. Actual c24 metadata/reason/span/hash/next barrier
+remain **PENDING the new compact game log**. Cloud has no authenticated target
+body/runtime table; nothing is reconstructed from hashes or proprietary bodies.
+Local identity/RET completion does not settle XYZ/W, cross-invocation, ownership
+or writability. No existing read/effect refusal is waived.
+
+## Files / implementation
+
+- read_target_identity.hpp + rdx_source_contract.cpp: guarded RVA/OS-lookup
+  callbacks, exact build/direct-call/target pin, PE64/AMD64/image and unique
+  readable executable nonwritable code section checks. Structural exception
+  directory validation is bounded to262144 ordered/nonoverlapping entries in
+  64-entry chunks, not a generic unwind interpreter. Compare containing PE and
+  OS lookup entries; wrong-image/unreadable/interior/malformed/disagreement/cap
+  refusals remain distinct. Existing exact runtime entry can retain c23 identity.
+- Only target0x2CF7FE0 with no containing entry in both sources may attempt a
+  no-unwind span. Bound by code/next static or dynamic runtime region and original
+  128byte/32instruction caps. Double guarded read/equality; decode from the exact
+  entry without skipping. Every preceding instruction must have one fallthrough
+  edge and a supported c23 register-only effect, ending in plain C3 RET. Branch,
+  indirect/nested CALL, memory/stack/partial/unknown effect, malformed bytes,
+  missing RET or cap refuse exactly. A branch-around-first-RET trap is rejected
+  at the branch. This is a modeled single-entry exit set, not symbol recovery.
+- Runtime coverage is rechecked over the selected no-entry span (or matching
+  normal entry). Hash only an admitted stable prefix; digest failure revokes
+  admission. This is startup current snapshot identity, not historical-hash or
+  subsequent per-invocation consistency/ownership proof. Candidate bytes cannot
+  cross another authenticated runtime-function region; no other body is followed.
+- writer_entry_snapshot.cpp: replace generic unavailable-boundary result with
+  compact MOVEMENT_CALLEE_READ_TARGET_IDENTITY and guarded lookup/header readers.
+  Existing READ_CALL reports admitted begin/end/size/hash; only admitted identity
+  enters c23. Failure propagates its exact reason/RVA/mnemonic without consuming
+  a nested effect state. No raw bytes/live data dump/game call/new hook/write.
+- read_target_identity_smoke.cpp/test_read_target_identity.sh:9 owned sparse PE/
+  code groups, full hooks integration. Version/info, README/README_TEST/BUILD,
+  package/release metadata and selected identity log, accepted c23 source mirror,
+  c24 analysis/gate, PROJECT_STATE and derived engine index updated. CODEX_NEXT
+  preserved; normal updater/shared Overstrike/archive/log invariants unchanged.
+
+Legacy State/Slice/c19-c23 value/alias/effect gates, native source lifecycle/
+orientation, raw thunk/ABI/pairing/hardware cleanup/deadlines/assertions remain.
+writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/
+downstream_conflicts_proven_absent0; Position/source-position/input/movement
+writes0. Producer0x351EB00 deferred. No movement/adhesion/camera/animation/physics,
+SF/ordinary-mod implementation, guessed ABI, PAGE_GUARD, main merge or old deletion.
+
+## Validation
+
+- Warnings-as-errors Windows x64 build PASS.
+- Full chain **13 portable + 7 DLL/logger + 149 hooks/native/contracts/workspace
+  PASS records = 169 public PASS / 5 optional private-input SKIP**, all exit0.
+- Nine new groups: strict no-entry completion/pin controls; first-RET/branch/CALL
+  traps; memory/stack/partial refusal; static/dynamic crossings and overlaps;
+  unavailable/unstable snapshot/coverage change; runtime entry start/interior/
+  lookup mismatch/cap; invalid image/code/PE/table; byte/instruction/RET bounds;
+  end-to-end identity -> c23 selected live/killed returns and failure propagation.
+  All21 c21-c23 read/call groups, c20 EDI and c19 Position gates remain.
+- Actual source ZIP fresh extraction: rebuild PASS; **84 focused entry/c14-c24 +
+  7 DLL/logger + 13 workspace = 104 separate PASS records**, all exit0/no private
+  inputs. Package verifier PASS separately; do not add duplicates to169.
+- Final reporting-only label clarifies that the identity scope depends on method
+  (normal runtime entry versus strict no-entry exit set). Main and extracted-source
+  rebuilds PASS; extracted DLL/logger7 PASS recheck. No semantic change after
+  full169/core104. Final native/tool sources match that rebuilt snapshot.
+- Final ZIP CRC, payload/DLL/version/identity-marker hashes, full current sources/
+  docs/analysis/licenses/helpers, exactly one virtual active install script,
+  source private/compiled exclusions and unchanged task/native safety files pass.
+  Final report docs are refreshed with a standalone package recheck.
+
+Wisdoms ENGINE_INTERNALS records accepted c23 target/carrier and unresolved
+identity; RE guide/WS internals preserve the strict no-entry method as
+VERIFIED-STATIC implementation/owned-fixture scope only, actual c24 UNKNOWN.
+Concurrent SF documentation was preserved without SF code changes. No private
+raw logs, full target body, personal data or recovered game ABI is published.
+
+## Next human step / specific missing evidence
+
+Compact c23 evidence lacks code-region/runtime metadata, target bytes and the
+actual failure stage. One new TARGET_IDENTITY record is necessary to distinguish
+those causes; this is not a habitual rerun of completed target decoding.
+Close game/Overstrike, run installed **MSM2-WS/Update-WS.cmd**, then shared
+Overstrike **Install mods -> Run modded game**. Test **A/cardinal ~4s -> fully end
+WallRun -> move/fast-travel -> E/diagonal ~4s**. Return newest complete private
+**MSM2-WS/logs/MSM2-WS-v0.1c24-YYYYMMDD-HHMMSS.log**.
+Only TARGET_IDENTITY is new; old READ/CALL/TEST/VALUE/WRITE/ALIAS/WRITER and
+safety/finalization/cleanup stay in the same log. No body dump/video unless a
+visible anomaly; no manual ZIP placement or unsolicited link needed.
+
+---
+
 # Codex result — c23 exact CALL / bounded register-only leaf (2026-10-25)
 
 Branch: **codex/v01c20-edi-value-provenance**; accepted task base **16dc676**.

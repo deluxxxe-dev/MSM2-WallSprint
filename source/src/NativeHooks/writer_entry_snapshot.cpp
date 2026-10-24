@@ -1208,7 +1208,7 @@ void configure(const Spec &s, Gate validate) noexcept {
              "PE_runtime_table_valid=%u PE_runtime_entries=%u missing_runtime_entry=%u "
              "scan_bytes=%u admitted_bytes=%u instructions=%u snapshot_stable=%u "
              "barrier_rva=0x%x barrier_instruction=%s reason=%s "
-             "proof_scope=single_entry_linear_normal_RET_only no_full_bytes=1 effect_certificate=0",
+             "proof_scope=method_specific_identity_only no_full_bytes=1 effect_certificate=0",
              identity.target,unsigned(identity.enabled),unsigned(identity.admitted),identity.method,
              identity.codeBegin,identity.codeEnd,unsigned(identity.lookup.found),unsigned(identity.lookup.sameImage),
              unsigned(identity.lookup.readable),identity.runtimeBegin,identity.runtimeEnd,identity.nextRuntime,
