@@ -1240,6 +1240,9 @@ bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
   };
   if (!c.direct || !c.identity.instructionVerified)
     return fail(call.address, call.mnemonic, "read_call_indirect_or_invalid_target_no_chase");
+  if (c.targetIdentity.enabled && !c.targetIdentity.admitted)
+    return fail(c.targetIdentity.barrier?c.targetIdentity.barrier:call.address,
+                c.targetIdentity.mnemonic,c.targetIdentity.reason);
   const auto begin = c.identity.begin, end = c.identity.end;
   if (c.identity.target==0x351eb00 || (begin<=0x351eb00 && 0x351eb00<end))
     return fail(call.address,call.mnemonic,"read_call_deferred_producer_refused");
@@ -2611,5 +2614,170 @@ Relation relation(const unsigned char *b, std::size_t size,
     return r;
   }
   return r;
+}
+ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
+    std::uint32_t imageSize, IdentityRead read, IdentityLookup lookup, void *ctx) noexcept {
+  static_assert(readCallByteCap==128 && readCallInstructionCap<=32,
+                "No-unwind admission may not silently widen c23 leaf caps");
+  ReadTargetIdentity out{}; out.enabled=true; out.target=target;
+  auto fail=[&](const char *why,std::uint32_t at,const char *mn="metadata") {
+    out.reason=why;out.barrier=at;copyName(out.mnemonic,sizeof(out.mnemonic),mn);return out;
+  };
+  auto grab=[&](std::uint32_t at,void *dst,unsigned n) {
+    return at<=imageSize && n<=imageSize-at && read && read(ctx,at,dst,n);
+  };
+  auto u16=[](const unsigned char *b) { std::uint16_t v{};std::memcpy(&v,b,2);return v; };
+  auto u32=[](const unsigned char *b) { std::uint32_t v{};std::memcpy(&v,b,4);return v; };
+  if (!verified || target!=readIdentityTarget || !read || !lookup)
+    return fail("target_exact_build_call_or_pin_not_admitted",target);
+  if (target>=imageSize) return fail("target_outside_admitted_image",target);
+  unsigned char dos[64]{},nt[264]{};
+  if (!grab(0,dos,sizeof(dos)) || u16(dos)!=0x5a4d)
+    return fail("target_PE_DOS_header_unavailable_or_invalid",target);
+  const auto pe=u32(dos+60);
+  if (pe<64 || pe>0x100000 || !grab(pe,nt,sizeof(nt)) || u32(nt)!=0x4550 ||
+      u16(nt+4)!=0x8664 || u16(nt+24)!=0x20b || u32(nt+24+56)!=imageSize ||
+      u16(nt+20)<240 || u16(nt+20)>4096 || !u16(nt+6) || u16(nt+6)>96 ||
+      u32(nt+24+108)<4)
+    return fail("target_PE64_headers_malformed",target);
+  const std::uint64_t sections=std::uint64_t(pe)+24+u16(nt+20);
+  if (sections>imageSize || std::uint64_t(u16(nt+6))*40>imageSize-sections)
+    return fail("target_section_table_malformed",target);
+  unsigned containing=0;
+  for (unsigned i=0;i<u16(nt+6);++i) {
+    unsigned char sec[40]{};
+    if (!grab(std::uint32_t(sections)+i*40,sec,40))
+      return fail("target_section_table_unreadable",target);
+    const auto begin=u32(sec+12),size=u32(sec+8),flags=u32(sec+36);
+    if (begin>imageSize || size>imageSize-begin)
+      return fail("target_section_range_malformed",target);
+    if (begin<=target && target-begin<size) {
+      ++containing;
+      // Executable code, readable and not writable; never admit data/RWX.
+      if ((flags&0x60000020u)==0x60000020u && !(flags&0x80000000u)) {
+        out.codeBegin=begin;out.codeEnd=begin+size;
+      }
+    }
+  }
+  if (containing!=1 || !out.codeEnd)
+    return fail(containing>1?"target_code_section_ambiguous":"target_outside_readonly_executable_code",target);
+  const auto table=u32(nt+24+112+3*8),tableSize=u32(nt+24+116+3*8);
+  out.tableEntries=tableSize/12;
+  if ((table==0)!=(tableSize==0) || table>imageSize || tableSize>imageSize-table ||
+      tableSize%12 || tableSize/12>262144)
+    return fail("target_runtime_table_malformed_or_cap",target);
+  std::uint32_t previousEnd=0,staticBegin=0,staticEnd=0,staticUnwind=0;
+  unsigned char chunk[64*12]{};
+  for (unsigned i=0;i<out.tableEntries;) {
+    const auto count=std::min(64u,out.tableEntries-i);
+    if (!grab(table+i*12,chunk,count*12))
+      return fail("target_runtime_table_unreadable",table+i*12);
+    for (unsigned j=0;j<count;++j) {
+      const auto *entry=chunk+j*12;
+      const auto begin=u32(entry),end=u32(entry+4),unwind=u32(entry+8);
+      if (begin>=end || end>imageSize || begin<previousEnd || !unwind || unwind>=imageSize)
+        return fail("target_runtime_metadata_malformed_or_overlapping",table+(i+j)*12);
+      previousEnd=end;
+      if (begin<=target && target<end) { staticBegin=begin;staticEnd=end;staticUnwind=unwind; }
+      if (begin>target && (!out.nextRuntime || begin<out.nextRuntime)) out.nextRuntime=begin;
+    }
+    i+=count;
+  }
+  out.tableValid=true;out.lookup=lookup(ctx,target);
+  const auto &rf=out.lookup;
+  if (!rf.readable || (rf.found && (!rf.sameImage || rf.begin>=rf.end ||
+      rf.end>imageSize || target<rf.begin || target>=rf.end)))
+    return fail("target_runtime_lookup_malformed_or_wrong_image",target);
+  out.runtimeBegin=rf.begin;out.runtimeEnd=rf.end;
+  if ((staticEnd!=0)!=rf.found || (rf.found &&
+      (staticBegin!=rf.begin || staticEnd!=rf.end || staticUnwind!=rf.unwind)))
+    return fail("target_runtime_lookup_and_PE_table_disagree",target);
+  unsigned limit=0;
+  if (rf.found) {
+    out.method="runtime_function";
+    if (rf.begin!=target) return fail("target_inside_runtime_entry_not_begin",target);
+    if (rf.end>out.codeEnd) return fail("target_runtime_span_crosses_code_section",target);
+    if (rf.end-target>readCallByteCap) return fail("target_runtime_span_exceeds_leaf_cap",target);
+    limit=rf.end-target;
+  } else {
+    out.missingRuntime=true;out.method="strict_single_target_no_unwind_linear";
+    limit=std::min(readCallByteCap,out.codeEnd-target);
+    if (out.nextRuntime) limit=std::min(limit,out.nextRuntime-target);
+    // Check dynamic/runtime regions before reading any candidate bytes there.
+    for (unsigned k=1;k<limit;++k) {
+      auto region=lookup(ctx,target+k);
+      if (!region.readable || (region.found && (!region.sameImage ||
+          region.begin!=target+k || region.end<=region.begin || region.end>imageSize)))
+        return fail("target_runtime_region_ambiguous_during_scan",target+k);
+      if (region.found) { limit=k;out.nextRuntime=region.begin;break; }
+    }
+  }
+  if (!limit) return fail("target_code_or_runtime_region_limit",target);
+  out.scanBytes=limit;
+  unsigned char again[readCallByteCap]{};
+  if (!grab(target,out.snapshot.data(),limit)) return fail("target_guarded_snapshot_unavailable",target);
+  if (!grab(target,again,limit)) return fail("target_guarded_recheck_unavailable",target);
+  if (std::memcmp(again,out.snapshot.data(),limit)) return fail("target_guarded_snapshot_unstable",target);
+  out.stable=true;
+  if (rf.found) out.size=limit;
+  else {
+    Decode d;
+    if (cs_open(CS_ARCH_X86,CS_MODE_64,&d.h)!=CS_ERR_OK)
+      return fail("target_leaf_decoder_unavailable",target);
+    cs_option(d.h,CS_OPT_DETAIL,CS_OPT_ON);cs_option(d.h,CS_OPT_SKIPDATA,CS_OPT_OFF);
+    d.p=cs_malloc(d.h);if (!d.p) return fail("target_leaf_decoder_allocation_failed",target);
+    d.n=1;
+    const std::uint8_t *cursor=out.snapshot.data();std::size_t left=limit;
+    std::uint64_t address=target;Slice registers;
+    while (left) {
+      const auto at=std::uint32_t(address);
+      if (!cs_disasm_iter(d.h,&cursor,&left,&address,d.p))
+        return fail("target_leaf_instruction_decode_failed",at,"decode");
+      const auto &ins=*d.p;const auto &x=ins.detail->x86;
+      if (++out.instructions>readCallInstructionCap)
+        return fail("target_leaf_instruction_cap",at,ins.mnemonic);
+      if (ins.id==X86_INS_RET && ins.size==1 && ins.bytes[0]==0xc3 && x.op_count==0) {
+        out.size=unsigned(address-target);break;
+      }
+      if (group(ins,CS_GRP_CALL) || group(ins,CS_GRP_JUMP) || group(ins,CS_GRP_RET) ||
+          group(ins,CS_GRP_INT) || group(ins,CS_GRP_IRET))
+        return fail("target_leaf_control_or_nested_call_refused",at,ins.mnemonic);
+      for (unsigned j=0;j<x.op_count;++j) if (x.operands[j].type==X86_OP_MEM)
+        return fail("target_leaf_memory_operand_refused",at,ins.mnemonic);
+      if (ins.id==X86_INS_NOP || ins.id==X86_INS_ENDBR64) continue;
+      cs_regs reads{},writes{};std::uint8_t nr{},nw{};
+      if (cs_regs_access(d.h,&ins,reads,&nr,writes,&nw)!=CS_ERR_OK)
+        return fail("target_leaf_register_effects_unknown",at,ins.mnemonic);
+      for (unsigned j=0;j<nr;++j)
+        if (reads[j]==X86_REG_EFLAGS || (reg(reads[j])<0 && xmm(reads[j])<0))
+          return fail("target_leaf_partial_or_flag_input_refused",at,ins.mnemonic);
+      for (unsigned j=0;j<nw;++j)
+        if (reg(writes[j])==4 || (writes[j]!=X86_REG_EFLAGS && reg(writes[j])<0 && xmm(writes[j])<0))
+          return fail("target_leaf_stack_or_partial_register_write_refused",at,ins.mnemonic);
+      const bool pair=x.op_count==2 && x.operands[0].type==X86_OP_REG && x.operands[1].type==X86_OP_REG;
+      const bool scalar=pair && reg(x.operands[0].reg)>=0 && reg(x.operands[1].reg)>=0 &&
+          (x.operands[0].size==4 || x.operands[0].size==8) && x.operands[0].size==x.operands[1].size;
+      const bool move=pair && (ins.id==X86_INS_MOV || ins.id==X86_INS_MOVD ||
+          ins.id==X86_INS_MOVAPS || ins.id==X86_INS_MOVUPS);
+      const bool zero=pair && x.operands[0].reg==x.operands[1].reg &&
+          (ins.id==X86_INS_XOR || ins.id==X86_INS_XORPS || ins.id==X86_INS_PXOR);
+      const bool flags=scalar && (ins.id==X86_INS_CMP || ins.id==X86_INS_TEST);
+      if (x.prefix[0] || (!move && !zero && !flags) || !registers.step(ins,false))
+        return fail("target_leaf_instruction_effect_not_admitted",at,ins.mnemonic);
+    }
+    if (!out.size) return fail(out.nextRuntime && target+limit==out.nextRuntime
+        ? "target_leaf_no_RET_before_runtime_region" : "target_leaf_no_RET_before_code_or_byte_cap",
+        target+limit,"fallthrough");
+  }
+  // Recheck runtime coverage over the entire selected no-unwind span.
+  for (unsigned k=0;k<(rf.found?1u:out.size);++k) {
+    const auto now=lookup(ctx,target+k);
+    if (!now.readable || now.found!=rf.found || (now.found &&
+        (!now.sameImage || now.begin!=rf.begin || now.end!=rf.end || now.unwind!=rf.unwind)))
+      return fail("target_runtime_coverage_changed_before_admission",target+k);
+  }
+  out.admitted=true;out.reason=rf.found?"runtime_boundary_current_snapshot_admitted"
+      :"strict_linear_single_entry_RET_exit_set_admitted";
+  return out;
 }
 } // namespace ws::rdx

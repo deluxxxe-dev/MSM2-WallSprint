@@ -69,3 +69,12 @@ register-only leaf can continue (128bytes/32instructions/depth1); unknown
 calls and any memory/branch/further-call effect stop. Actual CALL metadata
 requires the new compact READ_CALL log, not the old TEST capture. See
 analysis/V01C23_READ_CALL_FLOW.md; all prior game-write gates remain.
+
+## Current c24 identity diagnostic
+
+v0.1c24/package0.1.42 adds test_read_target_identity.sh (9 owned sparse PE/code
+groups), called by the full hooks suite after the21 retained read/call groups.
+Only target0x2CF7FE0 can attempt the strict no-entry linear proof; original
+128byte/32instruction caps and old effect gates remain. Any branch/memory/stack/
+nested CALL, code/runtime crossing or unstable snapshot refuses. Actual reason/
+span/hash still needs the new compact TARGET_IDENTITY record.

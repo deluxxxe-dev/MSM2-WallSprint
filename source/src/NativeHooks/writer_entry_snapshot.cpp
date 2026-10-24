@@ -932,24 +932,32 @@ void configure(const Spec &s, Gate validate) noexcept {
       nestedReadCall.identity = ws::rdx::exactCall(writerCallee.data(),writerCalleeSize,
           writerCall.begin,s.imageSize,0x74,0x79);
       auto &nc=nestedReadCall.identity;
-      if (nc.instructionVerified && nc.target!=0x351eb00) {
-        DWORD64 nestedImage{};
-        auto nf=RtlLookupFunctionEntry(s.base+nc.target,&nestedImage,nullptr);
-        if (nf && nestedImage==s.base) {
-          nc.begin=nf->BeginAddress; nc.end=nf->EndAddress;
-          nc.boundaryVerified=nc.begin==nc.target && nc.end>nc.begin && nc.end<=s.imageSize;
-          const auto nb=nc.begin, ne=nc.end;
-          const bool excluded=(nb<=0x351eb00 && 0x351eb00<ne) ||
-              (nb<writerCall.end && writerCall.begin<ne) || (nb<s.end && s.begin<ne);
-          if (nc.boundaryVerified && !excluded && ne-nb<=readCallCode.size()) {
-            unsigned char again[ws::rdx::readCallByteCap]{};
-            nestedReadCall.size=unsigned(ne-nb);
-            nestedReadCall.authenticated=guardedRead(s.base+nb,readCallCode.data(),ne-nb) &&
-                digest(readCallCode.data(),ne-nb,nestedReadCall.hash) &&
-                guardedRead(s.base+nb,again,ne-nb) && !std::memcmp(again,readCallCode.data(),ne-nb);
-            if (nestedReadCall.authenticated) nestedReadCall.code=readCallCode.data();
-          }
+      struct ImageReader { std::uintptr_t base; } owner{s.base};
+      const auto readImage=[](void *ctx,std::uint32_t rva,void *dst,unsigned n) {
+        return guardedRead(static_cast<ImageReader*>(ctx)->base+rva,dst,n);
+      };
+      const auto lookupImage=[](void *ctx,std::uint32_t rva) {
+        const auto base=static_cast<ImageReader*>(ctx)->base;
+        DWORD64 module{};auto entry=RtlLookupFunctionEntry(base+rva,&module,nullptr);
+        ws::rdx::RuntimeRegion region{};
+        if (entry) {
+          region.found=true;region.sameImage=module==base;
+          RUNTIME_FUNCTION copy{};
+          region.readable=guardedRead(reinterpret_cast<std::uintptr_t>(entry),&copy,sizeof(copy));
+          region.begin=copy.BeginAddress;region.end=copy.EndAddress;region.unwind=copy.UnwindData;
         }
+        return region;
+      };
+      auto &proof=nestedReadCall.targetIdentity;
+      proof=ws::rdx::authenticateReadTarget(nc.instructionVerified && s.imageSize<=UINT32_MAX,
+          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner);
+      if (proof.admitted) {
+        nc.begin=nc.target;nc.end=nc.target+proof.size;nc.boundaryVerified=true;
+        nestedReadCall.size=proof.size;
+        std::copy_n(proof.snapshot.data(),proof.size,readCallCode.data());
+        nestedReadCall.authenticated=digest(readCallCode.data(),proof.size,nestedReadCall.hash);
+        if (nestedReadCall.authenticated) nestedReadCall.code=readCallCode.data();
+        else { proof.admitted=false;proof.reason="target_snapshot_SHA256_failed";proof.barrier=proof.target; }
       }
     }
     writerAlias.reason =
@@ -1192,6 +1200,21 @@ void configure(const Spec &s, Gate validate) noexcept {
              (unsigned long long)rt.firstDependentConsumer, rt.returnedFlagsTags);
     const auto &ac = writerAlias.counts;
     const auto &rcall=writerAlias.readDependency.call;
+    const auto &identity=rcall.targetIdentity;
+    writeLog("MOVEMENT_CALLEE_READ_TARGET_IDENTITY target_rva=0x%x enabled=%u admitted=%u "
+             "method=%s code_region_begin_rva=0x%x code_region_end_rva=0x%x "
+             "runtime_lookup_found=%u runtime_lookup_same_image=%u runtime_lookup_readable=%u "
+             "runtime_begin_rva=0x%x runtime_end_rva=0x%x next_runtime_rva=0x%x "
+             "PE_runtime_table_valid=%u PE_runtime_entries=%u missing_runtime_entry=%u "
+             "scan_bytes=%u admitted_bytes=%u instructions=%u snapshot_stable=%u "
+             "barrier_rva=0x%x barrier_instruction=%s reason=%s "
+             "proof_scope=single_entry_linear_normal_RET_only no_full_bytes=1 effect_certificate=0",
+             identity.target,unsigned(identity.enabled),unsigned(identity.admitted),identity.method,
+             identity.codeBegin,identity.codeEnd,unsigned(identity.lookup.found),unsigned(identity.lookup.sameImage),
+             unsigned(identity.lookup.readable),identity.runtimeBegin,identity.runtimeEnd,identity.nextRuntime,
+             unsigned(identity.tableValid),identity.tableEntries,unsigned(identity.missingRuntime),
+             identity.scanBytes,identity.size,identity.instructions,unsigned(identity.stable),
+             identity.barrier,identity.mnemonic,identity.reason);
     writeLog("MOVEMENT_CALLEE_READ_CALL site_rva=0x2b235d4 enabled=%u decoded=%u "
              "form=%s operand=%s direct=%u target_rva=0x%llx exact_target=%u target_reason=%s "
              "target_begin_rva=0x%llx target_end_rva=0x%llx boundary_verified=%u "

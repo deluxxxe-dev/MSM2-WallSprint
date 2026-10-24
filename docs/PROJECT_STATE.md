@@ -196,3 +196,13 @@ Determine why `0x2CF7FE0` lacks the runtime-function boundary/hash required by c
 Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
 
 Deferred user-facing features are tracked in `docs/FEATURE_ROADMAP.md` and remain intentionally out of scope until the movement ownership foundation is safe.
+## Prepared c24 implementation — actual target identity pending
+
+v0.1c24/package0.1.42 adds exact failure classification and one pinned missing-
+unwind linear leaf identity rule: authenticated readonly executable section,
+consistent PE/runtime metadata, no other region crossing,128bytes/32instructions,
+modeled single-entry fallthrough through normal RET, guarded equality and hash.
+Only accepted identity resumes c23; failures propagate precise reasons. No new
+effect/ownership/mutation permission. Actual reason/span/hash/next barrier remain
+PENDING the one new TARGET_IDENTITY record in a shortest A/E log.
+See analysis/V01C24_TARGET_IDENTITY.md and V01C24_GATE.md.

@@ -1,5 +1,10 @@
 # c23 pinned CALL classification / one register-only leaf
 
+**C23 ACTUAL RESULT ACCEPTED:** V01C23_RUNTIME_RESULT.md supersedes original
+preparation/pending notes below: exact direct0x2CF7FE0, raw carrier0 tag1;
+target boundary/hash unavailable, no expansion. C24 diagnoses/authenticates
+only that target; see V01C24_TARGET_IDENTITY.md.
+
 ## Accepted input / missing evidence
 
 V01C22_RUNTIME_RESULT.md accepts TEST r8b/r8b0x2B235BE -> JE0x2B235C1,

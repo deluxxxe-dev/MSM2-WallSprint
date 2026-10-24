@@ -2,6 +2,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include "NativeHooks/read_target_identity.hpp"
 namespace ws::rdx {
 // Bounded local slices, independent of the unchanged c12 analyzer.
 // A certificate covers entry through the named stores, never the whole CFG.
@@ -127,6 +128,7 @@ struct ReadCallContract {
   };
   std::uintptr_t site{}, barrier{};
   CallEffect identity{};
+  ReadTargetIdentity targetIdentity{};
   const unsigned char *code{};
   unsigned size{}, samples{}, modeledStates{}, visits{}, flagsTags{}, callerStackTags{},
       clobberGpr{}, clobberXmm{}, returnedFlagsTags{};

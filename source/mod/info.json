@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.41",
-  "description": "WallSprint v0.1c23 bounded pinned CALL target/carrier diagnostics and register-only leaf effects after accepted c22 TEST/JE result. Existing fail-closed effect/ownership gates and no Position/source/input/movement mutation remain.",
+  "version": "0.1.42",
+  "description": "WallSprint v0.1c24 exact target boundary/current-code identity diagnostics and strict single-target no-unwind linear leaf proof after accepted c23. Existing fail-closed effect/ownership gates and no Position/source/input/movement mutation remain.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

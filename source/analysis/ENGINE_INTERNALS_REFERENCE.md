@@ -277,3 +277,13 @@ coverage. See V01C22_RUNTIME_RESULT.md. C23 classifies only that CALL and an
 optional current-authenticated register-only leaf, depth1/128bytes/32instructions.
 Implementation/owned-fixture scope only; actual c23 UNKNOWN. No memory/branch/
 further call model or effect/XYZ/W/ownership certificate. Details: V01C23_READ_CALL_FLOW.md.
+
+## Accepted c23 / prepared c24 target identity
+
+V01C23_RUNTIME_RESULT.md supersedes prepared target-unknown notes: exact direct
+CALL0x2B235D4 ->0x2CF7FE0, raw GPR0 tag1/mem32 Transform+0x10C. Target boundary/
+hash unavailable and effects UNKNOWN. C24 adds diagnostic-only PE/runtime/code
+classification and strict one-target no-entry linear leaf proof with original
+128byte/32instruction caps. No branch/memory/stack/nested-call inference; current
+snapshot identity does not grant effect/XYZ/W/ownership/writability. Implementation/
+owned-fixture scope only, actual c24 UNKNOWN. Details: V01C24_TARGET_IDENTITY.md.

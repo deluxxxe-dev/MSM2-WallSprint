@@ -62,5 +62,6 @@ bash tools/test_transform_write.sh
 bash tools/test_edi_value.sh
 
 bash tools/test_read_dependency.sh
+bash tools/test_read_target_identity.sh
 
 python tools/test-workspace.py
