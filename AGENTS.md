@@ -9,6 +9,16 @@ Before starting any implementation task, read these files in order:
 
 `docs/CODEX_NEXT.md` is the current highest-priority task. Do not continue to a later milestone unless it explicitly authorizes that step.
 
+## Shared MSM2 coordination
+
+Cross-project coordination source of truth: `Deluxeee0811/MSM2-Mods-Control`.
+
+When a task touches shared infrastructure or another MSM2 mod — including Overstrike, Mods Library, `Mods-Developing`, loader placement, shared naming, WS/SF isolation, or cross-project compatibility — consult the control repository's `SHARED-ENVIRONMENT.md` and `DECISIONS.md` when the environment can access that repository.
+
+Do not silently contradict the control repository. If it is not accessible from the current Codex environment, use the project-local shared-workspace documentation and explicitly report that the cross-project source could not be checked.
+
+If WallSprint work creates a requirement or result that SocialFeed/shared infrastructure must react to, record the exact cross-project impact in `docs/CODEX_RESULT.md`. ChatGPT will synchronize the concise state/handoff into `MSM2-Mods-Control/WS/STATUS.md` and `WS/HANDOFF.md`.
+
 ## Working rules
 
 - Preserve exact-build guards and fail-closed behavior.
