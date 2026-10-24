@@ -32,10 +32,27 @@ struct ReadCmpContract {
   std::array<Operand, 2> operands{};
   const char *reason = "pinned_cmp_not_decoded";
 };
+inline constexpr std::uint32_t readIdentityBranch = 0x2cf7fe7;
+inline constexpr unsigned readLeafBranchCap=1, readLeafPathCap=2, readLeafVisitCap=64;
+struct ReadEntryTags {
+  unsigned samples{};
+  std::array<unsigned,16> gpr{}, xmm{};
+};
+struct ReadLeafOutcome {
+  std::uint32_t ret{};
+  unsigned flagsTags{}, clobberGpr{}, clobberXmm{};
+  std::array<unsigned,3> returnedGpr{}, returnedXmm{};
+};
 struct ReadLeafBranch {
   std::uint32_t site{}, flagsProducer{}, entryCarrierMask{};
-  unsigned samples{}, flagsTags{};
-  bool decoded{}, conditional{}, flagsDependencyKnown{};
+  unsigned samples{}, flagsTags{}, instructionBytes{}, displacementBytes{};
+  std::int64_t displacement{};
+  std::uint32_t taken{}, fallthrough{};
+  bool decoded{}, conditional{}, flagsDependencyKnown{}, edgesExact{},
+      takenInCode{}, fallthroughInCode{}, takenInWindow{}, fallthroughInWindow{},
+      takenForward{}, fallthroughForward{}, takenRuntimeCross{}, fallthroughRuntimeCross{},
+      expanded{};
+  const char *encoding = "unsupported";
   char mnemonic[32] = "none";
   const char *condition = "unknown", *flagsRead = "unknown";
 };
@@ -50,11 +67,13 @@ struct ReadTargetIdentity {
   RuntimeRegion lookup{};
   ReadCmpContract cmp{};
   ReadLeafBranch branch{};
+  bool entryTagsKnown{}, cfgComplete{}, finalCodeRechecked{}, pathEffectsDiffer{};
+  unsigned entryTagSamples{}, paths{}, visits{};
   const char *method = "none", *reason = "target_identity_not_enabled";
   char mnemonic[32] = "none";
   std::array<unsigned char, 128> snapshot{};
 };
 ReadTargetIdentity authenticateReadTarget(bool buildAndCallVerified,
     std::uint32_t target, std::uint32_t imageSize, IdentityRead,
-    IdentityLookup, void *context) noexcept;
+    IdentityLookup, void *context, const ReadEntryTags *entryTags = nullptr) noexcept;
 }

@@ -12,7 +12,7 @@ struct Image {
   std::array<unsigned char,24> table{};
   std::array<unsigned char,128> code{};
   unsigned snapshots{},codeEndRead{};
-  bool unstable{},unreadable{},badTableRead{},missingLookup{},coverageChanges{};
+  bool changeFinal{},unstable{},unreadable{},badTableRead{},missingLookup{},coverageChanges{};
   ws::rdx::RuntimeRegion dynamic{};
   template<class B> static void put32(B &b,unsigned off,std::uint32_t v) { std::memcpy(b.data()+off,&v,4); }
   template<class B> static void put16(B &b,unsigned off,std::uint16_t v) { std::memcpy(b.data()+off,&v,2); }
@@ -44,7 +44,7 @@ struct Image {
       ++f.snapshots;f.codeEndRead=std::max(f.codeEndRead,rva+n);
       if (f.unreadable) return false;
       std::memcpy(dst,f.code.data()+rva-target,n);
-      if (f.unstable && f.snapshots==2) static_cast<unsigned char*>(dst)[0]^=1;
+      if ((f.unstable && f.snapshots==2) || (f.changeFinal && f.snapshots==3)) static_cast<unsigned char*>(dst)[0]^=1;
       return true;
     }
     return false;
@@ -62,9 +62,9 @@ struct Image {
     }
     return {};
   }
-  ws::rdx::ReadTargetIdentity run(bool admitted=true,std::uint32_t t=target,std::uint32_t size=imageSize) {
+  ws::rdx::ReadTargetIdentity run(bool admitted=true,std::uint32_t t=target,std::uint32_t size=imageSize,const ws::rdx::ReadEntryTags *tags=nullptr) {
     snapshots=codeEndRead=0;
-    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this);
+    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this,tags);
   }
 };
 constexpr std::uint32_t largeFunctionBase=0x1100000;
@@ -103,7 +103,8 @@ struct LargeImage : Image {
     return ws::rdx::authenticateReadTarget(true,target,imageSize,readLarge,lookupLarge,this);
   }
 };
-ws::rdx::CalleeAlias flowThroughIdentity(Image &image,bool expectAdmission,bool expectLiveValue) {
+ws::rdx::CalleeAlias flowThroughIdentity(Image &image,bool expectAdmission,bool expectLiveValue,const ws::rdx::ReadEntryTags *entry=nullptr,
+    bool disjointR8=false,bool expectLeafFlow=true,bool mismatchedCode=false) {
   std::array<unsigned char,183> writer{};std::array<unsigned char,137> parent{};
   writer.fill(0x90);parent.fill(0x90);
   auto put=[](auto &b,unsigned at,std::initializer_list<unsigned char> v) {
@@ -116,7 +117,7 @@ ws::rdx::CalleeAlias flowThroughIdentity(Image &image,bool expectAdmission,bool 
   put(writer,0x42,{0x89,0x57,0x38});put(writer,0x45,{0xc7,0x47,0x3c,0,0,0x80,0x3f});
   put(writer,0x4c,{0x48,0x83,0xc4,0x28,0xc3});
   put(parent,0,{0x48,0x89,0x7c,0x24,8,0x8b,0x81,0x0c,1,0,0});
-  put(parent,0xb,{0x44,0x8b,0x81,0x0c,1,0,0}); // other-prewrite tag4 in R8.
+  if (!disjointR8) put(parent,0xb,{0x44,0x8b,0x81,0x0c,1,0,0}); // other-prewrite tag4 in R8.
   put(parent,0x20,{0xbf,1,0,0,0});put(parent,0x2e,{0x89,0xb9,0x0c,1,0,0});
   put(parent,0x34,{0x8b,0x91,0x0c,1,0,0}); // postwrite tag2 in EDX.
   put(parent,0x3c,{0xe8,0,0,0,0,0x48,0x8b,0x7c,0x24,8,0xc3});
@@ -126,7 +127,7 @@ ws::rdx::CalleeAlias flowThroughIdentity(Image &image,bool expectAdmission,bool 
   ws::rdx::CalleeAlias alias{};alias.code=parent.data();alias.size=parent.size();
   alias.imageSize=imageSize;alias.authenticated=true;alias.exactWrite.site=0x202e;
   alias.edi.enabled=true;alias.readDependency.site=0x2005;
-  auto &call=alias.readDependency.call;call.site=0x203c;call.targetIdentity=image.run();
+  auto &call=alias.readDependency.call;call.site=0x203c;call.targetIdentity=image.run(true,target,imageSize,entry);
   assert(call.targetIdentity.admitted==expectAdmission);
   call.identity.target=target;
   if (expectAdmission) {
@@ -134,12 +135,15 @@ ws::rdx::CalleeAlias flowThroughIdentity(Image &image,bool expectAdmission,bool 
     call.identity.boundaryVerified=true;call.size=call.targetIdentity.size;
     call.authenticated=true;call.code=call.targetIdentity.snapshot.data();
   }
+  std::array<unsigned char,128> otherCode=call.targetIdentity.snapshot;
+  if (mismatchedCode) { otherCode[0]^=1;call.code=otherCode.data(); }
   auto result=ws::rdx::branchWriter(writer.data(),writer.size(),{0x36,0x3c,0x42,0x45},&main,&alias);
   assert(!result.xyz && !alias.resolved && !alias.relevantEffectsResolved && !main.noWrite);
   assert(alias.edi.complete && alias.edi.exact);
-  assert(alias.readDependency.flowComplete==expectAdmission);
-  if (expectAdmission) assert(bool(alias.readDependency.returnedGpr&1)==expectLiveValue);
-  else assert(!call.modeledStates && !std::strcmp(alias.readDependency.reason,call.targetIdentity.reason));
+  assert(alias.readDependency.flowComplete==(expectAdmission && expectLeafFlow));
+  if (expectAdmission && expectLeafFlow) assert(bool(alias.readDependency.returnedGpr&1)==expectLiveValue);
+  else if (!expectAdmission) assert(!call.modeledStates && !std::strcmp(alias.readDependency.reason,call.targetIdentity.reason));
+  else assert(!call.modeledStates);
   return alias;
 }
 int main() {
@@ -387,5 +391,147 @@ int main() {
     assert(!r.admitted && !r.cmp.decoded && !r.lookupQueried && !badTail.snapshots);
   }
   std::puts("PASS: c26 CMP extension remains pinned to exact target and stable snapshot; crossing, full large-table validation and late structural refusal preserve c24/c25 gates");
+
+  // Independently authored instruction fixtures from the accepted opcode form,
+  // not a captured target body. Gaps deliberately contain undecodable/unmodeled bytes.
+  auto fanout=[](Image &f,bool near=false) {
+    f.code.fill(0xcc);
+    const unsigned char cmp[]={0x41,0x81,0xf8,0xff,0x3f,0,0};
+    std::copy(std::begin(cmp),std::end(cmp),f.code.begin());
+    if (near) {
+      f.code[7]=0x0f;f.code[8]=0x87;Image::put32(f.code,9,11);
+      f.code[13]=0x89;f.code[14]=0xc0;f.code[15]=0xc3;
+      f.code[24]=0x89;f.code[25]=0xc0;f.code[26]=0xc3;
+    } else {
+      f.code[7]=0x77;f.code[8]=7;
+      f.code[9]=0x89;f.code[10]=0xc0;f.code[11]=0xc3;
+      f.code[16]=0x89;f.code[17]=0xc0;f.code[18]=0xc3;
+    }
+  };
+  ws::rdx::ReadEntryTags clean{};clean.samples=1;clean.gpr[0]=1;clean.gpr[2]=2;
+  {
+    for (bool near : {false,true}) {
+      Image f;fanout(f,near);r=f.run(true,target,imageSize,&clean);
+      assert(r.admitted && r.cfgComplete && r.finalCodeRechecked && r.paths==2 &&
+          r.branch.expanded && r.branch.edgesExact && r.instructions==6 && r.visits==6);
+      assert(r.branch.site==target+7 && r.branch.displacementBytes==(near?4u:1u) &&
+          r.branch.fallthrough==target+(near?13u:9u) && r.branch.taken==target+(near?24u:16u));
+      assert(r.size==(near?27u:19u) && f.snapshots==3 && !r.pathEffectsDiffer);
+      auto a=flowThroughIdentity(f,true,true,&clean,true);const auto &c=a.readDependency.call;
+      assert(c.returnPaths==2 && c.branchExpansions && !c.pathEffectsDiffer && (c.returnedGpr[0]&1));
+      assert(c.outcomes[0].returnedGpr[0]==c.outcomes[1].returnedGpr[0]);
+    }
+  }
+  std::puts("PASS: c27 exact pinned short/near JA edges and current CMP prove both safe RET paths, ignore unreachable gaps, recheck snapshot and preserve identical returned effects");
+
+  {
+    Image f;fanout(f);auto first=f.run();
+    assert(!first.admitted && first.branch.edgesExact && !first.branch.expanded &&
+        !std::strcmp(first.reason,"target_JA_current_call_tags_required"));
+    for (unsigned tag : {1u,2u,4u}) {
+      auto tainted=clean;tainted.gpr[8]=tag;r=f.run(true,target,imageSize,&tainted);
+      assert(!r.admitted && !r.branch.expanded && r.branch.flagsTags==tag &&
+          !std::strcmp(r.reason,"target_JA_tracked_condition_dependence_refused"));
+    }
+    const auto pre=flowThroughIdentity(f,false,false,nullptr,true);
+    ws::rdx::ReadEntryTags observed{};observed.samples=pre.readDependency.call.samples;
+    for (unsigned k=0;k<16;++k) { observed.gpr[k]=pre.readDependency.call.gpr[k].tags;observed.xmm[k]=pre.readDependency.call.xmmTags[k]; }
+    assert(observed.samples && !observed.gpr[8]);
+    const auto reproved=flowThroughIdentity(f,true,true,&observed,true);
+    assert(reproved.readDependency.flowComplete && reproved.readDependency.call.returnPaths==2);
+    auto a=flowThroughIdentity(f,true,false,&clean,false,false);
+    assert(!a.readDependency.call.modeledStates && !a.readDependency.flowComplete &&
+        !std::strcmp(a.readDependency.call.reason,"target_JA_tracked_condition_dependence_refused"));
+  }
+  std::puts("PASS: c27 current call tags are required before fan-out, all selected/postwrite/other condition dependence refuses and per-state effects recheck rather than trusting a disjoint identity input");
+
+  {
+    Image different;fanout(different);different.code[16]=0x31;different.code[17]=0xc0;
+    r=different.run(true,target,imageSize,&clean);assert(r.admitted && r.cfgComplete && r.pathEffectsDiffer);
+    auto a=flowThroughIdentity(different,true,true,&clean,true);const auto &c=a.readDependency.call;
+    assert(c.returnPaths==2 && c.pathEffectsDiffer && (c.returnedGpr[0]&1) &&
+        (c.outcomes[0].returnedGpr[0]&1) && !(c.outcomes[1].returnedGpr[0]&1));
+    assert(c.outcomes[0].ret==target+11 && c.outcomes[1].ret==target+18);
+    // Reverse which outcome preserves the selected read: never prefer taken or fallthrough.
+    Image reverse;fanout(reverse);reverse.code[9]=0x31;reverse.code[10]=0xc0;
+    a=flowThroughIdentity(reverse,true,true,&clean,true);
+    assert(!(a.readDependency.call.outcomes[0].returnedGpr[0]&1) &&
+        (a.readDependency.call.outcomes[1].returnedGpr[0]&1));
+    Image vector;fanout(vector);Image::put32(vector.code,9,0xc06e0f66);vector.code[13]=0xc3;
+    Image::put32(vector.code,16,0xc0ef0f66);vector.code[20]=0xc3;
+    a=flowThroughIdentity(vector,true,true,&clean,true);
+    assert(a.readDependency.call.pathEffectsDiffer && (a.readDependency.call.returnedXmm[0]&1) &&
+        (a.readDependency.call.outcomes[0].returnedXmm[0]&1) && !(a.readDependency.call.outcomes[1].returnedXmm[0]&1));
+  }
+  std::puts("PASS: c27 cloned states and both return effects merge conservatively; differing live/killed selected tags remain path-dependent in either outcome ordering");
+
+  {
+    for (auto delta : {0xfeu,0xf7u}) {
+      Image f;fanout(f);f.code[8]=(unsigned char)delta;r=f.run(true,target,imageSize,&clean);
+      assert(!r.admitted && !r.branch.expanded && !r.branch.takenForward &&
+          !std::strcmp(r.reason,"target_JA_backedge_or_loop_refused"));
+    }
+    Image wrap;fanout(wrap,true);Image::put32(wrap.code,9,0x80000000);r=wrap.run(true,target,imageSize,&clean);
+    assert(!r.admitted && !r.branch.edgesExact && !std::strcmp(r.reason,"target_JA_encoding_or_RVA_overflow_refused"));
+    Image far;fanout(far,true);Image::put32(far.code,9,0x7fffffff);r=far.run(true,target,imageSize,&clean);
+    assert(!r.admitted && r.branch.edgesExact && !r.branch.takenInCode);
+    Image lastByte;fanout(lastByte,true);Image::put32(lastByte.code,9,127-13);lastByte.code[127]=0xc3;
+    r=lastByte.run(true,target,imageSize,&clean);assert(r.admitted && r.paths==2 && r.size==128);
+    auto lastFlow=flowThroughIdentity(lastByte,true,true,&clean,true);assert(lastFlow.readDependency.call.returnPaths==2);
+    Image capEdge;fanout(capEdge,true);Image::put32(capEdge.code,9,128-13);r=capEdge.run(true,target,imageSize,&clean);
+    assert(!r.admitted && !r.branch.takenInWindow && !std::strcmp(r.reason,"target_JA_edge_outside_byte_allowance"));
+  }
+  std::puts("PASS: c27 signed edge decoding rejects self/back edges, negative RVA underflow, distant code exits and target byte-cap edges without guessing an outcome");
+
+  {
+    Image takenCross;fanout(takenCross);takenCross.entry(1,target+16,target+32);r=takenCross.run(true,target,imageSize,&clean);
+    assert(!r.admitted && r.branch.takenRuntimeCross && takenCross.codeEndRead==target+16);
+    Image bothCross;fanout(bothCross);bothCross.entry(1,target+9,target+32);r=bothCross.run(true,target,imageSize,&clean);
+    assert(!r.admitted && r.branch.fallthroughRuntimeCross && bothCross.codeEndRead==target+9);
+    Image dynamicCross;fanout(dynamicCross);dynamicCross.dynamic={true,true,true,target+16,target+32,0x800};
+    r=dynamicCross.run(true,target,imageSize,&clean);assert(!r.admitted && r.branch.takenRuntimeCross);
+    Image middle;fanout(middle);middle.code[8]=1;r=middle.run(true,target,imageSize,&clean);
+    assert(!r.admitted && !r.cfgComplete && !std::strcmp(r.reason,"target_cfg_edge_into_instruction_body"));
+  }
+  std::puts("PASS: c27 either-edge static/dynamic runtime-region crossings stop before code reads there; overlapping instruction boundaries cannot authenticate a shared tail");
+
+  {
+    for (unsigned effect=0;effect<6;++effect) {
+      Image f;fanout(f);
+      if (effect==0) {f.code[16]=0x8b;f.code[17]=1;}
+      if (effect==1) {f.code[16]=0x50;f.code[17]=0xc3;}
+      if (effect==2) {f.code[16]=0xe8;Image::put32(f.code,17,0);f.code[21]=0xc3;}
+      if (effect==3) {f.code[16]=0xff;f.code[17]=0xe0;}
+      if (effect==4) {f.code[16]=0xb0;f.code[17]=0;}
+      if (effect==5) {f.code[16]=0x75;f.code[17]=0;}
+      r=f.run(true,target,imageSize,&clean);assert(!r.admitted && !r.size && !r.cfgComplete &&
+          r.paths==1 && r.barrier==target+16);
+      auto a=flowThroughIdentity(f,false,false,&clean,true);
+      assert(!a.readDependency.call.modeledStates && !a.readDependency.call.authenticated);
+    }
+    Image instructionCap;fanout(instructionCap);instructionCap.code[8]=71;
+    std::fill(instructionCap.code.begin()+9,instructionCap.code.end(),0x90);
+    r=instructionCap.run(true,target,imageSize,&clean);assert(!r.admitted && !std::strcmp(r.reason,"target_cfg_instruction_cap"));
+    Image missingRet;fanout(missingRet);std::fill(missingRet.code.begin()+16,missingRet.code.end(),0x90);
+    r=missingRet.run(true,target,imageSize,&clean);assert(!r.admitted && !r.cfgComplete);
+  }
+  std::puts("PASS: c27 one safe RET never authenticates a memory/stack/call/indirect/partial/second-branch leg; instruction/path/normal-return bounds remain fail-closed");
+
+  {
+    Image mismatch;fanout(mismatch);
+    auto rejected=flowThroughIdentity(mismatch,true,false,&clean,true,false,true);
+    assert(!rejected.readDependency.call.modeledStates && !std::strcmp(rejected.readDependency.call.reason,"read_call_CFG_identity_pin_or_snapshot_mismatch"));
+    Image change;fanout(change);change.changeFinal=true;r=change.run(true,target,imageSize,&clean);
+    assert(!r.admitted && !r.stable && !r.finalCodeRechecked && !std::strcmp(r.reason,"target_cfg_final_snapshot_changed"));
+    Image unstable;fanout(unstable);unstable.unstable=true;r=unstable.run(true,target,imageSize,&clean);
+    assert(!r.admitted && !r.branch.decoded);
+    Image regionChanges;fanout(regionChanges);regionChanges.coverageChanges=true;r=regionChanges.run(true,target,imageSize,&clean);
+    assert(!r.admitted && !std::strcmp(r.reason,"target_runtime_coverage_changed_before_admission"));
+    Image wrongCMP;fanout(wrongCMP);wrongCMP.code[3]=0xfe;r=wrongCMP.run(true,target,imageSize,&clean);
+    assert(!r.admitted && !r.branch.expanded && !std::strcmp(r.reason,"target_JA_exact_CMP_flags_producer_required"));
+    LargeImage large(527161);fanout(large);r=ws::rdx::authenticateReadTarget(true,target,imageSize,LargeImage::readLarge,LargeImage::lookupLarge,&large,&clean);
+    assert(r.admitted && r.cfgComplete && r.paths==2 && r.validatedEntries==527161 && r.metadataBytesRead==6325932);
+  }
+  std::puts("PASS: c27 final snapshot/current producer/runtime coverage and complete527161-entry metadata gates remain mandatory; no private target bytes or gameplay-write certificates are needed");
 
 }

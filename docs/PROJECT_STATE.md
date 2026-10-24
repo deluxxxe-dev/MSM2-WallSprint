@@ -246,3 +246,17 @@ Classify exact taken and fallthrough edges of `0x2CF7FE7 JA`. Only add a narrowl
 Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
 
 Deferred user-facing features remain tracked in `docs/FEATURE_ROADMAP.md`.
+
+## C27 prepared successor
+
+v0.1c27/package0.1.45 adds exact JA short/near edge/range/runtime diagnostics and
+only a current-call tag-disjoint bounded fan-out:1 conditional/2 paths/128bytes/
+32 unique instructions/64 visits. At most2 guarded proof/parent-analysis passes;
+metadata/code rechecked and compared to prepass, per-state effects repeat tag0
+requirements. Every path must safely RET before identity/hash; path-dependent
+GPR/XMM/flags/origins merge conservatively. One safe path grants nothing. No
+memory/stack/call/partial/loop/other-branch effect or gameplay gate relaxed.
+Actual edges/next barrier remain pending compact runtime metadata. Seven owned
+groups added to identity suite (28 total); exact counts/results in CODEX_RESULT.
+Incoming Overstrike updater/WINMM recovery helpers are preserved. CODEX_NEXT
+remains the task authority; no producer0x351EB00 or writable ownership advancement.

@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.44",
-  "description": "WallSprint v0.1c26 exact pinned CMP operand/flags diagnostic and narrowly guarded full-GPR register/immediate semantics. Strict no-unwind linear leaf still refuses every branch, memory/stack/partial effect; all Position/source/input/movement and ownership gates remain closed.",
+  "version": "0.1.45",
+  "description": "WallSprint v0.1c27 exact pinned JA edge classification and bounded tag-disjoint both-path leaf proof. One forward JA/two paths/128 bytes/32 instructions; every path must safely RET. No memory/stack/call/partial effects or ownership/Position/source/input/movement permission.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

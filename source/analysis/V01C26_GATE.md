@@ -1,3 +1,5 @@
+> Accepted c26 actual outcome: CMP r8d,0x3FFF flags-only/tag0 crossed; JA0x2CF7FE7 condition tag0 but numerical outcome unknown is the next barrier. See V01C26_RUNTIME_RESULT.md and successor V01C27_JA_FANOUT.md. Pending-form/linear-only statements below are preparation history.
+
 # C26 diagnostic gate
 
 Accepted c25: full527161-entry/6325932-byte table valid, actual lookup queried,

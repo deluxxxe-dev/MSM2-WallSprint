@@ -97,3 +97,13 @@ reg/immediate flags-only effects; partial/memory/branch/stack/call forms still
 refuse. Compact prefix metadata is not full target identity or an effect waiver.
 See analysis/V01C26_CMP_FLAGS.md. Actual operands/next boundary pending; no raw
 private game byte fixture required or distributed.
+
+## Current c27 bounded JA proof
+
+v0.1c27/package0.1.45 adds7 groups to test_read_target_identity.sh (28 total),
+retaining21 read/call groups and the full pipeline. Exact pinned short/near JA
+only, current call tag-disjoint gate,1 split/2 paths/128bytes/32 unique decoded
+instructions/64 visits; all RET outcomes required. Final code/runtime checks,
+per-state tag recheck and conservative effects preserve fail-closed boundaries.
+See analysis/V01C27_JA_FANOUT.md. Actual edges/paths need minimal live metadata,
+never a private game body fixture. Existing Overstrike recovery helpers retained.

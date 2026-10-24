@@ -1,3 +1,14 @@
+## C26 accepted / c27 prepared checkpoint
+
+VERIFIED-RUNTIME c26 CMP r8d,0x3FFF0x2CF7FE0 flags-only/tag0; next JA0x2CF7FE7
+uses CF/ZF from CMP, tag0 but numerical outcome UNKNOWN. C27 classifies exact
+short/near edges and permits only current-state tag-disjoint1-split/2-path proof
+under128bytes/32 unique instructions/64 visits. Both safe RETs and final snapshot/
+runtime checks required for identity; effects merge conservatively per path and
+repeat tag gates per analyzed caller state. Actual edges/path effects UNKNOWN.
+No branch direction, XYZ-W/ownership/writability inference; producer deferred.
+Sources: V01C26_RUNTIME_RESULT.md / V01C27_JA_FANOUT.md. Prior checkpoints follow.
+
 ## C25 accepted / c26 prepared checkpoint
 
 VERIFIED-RUNTIME c25 directory0xC566000/6325932bytes/527161entries fully valid;

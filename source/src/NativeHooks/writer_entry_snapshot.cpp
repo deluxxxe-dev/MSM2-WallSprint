@@ -928,9 +928,8 @@ void configure(const Spec &s, Gate validate) noexcept {
     writerAlias.readDependency.test.site = calleeCurrent ? 0x2b235be : 0;
     auto &nestedReadCall = writerAlias.readDependency.call;
     nestedReadCall.site = calleeCurrent ? 0x2b235d4 : 0;
-    if (calleeCurrent) {
-      nestedReadCall.identity = ws::rdx::exactCall(writerCallee.data(),writerCalleeSize,
-          writerCall.begin,s.imageSize,0x74,0x79);
+    const auto authenticateNested=[&](const ws::rdx::ReadEntryTags *entryTags,
+                                      const ws::rdx::ReadTargetIdentity *expected) {
       auto &nc=nestedReadCall.identity;
       struct ImageReader { std::uintptr_t base; } owner{s.base};
       const auto readImage=[](void *ctx,std::uint32_t rva,void *dst,unsigned n) {
@@ -948,23 +947,52 @@ void configure(const Spec &s, Gate validate) noexcept {
         }
         return region;
       };
-      auto &proof=nestedReadCall.targetIdentity;
-      proof=ws::rdx::authenticateReadTarget(nc.instructionVerified && s.imageSize<=UINT32_MAX,
-          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner);
+      auto proof=ws::rdx::authenticateReadTarget(nc.instructionVerified && s.imageSize<=UINT32_MAX,
+          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner,entryTags);
+      if (expected && (!proof.stable || proof.scanBytes!=expected->scanBytes ||
+          std::memcmp(proof.snapshot.data(),expected->snapshot.data(),proof.scanBytes))) {
+        proof.admitted=false;proof.size=0;proof.reason="target_code_changed_between_tag_prepass_and_reproof";
+        proof.barrier=proof.target;
+      }
+      nestedReadCall.targetIdentity=proof;
+      nc.begin=nc.end=0;nc.boundaryVerified=false;
+      nestedReadCall.authenticated=false;nestedReadCall.code=nullptr;nestedReadCall.size=0;
       if (proof.admitted) {
         nc.begin=nc.target;nc.end=nc.target+proof.size;nc.boundaryVerified=true;
         nestedReadCall.size=proof.size;
         std::copy_n(proof.snapshot.data(),proof.size,readCallCode.data());
         nestedReadCall.authenticated=digest(readCallCode.data(),proof.size,nestedReadCall.hash);
         if (nestedReadCall.authenticated) nestedReadCall.code=readCallCode.data();
-        else { proof.admitted=false;proof.reason="target_snapshot_SHA256_failed";proof.barrier=proof.target; }
+        else { nestedReadCall.targetIdentity.admitted=false;
+          nestedReadCall.targetIdentity.reason="target_snapshot_SHA256_failed";
+          nestedReadCall.targetIdentity.barrier=proof.target; }
       }
+    };
+    if (calleeCurrent) {
+      nestedReadCall.identity=ws::rdx::exactCall(writerCallee.data(),writerCalleeSize,
+          writerCall.begin,s.imageSize,0x74,0x79);
+      authenticateNested(nullptr,nullptr);
     }
     writerAlias.reason =
         calleeCurrent ? "writer_call_not_reached_in_bounded_prefix"
                       : "exact_c17_target_boundary_hash_not_authenticated";
+    const auto callSeed=writerCall;
+    const auto aliasSeed=writerAlias;
     contractWriter = ws::rdx::branchWriter(code, functionSize, sites,
                                            &writerCall, &writerAlias);
+    unsigned targetProofPasses=1,prepassSamples=0;
+    if (calleeCurrent && nestedReadCall.samples &&
+        !std::strcmp(nestedReadCall.targetIdentity.reason,"target_JA_current_call_tags_required")) {
+      const auto previous=nestedReadCall.targetIdentity;
+      ws::rdx::ReadEntryTags entry{};entry.samples=prepassSamples=nestedReadCall.samples;
+      for (unsigned k=0;k<16;++k) { entry.gpr[k]=nestedReadCall.gpr[k].tags;entry.xmm[k]=nestedReadCall.xmmTags[k]; }
+      writerCall=callSeed;writerAlias=aliasSeed;
+      authenticateNested(&entry,&previous);targetProofPasses=2;
+      contractWriter=ws::rdx::branchWriter(code,functionSize,sites,&writerCall,&writerAlias);
+    }
+    writeLog("MOVEMENT_CALLEE_READ_TARGET_PASSES passes=%u max_passes=2 prepass_call_samples=%u "
+             "current_code_and_metadata_reproved=%u per_state_branch_tags_recheck_required=1 "
+             "no_numerical_outcome_selected=1 effect_certificate=0",targetProofPasses,prepassSamples,unsigned(targetProofPasses==2));
     writeLog(
         "MOVEMENT_WRITER_CALL_ARGUMENT_CONTRACT call_rva=0x2cfc927 "
         "arg_rcx_origin=%s arg_rdx_origin=%s arg_r8_origin=%s arg_r9_origin=%s "
@@ -1258,11 +1286,39 @@ void configure(const Spec &s, Gate validate) noexcept {
     writeLog("MOVEMENT_CALLEE_READ_LEAF_BRANCH site_rva=0x%x decoded=%u instruction=%s "
              "conditional=%u condition=%s flags_read=%s flags_producer_rva=0x%x "
              "flags_dependency_known=%u samples=%u consumer_may_depend_tags=0x%x "
-             "control_expanded=0 numerical_outcome=unknown both_outcomes_unresolved=1 "
-             "rule=strict_linear_no_branch effect_certificate=0 full_bytes_logged=0",
+             "encoding=%s instruction_bytes=%u displacement_bytes=%u displacement=%lld "
+             "edges_exact=%u taken_rva=0x%x fallthrough_rva=0x%x "
+             "taken_in_code=%u fallthrough_in_code=%u taken_in_allowance=%u fallthrough_in_allowance=%u "
+             "taken_forward=%u fallthrough_forward=%u taken_runtime_cross=%u fallthrough_runtime_cross=%u "
+             "snapshot_stable=%u control_expanded=%u numerical_outcome=unknown outcome_narrowing=0 "
+             "rule=pinned_JA_both_forward_paths effect_certificate=0 full_bytes_logged=0",
              branch.site,unsigned(branch.decoded),branch.mnemonic,unsigned(branch.conditional),
              branch.condition,branch.flagsRead,branch.flagsProducer,
-             unsigned(branch.flagsDependencyKnown && branch.samples!=0),branch.samples,branch.flagsTags);
+             unsigned(branch.flagsDependencyKnown && branch.samples!=0),branch.samples,branch.flagsTags,
+             branch.encoding,branch.instructionBytes,branch.displacementBytes,(long long)branch.displacement,
+             unsigned(branch.edgesExact),branch.taken,branch.fallthrough,
+             unsigned(branch.takenInCode),unsigned(branch.fallthroughInCode),unsigned(branch.takenInWindow),unsigned(branch.fallthroughInWindow),
+             unsigned(branch.takenForward),unsigned(branch.fallthroughForward),unsigned(branch.takenRuntimeCross),unsigned(branch.fallthroughRuntimeCross),
+             unsigned(identity.stable),unsigned(branch.expanded));
+    writeLog("MOVEMENT_CALLEE_READ_LEAF_CFG target_rva=0x%x entry_tags_known=%u entry_tag_samples=%u "
+             "complete=%u return_paths=%u unique_instructions=%u visits=%u "
+             "final_code_rechecked=%u symbolic_path_effects_differ=%u branch_cap=1 path_cap=2 "
+             "byte_cap=128 instruction_cap=32 visit_cap=64 all_paths_required=1 "
+             "call_return_paths=%u call_path_effects_differ=%u call_branch_expansions=%u "
+             "reason=%s effect_certificate=0 full_bytes_logged=0",
+             identity.target,unsigned(identity.entryTagsKnown),identity.entryTagSamples,unsigned(identity.cfgComplete),
+             identity.paths,identity.instructions,identity.visits,unsigned(identity.finalCodeRechecked),unsigned(identity.pathEffectsDiffer),
+             rcall.returnPaths,unsigned(rcall.pathEffectsDiffer),rcall.branchExpansions,identity.reason);
+    for (unsigned p=0;p<rcall.returnPaths && p<ws::rdx::readLeafPathCap;++p) {
+      const auto &e=rcall.outcomes[p];
+      writeLog("MOVEMENT_CALLEE_READ_LEAF_RETURN path=%u ret_rva=0x%x "
+               "returned_selected_GPR=0x%x returned_postwrite_GPR=0x%x returned_other_prewrite_GPR=0x%x "
+               "returned_selected_XMM=0x%x returned_postwrite_XMM=0x%x returned_other_prewrite_XMM=0x%x "
+               "returned_flags_tags=0x%x clobber_GPR=0x%x clobber_XMM=0x%x "
+               "scope=analyzed_parent_states_union effect_certificate=0 full_bytes_logged=0",
+               p,e.ret,e.returnedGpr[0],e.returnedGpr[1],e.returnedGpr[2],e.returnedXmm[0],e.returnedXmm[1],e.returnedXmm[2],
+               e.flagsTags,e.clobberGpr,e.clobberXmm);
+    }
     writeLog("MOVEMENT_CALLEE_READ_CALL site_rva=0x2b235d4 enabled=%u decoded=%u "
              "form=%s operand=%s direct=%u target_rva=0x%llx exact_target=%u target_reason=%s "
              "target_begin_rva=0x%llx target_end_rva=0x%llx boundary_verified=%u "

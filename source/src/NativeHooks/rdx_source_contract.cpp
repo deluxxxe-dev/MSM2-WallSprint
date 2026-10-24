@@ -1331,6 +1331,189 @@ void describeLeafBranch(ReadLeafBranch &b, const cs_insn &ins, bool flagsKnown,
   default: break;
   }
 }
+void describeLeafEdges(ReadLeafBranch &b, const cs_insn &ins,
+                       std::uint32_t codeBegin, std::uint32_t codeEnd,
+                       std::uint32_t limit, std::uint32_t nextRuntime) {
+  const auto &x=ins.detail->x86;
+  b.instructionBytes=ins.size;
+  std::int64_t delta=0;
+  if (ins.id==X86_INS_JA && ins.size==2 && ins.bytes[0]==0x77) {
+    b.encoding="short_JA_rel8";b.displacementBytes=1;delta=std::int8_t(ins.bytes[1]);
+  } else if (ins.id==X86_INS_JA && ins.size==6 && ins.bytes[0]==0x0f && ins.bytes[1]==0x87) {
+    std::int32_t v{};std::memcpy(&v,ins.bytes+2,4);
+    b.encoding="near_JA_rel32";b.displacementBytes=4;delta=v;
+  }
+  b.displacement=delta;
+  const auto fall=std::int64_t(ins.address)+ins.size, taken=fall+delta;
+  b.edgesExact=b.displacementBytes && x.op_count==1 && x.operands[0].type==X86_OP_IMM &&
+      !x.prefix[0] && !x.prefix[1] && !x.prefix[2] && !x.prefix[3] &&
+      fall>=0 && fall<=UINT32_MAX && taken>=0 && taken<=UINT32_MAX &&
+      x.operands[0].imm==taken;
+  if (!b.edgesExact) return;
+  b.taken=std::uint32_t(taken);b.fallthrough=std::uint32_t(fall);
+  b.takenInCode=codeBegin<=b.taken && b.taken<codeEnd;
+  b.fallthroughInCode=codeBegin<=b.fallthrough && b.fallthrough<codeEnd;
+  b.takenInWindow=readIdentityTarget<=b.taken && b.taken-readIdentityTarget<limit;
+  b.fallthroughInWindow=readIdentityTarget<=b.fallthrough && b.fallthrough-readIdentityTarget<limit;
+  b.takenForward=b.taken>ins.address;b.fallthroughForward=b.fallthrough>ins.address;
+  b.takenRuntimeCross=nextRuntime && b.taken>=nextRuntime;
+  b.fallthroughRuntimeCross=nextRuntime && b.fallthrough>=nextRuntime;
+}
+const char *leafEdgeRefusal(const ReadLeafBranch &b) {
+  if (!b.edgesExact) return "target_JA_encoding_or_RVA_overflow_refused";
+  if (!b.takenForward || !b.fallthroughForward) return "target_JA_backedge_or_loop_refused";
+  if (!b.takenInCode || !b.fallthroughInCode) return "target_JA_edge_outside_code_region";
+  if (b.takenRuntimeCross || b.fallthroughRuntimeCross) return "target_JA_edge_crosses_runtime_region";
+  if (!b.takenInWindow || !b.fallthroughInWindow) return "target_JA_edge_outside_byte_allowance";
+  return nullptr;
+}
+struct LeafCfgResult {
+  bool complete{}, effectsDiffer{};
+  unsigned size{}, instructions{}, visits{}, paths{};
+  std::uint32_t barrier{};
+  const char *reason="target_cfg_not_started";
+  char mnemonic[32]="none";
+  ReadCmpContract cmp{};
+  ReadLeafBranch branch{};
+  std::array<ReadLeafOutcome,readLeafPathCap> outcomes{};
+};
+// Exactly one pinned JA, both forward legs, no generic CFG/recursive expansion.
+// With symbolic=true, tags are entry-carrier masks, mapped only through supplied
+// current parent-call tags. Caller mode repeats the disjointness check per state.
+LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
+    std::uint32_t codeBegin,std::uint32_t codeEnd,std::uint32_t nextRuntime,
+    const ReadEntryTags *entry,bool symbolic,Slice &merged,ReadFlow &mergedTags) {
+  static_assert(readLeafBranchCap==1 && readLeafPathCap==2 && readLeafVisitCap==64,"Review bounded fan-out before changing budgets");
+  LeafCfgResult out{};
+  auto fail=[&](const cs_insn *ins,std::uint32_t at,const char *why) {
+    out.barrier=at;out.reason=why;
+    copyName(out.mnemonic,sizeof(out.mnemonic),ins?ins->mnemonic:"decode");return out;
+  };
+  if (!code || !limit || limit>readCallByteCap) return fail(nullptr,readIdentityTarget,"target_cfg_byte_cap");
+  Decode d;
+  if (cs_open(CS_ARCH_X86,CS_MODE_64,&d.h)!=CS_ERR_OK) return fail(nullptr,readIdentityTarget,"target_cfg_decoder_unavailable");
+  cs_option(d.h,CS_OPT_DETAIL,CS_OPT_ON);cs_option(d.h,CS_OPT_SKIPDATA,CS_OPT_OFF);
+  d.p=cs_malloc(d.h);d.n=1;
+  if (!d.p) return fail(nullptr,readIdentityTarget,"target_cfg_decoder_allocation_failed");
+  struct Path { Slice slice{};ReadFlow flow{};unsigned pc{},clobberGpr{},clobberXmm{};
+    bool flagsKnown{};std::uint32_t producer{}; };
+  std::array<Path,readLeafPathCap> paths{};
+  paths[0].slice=merged;paths[0].flow=mergedTags;
+  std::array<std::uint16_t,readCallByteCap> owner{};
+  unsigned scheduled=1;
+  bool haveReturn=false;
+  for (unsigned path=0;path<scheduled;++path) {
+    auto &p=paths[path];
+    for (;;) {
+      const auto at=readIdentityTarget+p.pc;
+      if (p.pc>=limit) return fail(nullptr,at,"target_cfg_path_falls_outside_allowance_without_RET");
+      if (owner[p.pc] && owner[p.pc]!=p.pc+1) return fail(nullptr,at,"target_cfg_edge_into_instruction_body");
+      if (++out.visits>readLeafVisitCap) return fail(nullptr,at,"target_cfg_visit_cap");
+      const std::uint8_t *cursor=code+p.pc;std::size_t left=limit-p.pc;std::uint64_t address=at;
+      if (!cs_disasm_iter(d.h,&cursor,&left,&address,d.p)) return fail(nullptr,at,"target_cfg_instruction_decode_failed");
+      const auto &ins=*d.p;const auto &x=ins.detail->x86;
+      for (unsigned j=p.pc;j<p.pc+ins.size;++j)
+        if (owner[j] && owner[j]!=p.pc+1) return fail(&ins,at,"target_cfg_edge_into_instruction_body");
+      if (!owner[p.pc]) {
+        if (++out.instructions>readCallInstructionCap) return fail(&ins,at,"target_cfg_instruction_cap");
+        for (unsigned j=p.pc;j<p.pc+ins.size;++j) owner[j]=static_cast<std::uint16_t>(p.pc+1);
+      }
+      out.size=std::max(out.size,p.pc+ins.size);
+      if (ins.id==X86_INS_RET && ins.size==1 && ins.bytes[0]==0xc3 && !x.op_count) {
+        auto &e=out.outcomes[out.paths++];e.ret=at;e.flagsTags=p.flow.flags;
+        e.clobberGpr=p.clobberGpr;e.clobberXmm=p.clobberXmm;
+        for (unsigned k=0;k<16;++k) for (unsigned bit=0;bit<3;++bit) {
+          if (p.flow.g[k]&(1u<<bit)) e.returnedGpr[bit] |= 1u<<k;
+          if (p.flow.x[k]&(1u<<bit)) e.returnedXmm[bit] |= 1u<<k;
+        }
+        if (!haveReturn) { merged=p.slice;mergedTags=p.flow;haveReturn=true; }
+        else {
+          for (unsigned k=0;k<16;++k) {
+            if (!equal(merged.s.g[k],p.slice.s.g[k]) || mergedTags.g[k]!=p.flow.g[k] || mergedTags.x[k]!=p.flow.x[k]) out.effectsDiffer=true;
+            if (!equal(merged.s.g[k],p.slice.s.g[k])) merged.s.g[k]={};
+            mergedTags.g[k] |= p.flow.g[k];mergedTags.x[k] |= p.flow.x[k];
+            for (unsigned lane=0;lane<4;++lane) {
+              auto &v=merged.s.x[k*4+lane];const auto &other=p.slice.s.x[k*4+lane];
+              if (!equal(v,other)) { out.effectsDiffer=true;v={}; }
+            }
+          }
+          out.effectsDiffer |= mergedTags.flags!=p.flow.flags ||
+              out.outcomes[0].clobberGpr!=e.clobberGpr || out.outcomes[0].clobberXmm!=e.clobberXmm;
+          mergedTags.flags |= p.flow.flags;
+          mergedTags.logicalTestFlags &= p.flow.logicalTestFlags;
+          mergedTags.pinnedTestFlags &= p.flow.pinnedTestFlags;
+        }
+        break;
+      }
+      if (group(ins,CS_GRP_JUMP)) {
+        if (at!=readIdentityBranch || ins.id!=X86_INS_JA || out.branch.expanded)
+          return fail(&ins,at,"target_cfg_branch_budget_or_unmodeled_transfer");
+        describeLeafBranch(out.branch,ins,p.flagsKnown,p.producer,p.flow);
+        describeLeafEdges(out.branch,ins,codeBegin,codeEnd,limit,nextRuntime);
+        if (const auto why=leafEdgeRefusal(out.branch)) return fail(&ins,at,why);
+        cs_regs reads{},writes{};std::uint8_t nr{},nw{};
+        if (cs_regs_access(d.h,&ins,reads,&nr,writes,&nw)!=CS_ERR_OK || nr!=1 || reads[0]!=X86_REG_EFLAGS || nw ||
+            !p.flagsKnown || p.producer!=readIdentityTarget || !out.cmp.modelApplied ||
+            out.cmp.operands[0].width!=4 || out.cmp.operands[0].parent!=8 ||
+            std::strcmp(out.cmp.operands[1].kind,"immediate") || out.cmp.operands[1].immediate!=0x3fff)
+          return fail(&ins,at,"target_JA_exact_CMP_flags_producer_required");
+        if (symbolic && (!entry || !entry->samples)) return fail(&ins,at,"target_JA_current_call_tags_required");
+        ReadFlow actual;
+        if (symbolic) { actual.g=entry->gpr;actual.x=entry->xmm; }
+        const unsigned tags=symbolic?carrierTags(out.branch.entryCarrierMask,actual):p.flow.flags;
+        out.branch.samples=1;out.branch.flagsTags=tags;
+        if (tags&7u) return fail(&ins,at,"target_JA_tracked_condition_dependence_refused");
+        if (scheduled>=readLeafPathCap) return fail(&ins,at,"target_cfg_path_cap");
+        paths[scheduled]=p;paths[scheduled++].pc=out.branch.taken-readIdentityTarget;
+        p.pc=out.branch.fallthrough-readIdentityTarget;out.branch.expanded=true;
+        continue;
+      }
+      if (group(ins,CS_GRP_CALL) || group(ins,CS_GRP_RET) || group(ins,CS_GRP_INT) || group(ins,CS_GRP_IRET))
+        return fail(&ins,at,"target_cfg_nested_call_or_transfer_refused");
+      if (at==readIdentityTarget && ins.id==X86_INS_CMP) {
+        out.cmp=describeCmp(ins,d.h);
+        if (!out.cmp.formSupported) return fail(&ins,at,out.cmp.reason);
+        p.flow.flags=carrierTags(out.cmp.flagsEntryGprMask,p.flow);p.flow.logicalTestFlags=p.flow.pinnedTestFlags=false;
+        p.flagsKnown=true;p.producer=at;out.cmp.modelApplied=true;
+        p.pc+=ins.size;continue;
+      }
+      for (unsigned j=0;j<x.op_count;++j) if (x.operands[j].type==X86_OP_MEM)
+        return fail(&ins,at,"target_cfg_memory_operand_refused");
+      if (ins.id==X86_INS_NOP || ins.id==X86_INS_ENDBR64) { p.pc+=ins.size;continue; }
+      cs_regs reads{},writes{};std::uint8_t nr{},nw{};
+      if (cs_regs_access(d.h,&ins,reads,&nr,writes,&nw)!=CS_ERR_OK) return fail(&ins,at,"target_cfg_register_effects_unknown");
+      unsigned incoming=0;
+      for (unsigned j=0;j<nr;++j) {
+        if (reads[j]==X86_REG_EFLAGS || (reg(reads[j])<0 && xmm(reads[j])<0)) return fail(&ins,at,"target_cfg_partial_or_flag_input_refused");
+        incoming |= p.flow.get(reads[j]);
+      }
+      for (unsigned j=0;j<nw;++j)
+        if (reg(writes[j])==4 || (writes[j]!=X86_REG_EFLAGS && reg(writes[j])<0 && xmm(writes[j])<0))
+          return fail(&ins,at,"target_cfg_stack_or_partial_write_refused");
+      const bool pair=x.op_count==2 && x.operands[0].type==X86_OP_REG && x.operands[1].type==X86_OP_REG;
+      const bool scalar=pair && reg(x.operands[0].reg)>=0 && reg(x.operands[1].reg)>=0 &&
+          (x.operands[0].size==4 || x.operands[0].size==8) && x.operands[0].size==x.operands[1].size;
+      const bool move=pair && (ins.id==X86_INS_MOV || ins.id==X86_INS_MOVD || ins.id==X86_INS_MOVAPS || ins.id==X86_INS_MOVUPS);
+      const bool zero=pair && x.operands[0].reg==x.operands[1].reg && (ins.id==X86_INS_XOR || ins.id==X86_INS_XORPS || ins.id==X86_INS_PXOR);
+      const bool flags=scalar && (ins.id==X86_INS_CMP || ins.id==X86_INS_TEST);
+      if (x.prefix[0] || (!move && !zero && !flags) || !p.slice.step(ins,false)) return fail(&ins,at,"target_cfg_instruction_effect_refused");
+      if (zero || (flags && ins.id==X86_INS_CMP && x.operands[0].reg==x.operands[1].reg)) incoming=0;
+      for (unsigned j=0;j<nw;++j) {
+        if (!p.flow.put(writes[j],incoming)) return fail(&ins,at,"target_cfg_register_effects_unknown");
+        if (reg(writes[j])>=0) p.clobberGpr |= 1u<<reg(writes[j]);
+        if (xmm(writes[j])>=0) p.clobberXmm |= 1u<<xmm(writes[j]);
+        if (writes[j]==X86_REG_EFLAGS) {
+          p.flow.logicalTestFlags=ins.id==X86_INS_TEST || (zero && ins.id==X86_INS_XOR);p.flow.pinnedTestFlags=false;
+          p.flagsKnown=true;p.producer=at;
+        }
+      }
+      p.pc+=ins.size;
+    }
+  }
+  out.complete=out.paths==scheduled && out.branch.expanded;
+  out.reason=out.complete?"target_all_JA_paths_normal_RET_effects_modeled":"target_cfg_incomplete";
+  return out;
+}
 void sampleCmpBoundary(ReadTargetIdentity &t, const ReadFlow &flow) {
   // Partial stable prefix evidence cannot grant identity/effect admission.
   if (!t.enabled || t.target!=readIdentityTarget || !t.tableValid || !t.lookupQueried || !t.stable) return;
@@ -1374,7 +1557,7 @@ bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
       (begin <= call.address && call.address < end))
     return fail(call.address, call.mnemonic, "read_call_boundary_cap_recursion_or_deferred_target");
   Decode d;
-  if (!d.run(c.code, c.size, begin) || d.n > readCallInstructionCap)
+  if (!c.targetIdentity.branch.expanded && (!d.run(c.code, c.size, begin) || d.n > readCallInstructionCap))
     return fail(begin, "decode", "read_call_full_decode_or_instruction_cap");
   auto state = caller; auto tags = flow;
   const auto oldSp = state.s.g[4];
@@ -1387,6 +1570,38 @@ bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
   if (!state.s.save(sp, {constant,0,0,std::uint32_t(call.address+call.size)},8,0) ||
       !tags.save(sp,8,0))
     return fail(call.address, call.mnemonic, "read_call_stack_slot_cap");
+  if (c.targetIdentity.branch.expanded) {
+    const auto &proof=c.targetIdentity;
+    if (begin!=readIdentityTarget || proof.target!=begin || !proof.enabled || !proof.admitted ||
+        !proof.stable || !proof.cfgComplete || !proof.finalCodeRechecked || proof.size!=c.size ||
+        proof.branch.site!=readIdentityBranch || !proof.branch.edgesExact ||
+        std::memcmp(c.code,proof.snapshot.data(),c.size))
+      return fail(begin,"snapshot","read_call_CFG_identity_pin_or_snapshot_mismatch");
+    const auto cfg=walkPinnedLeaf(c.code,c.size,c.targetIdentity.codeBegin,c.targetIdentity.codeEnd,
+        c.targetIdentity.nextRuntime,nullptr,false,state,tags);
+    c.visits+=cfg.visits;
+    if (!cfg.complete || c.visits>4096)
+      return fail(cfg.barrier?cfg.barrier:begin,cfg.mnemonic,c.visits>4096?"read_call_cumulative_visit_cap":cfg.reason);
+    if (!equal(state.s.g[4],sp)) return fail(begin,"rsp","read_call_stack_not_restored");
+    state.s.g[4]=oldSp;
+    caller=state;flow=tags;++c.modeledStates;++c.branchExpansions;
+    c.returnPaths=cfg.paths;c.pathEffectsDiffer |= cfg.effectsDiffer;c.returnedFlagsTags |= tags.flags;
+    for (unsigned p=0;p<cfg.paths;++p) {
+      auto &e=c.outcomes[p];const auto &next=cfg.outcomes[p];
+      if (c.modeledStates==1) e=next;
+      else {
+        c.pathEffectsDiffer |= e.flagsTags!=next.flagsTags || e.returnedGpr!=next.returnedGpr || e.returnedXmm!=next.returnedXmm;
+        e.flagsTags |= next.flagsTags;e.clobberGpr |= next.clobberGpr;e.clobberXmm |= next.clobberXmm;
+        for (unsigned bit=0;bit<3;++bit) { e.returnedGpr[bit] |= next.returnedGpr[bit];e.returnedXmm[bit] |= next.returnedXmm[bit]; }
+      }
+    }
+    for (unsigned p=0;p<cfg.paths;++p) {
+      c.clobberGpr |= cfg.outcomes[p].clobberGpr;c.clobberXmm |= cfg.outcomes[p].clobberXmm;
+      for (unsigned bit=0;bit<3;++bit) { c.returnedGpr[bit] |= cfg.outcomes[p].returnedGpr[bit];c.returnedXmm[bit] |= cfg.outcomes[p].returnedXmm[bit]; }
+    }
+    if (!c.barrier) c.reason=c.pathEffectsDiffer?"bounded_JA_all_RET_paths_conservatively_merged_path_dependent":"bounded_JA_all_RET_paths_same_effect";
+    return true;
+  }
   for (unsigned i = 0; i < d.n; ++i) {
     const auto &ins = d.p[i]; const auto &x = ins.detail->x86;
     if (++c.visits > 4096)
@@ -2742,10 +2957,14 @@ Relation relation(const unsigned char *b, std::size_t size,
   return r;
 }
 ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
-    std::uint32_t imageSize, IdentityRead read, IdentityLookup lookup, void *ctx) noexcept {
+    std::uint32_t imageSize, IdentityRead read, IdentityLookup lookup, void *ctx, const ReadEntryTags *entryTags) noexcept {
   static_assert(readCallByteCap==128 && readCallInstructionCap<=32,
                 "No-unwind admission may not silently widen c23 leaf caps");
   ReadTargetIdentity out{}; out.enabled=true; out.target=target;
+  if (entryTags && entryTags->samples) {
+    out.entryTagsKnown=true;out.entryTagSamples=entryTags->samples;
+    for (unsigned k=0;k<16;++k) if ((entryTags->gpr[k]|entryTags->xmm[k])&~7u) out.entryTagsKnown=false;
+  }
   auto fail=[&](const char *why,std::uint32_t at,const char *mn="metadata") {
     out.reason=why;out.barrier=at;copyName(out.mnemonic,sizeof(out.mnemonic),mn);return out;
   };
@@ -2889,7 +3108,27 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
       }
       if (group(ins,CS_GRP_CALL) || group(ins,CS_GRP_JUMP) || group(ins,CS_GRP_RET) ||
           group(ins,CS_GRP_INT) || group(ins,CS_GRP_IRET)) {
-        if (group(ins,CS_GRP_JUMP)) describeLeafBranch(out.branch,ins,flagsKnown,flagsProducer,dependencies);
+        if (group(ins,CS_GRP_JUMP)) {
+          describeLeafBranch(out.branch,ins,flagsKnown,flagsProducer,dependencies);
+          describeLeafEdges(out.branch,ins,out.codeBegin,out.codeEnd,limit,out.nextRuntime);
+        }
+        if (at==readIdentityBranch && ins.id==X86_INS_JA) {
+          Slice merged;ReadFlow tags;
+          for (unsigned k=0;k<16;++k) { tags.g[k]=1u<<k;tags.x[k]=1u<<(16+k); }
+          const auto cfg=walkPinnedLeaf(out.snapshot.data(),limit,out.codeBegin,out.codeEnd,out.nextRuntime,
+              out.entryTagsKnown?entryTags:nullptr,true,merged,tags);
+          out.cmp=cfg.cmp;out.branch=cfg.branch;out.instructions=cfg.instructions;
+          out.paths=cfg.paths;out.visits=cfg.visits;out.cfgComplete=cfg.complete;
+          out.pathEffectsDiffer=cfg.effectsDiffer;
+          if (!cfg.complete) return fail(cfg.reason,cfg.barrier,cfg.mnemonic);
+          // All paths must pass before any span/hash can exist; pin current bytes again.
+          if (!grab(target,again,limit) || std::memcmp(again,out.snapshot.data(),limit)) {
+            out.stable=false;return fail("target_cfg_final_snapshot_changed",target,"snapshot");
+          }
+          out.finalCodeRechecked=true;out.size=cfg.size;
+          out.method="strict_single_target_tag_disjoint_JA_all_paths";
+          break;
+        }
         return fail("target_leaf_control_or_nested_call_refused",at,ins.mnemonic);
       }
       if (at==readIdentityTarget && ins.id==X86_INS_CMP) {
@@ -2947,7 +3186,7 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
       return fail("target_runtime_coverage_changed_before_admission",target+k);
   }
   out.admitted=true;out.reason=rf.found?"runtime_boundary_current_snapshot_admitted"
-      :"strict_linear_single_entry_RET_exit_set_admitted";
+      : out.cfgComplete?"pinned_JA_all_forward_RET_paths_admitted":"strict_linear_single_entry_RET_exit_set_admitted";
   return out;
 }
 } // namespace ws::rdx

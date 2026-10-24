@@ -135,6 +135,9 @@ struct ReadCallContract {
   std::array<Carrier, 16> gpr{};
   std::array<unsigned, 16> xmmTags{};
   std::array<unsigned, 3> returnedGpr{}, returnedXmm{};
+  unsigned returnPaths{}, branchExpansions{};
+  bool pathEffectsDiffer{};
+  std::array<ReadLeafOutcome,readLeafPathCap> outcomes{};
   bool authenticated{}, decoded{}, direct{}, memoryEscape{};
   const char *reason = "read_call_not_enabled";
   char hash[65] = "unavailable", mnemonic[32] = "none", operand[32] = "none",
