@@ -3,6 +3,7 @@ $ErrorActionPreference = 'Stop'
 $targets = @{
   'Spider-Man2' = [IO.Path]::GetFullPath((Join-Path $GameRoot 'Spider-Man2.exe'))
   'Overstrike' = [IO.Path]::GetFullPath((Join-Path $GameRoot 'Overstrike\Overstrike.exe'))
+  'Check for updates' = [IO.Path]::GetFullPath((Join-Path $GameRoot 'Check for updates.exe'))
 }
 foreach ($name in $targets.Keys) {
   foreach ($process in @(Get-Process -Name $name -ErrorAction SilentlyContinue)) {
