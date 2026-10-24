@@ -1,38 +1,70 @@
 # WallSprint logging convention
 
-WallSprint diagnostic logs are isolated from other Spider-Man 2 MOD logs.
+WallSprint diagnostic logs are isolated inside the final WallSprint development workspace.
 
 ## Directory
-Relative to the game root:
-```text
-log_wallsprint\
-```
-Example current install:
-```text
-C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2\log_wallsprint\
-```
-Do not hard-code the absolute install path. Derive the game root and append `log_wallsprint`.
 
-If the directory is missing, create it safely. Do not silently fall back to the old shared `logs` directory.
+Authoritative runtime log directory:
+
+```text
+<game>\Mods Library\Mods-Developing\MSM2-WS\logs\
+```
+
+Example current install:
+
+```text
+C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2\Mods Library\Mods-Developing\MSM2-WS\logs\
+```
+
+Do not hard-code the absolute example path in reusable code. Derive the game root from the running game executable/module path and append the exact relative workspace path above.
+
+If the directory is missing, create it safely. Do not silently fall back to game-root `log_wallsprint`, a shared `logs` folder, `logs_WS`, or any other legacy destination.
 
 ## Filename
+
 One file per WallSprint process/run:
+
 ```text
-WallSprint_YYYYMMDD-HHMMSS.log
+MSM2-WS-v<version>-YYYYMMDD-HHMMSS.log
 ```
+
 Example:
+
 ```text
-WallSprint_20261024-034812.log
+MSM2-WS-v0.1c20-20261024-120500.log
 ```
-Use local PC wall-clock time, zero-padded. Keep A→E sessions from the same game run in the same file. If a same-second filename collision occurs, append `_01`, `_02`, etc.
+
+`<version>` comes from the authoritative WallSprint build/version metadata. Do not put commit hashes, GUIDs, or random IDs in the user-facing filename.
+
+Use local PC wall-clock time, zero-padded. Keep A→E sessions from the same game run in the same file. If a same-second filename collision occurs, append a bounded numeric suffix such as `-01`, `-02`, etc. without replacing an existing file.
 
 ## Human test convention
-Normal diagnostic test:
+
+Normal diagnostic test remains:
+
 ```text
 A ~4 s -> fully end WallRun -> move/fast-travel -> E ~4 s
 ```
-Send the single newest timestamped file from `log_wallsprint`. Video is only needed for a visible anomaly or when specifically requested.
+
+Send the single newest timestamped file from:
+
+```text
+Mods Library\Mods-Developing\MSM2-WS\logs
+```
+
+Video is only needed for a visible anomaly or when specifically requested.
 
 ## Implementation / failure behavior
 
-The existing executable-path root is used. Win32 CREATE_NEW chooses a free timestamped name atomically; suffix search is bounded to _9999 and never truncates an existing file. Re-enabling the same loaded module appends to its selected file; a full module reload starts a new run file. Directory/open/collision failure reports stage, attempted path and Win32Error through OutputDebugString; shared logs fallback is disabled. The filename uses GetLocalTime while telemetry line timestamps retain their existing UTC format.
+Preserve the existing safe logger properties while changing only the destination/name contract:
+
+- derive paths from the game executable/module rather than a personal absolute install path;
+- atomically choose a new filename and never truncate an existing log;
+- bounded same-second suffix search;
+- re-enabling the same loaded module appends to its selected run file;
+- a full module reload starts a new run file;
+- directory/open/collision failure reports stage, attempted path, and Win32 error through the existing diagnostic channel;
+- no silent fallback to any old/shared log path;
+- filename uses local time while telemetry line timestamps retain their existing UTC format.
+
+The logger/path tests must cover spaces and Unicode in the containing game/workspace path and assert that forbidden legacy directory names are not created.
