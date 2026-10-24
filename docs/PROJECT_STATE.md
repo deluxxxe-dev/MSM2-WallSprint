@@ -3,6 +3,12 @@
 ## Goal
 Convert vanilla WallRun into surface-relative locomotion. Do not advance movement rewrite, adhesion, or camera until runtime ownership gates authorize them.
 
+## Repository / branch policy
+- Canonical remote: `https://github.com/deluxxxe-dev/MSM2-WallSprint.git`
+- Implementation source of truth: `codex/v01c20-edi-value-provenance`
+- Owner-confirmed organized baseline: `5192f05f32313919fdf4049bd734b971655d163f`
+- `main` is heavily diverged and must **not** be merged into this branch.
+
 ## Exact target / safety
 - Spider-Man2.exe 2.810.0.0
 - SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`
@@ -31,7 +37,7 @@ observed second return=0x351A020
 
 Runtime source relation remains `RDX=entry RSP+0x28`; sampled `[RDX] XYZ` equals exact executed Position XYZ bits. Correlation only until writer-side causality completes.
 
-## Current research blocker
+## Current research blocker — c20 EDI value provenance
 C19 proved:
 
 ```text
@@ -40,9 +46,19 @@ RCX provenance = entry writer Hero Transform
 destination = Hero Transform +0x10C
 ```
 
-The write does not directly overlap Position `+0x30..+0x3F` or the Transform identity/pointer-carrier range. EDI value provenance remains unresolved. Prepared c20 EDI research is preserved but production-disabled and is not authorized until the local workspace acceptance gate below passes.
+The write does not directly overlap Position `+0x30..+0x3F` or the Transform identity/pointer-carrier range. EDI value provenance remains unresolved.
 
-## Current gate
+The prepared c20 bounded local value-provenance implementation is preserved in this branch. After the real-PC workspace acceptance passed on 2026-10-24, `docs/CODEX_NEXT.md` now explicitly reauthorizes a diagnostic-only c20 test build and actual-game A/E capture.
+
+The current question is limited to:
+- the exact local reaching-definition/value relation of EDI at `0x2B2358E`;
+- all-local-path coverage/conflict/refusal;
+- the next precise later read/effect blocker if the local relation succeeds;
+- eventual XYZ/W writer causality only if the stricter protected-effect coverage also succeeds.
+
+No semantic ABI type is assigned to EDI or Transform+0x10C without evidence.
+
+## Current safety gate
 ```text
 writable_source_proven=0
 Position/source/input/movement writes=0
@@ -54,13 +70,13 @@ downstream_conflicts_proven_absent=0
 
 Producer `0x351EB00` remains deferred. No movement, adhesion, camera, animation or physics advancement is authorized.
 
-## Local workspace implementation — cloud complete, real-PC acceptance pending
+## Local workspace implementation — accepted on real PC
 Branch: `codex/v01c20-edi-value-provenance`
 
-Implementation commit: `a4ec9c0f2635e9f2594bf5972d1765332de73766`.
-Current delivery head: `b191708c07bf8013f7a3e401a3dc2beaa09aee74`.
+Cloud implementation commit: `a4ec9c0f2635e9f2594bf5972d1765332de73766`.
+Real-PC acceptance evidence: `analysis/LOCAL_WORKSPACE_RUNTIME_ACCEPTANCE_20261024.md`.
 
-Cloud implementation completed the final local migration/update/logging infrastructure described by `docs/LOCAL_WORKSPACE.md`:
+The final local migration/update/logging infrastructure is accepted on the user's real Windows installation:
 
 ```text
 <game>\Mods Library\Mods-Developing\MSM2-WS\
@@ -71,27 +87,21 @@ Cloud implementation completed the final local migration/update/logging infrastr
 └─ _archive\
 ```
 
-A one-time `Migrate-WS.cmd` is included. `_source` is required to be an independent clone. Repository/release behavior no longer requires a live tracked `WallSprint.script` inside the recursively scanned source tree. Deployment is transactional and asserts one active WS script recursively. WS tooling protects SF and ordinary mods and only validates shared Overstrike infrastructure rather than owning it.
+Verified acceptance includes:
+- final `Mods-Developing\MSM2-WS` workspace and versioned `logs` destination;
+- ordinary mods + SF + WS recognized together by the shared Overstrike;
+- modded game launch;
+- visible WS operation;
+- versioned WS and SF runtime logs from the same run;
+- no evidence that the accepted WS tooling required mutation of SF or ordinary mods.
 
-Runtime logs now target:
+Runtime logs target:
 
 ```text
 <game>\Mods Library\Mods-Developing\MSM2-WS\logs\MSM2-WS-v<version>-YYYYMMDD-HHMMSS.log
 ```
 
-Cloud validation reported 131 public PASS records plus separate historical replay, including workspace filesystem/Git fixtures and actual Windows logger smoke. Prepared EDI offline tests are included but production EDI remains disabled. These tests do not prove real Windows migration, WSL prerequisites, process stopping, shared Overstrike UI recognition, or actual runtime logging on the user's machine.
-
-## Current blocker / required human acceptance
-Before any further gameplay-research implementation, run the produced migration on the real Windows installation and verify:
-
-1. migration completes without touching SF or ordinary mods;
-2. exactly one active `MSM2-WS-v<version>.script` exists under the WS workspace;
-3. the shared `<game>\Overstrike\Overstrike.exe` sees ordinary mods + SF + WS;
-4. `Install mods` -> `Run modded game` succeeds;
-5. a new versioned log appears under `MSM2-WS\logs`;
-6. optional regression run A ~4 s -> fully end WallRun -> move/fast-travel -> E ~4 s retains the accepted c19 safety/orientation behavior.
-
-Until this gate passes, do not resume EDI provenance or advance to producer/movement work.
+The acceptance smoke also preserved the c19 safety baseline (verified WallRun Deinit/retention/Surface Up and Position writes by MOD=0), but those short sessions are not a substitute for the dedicated c20 A/E provenance capture.
 
 ## Current stages
 1. lifecycle / SurfaceFrame ✅
@@ -108,10 +118,10 @@ Until this gate passes, do not resume EDI provenance or advance to producer/move
 12. c17 call argument provenance ✅
 13. c18 actual callee CFG / first real writes ✅
 14. c19 exact Transform+0x10C destination ✅ actual game
-15. local workspace implementation ✅ cloud
-16. real-PC workspace/shared-Overstrike/log acceptance ▶ CURRENT GATE
-17. c20 EDI value provenance ⏸ production-disabled until gate passes
-18. resume writer XYZ/W causal proof ⏸ after EDI contract
+15. local workspace implementation ✅
+16. real-PC workspace/shared-Overstrike/log acceptance ✅
+17. c20 EDI value provenance ▶ CURRENT — diagnostic build + actual A/E evidence
+18. resume writer XYZ/W causal proof ⏸ after EDI/value + protected-effect contract
 19. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
 20. safe writable upstream movement source ⬜ NOT AUTHORIZED
 21. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
@@ -119,4 +129,6 @@ Until this gate passes, do not resume EDI provenance or advance to producer/move
 23. animation/camera/later traversal ⬜
 
 ## Current action
-Use `MSM2-WS-v0.1c20.zip` outside Mods Library and run the migration helper against the real game root as documented in `docs/CODEX_NEXT.md`. Do not delete the legacy environment until real-PC acceptance passes.
+Follow `docs/CODEX_NEXT.md` on `codex/v01c20-edi-value-provenance`: revalidate and production-enable only the prepared c20 EDI diagnostics, run the relevant regression suite, build/package through the accepted workspace tooling, commit/push, then perform the dedicated A/cardinal ~4 s -> fully end WallRun -> move/fast-travel -> E/diagonal ~4 s runtime capture.
+
+Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable any Position/source/input/movement writes.
