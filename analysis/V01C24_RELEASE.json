@@ -1,0 +1,96 @@
+{
+  "version": "v0.1c24",
+  "package_version": "0.1.42",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "base_commit": "432f8a1",
+  "implementation_commit": "d9df7a4a4ec68cabdf9bbe239c9d36fbb20e3654",
+  "source_snapshot_commit": "242d27c35c64e7892164ca0e6bc6a6c02a086816",
+  "outputs": [
+    {
+      "path": "MSM2-WS-v0.1c24.zip",
+      "bytes": 3651890,
+      "sha256": "a7ec59c4aa37926e3ad55b96b79003f08bec2078071cc00aa9564546af8e1a21"
+    },
+    {
+      "path": "MSM2-WS-v0.1c24-source.zip",
+      "bytes": 875026,
+      "sha256": "2cabe6fd481674ecfa1165e06574879064f8679575a9bcc0ee0a7d7ea5152303"
+    }
+  ],
+  "script": {
+    "path": "MSM2-WS-v0.1c24.script.disabled",
+    "sha256": "99f5e81920edbaca851890cc0ad98c54d1f8919766372b66b4cde30b4ec453d0",
+    "dll_sha256": "843860a2d97ed5e8c590c51ea659de88eddf88e26908952c76dd25270e2550ec"
+  },
+  "public_test_pass_records": {
+    "portable": 13,
+    "smoke": 7,
+    "hooks": 149
+  },
+  "total_public_pass_records": 169,
+  "private_input_skips": 5,
+  "retained_read_call_groups": 21,
+  "new_identity_groups": 9,
+  "final_reporting_main_build": "PASS",
+  "standalone_source": {
+    "fresh_build": "PASS",
+    "focused_entry_c14_c24": 84,
+    "DLL_logger": 7,
+    "workspace": 13,
+    "total_separate_records": 104,
+    "private_skips": 0,
+    "package_verifier": "PASS",
+    "final_reporting_rebuild": "PASS",
+    "final_reporting_DLL_logger_recheck": 7,
+    "final_native_tool_inputs_identical_to_rebuilt_source": true
+  },
+  "accepted_c23": {
+    "evidence": "analysis/V01C23_RUNTIME_RESULT.md",
+    "direct_call": "0x2b235d4",
+    "target": "0x2cf7fe0",
+    "raw_gpr0_tags": 1,
+    "boundary_hash": "unavailable",
+    "effect": "unknown"
+  },
+  "read_target_identity": {
+    "single_target": "0x2cf7fe0",
+    "code_region": "unique_readonly_executable_PE_code",
+    "PE_runtime_table_entry_cap": 262144,
+    "lookup_table_consistency": true,
+    "no_unwind_only_if_no_containing_entry": true,
+    "no_crossing_static_or_dynamic_runtime_region": true,
+    "byte_cap": 128,
+    "instruction_cap": 32,
+    "leaf_shape": "single_entry_linear_register_only_normal_RET_complete_exit_set",
+    "branches_memory_stack_nested_CALL": "refuse",
+    "snapshot": "guarded_double_read_equality_SHA256_admitted_prefix",
+    "current_metadata_recheck": true,
+    "actual_result": "pending_new_log",
+    "effect_certificate": false,
+    "existing_c19_c20_refusal_preserved": true,
+    "Position_source_input_movement_writes": 0
+  },
+  "actual_c24": "PENDING_new_compact_target_identity_record_reason_span_hash_next_boundary",
+  "effect_certificate": false,
+  "legacy_c19_c20_refusal_preserved": true,
+  "safety": {
+    "writable_source_proven": 0,
+    "caller_owned": 0,
+    "ownership_exclusive": 0,
+    "source_lifetime_exclusive": 0,
+    "downstream_conflicts_proven_absent": 0,
+    "Position_source_position_input_movement_writes": 0,
+    "producer_0x351eb00": "deferred",
+    "new_hooks": 0,
+    "live_game_data_observation": false,
+    "bounded_PE_runtime_metadata_and_single_code_snapshot_only": true,
+    "native_lifecycle_orientation_ABI_assertions_deadlines_cleanup_unchanged": true
+  },
+  "CODEX_NEXT_preserved": true,
+  "main_merged": false,
+  "raw_logs_private_game_bodies_distributed": false,
+  "runtime_log": "MSM2-WS/logs/MSM2-WS-v0.1c24-YYYYMMDD-HHMMSS.log",
+  "updater": "MSM2-WS/Update-WS.cmd",
+  "archive_validation": "PASS_CRC_hash_DLL_version_identity_marker_full_current_sources_docs_helpers_licenses_one_active_install_member",
+  "Wisdoms_synchronization": "ENGINE_INTERNALS accepted c23 target; RE guide/WS internals strict missing-entry identity method implementation only, actual c24 UNKNOWN"
+}

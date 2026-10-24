@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c23",
-  "package_version": "0.1.41",
-  "artifact": "MSM2-WS-v0.1c23.script.disabled",
-  "sha256": "22d2a1a12e9745099966d6b526efa27f358154365f6045fdc9c459d689c05600",
-  "dll_sha256": "3e35bc0eceb0757895a646f06d6ed3731d7d931e002e73470380b50e83221470",
+  "version": "v0.1c24",
+  "package_version": "0.1.42",
+  "artifact": "MSM2-WS-v0.1c24.script.disabled",
+  "sha256": "99f5e81920edbaca851890cc0ad98c54d1f8919766372b66b4cde30b4ec453d0",
+  "dll_sha256": "843860a2d97ed5e8c590c51ea659de88eddf88e26908952c76dd25270e2550ec",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -130,7 +130,7 @@
   },
   "validation": "Warnings-as-errors cross-build; portable/DLL/native/c19/owned EDI/logger/workspace regressions and standalone source validation; exact current results in CODEX_RESULT.",
   "limitations": [
-    "C22 TEST r8b/r8b JE disjoint classification accepted; c23 CALL target/carriers/next boundary pending. Diagnostic-only leaf analysis grants no effect/XYZ/W/ownership permission.",
+    "C23 direct0x2cf7fe0/carrier accepted; c24 target identity/refusal/strict no-unwind result pending. Neither identity nor local flow grants XYZ/W/ownership/writability.",
     "Stack/global disjointness is conditional on per-invocation TEB/source/nonstack Transform/image region admission",
     "Unknown/conflicting pointer origins, unsupported effects and nested calls refuse at exact site",
     "Startup/current code snapshots are not atomic execution attestation; equality does not exclude transient writes",
@@ -656,7 +656,7 @@
   },
   "isolated_logging": {
     "directory": "game-root/Mods Library/Mods-Developing/MSM2-WS/logs",
-    "filename": "MSM2-WS-v0.1c23-YYYYMMDD-HHMMSS.log",
+    "filename": "MSM2-WS-v0.1c24-YYYYMMDD-HHMMSS.log",
     "filename_clock": "host_local_GetLocalTime",
     "line_clock": "UTC_unchanged",
     "collision_creation": "CREATE_NEW_atomic",
@@ -732,8 +732,8 @@
     "source": "_source_independent_clone",
     "archive": "_archive_disabled_only",
     "runtime_logs": "logs",
-    "active_script": "MSM2-WS-v0.1c23.script",
-    "artifact": "MSM2-WS-v0.1c23.script.disabled",
+    "active_script": "MSM2-WS-v0.1c24.script",
+    "artifact": "MSM2-WS-v0.1c24.script.disabled",
     "update_helper": "Update-WS.cmd",
     "migration_helper": "Migrate-WS.cmd",
     "overstrike": "game-root/Overstrike/Overstrike.exe",
@@ -793,7 +793,7 @@
     "producer_traversal": false,
     "Position_source_input_movement_writes": 0
   },
-  "v01c23_gate": "PINNED_CALL_DIAGNOSTIC_ACTUAL_TARGET_EFFECT_PENDING",
+  "v01c23_gate": "ACTUAL_DIRECT_TARGET_0x2cf7fe0_CARRIER_PASS_BOUNDARY_HASH_BLOCKER",
   "read_call_contract": {
     "site": "0x2b235d4",
     "diagnostic_only": true,
@@ -807,9 +807,28 @@
     "leaf_model": "register_only_no_memory_no_branch_no_further_call",
     "unknown_calls": "stop_never_clear_volatile_tags_and_continue",
     "producer_0x351eb00": "metadata_only_exclusion_no_body_read",
-    "actual_target": "pending_new_log",
+    "actual_target": "accepted_0x2cf7fe0_boundary_hash_unavailable",
     "effect_certificate": false,
     "legacy_c19_c20_refusal_preserved": true,
+    "Position_source_input_movement_writes": 0
+  },
+  "v01c24_gate": "EXACT_TARGET_IDENTITY_STRICT_NO_UNWIND_DIAGNOSTIC_PENDING",
+  "read_target_identity": {
+    "single_target": "0x2cf7fe0",
+    "code_region": "unique_readonly_executable_PE_code",
+    "PE_runtime_table_entry_cap": 262144,
+    "lookup_table_consistency": true,
+    "no_unwind_only_if_no_containing_entry": true,
+    "no_crossing_static_or_dynamic_runtime_region": true,
+    "byte_cap": 128,
+    "instruction_cap": 32,
+    "leaf_shape": "single_entry_linear_register_only_normal_RET_complete_exit_set",
+    "branches_memory_stack_nested_CALL": "refuse",
+    "snapshot": "guarded_double_read_equality_SHA256_admitted_prefix",
+    "current_metadata_recheck": true,
+    "actual_result": "pending_new_log",
+    "effect_certificate": false,
+    "existing_c19_c20_refusal_preserved": true,
     "Position_source_input_movement_writes": 0
   }
 }
