@@ -105,8 +105,8 @@
     "failure_channel": "OutputDebugString_stage_path_Win32Error"
   },
   "workspace_owned_Git_filesystem_fixtures": "PASS_8_groups_including_clone_ff_divergence_isolation_rollback_and_active_script_invariants",
-  "Windows_process_stop_WSL2_launcher_and_shared_Overstrike_UI": "PENDING_user_real_PC",
-  "actual_local_migration_and_new_runtime_log": "PENDING_user_execution",
+  "Windows_process_stop_WSL2_launcher_and_shared_Overstrike_UI": "Windows_helper_and_full_WSL_pipeline_completed_GUI_pending_user_confirmation",
+  "actual_local_migration_and_new_runtime_log": "migration_helper_deployment_PASS_actual_game_runtime_log_PENDING",
   "owned_A_E_orientation": [
     {
       "session": "1",
@@ -210,7 +210,7 @@
     "production_assertions_deadlines_budgets_and_admission_unchanged": true,
     "runtime_DLL_unchanged": true,
     "user_PC_cause": "UNCONFIRMED",
-    "user_PC_diagnostic_result": "pending"
+    "user_PC_diagnostic_result": "PASS_9_records_1_optional_private_SKIP_user_terminal"
   },
   "focused_diagnostic_staging": {
     "implementation_commit": "bc050b27d9cf1cdd01fda6208b4e735a2a549c25",
@@ -225,6 +225,33 @@
     "deploys_to_game": false,
     "existing_production_fixture_deadlines_and_assertions_unchanged": true,
     "original_user_capture_failure_cause": "UNCONFIRMED",
-    "user_new_helper_result": "pending"
+    "user_new_helper_result": "PASS_build_and_9_focused_records_1_optional_private_SKIP"
+  },
+  "release_artifact_snapshot_commit": "2735e500e7bee17ce6d3016736439f2bd5edad0c",
+  "real_PC_latest_migration": {
+    "evidence": "user_supplied_terminal_summary_no_raw_log_committed",
+    "version": "v0.1c20",
+    "full_public_test_PASS_records": 131,
+    "optional_private_input_SKIP_records": 5,
+    "optional_maintainer_log_absences": 18,
+    "build_tests_package_and_staging": "PASS_reported_by_real_Windows_helper",
+    "deployment": "PASS_reported_by_real_Windows_helper",
+    "active_script": "MSM2-WS-v0.1c20.script",
+    "one_active_script_postcondition": "PASS_checked_by_helper",
+    "shared_Overstrike_launch_request": "PASS",
+    "GUI_recognition_ordinary_SF_WS": "PENDING_user_confirmation",
+    "Install_mods_and_Run_modded_game": "PENDING",
+    "actual_versioned_runtime_log": "PENDING",
+    "overall_real_PC_acceptance": "PENDING_remaining_GUI_and_runtime_checks",
+    "original_capture_failure_cause": "UNCONFIRMED_not_reproduced_in_focused_or_full_rerun",
+    "production_deadlines_assertions_and_gates_unchanged": true,
+    "local_generated_install_zip": {
+      "bytes": 3332536,
+      "reported_sha256": "236e9088014b244a0c7e044ef5dca0a135d922543de4ccc55b300246a9775374"
+    },
+    "local_generated_source_zip": {
+      "bytes": 764618,
+      "reported_sha256": "17a0263dd6d604cf15cec5b95a2b9a96e272b4be27cd65e3b709cb34de24b974"
+    }
   }
 }
