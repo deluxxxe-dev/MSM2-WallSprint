@@ -1,159 +1,311 @@
-# Next task — WallSprint v0.1c20 EDI Value Provenance
+# Next task — Final local development workspace migration
 
-## Base
+## Priority / scope
+
+This task **supersedes the previous local-package/AppData-Overstrike instructions** and temporarily takes priority over the prepared c20 EDI-value-provenance research task.
+
+Current branch:
+
 ```text
-source branch: codex/v01c19-transform-write-contract
-source implementation: b3185cd240a16446a2424ecab9fa0c2605cb00e8
-next branch: codex/v01c20-edi-value-provenance
-version target: v0.1c20
+codex/v01c20-edi-value-provenance
 ```
+
+Do not discard or regress the accepted c19 runtime evidence or the prepared c20 research work. The exact EDI blocker remains pending and should resume only after this infrastructure migration is implemented and validated.
+
+This task is infrastructure/layout/update/logging work. Do not traverse producer `0x351EB00`, implement movement/adhesion/camera/animation/traversal, or change gameplay behavior except the narrow runtime log destination/name required below.
 
 Read first:
+
 - `AGENTS.md`
 - `docs/DEV_RULES.md`
+- `docs/LOCAL_WORKSPACE.md`
+- `analysis/LOCAL_WORKSPACE_AUDIT.md`
 - `docs/PROJECT_STATE.md`
 - `docs/LOGGING_CONVENTION.md`
-- `analysis/V01C19_RUNTIME_RESULT.md`
-- `analysis/V01C19_TRANSFORM_WRITE_CONTRACT.md`
-- `analysis/RDX_XYZ_SOURCE_CONTRACT.md`
-- c19 `docs/CODEX_RESULT.md`
+- `source/BUILD.md`
+- current `source/tools/build_windows.sh`, `test.sh`, `smoke_windows.sh`, `test_hooks_windows.sh`, `package.py`, and `release.py`
 
-## Accepted c19 actual-game result
-C19 is **Diagnostic PASS / exact value-provenance blocker identified**.
+## Final invariant
 
-Regression gate:
+There is exactly one shared game root, one `Mods Library`, and one shared Overstrike for ordinary mods + SocialFeed + WallSprint.
+
+Authoritative shape:
+
 ```text
-A/session1 duration=3844 ms
-E/session2 duration=4094 ms
-both verified Deinit
-both retention_pass=1
-both stale_suspend_count=0
-both hard_kill_calls=0
-both Position_writes_by_mod=0
-both final Up dot surface=1
-```
-Both sessions finalized 8 true entry snapshots / 8 complete invocation maps with XYZ mask `0x7`, source W=0 and destination W=1.
-
-C19 proved the exact destination of the former c18 alias:
-```text
-site_rva=0x2B2358E
-instruction=mov
-width=4
-destination=[RCX+0x10C]
-dst provenance=entry_writer_RCX_transform
-address_class=hero_transform_exact
-may_alias_source=0
-may_alias_transform=1
-write_overlaps_position_range=0
-write_overlaps_transform_identity_or_pointer_carrier=0
+<game>\
+├─ Spider-Man2.exe
+├─ scripts_proxy.dll
+├─ winmm.dll
+├─ Overstrike\
+│  └─ Overstrike.exe
+└─ Mods Library\
+   ├─ <existing ordinary mods...>
+   └─ Mods-Developing\
+      ├─ MSM2-SF\
+      │  └─ <never modify from WS tooling>
+      └─ MSM2-WS\
+         ├─ MSM2-WS-v<version>.script
+         ├─ Update-WS.cmd
+         ├─ logs\
+         ├─ _source\
+         └─ _archive\
 ```
 
-The new exact blocker is the value source:
-```text
-value_source_register_or_memory=edi
-value_source_kind=unknown
-value_source_provenance_exact=0
-all_reaching_states_same_value_origin=0
-all_reaching_states_examined=0
-write_affects_writer_reload_provenance=unknown
-write_effect_relevant_to_xyz=unknown
-write_effect_relevant_to_w=unknown
-reason=exact_write_value_unknown_computed_or_reaching_origins_conflict
-```
+A one-time `Migrate-WS.cmd` may also exist at `MSM2-WS` root until migration is complete.
 
-## Objective
-Resolve **only the value provenance of EDI at `0x2B2358E` and its relevance to later Position/source-carrier reads**.
+The local example game path supplied by the user is:
 
-Answer:
-1. Which exact local instruction(s) produce the EDI value reaching `0x2B2358E`?
-2. Are all reaching paths covered, and do they have one stable origin?
-3. Is the value constant, copied from an entry register, loaded from memory, or computed?
-4. Does the Transform+0x10C write influence any later read/carrier needed for Position XYZ/W causality?
-5. If irrelevant, can the write be safely modeled and writer proof resume past `0x2CFC92C`?
-
-Do not traverse or mutate upstream producer `0x351EB00`. Do not implement movement.
-
-## Required proof
-Use the authenticated c19 callee CFG and exact current-code/hash gates. Trace EDI backward only within the exact authenticated callee and only as far as required to establish its reaching definitions. Preserve separate states across branches; conflicting origins remain unresolved.
-
-Emit compact metadata, for example:
-```text
-MOVEMENT_CALLEE_VALUE_CONTRACT
-site_rva=0x2b2358e
-value_register=edi
-reaching_definition_count=
-producer_rva=
-producer_kind=constant|register_copy|memory_load|computed|unknown
-producer_root=
-producer_offset=
-all_reaching_states_examined=0|1
-all_reaching_states_same_value_origin=0|1
-later_relevant_read_count=
-first_dependency_rva=
-write_effect_relevant_to_xyz=0|1|unknown
-write_effect_relevant_to_w=0|1|unknown
-reason=
-```
-
-Do not invent semantics for Transform+0x10C or EDI.
-
-## Safe continuation
-Only if EDI provenance is exact on all reaching paths and the Transform+0x10C write is proven non-causal to Position/source-carrier reads may c20 mark:
-```text
-transform_position_protected_range_unmodified=1
-relevant_transform_effects_resolved=1
-```
-and continue the existing writer XYZ/W proof.
-
-If another exact callee/writer instruction becomes the blocker, report that exact RVA/mnemonic/effect and stop.
-
-## Development package / Overstrike workflow
-WS must use the same development-library scheme already adopted by SF.
-
-Development package directory on the user's PC:
-```text
-C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2\Mods Library\Mods-Developing
-```
-
-Overstrike recursively reads `Mods Library`, so `Mods-Developing` is the required shared location for active development packages.
-
-For c20 and future WS development builds:
-- user-facing install ZIP is exactly `MSM2-WS-v0.1c20.zip` for c20 and `MSM2-WS-v<version>.zip` thereafter;
-- no task-description suffixes in the install ZIP name;
-- local update/copy helpers must place the current WS ZIP under `Mods Library\Mods-Developing`, not `Mods Library` root;
-- never move/rename/delete/overwrite any `MSM2-SF-*` file or other unrelated mod;
-- create `Mods-Developing` locally if missing;
-- when cleaning/replacing old WS builds, only target `MSM2-WS-*` artifacts.
-
-The separated development `Overstrike.exe` remains in its AppData-side location used by the shared SF/WS workflow, but **its WorkingDirectory must be the MSM2 game root**:
 ```text
 C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2
 ```
-Do not run it with the AppData directory as WorkingDirectory. This is required so game-root `Mods Library\Mods-Developing` is used and game-root dependencies such as `scripts_proxy.dll` can resolve normally.
 
-Add/update a double-click local helper named:
+Reusable implementation must **not** hard-code that personal absolute path. `Update-WS.cmd`, once installed under `MSM2-WS`, must derive/canonicalize `<game>` from its own location (`MSM2-WS` -> `Mods-Developing` -> `Mods Library` -> game root) and validate `Spider-Man2.exe` before doing anything destructive.
+
+## Naming rules
+
+User-facing workspace names use hyphens:
+
 ```text
-UpdateForTest.cmd
+Mods-Developing
+MSM2-WS
+Update-WS.cmd
+Migrate-WS.cmd
+MSM2-WS-v<version>.script
+MSM2-WS-v<version>-YYYYMMDD-HHMMSS.log
 ```
-It must be safe and WS-only. Its local behavior should:
-1. ensure `Mods Library\Mods-Developing` exists;
-2. copy/update only the current `MSM2-WS-v0.1c20.zip` development package there;
-3. not touch any `MSM2-SF-*` artifact;
-4. launch or hand off to the separated Overstrike executable while explicitly using the MSM2 game root as WorkingDirectory;
-5. fail clearly rather than silently falling back to another Mods Library or WorkingDirectory if the separated Overstrike path cannot be resolved.
 
-Do not invent or hardcode an unverified AppData Overstrike executable path. If the repository does not already contain an authenticated/configured path, make the helper resolve it from an explicit configurable variable or clearly documented existing local path contract and fail closed when unavailable.
+Leading `_` is reserved for internal workspace folders:
 
-Cloud Codex cannot write the user's `C:` drive. The cloud job should create/test the package/helper logic and document the exact local behavior; the user's local execution performs the actual copy/update.
-
-This storage workflow does not change the runtime log location:
 ```text
-log_wallsprint\WallSprint_YYYYMMDD-HHMMSS.log
+_source
+_archive
 ```
-with no fallback to shared `logs`.
 
-## Safety boundary
-Keep unchanged:
+The log directory is exactly:
+
+```text
+logs
+```
+
+Do not newly create workspace variants such as:
+
+```text
+Mods_Developing
+MSM2_WS
+Update_WS.cmd
+logs_WS
+WS_logs
+log_wallsprint
+```
+
+Do not mass-rename established C/C++ source identifiers/files merely because the repository historically uses underscores. This naming rule governs the local development workspace and newly created user-facing/local-management helpers; avoid unrelated source churn.
+
+## 1. Audit and preserve the existing build/test/release chain
+
+Before changing scripts, inspect and document how the current repository produces the Windows DLL/script/package. Preserve the existing validation suites rather than replacing them with a weaker shortcut.
+
+Current known helpers include:
+
+```text
+source/tools/build_windows.sh
+source/tools/test.sh
+source/tools/smoke_windows.sh
+source/tools/test_hooks_windows.sh
+source/tools/package.py
+source/tools/release.py
+```
+
+Determine the supported Windows-local prerequisites/wrappers for these tools. `Update-WS.cmd` may call a repository-owned PowerShell/helper script if useful, but the user entry point remains exactly `Update-WS.cmd`. Tool discovery must fail clearly; do not silently skip build/tests when Bash/Python/CMake/compiler/toolchain prerequisites are missing.
+
+Support spaces and Unicode paths throughout.
+
+## 2. Make `_source` a safe independent clone
+
+Final local checkout:
+
+```text
+<game>\Mods Library\Mods-Developing\MSM2-WS\_source
+```
+
+It must be an independent Git clone, not a worktree, junction, symlink, or reparse-point link to the old D-drive checkout.
+
+The current repository audit found a tracked root artifact:
+
+```text
+WallSprint.script
+```
+
+This is incompatible with an Overstrike-recursively-scanned `_source` checkout. Refactor repository/release behavior so a normal checkout no longer contains any active `*.script` file. Preserve Git history; do not rewrite history. Remove/stop tracking generated live script artifacts as needed and add appropriate ignore/output discipline so future builds do not leave a live `.script` anywhere under `_source`.
+
+Historical ZIPs need not be deleted merely for this task, but no packaging/test operation may unpack or leave an active `.script` under `_source`.
+
+Required postcondition for the local workspace:
+
+```text
+MSM2-WS\MSM2-WS-v<version>.script     <- exactly one active script
+MSM2-WS\_source\**\*.script           <- zero
+MSM2-WS\logs\**\*.script              <- zero
+MSM2-WS\_archive\**\*.script          <- zero
+```
+
+## 3. Implement `Migrate-WS.cmd`
+
+Add a source-controlled migration/bootstrap implementation that produces the top-level local `Migrate-WS.cmd` when used on Windows.
+
+The one-time migration must be safe and fail closed. It must:
+
+- resolve/accept the intended MSM2 game root without embedding the user's D-drive or C-drive personal path in reusable code;
+- validate the game root and exact `Mods Library\Mods-Developing\MSM2-WS` destination;
+- create only the required WS workspace folders (`logs`, `_source`, `_archive`) and top-level WS helpers;
+- create `_source` as a fresh independent clone from the WallSprint GitHub remote/current development branch, or validate an already-correct independent clone;
+- reject worktree/junction/symlink/reparse-point dependence on the legacy checkout;
+- never copy the legacy `.git` directory as a substitute for a clone;
+- never delete the old D-drive environment;
+- never alter `Mods-Developing\MSM2-SF` or ordinary mods;
+- run the same workspace preflight/build/test/package/deploy checks required by `Update-WS.cmd` before declaring migration successful;
+- only after all local checks pass, print that the old WallSprint environment may be manually deleted.
+
+If initial bootstrap cannot infer `<game>` because the migration script is not yet placed in the target workspace, accept a validated explicit game-root argument/environment value or prompt for it. Once installed, normal `Update-WS.cmd` must derive `<game>` from its own location with no personal absolute path.
+
+Automatic deletion of `D:\ajita\制作\自主\MSM2_Mods` or any legacy path is forbidden.
+
+## 4. Implement `Update-WS.cmd`
+
+The regular user entry point must be:
+
+```text
+<game>\Mods Library\Mods-Developing\MSM2-WS\Update-WS.cmd
+```
+
+Double-click flow, fail closed:
+
+1. stop `Spider-Man2.exe` and the shared Overstrike process if running;
+2. canonicalize workspace/game paths from `%~dp0` and verify this is the exact `Mods Library\Mods-Developing\MSM2-WS` shape;
+3. verify `_source` is a valid independent non-reparse-point Git checkout;
+4. reject detached HEAD; verify current development branch/upstream and use safe `git pull --ff-only` semantics (do not hard-code a branch that will make future task branches impossible to use; allow an explicit expected-branch contract if needed);
+5. build with the existing supported WallSprint Windows workflow;
+6. run required existing tests plus new workspace tests;
+7. run package validation;
+8. obtain the generated WallSprint script without leaving a live `.script` inside `_source`;
+9. archive/disable only old `MSM2-WS-*` active scripts as `.script.disabled` under `_archive`;
+10. deploy exactly one active `MSM2-WS-v<version>.script` at workspace root; version must come from the authoritative build/version metadata, not a commit hash/GUID/random suffix;
+11. recursively assert exactly one active WS `.script` beneath `MSM2-WS` and zero under `_source`, `logs`, `_archive`;
+12. verify `<game>\Overstrike\Overstrike.exe` exists;
+13. verify `<game>\Overstrike\winmm.dll` does **not** exist;
+14. verify `<game>\scripts_proxy.dll` exists;
+15. launch only `<game>\Overstrike\Overstrike.exe` with WorkingDirectory=`<game>`;
+16. print a concise instruction: select ordinary mods + SF + WS as desired, then `Install mods` -> `Run modded game`.
+
+Do not create/copy/regenerate a project-specific Overstrike. Do not create AppData Overstrike copies. Do not create `MSM2-WS\_tools\Overstrike`.
+
+## 5. Shared Overstrike isolation
+
+WallSprint tooling may read/validate shared infrastructure but must not treat it as WS-owned cleanup state.
+
+Allowed shared paths:
+
+```text
+<game>
+<game>\Mods Library
+<game>\Mods Library\Mods-Developing
+<game>\Overstrike\Overstrike.exe
+```
+
+Forbidden WS side effects:
+
+- deleting/moving/renaming/overwriting/backing up anything under `Mods-Developing\MSM2-SF`;
+- deleting/moving/renaming/overwriting/backing up ordinary mods;
+- copying `winmm.dll` or `scripts_proxy.dll` into `Overstrike`;
+- maintaining a separate WS Mods Library/profile;
+- modifying shared Overstrike binaries as part of normal WS update.
+
+Where practical, migration/update tests should snapshot names/metadata for sibling SF/ordinary-mod fixtures before and after operations and assert they remain untouched.
+
+## 6. Change runtime log destination/name
+
+Replace the old game-root `log_wallsprint` destination with:
+
+```text
+<game>\Mods Library\Mods-Developing\MSM2-WS\logs
+```
+
+Runtime filename:
+
+```text
+MSM2-WS-v<version>-YYYYMMDD-HHMMSS.log
+```
+
+Keep the existing local-time filename behavior, atomic collision handling, bounded suffixing, diagnostics on failure, and no silent fallback. Include the authoritative build version; do not include commit hashes/GUID/random IDs.
+
+Update `docs/LOGGING_CONVENTION.md`, runtime logger code, and logger smoke/integration tests accordingly.
+
+## 7. Required workspace tests
+
+Add deterministic tests for at least:
+
+- exact `Mods-Developing`, never create `Mods_Developing`;
+- exact `MSM2-WS`, `Update-WS.cmd`, `logs`, `_source`, `_archive`;
+- never create `logs_WS`, `WS_logs`, `MSM2_WS`, `Update_WS.cmd`;
+- paths with spaces and Unicode;
+- no D-drive/legacy absolute dependency in generated local helpers/config;
+- `_source` is independent and not a worktree/junction/symlink/reparse-point dependency;
+- exactly one active WS `.script` recursively after deployment;
+- no active `.script` in `_source`, `logs`, or `_archive`;
+- old WS versions archived as `.script.disabled` only;
+- no SF mutations;
+- no ordinary-mod mutations;
+- exact shared Overstrike path `<game>\Overstrike\Overstrike.exe`;
+- no `<game>\Overstrike\winmm.dll`;
+- Overstrike WorkingDirectory=`<game>`;
+- game-root `scripts_proxy.dll` preflight;
+- runtime log destination/name;
+- failed preflight/build/test/package leaves the previous active WS build intact when possible and does not partially deploy a new one;
+- all existing WallSprint regression suites remain PASS.
+
+Use owned temporary filesystem fixtures for destructive/rename/archive tests. Never run cleanup tests against the user's real Mods Library in cloud/offline test suites.
+
+## 8. Documentation / repository hygiene
+
+Update as part of implementation:
+
+```text
+AGENTS.md
+docs/DEV_RULES.md
+docs/LOCAL_WORKSPACE.md
+docs/LOGGING_CONVENTION.md
+docs/PROJECT_STATE.md
+README_TEST.md
+source/BUILD.md
+docs/CODEX_RESULT.md
+```
+
+Add the reusable Windows migration/update helpers and their tests in an appropriate source-controlled location. The installed top-level names remain exactly `Migrate-WS.cmd` and `Update-WS.cmd`.
+
+Do not package raw user logs or private game bodies.
+
+## 9. Preserve WallSprint research state
+
+Accepted c19 actual result remains:
+
+```text
+A=3844 ms, E=4094 ms
+verified Deinit / retention PASS
+Surface Up PASS
+stale=0 / hard kill=0
+Position writes by MOD=0
+8 true entries / 8 complete maps each
+XYZ match mask=0x7
+```
+
+Current research blocker remains:
+
+```text
+0x2B2358E: mov dword ptr [RCX+0x10C], EDI
+EDI value provenance unresolved
+```
+
+Keep:
+
 ```text
 writable_source_proven=0
 caller_owned=0
@@ -162,34 +314,23 @@ source_lifetime_exclusive=0
 downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
-No Actor/Transform Position writes, source mutation, input rewrite, movement/velocity/gravity/adhesion, camera/animation/traversal, PAGE_GUARD, data-page protection mutation, guessed game calls, or producer `0x351EB00` traversal.
 
-## Human test
-If actual-game evidence is required:
-```text
-A/cardinal ~4 s -> fully end WallRun -> move/fast-travel -> E/diagonal ~4 s -> send newest complete timestamped file from log_wallsprint
-```
-No special input. Video only for a visible anomaly.
+Do not consume this infrastructure task as authorization to advance EDI/producer/movement research. After migration implementation, state that c20 EDI work remains the next gameplay-research task.
 
-## PASS
-A. EDI reaching definitions and relevance are exact; the +0x10C write is safely modeled and writer proof advances/completes.
+## Cloud vs real-PC validation
 
-B. One narrower exact value/dependency blocker is identified with all safety gates preserved.
+Cloud Codex cannot mutate the user's `C:` or old `D:` environment. Implement and test the migration/update logic with owned fixtures and produce the exact local steps/artifacts needed.
 
-The package/local workflow must also satisfy the shared SF/WS `Mods-Developing` and game-root WorkingDirectory rules above.
+Do **not** claim the real migration is complete until the user runs the helper locally and reports the Windows results. In particular, shared Overstrike UI recognition of ordinary mods + SF + WS is a real-PC acceptance check.
 
-Do not implement movement automatically.
+## Completion / persistence
 
-## Required outputs
-Update/create:
-```text
-analysis/V01C19_RUNTIME_RESULT.md
-analysis/V01C20_EDI_VALUE_PROVENANCE.md
-analysis/V01C20_GATE.md
-analysis/RDX_XYZ_SOURCE_CONTRACT.md
-README_TEST.md
-docs/PROJECT_STATE.md
-docs/CODEX_RESULT.md
-UpdateForTest.cmd
-```
-Package the user-facing install release as `MSM2-WS-v0.1c20.zip`.
+Before reporting implementation complete:
+
+1. run all applicable build/test/workspace fixture suites;
+2. update `docs/CODEX_RESULT.md` with exact results and any real-PC checks still pending;
+3. commit every intended change to the **current branch `codex/v01c20-edi-value-provenance`**;
+4. push/publish that branch to GitHub;
+5. report the final branch head SHA and the exact first local migration command/action for the user.
+
+Do not force-push, rewrite history, delete the old D-drive workspace, modify `main`, or modify MSM2-SF.
