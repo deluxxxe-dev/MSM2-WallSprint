@@ -8,13 +8,13 @@
   "outputs": [
     {
       "path": "MSM2-WS-v0.1c20.zip",
-      "bytes": 3388941,
-      "sha256": "ae5283d42f5bdcd46dfce0fd0450207e9e0c0cbcfa8b5e0288cfedb0c625f5a4"
+      "bytes": 3397778,
+      "sha256": "1f7a86e4a4c8b2dd2cc888e97431db3ffde0066ceb08a323baf1526eac09d022"
     },
     {
       "path": "MSM2-WS-v0.1c20-source.zip",
-      "bytes": 772305,
-      "sha256": "d4d1a931953738c2150046e989a54af414e26a2199e418073a206dcb642eb4bc"
+      "bytes": 774773,
+      "sha256": "18c3037b5252025404f33264811811cfa52ea52e82e2416b57d3a58ef47030f9"
     }
   ],
   "public_test_pass_records": {
@@ -303,5 +303,32 @@
     "SF_ordinary_mods_old_D_and_shared_cache_profile_mutations": false,
     "EDI_production_enabled": false,
     "user_corrected_migration_UI_and_runtime_acceptance": "PENDING"
+  },
+  "real_PC_archive_upgrade_rerun": {
+    "delivery_commit": "890d23cec5878e364efe015838e274d1a5bd47fe",
+    "public_PASS_records": 46,
+    "optional_private_SKIP_records": 3,
+    "failure": "immediate_reset_smoke.cpp:156 beginReset(r,snapshot) assertion",
+    "session_and_root_cause": "UNCONFIRMED_missing_arm_failure_state_in_original_output",
+    "pipeline_completed": false,
+    "deployment_reached": false,
+    "previous_active_script": "retained_by_helper",
+    "overall_real_PC_acceptance": "BLOCKED"
+  },
+  "reset_arm_failure_diagnostic": {
+    "implementation_commit": "6fcf33e45e49523a456a75016e267f7717713e79",
+    "scope": "owned_test_failure_output_and_focused_diagnostic_helper_only",
+    "focused_PASS_records": 9,
+    "focused_optional_private_SKIP_records": 1,
+    "fresh_stage_helper_PASS_records": 19,
+    "helper_optional_private_SKIP_records": 1,
+    "extra_short_fixture_repetitions": 5,
+    "negative_expired_commit": "PASS_fatal_assertion_windows_0_to_0",
+    "negative_no_candidate_thread": "PASS_fatal_assertion_windows_0_to_1",
+    "stdout_stderr_retained": true,
+    "production_sources_headers_DLL_script_unchanged": true,
+    "deadlines_assertions_and_admission_preserved": true,
+    "full136_and_source74": "historical_890d23c_baseline_not_rerun_for_this_diagnostic_only_change",
+    "real_PC_cause": "UNCONFIRMED_requires_focused_output"
   }
 }
