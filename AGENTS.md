@@ -3,9 +3,10 @@
 Before starting any implementation task, read these files in order:
 
 1. `docs/DEV_RULES.md`
-2. `docs/PROJECT_STATE.md`
-3. `docs/CODEX_NEXT.md`
-4. Relevant files under `analysis/`
+2. `docs/LOCAL_WORKSPACE.md`
+3. `docs/PROJECT_STATE.md`
+4. `docs/CODEX_NEXT.md`
+5. Relevant files under `analysis/`
 
 `docs/CODEX_NEXT.md` is the current highest-priority task. Do not continue to a later milestone unless it explicitly authorizes that step.
 
@@ -21,18 +22,41 @@ Before starting any implementation task, read these files in order:
 - Do not package raw user logs, full captured game functions, or unnecessary game binary fragments in release ZIPs.
 - Treat each cloud task as isolated. Never assume an uncommitted working tree from a previous task still exists.
 
+## Final local workspace invariant
+
+The authoritative Windows development/test layout is `docs/LOCAL_WORKSPACE.md`.
+
+Steady-state WallSprint root:
+
+```text
+<game>\Mods Library\Mods-Developing\MSM2-WS\
+├─ MSM2-WS-v<version>.script
+├─ Update-WS.cmd
+├─ logs\
+├─ _source\
+└─ _archive\
+```
+
+A one-time `Migrate-WS.cmd` may exist during migration.
+
+Important invariants:
+
+- `_source` is the independent authoritative Git clone; no worktree/junction/symlink/reparse-point dependency on the old D-drive checkout.
+- Exactly one active WallSprint `.script` may exist recursively beneath `MSM2-WS`, at workspace root only.
+- No active `.script` may remain in `_source`, `logs`, or `_archive`.
+- Shared Overstrike is only `<game>\Overstrike\Overstrike.exe`, launched with WorkingDirectory=`<game>`.
+- Do not create WS-specific/AppData Overstrike copies or a separate WS Mods Library/profile.
+- Never mutate `Mods-Developing\MSM2-SF` or ordinary existing mods from WallSprint tooling.
+- Reusable scripts must not hard-code the user's personal C-/D-drive paths and must support spaces/Unicode.
+- The old D-drive WallSprint environment must never be automatically deleted.
+
+The current infrastructure task temporarily takes priority over the prepared c20 EDI research. Preserve that research state; do not advance it unless `docs/CODEX_NEXT.md` explicitly re-authorizes it.
+
 ## Runtime-log handoff
 
 The user normally sends game runtime logs to ChatGPT, not directly to Codex.
 
-ChatGPT will analyze those logs and write the implementation-relevant evidence into repository files such as:
-
-```text
-analysis/V01B8_RUNTIME_RESULT.md
-analysis/V01B9_RUNTIME_RESULT.md
-```
-
-`docs/CODEX_NEXT.md` will reference the latest relevant runtime-result file.
+ChatGPT will analyze those logs and write implementation-relevant evidence into repository analysis files. `docs/CODEX_NEXT.md` will reference the latest relevant runtime-result file.
 
 When starting a task:
 
@@ -43,6 +67,14 @@ When starting a task:
 5. if more raw evidence is required, state the exact event, field, timestamp window or log key needed instead of asking for an undirected full re-analysis.
 
 Do not commit full raw runtime logs to GitHub by default. Keep the repository clean for eventual public/Nexus distribution. Compact, task-specific runtime excerpts and derived analysis belong under `analysis/`.
+
+Current local runtime logs, after the workspace migration is implemented, belong under:
+
+```text
+<game>\Mods Library\Mods-Developing\MSM2-WS\logs
+```
+
+with the versioned timestamp naming documented in `docs/LOGGING_CONVENTION.md`.
 
 ## Persistence is mandatory
 
@@ -56,7 +88,7 @@ Before reporting completion:
 4. push/publish that branch to GitHub when the environment supports it;
 5. if direct push is unavailable, clearly report the exact branch/commit/diff that the user must preserve and do not claim the implementation is safely handed off.
 
-Prefer a dedicated task branch such as `codex/v01b8-dual-source` over leaving changes only in an ephemeral cloud checkout. Do not force-push or rewrite `main` history.
+Prefer the existing dedicated task branch over leaving changes only in an ephemeral cloud checkout. Do not force-push or rewrite `main` history.
 
 The next isolated Codex task must be able to reproduce the current implementation by checking out GitHub alone.
 
@@ -68,9 +100,9 @@ Update `docs/CODEX_RESULT.md` with:
 - files changed;
 - build/test results;
 - safety/admission gates;
-- what still requires real in-game verification;
+- what still requires real in-game/Windows verification;
 - exact package/output name;
 - branch name and commit SHA containing the implementation;
-- next recommended human test.
+- next recommended human action/test.
 
-Do not overwrite `docs/PROJECT_STATE.md` or `docs/CODEX_NEXT.md` unless the task explicitly asks you to.
+Do not overwrite `docs/PROJECT_STATE.md` or `docs/CODEX_NEXT.md` unless the task explicitly asks you to. The current workspace migration task explicitly authorizes the documentation updates listed in `docs/CODEX_NEXT.md`.
