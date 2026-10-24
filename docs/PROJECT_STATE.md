@@ -69,8 +69,6 @@ Semantic meaning of the memory origin, EDI, and `Transform+0x10C` remains unknow
 
 Evidence: `analysis/V01C22_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c22-20261025-021717.log`.
 
-The previous blocker is now classified:
-
 ```text
 0x2B235BE: test r8b,r8b
 parent R8 selected/same-field tags = 0x0
@@ -81,31 +79,58 @@ first_possible_dependent_branch_rva = 0x0
 returned_flags_tags = 0x0
 ```
 
-Thus the exact c22 TEST/JE pair is not a carrier of the selected `0x2B23578` same-field read value for the analyzed bounded state.
+Thus that exact TEST/JE pair is not a carrier of the selected same-field read for the analyzed state.
 
-The selected-read walk now stops at:
+## Accepted c23 runtime result — direct CALL target identified
+
+Evidence: `analysis/V01C23_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c23-20261025-025936.log`.
+
+The next call is now classified:
 
 ```text
-first_unresolved_rva=0x2B235D4
-first_unresolved_instruction=call
-reason=read_flow_call_or_control_no_expansion
+0x2B235D4: direct call
+target_rva=0x2CF7FE0
+exact_target=1
 ```
 
-Current unresolved outputs:
+The selected `Transform+0x10C` read dependence reaches this call boundary in raw GPR carrier index 0:
+
+```text
+gpr=0
+gpr_tags=0x1
+origin_kind=mem32
+root=Hero Transform
+offset=0x10C
+```
+
+However target authentication failed closed:
+
+```text
+target_begin_rva=0
+target_end_rva=0
+boundary_verified=0
+snapshot_authenticated=0
+snapshot_sha256=unavailable
+modeled_states=0
+reason=read_call_target_boundary_hash_unavailable
+```
+
+Therefore the target body/effect is still unknown. The selected-read walk remains incomplete at the same call, but the blocker is now specifically **target boundary/current-code identity**, not target resolution.
+
+Current unresolved outputs remain:
 
 ```text
 complete_local_flow=0
+first_unresolved_rva=0x2B235D4
+first_unresolved_instruction=call
 returned_gpr_may_depend_mask=0x1
-returned_xmm_may_depend_mask=0x0
-returned_flags_may_depend=0
-returned_caller_stack_may_depend=0
 memory_escape=0
 downstream_XYZ_W_relevance=unknown
 cross_invocation_feedback=unknown
 effect_certificate=0
 ```
 
-Do not infer that `Transform+0x10C` controls XYZ/W. The next proof obligation is the smallest bounded classification of the exact `0x2B235D4` call and its selected-read effect.
+Runtime safety remained clean across two ~4s A/E sessions: verified native Deinit, retention pass, MOD Position writes 0, hard kills 0.
 
 ## Current safety gate
 
@@ -155,27 +180,19 @@ Shared ordinary mods + SF + WS, shared Overstrike, modded launch and versioned W
 16. c20 EDI local value provenance ✅ actual game
 17. c21 exact `Transform+0x10C` pre-write read classification ✅ actual game
 18. c22 `0x2B235BE TEST r8b,r8b` / `0x2B235C1 JE` classification ✅ actual game
-19. `0x2B235D4 call` selected-read effect classification ▶ CURRENT
-20. resume full writer XYZ/W causal proof ⏸ after local effect classification
-21. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-22. safe writable upstream movement source ⬜ NOT AUTHORIZED
-23. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-24. adhesion/contact refinement ⏸ deferred
-25. animation/camera/later traversal ⬜
+19. c23 `0x2B235D4` direct target `0x2CF7FE0` + carrier classification ✅ actual game
+20. authenticate/bound `0x2CF7FE0` target effect ▶ CURRENT
+21. resume full writer XYZ/W causal proof ⏸ after local effect classification
+22. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+23. safe writable upstream movement source ⬜ NOT AUTHORIZED
+24. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+25. adhesion/contact refinement ⏸ deferred
+26. animation/camera/later traversal ⬜
 
 ## Current action
 
-Continue from accepted c22 evidence. Classify only the exact `0x2B235D4` call sufficiently to determine whether the selected same-field read can escape through arguments, return/clobber state, aliases, memory or downstream control/data flow, then stop at the next exact proof boundary. Preserve all safety gates, do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
+Determine why `0x2CF7FE0` lacks the runtime-function boundary/hash required by c23. If and only if a strict build-authenticated bounded no-unwind/leaf proof can be established, admit one tiny target span and resume the existing register-only call-effect model until the next exact boundary. Otherwise report the exact identity/boundary failure without guessing.
+
+Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
 
 Deferred user-facing features are tracked in `docs/FEATURE_ROADMAP.md` and remain intentionally out of scope until the movement ownership foundation is safe.
-
-## Prepared c23 implementation — actual CALL metadata pending
-
-v0.1c23/package0.1.41 adds only exact CALL0x2B235D4 target/form/current boundary/
-hash and all raw carrier/alias tags, with one optional authenticated register-only
-leaf128bytes/32instructions/depth1. Memory effects/branch/further CALL/partial/
-unknown identity stop exactly. Old effect and ownership gates remain closed.
-Current compact c22 evidence lacks the target snapshot/argument metadata, so
-actual c23 target/effect/next barrier require the new READ_CALL records in a
-shortest A/E log. No body dump, producer traversal or gameplay advancement.
-See analysis/V01C23_READ_CALL_FLOW.md and V01C23_GATE.md.
