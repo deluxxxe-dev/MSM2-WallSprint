@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.42",
-  "description": "WallSprint v0.1c24 exact target boundary/current-code identity diagnostics and strict single-target no-unwind linear leaf proof after accepted c23. Existing fail-closed effect/ownership gates and no Position/source/input/movement mutation remain.",
+  "version": "0.1.43",
+  "description": "WallSprint v0.1c25 bounded PE runtime-table validation separating structural errors, byte/entry budgets and lookup coverage after accepted c24. Existing fail-closed effect/ownership gates and no Position/source/input/movement mutation remain.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

@@ -196,3 +196,16 @@ Do not reinterpret the c24 refusal as proof of a no-unwind leaf. First separate 
 Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
 
 Deferred user-facing features are tracked in `docs/FEATURE_ROADMAP.md` and remain intentionally out of scope until the movement ownership foundation is safe.
+
+## Prepared c25 implementation — complete table result pending
+
+v0.1c25/package0.1.43 separates directory structure from explicit byte/entry
+limits, admits up to600000 entries/8MiB in64-entry chunks, and reports read/
+validated coverage and actual lookup execution.An aligned527161-entry table would require6325932
+bytes and fit; actual directory bytes/divisibility and structure remain unproven. C24 cap refusal
+preceded lookup: found0/same_image1/readable1 were defaults, not OS evidence.
+Only fully validated metadata permits target lookup and the unchanged strict
+c24 identity/leaf path. All old effect/ownership/mutation gates remain closed.
+Actual c25 table/lookup/next boundary needs the new compact RUNTIME_TABLE record;
+shortest A/E capture is about3s each, below the unchanged5second test limit.
+See analysis/V01C25_RUNTIME_TABLE_BUDGET.md / V01C25_GATE.md.

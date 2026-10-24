@@ -1203,18 +1203,34 @@ void configure(const Spec &s, Gate validate) noexcept {
     const auto &identity=rcall.targetIdentity;
     writeLog("MOVEMENT_CALLEE_READ_TARGET_IDENTITY target_rva=0x%x enabled=%u admitted=%u "
              "method=%s code_region_begin_rva=0x%x code_region_end_rva=0x%x "
-             "runtime_lookup_found=%u runtime_lookup_same_image=%u runtime_lookup_readable=%u "
+             "runtime_lookup_queried=%u runtime_lookup_found=%u runtime_lookup_same_image=%u runtime_lookup_readable=%u "
              "runtime_begin_rva=0x%x runtime_end_rva=0x%x next_runtime_rva=0x%x "
              "PE_runtime_table_valid=%u PE_runtime_entries=%u missing_runtime_entry=%u "
              "scan_bytes=%u admitted_bytes=%u instructions=%u snapshot_stable=%u "
              "barrier_rva=0x%x barrier_instruction=%s reason=%s "
              "proof_scope=method_specific_identity_only no_full_bytes=1 effect_certificate=0",
              identity.target,unsigned(identity.enabled),unsigned(identity.admitted),identity.method,
-             identity.codeBegin,identity.codeEnd,unsigned(identity.lookup.found),unsigned(identity.lookup.sameImage),
+             identity.codeBegin,identity.codeEnd,unsigned(identity.lookupQueried),unsigned(identity.lookup.found),unsigned(identity.lookup.sameImage),
              unsigned(identity.lookup.readable),identity.runtimeBegin,identity.runtimeEnd,identity.nextRuntime,
              unsigned(identity.tableValid),identity.tableEntries,unsigned(identity.missingRuntime),
              identity.scanBytes,identity.size,identity.instructions,unsigned(identity.stable),
              identity.barrier,identity.mnemonic,identity.reason);
+    writeLog("MOVEMENT_CALLEE_READ_RUNTIME_TABLE target_rva=0x%x "
+             "directory_rva=0x%x directory_bytes=%u entry_bytes=12 derived_entries=%u "
+             "RVA_size_pair_valid=%u directory_range_in_image=%u entry_size_divisible=%u "
+             "metadata_byte_cap=%u entry_cap=%u byte_cap_exceeded=%u entry_cap_exceeded=%u "
+             "budget_admitted=%u entry_validation_skipped_by_cap=%u "
+             "metadata_bytes_read=%u entries_validated=%u guarded_read_failed=%u "
+             "all_entries_read_and_validated=%u table_structurally_valid=%u "
+             "runtime_lookup_queried=%u chunk_entries=64 max_chunk_bytes=768 "
+             "reason=%s full_bytes_logged=0 effect_certificate=0",
+             identity.target,identity.directoryRva,identity.directoryBytes,identity.tableEntries,
+             unsigned(identity.directoryPairValid),unsigned(identity.directoryRangeInImage),
+             unsigned(identity.directorySizeDivisible),ws::rdx::readRuntimeTableByteCap,
+             ws::rdx::readRuntimeTableEntryCap,unsigned(identity.byteCapExceeded),unsigned(identity.entryCapExceeded),
+             unsigned(identity.tableBudgetAdmitted),unsigned(identity.validationSkippedByCap),
+             identity.metadataBytesRead,identity.validatedEntries,unsigned(identity.tableReadFailed),
+             unsigned(identity.tableReadComplete),unsigned(identity.tableValid),unsigned(identity.lookupQueried),identity.reason);
     writeLog("MOVEMENT_CALLEE_READ_CALL site_rva=0x2b235d4 enabled=%u decoded=%u "
              "form=%s operand=%s direct=%u target_rva=0x%llx exact_target=%u target_reason=%s "
              "target_begin_rva=0x%llx target_end_rva=0x%llx boundary_verified=%u "

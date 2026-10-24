@@ -1,5 +1,11 @@
 # c24 gate — exact target boundary / no-unwind identity only
 
+**C24 ACTUAL RESULT ACCEPTED:** V01C24_RUNTIME_RESULT.md supersedes original
+preparation notes:527161 derived entries exceeded old262144 cap; no target
+identity admitted. Lookup fields at that refusal were defaults, not an executed
+OS probe (see c24 source and V01C25_RUNTIME_TABLE_BUDGET.md). C25 separates
+structure/caps/coverage under a finite larger metadata budget.
+
 Accepted input: V01C23_RUNTIME_RESULT.md. Exact target0x2CF7FE0 and raw carrier
 tag1 known; runtime boundary/hash failure reason/effect UNKNOWN.
 

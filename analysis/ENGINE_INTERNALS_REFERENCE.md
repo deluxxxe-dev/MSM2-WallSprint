@@ -287,3 +287,13 @@ classification and strict one-target no-entry linear leaf proof with original
 128byte/32instruction caps. No branch/memory/stack/nested-call inference; current
 snapshot identity does not grant effect/XYZ/W/ownership/writability. Implementation/
 owned-fixture scope only, actual c24 UNKNOWN. Details: V01C24_TARGET_IDENTITY.md.
+
+## Accepted c24 / prepared c25 runtime-table boundary
+
+Accepted c24 derives527161 entries but stops at old262144 cap, before target
+lookup. Source control flow establishes lookup fields were defaults at this
+refusal, not a no-entry observation. No corruption/absence/leaf/effect proof
+follows. C25 separates structure/finite600000entry+8MiB budgets and validates
+all rows before any lookup, preserving strict c24 identity and all old effect/
+ownership gates. Implementation/owned-fixture scope only; actual c25 UNKNOWN.
+See V01C24_RUNTIME_RESULT.md and V01C25_RUNTIME_TABLE_BUDGET.md.

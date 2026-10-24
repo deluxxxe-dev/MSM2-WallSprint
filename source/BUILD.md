@@ -78,3 +78,12 @@ Only target0x2CF7FE0 can attempt the strict no-entry linear proof; original
 128byte/32instruction caps and old effect gates remain. Any branch/memory/stack/
 nested CALL, code/runtime crossing or unstable snapshot refuses. Actual reason/
 span/hash still needs the new compact TARGET_IDENTITY record.
+
+## Current c25 metadata validation
+
+v0.1c25/package0.1.43 adds6 large-table groups to test_read_target_identity.sh
+(15 total), retaining21 read/call groups and the full pipeline. Explicit
+600000-entry/8MiB/64-entry-chunk bounds cover observed527161 without unbounded
+allocation. Complete table checks precede actual lookup and unchanged c24
+no-unwind proof. Cap and default lookup fields never imply corruption/absence.
+See analysis/V01C25_RUNTIME_TABLE_BUDGET.md.

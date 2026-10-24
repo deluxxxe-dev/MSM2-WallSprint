@@ -2662,28 +2662,48 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
   if (containing!=1 || !out.codeEnd)
     return fail(containing>1?"target_code_section_ambiguous":"target_outside_readonly_executable_code",target);
   const auto table=u32(nt+24+112+3*8),tableSize=u32(nt+24+116+3*8);
+  out.directoryRva=table;out.directoryBytes=tableSize;
   out.tableEntries=tableSize/12;
-  if ((table==0)!=(tableSize==0) || table>imageSize || tableSize>imageSize-table ||
-      tableSize%12 || tableSize/12>262144)
-    return fail("target_runtime_table_malformed_or_cap",target);
+  out.directoryPairValid=(table==0)==(tableSize==0);
+  out.directoryRangeInImage=table<=imageSize && tableSize<=imageSize-table;
+  out.directorySizeDivisible=tableSize%12==0;
+  out.byteCapExceeded=tableSize>readRuntimeTableByteCap;
+  out.entryCapExceeded=out.tableEntries>readRuntimeTableEntryCap;
+  if (!out.directoryPairValid)
+    return fail("target_runtime_directory_RVA_size_pair_malformed",target);
+  if (!out.directoryRangeInImage)
+    return fail("target_runtime_directory_outside_admitted_image",target);
+  if (!out.directorySizeDivisible)
+    return fail("target_runtime_directory_size_not_entry_aligned",target);
+  if (out.byteCapExceeded || out.entryCapExceeded) {
+    out.validationSkippedByCap=true;
+    return fail(out.byteCapExceeded?"target_runtime_metadata_byte_cap_exceeded"
+        :"target_runtime_entry_cap_exceeded",target);
+  }
+  out.tableBudgetAdmitted=true;
   std::uint32_t previousEnd=0,staticBegin=0,staticEnd=0,staticUnwind=0;
   unsigned char chunk[64*12]{};
   for (unsigned i=0;i<out.tableEntries;) {
     const auto count=std::min(64u,out.tableEntries-i);
-    if (!grab(table+i*12,chunk,count*12))
+    if (!grab(table+i*12,chunk,count*12)) {
+      out.tableReadFailed=true;
       return fail("target_runtime_table_unreadable",table+i*12);
+    }
+    out.metadataBytesRead+=count*12;
     for (unsigned j=0;j<count;++j) {
       const auto *entry=chunk+j*12;
       const auto begin=u32(entry),end=u32(entry+4),unwind=u32(entry+8);
       if (begin>=end || end>imageSize || begin<previousEnd || !unwind || unwind>=imageSize)
         return fail("target_runtime_metadata_malformed_or_overlapping",table+(i+j)*12);
       previousEnd=end;
+      ++out.validatedEntries;
       if (begin<=target && target<end) { staticBegin=begin;staticEnd=end;staticUnwind=unwind; }
       if (begin>target && (!out.nextRuntime || begin<out.nextRuntime)) out.nextRuntime=begin;
     }
     i+=count;
   }
-  out.tableValid=true;out.lookup=lookup(ctx,target);
+  out.tableReadComplete=out.tableValid=true;
+  out.lookupQueried=true;out.lookup=lookup(ctx,target);
   const auto &rf=out.lookup;
   if (!rf.readable || (rf.found && (!rf.sameImage || rf.begin>=rf.end ||
       rf.end>imageSize || target<rf.begin || target>=rf.end)))

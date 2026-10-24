@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstdio>
 #include <cstring>
+#include <vector>
 constexpr std::uint32_t target=ws::rdx::readIdentityTarget,imageSize=0x3000000;
 struct Image {
   std::array<unsigned char,4096> headers{};
@@ -64,6 +65,42 @@ struct Image {
   ws::rdx::ReadTargetIdentity run(bool admitted=true,std::uint32_t t=target,std::uint32_t size=imageSize) {
     snapshots=codeEndRead=0;
     return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this);
+  }
+};
+constexpr std::uint32_t largeFunctionBase=0x1100000;
+struct LargeImage : Image {
+  std::vector<unsigned char> entries;
+  unsigned chunks{},largestChunk{},lookupCalls{},lastMetadataEnd{};
+  bool targetEntry{};
+  std::uint32_t failReadAt=UINT32_MAX;
+  explicit LargeImage(unsigned count) : entries(std::size_t(count)*12) {
+    put32(headers,0x188+12,0x1000000);
+    put32(headers,0x188+8,(target&~0xfffu)+0x3000-0x1000000);
+    put32(headers,0x98+116+3*8,unsigned(entries.size()));
+    put32(headers,0x188+40+8,unsigned(entries.size()));
+    for (unsigned i=0;i<count;++i) row(i,largeFunctionBase+i*16,largeFunctionBase+8+i*16,0x800);
+  }
+  void row(unsigned i,std::uint32_t begin,std::uint32_t end,std::uint32_t unwind) {
+    put32(entries,i*12,begin);put32(entries,i*12+4,end);put32(entries,i*12+8,unwind);
+  }
+  static bool readLarge(void *ctx,std::uint32_t rva,void *dst,unsigned n) {
+    auto &f=*static_cast<LargeImage*>(ctx);
+    if (rva>=0x2000 && std::uint64_t(rva-0x2000)+n<=f.entries.size()) {
+      ++f.chunks;f.largestChunk=std::max(f.largestChunk,n);
+      if (rva>=f.failReadAt) return false;
+      f.lastMetadataEnd=rva+n;std::memcpy(dst,f.entries.data()+rva-0x2000,n);return true;
+    }
+    return Image::read(static_cast<Image*>(&f),rva,dst,n);
+  }
+  static ws::rdx::RuntimeRegion lookupLarge(void *ctx,std::uint32_t rva) {
+    auto &f=*static_cast<LargeImage*>(ctx);++f.lookupCalls;
+    if (f.targetEntry && !f.missingLookup && target<=rva && rva<target+3)
+      return {true,true,true,target,target+3,0x800};
+    return {};
+  }
+  ws::rdx::ReadTargetIdentity runLarge() {
+    snapshots=codeEndRead=chunks=largestChunk=lookupCalls=lastMetadataEnd=0;
+    return ws::rdx::authenticateReadTarget(true,target,imageSize,readLarge,lookupLarge,this);
   }
 };
 void flowThroughIdentity(Image &image,bool expectAdmission,bool expectLiveValue) {
@@ -173,4 +210,72 @@ int main() {
   Image refused;refused.code[0]=0x8b;refused.code[1]=1;flowThroughIdentity(refused,false,false);
   Image badSnapshot;badSnapshot.unstable=true;flowThroughIdentity(badSnapshot,false,false);
   std::puts("PASS: c24 admitted identity alone feeds c23 live/killed return flow; failed identity propagates precise blocker and preserves c19/c20/c21 safety certificates");
+
+  for (unsigned count : {262143u,262145u,527161u,ws::rdx::readRuntimeTableEntryCap}) {
+    LargeImage large(count);r=large.runLarge();
+    assert(r.admitted && r.tableValid && r.tableReadComplete && r.lookupQueried && r.missingRuntime);
+    assert(r.tableEntries==count && r.validatedEntries==count && r.metadataBytesRead==count*12);
+    assert(!r.entryCapExceeded && !r.byteCapExceeded && !r.validationSkippedByCap);
+    assert(large.chunks==(count+63)/64 && large.largestChunk<=768 &&
+           large.lastMetadataEnd==0x2000+count*12);
+  }
+  std::puts("PASS: c25 valid tables below/above old cap, exact527161 count and new entry ceiling validate completely in bounded64-entry reads");
+
+  {
+    LargeImage over(ws::rdx::readRuntimeTableEntryCap+1);r=over.runLarge();
+    assert(!r.admitted && r.entryCapExceeded && !r.byteCapExceeded && r.validationSkippedByCap);
+    assert(r.directoryRangeInImage && r.directorySizeDivisible && !r.lookupQueried && !over.lookupCalls && !over.chunks && !over.snapshots);
+    assert(!std::strcmp(r.reason,"target_runtime_entry_cap_exceeded"));
+    LargeImage bytes(ws::rdx::readRuntimeTableByteCap/12+1);r=bytes.runLarge();
+    assert(!r.admitted && r.byteCapExceeded && r.validationSkippedByCap && !r.lookupQueried && !bytes.chunks);
+    assert(!std::strcmp(r.reason,"target_runtime_metadata_byte_cap_exceeded"));
+  }
+  std::puts("PASS: c25 entry and metadata-byte budget refusals are explicit, skip entry validation and never imply corruption or missing unwind");
+
+  {
+    LargeImage odd(16);Image::put32(odd.headers,0x98+116+3*8,16*12+1);r=odd.runLarge();
+    assert(!r.directorySizeDivisible && !r.validationSkippedByCap && !odd.chunks && !r.lookupQueried);
+    assert(!std::strcmp(r.reason,"target_runtime_directory_size_not_entry_aligned"));
+    LargeImage pair(16);Image::put32(pair.headers,0x98+116+3*8,0);r=pair.runLarge();
+    assert(!r.directoryPairValid && !pair.chunks && !r.lookupQueried);
+    for (auto address : {imageSize-8,UINT32_MAX-15}) {
+      LargeImage overflow(16);Image::put32(overflow.headers,0x98+112+3*8,address);r=overflow.runLarge();
+      assert(!r.directoryRangeInImage && !r.lookupQueried && !overflow.chunks && !r.validationSkippedByCap);
+      assert(!std::strcmp(r.reason,"target_runtime_directory_outside_admitted_image"));
+    }
+  }
+  std::puts("PASS: c25 non-divisible sizes, RVA/size mismatch and in-image/arithmetic overflow refuse as structure errors before any table scan");
+
+  for (unsigned defect=0;defect<7;++defect) {
+    constexpr unsigned count=262145;LargeImage broken(count);
+    if (defect==0) broken.row(count-1,largeFunctionBase,largeFunctionBase+8,0x800); // unordered tail.
+    if (defect==1) broken.row(count-1,largeFunctionBase+(count-2)*16+4,largeFunctionBase+(count-1)*16+8,0x800);
+    if (defect==2) broken.row(count-1,largeFunctionBase+(count-1)*16,largeFunctionBase+8+(count-1)*16,imageSize);
+    if (defect==3) broken.row(count-1,largeFunctionBase+(count-1)*16,largeFunctionBase+8+(count-1)*16,0);
+    if (defect==4) broken.row(count-1,largeFunctionBase+(count-1)*16,imageSize+8,0x800);
+    if (defect==5) broken.row(count-1,largeFunctionBase+(count-1)*16,largeFunctionBase+(count-1)*16,0x800);
+    if (defect==6) broken.row(count-1,UINT32_MAX-3,4,0x800);
+    r=broken.runLarge();assert(!r.tableValid && r.tableBudgetAdmitted && r.validatedEntries==count-1 &&
+        !r.lookupQueried && !broken.snapshots && !r.validationSkippedByCap);
+    assert(!std::strcmp(r.reason,"target_runtime_metadata_malformed_or_overlapping"));
+  }
+  std::puts("PASS: c25 unordered/overlapping tails and invalid unwind RVAs are checked beyond the old cap before any target lookup or no-unwind admission");
+
+  {
+    LargeImage unreadable(527161);unreadable.failReadAt=0x2000+64*12;r=unreadable.runLarge();
+    assert(!r.tableValid && r.tableReadFailed && !r.tableReadComplete && r.validatedEntries==64 &&
+        r.metadataBytesRead==64*12 && !r.lookupQueried && !unreadable.lookupCalls && !unreadable.snapshots);
+    assert(r.barrier==unreadable.failReadAt && !std::strcmp(r.reason,"target_runtime_table_unreadable"));
+  }
+  std::puts("PASS: c25 guarded chunk failure reports exact metadata range and validated prefix; incomplete readability never permits target status or code reads");
+
+  {
+    LargeImage containing(527161);containing.targetEntry=true;containing.row(527160,target,target+3,0x800);
+    r=containing.runLarge();assert(r.admitted && r.tableValid && r.lookupQueried && !r.missingRuntime &&
+        r.validatedEntries==527161 && !std::strcmp(r.method,"runtime_function"));
+    containing.missingLookup=true;r=containing.runLarge();
+    assert(r.tableValid && r.lookupQueried && !r.admitted && !r.missingRuntime && !containing.snapshots &&
+        !std::strcmp(r.reason,"target_runtime_lookup_and_PE_table_disagree"));
+  }
+  std::puts("PASS: c25 fully validated large-table containing entry uses normal identity; lookup disagreement blocks fallback while validated absence keeps strict c24 proof");
 }
