@@ -67,7 +67,7 @@ Semantic meaning of the memory origin, EDI, and `Transform+0x10C` remains unknow
 
 ## Accepted c22 runtime result — TEST/JE resolved
 
-Evidence: `analysis/V01C22_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c22-20261025-021717.log`.
+Evidence: `analysis/V01C22_RUNTIME_RESULT.md`.
 
 ```text
 0x2B235BE: test r8b,r8b
@@ -83,9 +83,7 @@ Thus that exact TEST/JE pair is not a carrier of the selected same-field read fo
 
 ## Accepted c23 runtime result — direct CALL target identified
 
-Evidence: `analysis/V01C23_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c23-20261025-025936.log`.
-
-The next call is now classified:
+Evidence: `analysis/V01C23_RUNTIME_RESULT.md`.
 
 ```text
 0x2B235D4: direct call
@@ -93,44 +91,45 @@ target_rva=0x2CF7FE0
 exact_target=1
 ```
 
-The selected `Transform+0x10C` read dependence reaches this call boundary in raw GPR carrier index 0:
+Selected `Transform+0x10C` dependence reaches the call boundary in raw GPR carrier index 0 (`gpr_tags=0x1`, mem32 Hero Transform+0x10C). Target boundary/hash was unavailable, so no effect analysis was admitted.
+
+## Accepted c24 runtime result — PE runtime-table cap blocker
+
+Evidence: `analysis/V01C24_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c24-20261025-033837.log`.
+
+Target identity now fails at a more precise metadata boundary:
 
 ```text
-gpr=0
-gpr_tags=0x1
-origin_kind=mem32
-root=Hero Transform
-offset=0x10C
+target_rva=0x2CF7FE0
+admitted=0
+method=none
+runtime_lookup_found=0
+runtime_lookup_same_image=1
+runtime_lookup_readable=1
+PE_runtime_table_valid=0
+PE_runtime_entries=527161
+scan_bytes=0
+admitted_bytes=0
+snapshot_stable=0
+reason=target_runtime_table_malformed_or_cap
 ```
 
-However target authentication failed closed:
+C24's PE runtime-function entry cap is 262144. Therefore the current result does **not** prove a malformed exception directory and does **not** prove a missing-unwind/no-entry target. It proves only that structural table validation did not complete under the configured cap.
+
+The selected-read carrier remains present at the CALL boundary; no target code span/hash/effect was admitted:
 
 ```text
-target_begin_rva=0
-target_end_rva=0
 boundary_verified=0
 snapshot_authenticated=0
 snapshot_sha256=unavailable
 modeled_states=0
-reason=read_call_target_boundary_hash_unavailable
-```
-
-Therefore the target body/effect is still unknown. The selected-read walk remains incomplete at the same call, but the blocker is now specifically **target boundary/current-code identity**, not target resolution.
-
-Current unresolved outputs remain:
-
-```text
-complete_local_flow=0
-first_unresolved_rva=0x2B235D4
-first_unresolved_instruction=call
-returned_gpr_may_depend_mask=0x1
-memory_escape=0
+effect_certificate=0
 downstream_XYZ_W_relevance=unknown
 cross_invocation_feedback=unknown
-effect_certificate=0
+writable_source_proven=0
 ```
 
-Runtime safety remained clean across two ~4s A/E sessions: verified native Deinit, retention pass, MOD Position writes 0, hard kills 0.
+Runtime safety remained closed: MOD Position writes 0. Session 1 hit the bounded 5-second diagnostic window once before verified Deinit; session 2 exited normally via verified native Deinit. This does not authorize gameplay writes.
 
 ## Current safety gate
 
@@ -181,28 +180,19 @@ Shared ordinary mods + SF + WS, shared Overstrike, modded launch and versioned W
 17. c21 exact `Transform+0x10C` pre-write read classification ✅ actual game
 18. c22 `0x2B235BE TEST r8b,r8b` / `0x2B235C1 JE` classification ✅ actual game
 19. c23 `0x2B235D4` direct target `0x2CF7FE0` + carrier classification ✅ actual game
-20. authenticate/bound `0x2CF7FE0` target effect ▶ CURRENT
-21. resume full writer XYZ/W causal proof ⏸ after local effect classification
-22. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-23. safe writable upstream movement source ⬜ NOT AUTHORIZED
-24. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-25. adhesion/contact refinement ⏸ deferred
-26. animation/camera/later traversal ⬜
+20. c24 target identity failure narrowed to PE runtime-table validation cap ✅ actual game
+21. distinguish valid-large runtime table from malformed metadata; retry exact target identity ▶ CURRENT
+22. resume full writer XYZ/W causal proof ⏸ after local effect classification
+23. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+24. safe writable upstream movement source ⬜ NOT AUTHORIZED
+25. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+26. adhesion/contact refinement ⏸ deferred
+27. animation/camera/later traversal ⬜
 
 ## Current action
 
-Determine why `0x2CF7FE0` lacks the runtime-function boundary/hash required by c23. If and only if a strict build-authenticated bounded no-unwind/leaf proof can be established, admit one tiny target span and resume the existing register-only call-effect model until the next exact boundary. Otherwise report the exact identity/boundary failure without guessing.
+Do not reinterpret the c24 refusal as proof of a no-unwind leaf. First separate `entry_cap_exceeded` from genuinely malformed PE exception metadata. Validate the exact exception-directory size/range/count under a justified bounded metadata budget; if structurally valid, complete the ordered/nonoverlap/runtime-RVA checks without weakening exact-build fail-closed behavior. Only after a valid table plus OS lookup establish no containing runtime-function entry may the existing strict c24 no-unwind leaf rule run.
 
 Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
 
 Deferred user-facing features are tracked in `docs/FEATURE_ROADMAP.md` and remain intentionally out of scope until the movement ownership foundation is safe.
-## Prepared c24 implementation — actual target identity pending
-
-v0.1c24/package0.1.42 adds exact failure classification and one pinned missing-
-unwind linear leaf identity rule: authenticated readonly executable section,
-consistent PE/runtime metadata, no other region crossing,128bytes/32instructions,
-modeled single-entry fallthrough through normal RET, guarded equality and hash.
-Only accepted identity resumes c23; failures propagate precise reasons. No new
-effect/ownership/mutation permission. Actual reason/span/hash/next barrier remain
-PENDING the one new TARGET_IDENTITY record in a shortest A/E log.
-See analysis/V01C24_TARGET_IDENTITY.md and V01C24_GATE.md.
