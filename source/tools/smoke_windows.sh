@@ -13,7 +13,7 @@ cat > "$wine_root/usr/lib/wine/wineserver" <<'WRAPPER'
 exec /workspace/toolchains/wine/usr/lib/wine/wineserver64 -p0 "$@"
 WRAPPER
 chmod +x "$wine_root/usr/lib/wine/wineserver"
-[[ -e "$wine_root/usr/share/wine/wine" ]] || ln -s . "$wine_root/usr/share/wine/wine/wine"
+[[ -e "$wine_root/usr/share/wine/wine" ]] || ln -s . "$wine_root/usr/share/wine/wine"
 mkdir -p /workspace/toolchains/wine-prefix/drive_c/windows/system32 /workspace/toolchains/fontcache
 cp -asn "$wine_root/usr/lib/x86_64-linux-gnu/wine/x86_64-windows/." /workspace/toolchains/wine-prefix/drive_c/windows/system32/
 cp "$wine_root/usr/x86_64-w64-mingw32/lib/zlib1.dll" /workspace/toolchains/wine-prefix/drive_c/windows/system32/zlib1.dll
