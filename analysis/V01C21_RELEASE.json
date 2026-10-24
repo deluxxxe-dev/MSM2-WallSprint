@@ -1,0 +1,104 @@
+{
+  "version": "v0.1c21",
+  "package_version": "0.1.39",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "base_commit": "897381a",
+  "implementation_commit": "9b3b7b0ab9c1bfbd932693fceb60530fca77fe34",
+  "source_snapshot_commit": "43921ca99427d191210e41cf3068fdf2c183e627",
+  "outputs": [
+    {
+      "path": "MSM2-WS-v0.1c21.zip",
+      "bytes": 3533071,
+      "sha256": "e02a755e7ba0a58aaa4679aa32783cdb748618e6e7b5e0ad40c95f8d1a8762e7"
+    },
+    {
+      "path": "MSM2-WS-v0.1c21-source.zip",
+      "bytes": 827130,
+      "sha256": "8ce53997fb5cae822f73337acced59f39c62cdc9000113a5e9ce57aa999faff9"
+    }
+  ],
+  "script": {
+    "path": "MSM2-WS-v0.1c21.script.disabled",
+    "sha256": "18a8136ed00182e8133339a1d6d27a3b9a1124c32c4d119e49c6494512b8d432",
+    "dll_sha256": "8f3d1dc75ea885f4cb8c74af6abd6a71fc2f2bfcb2b1b79a7dfc439b494d1288"
+  },
+  "public_test_pass_records": {
+    "portable": 13,
+    "smoke": 7,
+    "hooks": 127
+  },
+  "total_public_pass_records": 147,
+  "private_input_skips": 5,
+  "focused_read_dependency_records_included": 8,
+  "workspace_records_included": 13,
+  "standalone_source": {
+    "fresh_build": "PASS",
+    "focused_entry_c14_c21": 62,
+    "DLL_logger": 7,
+    "workspace": 13,
+    "total_separate_records": 82,
+    "private_skips": 0,
+    "final_report_packaging_recheck": "PASS_unchanged_tested_native_sources"
+  },
+  "non_reproduced_existing_fixture_failure": {
+    "file": "source/src/msm2/native_source_override_smoke.cpp",
+    "line": 376,
+    "assertion": "pathA/pathB unchanged, exactly1 stale suspend and0 resumes before explicit recovery",
+    "root_cause": "UNKNOWN_not_separately_measured",
+    "fixture_and_production_deadlines_assertions": "UNCHANGED",
+    "unchanged_focused_rerun_PASS": 9,
+    "unchanged_full_rerun_PASS": 127,
+    "full_optional_private_SKIPs": 5
+  },
+  "read_dependency_contract": {
+    "diagnostic_only": true,
+    "site": "0x2b23578",
+    "write_site": "0x2b2358e",
+    "authenticated_current_callee_only": true,
+    "new_hooks": 0,
+    "runtime_memory_observation": false,
+    "effect_certificate": false,
+    "legacy_effect_refusal_preserved": true,
+    "order_scope": "forward_local_CFG_CALL_normal_return_only",
+    "order_visits": 4096,
+    "flow_visits": 4096,
+    "pending_states": 9,
+    "stack_tags": 128,
+    "flow_semantics": "conservative_possible_dependence_not_causality",
+    "flags_and_caller_stack_included": true,
+    "selected_read_and_post_write_field_values_separate": true,
+    "cross_invocation_feedback": "unknown",
+    "downstream_XYZ_W_relevance": "unknown",
+    "actual_read_classification": "pending_new_game_log",
+    "producer_traversal": false,
+    "Position_source_input_movement_writes": 0
+  },
+  "accepted_c20": {
+    "evidence": "analysis/V01C20_RUNTIME_RESULT.md",
+    "EDI_producer": "0x2b2356f",
+    "origin": "memory_load image globalRoot16+0x0c323788",
+    "local_only": true,
+    "field_semantics": "UNKNOWN"
+  },
+  "actual_c21_read_classification": "PENDING_new_authenticated_game_log",
+  "safety": {
+    "writable_source_proven": 0,
+    "caller_owned": 0,
+    "ownership_exclusive": 0,
+    "source_lifetime_exclusive": 0,
+    "downstream_conflicts_proven_absent": 0,
+    "Position_source_position_input_movement_writes": 0,
+    "producer_0x351EB00": "deferred",
+    "native_lifecycle_orientation_ABI_cleanup_unchanged": true,
+    "legacy_State_Slice_and_c19_c20_effect_gates_unchanged": true,
+    "new_observation_hooks": 0,
+    "gameplay_advancement": false
+  },
+  "runtime_log": "MSM2-WS/logs/MSM2-WS-v0.1c21-YYYYMMDD-HHMMSS.log",
+  "updater": "MSM2-WS/Update-WS.cmd",
+  "CODEX_NEXT_preserved": true,
+  "main_merged": false,
+  "private_game_bodies_or_user_logs_distributed": false,
+  "archive_validation": "PASS_final_CRC_complete_source_docs_helpers_licenses_and_payload_hashes",
+  "Wisdoms_synchronization": "docs/REVERSE_ENGINEERING_GUIDE.md and docs/WALLSPRINT_INTERNALS.md; method only, actual c21 UNKNOWN"
+}
