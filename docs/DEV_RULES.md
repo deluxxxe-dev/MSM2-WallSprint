@@ -12,6 +12,25 @@ Do not add new vendored copies of SM2ScriptTemplate source files. Existing templ
 
 Release packages must not contain raw private user logs, full captured native game functions, unnecessary game binary fragments, or files from other mods.
 
+## Release package naming
+
+The user-facing install ZIP must use exactly this pattern:
+
+```text
+MSM2-WS-v<version>.zip
+```
+
+Examples:
+
+```text
+MSM2-WS-v0.1c20.zip
+MSM2-WS-v0.2.zip
+```
+
+Do not append implementation/task descriptions such as `transform_write_contract`, `callee_alias`, `movement_source_lineage`, or similar explanatory suffixes to the install ZIP filename.
+
+If a separate source archive is required for development/reproducibility, it may use `MSM2-WS-v<version>-source.zip`; the user-facing install ZIP must remain the plain version-only name above.
+
 ## Native safety
 
 - Current target build: Spider-Man2.exe 2.810.0.0.
