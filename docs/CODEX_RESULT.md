@@ -63,7 +63,7 @@ SF/ordinary mod mutation, main merge or old-environment deletion.
 - Full required chain: portable **13 PASS**, DLL/logger **7 PASS**, hooks/native/
   c19/c20/c21/c22/workspace **135 PASS / 5 optional private-input SKIP**.
   **155 public PASS records / 5 SKIP**, every final suite exit0.
--16 read groups include self-test/both operands, killed/dead/unrelated values,
+- 16 read groups include self-test/both operands, killed/dead/unrelated values,
   low8/DIL/64bit, all16 Jcc/CF-OF constants, overwritten flags, separate post-write/
   other-field tags, both reaching paths, partial-write/high8/16bit/immediate/
   indexed/non-TEST refusal, unsupported flag use/CALL and auth/disable/boundary.
@@ -86,6 +86,11 @@ VERIFIED-STATIC implementation/owned-fixture scope; actual c22 remains UNKNOWN.
 ENGINE_INTERNALS clarifies root16 is the dedicated executable-image globalRoot,
 while raw entry-register tokens and loaded game semantic types stay separate.
 No raw log/private body/personal data is published.
+
+Publication fetch found same-branch concurrent5faacc4 (deferred controls/settings
+roadmap only). Preserved it by a normal same-branch merge; FEATURE_ROADMAP is
+included in the final source archive. No main merge or implementation change;
+this roadmap explicitly grants no current gameplay scope.
 
 ## Next human step
 
