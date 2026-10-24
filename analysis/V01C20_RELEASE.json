@@ -2,19 +2,19 @@
   "version": "v0.1c20",
   "package_version": "0.1.38",
   "branch": "codex/v01c20-edi-value-provenance",
-  "base_handoff_commit": "6547ec4c204feb1678bd444f2bff5bea94778e6b",
-  "implementation_commit": "79d2acff84574b7c794abe980560dad1e3e9052a",
+  "base_handoff_commit": "b49425e",
+  "implementation_commit": "5e894c1a99932554d73f95954ae1a1becfbf6ad1",
   "prepared_research_commit": "9057d24",
   "outputs": [
     {
       "path": "MSM2-WS-v0.1c20.zip",
-      "bytes": 3419022,
-      "sha256": "483ef19a407cce5c7c9c7009f504822b881ba23a6842c71ea1739009bfd98f3f"
+      "bytes": 3460868,
+      "sha256": "f64bab71482c74d47cfbb09ce0e9b02fa8602ed5461ceac9834232bc2b15007e"
     },
     {
       "path": "MSM2-WS-v0.1c20-source.zip",
-      "bytes": 778839,
-      "sha256": "08c7988d0880392ba7f97b902fe5097b3abbb255f76db22447ac712fe49a0fa3"
+      "bytes": 804064,
+      "sha256": "d70c9b0f37b458b019f00d6411b483e8eadc962ee6e04c244302160adaf2c64b"
     }
   ],
   "public_test_pass_records": {
@@ -24,8 +24,8 @@
   },
   "total_public_pass_records": 139,
   "private_input_skips": 5,
-  "separate_historical_private_replay_records": 4,
-  "private_replay_duplicate_baseline_records": 1,
+  "separate_historical_private_replay_records": 0,
+  "private_replay_duplicate_baseline_records": 0,
   "focused_records_included": {
     "entry": 11,
     "contract": 4,
@@ -38,22 +38,33 @@
     "workspace": 13,
     "logging": 3
   },
-  "standalone_source": "HISTORICAL_890d23c_PASS74_current_snapshot_fixture_change_has_full139_and_focused12_plus_artifact_integrity",
+  "standalone_source": "PASS_current_source_ZIP_fresh_build_54_focused_7_DLL_logger_13_workspace",
   "standalone_focused_records": 54,
   "standalone_DLL_logger_records": 7,
   "standalone_workspace_records": 13,
-  "full_staging_wrapper": "PASS_current_snapshot_correction_full139_5_optional_private_SKIPs_disabled_artifacts",
-  "CRC_current_sources_docs_helpers_licenses_script_DLL_hash_private_body_exclusion": "PASS",
+  "full_staging_wrapper": "HISTORICAL_PASS_accepted_unchanged_wrapper; current required serial chain139_and_independent_source74_rerun",
+  "CRC_current_sources_docs_helpers_licenses_script_DLL_hash_private_body_exclusion": "PASS_current_final_artifacts",
   "legacy_State_Slice_c14_c16_caller_producer_native_lifecycle_entry_thunk_cleanup_unchanged": true,
   "c15_writer_CFG_setup_and_c19_read_region_gates_unchanged": true,
   "CODEX_NEXT_preserved": true,
   "authorized_workspace_documentation_updated": true,
   "EDI_research": {
     "prepared": true,
-    "production_enabled": false,
+    "production_enabled": true,
+    "enabled_only_for_authenticated_current_callee": true,
+    "diagnostic_only": true,
     "preserved_commit": "9057d24",
-    "actual_EDI_value": "unresolved_c19",
-    "research_advancement_authorized": false
+    "actual_EDI_value": "unresolved_c19_pending_c20_A_E",
+    "research_advancement_authorized": true,
+    "authorization": "docs/CODEX_NEXT.md",
+    "value_definition_cap": 16,
+    "copy_chain_cap": 8,
+    "value_visit_cap": 4096,
+    "local_value_and_whole_writer_coverage_separate": true,
+    "raw_register_bits_are_not_pointer_types": true,
+    "runtime_observation_hooks": 0,
+    "producer_traversal": false,
+    "Position_source_input_movement_writes": 0
   },
   "exact_write_contract": {
     "site": "0x2b2358e",
@@ -62,7 +73,6 @@
     "only_new_accepted_root": "entry_writer_RCX_transform",
     "only_new_accepted_offset": "0x10c",
     "exact_all_reaching_value_required": true,
-    "unknown_computed_or_conflicting_value_refused": true,
     "protected_Transform_range": "[0,64)",
     "modeled_write_range": "[0x10c,0x110)",
     "literal_transform_no_write_kept_false": true,
@@ -74,7 +84,9 @@
     "producer_traversal": false,
     "writable_source_proven": false,
     "Position_source_input_movement_writes": 0,
-    "actual_c19_result": "pending_A_E"
+    "actual_c19_result": "exact_Transform_plus0x10C_from_EDI_value_unresolved",
+    "unknown_opaque_or_conflicting_value_refused": true,
+    "exact_affine_mod_2_32_value_relation_allowed": true
   },
   "workspace": {
     "relative_root": "Mods Library/Mods-Developing/MSM2-WS",
@@ -90,7 +102,7 @@
     "source_live_scripts": 0,
     "SF_or_ordinary_mod_mutation": false,
     "legacy_workspace_auto_delete": false,
-    "real_PC_migration": "pending_local_execution",
+    "real_PC_migration": "accepted_20261024_see_LOCAL_WORKSPACE_RUNTIME_ACCEPTANCE",
     "source_archive_policy": "managed_Git_sparse_checkout_excludes_ZIP_RAR_7z",
     "source_visible_archives": 0,
     "build_archive_suffix": ".zip.disabled",
@@ -108,7 +120,7 @@
     "shared_logs_fallback": false,
     "failure_channel": "OutputDebugString_stage_path_Win32Error"
   },
-  "workspace_owned_Git_filesystem_fixtures": "PASS_8_groups_including_clone_ff_divergence_isolation_rollback_and_active_script_invariants",
+  "workspace_owned_Git_filesystem_fixtures": "PASS_13_groups_current_owned_independent_Git_filesystem",
   "Windows_process_stop_WSL2_launcher_and_shared_Overstrike_UI": "PASS_real_helper_and_actual_shared_UI_ordinary_SF1_WS1",
   "actual_local_migration_and_new_runtime_log": "PASS_real_PC_full_pipeline_deployment_shared_UI_launch_and_canonical_new_WS_SF_logs",
   "owned_A_E_orientation": [
@@ -117,28 +129,32 @@
       "wallrun_duration_ms": "4102",
       "source_active_until_deinit": "1",
       "verified_deinit": "1",
-      "path_a_writes": "175",
-      "path_b_writes": "175",
-      "max_held_ms": "2110",
-      "max_held_updates": "130",
-      "retention_pass": "1",
-      "last_actor_up_dot_surface": "1",
-      "first_hard_kill": "none",
-      "hard_kill_calls": "0"
-    },
-    {
-      "session": "2",
-      "wallrun_duration_ms": "4112",
-      "source_active_until_deinit": "1",
-      "verified_deinit": "1",
-      "path_a_writes": "178",
-      "path_b_writes": "178",
+      "path_a_writes": "176",
+      "path_b_writes": "176",
       "max_held_ms": "2132",
       "max_held_updates": "132",
       "retention_pass": "1",
       "last_actor_up_dot_surface": "1",
       "first_hard_kill": "none",
-      "hard_kill_calls": "0"
+      "hard_kill_calls": "0",
+      "stale_suspend_count": "0",
+      "stale_resume_count": "0"
+    },
+    {
+      "session": "2",
+      "wallrun_duration_ms": "4104",
+      "source_active_until_deinit": "1",
+      "verified_deinit": "1",
+      "path_a_writes": "179",
+      "path_b_writes": "179",
+      "max_held_ms": "2144",
+      "max_held_updates": "133",
+      "retention_pass": "1",
+      "last_actor_up_dot_surface": "1",
+      "first_hard_kill": "none",
+      "hard_kill_calls": "0",
+      "stale_suspend_count": "0",
+      "stale_resume_count": "0"
     }
   ],
   "owned_A_E_position_watch": [
@@ -172,7 +188,7 @@
     "ABI_finalization_cleanup": "PASS"
   },
   "human_c19": "ACCEPTED_A3844_E4094_exact_MOV_Transform_plus0x10C_from_EDI_unknown_value",
-  "actual_c20_EDI_research": "PAUSED_production_disabled_not_advanced",
+  "actual_c20_EDI_research": "DIAGNOSTIC_ENABLED_ACTUAL_GAME_A_E_PENDING",
   "producer_0x351EB00": "deferred",
   "writable_source_proven": false,
   "Position_source_input_movement_writes": 0,
@@ -566,5 +582,17 @@
     "SF_player_signal_acceptance": false,
     "EDI_research_reauthorized": false,
     "raw_logs_or_full_game_bodies_committed": false
+  },
+  "source_snapshot_commit": "433195ec61073de1bc1964a53075b4bde59d34a7",
+  "private_replay_scope": "Not rerun for this activation; earlier historical records remain in Git history",
+  "standalone_optional_private_skips": 0,
+  "standalone_final_doc_allowlist_package": "PASS_unchanged_native_source_and_actual_rebuilt_DLL",
+  "concurrent_handoff_commit": "988a7c5",
+  "source_coverage_note": "Final docs/AGENTS/doc-allowlist changes retain byte-identical tested native sources; final standalone package revalidated",
+  "current_validation_document": "analysis/V01C20_DIAGNOSTIC_VALIDATION.md",
+  "script": {
+    "path": "MSM2-WS-v0.1c20.script.disabled",
+    "sha256": "7dbba2d148522560002bc44b855342c3be7939864e7dd6dac065ceaeb80402ca",
+    "dll_sha256": "ec5200e98c820d988f4bd4094d43eb414fa260f1943d3aaec58f438dcbef9fcd"
   }
 }

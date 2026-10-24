@@ -2,8 +2,8 @@
   "version": "v0.1c20",
   "package_version": "0.1.38",
   "artifact": "MSM2-WS-v0.1c20.script.disabled",
-  "sha256": "40092273488b89d520b9882cab3a2b03d08523de212ce6ac4a5dfda0f0edb312",
-  "dll_sha256": "f62147b3c99813f95a9eca094b7f8f38e81a96a29c06d9e3d02c1c855f5ae1e4",
+  "sha256": "7dbba2d148522560002bc44b855342c3be7939864e7dd6dac065ceaeb80402ca",
+  "dll_sha256": "ec5200e98c820d988f4bd4094d43eb414fa260f1943d3aaec58f438dcbef9fcd",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -128,15 +128,15 @@
     "original_capture": "private PATH_B_FUNCTION/PATH_B_CODE before hook; never redistributed",
     "caller_original_sha256": "1665a7a329a983101673f05ccd95bbf3d738c39099469b4acfd14344ec98a79d"
   },
-  "validation": "Existing full build/regressions preserved; owned workspace migration/Git/transaction/isolation fixtures plus new logger path/time/collision tests; counts in CODEX_RESULT.",
+  "validation": "Warnings-as-errors cross-build; portable/DLL/native/c19/owned EDI/logger/workspace regressions and standalone source validation; exact current results in CODEX_RESULT.",
   "limitations": [
-    "Real Windows migration/WSL toolchain/shared Overstrike UI recognition and new runtime log path pending local acceptance; EDI research remains paused at c19 blocker",
+    "Real-PC shared workspace/startup/log acceptance passed; actual c20 EDI producer/origin/local coverage/later dependency and XYZ/W remain pending dedicated A/E capture",
     "Stack/global disjointness is conditional on per-invocation TEB/source/nonstack Transform/image region admission",
     "Unknown/conflicting pointer origins, unsupported effects and nested calls refuse at exact site",
     "Startup/current code snapshots are not atomic execution attestation; equality does not exclude transient writes",
     "Producer0x351EB00/ownership/lifetime/downstream/exclusivity remain deferred and writable_source_proven0",
     "Prior incomplete hardware coverage, admitted-store/close overlap and bounded refresh limits remain",
-    "Read-carrier exclusion is conservative and may refuse unused reads; unknown/computed values do not receive exact-value permission"
+    "Read-carrier exclusion is conservative and may refuse unused reads; only exact modeled raw-bit/constant/memory/affine relations qualify, never opaque computations or conflicting origins"
   ],
   "source_directory": "source",
   "path_b_override": true,
@@ -693,7 +693,6 @@
     "only_new_accepted_root": "entry_writer_RCX_transform",
     "only_new_accepted_offset": "0x10c",
     "exact_all_reaching_value_required": true,
-    "unknown_computed_or_conflicting_value_refused": true,
     "protected_Transform_range": "[0,64)",
     "modeled_write_range": "[0x10c,0x110)",
     "literal_transform_no_write_kept_false": true,
@@ -705,15 +704,28 @@
     "producer_traversal": false,
     "writable_source_proven": false,
     "Position_source_input_movement_writes": 0,
-    "actual_c19_result": "pending_A_E"
+    "actual_c19_result": "exact_Transform_plus0x10C_from_EDI_value_unresolved",
+    "unknown_opaque_or_conflicting_value_refused": true,
+    "exact_affine_mod_2_32_value_relation_allowed": true
   },
-  "v01c20_gate": "WORKSPACE_MIGRATION_IMPLEMENTED_EDI_RESEARCH_PAUSED",
+  "v01c20_gate": "DIAGNOSTIC_BUILD_ENABLED_ACTUAL_EDI_A_E_PENDING",
   "edi_value_contract": {
     "prepared": true,
-    "production_enabled": false,
+    "production_enabled": true,
+    "enabled_only_for_authenticated_current_callee": true,
+    "diagnostic_only": true,
     "preserved_commit": "9057d24",
-    "actual_EDI_value": "unresolved_c19",
-    "research_advancement_authorized": false
+    "actual_EDI_value": "unresolved_c19_pending_c20_A_E",
+    "research_advancement_authorized": true,
+    "authorization": "docs/CODEX_NEXT.md",
+    "value_definition_cap": 16,
+    "copy_chain_cap": 8,
+    "value_visit_cap": 4096,
+    "local_value_and_whole_writer_coverage_separate": true,
+    "raw_register_bits_are_not_pointer_types": true,
+    "runtime_observation_hooks": 0,
+    "producer_traversal": false,
+    "Position_source_input_movement_writes": 0
   },
   "local_workspace": {
     "relative_root": "Mods Library/Mods-Developing/MSM2-WS",
@@ -729,7 +741,7 @@
     "source_live_scripts": 0,
     "SF_or_ordinary_mod_mutation": false,
     "legacy_workspace_auto_delete": false,
-    "real_PC_migration": "pending_local_execution",
+    "real_PC_migration": "accepted_20261024_see_LOCAL_WORKSPACE_RUNTIME_ACCEPTANCE",
     "source_archive_policy": "managed_Git_sparse_checkout_excludes_ZIP_RAR_7z",
     "source_visible_archives": 0,
     "build_archive_suffix": ".zip.disabled",
