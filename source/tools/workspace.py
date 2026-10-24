@@ -4,6 +4,8 @@ import argparse,hashlib,json,os,re,shutil,stat,subprocess,sys,zipfile
 REMOTE='https://github.com/Deluxeee0811/WallSprint.git'
 WS_NAME='MSM2-WS'
 ACTIVE=re.compile(r'MSM2-WS-v[0-9A-Za-z.]+\.script\Z')
+ARCHIVE_SUFFIXES={'.zip','.rar','.7z'}
+SOURCE_PATTERNS=('/*','!*.[zZ][iI][pP]','!*.[rR][aA][rR]','!*.7[zZ]')
 class WorkspaceError(RuntimeError):pass
 
 def require(condition,message):
@@ -27,7 +29,21 @@ def live_scripts(path):
  if not path.exists():return []
  no_links(path)
  return sorted(p for p in path.rglob('*') if p.is_file() and p.suffix.lower()=='.script')
+def live_archives(path):
+ if not path.exists():return []
+ no_links(path)
+ return sorted(p for p in path.rglob('*') if p.is_file() and p.suffix.lower() in ARCHIVE_SUFFIXES)
 def git(source,*args):return run(['git','-C',source,*args])
+def source_patterns(source):
+ path=source/'.git/info/sparse-checkout'
+ return tuple(path.read_text().splitlines()) if path.exists() else None
+def prepare_source_checkout(source):
+ # Git owns these clean tracked files; keep their bytes/history in Git and
+ # exclude archives from the scanned working tree, without legacy links.
+ require(not git(source,'status','--porcelain'),'Preserve local work before configuring the source checkout')
+ require(source_patterns(source) in (None,SOURCE_PATTERNS),'Custom sparse checkout refused; preserve its configuration before migrating')
+ git(source,'sparse-checkout','set','--no-cone',*SOURCE_PATTERNS)
+ require(source_patterns(source)==SOURCE_PATTERNS,'Archive-excluding source checkout configuration failed')
 def branch_name(value):
  require(value and not value.startswith('-'),'An explicit development branch is required')
  run(['git','check-ref-format','--branch',value]);return value
@@ -53,7 +69,7 @@ def workspace_paths(workspace):
  require(p.resolve()==game/'Mods Library'/'Mods-Developing'/'MSM2-WS','Workspace canonical path escaped the game root')
  return p.resolve(),game
 
-def independent_clone(source,remote=REMOTE):
+def independent_clone(source,remote=REMOTE,allow_legacy_archives=False):
  require(source.is_dir(),'Independent _source clone is missing; use Migrate-WS.cmd')
  no_links(source)
  require((source/'.git').is_dir() and not linked(source/'.git'),'_source must be a standalone clone, not a worktree/gitdir link')
@@ -70,6 +86,14 @@ def independent_clone(source,remote=REMOTE):
  require(not git(source,'ls-files','*.script'),'Checkout tracks a live .script; use the migration-ready branch')
  require(not live_scripts(source),'_source contains active .script files; do not unpack install bundles there')
  require(not git(source,'status','--porcelain'),'_source has local changes; preserve/commit them before updating')
+ archives=live_archives(source)
+ if allow_legacy_archives:
+  tracked=set(git(source,'ls-files','-z').split('\0'))
+  require(all(p.relative_to(source).as_posix() in tracked for p in archives),'Untracked archive in _source refused; preserve it outside Mods Library')
+ else:
+  require(not archives,'_source contains Overstrike-visible archives, including nested scripts')
+  require(source_patterns(source)==SOURCE_PATTERNS,'_source must exclude archives using the managed Git sparse checkout')
+  require(git(source,'config','--bool','core.sparseCheckout')=='true' and git(source,'config','--bool','core.sparseCheckoutCone')=='false','Managed archive-excluding sparse checkout must remain active')
  return source
 
 def expected_branch(source,expected=None):
@@ -109,12 +133,57 @@ def owned_script(path):
   with zipfile.ZipFile(path) as z:return json.loads(z.read('info.json')).get('name')=='WallSprint'
  except (OSError,ValueError,KeyError,zipfile.BadZipFile):return False
 
-def assert_layout(workspace,expected=None):
+def owned_build_archive(path):
+ """Only positively identified outputs of the old WS build can be disabled."""
+ match=re.fullmatch(r'MSM2-WS-(v[0-9A-Za-z.]+)(-source)?\.zip',path.name,re.IGNORECASE)
+ if not match or linked(path):return False
+ label=match[1]
+ try:
+  with zipfile.ZipFile(path) as z:
+   if len(z.infolist())>4096 or sum(i.file_size for i in z.infolist())>512*1024*1024 or z.testzip() is not None:return False
+   if match[2]:
+    info=json.loads(z.read('source/mod/info.json'))
+    header=z.read('source/include/version.hpp').decode('utf-8')
+    return info.get('name')=='WallSprint' and 'versionLabel[]="'+label+'"' in header and 'source/tools/workspace.py' in z.namelist()
+   prefix='MSM2-WS-'+label+'/'
+   manifest=json.loads(z.read(prefix+'BUILD_MANIFEST.json'))
+   name=prefix+'MSM2-WS-'+label+'.script'
+   if [p for p in z.namelist() if p.lower().endswith('.script')]!=[name]:return False
+   data=z.read(name)
+   if manifest.get('version')!=label or hashlib.sha256(data).hexdigest()!=manifest.get('sha256'):return False
+   import io
+   with zipfile.ZipFile(io.BytesIO(data)) as script:
+    info=json.loads(script.read('info.json'))
+    return script.testzip() is None and info.get('name')=='WallSprint' and info.get('version')==manifest.get('package_version') and hashlib.sha256(script.read('WallSprint.dll')).hexdigest()==manifest.get('dll_sha256')
+ except (OSError,ValueError,KeyError,UnicodeError,RuntimeError,zipfile.BadZipFile):return False
+
+def disable_legacy_build_archives(workspace):
+ paths=live_archives(workspace/'_archive')
+ require(all(p.parent==workspace/'_archive/_build' and owned_build_archive(p) for p in paths),'Unowned archive refused; no unrelated file will be moved')
+ saved=[]
+ try:
+  for path in paths:
+   target=workspace/'_archive'/(path.name+'.disabled');n=0
+   while target.exists():
+    n+=1;target=workspace/'_archive'/(path.name+'-'+str(n).zfill(2)+'.disabled')
+   path.rename(target);saved.append((path,target))
+   print('Disabled legacy WS build archive: '+str(path.relative_to(workspace))+' -> '+str(target.relative_to(workspace)))
+ except BaseException:
+  for old,target in reversed(saved):target.rename(old)
+  raise
+
+def assert_layout(workspace,expected=None,allow_legacy_archives=False):
  source=workspace/'_source'
  for folder in [source,workspace/'logs',workspace/'_archive']:
   require(folder.is_dir() and not linked(folder),'Missing/reparse internal folder: '+folder.name)
   require(not live_scripts(folder),'Active .script is forbidden in '+folder.name)
  scripts=live_scripts(workspace)
+ tracked=set(git(source,'ls-files','-z').split('\0')) if allow_legacy_archives else set()
+ for archive in live_archives(workspace):
+  require(allow_legacy_archives,'Overstrike-visible archive refused: '+str(archive)+'; ZIP/RAR/7z contents are scanned too')
+  source_tracked=archive.is_relative_to(source) and archive.relative_to(source).as_posix() in tracked
+  old_build=archive.parent==workspace/'_archive/_build' and owned_build_archive(archive)
+  require(source_tracked or old_build,'Untracked or unowned Overstrike-visible archive refused: '+str(archive))
  if expected is not None:
   require(scripts==[workspace/expected],'Exactly one root active WS script must remain')
  else:
@@ -168,7 +237,7 @@ class Manager:
    run(['git','-c','core.longpaths=true','clone','--no-local','--single-branch','--branch',branch,self.remote,source])
    git(source,'config','core.longpaths','true')
    git(source,'config','wallsprint.expectedBranch',branch)
-  independent_clone(source,self.remote)
+  independent_clone(source,self.remote,allow_legacy_archives=True)
   # Existing independent clones must match the explicit migration branch.
   expected_branch(source,branch)
   self.update(workspace,branch)
@@ -183,8 +252,8 @@ class Manager:
   for name in ['logs','_archive']:
    p=workspace/name
    if not p.exists():p.mkdir()
-  assert_layout(workspace)
-  source=independent_clone(workspace/'_source',self.remote)
+  assert_layout(workspace,allow_legacy_archives=True)
+  source=independent_clone(workspace/'_source',self.remote,allow_legacy_archives=True)
   branch=expected_branch(source,expected)
   self.system.stop(game)
   lock=workspace/'_archive/Update-WS.lock'
@@ -192,8 +261,11 @@ class Manager:
   except FileExistsError:raise WorkspaceError('Another update or stale Update-WS.lock exists; no deployment started')
   os.close(fd)
   try:
+   prepare_source_checkout(source)
    git(source,'pull','--ff-only')
    independent_clone(source,self.remote);expected_branch(source,branch)
+   disable_legacy_build_archives(workspace)
+   assert_layout(workspace)
    git(source,'config','wallsprint.expectedBranch',branch)
    head=git(source,'rev-parse','HEAD');label,pkg=version(source)
    target='MSM2-WS-'+label+'.script'

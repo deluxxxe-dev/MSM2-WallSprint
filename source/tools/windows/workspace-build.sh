@@ -7,6 +7,15 @@ result=$2
 export WALLSPRINT_TOOLCHAIN_ROOT=/workspace/toolchains/windows
 export WALLSPRINT_DECODER_CACHE=/workspace/toolchains/decoder-cache
 unset WALLSPRINT_PATH_B_CAPTURE
+command -v python >/dev/null || { echo 'WS ERROR: Python is required; no validation is skipped' >&2; exit 1; }
+python - "$repo" <<'PY'
+from pathlib import Path
+import sys
+source=Path(sys.argv[1]).resolve()
+if any(p.name.casefold()=='mods library' for p in [source,*source.parents]):
+ if any(p.is_file() and p.suffix.lower() in {'.script','.zip','.rar','.7z'} for p in source.rglob('*')):
+  raise SystemExit('WS ERROR: source tree contains scanner-visible scripts/archives; update the preparation checkout and rerun its latest Migrate-WS.cmd before building')
+PY
 for tool in bash python g++ make objdump tar curl sha256sum; do
  command -v "$tool" >/dev/null || { echo "WS ERROR: missing WSL prerequisite $tool; see source/BUILD.md" >&2; exit 1; }
 done
@@ -34,7 +43,10 @@ payload=root/name
 assert payload.is_file() and not list((root/'source').rglob('*.script'))
 with zipfile.ZipFile(payload) as z:assert z.testzip() is None
 shutil.copy2(payload,result/name);shutil.copy2(root/'BUILD_MANIFEST.json',result/'BUILD_MANIFEST.json')
-for path in root.glob('MSM2-WS-*.zip'):shutil.copy2(path,result/path.name)
+for path in root.glob('MSM2-WS-*.zip'):
+ # Overstrike also discovers scripts inside archives without extracting them.
+ shutil.copy2(path,result/(path.name+'.disabled'))
+assert not any(p.suffix.lower() in {'.zip','.rar','.7z','.script'} for p in result.rglob('*') if p.is_file())
 (result/'Build-WS-result.json').write_text(json.dumps({'artifact':name,'version':label},indent=2)+'\n')
 print('PASS: required full WSL build/test/package completed; disabled artifact staged for transactional WS-only deployment')
 PY

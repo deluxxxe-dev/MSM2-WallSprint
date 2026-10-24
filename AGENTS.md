@@ -44,6 +44,8 @@ Important invariants:
 - `_source` is the independent authoritative Git clone; no worktree/junction/symlink/reparse-point dependency on the old D-drive checkout.
 - Exactly one active WallSprint `.script` may exist recursively beneath `MSM2-WS`, at workspace root only.
 - No active `.script` may remain in `_source`, `logs`, or `_archive`.
+- Overstrike also recursively scans ZIP/RAR/7z contents. `_source` uses an independent Git clone with the managed sparse checkout excluding archive extensions while retaining all source code and archive blobs/history in Git. Never disable that policy inside Mods Library.
+- No visible `.zip`, `.rar` or `.7z` may remain anywhere under `MSM2-WS`. Store build ZIPs only as `.zip.disabled`; the updater may disable only positively identified legacy WS build outputs. Public ZIP downloads stay outside Mods Library.
 - Shared Overstrike is only `<game>\Overstrike\Overstrike.exe`, launched with WorkingDirectory=`<game>`.
 - Do not create WS-specific/AppData Overstrike copies or a separate WS Mods Library/profile.
 - Never mutate `Mods-Developing\MSM2-SF` or ordinary existing mods from WallSprint tooling.

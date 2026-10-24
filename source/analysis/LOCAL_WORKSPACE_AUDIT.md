@@ -54,7 +54,7 @@ MSM2-WS\MSM2-WS-v<version>.script
 
 The migration implementation must remove the checkout's dependency on a tracked/generated live `.script` and verify `git ls-files "*.script"` / filesystem scans are compatible with the new invariant. Git history need not be rewritten.
 
-Historical ZIP files do not by themselves count as active `.script` files, but migration/package tooling must never unpack a live `.script` into `_source`, `logs`, or `_archive`.
+The initial audit counted physical `.script` files only. Real-PC UI acceptance disproved the assumption that historical ZIPs are harmless: Overstrike recursively opens ZIP/RAR/7z and detects contained scripts without extraction. The44 tracked ZIPs include22 install packages with WallSprint scripts; one build-cache install ZIP plus the root active script predicts24 entries, matching the screenshot. Physical-script checks alone are insufficient. The correction uses managed Git sparse checkout for source archives, disabled build ZIP suffixes and an archive-aware strict layout guard; see OVERSTRIKE_ARCHIVE_DISCOVERY.md.
 
 ## Current logging conflict
 

@@ -101,7 +101,7 @@ It must be an independent clone, not a worktree/junction/symlink/reparse-point d
 
 Because Overstrike recursively scans `Mods Library`, a normal source checkout under `_source` must contain no active `*.script`. Generated script output must be produced outside recursively active source locations or use a non-`.script` temporary extension until final deployment.
 
-Exactly one active WallSprint `.script` may exist recursively beneath `MSM2-WS`, and it must be the versioned script at workspace root. Older versions under `_archive` must use a disabled/non-active extension such as `.script.disabled`.
+Exactly one active WallSprint `.script` may exist recursively beneath `MSM2-WS`, and it must be the versioned script at workspace root. Older versions under `_archive` must use a disabled/non-active extension such as `.script.disabled`. Overstrike also discovers scripts recursively inside ZIP/RAR/7z containers without extracting them. Enforce zero visible archives beneath WS, not merely zero physical source scripts. The independent `_source` clone uses the managed non-cone sparse checkout to exclude archive extensions from its working tree; all code and tracked archive blobs/history remain in Git. Keep returned build ZIPs as `.zip.disabled`. Refuse untracked/foreign archives and custom sparse patterns rather than deleting data or overwriting configuration.
 
 ## Update / migration safety
 

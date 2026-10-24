@@ -111,7 +111,11 @@ Older versions may be retained only with a non-active extension, for example:
 _archive\MSM2-WS-v0.1c19.script.disabled
 ```
 
-No file below `_source`, `logs`, or `_archive` may end in `.script` after a successful update.
+No file below `_source`, `logs`, or `_archive` may end in `.script` after a successful update. ZIP/RAR/7z contents are also recursively scanned by Overstrike: no visible archive with those extensions may remain anywhere under WS. Returned install/source archives use `.zip.disabled`. This hides the entire container from extension-based scanning while preserving its bytes.
+
+The independent `_source` clone has a managed Git sparse checkout: every code/documentation file is included, while ZIP/RAR/7z paths are excluded from the working tree, including nested and mixed-case extensions. The tracked archives and commit history remain in the independent Git object store and on GitHub. This is a regular clone with its own `.git`, not a linked Git worktree or junction. Fast-forward pulls retain this policy. Custom sparse patterns and untracked archives refuse rather than being silently changed/deleted.
+
+During upgrade, clean tracked source archives are excluded by Git. Only validated legacy `MSM2-WS-v<version>[‑source].zip` outputs directly in `_archive/_build` may be moved to collision-safe `.disabled` names under `_archive`, preserving bytes and timestamps. Unrelated files, shared Overstrike cache/profiles, SF and ordinary mods are not cleanup targets.
 
 ## Logs
 
@@ -191,6 +195,6 @@ Windows Python3.11+, Git for Windows, PowerShell and a configured WSL2 cross-bui
 
 `Update-WS.cmd` loads only its installed `_source` engine. Migration clones with no local/shared-object optimization and stores the explicit expected branch contract. Both update and migration reject dirty/detached/diverged/linked checkouts. An intentional future branch switch needs `--expected-branch` plus a matching upstream. Build/tests/package run in a temporary WSL source copy outside Mods Library; `_source` remains clean and contains no generated active script. The current script is not archived until package validation succeeds; a failed deployment/launch attempts to restore the exact prior active build and helper.
 
-Shared process stopping is limited to the validated game executable and shared Overstrike path; a different running Overstrike must be closed manually. The updater neither installs nor repairs shared Overstrike/DLLs. Disabled build artifacts and ZIPs may be retained under `_archive/_build`; they are not active scripts.
+Shared process stopping is limited to the validated game executable and shared Overstrike path; a different running Overstrike must be closed manually. The updater neither installs nor repairs shared Overstrike/DLLs. Disabled build artifacts and archives may be retained under `_archive/_build`, using `.script.disabled` and `.zip.disabled` respectively. A normal ZIP is not safe there: Overstrike opens it and discovers nested scripts. A release invoked directly anywhere inside Mods Library refuses before producing ZIPs; use the mandatory external staging pipeline.
 
 Cloud tests use owned Git/filesystem and Windows logger fixtures. Real Windows process/WSL/toolchain behavior, shared Overstrike UI recognition and actual new runtime logs must be confirmed locally before considering manual removal of the old environment.

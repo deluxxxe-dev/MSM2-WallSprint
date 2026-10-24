@@ -2,6 +2,8 @@
 from pathlib import Path
 import subprocess,hashlib,zipfile,shutil,re,json
 root=Path(__file__).resolve().parents[1]
+if any(p.name.casefold()=='mods library' for p in [root,*root.parents]):
+ raise RuntimeError('Release ZIPs must be built outside Mods Library; use Update-WS.cmd and its Linux staging pipeline')
 subprocess.run(['python',str(root/'tools/package.py')],cwd=root,check=True)
 label=re.search(r'versionLabel\[\]="([^"]+)"',(root/'include/version.hpp').read_text())[1]
 out=root/'output'/('MSM2-WS-'+label)
