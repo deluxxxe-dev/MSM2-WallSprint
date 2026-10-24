@@ -1,60 +1,26 @@
-# Next task — WallSprint v0.1c19 Actual-Game Transform Write Gate
+# Next task — WallSprint v0.1c20 EDI Value Provenance
 
-## Base
+Branch: `codex/v01c20-edi-value-provenance`.
+
+Read `AGENTS.md`, `docs/DEV_RULES.md`, `docs/PROJECT_STATE.md`, `docs/LOGGING_CONVENTION.md`, `analysis/V01C19_RUNTIME_RESULT.md`, `analysis/V01C19_TRANSFORM_WRITE_CONTRACT.md`, `analysis/RDX_XYZ_SOURCE_CONTRACT.md`, and c19 `docs/CODEX_RESULT.md` first.
+
+Accepted c19 actual-game result:
+- A/session1 3844 ms and E/session2 4094 ms; both verified Deinit, retention PASS, Surface Up PASS, stale0, hard0, Position writes0.
+- Both sessions finalized 8 true entry snapshots / 8 complete maps and XYZ mask `0x7`.
+- `0x2B2358E` is exactly a 4-byte `mov` to Hero Transform + `0x10C` via `[RCX+0x10C]`.
+- The destination does not overlap Position `+0x30..+0x3F` or the Transform identity/pointer-carrier range.
+- Current blocker: the written value comes from `EDI`, but its reaching origin is unresolved. Reason: `exact_write_value_unknown_computed_or_reaching_origins_conflict`.
+
+Objective: trace only EDI reaching definitions at `0x2B2358E` across the authenticated callee CFG and determine whether the Transform+0x10C write can affect any later Position/source-carrier read. Preserve separate branch states and refuse conflicting/unknown origins. If the value/effect becomes exact and irrelevant, resume the existing writer XYZ/W proof only until the next exact blocker.
+
+Do not traverse producer `0x351EB00`. Do not implement movement, Position/source writes, input rewrite, adhesion, camera, animation or traversal. Keep `writable_source_proven=0` unless a later separately authorized task changes the gate.
+
+Preserve dedicated `log_wallsprint/WallSprint_YYYYMMDD-HHMMSS.log` logging with no shared fallback.
+
+User-facing install ZIP naming is now mandatory:
 ```text
-branch: codex/v01c19-transform-write-contract
-implementation: b3185cd240a16446a2424ecab9fa0c2605cb00e8
-version: v0.1c19 / package 0.1.37
+MSM2-WS-v0.1c20.zip
 ```
+Do not append task-description suffixes. Future versions must follow `MSM2-WS-v<version>.zip` per `docs/DEV_RULES.md`.
 
-Read `AGENTS.md`, `docs/DEV_RULES.md`, `docs/PROJECT_STATE.md`, `docs/LOGGING_CONVENTION.md`, `analysis/V01C18_RUNTIME_RESULT.md`, `analysis/V01C19_TRANSFORM_WRITE_CONTRACT.md`, `analysis/RDX_XYZ_SOURCE_CONTRACT.md`, and c19 `docs/CODEX_RESULT.md` first.
-
-## Status
-C19 cloud implementation is complete and validated, but its exact Transform+0x10C model is not actual-game evidence. No c20 implementation is authorized yet.
-
-C18 actual game identified `0x2B2358E` as the first unresolved 4-byte write, root1 +0x10C, possible Hero Transform alias. C19 now records exact operand/value/reaching-state provenance and permits writer continuation only if the actual instruction is exactly the narrowly modeled non-overlapping effect and all dependency checks pass.
-
-Safety remains:
-```text
-writable_source_proven=0
-caller_owned=0
-ownership_exclusive=0
-source_lifetime_exclusive=0
-downstream_conflicts_proven_absent=0
-Position/source/input/movement writes=0
-```
-Producer `0x351EB00`, movement, adhesion and camera remain deferred.
-
-## Human runtime gate
-Install `WallSprint_v0.1c19_transform_write_contract.zip`. Confirm v0.1c19/package0.1.37, exact supported exe/SHA, and a fresh dedicated timestamped log under:
-```text
-game-root\log_wallsprint\WallSprint_YYYYMMDD-HHMMSS.log
-```
-No shared `logs` fallback.
-
-Run normal input:
-```text
-A/cardinal ~4 s
-fully end WallRun
-move or fast-travel
-E/diagonal ~4 s
-```
-Then provide the newest complete log. Video is needed only for a visible anomaly.
-
-## Review requirements
-Evaluate the actual log for:
-- exact `0x2B2358E` MOV destination base/index/scale/displacement and width;
-- proven root identity and whether destination is exactly Transform +0x10C;
-- value-source provenance and all-reaching-state agreement;
-- Position +0x30..+0x3F non-overlap;
-- transform identity/reload-carrier/read dependency checks;
-- `transform_position_protected_range_unmodified` and `relevant_transform_effects_resolved`;
-- next exact callee/writer blocker, or completed XYZ/W causality if reached;
-- 8 finalized entry snapshots/maps where available;
-- verified Deinit/retention/Surface Up and clean watch restoration;
-- zero MOD Position/source/input/movement writes.
-
-## Decision after log
-If the actual write/effect contract passes, update project state with only what the log proves and define the next narrow writer-causality or ownership task. If it fails, define only the exact narrower blocker. Do not automatically traverse producer `0x351EB00` or implement movement/adhesion/camera.
-
-Preserve all exact-build/fail-closed, lifecycle, orientation, stale/hard-kill, direct-call, callee identity/CFG, logging and cleanup protections. Preserve independent implementation suitable for Nexus Mods.
+If a human test is needed: A/cardinal ~4 s -> fully end WallRun -> move/fast-travel -> E/diagonal ~4 s; send the newest complete timestamped WallSprint log. Video only for a visible anomaly.
