@@ -64,6 +64,15 @@ static void dumpWatchFailure(unsigned index){
   static_cast<unsigned long long>(w.session),w.hits.load(),w.drops.load(),unsigned(w.capture.load()),unsigned(w.primaryInstalled.load()),w.start-commitMs,w.primaryArmedAt-commitMs,1000.*double(storeStartedQpc.load())/double(frequency.QuadPart)-commitMs,w.end-commitMs,reason?reason:"none");
  std::lock_guard<std::mutex> lock(outputLock);std::fwrite(output.data(),1,output.size(),stderr);std::fflush(stderr);
 }
+static void dumpArmFailure(const msm2::reset_trace::Request& r,const Snapshot& s,unsigned before,DWORD lastError){
+ LARGE_INTEGER q{};const bool qpcOk=QueryPerformanceCounter(&q)!=0;
+ const double elapsed=qpcOk&&frequency.QuadPart>0?1000.*double(q.QuadPart-r.commitQpc)/double(frequency.QuadPart):-1.;
+ std::fprintf(stderr,"RESET_SMOKE_ARM_FAILURE session=%llu elapsed_from_commit_ms=%.6f external_reset=%u admitted=%u killed=%u axes_valid=%u hero_matches=%u transform_matches=%u transform_aligned=%u debugger_present=%u windows_before=%u windows_after=%u max_windows=%u active_leases=%u current_window=%d last_error_unattributed=%lu production_deadline_ms=30 production_gates_unchanged=1\n",
+  static_cast<unsigned long long>(r.session),elapsed,unsigned(externalReset),unsigned(admitted),unsigned(killed.load()),unsigned(ws::diag::actorAxes(s.prefix).valid),unsigned(r.hero==s.hero),unsigned(r.transform==s.transform),unsigned(s.transform%16==0),unsigned(IsDebuggerPresent()!=0),before,usedWindows,config.maxWindows,unsigned(activeLeases()),current,lastError);
+ // beginReset can reject before allocating a window. Never index an absent one.
+ if(usedWindows>before)dumpWatchFailure(before);
+ else {std::lock_guard<std::mutex> lock(outputLock);std::fwrite(output.data(),1,output.size(),stderr);std::fflush(stderr);}
+}
 static DWORD WINAPI idleThread(void* end){WaitForSingleObject(static_cast<HANDLE>(end),INFINITE);return 0;}
 int main(int argc,char** argv){
  bool sequence=argc>1&&std::strcmp(argv[1],"--sequence")==0;
@@ -153,7 +162,14 @@ int main(int argc,char** argv){
   puts("PASS: production async reset coordinator wake/identity/native gate + actual hardware event + stop/join/DR cleanup on owned synthetic memory; no game verification");return 0;
  }
  assert(msm2::trace::configureReset(true,base,nt->OptionalHeader.SizeOfImage));config.maxThreads=1;
- auto arm=[&](unsigned session,bool characterize=false){std::memcpy(memory,tilted,64);Snapshot snapshot{};assert(msm2::sample(snapshot));LARGE_INTEGER q{};QueryPerformanceCounter(&q);msm2::reset_trace::Request r{};r.session=session;r.characterize=characterize;r.nativeUpdate=76;r.commitQpc=q.QuadPart;r.hero=hero.hero;r.transform=hero.transform;r.thread=tid;r.normal={0,0,1};r.appliedUp={0,0,1};assert(msm2::trace::beginReset(r,snapshot));};
+ auto arm=[&](unsigned session,bool characterize=false){
+  std::memcpy(memory,tilted,64);Snapshot snapshot{};assert(msm2::sample(snapshot));
+  LARGE_INTEGER q{};assert(QueryPerformanceCounter(&q));msm2::reset_trace::Request r{};
+  r.session=session;r.characterize=characterize;r.nativeUpdate=76;r.commitQpc=q.QuadPart;r.hero=hero.hero;r.transform=hero.transform;r.thread=tid;r.normal={0,0,1};r.appliedUp={0,0,1};
+  const auto before=usedWindows;const bool armed=msm2::trace::beginReset(r,snapshot);const auto lastError=GetLastError();
+  if(!armed)dumpArmFailure(r,snapshot,before,lastError);
+  assert(armed);
+ };
  arm(1);SetEvent(go);assert(WaitForSingleObject(done,1000)==WAIT_OBJECT_0);msm2::trace::pollReset(true);msm2::trace::drainLogs();assert(!activeLeases());if(windows[0].hits!=1)dumpWatchFailure(0);assert(windows[0].hits==1);
  assert(output.find("RESET_WRITER_CANDIDATE session=1")!=std::string::npos);assert(output.find("R8=0x1234 R9=0x5678")!=std::string::npos);assert(output.find("source_up=(0,1,0)")!=std::string::npos);assert(output.find("native_update=0")!=std::string::npos); // unknown synthetic writer cannot inherit the trigger update
  assert(output.find("entry_correlated=0")!=std::string::npos);assert(output.find("RESET_WRITER_VERIFIED=1")==std::string::npos);

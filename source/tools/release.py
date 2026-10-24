@@ -14,7 +14,7 @@ for name in ['LOCAL_WORKSPACE_AUDIT.md', 'V01C19_RUNTIME_RESULT.md', 'V01C20_EDI
  shutil.copy2(root/'analysis'/name,out/'analysis'/name)
 (out/'logs').mkdir(exist_ok=True)
 # Only known independent cloud validation logs; no raw private game logs.
-for name in ['workspace_archive_full_pipeline.log','workspace_archive_tests.log','workspace_real_sparse_clone.log','workspace_tests.log','workspace_logging.log','workspace_smoke.log','v01c20_build.log','v01c20_portable.log','v01c20_smoke.log','v01c20_hooks.log','v01c20_public_build.log','v01c20_entry.log','v01c20_contract.log','v01c20_branch.log','v01c20_call.log','v01c20_alias.log','v01c20_logging.log','v01c20_callee_branch.log','v01c20_transform_write.log','v01c20_edi.log','v01c20_workspace.log','package_check.log']:
+for name in ['workspace_reset_arm_diagnostic.log','workspace_reset_arm_negative.log','workspace_reset_arm_helper.log','workspace_archive_full_pipeline.log','workspace_archive_tests.log','workspace_real_sparse_clone.log','workspace_tests.log','workspace_logging.log','workspace_smoke.log','v01c20_build.log','v01c20_portable.log','v01c20_smoke.log','v01c20_hooks.log','v01c20_public_build.log','v01c20_entry.log','v01c20_contract.log','v01c20_branch.log','v01c20_call.log','v01c20_alias.log','v01c20_logging.log','v01c20_callee_branch.log','v01c20_transform_write.log','v01c20_edi.log','v01c20_workspace.log','package_check.log']:
  if (root/'logs'/name).exists():shutil.copy2(root/'logs'/name,out/'logs'/name)
  else:print('SKIP: optional maintainer validation log',name)
 if (root.parent/'docs/CODEX_RESULT.md').exists():

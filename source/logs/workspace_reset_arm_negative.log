@@ -1,0 +1,48 @@
+PASS: owned expired fault retains fatal assertion and reports rejected arm, session, gate state and safe window bounds
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+RESET_SMOKE_ARM_FAILURE session=1 elapsed_from_commit_ms=50.003100 external_reset=1 admitted=1 killed=0 axes_valid=1 hero_matches=1 transform_matches=1 transform_aligned=1 debugger_present=0 windows_before=0 windows_after=0 max_windows=8 active_leases=0 current_window=-1 last_error_unattributed=0 production_deadline_ms=30 production_gates_unchanged=1
+MOVEMENT_WRITER_PROOF writer_rva=0x2cfc900 function_begin=0x0 function_end=0x0 function_size=0 complete_decode=0 current_code_hash=unavailable position_store_count=0 destination_mask=0x0 entry_target_relation=unproven_see_components lineage_complete=0 source_map_supported_prefix=0 first_unsupported_offset=0x0 unsupported=0 reason=exact_runtime_writer_boundary_missing hash_scope=accepted_exe_current_runtime_NOT_exclusive_semantics full_bytes_logged=0 writable_source_proven=0
+MOVEMENT_CALLSITE_PROOF return_rva=0x351eeb0 call_rva=0x0 target_rva=0x2cfc900 direct_call_verified=0 caller_function_begin=0x0 caller_function_end=0x0 caller_hash=unavailable complete_decode=0 caller2_return_rva=0x351a020 caller2_function_begin=0x0 caller2_function_end=0x0 caller2_direct_relation_verified=0 caller2_reason=missing_caller reason=missing_caller
+MOVEMENT_CALLER_SOURCE_PROOF caller_rva=0x351eeb0 source_storage=bounded_symbolic_caller_slice construction_kind=unknown arithmetic_shape=unknown producer_rva=0 slice_last_instruction_rva=0x0 producer_caller_rva=0x351a020 uses_current_position=unknown uses_dt=unknown uses_direction_like_vector=unknown uses_speed_like_scalar=unknown slice_complete=0 unsupported_edges=0 last_barrier_offset=0x0 surface_tangent_correlation=pending_runtime exclusive_to_hero_translation=0 writable_source_proven=0 reason=missing_caller
+MOVEMENT_CALLER_SOURCE_COMPONENT component=0 expression=unknown typed_semantics=unknown writable_source_proven=0
+MOVEMENT_CALLER_SOURCE_COMPONENT component=1 expression=unknown typed_semantics=unknown writable_source_proven=0
+MOVEMENT_CALLER_SOURCE_COMPONENT component=2 expression=unknown typed_semantics=unknown writable_source_proven=0
+MOVEMENT_CALLER_SOURCE_COMPONENT component=3 expression=unknown typed_semantics=unknown writable_source_proven=0
+MOVEMENT_ENTRY_DIAGNOSTIC_GATE admitted=0 writer_rva=0x2cfc900 end_rva=0x2cfc9b7 original_sha256=unavailable hash_scope=accepted_build_c12_startup_baseline NOT_whole_function_semantics=1 reason=exact_build_boundary_hash_or_direct_call_failed new_Position_writes=0
+MOVEMENT_SOURCE_CANDIDATE candidate_id=c12_verified_chain producer_rva=0x0 consumer_rva=0x2cfc900 source_kind=unknown storage_or_stack_location=symbolic_component_records hero_target_verified=0 wallrun_owned=0 correlates_with_translation=unknown surface_tangent_relation=pending_runtime writable_source_proven=0 reason=writer_source_prefix_or_direct_callsite_proof_missing source_capture_ready=0 input_observation=0
+RESET_TRACE_MODE prearmed=0 prearm_elapsed=0.60 override_elapsed=0.70 end_elapsed=1.10 primary_first=1 multithread=0 expand_elapsed=0.85 max_threads=32
+RESET_TRACE_CONFIG admitted=1 window_ms=30 deadline_native_elapsed_ms=0 max_sessions=8 max_events=256 max_threads=32 once_per_session=1 source_callback_wait=0 additional_game_hooks=0 original_tailjump_preserved=1
+RESET_TRACE_SKIPPED session=1 reason=gate_or_identity_or_arm_deadline arm_delay_us=50000.600
+Assertion failed: armed, file /tmp/ws-arm-negative-1bqhqqw9/src/NativeHooks/immediate_reset_smoke.cpp, line 172
+
+
+PASS: owned no-thread fault retains fatal assertion and reports rejected arm, session, gate state and safe window bounds
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+RESET_SMOKE_ARM_FAILURE session=1 elapsed_from_commit_ms=16.012800 external_reset=1 admitted=1 killed=0 axes_valid=1 hero_matches=1 transform_matches=1 transform_aligned=1 debugger_present=0 windows_before=0 windows_after=1 max_windows=8 active_leases=0 current_window=-1 last_error_unattributed=18 production_deadline_ms=30 production_gates_unchanged=1
+RESET_SMOKE_FAILURE session=1 hits=0 drops=0 capture=0 primary_installed=0 arm_start_from_commit_ms=15.995700 primary_ready_from_commit_ms=-132962130.562700 store_start_from_commit_ms=-132962130.562700 deadline_from_commit_ms=30.000000 stop_reason=inactive_or_identity_or_guard_loss production_deadline_unchanged=1
+MOVEMENT_WRITER_PROOF writer_rva=0x2cfc900 function_begin=0x0 function_end=0x0 function_size=0 complete_decode=0 current_code_hash=unavailable position_store_count=0 destination_mask=0x0 entry_target_relation=unproven_see_components lineage_complete=0 source_map_supported_prefix=0 first_unsupported_offset=0x0 unsupported=0 reason=exact_runtime_writer_boundary_missing hash_scope=accepted_exe_current_runtime_NOT_exclusive_semantics full_bytes_logged=0 writable_source_proven=0
+MOVEMENT_CALLSITE_PROOF return_rva=0x351eeb0 call_rva=0x0 target_rva=0x2cfc900 direct_call_verified=0 caller_function_begin=0x0 caller_function_end=0x0 caller_hash=unavailable complete_decode=0 caller2_return_rva=0x351a020 caller2_function_begin=0x0 caller2_function_end=0x0 caller2_direct_relation_verified=0 caller2_reason=missing_caller reason=missing_caller
+MOVEMENT_CALLER_SOURCE_PROOF caller_rva=0x351eeb0 source_storage=bounded_symbolic_caller_slice construction_kind=unknown arithmetic_shape=unknown producer_rva=0 slice_last_instruction_rva=0x0 producer_caller_rva=0x351a020 uses_current_position=unknown uses_dt=unknown uses_direction_like_vector=unknown uses_speed_like_scalar=unknown slice_complete=0 unsupported_edges=0 last_barrier_offset=0x0 surface_tangent_correlation=pending_runtime exclusive_to_hero_translation=0 writable_source_proven=0 reason=missing_caller
+MOVEMENT_CALLER_SOURCE_COMPONENT component=0 expression=unknown typed_semantics=unknown writable_source_proven=0
+MOVEMENT_CALLER_SOURCE_COMPONENT component=1 expression=unknown typed_semantics=unknown writable_source_proven=0
+MOVEMENT_CALLER_SOURCE_COMPONENT component=2 expression=unknown typed_semantics=unknown writable_source_proven=0
+MOVEMENT_CALLER_SOURCE_COMPONENT component=3 expression=unknown typed_semantics=unknown writable_source_proven=0
+MOVEMENT_ENTRY_DIAGNOSTIC_GATE admitted=0 writer_rva=0x2cfc900 end_rva=0x2cfc9b7 original_sha256=unavailable hash_scope=accepted_build_c12_startup_baseline NOT_whole_function_semantics=1 reason=exact_build_boundary_hash_or_direct_call_failed new_Position_writes=0
+MOVEMENT_SOURCE_CANDIDATE candidate_id=c12_verified_chain producer_rva=0x0 consumer_rva=0x2cfc900 source_kind=unknown storage_or_stack_location=symbolic_component_records hero_target_verified=0 wallrun_owned=0 correlates_with_translation=unknown surface_tangent_relation=pending_runtime writable_source_proven=0 reason=writer_source_prefix_or_direct_callsite_proof_missing source_capture_ready=0 input_observation=0
+RESET_TRACE_MODE prearmed=0 prearm_elapsed=0.60 override_elapsed=0.70 end_elapsed=1.10 primary_first=1 multithread=0 expand_elapsed=0.85 max_threads=32
+RESET_TRACE_CONFIG admitted=1 window_ms=30 deadline_native_elapsed_ms=0 max_sessions=8 max_events=256 max_threads=32 once_per_session=1 source_callback_wait=0 additional_game_hooks=0 original_tailjump_preserved=1
+orientation_trace_arm window=1 state=CrawlCandidate session=1 hero=0x7ffffe9e0100 transform=0x7ffffe9e0000 watched=Up_[0x10,0x1c) mechanism=hardware_DR0_8bytes_DR1_4bytes window_ms=30 threads_enumerated=1 installed=0 skipped_busy=0 failed=0 complete_thread_coverage=0 primary_native_thread=0 N398=(0.000000,0.000000,1.000000) normal_source=cached_pre_Deinit_NOT_fresh_contact actor_up=(0.000000,0.000000,1.000000) actor_writes=0
+RESET_TRACE_WINDOW session=1 override_commit_qpc=1329621305627 qpc_frequency=10000000 arm_delay_us=16007.000 deadline_from_commit_ms=30 armed=0 initial_applied_up=(0,0,1) coverage=bounded_current_threads_NOT_complete_initial_write_may_precede_arm
+orientation_trace_stop window=1 captured=0 dropped=0 restored=0 already_cleared_or_foreign=0 cleanup_pending=0 no_page_protection_change=1
+Assertion failed: armed, file /tmp/ws-arm-negative-1bqhqqw9/src/NativeHooks/immediate_reset_smoke.cpp, line 172
+
