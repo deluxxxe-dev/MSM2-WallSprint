@@ -8,13 +8,13 @@
   "outputs": [
     {
       "path": "MSM2-WS-v0.1c20.zip",
-      "bytes": 3349636,
-      "sha256": "90d96ce5de6e0ed6b43e71b478ff016d91ea3d6b3df614c346aa1b2a30531c9c"
+      "bytes": 3352082,
+      "sha256": "f78ffd90e3a91af0c54cf86026145a8ee76dbce83703808f4aa9655834c9075f"
     },
     {
       "path": "MSM2-WS-v0.1c20-source.zip",
-      "bytes": 758240,
-      "sha256": "0c32523854935a32809e3a63c43b613bfc0f2071366ab401e6d10106469cec7b"
+      "bytes": 759739,
+      "sha256": "c0d577be578c3163ceced224cf74c4070b4e151a8335420655a046e7bf7b063b"
     }
   ],
   "public_test_pass_records": {
@@ -186,5 +186,30 @@
     "runtime_DLL_and_version_unchanged": true,
     "native_gameplay_and_admission_unchanged": true,
     "real_PC_acceptance": "PENDING_migration_shared_Overstrike_and_runtime_log"
+  },
+  "real_PC_first_migration_attempt": {
+    "commit": "981579375c5369e81d0ff083b0cd1a59bfa9f1d3",
+    "partial_PASS_records": 47,
+    "partial_private_input_SKIP_records": 3,
+    "failure": "immediate_reset_smoke.cpp_assert_windows[0].hits==1",
+    "cause": "UNCONFIRMED_pending_failure_timing_diagnostic",
+    "pipeline_completed": false,
+    "deployment_reached": false,
+    "shared_Overstrike_and_runtime_acceptance": false
+  },
+  "reset_fixture_diagnostic": {
+    "implementation_commit": "569b0e0e37b00022a7e1c38047728f1d3c533682",
+    "scope": "owned_test_failure_diagnostics_only",
+    "cloud_focused_PASS_records": 9,
+    "cloud_optional_private_SKIP_records": 1,
+    "owned_negative": "expected_fatal_assertion_after_injected40ms_delay",
+    "owned_negative_store_ms": 41.3498,
+    "deadline_ms": 30,
+    "negative_hits": 0,
+    "negative_stop_reason": "deadline",
+    "production_assertions_deadlines_budgets_and_admission_unchanged": true,
+    "runtime_DLL_unchanged": true,
+    "user_PC_cause": "UNCONFIRMED",
+    "user_PC_diagnostic_result": "pending"
   }
 }
