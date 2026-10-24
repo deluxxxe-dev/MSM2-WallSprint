@@ -16,12 +16,6 @@ Convert vanilla WallRun into surface-relative locomotion. Do not advance movemen
 - WallRun Init `0x14233C0`, Entry `0x14235C0`, Update `0x1424530`, Deinit `0x1416660`
 - Preserve exact-build fail-closed behavior, `AGENTS.md` / `docs/DEV_RULES.md`, independent implementation, and no raw user logs/full private game bodies in public artifacts.
 
-## Accepted c20 runtime result
-
-Evidence: `analysis/V01C20_RUNTIME_RESULT.md`.
-
-Actual A/E-style run on v0.1c20 / package0.1.38 retained verified lifecycle/orientation behavior, no hard kills, no MOD Position writes, and 8 true entry snapshots / 8 complete invocation maps in each session.
-
 ## Verified movement chain
 
 ```text
@@ -35,7 +29,7 @@ observed second return=0x351A020
 
 Runtime source relation remains `RDX=entry RSP+0x28`; sampled `[RDX] XYZ` equals exact executed Position XYZ bits. This remains correlation until the writer/effect/ownership chain completes.
 
-## c20 result — EDI local value provenance resolved
+## c19/c20/c21 accepted results
 
 C19 established:
 
@@ -45,13 +39,13 @@ RCX provenance = writer-entry Hero Transform
 destination = Hero Transform +0x10C
 ```
 
-C20 established the bounded local reaching definition for EDI under the authenticated actual-game callee:
+C20 established the bounded local reaching definition for EDI:
 
 ```text
 producer RVA = 0x2B2356F
 producer kind = memory_load
 origin kind = memory_load
-root = analyzer-internal root 16
+root = analyzer-internal globalRoot 16
 offset = 0x0C323788
 reaching definitions = 1
 all local reaching states examined = 1
@@ -59,62 +53,59 @@ same local value origin = 1
 value provenance exact = 1
 ```
 
-This does not assign semantic meaning to the memory origin, EDI, or `Transform+0x10C`.
-
-## Accepted c21 runtime result — exact same-field pre-write read
-
-Owner-supplied runtime log:
+C21 classified the earlier exact same-field read:
 
 ```text
-MSM2-WS-v0.1c21-20261025-013952.log
+0x2B23578: mov EAX,[RCX+0x10C]
+address = Hero Transform+0x10C
+first possible use = 0x2B23581
+first control dependence = 0x2B23583
+memory_escape = 0
 ```
 
-C21 classified the previous `0x2B23578` blocker precisely:
+Semantic meaning of the memory origin, EDI, and `Transform+0x10C` remains unknown.
+
+## Accepted c22 runtime result — TEST/JE resolved
+
+Evidence: `analysis/V01C22_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c22-20261025-021717.log`.
+
+The previous blocker is now classified:
 
 ```text
-site=0x2B23578
-instruction=mov
-read width=4
-address=Hero Transform+0x10C
-base=RCX
-carrier=EAX
-same exact address for analyzed states=1
+0x2B235BE: test r8b,r8b
+parent R8 selected/same-field tags = 0x0
+flags_may_depend_tags = 0x0
+0x2B235C1: je
+consumer_may_depend_tags = 0x0
+first_possible_dependent_branch_rva = 0x0
+returned_flags_tags = 0x0
 ```
 
-Therefore the earlier read is an exact read of the same field later written at `0x2B2358E`.
+Thus the exact c22 TEST/JE pair is not a carrier of the selected `0x2B23578` same-field read value for the analyzed bounded state.
 
-The bounded local flow also establishes:
-
-```text
-first possible use=0x2B23581
-control_may_depend=1
-first control dependence=0x2B23583
-memory_escape=0
-```
-
-This is possible local control dependence, not completed Position causality.
-
-## Current research blocker — 0x2B235BE `test`
-
-C21 read-flow analysis remains incomplete at:
+The selected-read walk now stops at:
 
 ```text
-first_unresolved_rva=0x2B235BE
-first_unresolved_instruction=test
-reason=read_flow_partial_or_unmodeled_register
+first_unresolved_rva=0x2B235D4
+first_unresolved_instruction=call
+reason=read_flow_call_or_control_no_expansion
 ```
 
 Current unresolved outputs:
 
 ```text
+complete_local_flow=0
+returned_gpr_may_depend_mask=0x1
+returned_xmm_may_depend_mask=0x0
+returned_flags_may_depend=0
+returned_caller_stack_may_depend=0
+memory_escape=0
 downstream_XYZ_W_relevance=unknown
 cross_invocation_feedback=unknown
 effect_certificate=0
 ```
 
-The next task is the smallest bounded extension needed to model/classify the exact `test` operands/flags and continue only until the next exact local proof boundary.
-
-Do not infer that `Transform+0x10C` controls XYZ/W merely because the read may affect local control flow. Do not infer that the later write is irrelevant merely because it is disjoint from Position offsets.
+Do not infer that `Transform+0x10C` controls XYZ/W. The next proof obligation is the smallest bounded classification of the exact `0x2B235D4` call and its selected-read effect.
 
 ## Current safety gate
 
@@ -163,27 +154,17 @@ Shared ordinary mods + SF + WS, shared Overstrike, modded launch and versioned W
 15. local/shared workspace acceptance ✅
 16. c20 EDI local value provenance ✅ actual game
 17. c21 exact `Transform+0x10C` pre-write read classification ✅ actual game
-18. `0x2B235BE test` / selected-read flow completion ▶ CURRENT
-19. resume full writer XYZ/W causal proof ⏸ after local effect classification
-20. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-21. safe writable upstream movement source ⬜ NOT AUTHORIZED
-22. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-23. adhesion/contact refinement ⏸ deferred
-24. animation/camera/later traversal ⬜
+18. c22 `0x2B235BE TEST r8b,r8b` / `0x2B235C1 JE` classification ✅ actual game
+19. `0x2B235D4 call` selected-read effect classification ▶ CURRENT
+20. resume full writer XYZ/W causal proof ⏸ after local effect classification
+21. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+22. safe writable upstream movement source ⬜ NOT AUTHORIZED
+23. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+24. adhesion/contact refinement ⏸ deferred
+25. animation/camera/later traversal ⬜
 
 ## Current action
 
-Continue from the accepted c21 evidence. Model/classify only the missing `0x2B235BE test` semantics and the selected-read value/flag flow needed to decide downstream relevance or identify the next exact blocker. Preserve all current safety gates, do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
+Continue from accepted c22 evidence. Classify only the exact `0x2B235D4` call sufficiently to determine whether the selected same-field read can escape through arguments, return/clobber state, aliases, memory or downstream control/data flow, then stop at the next exact proof boundary. Preserve all safety gates, do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
 
-## Prepared c22 implementation — actual classification pending
-
-v0.1c22/package0.1.40 adds the bounded pinned TEST operand/flags diagnostic
-(analysis/V01C22_READ_TEST_FLOW.md).32/64bit register TEST and read-only low8bit
-aliases at the exact site retain conservative parent tags; no general partial
-register write/address model changes. CF/OF constant conditions are separate
-from possible ZF/SF/PF dependence; both CFG legs stay enumerated. Existing
-c19/c20 read/effect refusal and all ownership/mutation gates stay closed.
-Exact actual TEST operands/local completion/next blocker remain PENDING a new
-versioned c22 A/E log. Accepted c21 evidence is now in V01C21_RUNTIME_RESULT.md.
-Use Update-WS, Install mods -> Run modded game, A~4s -> fully end -> move -> E~4s.
-Do not advance producer0x351EB00 or movement/adhesion/camera/animation/physics.
+Deferred user-facing features are tracked in `docs/FEATURE_ROADMAP.md` and remain intentionally out of scope until the movement ownership foundation is safe.
