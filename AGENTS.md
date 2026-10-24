@@ -49,6 +49,7 @@ Important invariants:
 - Shared Overstrike is only `<game>\Overstrike\Overstrike.exe`, launched with WorkingDirectory=`<game>`.
 - Do not create WS-specific/AppData Overstrike copies or a separate WS Mods Library/profile.
 - Never mutate `Mods-Developing\MSM2-SF` or ordinary existing mods from WallSprint tooling.
+- Explicit user-authorized shared `environment/` Mod-Tools are a separate owner-operated utility: the current request authorizes whole-environment snapshots/restores including SF and ordinary mods. This exception applies only to an explicitly invoked shared backup/restore, never to WS updater cleanup, SF development, or publication of private backups. Install only the toolkit/shortcuts; restore only the documented mod roots with verified staging and preserved previous data.
 - Reusable scripts must not hard-code the user's personal C-/D-drive paths and must support spaces/Unicode.
 - The old D-drive WallSprint environment must never be automatically deleted.
 

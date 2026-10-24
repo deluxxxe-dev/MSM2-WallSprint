@@ -1,0 +1,131 @@
+# MSM2 Mod-Tools v1.0.0
+
+今回構築した共有MOD環境の起動・バックアップ・同じ場所への復元用ツールです。
+SF/WS本体の開発・更新は、それぞれの既存アップデーターで行います。
+
+## 最初の導入
+
+ゲームとOverstrikeを終了し、このツール一式を**Mods Libraryの外**へ展開します。
+`Install-Mod-Tools.cmd` を実行し、ゲームEXEのあるフォルダーと保存先を入力します。
+例のゲームフォルダーは次の場所です。
+
+```text
+C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2
+```
+
+保存先には、ゲームフォルダーと別の場所を指定します。別ドライブのフォルダーを
+選ぶとゲームのあるドライブが故障した場合にも使えます。
+
+ZIPをブラウザーから保存した場合、Windowsのプロパティで信頼するZIPの「許可する」を選んでから展開してください。既存Git checkoutからの導入も使えます。
+
+Python 3.11以降とWindows標準PowerShellが必要です。現在の環境のPythonで動きます。
+このツールの起動・保存・復元自体に、Git・WSL・MSVC・ビルドは必要ありません。
+それらの外部開発ツール本体・Steam・セーブデータは、このバックアップに含めません。
+PC全体を再インストールした場合、開発の再開には別途その前提環境が必要です。
+
+導入先は `<game>\Mod-Tools` です。デスクトップに以下の2つを作成します。
+
+- `MSM2 - Play Modded`：導入済みMODでゲームを起動。
+- `MSM2 - Backup Mods`：現在の共有環境を保存・検証。
+
+導入時に選択されているMSM2用Overstrikeプロファイルを保存して使用します。複数候補があり選べない場合は
+`Install-Mod-Tools.cmd --profile "プロファイル名"` で指定できます。
+
+## 普段の起動
+
+`MSM2 - Play Modded` をダブルクリックします。Overstrikeの `Run modded game` と同じ
+ゲームEXE・作業ディレクトリ・`-scripts` 指定で起動します。Steamは通常どおり使用します。
+すでに起動している同じゲームは重複起動せず、既存のウィンドウを前面に出します。
+
+MODを追加・更新して適用するときは `<game>\Mod-Tools\Open-Overstrike.cmd` から
+共有Overstrikeを開き、`Install mods` を実行します。プロジェクトのコードを更新する
+`Update-SF.cmd` / `Update-WS.cmd` は従来どおり別操作です。
+
+## バックアップ
+
+ゲーム・Overstrike・アップデーターを終了し、編集中のファイルを保存してから
+`MSM2 - Backup Mods` を実行します。ゲームやOverstrikeが残っている場合は停止し、
+勝手にプロセスを強制終了しません。
+
+次を、隠しファイル・空のフォルダーも含め、階層を維持して保存します。
+
+| 対象 | 内容 |
+|---|---|
+| `Overstrike` | 共有マネージャー本体と配下のファイル |
+| `Profiles` | MOD選択状態、プロファイル、Overstrike設定 |
+| `Mods Library` 全体 | 通常MOD、SF/WS、両方の `_source/.git` と未コミットの作業、ログ、アーカイブ |
+| `scripts` | インストール済みスクリプト・設定・付属データ |
+| `scripts_proxy.dll`, `winmm.dll` | ゲームルートのローダー |
+| `scripts.txt`, `commandline.txt` | 起動設定（存在するもの） |
+| `Mod-Tools` | このツールとローカル設定 |
+
+`Spider-Man2.exe` や `asset_archive` などゲーム本体は保存・上書きしません。
+ゲームEXEはSHA256を記録して、復元先のビルドを照合します。
+バックアップ中に一覧・サイズ・更新時刻・モードの変化を検出した場合は公開せず失敗にします。
+個々のMODの動作を検証する機能ではなく、保存したファイルの完全性を検証します。
+
+保存先には `MSM2-Mod-Environment-YYYYMMDD-HHMMSS` フォルダーができます。
+
+```text
+MSM2-Mod-Environment-YYYYMMDD-HHMMSS\
+  environment.zip
+  Restore-Mods.cmd
+  Verify-Backup.cmd
+  mod_environment.py
+  windows.ps1
+  ... ツール一式 ...
+```
+
+ZIP内の全ファイルをCRCとSHA256で再検証してから完成扱いにします。
+同時刻の保存でも過去のバックアップを上書きしません。
+このフォルダーを**丸ごと**保管してください。Git設定・ローカル作業・ログを含む個人用の
+バックアップです。このツールがバックアップをGitHubなどへ送信することはありません。
+
+## Vanillaへの復元
+
+1. Steamで、バックアップ時と**同じゲームビルド**を、**元と同じパス**へ用意します。
+2. ゲームとOverstrikeを終了します。
+3. 保存してあるバックアップフォルダーの `Restore-Mods.cmd` を実行します。
+4. 表示された対象を確認し、`RESTORE` と入力すると展開・復元します。
+5. 自動で開いた共有Overstrikeで `Install mods` を実行し、通常MODもゲーム本体へ再適用します。
+6. `Play-Modded` で一度だけ `INSTALLED` と確認し、通常の起動へ戻ります。
+
+バックアップ検証だけなら `Verify-Backup.cmd` を実行します。
+復元前に全データを検証し、別のステージへ展開・照合してから置き換えます。
+既存の対象フォルダー・ローダーは、ゲームフォルダーの隣の `.MSM2-rollback-...` に
+退避します。途中の置き換えに失敗したら元へ戻します。ロールバック自体が失敗したときは
+両方の場所を表示して保全し、完了とは表示しません。成功時の退避も自動削除しません。
+
+復元したのはMOD環境のファイルです。VanillaのゲームアーカイブへMODを反映する
+最後の工程はOverstrikeの `Install mods` が行います。破損したゲーム本体はSteamで修復し、
+同じEXEのハッシュになってから復元します。別パスへの移設はプロファイル・外部MODの
+不透明な絶対パスを壊すため、この版では受け付けません。
+
+ファイルの内容・名前・階層・ファイル更新時刻を保存します。Windows ACL、所有者、
+ジャンクション/リンク/代替ストリーム、WSLディストリビューションのエクスポートは含みません。
+リンクを含む環境、外部Gitオブジェクト依存、危険なZIPパスは処理を拒否します。
+
+## コマンドライン
+
+```powershell
+.\Install-Mod-Tools.cmd --game-root "<ゲームフォルダー>" --backup-dir "<外部保存先>"
+.\Backup-Mods.cmd
+.\Verify-Backup.cmd --archive "<保存フォルダー>\environment.zip"
+.\Restore-Mods.cmd --archive "<保存フォルダー>\environment.zip" --game-root "<元のゲームフォルダー>"
+```
+
+スクリプトから明示的に復元するときだけ `--apply` を指定します。指定しなければ
+検証・対象表示後に `RESTORE` の入力が必要です。
+SHA256は破損検出用で、バックアップの作者を認証する署名ではありません。
+自分で作成したバックアップを使用してください。
+
+## 検証と出典
+
+所有する一時データで、Git履歴/未コミット作業/通常MODを含む往復復元、破損・ZIPパス攻撃・
+リンク・異なるEXE/復元先・プロセス稼働・途中失敗の拒否とロールバックを検証します。
+クラウドでゲームや共有Overstrikeそのものは起動していません。
+実機のショートカット・起動・バックアップ読み取り・Vanillaへの復元は実機確認が必要です。
+
+通常起動の仕様はTkachov/Overstrikeの `MainWindow.LaunchGame`、プロファイル形式は
+`Profile`/`AppSettings` を参照（commit `ab61de27a4ba76d92780178f600f73f15bcddd81`）。
+外部の実装・バイナリはこのツールにコピーしていません。

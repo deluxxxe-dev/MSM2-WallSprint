@@ -163,3 +163,14 @@ Keep analysis files explicit about VERIFIED, CANDIDATE, and UNKNOWN findings. Do
 When local workspace requirements change, keep `docs/LOCAL_WORKSPACE.md`, `docs/LOGGING_CONVENTION.md`, `docs/PROJECT_STATE.md`, and the relevant tests synchronized.
 
 The supported Windows-local wrapper runs the preserved full Linux cross-build/regression chain in configured WSL2, staged outside the scanned `_source`. It must not replace that chain with a native MSVC/CMake shortcut or a prebuilt-package bypass. Root `WallSprint.script` is no longer tracked; disabled intermediates and virtual install-ZIP members preserve the one-active-script invariant. See `source/BUILD.md` for prerequisites.
+
+
+## Explicit shared-environment recovery scope
+
+The current user request authorizes `environment/` Mod-Tools to back up/restore
+all shared mod roots, including SF and ordinary mods, as a separate explicitly
+invoked utility. This does not broaden the authority of Update-WS/Migrate-WS or
+permit SF code development, third-party code reuse, game-file archival or uploads
+of private snapshots. Toolkit installation and fast launch do not update/build
+projects. Recovery excludes game data and preserves previous roots; see
+`docs/MOD_ENVIRONMENT_BACKUP.md` for supported paths and actual validation limits.

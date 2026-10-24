@@ -198,3 +198,22 @@ Windows Python3.11+, Git for Windows, PowerShell and a configured WSL2 cross-bui
 Shared process stopping is limited to the validated game executable and shared Overstrike path; a different running Overstrike must be closed manually. The updater neither installs nor repairs shared Overstrike/DLLs. Disabled build artifacts and archives may be retained under `_archive/_build`, using `.script.disabled` and `.zip.disabled` respectively. A normal ZIP is not safe there: Overstrike opens it and discovers nested scripts. A release invoked directly anywhere inside Mods Library refuses before producing ZIPs; use the mandatory external staging pipeline.
 
 Cloud tests use owned Git/filesystem and Windows logger fixtures. Real Windows process/WSL/toolchain behavior, shared Overstrike UI recognition and actual new runtime logs must be confirmed locally before considering manual removal of the old environment.
+
+
+## Optional user-operated shared Mod-Tools
+
+The user separately requested one-click modded launch and a complete private
+backup/restore of the shared environment, including ordinary mods, SF/WS sources,
+Git history and logs. The independent toolkit lives at `<game>/Mod-Tools`, outside
+both project subtrees and Mods Library. See environment/README.md and
+`docs/MOD_ENVIRONMENT_BACKUP.md`. Its installer modifies only that toolkit and
+its own desktop shortcuts. Normal SF/WS update/build behavior remains unchanged.
+
+Explicit shared snapshots read the documented Overstrike/Profiles/Mods Library/
+scripts/toolkit roots and loader/settings files. They are stored outside the game
+and never published by the tool. Explicit restore verifies bytes and game build,
+stages before replacement, preserves old roots outside the scanned library and
+rolls back replacement failures. This is the user's authorized shared recovery
+operation, not WS cleanup or SF development. Same-path recovery preserves opaque
+absolute paths. Game data, external WSL/toolchains and saves are not in the archive.
+After Vanilla restoration, complete Install mods before direct modded launch.
