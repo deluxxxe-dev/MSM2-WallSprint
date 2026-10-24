@@ -20,6 +20,7 @@ namespace ws::native_source {void setObserver(Observer fn) noexcept {lifecycleOb
 bool lifecycle(Token& t) noexcept {t=fakeToken;if(prearmTest)t.updateMs=GetTickCount64();return true;}}
 static msm2::Snapshot hero;static HANDLE go,done;static std::atomic<bool> finish{false};
 static std::atomic<unsigned> mode{0};static float world[16],tilted[16];
+static std::atomic<std::uint64_t> storeStartedQpc{0};
 extern "C" {void ws_source_thunk();void* ws_source_original{};std::atomic<unsigned> ws_source_recording{1},ws_native_source_enabled{0};}
 struct Frame {std::uintptr_t r11,r10,r9,r8,rdx,rcx,rax,flags,ret;};
 extern "C" void ws_source_capture(const Frame* f) noexcept {msm2::trace::resetEntry(f->rcx,f->rdx,f->r8,f->r9,f->ret,prearmTest&&mode.load()==2,77,fakeToken.generation,fakeToken.owner);}
@@ -45,6 +46,7 @@ DWORD WINAPI writerThread(void*){
    msm2::trace::beginResetCopyEntry();
    if(stage==1){msm2::path_b::Entry e{};e.id=1234;e.session=6;e.rcx=hero.transform;e.thread=GetCurrentThreadId();msm2::trace::resetCopyEntry(e);}
   }
+  LARGE_INTEGER storeQpc{};assert(QueryPerformanceCounter(&storeQpc));storeStartedQpc=storeQpc.QuadPart;
   if(prearmTest&&mode.load()==2){LARGE_INTEGER q{};QueryPerformanceCounter(&q);auto r=testRequest;r.commitQpc=q.QuadPart;r.overrideBeginQpc=q.QuadPart;msm2::reset_trace::committed(r);commonWriter(reinterpret_cast<float*>(hero.transform),tilted,0x1234,0x5678);}
   else if(prearmTest&&mode.load()==0){LARGE_INTEGER q{};QueryPerformanceCounter(&q);auto r=testRequest;r.resetCopy=true;r.commitQpc=r.overrideBeginQpc=q.QuadPart;msm2::reset_trace::committed(r);commonWriter(reinterpret_cast<float*>(hero.transform),world,0x1234,0x5678);}
   else if(prearmTest&&mode.load()==1){LARGE_INTEGER q{};QueryPerformanceCounter(&q);auto r=testRequest;r.resetCopy=true;r.commitQpc=r.overrideBeginQpc=q.QuadPart;msm2::reset_trace::committed(r);sequentialWriter(reinterpret_cast<float*>(hero.transform));}
@@ -54,6 +56,14 @@ DWORD WINAPI writerThread(void*){
  }return 0;
 }
 static CONTEXT debug(HANDLE thread){assert(SuspendThread(thread)!=DWORD(-1));CONTEXT c{};c.ContextFlags=CONTEXT_DEBUG_REGISTERS;assert(GetThreadContext(thread,&c));assert(ResumeThread(thread)!=DWORD(-1));return c;}
+static void dumpWatchFailure(unsigned index){
+ const auto& w=windows[index];
+ const double commitMs=1000.*double(w.reset.commitQpc)/double(frequency.QuadPart);
+ const auto reason=w.stopReason.load();
+ std::fprintf(stderr,"RESET_SMOKE_FAILURE session=%llu hits=%u drops=%u capture=%u primary_installed=%u arm_start_from_commit_ms=%.6f primary_ready_from_commit_ms=%.6f store_start_from_commit_ms=%.6f deadline_from_commit_ms=%.6f stop_reason=%s production_deadline_unchanged=1\n",
+  static_cast<unsigned long long>(w.session),w.hits.load(),w.drops.load(),unsigned(w.capture.load()),unsigned(w.primaryInstalled.load()),w.start-commitMs,w.primaryArmedAt-commitMs,1000.*double(storeStartedQpc.load())/double(frequency.QuadPart)-commitMs,w.end-commitMs,reason?reason:"none");
+ std::lock_guard<std::mutex> lock(outputLock);std::fwrite(output.data(),1,output.size(),stderr);std::fflush(stderr);
+}
 static DWORD WINAPI idleThread(void* end){WaitForSingleObject(static_cast<HANDLE>(end),INFINITE);return 0;}
 int main(int argc,char** argv){
  bool sequence=argc>1&&std::strcmp(argv[1],"--sequence")==0;
@@ -144,7 +154,7 @@ int main(int argc,char** argv){
  }
  assert(msm2::trace::configureReset(true,base,nt->OptionalHeader.SizeOfImage));config.maxThreads=1;
  auto arm=[&](unsigned session,bool characterize=false){std::memcpy(memory,tilted,64);Snapshot snapshot{};assert(msm2::sample(snapshot));LARGE_INTEGER q{};QueryPerformanceCounter(&q);msm2::reset_trace::Request r{};r.session=session;r.characterize=characterize;r.nativeUpdate=76;r.commitQpc=q.QuadPart;r.hero=hero.hero;r.transform=hero.transform;r.thread=tid;r.normal={0,0,1};r.appliedUp={0,0,1};assert(msm2::trace::beginReset(r,snapshot));};
- arm(1);SetEvent(go);assert(WaitForSingleObject(done,1000)==WAIT_OBJECT_0);msm2::trace::pollReset(true);msm2::trace::drainLogs();assert(!activeLeases());assert(windows[0].hits==1);
+ arm(1);SetEvent(go);assert(WaitForSingleObject(done,1000)==WAIT_OBJECT_0);msm2::trace::pollReset(true);msm2::trace::drainLogs();assert(!activeLeases());if(windows[0].hits!=1)dumpWatchFailure(0);assert(windows[0].hits==1);
  assert(output.find("RESET_WRITER_CANDIDATE session=1")!=std::string::npos);assert(output.find("R8=0x1234 R9=0x5678")!=std::string::npos);assert(output.find("source_up=(0,1,0)")!=std::string::npos);assert(output.find("native_update=0")!=std::string::npos); // unknown synthetic writer cannot inherit the trigger update
  assert(output.find("entry_correlated=0")!=std::string::npos);assert(output.find("RESET_WRITER_VERIFIED=1")==std::string::npos);
  auto restored=debug(thread);assert(restored.Dr0==original.Dr0&&restored.Dr1==original.Dr1&&(restored.Dr7&ownMask)==(original.Dr7&ownMask));
