@@ -2,27 +2,27 @@
   "version": "v0.1c20",
   "package_version": "0.1.38",
   "branch": "codex/v01c20-edi-value-provenance",
-  "base_handoff_commit": "d50bd29afae075791717e5491b82d98bf0744588",
-  "implementation_commit": "a4ec9c0f2635e9f2594bf5972d1765332de73766",
+  "base_handoff_commit": "d19fa36011c185d87da209437d055eb20b6bd2e9",
+  "implementation_commit": "a2faf166851270a78bd5ca30c67cd55bcc59cc5c",
   "prepared_research_commit": "9057d24",
   "outputs": [
     {
       "path": "MSM2-WS-v0.1c20.zip",
-      "bytes": 3354639,
-      "sha256": "cdac793f8e39c2bff47f97814148e6ff71e64aa7e5ed7f5775e3f0562ee694ff"
+      "bytes": 3388941,
+      "sha256": "ae5283d42f5bdcd46dfce0fd0450207e9e0c0cbcfa8b5e0288cfedb0c625f5a4"
     },
     {
       "path": "MSM2-WS-v0.1c20-source.zip",
-      "bytes": 761507,
-      "sha256": "f81942b11ee04f6640859aa47b04d1e3cc348cccdbe2d16893c387cf6978ab0e"
+      "bytes": 772305,
+      "sha256": "d4d1a931953738c2150046e989a54af414e26a2199e418073a206dcb642eb4bc"
     }
   ],
   "public_test_pass_records": {
     "portable": 13,
     "smoke": 7,
-    "hooks": 111
+    "hooks": 116
   },
-  "total_public_pass_records": 131,
+  "total_public_pass_records": 136,
   "private_input_skips": 5,
   "separate_historical_private_replay_records": 4,
   "private_replay_duplicate_baseline_records": 1,
@@ -35,13 +35,13 @@
     "callee_branch": 6,
     "transform_write": 7,
     "edi": 6,
-    "workspace": 8,
+    "workspace": 13,
     "logging": 3
   },
-  "standalone_source": "PASS_69_record_baseline_b191708_before_first_run_bootstrap_followup",
+  "standalone_source": "PASS74_fresh_extraction_native61_byte_identity_then_fixture_only_corrected13_workspace",
   "standalone_focused_records": 54,
   "standalone_DLL_logger_records": 7,
-  "standalone_workspace_records": 8,
+  "standalone_workspace_records": 13,
   "full_staging_wrapper": "PASS_full_preserved_pipeline_from_owned_Unicode_space_path_outside_scanned_source",
   "CRC_current_sources_docs_helpers_licenses_script_DLL_hash_private_body_exclusion": "PASS",
   "legacy_State_Slice_c14_c16_caller_producer_native_lifecycle_entry_thunk_cleanup_unchanged": true,
@@ -90,7 +90,11 @@
     "source_live_scripts": 0,
     "SF_or_ordinary_mod_mutation": false,
     "legacy_workspace_auto_delete": false,
-    "real_PC_migration": "pending_local_execution"
+    "real_PC_migration": "pending_local_execution",
+    "source_archive_policy": "managed_Git_sparse_checkout_excludes_ZIP_RAR_7z",
+    "source_visible_archives": 0,
+    "build_archive_suffix": ".zip.disabled",
+    "Overstrike_nested_archive_scanning": true
   },
   "logging": {
     "directory": "game-root/Mods Library/Mods-Developing/MSM2-WS/logs",
@@ -105,8 +109,8 @@
     "failure_channel": "OutputDebugString_stage_path_Win32Error"
   },
   "workspace_owned_Git_filesystem_fixtures": "PASS_8_groups_including_clone_ff_divergence_isolation_rollback_and_active_script_invariants",
-  "Windows_process_stop_WSL2_launcher_and_shared_Overstrike_UI": "Windows_helper_and_full_WSL_pipeline_completed_GUI_pending_user_confirmation",
-  "actual_local_migration_and_new_runtime_log": "migration_helper_deployment_PASS_actual_game_runtime_log_PENDING",
+  "Windows_process_stop_WSL2_launcher_and_shared_Overstrike_UI": "old_real_helper_PASS_GUI_visible_but24_WallSprint_entries_BLOCKED_revalidate_archive_fix",
+  "actual_local_migration_and_new_runtime_log": "old_helper_PASS_archive_aware_rerun_and_actual_runtime_log_PENDING",
   "owned_A_E_orientation": [
     {
       "session": "1",
@@ -173,7 +177,6 @@
   "writable_source_proven": false,
   "Position_source_input_movement_writes": 0,
   "private_full_game_bodies_distributed": false,
-  "baseline_validation_delivery": "b191708c07bf8013f7a3e401a3dc2beaa09aee74",
   "first_run_bootstrap_followup": {
     "implementation_commit": "556e67e9404dc75fa78230ef8e19ba5710ce2e2a",
     "documentation_base_commit": "d50bd29afae075791717e5491b82d98bf0744588",
@@ -227,7 +230,6 @@
     "original_user_capture_failure_cause": "UNCONFIRMED",
     "user_new_helper_result": "PASS_build_and_9_focused_records_1_optional_private_SKIP"
   },
-  "release_artifact_snapshot_commit": "2735e500e7bee17ce6d3016736439f2bd5edad0c",
   "real_PC_latest_migration": {
     "evidence": "user_supplied_terminal_summary_no_raw_log_committed",
     "version": "v0.1c20",
@@ -239,10 +241,10 @@
     "active_script": "MSM2-WS-v0.1c20.script",
     "one_active_script_postcondition": "PASS_checked_by_helper",
     "shared_Overstrike_launch_request": "PASS",
-    "GUI_recognition_ordinary_SF_WS": "PENDING_user_confirmation",
+    "GUI_recognition_ordinary_SF_WS": "FAILED_duplicate_WallSprint_entries",
     "Install_mods_and_Run_modded_game": "PENDING",
     "actual_versioned_runtime_log": "PENDING",
-    "overall_real_PC_acceptance": "PENDING_remaining_GUI_and_runtime_checks",
+    "overall_real_PC_acceptance": "BLOCKED_pending_archive_fix_rerun_and_GUI_runtime_checks",
     "original_capture_failure_cause": "UNCONFIRMED_not_reproduced_in_focused_or_full_rerun",
     "production_deadlines_assertions_and_gates_unchanged": true,
     "local_generated_install_zip": {
@@ -252,6 +254,54 @@
     "local_generated_source_zip": {
       "bytes": 764618,
       "reported_sha256": "17a0263dd6d604cf15cec5b95a2b9a96e272b4be27cd65e3b709cb34de24b974"
-    }
+    },
+    "shared_Overstrike_UI_opened": true,
+    "ordinary_mods_visible": true,
+    "observed_WallSprint_entries": 24,
+    "SF_visibility": "not_identifiable_in_supplied_list",
+    "physical_one_script_postcondition_sufficient": false
+  },
+  "original_infrastructure_implementation_commit": "a4ec9c0f2635e9f2594bf5972d1765332de73766",
+  "fixture_consistency_commit": "31065f8228f415ef0f464aef6b88b727adafa63a",
+  "instruction_base_commit": "d50bd29afae075791717e5491b82d98bf0744588",
+  "prior_baseline_delivery": "b191708c07bf8013f7a3e401a3dc2beaa09aee74",
+  "prior_baseline_public_test_PASS_records": 131,
+  "standalone_total_records": 74,
+  "archive_discovery_correction": {
+    "implementation_commit": "a2faf166851270a78bd5ca30c67cd55bcc59cc5c",
+    "upstream_reference_commit": "ab61de27a4ba76d92780178f600f73f15bcddd81",
+    "actual_UI_observed_checked_WallSprint_entries": 24,
+    "tracked_source_ZIPs": 44,
+    "install_scripts_in_source_ZIPs": 22,
+    "predicted_duplicate_entries": "source22_build_cache1_active1_matches24",
+    "individual_GUI_entry_paths_captured": false,
+    "normal_download_filenames_and_history_preserved": true,
+    "source_clone": "independent_managed_noncone_sparse_checkout_all_code_archive_blobs_in_Git",
+    "actual_owned_clone_visible_archives_before": 44,
+    "actual_owned_clone_visible_archives_after": 0,
+    "all44_blob_hashes_and_code_preserved": true,
+    "legacy_build_archive_move": "positive_WS_outputs_only_to_collision_safe_disabled_names_preserving_bytes_mtime",
+    "new_returned_archives": ".zip.disabled",
+    "foreign_or_untracked_archives": "refuse_without_cleanup",
+    "custom_sparse_configuration": "preserve_and_refuse",
+    "strict_predeploy_and_prelaunch_archive_guard": true,
+    "direct_release_under_Mods_Library": "refused_before_work",
+    "unsafe_old_bootstrap_source": "refused_before_build",
+    "owned_recursive_ZIP_model": "PASS_3_visible_to1_and_nested_container_coverage",
+    "workspace_PASS_records": 13,
+    "new_archive_groups": 5,
+    "full_public_PASS_records": 136,
+    "optional_private_input_SKIP_records": 5,
+    "full_external_staging_pipeline": "PASS_returned_disabled_artifacts_CRC_and_exact_tested_payload_hash",
+    "standalone_PASS_records": 74,
+    "standalone_fixture_correction": "uses_actual_active_payload_SHA_and_negative_wrong_manifest_test_native61_bytes_identical_then_corrected13_rerun",
+    "native_sources_headers_and_version_unchanged_from_base": true,
+    "exact_full_tested_DLL_payload_published": true,
+    "cloud_first_attempt": "unchanged_owned_Up_watch_fixture_hang_aborted_with_stale_27h_owned_test_present",
+    "cloud_validation_context": "fresh_cloud_Wine_prefix_full136_PASS_prior_prefix_preserved_no_user_PC_change",
+    "original_cloud_hang_cause": "unconfirmed_no_deadline_assertion_or_gate_changes",
+    "SF_ordinary_mods_old_D_and_shared_cache_profile_mutations": false,
+    "EDI_production_enabled": false,
+    "user_corrected_migration_UI_and_runtime_acceptance": "PENDING"
   }
 }
