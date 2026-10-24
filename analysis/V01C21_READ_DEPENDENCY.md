@@ -1,5 +1,11 @@
 # c21 exact read-dependency diagnostic
 
+**C21 ACTUAL RESULT ACCEPTED:** V01C21_RUNTIME_RESULT.md supersedes the
+original preparation/pending notes below: exact Transform+0x10C MOV intoEAX,
+possible control0x2B23583, next TEST0x2B235BE operand/flow blocker. Full XYZ/W,
+cross-invocation and ownership remain UNKNOWN. C22 preparation is documented
+separately in V01C22_READ_TEST_FLOW.md.
+
 ## Evidence and scope
 
 VERIFIED-STATIC under accepted actual-game c20 identity: EDI at0x2B2358E comes

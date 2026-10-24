@@ -1115,6 +1115,7 @@ bool ediDefinitions(CalleeAlias &a, Decode &d, const Nodes &nodes,
 struct ReadFlow {
   std::array<unsigned, 16> g{}, x{};
   unsigned flags{};
+  bool logicalTestFlags{}, pinnedTestFlags{};
   struct Slot { std::int64_t off{}; unsigned width{}, tags{}; bool used{}; };
   std::array<Slot, 128> stack{};
   unsigned load(Value at, unsigned width) const {
@@ -1151,6 +1152,82 @@ struct ReadFlow {
     return true;
   }
 };
+// Only the pinned read-only TEST may inspect a low-byte alias. We retain the
+// whole parent's possible-dependence tags; never infer an untainted byte or
+// change the general partial-register/write/address model.
+int testParent(unsigned r) {
+  if (reg(r) >= 0) return reg(r);
+  switch (r) {
+  case X86_REG_AL: return 0;
+  case X86_REG_CL: return 1;
+  case X86_REG_DL: return 2;
+  case X86_REG_BL: return 3;
+  case X86_REG_SPL: return 4;
+  case X86_REG_BPL: return 5;
+  case X86_REG_SIL: return 6;
+  case X86_REG_DIL: return 7;
+  case X86_REG_R8B: return 8;
+  case X86_REG_R9B: return 9;
+  case X86_REG_R10B: return 10;
+  case X86_REG_R11B: return 11;
+  case X86_REG_R12B: return 12;
+  case X86_REG_R13B: return 13;
+  case X86_REG_R14B: return 14;
+  case X86_REG_R15B: return 15;
+  default: return -1;
+  }
+}
+void describeTest(ReadTestContract &t, const cs_insn &ins, csh decoder) {
+  const auto &x = ins.detail->x86;
+  t.decoded = true; t.operandCount = x.op_count;
+  copyName(t.mnemonic, sizeof(t.mnemonic), ins.mnemonic);
+  t.formSupported = ins.id == X86_INS_TEST && x.op_count == 2 && !x.prefix[0];
+  for (unsigned j = 0; j < std::min<unsigned>(x.op_count, 2); ++j) {
+    const auto &op = x.operands[j]; auto &out = t.operands[j];
+    out.width = op.size;
+    if (op.type == X86_OP_REG) {
+      copyName(out.kind, sizeof(out.kind), "register");
+      copyName(out.name, sizeof(out.name), cs_reg_name(decoder, op.reg));
+      out.parent = testParent(op.reg);
+      out.conservativeParent = op.size == 1 && out.parent >= 0;
+      t.formSupported &= out.parent >= 0 &&
+                         (op.size == 1 || op.size == 4 || op.size == 8);
+    } else {
+      t.formSupported = false;
+      if (op.type == X86_OP_MEM) {
+        copyName(out.kind, sizeof(out.kind), "memory");
+        copyName(out.base, sizeof(out.base), cs_reg_name(decoder, op.mem.base));
+        copyName(out.index, sizeof(out.index), cs_reg_name(decoder, op.mem.index));
+        copyName(out.segment, sizeof(out.segment), cs_reg_name(decoder, op.mem.segment));
+        out.scale = op.mem.scale; out.displacement = op.mem.disp;
+      } else if (op.type == X86_OP_IMM) {
+        copyName(out.kind, sizeof(out.kind), "immediate"); out.immediate = op.imm;
+      } else copyName(out.kind, sizeof(out.kind), "unsupported");
+    }
+  }
+  t.formSupported &= x.op_count == 2 && x.operands[0].size == x.operands[1].size;
+  t.lowByteRead = t.formSupported && x.operands[0].size == 1;
+  // Verify the decoder's complete register effects, not only its mnemonic.
+  cs_regs reads{}, writes{}; std::uint8_t nr{}, nw{};
+  t.flagsOnly = ins.id == X86_INS_TEST &&
+      cs_regs_access(decoder, &ins, reads, &nr, writes, &nw) == CS_ERR_OK &&
+      nw == 1 && writes[0] == X86_REG_EFLAGS;
+  bool registerReadsOnly = true;
+  for (unsigned k = 0; k < nr; ++k)
+    registerReadsOnly &= x.op_count == 2 &&
+        ((x.operands[0].type == X86_OP_REG && reads[k] == x.operands[0].reg) ||
+         (x.operands[1].type == X86_OP_REG && reads[k] == x.operands[1].reg));
+  t.formSupported &= t.flagsOnly && registerReadsOnly;
+  t.reason = ins.id != X86_INS_TEST ? "pinned_instruction_is_not_test"
+      : t.formSupported ? "decoded_not_reached_by_flow"
+      : "test_partial_or_unmodeled_operand_or_effect";
+}
+unsigned testBranchTags(unsigned id, unsigned tags) {
+  // TEST clears CF/OF. ZF/SF/PF may depend on its AND result; AF is undefined.
+  // Both CFG legs remain enumerated even for a constant condition.
+  return id == X86_INS_JB || id == X86_INS_JAE ||
+         id == X86_INS_JO || id == X86_INS_JNO ? 0u : tags;
+}
 template <class Nodes>
 void inspectReadDependency(CalleeAlias &a, Decode &d, const Nodes &nodes,
                            const Slice &input, unsigned writeIndex) {
@@ -1178,6 +1255,12 @@ void inspectReadDependency(CalleeAlias &a, Decode &d, const Nodes &nodes,
     r.reason = "selected_read_not_on_authenticated_instruction_boundary";
     copyName(r.unresolvedMnemonic, sizeof(r.unresolvedMnemonic), "instruction_boundary");
     return;
+  }
+  auto &test = r.test;
+  if (test.site) {
+    for (unsigned j = 0; j < d.n; ++j)
+      if (d.p[j].address == test.site) describeTest(test, d.p[j], d.h);
+    if (!test.decoded) test.reason = "test_not_on_authenticated_instruction_boundary";
   }
   // Ordering is structural, over the fully checked forward local CFG, with
   // CALL fallthrough explicitly conditional on normal return (no expansion).
@@ -1233,13 +1316,25 @@ void inspectReadDependency(CalleeAlias &a, Decode &d, const Nodes &nodes,
           if (w.flow.g[k] & 2) r.newValueGpr |= 1u << k;
         }
         r.returnedFlags |= (w.flow.flags & 1) != 0;
+        if (w.flow.pinnedTestFlags) test.returnedFlagsTags |= w.flow.flags;
         for (const auto &s : w.flow.stack)
           r.returnedCallerStack |= s.used && (s.tags & 1) &&
                                   s.off + s.width > input.s.g[4].off;
         break;
       }
       if (node.branch) {
-        if (node.cond && (w.flow.flags & 1)) {
+        const unsigned tags = w.flow.logicalTestFlags
+            ? testBranchTags(ins.id, w.flow.flags) : w.flow.flags;
+        if (node.cond && w.flow.pinnedTestFlags) {
+          ++test.consumerSamples; test.consumerTags |= tags;
+          if (!test.firstConsumer) {
+            test.firstConsumer = ins.address;
+            test.consumerKind = "local_Jcc";
+            copyName(test.consumerMnemonic, sizeof(test.consumerMnemonic), ins.mnemonic);
+          }
+          if (tags && !test.firstDependentConsumer) test.firstDependentConsumer = ins.address;
+        }
+        if (node.cond && (tags & 1)) {
           r.controlUse = true;
           if (!r.firstControl) r.firstControl = ins.address;
           if (!r.firstUse) r.firstUse = ins.address;
@@ -1259,6 +1354,29 @@ void inspectReadDependency(CalleeAlias &a, Decode &d, const Nodes &nodes,
         if (!node.count) { stop(ins, "read_flow_fallthrough"); break; }
         w.pc = unsigned(node.next[0]); continue;
       }
+      if (test.site && ins.address == test.site) {
+        ++test.samples;
+        unsigned tags = 0;
+        for (unsigned j = 0; j < 2; ++j) {
+          auto &op = test.operands[j];
+          if (op.parent >= 0) {
+            const auto parentTags = w.flow.g[op.parent];
+            op.parentTags |= parentTags; tags |= parentTags;
+          }
+        }
+        if (!test.formSupported) {
+          stop(ins, test.reason); break;
+        }
+        ++test.modeledStates; test.flagsTags |= tags;
+        test.reason = "modeled_read_only_TEST_AND_flags_possible_dependence";
+        // TEST never writes its operands and never reads the old flags. A
+        // register tested against itself is NOT a zero idiom (unlike CMP/XOR).
+        w.flow.flags = tags;
+        w.flow.logicalTestFlags = w.flow.pinnedTestFlags = true;
+        if ((tags & 1) && !r.firstUse) r.firstUse = ins.address;
+        if (!node.count) { stop(ins, "read_flow_fallthrough"); break; }
+        w.pc = unsigned(node.next[0]); continue;
+      }
       cs_regs reads{}, writes{}; std::uint8_t nr{}, nw{};
       if (cs_regs_access(d.h, &ins, reads, &nr, writes, &nw) != CS_ERR_OK) {
         stop(ins, "read_flow_register_access_unavailable"); break;
@@ -1269,6 +1387,15 @@ void inspectReadDependency(CalleeAlias &a, Decode &d, const Nodes &nodes,
         readRegsOk &= reads[k] == X86_REG_RIP || reads[k] == X86_REG_EFLAGS ||
                       reg(reads[k]) >= 0 || xmm(reads[k]) >= 0;
         incoming |= w.flow.get(reads[k]);
+        if (reads[k] == X86_REG_EFLAGS && w.flow.pinnedTestFlags) {
+          // Non-Jcc flag users need their own model; don't guess AF/CF effects.
+          if (!test.firstConsumer) {
+            test.firstConsumer = ins.address;
+            test.consumerKind = "unsupported_flag_use";
+            copyName(test.consumerMnemonic, sizeof(test.consumerMnemonic), ins.mnemonic);
+          }
+          stop(ins, "test_flags_nonbranch_consumer_unmodeled"); readRegsOk = false;
+        }
       }
       if (!readRegsOk) { stop(ins, "read_flow_partial_or_unmodeled_register"); break; }
       unsigned selectedOperands = 0;
@@ -1362,7 +1489,11 @@ void inspectReadDependency(CalleeAlias &a, Decode &d, const Nodes &nodes,
       if (ins.id == X86_INS_PUSH && !w.flow.save(plus(w.slice.s.g[4], -8), 8, incoming)) badWrite = true;
       if (badWrite) { stop(ins, "read_flow_nonstack_memory_or_stack_cap_unresolved"); break; }
       bool regsOk = true;
-      for (unsigned k = 0; k < nw; ++k) regsOk &= w.flow.put(writes[k], incoming);
+      for (unsigned k = 0; k < nw; ++k) {
+        regsOk &= w.flow.put(writes[k], incoming);
+        if (writes[k] == X86_REG_EFLAGS)
+          w.flow.logicalTestFlags = w.flow.pinnedTestFlags = false;
+      }
       if (ins.id == X86_INS_PUSH || ins.id == X86_INS_POP) w.flow.g[4] = oldSpTags;
       if (!regsOk) { stop(ins, "read_flow_partial_or_unmodeled_register"); break; }
       if (fieldStore) w.wrote = true;

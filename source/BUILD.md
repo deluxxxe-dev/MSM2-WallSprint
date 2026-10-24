@@ -51,3 +51,12 @@ Never place private game bodies/logs under Git or release inputs. This historica
 Public outputs outside Mods Library are `MSM2-WS-v<version>.zip`, optional `MSM2-WS-v<version>-source.zip`, and non-active `MSM2-WS-v<version>.script.disabled`/BUILD_MANIFEST. Overstrike recursively scans archive contents, so the pipeline returns those ZIPs to WS `_archive/_build` only with a `.zip.disabled` suffix. The workspace validates that zero visible ZIP/RAR/7z remain recursively before deployment/launch. Direct `release.py` under Mods Library refuses before work. The install ZIP contains one virtual versioned active script member; source ZIP contains none. Test source ZIP extraction only outside Mods Library; never unpack the install ZIP into `_source`. Disabled intermediates and old archived scripts are not Overstrike-active. Normal ZIPs are Overstrike-visible even without extraction; plain public archives must stay outside Mods Library. The updater preserves clean tracked source archive blobs/history through Git sparse checkout and disables only positively validated old WS build-cache ZIPs. See analysis/OVERSTRIKE_ARCHIVE_DISCOVERY.md for the real24-entry failure and independent regression model. Full source/tests/licenses/docs are included for isolated reproduction.
 
 Cloud validation does not complete the user's real migration. Windows process stopping, WSL installation, real shared Overstrike recognition of ordinary mods + SF + WS, actual runtime logging and gameplay A/E remain local acceptance checks. The old environment is never automatically deleted.
+
+## Current c22 bounded diagnostic
+
+v0.1c22/package0.1.40 extends only the authenticated pinned TEST read/flag sidecar.
+`bash tools/test_read_dependency.sh` includes the8 c21 groups and8 c22 groups;
+`test_hooks_windows.sh` retains this suite and all existing c19/c20/native/workspace
+regressions. Low-byte TEST is read-only/conservative parent taint, never a partial
+register write model or a writer/effect certificate. See analysis/V01C22_READ_TEST_FLOW.md.
+Actual TEST operands/next blocker still require the shortest normal A/E game log.

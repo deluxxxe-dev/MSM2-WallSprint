@@ -924,6 +924,7 @@ void configure(const Spec &s, Gate validate) noexcept {
     writerAlias.edi.enabled =
         calleeCurrent; // c20 diagnostic-only opt-in after exact current identity.
     writerAlias.readDependency.site = calleeCurrent ? 0x2b23578 : 0;
+    writerAlias.readDependency.test.site = calleeCurrent ? 0x2b235be : 0;
     writerAlias.reason =
         calleeCurrent ? "writer_call_not_reached_in_bounded_prefix"
                       : "exact_c17_target_boundary_hash_not_authenticated";
@@ -1129,6 +1130,39 @@ void configure(const Spec &s, Gate validate) noexcept {
              unsigned(rd.controlUse), (unsigned long long)rd.firstControl,
              unsigned(rd.memoryEscape), (unsigned long long)rd.firstEscape,
              (unsigned long long)rd.barrier, rd.unresolvedMnemonic, rd.reason);
+    const auto &rt = rd.test;
+    writeLog("MOVEMENT_CALLEE_READ_TEST site_rva=0x2b235be enabled=%u "
+             "instruction_decoded=%u mnemonic=%s operand_count=%u "
+             "form_supported=%u flags_only=%u low_byte_read=%u "
+             "analyzed_states=%u modeled_states=%u flags_may_depend_tags=0x%x "
+             "supported_flags_model=AND_ZF_SF_PF_CF0_OF0_AF_undefined modeled_operand_writes=0 "
+             "dependence_kind=conservative_parent_tags_no_numeric_value "
+             "effect_certificate=0 full_bytes_logged=0 reason=%s",
+             unsigned(rt.site != 0), unsigned(rt.decoded), rt.mnemonic, rt.operandCount,
+             unsigned(rt.formSupported), unsigned(rt.flagsOnly), unsigned(rt.lowByteRead),
+             rt.samples, rt.modeledStates, rt.flagsTags, rt.reason);
+    for (unsigned j = 0; j < std::min(rt.operandCount, 2u); ++j) {
+      const auto &op = rt.operands[j];
+      writeLog("MOVEMENT_CALLEE_READ_TEST_OPERAND site_rva=0x2b235be index=%u "
+               "kind=%s register=%s width=%u parent_gpr=%d "
+               "parent_may_depend_tags=0x%x low_byte_parent_overapproximation=%u "
+               "base=%s memory_index=%s segment=%s scale=%u displacement=%lld "
+               "immediate=%lld tags_scope=analyzed_states_union "
+               "tags_1_selected_2_postwrite_4_other_prewrite=1 full_bytes_logged=0",
+               j, op.kind, op.name, op.width, op.parent, op.parentTags,
+               unsigned(op.conservativeParent), op.base, op.index, op.segment, op.scale,
+               (long long)op.displacement, (long long)op.immediate);
+    }
+    writeLog("MOVEMENT_CALLEE_READ_TEST_FLAGS site_rva=0x2b235be "
+             "first_consumer_rva=0x%llx first_consumer_instruction=%s consumer_kind=%s "
+             "branch_samples=%u consumer_may_depend_tags=0x%x "
+             "first_possible_dependent_branch_rva=0x%llx returned_flags_tags=0x%x "
+             "CF_OF_conditions_independent=1 both_CFG_legs_enumerated=1 "
+             "coverage=analyzed_local_flow_paths downstream_XYZ_W_relevance=unknown "
+             "cross_invocation_feedback=unknown effect_certificate=0 full_bytes_logged=0",
+             (unsigned long long)rt.firstConsumer, rt.consumerMnemonic, rt.consumerKind,
+             rt.consumerSamples, rt.consumerTags,
+             (unsigned long long)rt.firstDependentConsumer, rt.returnedFlagsTags);
     const auto &ac = writerAlias.counts;
     writeLog(
         "MOVEMENT_CALLEE_ALIAS_CONTRACT target_rva=0x2b23560 "

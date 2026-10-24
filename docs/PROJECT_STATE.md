@@ -174,3 +174,16 @@ Shared ordinary mods + SF + WS, shared Overstrike, modded launch and versioned W
 ## Current action
 
 Continue from the accepted c21 evidence. Model/classify only the missing `0x2B235BE test` semantics and the selected-read value/flag flow needed to decide downstream relevance or identify the next exact blocker. Preserve all current safety gates, do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
+
+## Prepared c22 implementation — actual classification pending
+
+v0.1c22/package0.1.40 adds the bounded pinned TEST operand/flags diagnostic
+(analysis/V01C22_READ_TEST_FLOW.md).32/64bit register TEST and read-only low8bit
+aliases at the exact site retain conservative parent tags; no general partial
+register write/address model changes. CF/OF constant conditions are separate
+from possible ZF/SF/PF dependence; both CFG legs stay enumerated. Existing
+c19/c20 read/effect refusal and all ownership/mutation gates stay closed.
+Exact actual TEST operands/local completion/next blocker remain PENDING a new
+versioned c22 A/E log. Accepted c21 evidence is now in V01C21_RUNTIME_RESULT.md.
+Use Update-WS, Install mods -> Run modded game, A~4s -> fully end -> move -> E~4s.
+Do not advance producer0x351EB00 or movement/adhesion/camera/animation/physics.

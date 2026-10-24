@@ -95,6 +95,26 @@ struct EdiValueContract {
   const char *reason = "EDI_trace_not_enabled";
 };
 const char *bitKindName(BitKind) noexcept;
+// One pinned TEST only. Parent tags for low-byte reads are conservative, not
+// a byte-value proof. No partial register writes or effect certificates.
+struct ReadTestContract {
+  struct Operand {
+    char kind[16] = "none", name[16] = "none", base[16] = "none",
+         index[16] = "none", segment[16] = "none";
+    unsigned width{}, scale{}, parentTags{};
+    int parent = -1;
+    std::int64_t displacement{}, immediate{};
+    bool conservativeParent{};
+  };
+  std::uintptr_t site{}, firstConsumer{}, firstDependentConsumer{};
+  unsigned operandCount{}, samples{}, modeledStates{}, flagsTags{},
+      consumerSamples{}, consumerTags{}, returnedFlagsTags{};
+  bool decoded{}, formSupported{}, flagsOnly{}, lowByteRead{};
+  std::array<Operand, 2> operands{};
+  char mnemonic[32] = "none", consumerMnemonic[32] = "none";
+  const char *consumerKind = "none";
+  const char *reason = "test_diagnostic_not_enabled";
+};
 // Diagnostic sidecar only: cannot grant any alias/effect/write certificate.
 struct ReadDependencyContract {
   std::uintptr_t site{}, barrier{}, firstUse{}, firstControl{}, firstEscape{};
@@ -108,6 +128,7 @@ struct ReadDependencyContract {
   const char *reason = "read_dependency_not_enabled";
   char mnemonic[32] = "none", base[32] = "none", index[32] = "none",
        carrier[32] = "none", unresolvedMnemonic[32] = "none";
+  ReadTestContract test{};
 };
 struct CalleeAlias {
   // Only authenticated current target bytes; never dereferenced process

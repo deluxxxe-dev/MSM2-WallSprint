@@ -1,5 +1,11 @@
 # c21 gate — read-dependency diagnostic only
 
+**C21 ACTUAL RESULT ACCEPTED:** V01C21_RUNTIME_RESULT.md supersedes the
+original preparation/pending notes below: exact Transform+0x10C MOV intoEAX,
+possible control0x2B23583, next TEST0x2B235BE operand/flow blocker. Full XYZ/W,
+cross-invocation and ownership remain UNKNOWN. C22 preparation is documented
+separately in V01C22_READ_TEST_FLOW.md.
+
 Accepted input: V01C20_RUNTIME_RESULT.md, exact EDI producer0x2B2356F with
 image-global origin root16+0x0C323788; earlier read blocker0x2B23578 before
 native write0x2B2358E. The read opcode, address and value-flow result are UNKNOWN

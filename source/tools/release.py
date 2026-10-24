@@ -18,7 +18,7 @@ for name in ['workspace_reset_snapshot_tests.log','workspace_reset_snapshot_full
  if (root/'logs'/name).exists():shutil.copy2(root/'logs'/name,out/'logs'/name)
  else:print('SKIP: optional maintainer validation log',name)
 for phase in ['build','portable','smoke','hooks','read']:
- name='v01c21_'+phase+'.log'
+ name=label.replace('.','')+'_'+phase+'.log'
  if (root/'logs'/name).exists():shutil.copy2(root/'logs'/name,out/'logs'/name)
 if (root.parent/'docs/CODEX_RESULT.md').exists():
  (out/'docs').mkdir(exist_ok=True);shutil.copy2(root.parent/'docs/CODEX_RESULT.md',out/'docs/CODEX_RESULT.md')

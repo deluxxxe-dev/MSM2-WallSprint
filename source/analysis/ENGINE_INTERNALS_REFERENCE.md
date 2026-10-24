@@ -250,3 +250,15 @@ WS runtime logs:
 This is a living derived index, not the primary proof record. When new evidence confirms/narrows/disproves a reusable fact, update both the project-local proof/index and `deluxxxe-dev/MSM2-Wisdoms` when practical. Scope old/new RVAs to authenticated builds and mark speculation explicitly.
 
 Do not store raw user logs, complete proprietary native bodies, credentials, personal secrets or unnecessary binary fragments.
+
+## Accepted c21 / prepared c22 checkpoint
+
+C21 authenticated actual-game code classifies read0x2B23578 as exact4-byte MOV
+Transform+0x10C -> EAX; possible first use0x2B23581/control0x2B23583. Prefix
+memory_escape0 does not cover the unanalyzed suffix. Next stop0x2B235BE TEST
+operands UNKNOWN. See V01C21_RUNTIME_RESULT.md. C22 models only the pinned
+read-only register TEST and conservative flag consumers; low-byte reads retain
+whole-parent possible tags, partial writes/unmodeled forms still refuse.
+VERIFIED-STATIC implementation/owned-fixture scope only; actual c22 UNKNOWN.
+Existing read/effect certificate gate remains closed; no XYZ/W/cross-invocation/
+ownership inference or new game mutation. See V01C22_READ_TEST_FLOW.md.
