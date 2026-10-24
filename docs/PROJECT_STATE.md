@@ -10,19 +10,18 @@ Convert vanilla WallRun into surface-relative locomotion. Do not advance movemen
 - Preserve exact-build fail-closed behavior, `AGENTS.md` / `docs/DEV_RULES.md`, independent implementation, and no raw user logs/full private game bodies in public artifacts.
 
 ## Accepted orientation / logging
-Latest actual c18 combined A -> E:
+Latest actual c19 combined A -> E:
 ```text
-A/session1: 2984 ms, verified Deinit, retention pass, Up dot surface=1, stale0, hard0, Position writes0
-E/session2: 4171 ms, verified Deinit, retention pass, Up dot surface=1.00000012, stale0, hard0, Position writes0
+A/session1: 3844 ms, verified Deinit, retention pass, Up dot surface=1, stale0, hard0, Position writes0
+E/session2: 4094 ms, verified Deinit, retention pass, Up dot surface=1, stale0, hard0, Position writes0
 ```
-Both sessions finalized 8 true entry snapshots / 8 complete maps, XYZ mask0x7, source W0 and destination W1. Entry diagnostic / Position-watch cleanup restored normally.
+Both sessions finalized 8 true entry snapshots / 8 complete maps, XYZ mask0x7, source W0 and destination W1. Cleanup restored normally.
 
-Dedicated logging remains actual-game verified:
+Dedicated logging remains:
 ```text
 game-root\log_wallsprint\WallSprint_YYYYMMDD-HHMMSS.log
 shared_logs_fallback=0
 ```
-Latest actual file: `WallSprint_20261024-051436.log`.
 
 ## Verified movement chain
 ```text
@@ -35,61 +34,29 @@ observed second return=0x351A020
 ```
 Runtime source relation remains `RDX=entry RSP+0x28`; sampled `[RDX] XYZ` equals exact executed Position XYZ bits. Correlation only until writer-side causality completes.
 
-## Writer-local call/callee
-Authenticated writer call:
-```text
-0x2CFC927 -> 0x2B23560
-return=0x2CFC92C
-callee=0x2B23560..0x2B235E9
-hash=2d62e54b270c46f4babc8120a7e56123e3fe467ca383895d57a989f853095a9d
-```
-Actual call arguments from c17:
-```text
-RCX = Transform-derived
-RDX = Transform-derived
-R8 = constant bits, not pointer
-R9 = unknown argument
-source_span_alias_mask=0x0
-transform_alias_mask=0x3
-```
-Writer-entry RDX Position source remains distinct from call-time RDX.
+## c19 actual-game result
+C19 is **Diagnostic PASS / exact value-provenance blocker identified**.
 
-## c18 actual-game result
-**Diagnostic PASS / exact write blocker identified.** See `analysis/V01C18_RUNTIME_RESULT.md`.
+The former c18 possible alias is now exact:
+```text
+0x2B2358E: mov dword ptr [RCX+0x10C], EDI
+RCX provenance = entry writer Hero Transform
+destination = Hero Transform +0x10C
+```
+This write does not directly overlap Position `+0x30..+0x3F` or the Transform identity/pointer-carrier range.
 
-C18 resolved the former `0x2B235C1: je` branch-cap blocker and built the actual bounded local callee CFG:
+The exact current blocker is the value source `EDI`:
 ```text
-local_branch_sites=5
-conditional_branch_sites=4
-branch_cap=5
-blocks_total=8
-edges_total=10
-complete_local_cfg=1
-backedges_seen=0
-indirect_transfers_seen=0
-nested_calls_seen=2
+value_source_kind=unknown
+value_source_provenance_exact=0
+all_reaching_states_same_value_origin=0
+all_reaching_states_examined=0
+write_affects_writer_reload_provenance=unknown
+write_effect_relevant_to_xyz=unknown
+write_effect_relevant_to_w=unknown
+reason=exact_write_value_unknown_computed_or_reaching_origins_conflict
 ```
-
-Reachable writes classified before the new blocker:
-```text
-0x2B23560 width8 caller_shadow_or_return_area
-0x2B23565 width8 caller_shadow_or_return_area
-0x2B2356A width8 callee_private_stack
-0x2B2358E width4 hero_transform_possible_alias address_root=1 offset=268/0x10C
-```
-The first three are disjoint from source/Transform. The fourth is the exact current blocker:
-```text
-next_barrier_rva=0x2B2358E
-next_barrier_instruction=mov
-next_barrier_effect=hero_transform_possible_alias
-may_alias_source=0
-may_alias_transform=1
-writes_transform_possible_alias=1
-source_span_no_write_proven=0
-transform_no_write_proven=0
-all_relevant_write_aliases_resolved=0
-```
-Thus CFG coverage is no longer the problem. The next task must resolve only the exact destination/value/provenance and protected-range relevance of this 4-byte write.
+Thus the +0x10C write cannot yet be modeled as irrelevant and writer XYZ/W causality cannot advance past the call.
 
 ## Current gate
 ```text
@@ -100,7 +67,7 @@ ownership_exclusive=0
 source_lifetime_exclusive=0
 downstream_conflicts_proven_absent=0
 ```
-Upstream producer `0x351EB00` remains deferred.
+Producer `0x351EB00` remains deferred.
 
 ## Current stage
 1. lifecycle / SurfaceFrame ✅
@@ -115,25 +82,31 @@ Upstream producer `0x351EB00` remains deferred.
 10. c15 writer branch crossing ✅
 11. c16 exact call target/boundary/hash ✅
 12. c17 call argument provenance ✅
-13. c17 isolated timestamped logging ✅ actual game
+13. c17 isolated timestamped logging ✅
 14. c18 actual callee CFG / first real writes ✅
-15. exact `0x2B2358E` Transform-alias write implementation ✅ CLOUD; actual c19 A/E PENDING
-16. resume writer XYZ/W causal proof ⏸ after write contract
-17. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-18. safe writable upstream movement source ⬜ NOT AUTHORIZED
-19. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-20. adhesion/contact refinement ⏸ deferred
-21. animation/camera/later traversal ⬜
+15. c19 exact Transform+0x10C destination ✅ actual game
+16. c20 EDI value provenance ▶ CURRENT
+17. resume writer XYZ/W causal proof ⏸ after c20 value contract
+18. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+19. safe writable upstream movement source ⬜ NOT AUTHORIZED
+20. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+21. adhesion/contact refinement ⏸ deferred
+22. animation/camera/later traversal ⬜
 
-## Current implementation base / next branch
+## Current implementation / next branch
 ```text
-c18 branch: codex/v01c18-callee-branch-alias
-c18 implementation: 19aa3012959bf7538df3917278dd4a97551123dd
-c18 delivery head before human result: 3ffc19b5b3b3f42c0fcbf62679fe6d9e44f92dfb
-c18 version: v0.1c18 / package 0.1.36
-next: c19 exact 0x2B2358E write contract
+c19 branch: codex/v01c19-transform-write-contract
+c19 implementation: b3185cd240a16446a2424ecab9fa0c2605cb00e8
+c19 version: v0.1c19 / package 0.1.37
+c20 branch: codex/v01c20-edi-value-provenance
 ```
 
-## c19 cloud implementation
+## Release naming
+User-facing install ZIPs use only the clear version name:
+```text
+MSM2-WS-v<version>.zip
+```
+No descriptive suffix such as `transform_write_contract` is allowed. See `docs/DEV_RULES.md`.
 
-Version v0.1c19/package0.1.37 on codex/v01c19-transform-write-contract. Exact write metadata, one-site scalar Transform+0x10C model and conservative read-carrier exclusion are implemented; real Transform writes retain literal transform_no_write_proven0. New Position-range/effects-resolved certificate plus extended Transform+[0,0x110) runtime TEB/image exclusion is required. No runtime observation or producer traversal. Actual c19 operands/value/all-path effects/next blocker/XYZ/W remain PENDING A/E; see V01C19_TRANSFORM_WRITE_CONTRACT.md and CODEX_RESULT.md.
+## Current action
+Run Codex on `docs/CODEX_NEXT.md` for c20. Resolve only EDI reaching definitions and the dependency of the exact Transform+0x10C write. Do not begin producer ownership or movement/adhesion/camera work.
