@@ -1,156 +1,157 @@
-# Next task — classify/model exact CMP at 0x2CF7FE0 after accepted c25
+# Next task — bounded exact JA fan-out after accepted c26
 
 ## Status
 
-The v0.1c25 actual-game capture is accepted for the current bounded diagnostic question.
+The v0.1c26 actual-game capture is accepted for the current bounded diagnostic question.
 
 Source log supplied by the owner:
 
 ```text
-MSM2-WS-v0.1c25-20261025-042121.log
+MSM2-WS-v0.1c26-20261025-054449.log
 ```
 
 Do not merge `main`. Continue from the latest `codex/v01c20-edi-value-provenance` history.
 
-## Accepted c25 facts
+See `analysis/V01C26_RUNTIME_RESULT.md`.
 
-The c24 table-cap ambiguity is resolved. The authenticated PE exception/runtime-function directory is structurally valid under the bounded c25 budget:
+## Accepted c26 facts
+
+The c25 large-table result remains accepted: the authenticated PE runtime-function table is structurally valid with 527161 entries, the actual OS lookup was queried, and exact target `0x2CF7FE0` has no containing runtime-function entry. The strict pinned no-unwind fallback is therefore the active method.
+
+C26 classifies the exact first target instruction:
 
 ```text
-directory_rva=0xC566000
-directory_bytes=6325932
-entry_bytes=12
-derived_entries=527161
-metadata_byte_cap=8388608
-entry_cap=600000
-byte_cap_exceeded=0
-entry_cap_exceeded=0
-entry_validation_skipped_by_cap=0
-metadata_bytes_read=6325932
-entries_validated=527161
-all_entries_read_and_validated=1
-table_structurally_valid=1
-runtime_lookup_queried=1
+0x2CF7FE0: cmp r8d, 0x3FFF
+operand_count=2
+has_memory_operand=0
+flags_only=1
+form_supported=1
+GPR_XMM_memory_writes=0
+flags_written=CF_PF_AF_ZF_SF_OF
 ```
 
-For the exact direct-call target:
+For the analyzed selected-read state:
 
 ```text
-target_rva=0x2CF7FE0
-runtime_lookup_found=0
-runtime_lookup_same_image=1
-runtime_lookup_readable=1
-next_runtime_rva=0x2CF8020
-PE_runtime_table_valid=1
-missing_runtime_entry=1
+R8 parent_may_depend_tags=0x0
+CMP flags_may_depend_tags=0x0
 ```
 
-Therefore the exact target truly has no containing runtime-function entry under the authenticated current image, and the strict single-target no-unwind fallback legitimately starts.
+Thus CMP is admitted as a read-only flag effect and is disjoint from selected tag 1.
 
-The fallback obtains a stable bounded snapshot but stops on its first decoded instruction:
+The strict walk advances exactly one instruction and now stops at:
 
 ```text
-method=strict_single_target_no_unwind_linear
-scan_bytes=64
-snapshot_stable=1
-instructions=1
+0x2CF7FE7: ja
+condition=CF0_and_ZF0
+flags_read=CF_ZF
+flags_producer_rva=0x2CF7FE0
+flags_dependency_known=1
+consumer_may_depend_tags=0x0
+control_expanded=0
+numerical_outcome=unknown
+both_outcomes_unresolved=1
+reason=target_leaf_control_or_nested_call_refused
+```
+
+Target identity remains unadmitted:
+
+```text
 admitted=0
-admitted_bytes=0
-barrier_rva=0x2CF7FE0
-barrier_instruction=cmp
-reason=target_leaf_instruction_effect_not_admitted
-```
-
-The selected `Transform+0x10C` read dependence still reaches the parent CALL boundary in raw GPR carrier index 0 (`tags=0x1`, mem32 Hero Transform+0x10C). The selected-read flow now stops exactly at the nested target instruction:
-
-```text
-complete_local_flow=0
-first_unresolved_rva=0x2CF7FE0
-first_unresolved_instruction=cmp
-returned_gpr_may_depend_mask=0x1
-memory_escape=0
-downstream_XYZ_W_relevance=unknown
-cross_invocation_feedback=unknown
+boundary_verified=0
+snapshot_authenticated=0
 effect_certificate=0
+first_unresolved_rva=0x2CF7FE7
+first_unresolved_instruction=ja
 writable_source_proven=0
 ```
 
-See `analysis/V01C25_RUNTIME_RESULT.md`.
+Do **not** infer the numerical branch direction merely because its flags are disjoint from selected tag 1.
 
 ## Current bounded Codex task
 
-Implement the smallest fail-closed extension necessary to classify the exact `CMP` instruction at `0x2CF7FE0` and, only if its read-only effects can be proven within the existing strict no-unwind contract, continue the single-target walk to the next exact proof boundary.
+Implement the smallest fail-closed extension needed to classify and, only if safe, enumerate the exact `JA` at `0x2CF7FE7` under the pinned no-unwind target proof.
 
-### 1. Classify the exact CMP form before adding semantics
+### 1. Classify the exact branch edges first
 
-Report compact metadata for the exact instruction at `0x2CF7FE0` sufficient to determine:
+Before changing control-flow semantics, report compact metadata for the exact branch sufficient to establish:
 
-- operand count;
-- operand classes (register / immediate / memory);
-- operand widths;
-- exact register aliases / parent GPRs when register operands are used;
-- immediate value if present as an instruction constant;
-- whether any operand is memory-addressed;
-- which incoming selected/post-write/other-prewrite tags each read operand may carry;
-- flags written by CMP;
-- whether CMP writes any GPR/XMM/memory state (it should not, but prove the decoded form rather than assume from mnemonic alone).
+- encoded conditional branch form and width;
+- exact taken target RVA;
+- exact fallthrough RVA;
+- whether either edge leaves the authenticated code region;
+- whether either edge reaches/crosses `next_runtime_rva=0x2CF8020` or another runtime-function region;
+- forward/backward relation for each edge;
+- condition and exact flags read;
+- exact producer of those flags;
+- selected/post-write/other-prewrite tag dependence of the condition;
+- snapshot stability/current-code pin for the bytes used to derive both edges.
 
-Do not assign semantic argument/type names from register indices.
+Do not infer semantic function names or ABI types.
 
-### 2. Add only the exact missing read-only CMP semantics if justified
+### 2. Add only a narrow tag-disjoint conditional-branch fan-out if justified
 
-The existing c23/c24 strict target rule remains the safety boundary. Do not turn this into a generic x86 emulator.
+The existing strict no-unwind contract remains the safety boundary. Do not turn this into a generic CFG emulator.
 
-If the exact form is a register-only or register/immediate CMP whose read/flag effects can be modeled exactly under the owned Slice/State rules, add only that narrow form.
+The exact `JA` may be expanded only if all of the following are proven:
 
-Requirements:
+- its condition dependence is known and disjoint from selected/post-write/other-prewrite tags relevant to the tracked read state;
+- both taken and fallthrough edges are exact;
+- both stay inside the pinned target code allowance and before any authenticated runtime-region boundary;
+- no backward edge / loop is introduced;
+- branch/path/instruction budgets are explicit and finite;
+- both outcomes are explored; no numerical outcome is guessed or selected;
+- path state is cloned and merged conservatively.
 
-- no memory operand may be silently admitted;
-- CMP must not be treated as modifying its operands;
-- model the flags required by actual downstream consumers conservatively and exactly enough to preserve selected-read provenance;
-- for 32/64-bit full-register reads, use exact parent-register tag flow;
-- if the actual form is 8/16-bit or another partial-register read, either add a narrowly justified read-only parent-tag model analogous in spirit to c22 (without granting partial-register write semantics), or stop at the exact unsupported form;
-- immediate operands carry no selected-read tag by themselves;
-- do not infer the numerical branch outcome from tag analysis alone;
-- preserve both possible control-flow outcomes whenever a later conditional consumer is encountered unless its dependence can be proven disjoint.
+A suggested tight initial budget is one conditional fan-out, at most two live paths, still bounded by the existing <=128 target bytes and <=32 decoded instructions. Increase only if the actual exact structure proves that the tighter budget is insufficient and a finite justification is documented.
 
-If the actual CMP has a memory operand, unsupported encoding/effect, ambiguous alias, or another form outside this narrow proof, report Outcome C and stop.
+### 3. Preserve the existing leaf prohibitions on every branch leg
 
-### 3. Continue the strict no-unwind identity walk only to the next exact boundary
+Each reachable leg must still stop on the first exact unsupported effect. Continue to refuse:
 
-After CMP is admitted, continue from exact fallthrough under the existing target constraints:
+- memory operand/effect not already explicitly authorized by the strict leaf model;
+- stack construction/change;
+- nested CALL;
+- indirect jump/call/return-like transfer other than a modeled normal RET;
+- unsupported partial-register effect;
+- self-modifying/current-code instability;
+- runtime-region crossing;
+- loop/backedge;
+- unbounded or unresolved control flow.
 
-- pinned target `0x2CF7FE0` only;
-- <=128 bytes / <=32 instructions;
-- same stable guarded snapshot;
-- no code crossing `next_runtime_rva=0x2CF8020` or another authenticated runtime region;
-- no generic function finder;
-- no memory operand unless already explicitly authorized by the strict rule (currently none);
-- no stack construction/change;
-- no nested CALL/indirect transfer;
-- no unsupported partial effect;
-- no unmodeled branch.
+Do not weaken these merely to complete target identity.
 
-If the next instruction is a branch, log its exact RVA/mnemonic/condition/flag dependence and stop unless the already-approved strict rule explicitly supports it. Do not broaden c24's linear-leaf contract merely to force completion.
+### 4. Identity/effect admission requires all reachable outcomes
 
-If the walk reaches a plain normal RET with every preceding instruction admitted and no alternate reachable exit, then and only then:
+Do not authenticate the target from one branch leg.
 
-- admit exact begin/end/size/hash;
-- recheck runtime-region coverage;
-- pass the authenticated span into the existing c23 register-only call-effect sidecar.
+Only if **every** reachable path under the admitted exact branch fan-out:
 
-### 4. Resume selected-read effect analysis only after target identity passes
+- stays within all caps;
+- contains only admitted effects;
+- terminates in a plain modeled normal RET;
+- has no alternate unresolved exit;
+- passes final snapshot/runtime-region coverage checks;
 
-If the target becomes authenticated, classify only whether tag `1` is:
+may the target begin/end/size/hash be admitted.
 
-- preserved into a returned GPR/XMM/flags state;
+If multiple RET paths exist, merge returned GPR/XMM/flags effects conservatively. A selected tag is considered preserved/escaped/clobbered only according to the union required by all reachable paths; do not choose the most convenient path.
+
+If path effects differ, report that difference explicitly rather than collapsing it to a single deterministic result.
+
+### 5. Resume parent CALL effect analysis only after full target identity passes
+
+If and only if target identity is admitted, feed the complete admitted reachable effect set into the existing c23 call-effect sidecar and classify whether selected tag 1 is:
+
+- preserved into returned GPR/XMM/flags state;
 - killed/clobbered;
 - escaped to caller/home stack or memory;
-- blocked at another exact instruction/effect boundary.
+- path-dependent;
+- blocked by another exact instruction/effect boundary.
 
-Do not broaden into general recursive interprocedural analysis.
+Do not broaden into recursive interprocedural analysis.
 
-Even successful local completion does not settle:
+Even successful local target completion does not settle:
 
 ```text
 whole writer XYZ/W causality
@@ -160,7 +161,7 @@ lifetime/exclusivity
 writability
 ```
 
-### 5. Preserve all safety gates
+### 6. Preserve all safety gates
 
 Still forbidden:
 
@@ -183,23 +184,27 @@ downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
 
-### 6. Owned tests / handoff
+### 7. Owned tests / handoff
 
 Add fixtures covering at minimum:
 
-- the exact newly supported CMP operand form;
-- selected-tag and disjoint-tag CMP operands;
-- immediate operand remains untainted;
-- CMP modifies flags only, not operand registers;
-- partial-register read handling if implemented;
-- memory-operand CMP refusal;
-- unsupported width/form refusal;
-- next-instruction branch refusal / precise flag-dependence reporting under the unchanged strict linear rule;
-- stable RET completion for an admissible linear target;
-- no regression of c25 full large-table validation / genuine missing-entry result;
-- no regression of c24 no-unwind identity safeguards;
-- no regression of c23 call carrier, c22 TEST/JE, c21 same-field read, c20 EDI provenance and c19 Transform protection.
+- exact conditional edge decoding for short/near Jcc forms actually supported by the implementation;
+- taken/fallthrough RVA calculation and overflow/range refusal;
+- current-code/snapshot pin for edge decoding;
+- tag-disjoint branch expansion with both outcomes explored;
+- selected-tag-dependent branch refusal unless explicitly supported by a future task;
+- backward-edge/loop refusal;
+- runtime-region crossing refusal on either edge;
+- path/instruction/byte cap refusal;
+- one leg hitting memory/stack/call/indirect/unsupported effect -> whole identity refusal;
+- two safe RET legs with identical effects;
+- two safe RET legs with differing returned-tag effects -> conservative/path-dependent result;
+- no one-leg-only authentication;
+- c26 CMP regression (`cmp r8d,0x3FFF`, flags-only, tag0 flags);
+- c25 full large-table validation / genuine missing-entry regression;
+- c24 no-unwind safeguards;
+- c23 call carrier, c22 TEST/JE, c21 same-field read, c20 EDI provenance and c19 Transform protection.
 
 Run the relevant full build/regression chain. Update a successor analysis/result file, `docs/PROJECT_STATE.md`, `docs/CODEX_RESULT.md`, and reusable confirmed/corrected facts in `deluxxxe-dev/MSM2-Wisdoms` when accessible.
 
-If authenticated static/current-code evidence after the CMP fix is sufficient, do not request another runtime test by habit. If runtime capture is genuinely required, emit only the minimum CMP/next-boundary fields and request the shortest A/E-style test necessary. Commit and push all authorized changes to the current development line.
+If authenticated current-code evidence after the branch extension is sufficient, do not request another runtime test by habit. If actual branch target/path bytes are unavailable outside the live guarded snapshot, emit only the minimum branch-edge/next-barrier fields and request the shortest A/E-style runtime test necessary. Commit and push all authorized changes to the current development line.
