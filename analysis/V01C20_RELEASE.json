@@ -8,13 +8,13 @@
   "outputs": [
     {
       "path": "MSM2-WS-v0.1c20.zip",
-      "bytes": 3352082,
-      "sha256": "f78ffd90e3a91af0c54cf86026145a8ee76dbce83703808f4aa9655834c9075f"
+      "bytes": 3354639,
+      "sha256": "cdac793f8e39c2bff47f97814148e6ff71e64aa7e5ed7f5775e3f0562ee694ff"
     },
     {
       "path": "MSM2-WS-v0.1c20-source.zip",
-      "bytes": 759739,
-      "sha256": "c0d577be578c3163ceced224cf74c4070b4e151a8335420655a046e7bf7b063b"
+      "bytes": 761507,
+      "sha256": "f81942b11ee04f6640859aa47b04d1e3cc348cccdbe2d16893c387cf6978ab0e"
     }
   ],
   "public_test_pass_records": {
@@ -211,5 +211,20 @@
     "runtime_DLL_unchanged": true,
     "user_PC_cause": "UNCONFIRMED",
     "user_PC_diagnostic_result": "pending"
+  },
+  "focused_diagnostic_staging": {
+    "implementation_commit": "bc050b27d9cf1cdd01fda6208b4e735a2a549c25",
+    "user_direct_build_failure": "Windows_mounted_source_Windows.h_windows.h_alias_before_reset_fixture",
+    "owned_alias_reproducer": "PASS_missing_Windows_types",
+    "helper": "source/tools/windows/reset-diagnostic.sh",
+    "case_sensitive_Linux_staging": true,
+    "cloud_build": "PASS",
+    "cloud_focused_PASS_records": 9,
+    "cloud_optional_private_SKIP_records": 1,
+    "diagnostic_tree_and_logs_retained": true,
+    "deploys_to_game": false,
+    "existing_production_fixture_deadlines_and_assertions_unchanged": true,
+    "original_user_capture_failure_cause": "UNCONFIRMED",
+    "user_new_helper_result": "pending"
   }
 }
