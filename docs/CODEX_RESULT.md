@@ -1,3 +1,60 @@
+# Codex result — one-click shared Overstrike startup (2026-10-24)
+
+Branch: **codex/v01c20-edi-value-provenance**.
+Implementation: **845e33cafecae352e5194d790358500bb0066081**, based on the
+owner-confirmed Organization baseline 5192f05 and recorded branch policy e884fed.
+Output: **MSM2-Mod-Tools-v1.1.0.zip**, 41244 bytes,
+SHA256 `24262407787c3c757e4d1240435e6d842c288c3d23e3ce12796e789838b0d219`.
+
+The user requested double-click preparation through Overstrike startup and chose
+ordinary environment/layout checks, rather than updating/building WS at launch.
+The existing actual-game installation/startup/log acceptance remains accepted.
+
+## Change / use
+
+Run `_source/environment/Start-Overstrike.cmd` once after pulling this branch
+with game and Overstrike closed. It derives the game root from the authoritative
+source layout (or asks for it outside that layout), checks shared EXE/loaders,
+the MSM2 profile and WS layout, installs/refreshes only its own Mod-Tools files
+and three owned shortcuts, then opens shared Overstrike with cwd=game.
+Existing backup destination/profile and post-restore confirmation are preserved;
+first-time backup defaults to home/MSM2-Mod-Backups without making a snapshot.
+
+Thereafter double-click **MSM2 - Overstrike** on the desktop. It validates the
+same paths, requires one root versioned WS script, refuses visible WS archives,
+links and update/Git locks, and launches/reuses only the matching shared manager.
+It does not pull Git, build/test/deploy WS, edit SF/ordinary mods, change profiles,
+stop processes or start the game. Use Install mods / Run modded game in Overstrike.
+Wrong layouts preserve all files and display an error instead of cleaning them.
+Matching running Overstrike is activated; a foreign process path is refused.
+
+Files: new environment/Start-Overstrike.cmd; environment engine/Windows adapter,
+Python/PowerShell tests, README/TEST_REPORT; root README and shared recovery docs.
+This delivery updates CODEX_RESULT, toolkit ZIP and MOD_TOOLS_RELEASE metadata.
+
+## Validation / limits
+
+- **27 Python tests PASS** (owned real filesystem/Git): existing backup/restore
+  regressions plus new first-time setup/upgrade, preserved settings/dirty work,
+  repeated startup without reinstallation/full scan/Git, path inference, and
+  duplicate/archive/lock/loader/profile/unrelated-toolkit refusals.
+- **16 PowerShell checks PASS** with fake launch/process/COM boundaries: exact
+  EXE/CWD, same-manager reuse, three shortcut targets/icon/CWD, collision refusal
+  before saving any shortcut, existing game protections and syntax parsing.
+- Seven CRLF CMD entrypoint contracts and Python syntax pass. Distribution CRC,
+  payload hashes/allowlist pass; standalone extraction rebuilds identical ZIP.
+- Actual Windows desktop COM and this new launcher remain user acceptance checks.
+  Linux/Core fake-host tests do not prove the user's shortcut was installed.
+
+No main merge, SF code change or native runtime/version/binary package change.
+WS stays v0.1c20/package0.1.38; EDI remains disabled, ownership/exact-build gates
+and zero Position/source/input/movement writes are preserved. CODEX_NEXT and
+PROJECT_STATE are unchanged. No native139-suite rerun was needed for shared
+launcher-only changes. Next human step: one-time launcher setup, then confirm
+the desktop shortcut opens the existing shared ordinary+SF+WS Overstrike UI.
+
+---
+
 # Codex result — Organization development baseline accepted (2026-10-24)
 
 Repository: **deluxxxe-dev/MSM2-WallSprint**.
