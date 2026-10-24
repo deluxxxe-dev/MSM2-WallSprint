@@ -32,6 +32,25 @@ Before starting any implementation task, read these files in order:
 - Do not package raw user logs, full captured game functions, or unnecessary game binary fragments in release ZIPs.
 - Treat each cloud task as isolated. Never assume an uncommitted working tree from a previous task still exists.
 
+## Reusable MSM2 knowledge maintenance
+
+`analysis/ENGINE_INTERNALS_REFERENCE.md` is the current WallSprint-derived compact index of engine facts that may be reusable by SocialFeed or future MSM2 mods. It is not the primary proof record; detailed evidence remains in task-specific analysis/runtime-result files.
+
+Whenever a task establishes, narrows, or disproves a reusable engine fact, update that reference in the same task when practical. Preserve the evidence labels and distinctions used there:
+
+- `VERIFIED-RUNTIME`
+- `VERIFIED-STATIC`
+- `OBSERVED-CORRELATION`
+- `HYPOTHESIS`
+- `UNKNOWN`
+- `REJECTED`
+
+Never promote correlation to causality/ownership/writability without the required proof. If a prior shared fact is wrong, correct the canonical entry explicitly rather than leaving contradictory statements as equally current truth.
+
+The owner intends to move this reusable knowledge into a dedicated organization-level repository under `deluxxxe-dev`. Until that central repository exists, `analysis/ENGINE_INTERNALS_REFERENCE.md` is the staging source for WallSprint-derived knowledge. After centralization, keep project-specific proof/history in this repository and synchronize reusable facts/corrections to the shared knowledge base rather than allowing the copies to drift.
+
+Do not place raw user logs, complete proprietary native function bodies, credentials, personal paths, or unnecessary game binary fragments in the reusable knowledge base.
+
 ## Final local workspace invariant
 
 The authoritative Windows development/test layout is `docs/LOCAL_WORKSPACE.md`.
