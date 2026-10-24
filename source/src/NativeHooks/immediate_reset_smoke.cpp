@@ -1,6 +1,32 @@
 // TEST ONLY: real debug-register writes and a real MinHook on an independently
 // written native function. Owned memory only; no game code or game gate bypass.
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <tlhelp32.h>
+#include <atomic>
+#include <cassert>
+// The legacy 30ms positive test measures actual hardware installation/capture,
+// not cold system-wide snapshot acquisition. Prepare a REAL OS snapshot first;
+// production still enumerates/filters it and closes the real handle unchanged.
+// This adapter exists only in this test translation unit, never in the DLL.
+static std::atomic<HANDLE> resetSmokeSnapshot{INVALID_HANDLE_VALUE};
+static std::atomic<DWORD> resetSmokeSnapshotDelay{0};
+static HANDLE WINAPI resetSmokeTakeSnapshot(DWORD flags,DWORD pid){
+ if(flags==TH32CS_SNAPTHREAD&&pid==0){
+  auto snapshot=resetSmokeSnapshot.exchange(INVALID_HANDLE_VALUE);
+  if(snapshot!=INVALID_HANDLE_VALUE){if(auto delay=resetSmokeSnapshotDelay.exchange(0))Sleep(delay);return snapshot;}
+ }
+ return CreateToolhelp32Snapshot(flags,pid);
+}
+static void prepareResetSmokeSnapshot(DWORD setupDelay=0){
+ assert(resetSmokeSnapshot.load()==INVALID_HANDLE_VALUE);
+ if(setupDelay)Sleep(setupDelay);
+ auto snapshot=CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD,0);
+ assert(snapshot!=INVALID_HANDLE_VALUE);resetSmokeSnapshot.store(snapshot);
+}
+#define CreateToolhelp32Snapshot resetSmokeTakeSnapshot
 #include "../msm2/orientation_trace.cpp"
+#undef CreateToolhelp32Snapshot
 #include "immediate_reset_trace.cpp"
 #include <MinHook.h>
 #include <immintrin.h>
@@ -76,6 +102,8 @@ static void dumpArmFailure(const msm2::reset_trace::Request& r,const Snapshot& s
 static DWORD WINAPI idleThread(void* end){WaitForSingleObject(static_cast<HANDLE>(end),INFINITE);return 0;}
 int main(int argc,char** argv){
  bool sequence=argc>1&&std::strcmp(argv[1],"--sequence")==0;
+ const bool slowSetup=argc>1&&std::strcmp(argv[1],"--slow-setup")==0;
+ const bool slowSnapshot=argc>1&&std::strcmp(argv[1],"--slow-snapshot")==0;
  auto* memory=static_cast<float*>(VirtualAlloc(nullptr,4096,MEM_COMMIT|MEM_RESERVE,PAGE_READWRITE));assert(memory);
  world[0]=world[5]=world[10]=world[15]=1;tilted[0]=tilted[6]=tilted[15]=1;tilted[9]=-1;
  hero.hero=reinterpret_cast<std::uintptr_t>(memory+64);hero.transform=reinterpret_cast<std::uintptr_t>(memory);
@@ -149,9 +177,27 @@ int main(int argc,char** argv){
   if(sequence)puts("PASS: real hardware diagonal E sequential dword reset after dual commits; previous surface anchor captures final WorldUp despite non-surface intermediate row; synthetic only");
   puts("PASS: b7 .60 prearm primary-only before .70 source commit, all-caller/invalid-source trace, surface/reset hardware events, positive PREARM_STATUS, unknown-writer non-correlation, Deinit cancellation and DR cleanup; synthetic NOT game evidence");return 0;
  }
- if(argc>1){
+ if(slowSnapshot){
+  assert(msm2::trace::configureReset(true,base,nt->OptionalHeader.SizeOfImage));config.maxThreads=1;
+  std::memcpy(memory,tilted,64);Snapshot snapshot{};assert(msm2::sample(snapshot));
+  prepareResetSmokeSnapshot();resetSmokeSnapshotDelay=50;
+  LARGE_INTEGER q{};assert(QueryPerformanceCounter(&q));msm2::reset_trace::Request r{};
+  r.session=1;r.commitQpc=q.QuadPart;r.hero=hero.hero;r.transform=hero.transform;r.thread=tid;r.normal={0,0,1};r.appliedUp={0,0,1};
+  assert(!msm2::trace::beginReset(r,snapshot));assert(resetSmokeSnapshot.load()==INVALID_HANDLE_VALUE);
+  assert(usedWindows==1&&!windows[0].primaryInstalled&&!windows[0].capture&&!windows[0].hits&&!activeLeases());
+  assert(windows[0].start>=1000.*double(q.QuadPart)/double(frequency.QuadPart)+50.);
+  assert(std::memcmp(memory,tilted,64)==0);
+  auto restored=debug(thread);assert(restored.Dr0==original.Dr0&&restored.Dr1==original.Dr1&&restored.Dr7==original.Dr7);
+  assert(output.find("installed=0 skipped_busy=0 failed=0")!=std::string::npos&&output.find("armed=0")!=std::string::npos);
+  msm2::trace::stop();finish=true;SetEvent(go);assert(WaitForSingleObject(thread,1000)==WAIT_OBJECT_0);
+  CloseHandle(thread);CloseHandle(go);CloseHandle(done);MH_Uninitialize();VirtualFree(memory,0,MEM_RELEASE);
+  puts("PASS: real snapshot handed to unchanged legacy engine50ms after commit refuses30ms arm; zero leases/hits, owned memory and debug registers unchanged; synthetic only");return 0;
+ }
+ if(argc>1&&!slowSetup){
   std::memcpy(memory,tilted,64);fakeToken.phase=3;fakeToken.generation=1;fakeToken.owner=hero.hero;fakeToken.updates=77;fakeToken.updateMs=GetTickCount64();fakeToken.thread=tid;
   armedSignal=CreateEventW(nullptr,FALSE,FALSE,nullptr);msm2::reset_trace::configure(true,base,nt->OptionalHeader.SizeOfImage,false);config.maxThreads=1;
+  prepareResetSmokeSnapshot();
+  fakeToken.updateMs=GetTickCount64();
   LARGE_INTEGER q{};QueryPerformanceCounter(&q);msm2::reset_trace::Request r{};r.session=1;r.generation=1;r.nativeUpdate=76;r.commitQpc=q.QuadPart;r.hero=hero.hero;r.transform=hero.transform;r.owner=hero.hero;r.thread=tid;r.normal={0,0,1};r.appliedUp={0,0,1};
   msm2::reset_trace::request(r);assert(WaitForSingleObject(armedSignal,1000)==WAIT_OBJECT_0);SetEvent(go);assert(WaitForSingleObject(done,1000)==WAIT_OBJECT_0);
   Sleep(20);msm2::reset_trace::stop();msm2::trace::stop();assert(!activeLeases());
@@ -164,11 +210,13 @@ int main(int argc,char** argv){
  assert(msm2::trace::configureReset(true,base,nt->OptionalHeader.SizeOfImage));config.maxThreads=1;
  auto arm=[&](unsigned session,bool characterize=false){
   std::memcpy(memory,tilted,64);Snapshot snapshot{};assert(msm2::sample(snapshot));
+  prepareResetSmokeSnapshot(slowSetup?50:0);
   LARGE_INTEGER q{};assert(QueryPerformanceCounter(&q));msm2::reset_trace::Request r{};
   r.session=session;r.characterize=characterize;r.nativeUpdate=76;r.commitQpc=q.QuadPart;r.hero=hero.hero;r.transform=hero.transform;r.thread=tid;r.normal={0,0,1};r.appliedUp={0,0,1};
   const auto before=usedWindows;const bool armed=msm2::trace::beginReset(r,snapshot);const auto lastError=GetLastError();
   if(!armed)dumpArmFailure(r,snapshot,before,lastError);
   assert(armed);
+  assert(resetSmokeSnapshot.load()==INVALID_HANDLE_VALUE);
  };
  arm(1);SetEvent(go);assert(WaitForSingleObject(done,1000)==WAIT_OBJECT_0);msm2::trace::pollReset(true);msm2::trace::drainLogs();assert(!activeLeases());if(windows[0].hits!=1)dumpWatchFailure(0);assert(windows[0].hits==1);
  assert(output.find("RESET_WRITER_CANDIDATE session=1")!=std::string::npos);assert(output.find("R8=0x1234 R9=0x5678")!=std::string::npos);assert(output.find("source_up=(0,1,0)")!=std::string::npos);assert(output.find("native_update=0")!=std::string::npos); // unknown synthetic writer cannot inherit the trigger update

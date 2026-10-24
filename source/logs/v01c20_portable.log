@@ -1,0 +1,13 @@
+PASS: basis/quaternion, delayed entry, four inputs, surface loss, nine unsafe exits, vanilla ground isolation
+PASS: short buffers, unique/ambiguous AOB, final byte, invalid patterns
+PASS: basis metrics/layout/reflection/shear/NaN, six number-only marker press/hold/release/focus cases, identity resets and velocity gaps
+PASS: real v0.1a4 thinned event replay: six Init/Entry/Update/Deinit sessions (not reconstructed frame counts)
+PASS: build admission, owner/lifecycle/elapsed, short gap vs emergency timeout, reset, crawl isolation, bounded vector filters/sign correlation
+PASS: overlapping clusters/basis suppression/matrix hypotheses, paired point covariance, 3 nonparallel axes vs antiparallel controls, crawl window/identity/state/freshness/validity/sign, surface gate stays blocked
+PASS: four-face min/mean/opposites, global sign inversion, constant/missing/bad/unstable face rejection, mixed-sign axis vs signed distinction
+PASS: targeted fields, missing-sample stability, cached contact metrics, 3 fresh crawl samples, short-session/identity/child-change exclusion; no actor writes
+PASS: Surface Pair/SurfaceFrame/adhesion local-only math, diagonal basis/negative controls/far-tangent plane/missing-batch reset; replayed431 real telemetry samples, 412 valid dry-run frames, no game writes
+PASS: delayed entry, smooth proper quaternion A/E basis, phase1 no position requests, bounded normal-only adhesion/far tangent plane, surface input movement, bad fields/corner/identity/kill/native overwrite exits
+PASS: A/E/axis surface basis, 0.25s monotonic shortest quaternion interpolation from captured entry (no restart), fixed heading/position/W preservation, invalid/slope/corner/degenerate/nonfinite rejection
+PASS: read-only A/E planar standoff candidate control: target0.5/deadzone0.01/gain0.25/cap0.02/error0.35, no pre-transition request, normal-only delta and tangent preservation, invalid/nonfinite/steep/nonunit refusal; no Position mutation
+PASS: c11 cardinal/diagonal SurfaceFrame displacement projection, time-scaled velocity and world-translation invariance; nonfinite/bad basis/invalid time refuse diagnostic

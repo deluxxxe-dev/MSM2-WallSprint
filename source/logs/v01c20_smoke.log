@@ -1,0 +1,7 @@
+PASS: SEH guarded read, DLL load, repeated enable/disable, restart, clean unload (synthetic host only)
+PASS: production Windows diagnostic formatter, six marker records, row/column metrics, signs, unavailable snapshot
+PASS: synthetic-host log confirms zero-match/build-gate refusal, executable hashing, 100ms diagnostic intervals, clean stop
+PASS: production bounded object reader: readable/read-only pages, guard/noaccess/cross-page/unmapped/null/overflow refusal; no game function calls
+PASS: workspace logger derives executable root, versioned nested project folder and zero-padded local SYSTEMTIME timestamp/suffix without hard-coded install path
+PASS: workspace actual Unicode/space directory creation/atomic collision suffixes preserve existing and concurrent logs; A/E and reopen append to one fixed timestamped run file
+PASS: workspace directory/root/open/collision failures report explicit stage/error and never use or modify the shared logs path
