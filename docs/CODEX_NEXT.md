@@ -1,50 +1,61 @@
-# Next task — bounded call-effect classification at 0x2B235D4 after accepted c22
+# Next task — authenticate and bound target 0x2CF7FE0 after accepted c23
 
 ## Status
 
-The v0.1c22 actual-game A/E capture is accepted for the current bounded diagnostic question.
+The v0.1c23 actual-game A/E capture is accepted for the current bounded diagnostic question.
 
 Source log supplied by the owner:
 
 ```text
-MSM2-WS-v0.1c22-20261025-021717.log
+MSM2-WS-v0.1c23-20261025-025936.log
 ```
 
 Do not merge `main`. Continue from the latest `codex/v01c20-edi-value-provenance` history unless this task deliberately creates and fully hands off a successor branch.
 
-## Accepted c22 facts
+## Accepted c23 facts
 
-The previous `0x2B235BE` blocker is resolved for the authenticated analyzed state:
-
-```text
-0x2B235BE: test r8b,r8b
-flags_only=1
-parent R8 selected/same-field tags=0x0
-flags_may_depend_tags=0x0
-0x2B235C1: je
-consumer_may_depend_tags=0x0
-first_possible_dependent_branch_rva=0x0
-returned_flags_tags=0x0
-```
-
-Therefore this exact TEST/JE pair does not carry the selected `0x2B23578` `Transform+0x10C` read value for the analyzed bounded state.
-
-The selected-read walk now stops at:
+The selected-read walk reaches an exact direct call:
 
 ```text
-first_unresolved_rva=0x2B235D4
-first_unresolved_instruction=call
-reason=read_flow_call_or_control_no_expansion
+site_rva=0x2B235D4
+form=direct_call
+target_rva=0x2CF7FE0
+exact_target=1
 ```
 
-Current unresolved outputs remain:
+The selected `Transform+0x10C` read dependence is still present at the call boundary in raw GPR carrier index 0:
+
+```text
+gpr=0
+gpr_tags=0x1
+origin_kind=mem32
+root=Hero Transform
+offset=0x10C
+```
+
+Do not assign semantic ABI/type names to this raw carrier merely from its index.
+
+The exact new blocker is target identity/boundary authentication:
+
+```text
+target_begin_rva=0
+target_end_rva=0
+boundary_verified=0
+snapshot_authenticated=0
+snapshot_sha256=unavailable
+modeled_states=0
+reason=read_call_target_boundary_hash_unavailable
+```
+
+Thus c23 did **not** expand the target and did not produce an effect certificate.
+
+Current outputs remain:
 
 ```text
 complete_local_flow=0
+first_unresolved_rva=0x2B235D4
+first_unresolved_instruction=call
 returned_gpr_may_depend_mask=0x1
-returned_xmm_may_depend_mask=0x0
-returned_flags_may_depend=0
-returned_caller_stack_may_depend=0
 memory_escape=0
 downstream_XYZ_W_relevance=unknown
 cross_invocation_feedback=unknown
@@ -52,7 +63,9 @@ effect_certificate=0
 writable_source_proven=0
 ```
 
-See `analysis/V01C22_RUNTIME_RESULT.md`.
+Runtime safety remained clean across two A/E-style sessions: verified native Deinit, retention pass, MOD Position writes 0, hard kills 0.
+
+See `analysis/V01C23_RUNTIME_RESULT.md`.
 
 ## Required reading
 
@@ -61,62 +74,89 @@ Before editing code, read:
 1. `AGENTS.md`
 2. `docs/DEV_RULES.md`
 3. `docs/PROJECT_STATE.md`
-4. `analysis/V01C22_RUNTIME_RESULT.md`
-5. `analysis/V01C22_READ_TEST_FLOW.md`
-6. `analysis/V01C21_RUNTIME_RESULT.md`
-7. `analysis/V01C20_RUNTIME_RESULT.md`
-8. `analysis/RDX_XYZ_SOURCE_CONTRACT.md`
-9. relevant `source/src/NativeHooks/rdx_source_contract.cpp/.hpp` code/tests
-10. `deluxxxe-dev/MSM2-Wisdoms/docs/WALLSPRINT_INTERNALS.md`
-11. `deluxxxe-dev/MSM2-Wisdoms/docs/ENGINE_INTERNALS.md`
+4. `analysis/V01C23_RUNTIME_RESULT.md`
+5. `analysis/V01C23_READ_CALL_FLOW.md`
+6. `analysis/V01C22_RUNTIME_RESULT.md`
+7. `analysis/V01C21_RUNTIME_RESULT.md`
+8. `analysis/V01C20_RUNTIME_RESULT.md`
+9. `analysis/RDX_XYZ_SOURCE_CONTRACT.md`
+10. relevant `source/src/NativeHooks/rdx_source_contract.cpp/.hpp` code/tests
+11. `deluxxxe-dev/MSM2-Wisdoms/docs/WALLSPRINT_INTERNALS.md`
+12. `deluxxxe-dev/MSM2-Wisdoms/docs/ENGINE_INTERNALS.md`
 
 Project-local measured evidence remains authoritative over a stale shared summary.
 
 ## Current bounded Codex task
 
-Implement the smallest evidence-preserving extension necessary to classify the exact call at `0x2B235D4` and continue the selected `Transform+0x10C` read-flow only until the next exact proof boundary.
+Implement the smallest fail-closed extension necessary to determine why the exact target `0x2CF7FE0` lacks c23's required function-boundary/hash identity and, only if provable, authenticate one bounded no-unwind/leaf span sufficiently to resume the existing c23 register-only call-effect analysis.
 
-### 1. Classify the exact callsite
+### 1. Classify the boundary failure exactly
 
-For `0x2B235D4`, report compact metadata sufficient to answer:
+For target `0x2CF7FE0`, report compact metadata sufficient to distinguish at minimum:
 
-- direct/indirect call form;
-- exact target RVA if statically resolvable;
-- authenticated target function boundary/hash if available under existing capture rules;
-- call arguments at the analyzed state and which may carry tag `1` selected-read, tag `2` post-write same-field, or tag `4` other-prewrite same-field dependence;
-- whether any argument may alias Hero Transform, the writer-entry RDX source span, caller/home stack, or another protected region;
-- which volatile/nonvolatile return/clobber carriers matter to the selected-read walk.
+- target outside admitted image/code region;
+- runtime-function lookup has no entry containing the exact target;
+- target falls inside an entry but is not its begin;
+- runtime metadata malformed/ambiguous;
+- span exceeds configured cap;
+- guarded current-code snapshot unavailable/unstable;
+- another exact identity refusal.
 
-Do not publish/reconstruct full proprietary native function bodies.
+Do not silently treat missing unwind/runtime-function metadata as a valid function boundary.
 
-### 2. Expand only if required and bounded
+Do not publish/reconstruct the whole proprietary target body.
 
-If the call target is exact, authenticated, locally bounded, and expansion is necessary to decide selected-read effect, add one narrowly scoped nested-call effect analysis for this call only.
+### 2. Optional strict no-unwind leaf admission
 
-Required questions are limited to whether selected-read dependence can:
+Only if the exact direct target is inside the authenticated executable code region and the failure is specifically compatible with a function that has no runtime-function entry, add a **single-target** bounded fallback for `0x2CF7FE0`.
+
+The fallback must fail closed and must not become a generic function finder.
+
+A possible admissible shape is:
+
+- start exactly at `0x2CF7FE0`;
+- hard byte/instruction caps no looser than the existing c23 leaf caps unless justified by owned fixtures;
+- decode from the exact target with no byte skipping;
+- accept only a tiny linear or otherwise fully enumerated leaf whose end can be proven by modeled control flow ending in normal `RET`;
+- no indirect transfer;
+- no unresolved branch target;
+- no nested CALL;
+- no recursion;
+- no unsupported instruction/effect;
+- no unbounded stack-frame construction;
+- no code crossing into another authenticated runtime-function region;
+- guarded double-read/current-code equality before admitting a hash/span;
+- record the exact admitted begin/end/size/hash and why the no-unwind proof is safe.
+
+If any of those conditions fail, stop at the exact reason. Do not infer a function end from the first convenient `RET` unless the bounded control-flow proof establishes that it is the admitted target's complete modeled exit set.
+
+### 3. Resume c23 effect analysis only after identity passes
+
+If the target becomes authenticated under the strict bounded rule, run only the already-designed c23 register-only leaf effect model needed to answer whether tag `1` can:
 
 - return through GPR/XMM/flags;
-- write/escape through caller/home stack or memory;
-- reach the same Transform field or protected Position/source regions through a proven alias;
-- alter a downstream branch/data path relevant to the writer XYZ/W contract.
+- be killed/clobbered;
+- escape through caller/home stack or another memory effect;
+- reach a protected Transform/source/Position alias;
+- alter the parent selected-read flow after return.
 
-Do not create a generic recursive interprocedural engine. Preserve strict caps and fail closed at unsupported instructions, aliases, indirect targets, recursion, nested calls beyond the explicitly admitted depth, or incomplete code identity.
+Do not broaden into a generic recursive interprocedural engine.
 
-### 3. Continue only to the next exact boundary
+Any memory operand, branch/call/stack effect outside the admitted model, alias ambiguity, cap, or unsupported instruction is the next exact blocker.
 
-After the `0x2B235D4` call is classified, continue the selected-read walk only as far as the existing bounded flow safely permits.
+### 4. Continue only to the next exact proof boundary
 
-Possible acceptable outcomes:
+Acceptable outcomes:
 
-**A.** Call is proven disjoint from selected-read effect for the modeled scope; continue to the next exact blocker/return.
+**A.** `0x2CF7FE0` is authenticated as a strict bounded leaf, its effect is modeled, and the selected-read walk advances to the next exact blocker/return.
 
-**B.** Call carries a narrow selected-read dependence relevant to protected downstream state; record the exact causal relation and stop before ownership/mutation work.
+**B.** The authenticated leaf proves a narrow selected-read dependence relevant to protected downstream state; record it and stop before ownership/mutation work.
 
-**C.** Exact target/alias/effect cannot be bounded; report the precise blocker and stop without guessing.
+**C.** Boundary/identity cannot be proven safely; report the precise reason and stop without guessing.
 
-Even local completion does not settle `cross_invocation_feedback` or authorize ownership research/mutation.
+Even Outcome A does not settle `cross_invocation_feedback`, whole writer XYZ/W causality, storage ownership, lifetime, exclusivity or writability.
 
-### 4. Preserve existing gates
+### 5. Preserve existing gates
 
 Still forbidden:
 
@@ -139,22 +179,23 @@ downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
 
-### 5. Tests / handoff
+### 6. Tests / handoff
 
-Add owned fixtures covering at minimum:
+Add owned fixtures for at minimum:
 
-- direct-call selected-read taint in an argument;
-- direct-call disjoint arguments;
-- return GPR carrying selected-read taint;
-- clobbered/dead selected-read carrier;
-- caller/home-stack memory escape;
-- protected Transform/source-span alias refusal;
-- unsupported/indirect/nested-call refusal;
+- exact direct target with missing runtime-function entry and safe strict leaf completion;
+- missing entry with internal branch that is fully bounded/enumerated if supported, otherwise exact refusal;
+- missing entry with nested CALL refusal;
+- missing entry with memory/stack effect refusal under the register-only leaf model;
+- first-RET-but-more-reachable-code trap proving no naive RET boundary inference;
+- target overlapping/crossing an authenticated runtime-function region refusal;
+- unstable guarded snapshot refusal;
+- no regression of c23 direct-call target/carrier classification;
 - no regression of c22 TEST/JE disjoint classification;
 - no regression of c21 exact same-field read;
 - no regression of c20 EDI value provenance;
 - no regression of c19 Transform/Position protection.
 
-Run the relevant full build/regression chain. Update a successor analysis/result file, `docs/PROJECT_STATE.md`, `docs/CODEX_RESULT.md`, and reusable confirmed/corrected facts in `deluxxxe-dev/MSM2-Wisdoms` when accessible.
+Run the relevant full build/regression chain. Update a successor c24 analysis/result file, `docs/PROJECT_STATE.md`, `docs/CODEX_RESULT.md`, and reusable confirmed/corrected facts in `deluxxxe-dev/MSM2-Wisdoms` when accessible.
 
-If current authenticated static/captured evidence suffices, do not request another runtime test merely by habit. If a new runtime capture is genuinely required, emit only the exact new fields needed and request the shortest A/E-style test necessary. Commit and push all authorized changes to the current development line.
+If authenticated static/current-code evidence suffices, do not request another runtime test merely by habit. If a new runtime capture is genuinely required, emit only the exact new fields needed and request the shortest A/E-style test necessary. Commit and push all authorized changes to the current development line.
