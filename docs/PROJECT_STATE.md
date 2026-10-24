@@ -20,24 +20,7 @@ Convert vanilla WallRun into surface-relative locomotion. Do not advance movemen
 
 Evidence: `analysis/V01C20_RUNTIME_RESULT.md`.
 
-Actual A/E-style run on v0.1c20 / package0.1.38:
-
-```text
-session1: 4219 ms orientation summary / 4.214959 s verified WallRun
-  verified Deinit, source active until Deinit, retention PASS
-  final actor Up dot surface=1
-  stale suspend/resume=1/1, max stale 103 ms, recovered
-  hard kills=0
-  Position writes by MOD=0, watch cleanup restored
-
-session2: 4390 ms orientation summary / 4.392723 s verified WallRun
-  verified Deinit, source active until Deinit, retention PASS
-  final actor Up dot surface=1.00000012
-  stale0, hard kills=0
-  Position writes by MOD=0, watch cleanup restored
-```
-
-Both sessions retained 8 true entry snapshots / 8 complete invocation maps.
+Actual A/E-style run on v0.1c20 / package0.1.38 retained verified lifecycle/orientation behavior, no hard kills, no MOD Position writes, and 8 true entry snapshots / 8 complete invocation maps in each session.
 
 ## Verified movement chain
 
@@ -62,13 +45,13 @@ RCX provenance = writer-entry Hero Transform
 destination = Hero Transform +0x10C
 ```
 
-C20 now establishes the bounded local reaching definition for EDI under the authenticated actual-game callee:
+C20 established the bounded local reaching definition for EDI under the authenticated actual-game callee:
 
 ```text
 producer RVA = 0x2B2356F
 producer kind = memory_load
 origin kind = memory_load
-root = 16 = analyzer globalRoot / exact RIP-relative executable-image address
+root = analyzer-internal root 16
 offset = 0x0C323788
 reaching definitions = 1
 all local reaching states examined = 1
@@ -76,36 +59,62 @@ same local value origin = 1
 value provenance exact = 1
 ```
 
-This supersedes the old statement that EDI local provenance is unknown. It does **not** assign semantic meaning to the image-global value, EDI, or `Transform+0x10C`.
+This does not assign semantic meaning to the memory origin, EDI, or `Transform+0x10C`.
 
-## Current research blocker — exact earlier read at 0x2B23578
+## Accepted c21 runtime result — exact same-field pre-write read
 
-The c20 local value proof did not finish the full callee/writer-effect proof:
-
-```text
-all_writer_call_states_examined=0
-relevant_transform_effects_resolved=0
-transform_position_protected_range_unmodified=0
-source_span_no_write_proven=0
-XYZ/W causal proof incomplete
-```
-
-The exact next dependency site is:
+Owner-supplied runtime log:
 
 ```text
-0x2B23578
+MSM2-WS-v0.1c21-20261025-013952.log
 ```
 
-Current conservative classification:
+C21 classified the previous `0x2B23578` blocker precisely:
 
 ```text
-earlier_read_provenance_dependency
-reason=exact_transform_write_may_change_a_decoded_read_carrier
+site=0x2B23578
+instruction=mov
+read width=4
+address=Hero Transform+0x10C
+base=RCX
+carrier=EAX
+same exact address for analyzed states=1
 ```
 
-The read occurs before the native write at `0x2B2358E`. The next task is therefore to classify its exact address/value provenance and ordering/value-flow relationship, not to skip directly to producer ownership.
+Therefore the earlier read is an exact read of the same field later written at `0x2B2358E`.
 
-Do not assume either that the earlier read is irrelevant or that it is causal. Same-invocation flow, any surviving returned carrier, and possible cross-invocation persistence must be distinguished or explicitly left unresolved.
+The bounded local flow also establishes:
+
+```text
+first possible use=0x2B23581
+control_may_depend=1
+first control dependence=0x2B23583
+memory_escape=0
+```
+
+This is possible local control dependence, not completed Position causality.
+
+## Current research blocker — 0x2B235BE `test`
+
+C21 read-flow analysis remains incomplete at:
+
+```text
+first_unresolved_rva=0x2B235BE
+first_unresolved_instruction=test
+reason=read_flow_partial_or_unmodeled_register
+```
+
+Current unresolved outputs:
+
+```text
+downstream_XYZ_W_relevance=unknown
+cross_invocation_feedback=unknown
+effect_certificate=0
+```
+
+The next task is the smallest bounded extension needed to model/classify the exact `test` operands/flags and continue only until the next exact local proof boundary.
+
+Do not infer that `Transform+0x10C` controls XYZ/W merely because the read may affect local control flow. Do not infer that the later write is irrelevant merely because it is disjoint from Position offsets.
 
 ## Current safety gate
 
@@ -153,30 +162,15 @@ Shared ordinary mods + SF + WS, shared Overstrike, modded launch and versioned W
 14. c19 exact Transform+0x10C destination ✅
 15. local/shared workspace acceptance ✅
 16. c20 EDI local value provenance ✅ actual game
-17. `0x2B23578` earlier-read dependency classification ▶ CURRENT
-18. resume full writer XYZ/W causal proof ⏸ after read/effect classification
-19. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-20. safe writable upstream movement source ⬜ NOT AUTHORIZED
-21. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-22. adhesion/contact refinement ⏸ deferred
-23. animation/camera/later traversal ⬜
-
-## c21 diagnostic preparation
-
-v0.1c21/package0.1.39 adds compact READ_DEPENDENCY/READ_FLOW metadata for the
-pinned read0x2B23578 under unchanged current-code authentication. Structural
-local ordering and conservative possible value flow are separate; surviving
-GPR/XMM/flags/caller stack and later reload/control/unsupported points are logged.
-The sidecar does not grant an effect or writer certificate and does not bypass
-the old refusal. Cross-invocation feedback/downstream XYZ/W remain unknown.
-Actual c21 classification is pending the next game log; see
-analysis/V01C21_READ_DEPENDENCY.md and docs/CODEX_RESULT.md for preparation/results.
+17. c21 exact `Transform+0x10C` pre-write read classification ✅ actual game
+18. `0x2B235BE test` / selected-read flow completion ▶ CURRENT
+19. resume full writer XYZ/W causal proof ⏸ after local effect classification
+20. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+21. safe writable upstream movement source ⬜ NOT AUTHORIZED
+22. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+23. adhesion/contact refinement ⏸ deferred
+24. animation/camera/later traversal ⬜
 
 ## Current action
 
-Run the completed diagnostic build through installed Update-WS, then shared
-Overstrike Install mods -> Run modded game. A/cardinal ~4s -> fully end WallRun
--> move/fast-travel -> E/diagonal ~4s; return the newest complete versioned WS log.
-Use READ_DEPENDENCY/READ_FLOW with existing VALUE/WRITE/ALIAS/WRITER and safety/
-finalization summaries to adjudicate only the current exact read blocker.
-Do not merge main, traverse producer0x351EB00 or enable gameplay writes.
+Continue from the accepted c21 evidence. Model/classify only the missing `0x2B235BE test` semantics and the selected-read value/flag flow needed to decide downstream relevance or identify the next exact blocker. Preserve all current safety gates, do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
