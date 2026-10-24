@@ -1,171 +1,144 @@
-# Next task — authenticate and bound target 0x2CF7FE0 after accepted c23
+# Next task — distinguish valid-large PE runtime table from malformed metadata after accepted c24
 
 ## Status
 
-The v0.1c23 actual-game A/E capture is accepted for the current bounded diagnostic question.
+The v0.1c24 actual-game capture is accepted for the current bounded diagnostic question.
 
 Source log supplied by the owner:
 
 ```text
-MSM2-WS-v0.1c23-20261025-025936.log
+MSM2-WS-v0.1c24-20261025-033837.log
 ```
 
-Do not merge `main`. Continue from the latest `codex/v01c20-edi-value-provenance` history unless this task deliberately creates and fully hands off a successor branch.
+Do not merge `main`. Continue from the latest `codex/v01c20-edi-value-provenance` history.
 
-## Accepted c23 facts
+## Accepted c24 facts
 
-The selected-read walk reaches an exact direct call:
+The selected-read walk still reaches:
 
 ```text
-site_rva=0x2B235D4
-form=direct_call
+0x2B235D4 -> direct target 0x2CF7FE0
+raw GPR carrier index 0 tags=0x1
+origin=mem32 Hero Transform+0x10C
+```
+
+C24 narrowed target-identity failure to PE/runtime metadata validation:
+
+```text
 target_rva=0x2CF7FE0
-exact_target=1
+code_region_begin_rva=0x1000
+code_region_end_rva=0x52A41EC
+runtime_lookup_found=0
+runtime_lookup_same_image=1
+runtime_lookup_readable=1
+PE_runtime_table_valid=0
+PE_runtime_entries=527161
+scan_bytes=0
+admitted_bytes=0
+instructions=0
+snapshot_stable=0
+reason=target_runtime_table_malformed_or_cap
 ```
 
-The selected `Transform+0x10C` read dependence is still present at the call boundary in raw GPR carrier index 0:
+The c24 implementation cap is 262144 runtime-function entries. Therefore this result does **not** establish that the PE exception directory is malformed, nor that the exact target truly lacks a runtime-function entry. No no-unwind leaf span/hash/effect was admitted.
+
+Current unresolved outputs remain:
 
 ```text
-gpr=0
-gpr_tags=0x1
-origin_kind=mem32
-root=Hero Transform
-offset=0x10C
-```
-
-Do not assign semantic ABI/type names to this raw carrier merely from its index.
-
-The exact new blocker is target identity/boundary authentication:
-
-```text
-target_begin_rva=0
-target_end_rva=0
 boundary_verified=0
 snapshot_authenticated=0
 snapshot_sha256=unavailable
 modeled_states=0
-reason=read_call_target_boundary_hash_unavailable
-```
-
-Thus c23 did **not** expand the target and did not produce an effect certificate.
-
-Current outputs remain:
-
-```text
-complete_local_flow=0
-first_unresolved_rva=0x2B235D4
-first_unresolved_instruction=call
-returned_gpr_may_depend_mask=0x1
-memory_escape=0
+effect_certificate=0
 downstream_XYZ_W_relevance=unknown
 cross_invocation_feedback=unknown
-effect_certificate=0
 writable_source_proven=0
 ```
 
-Runtime safety remained clean across two A/E-style sessions: verified native Deinit, retention pass, MOD Position writes 0, hard kills 0.
-
-See `analysis/V01C23_RUNTIME_RESULT.md`.
-
-## Required reading
-
-Before editing code, read:
-
-1. `AGENTS.md`
-2. `docs/DEV_RULES.md`
-3. `docs/PROJECT_STATE.md`
-4. `analysis/V01C23_RUNTIME_RESULT.md`
-5. `analysis/V01C23_READ_CALL_FLOW.md`
-6. `analysis/V01C22_RUNTIME_RESULT.md`
-7. `analysis/V01C21_RUNTIME_RESULT.md`
-8. `analysis/V01C20_RUNTIME_RESULT.md`
-9. `analysis/RDX_XYZ_SOURCE_CONTRACT.md`
-10. relevant `source/src/NativeHooks/rdx_source_contract.cpp/.hpp` code/tests
-11. `deluxxxe-dev/MSM2-Wisdoms/docs/WALLSPRINT_INTERNALS.md`
-12. `deluxxxe-dev/MSM2-Wisdoms/docs/ENGINE_INTERNALS.md`
-
-Project-local measured evidence remains authoritative over a stale shared summary.
+See `analysis/V01C24_RUNTIME_RESULT.md` and `analysis/V01C24_TARGET_IDENTITY.md`.
 
 ## Current bounded Codex task
 
-Implement the smallest fail-closed extension necessary to determine why the exact target `0x2CF7FE0` lacks c23's required function-boundary/hash identity and, only if provable, authenticate one bounded no-unwind/leaf span sufficiently to resume the existing c23 register-only call-effect analysis.
+Implement the smallest fail-closed refinement necessary to distinguish a structurally malformed PE exception/runtime-function table from a structurally valid table that merely exceeds c24's fixed 262144-entry cap. Only if the exact-build metadata becomes fully validated may the existing strict c24 target-identity/no-unwind path continue.
 
-### 1. Classify the boundary failure exactly
+### 1. Split cap refusal from malformed metadata
 
-For target `0x2CF7FE0`, report compact metadata sufficient to distinguish at minimum:
+Do not keep the combined `target_runtime_table_malformed_or_cap` as the only outcome.
 
-- target outside admitted image/code region;
-- runtime-function lookup has no entry containing the exact target;
-- target falls inside an entry but is not its begin;
-- runtime metadata malformed/ambiguous;
-- span exceeds configured cap;
-- guarded current-code snapshot unavailable/unstable;
-- another exact identity refusal.
+Report separately at minimum:
 
-Do not silently treat missing unwind/runtime-function metadata as a valid function boundary.
+- exception directory RVA and byte size validity;
+- entry-size divisibility / exact derived entry count;
+- in-image/readable range validity;
+- configured metadata byte/entry budget;
+- explicit `entry_cap_exceeded` versus structural malformed reasons;
+- whether any validation was skipped because of the cap.
 
-Do not publish/reconstruct the whole proprietary target body.
+Do not treat `527161 > 262144` as evidence of corruption by itself.
 
-### 2. Optional strict no-unwind leaf admission
+### 2. Permit larger-table validation only under a justified bounded budget
 
-Only if the exact direct target is inside the authenticated executable code region and the failure is specifically compatible with a function that has no runtime-function entry, add a **single-target** bounded fallback for `0x2CF7FE0`.
+If the exact exception directory is structurally valid, extend validation only enough to cover this exact build while remaining bounded and fixture-tested.
 
-The fallback must fail closed and must not become a generic function finder.
+Preferred properties:
 
-A possible admissible shape is:
+- derive work from the authenticated directory byte size rather than blindly trusting a count field;
+- keep a hard metadata-byte ceiling and hard entry ceiling, justified in code/docs/tests;
+- chunk reads; do not allocate/copy an unbounded table;
+- validate all entries needed by the existing c24 contract: ordered/nonoverlapping begin/end, in-image ranges, bounded unwind RVA, no arithmetic overflow;
+- preserve guarded read failure as exact refusal;
+- preserve exact-build/image/code-section gates;
+- do not scan arbitrary memory outside the admitted PE exception directory.
 
-- start exactly at `0x2CF7FE0`;
-- hard byte/instruction caps no looser than the existing c23 leaf caps unless justified by owned fixtures;
-- decode from the exact target with no byte skipping;
-- accept only a tiny linear or otherwise fully enumerated leaf whose end can be proven by modeled control flow ending in normal `RET`;
-- no indirect transfer;
-- no unresolved branch target;
-- no nested CALL;
-- no recursion;
-- no unsupported instruction/effect;
-- no unbounded stack-frame construction;
-- no code crossing into another authenticated runtime-function region;
-- guarded double-read/current-code equality before admitting a hash/span;
-- record the exact admitted begin/end/size/hash and why the no-unwind proof is safe.
+A simple larger ceiling is acceptable only if it is explicitly bounded, sufficient for the authenticated directory, and covered by owned over-cap/malformed fixtures. Do not silently make the limit effectively unbounded.
 
-If any of those conditions fail, stop at the exact reason. Do not infer a function end from the first convenient `RET` unless the bounded control-flow proof establishes that it is the admitted target's complete modeled exit set.
+### 3. Decide target runtime-entry status only after full metadata validation
 
-### 3. Resume c23 effect analysis only after identity passes
+After the table is structurally valid under the admitted budget:
 
-If the target becomes authenticated under the strict bounded rule, run only the already-designed c23 register-only leaf effect model needed to answer whether tag `1` can:
+- determine whether any runtime-function entry contains `0x2CF7FE0`;
+- compare with the existing OS runtime lookup result;
+- if an exact/containing entry exists, authenticate it under the ordinary path or stop at the exact disagreement/interior-target reason;
+- if **no** containing entry exists and OS lookup consistently reports none, only then permit the existing c24 strict no-unwind leaf admission to run.
 
-- return through GPR/XMM/flags;
-- be killed/clobbered;
-- escape through caller/home stack or another memory effect;
-- reach a protected Transform/source/Position alias;
-- alter the parent selected-read flow after return.
+Do not infer a no-unwind function from OS lookup alone while PE table validation is incomplete.
 
-Do not broaden into a generic recursive interprocedural engine.
+### 4. Reuse c24 no-unwind rule unchanged unless evidence requires a narrow fix
 
-Any memory operand, branch/call/stack effect outside the admitted model, alias ambiguity, cap, or unsupported instruction is the next exact blocker.
+If the target reaches the strict missing-entry fallback, keep the existing constraints:
 
-### 4. Continue only to the next exact proof boundary
+- exact target `0x2CF7FE0` only;
+- <=128 bytes / <=32 instructions unless a separately justified owned-fixture change is necessary;
+- guarded stable current-code snapshot;
+- linear fully modeled register-only path ending in normal RET;
+- no memory operand, stack construction, branch, nested CALL, indirect transfer, unsupported partial effect, or crossing another runtime region;
+- no naive first-RET function finder.
 
-Acceptable outcomes:
+If it fails, report the next exact instruction/reason and stop.
 
-**A.** `0x2CF7FE0` is authenticated as a strict bounded leaf, its effect is modeled, and the selected-read walk advances to the next exact blocker/return.
+### 5. Resume c23 call-effect analysis only after identity admission
 
-**B.** The authenticated leaf proves a narrow selected-read dependence relevant to protected downstream state; record it and stop before ownership/mutation work.
+Only after target identity passes may the existing register-only selected-read effect model classify whether tag `1` is killed, returned, or reaches another exact boundary.
 
-**C.** Boundary/identity cannot be proven safely; report the precise reason and stop without guessing.
+Even successful local completion does not settle:
 
-Even Outcome A does not settle `cross_invocation_feedback`, whole writer XYZ/W causality, storage ownership, lifetime, exclusivity or writability.
+```text
+whole writer XYZ/W causality
+cross_invocation_feedback
+caller/storage ownership
+lifetime/exclusivity
+writability
+```
 
-### 5. Preserve existing gates
+### 6. Preserve safety gates
 
 Still forbidden:
 
-- Position writes;
-- source-position writes;
+- Position/source-position writes;
 - input/movement/adhesion/camera/animation/physics changes;
 - producer `0x351EB00` traversal;
-- guessed ABI/type names;
-- arbitrary data-page mutation/PAGE_GUARD shortcuts;
+- guessed ABI/type semantics;
+- PAGE_GUARD/data-page mutation shortcuts;
 - weakening ownership/lifetime/exclusivity requirements.
 
 Safety state remains:
@@ -179,23 +152,23 @@ downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
 
-### 6. Tests / handoff
+### 7. Owned tests / handoff
 
-Add owned fixtures for at minimum:
+Add fixtures covering at minimum:
 
-- exact direct target with missing runtime-function entry and safe strict leaf completion;
-- missing entry with internal branch that is fully bounded/enumerated if supported, otherwise exact refusal;
-- missing entry with nested CALL refusal;
-- missing entry with memory/stack effect refusal under the register-only leaf model;
-- first-RET-but-more-reachable-code trap proving no naive RET boundary inference;
-- target overlapping/crossing an authenticated runtime-function region refusal;
-- unstable guarded snapshot refusal;
-- no regression of c23 direct-call target/carrier classification;
-- no regression of c22 TEST/JE disjoint classification;
-- no regression of c21 exact same-field read;
-- no regression of c20 EDI value provenance;
-- no regression of c19 Transform/Position protection.
+- valid exception table just below old 262144 cap;
+- structurally valid table above old cap and below new bounded budget;
+- table exceeding the new hard budget;
+- byte size not divisible by runtime-function entry size;
+- arithmetic/range overflow;
+- unordered/overlapping entries;
+- invalid unwind RVA;
+- exact target with containing entry;
+- exact target with fully validated missing entry + OS lookup none;
+- lookup/table disagreement;
+- no regression of c24 strict no-unwind rules;
+- no regression of c23 call carrier, c22 TEST/JE, c21 same-field read, c20 EDI provenance, c19 Transform protection.
 
-Run the relevant full build/regression chain. Update a successor c24 analysis/result file, `docs/PROJECT_STATE.md`, `docs/CODEX_RESULT.md`, and reusable confirmed/corrected facts in `deluxxxe-dev/MSM2-Wisdoms` when accessible.
+Run the relevant full build/regression chain. Update a successor analysis/result file, `docs/PROJECT_STATE.md`, `docs/CODEX_RESULT.md`, and reusable confirmed/corrected facts in `deluxxxe-dev/MSM2-Wisdoms` when accessible.
 
-If authenticated static/current-code evidence suffices, do not request another runtime test merely by habit. If a new runtime capture is genuinely required, emit only the exact new fields needed and request the shortest A/E-style test necessary. Commit and push all authorized changes to the current development line.
+If current authenticated metadata/current-code evidence suffices after the parser/budget fix, do not request another runtime test merely by habit. If a new capture is genuinely required, emit only the minimum new metadata fields and request the shortest A/E-style test necessary. Commit and push all authorized changes to the current development line.
