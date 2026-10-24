@@ -1,3 +1,121 @@
+# Codex result — c27 exact JA edges / bounded all-path target proof
+
+Branch **codex/v01c20-edi-value-provenance**; accepted task base **7f0c4d9**.
+Implementation **0305d77ff17b25fe7169420415e968670b976286**. Version **v0.1c27 / package0.1.45**.
+Outputs **MSM2-WS-v0.1c27.zip**, **MSM2-WS-v0.1c27-source.zip**,
+**MSM2-WS-v0.1c27.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C27_RELEASE.json** (final sizes/hashes/source-snapshot commit).
+
+## Accepted input / outcome
+
+Read AGENTS, development manual/rules/workspace/state/NEXT, referenced compact
+runtime results, current code and relevant accessible Wisdoms instructions/manual/
+engine/method/project references. Fetched/fast-forwarded only the intended WS
+branch; no main merge/reset. Incoming Overstrike updater/WINMM recovery helpers
+remain byte-identical to task base. No SF/ordinary-mod implementation changes.
+
+Accepted c26 actual diagnostic: exact CMP r8d,0x3FFF at0x2CF7FE0, flags-only,
+R8/flags tags0; next JA0x2CF7FE7 uses CF/ZF from CMP, condition tags0 but numerical
+outcome UNKNOWN. C25 full527161-entry/6325932-byte table/actual queried no-entry
+and next runtime0x2CF8020 remain accepted. C26 native Deinit/retention passed,
+hard kills/Position/source-position/corrections0. Compact evidence contains no
+branch displacement, taken/fallthrough RVAs or subsequent path bytes.
+
+**Outcome C / prepared conditional proof:** classify exact current edges and
+attempt only an explicitly authorized bounded all-path extension. Actual c27
+edges/next barrier/identity/effects remain PENDING minimum live metadata. Owned
+fixture success does not supply the missing actual bytes/structure. Do not infer
+branch direction, function semantics, ABI, XYZ/W relevance or writable ownership.
+
+## Implementation / files
+
+- read_target_identity.hpp / rdx_source_contract.hpp: compact exact edge/range/
+  runtime/encoding and CFG fields, current entry tags and per-return summaries.
+- rdx_source_contract.cpp: only pinned JA0x2CF7FE7, short77rel8 or near0F87rel32,
+  exact decoded signed displacement/edge agreement, RVA under/overflow/code/
+  allowance/runtime bounds and forward checks. Require its exact accepted CMP
+  producer, complete decoded flag access and no relevant1/2/4 condition tags.
+  No historical tag0 assumption or numerical-direction choice.
+- One conditional split, at most2 paths,128 target bytes,32 unique reachable
+  instructions,64 visits. Clone state before both legs; use byte ownership to
+  reject overlapping instruction decodes. Decode reachable instructions only;
+  unused hash-span gaps are not modeled instructions. Any unsupported effect,
+  memory/stack/nested-call/partial/indirect/other branch/backedge/cap or missing
+  normal RET refuses the whole candidate, including after one safe RET.
+- Every path must safely end at plain C3 RET before span admission. Re-read the
+  whole bounded snapshot after the walk and recheck runtime coverage before
+  identity/hash. c23 verifies the same pinned proof/snapshot, repeats branch
+  tags per analyzed state and models all reachable returns; legacy return-slot/
+  stack alias/SP bookkeeping stays. Union GPR/XMM/flags/clobber effects; differing
+  origins become unknown, with explicit per-path/path-dependent return records.
+  Caller state is untouched if any path fails. No recursive CFG emulator added.
+- writer_entry_snapshot.cpp: at most2 proof/parent-analysis passes. First proof
+  records edges and stops for missing current tags; parent sidecar supplies tag
+  unions. Reprove current metadata/code, compare to prepass snapshot, reset both
+  analysis seeds, then rerun. Any incomplete parent proof remains incomplete.
+  New TARGET_PASSES/LEAF_CFG/LEAF_RETURN and extended LEAF_BRANCH report exact
+  outcomes/next failure. No raw body, memory value or numerical outcome emitted.
+- Seven owned groups added to read_target_identity_smoke.cpp (28 total), retaining
+  c19-c26/21 read-call groups. Version/info, package manifest, README/README_TEST/
+  BUILD, accepted c26 source mirror, c27 design/gate, engine index, AGENTS and
+  PROJECT_STATE updated. **CODEX_NEXT preserved**. See V01C27_JA_FANOUT.md.
+
+## Validation
+
+- Final Windows x64 warnings-as-errors build PASS.
+- Final full pipeline **13 portable + 7 DLL/logger + 168 hooks/native/contracts/
+  workspace = 188 public PASS / 5 optional private-input SKIP**, all exit0.
+- New owned cases cover exact short/near edges and last allowed byte, signed
+  overflow/range/backedge/runtime crossing, missing/dependent current tags and
+  per-state recheck, two identical/different live-killed GPR/XMM returns in both
+  orders, decode overlap, second branch/path cap, forbidden effect on one leg,
+  instruction/byte/normal-return limits, initial/final snapshot instability,
+  proof-versus-effect snapshot mismatch, exact CMP producer, full527161-entry
+  table and existing c19-c26 guards. No private target body replay.
+- Actual provisional source ZIP extracted independently: fresh build PASS;
+  **103 focused entry/c14-c27 + 7 DLL/logger + 13 workspace = 123 separate PASS**,
+  no private skips; package verifier PASS separately. Don't add duplicates to188.
+- Initial full run stalled in the unchanged hardware orientation-watch fixture;
+  stopped that owned process (exit143). One bounded isolated retry timed out124.
+  Prior c26 and current fixtures then passed independently, including current
+  normal WINEDEBUG=-all. Final full normal pipeline passed including that fixture.
+  No fixture assertion, timeout or native production gate was relaxed. This is a
+  Wine-fixture intermittent stall, not a claimed real-game result or hidden PASS.
+- Static byte checks preserve c19-c26 scalar models before the new edge helper,
+  complete c25 table/lookup/snapshot guards, native lifecycle/orientation/ABI/
+  deadline/cleanup sources, updater/WINMM helper baseline and CODEX_NEXT.
+- Final reporting refresh retains byte-identical tested native/tool inputs,
+  rechecks standalone package, final ZIP CRC/hash/version/DLL diagnostic markers,
+  complete current source/docs/analysis/helpers/licenses, one active virtual
+  install member and private/compiled exclusions. Hashes are in release metadata.
+
+Shared Wisdoms **650e384** supersedes stale c26 UNKNOWN form with accepted CMP/JA
+facts and records the all-path/current-state/conservative-merge method as
+VERIFIED-STATIC/owned-fixture scope, actual c27 UNKNOWN. Concurrent SF knowledge
+changes retained; no raw private logs/bodies/personal data added.
+
+## Safety / human evidence
+
+writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/
+downstream_conflicts_proven_absent0; Position/source-position/input/movement0.
+Producer0x351EB00 deferred; no gameplay/adhesion/camera/animation/physics, guessed
+ABI/PAGE_GUARD/data-page changes/new hook or SF/ordinary mod mutation. Current
+code snapshots are not atomic execution attestation or future ownership proof.
+Local all-path completion alone does not resolve whole writer XYZ/W, feedback,
+caller storage, lifetime/exclusivity or writability. No effect certificate issued.
+
+Exact actual edges/path bytes are absent from compact c26, so one short capture
+is genuinely required. Minimum fields: LEAF_BRANCH encoding/displacement/both
+edges and limits, TARGET_PASSES/LEAF_CFG/next TARGET_IDENTITY/READ_CALL barrier;
+LEAF_RETURN only if all outcomes pass; existing native/Position/cleanup records.
+Close game/Overstrike; installed **MSM2-WS/Update-WS.cmd**; shared Overstrike
+**Install mods -> Run modded game**. **A ~3s -> fully end WallRun -> move/fast-travel
+-> E ~3s**, each below unchanged5s. Return newest private complete
+**MSM2-WS/logs/MSM2-WS-v0.1c27-YYYYMMDD-HHMMSS.log**. No function/memory dump,
+manual ZIP placement, routine repeat run or download link required.
+
+---
+
 # Codex result — c26 exact pinned CMP / strict linear next boundary
 
 Branch: **codex/v01c20-edi-value-provenance**; accepted task base **4b075c6**.
