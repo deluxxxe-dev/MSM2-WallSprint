@@ -1,0 +1,151 @@
+{
+  "version": "v0.1c26",
+  "package_version": "0.1.44",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "base_commit": "4b075c61a527126e936445ea10d6fe7709fe09ff",
+  "implementation_commit": "53530d9db2098c34dfa6b709398d3f3f79355957",
+  "source_snapshot_commit": "8fc20e0032c694ab8a792766ebb2d1ea25cd3d3f",
+  "outputs": [
+    {
+      "path": "MSM2-WS-v0.1c26.zip",
+      "bytes": 3712164,
+      "sha256": "29d180fed2793408037bc76988d27c9dce6707cf11c3bb1301dccfe369e8f555"
+    },
+    {
+      "path": "MSM2-WS-v0.1c26-source.zip",
+      "bytes": 902523,
+      "sha256": "8542ccc50c75bf0cf0220ea0050ccca8444799644fde17b13ba4219ff5cf0024"
+    }
+  ],
+  "script": {
+    "path": "MSM2-WS-v0.1c26.script.disabled",
+    "sha256": "b347429b5dd3235f88effdfb6b17808a5d68fbe26b58c7566b9d46f3248f3dd1",
+    "dll_sha256": "94da021a9ec46e19c1db80464f588bb691670debc8666c47e9103c615f7c43f9"
+  },
+  "public_test_pass_records": {
+    "portable": 13,
+    "smoke": 7,
+    "hooks": 161
+  },
+  "total_public_pass_records": 181,
+  "private_input_skips": 5,
+  "retained_read_call_groups": 21,
+  "identity_groups": 21,
+  "new_identity_groups": 6,
+  "standalone_source": {
+    "fresh_build": "PASS",
+    "focused_entry_c14_c26": 96,
+    "DLL_logger": 7,
+    "workspace": 13,
+    "total_separate_records": 116,
+    "private_skips": 0,
+    "package_verifier": "PASS",
+    "final_reporting_package_verifier": "PASS",
+    "final_native_tool_inputs_identical_to_rebuilt_source": true
+  },
+  "accepted_c25": {
+    "evidence": "analysis/V01C25_RUNTIME_RESULT.md",
+    "directory_rva": "0xc566000",
+    "directory_bytes": 6325932,
+    "entries": 527161,
+    "fully_validated": true,
+    "lookup_executed": true,
+    "missing_runtime_entry": true,
+    "target": "0x2cf7fe0",
+    "next_runtime": "0x2cf8020",
+    "stable_snapshot_first_barrier": "CMP",
+    "actual_operand_form": "unknown"
+  },
+  "read_target_identity": {
+    "single_target": "0x2cf7fe0",
+    "code_region": "unique_readonly_executable_PE_code",
+    "PE_runtime_table_entry_cap": 600000,
+    "PE_runtime_table_byte_cap": 8388608,
+    "lookup_table_consistency": true,
+    "no_unwind_only_if_no_containing_entry": true,
+    "no_crossing_static_or_dynamic_runtime_region": true,
+    "byte_cap": 128,
+    "instruction_cap": 32,
+    "leaf_shape": "single_entry_linear_register_only_normal_RET_complete_exit_set",
+    "branches_memory_stack_nested_CALL": "refuse",
+    "snapshot": "guarded_double_read_equality_SHA256_admitted_prefix",
+    "current_metadata_recheck": true,
+    "actual_result": "c25_full_table_valid_actual_lookup_no_entry_first_CMP_blocker_c26_form_pending",
+    "effect_certificate": false,
+    "existing_c19_c20_refusal_preserved": true,
+    "Position_source_input_movement_writes": 0
+  },
+  "runtime_table_validation": {
+    "observed_c24_entries": 527161,
+    "aligned_bytes_from_c24_count": 6325932,
+    "actual_directory_bytes": 6325932,
+    "entry_bytes": 12,
+    "entry_cap": 600000,
+    "metadata_byte_cap": 8388608,
+    "chunk_entries": 64,
+    "max_chunk_bytes": 768,
+    "max_chunk_reads": 9375,
+    "directory_pair_range_divisibility_checked_before_budget": true,
+    "all_entries_required_before_lookup": true,
+    "lookup_queried_reported": true,
+    "cap_structure_and_read_failure_separate": true,
+    "no_unwind_128byte_32instruction_rule_unchanged": true,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "Position_source_input_movement_writes": 0
+  },
+  "read_cmp_contract": {
+    "site": "0x2cf7fe0",
+    "diagnostic_only": true,
+    "decoded_operands_before_effects": true,
+    "forms": "full32_or64_GPR_reg_reg_or_reg_immediate",
+    "exact_read_flags_only_effects_required": true,
+    "flags": "CF_PF_AF_ZF_SF_OF",
+    "immediate_tags": 0,
+    "operand_state_unchanged": true,
+    "partial8_16_memory_unknown": "refuse",
+    "partial_parent_tags": "metadata_only_conservative",
+    "numerical_branch_outcome": "unknown",
+    "next_branch": "condition_and_flag_provenance_only_all_branches_refuse",
+    "stable_prefix_metadata_is_full_identity": false,
+    "identity_requires_complete_linear_RET_and_coverage_recheck": true,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "Position_source_input_movement_writes": 0,
+    "actual_form": "pending_minimal_runtime_metadata"
+  },
+  "actual_c26": "PENDING_exact_CMP_metadata_and_next_boundary_not_in_compact_c25_evidence",
+  "effect_certificate": false,
+  "legacy_c19_c20_refusal_preserved": true,
+  "safety": {
+    "writable_source_proven": 0,
+    "caller_owned": 0,
+    "ownership_exclusive": 0,
+    "source_lifetime_exclusive": 0,
+    "downstream_conflicts_proven_absent": 0,
+    "Position_source_position_input_movement_writes": 0,
+    "producer_0x351eb00": "deferred",
+    "new_hooks": 0,
+    "live_game_data_observation": false,
+    "bounded_PE_runtime_metadata_and_single_code_snapshot_only": true,
+    "native_lifecycle_orientation_ABI_assertions_deadlines_cleanup_unchanged": true
+  },
+  "CODEX_NEXT_preserved": true,
+  "main_merged": false,
+  "raw_logs_private_game_bodies_distributed": false,
+  "runtime_log": "MSM2-WS/logs/MSM2-WS-v0.1c26-YYYYMMDD-HHMMSS.log",
+  "updater": "MSM2-WS/Update-WS.cmd",
+  "human_test": "A/cardinal ~3s; fully end WallRun; move/fast-travel; E/diagonal ~3s; unchanged5s hard limit",
+  "minimum_missing_evidence": "READ_CMP/READ_CMP_OPERAND/next_LEAF_BRANCH_or_TARGET_IDENTITY_READ_CALL; no target body or memory dump",
+  "archive_validation": "PASS_CRC_hash_DLL_version_CMP_operand_branch_markers_full_current_sources_docs_helpers_licenses_one_active_install_member",
+  "Wisdoms_synchronization": {
+    "commit": "373516a",
+    "files": [
+      "docs/ENGINE_INTERNALS.md",
+      "docs/REVERSE_ENGINEERING_GUIDE.md",
+      "docs/WALLSPRINT_INTERNALS.md"
+    ],
+    "actual_c25_accepted": true,
+    "actual_c26_form": "UNKNOWN"
+  }
+}
