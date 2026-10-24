@@ -1,3 +1,121 @@
+# Codex result — c23 exact CALL / bounded register-only leaf (2026-10-25)
+
+Branch: **codex/v01c20-edi-value-provenance**; accepted task base **16dc676**.
+Implementation: **d33cccfffe38bc72e58b3fa32429c6953630f204**.
+Version: **v0.1c23 / package0.1.41**. Outputs:
+**MSM2-WS-v0.1c23.zip**, **MSM2-WS-v0.1c23-source.zip**,
+**MSM2-WS-v0.1c23.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C23_RELEASE.json**. Final hashes are in release metadata.
+
+## Accepted input / bounded result
+
+Read AGENTS/manual/rules/workspace/state/NEXT, accepted c22/c21/c20 runtime,
+c22 TEST and RDX contracts, relevant implementation/tests and Wisdoms references.
+C22 accepts TEST r8b/r8b0x2B235BE -> JE0x2B235C1 with parent/flags/consumer tags0.
+That resolves the pair only. The selected-read suffix stops at CALL0x2B235D4;
+its target, call-state arguments and target body are absent from compact evidence.
+Do not upgrade the other completed path's EAX return mask1 or prefix escape0
+into complete CALL-path coverage. No private body is reconstructed/requested.
+
+**Outcome C diagnostic preparation:** exact pinned call form/target and raw
+carriers are now classified on the existing authenticated parent code snapshot.
+If an exact target has a safe runtime-function boundary/current code hash and
+recheck, a single128byte/32instruction register-only leaf can be evaluated.
+Otherwise the exact call or nested instruction/alias/cap is reported. Actual
+c23 target/effect/next barrier remain **PENDING the new compact game log**.
+A local normal return does not settle downstream XYZ/W/cross-invocation or
+ownership. Existing c19/c20 read/effect refusal remains unconditionally separate.
+
+## Files / implementation
+
+- rdx_source_contract.hpp/.cpp: ReadCallContract, exact callsite/return/target
+  re-decode and per-state all-GPR/XMM/flags/visible-stack tag/provenance union.
+  Conflicting origins are marked; displayed origin is the last state. Tags1/2/4
+  still distinguish selected/post-write/other pre-write field values. No guessed
+  typed game arguments. Unknown raw/loaded bits never become disjoint aliases.
+- Optional leaf uses existing Slice register semantics plus separate tags, no
+  generic CPU model. Full decode128bytes/32instructions,4096 cumulative nested
+  visits, depth1. MOV/register vector copies, full self-XOR,32/64bit CMP/TEST,
+  NOP/ENDBR/RET only. Memory, branches, further CALL, partial/unknown effects,
+  stack changes and missing return stop precisely; failure discards temporary
+  state. Explicit return/clobber masks replace no ABI assumptions. Unknown calls
+  never clear volatile tags and continue. Modified masks cover analyzed prefixes;
+  return masks cover modeled normal returns only.
+- CALL return-address slot is an owned abstract-stack operation, not process
+  memory mutation: bounded exact SP, protected return/source exclusion, temporary
+  untainted return slot and restored SP. Raw GPR/XMM/flags survive according to
+  decoded effects. Caller/home/Transform/source/unknown memory aliases refuse,
+  with possible selected-value escape labeled conservatively.
+- writer_entry_snapshot.cpp: pinned0x2B235D4 opts in only after old parent identity.
+  At configure, one exact target may obtain unwind boundary and guarded code/SHA/
+  byte recheck within128bytes. Parent/writer overlaps and functions containing
+  deferred0x351EB00 are excluded before body reads; exact0x351EB00 before lookup.
+  Identity means startup current snapshot, not a historical digest or subsequent
+  per-invocation effect certificate. No new hook/live-data observation/game call.
+- READ_CALL / READ_CALL_CARRIER (at most16) / READ_CALL_RETURN report compact
+  metadata only, never full bytes/live register payloads. Existing READ_FLOW and
+  c19/c20/TEST records remain. Formatter/type checks passed with4096byte limit.
+- read_dependency_smoke.cpp:5 new groups retain16 c21/c22 groups. Version/info,
+  README/README_TEST/BUILD, package metadata, accepted c22 source mirror, new c23
+  analysis/gate, PROJECT_STATE and derived engine-reference checkpoint updated.
+  CODEX_NEXT preserved. Normal Update-WS/shared manager/archive/log contracts stay.
+
+Legacy State/Slice/readMayDepend/recordRead and c19/c20 certificates remain;
+existing outer4096visit/9pending/8branch/16writer-input limits, lifecycle/
+orientation/ABI/pairing/hardware cleanup/deadlines/assertions unchanged.
+writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/
+downstream_conflicts_proven_absent0; Position/source-position/input/movement
+writes0. No producer traversal or movement/adhesion/camera/animation/physics,
+SF/ordinary-mod code, guessed ABI, PAGE_GUARD or old-workspace deletion.
+
+## Validation / persistence
+
+- Warnings-as-errors Windows x64 build PASS.
+- Full chain **13 portable + 7 DLL/logger + 140 hooks/native/contracts/workspace
+  PASS records = 160 public PASS / 5 optional private-input SKIP**, all exit0.
+- Five new groups cover direct selected/disjoint inputs, returned GPR/XMM/flags,
+  exact self-zero clobbers, caller/home escape, Transform/source aliases,
+  indirect/missing identity/partial/depth-two CALL, byte cap/no RET/indexed alias.
+  Independently authored fake-address fixtures, not game code reconstruction.
+- Final log field labels clarify analyzed-prefix modified masks. Rebuild and
+  DLL/logger7 PASS recheck follow that reporting-only change; no new behavioral
+  changes or weakened tests. Fixture variable-name collisions were corrected
+  during development before validation; no production gate was changed for them.
+- Actual source ZIP extracted fresh: build PASS; **75 focused entry/c14-c23 +
+  7 DLL/logger + 13 workspace = 95 separate PASS records**, all exit0/no private
+  inputs. Package verifier PASS separately. Do not add duplicates to160.
+- Final archives verified for CRC, payload/DLL hashes/version/new CALL markers,
+  current full source/docs/analysis/licenses/helpers, one virtual active script,
+  source private/compiled exclusions, and exact unchanged task/native safety files.
+  Final report/roadmap refresh uses identical tested native/tool inputs and a
+  standalone package recheck; source95 covers final implementation.
+
+An exec-server disconnect interrupted provisional packaging after the code/test
+commit; reconnect verified the commit and completed test records remained intact.
+No completion/publication was claimed during the interruption. A concurrent
+same-branch6a6df0d extended only deferred roadmap docs; preserved with a normal
+same-branch merge. No main merge or scope expansion; final source includes it.
+
+Wisdoms ENGINE_INTERNALS accepts the supplied c22 TEST/JE result and next CALL;
+RE guide/WS internals preserve the narrow-call method as VERIFIED-STATIC
+implementation/owned-fixture scope only, actual c23 UNKNOWN. Concurrent SF docs
+were preserved; no SF implementation or raw logs/private bodies copied.
+
+## Next human step / why a capture is required
+
+Compact current evidence lacks this exact target's bytes/boundary/hash and
+call-state carriers; cloud has no authenticated game snapshot. New READ_CALL
+metadata is therefore necessary, not a habitual rerun of resolved TEST work.
+Close game/Overstrike, run installed **MSM2-WS/Update-WS.cmd**, then shared
+Overstrike **Install mods -> Run modded game**. Test **A/cardinal ~4s -> fully end
+WallRun -> move/fast-travel -> E/diagonal ~4s**. Return newest complete private
+**MSM2-WS/logs/MSM2-WS-v0.1c23-YYYYMMDD-HHMMSS.log**.
+Only the3 READ_CALL families are new requested fields; existing READ/TEST/VALUE/
+WRITE/ALIAS/WRITER and safety/cleanup remain in the same log. No body dump or
+video unless a visible anomaly; no manual ZIP placement or link needed.
+
+---
+
 # Codex result — c22 pinned TEST operand / flag flow (2026-10-25)
 
 Branch: **codex/v01c20-edi-value-provenance**; accepted task base **a180b6b**.
