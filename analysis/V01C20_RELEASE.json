@@ -357,9 +357,30 @@
     "full_optional_private_SKIP_records": 5,
     "production_sources_headers_and_version_unchanged": true,
     "runtime_payload": "exact_DLL_from_successful_current_full_pipeline",
-    "real_PC_corrected_focused_and_migration": "PENDING",
+    "real_PC_corrected_focused_and_migration": "focused_PASS22_1_optional_SKIP_exit0_all5_repetitions; full_migration_PENDING",
     "fresh_stage_helper_PASS_records": 22,
     "helper_optional_private_SKIP_records": 1,
     "extra_short_fixture_repetitions": 5
+  },
+  "real_PC_corrected_focused_reset": {
+    "tested_delivery_commit": "f2be95b40ea22c8568d7c39489ba0e75461f426e",
+    "implementation_commit": "79d2acff84574b7c794abe980560dad1e3e9052a",
+    "evidence": "user_supplied_PowerShell_Ubuntu24.04_diagnostic_output_no_raw_log_committed",
+    "public_PASS_records": 22,
+    "optional_private_input_SKIP_records": 1,
+    "extra_short_fixture_repetitions": 5,
+    "all_repetitions_passed": true,
+    "slow_setup_before_commit_positive": "PASS",
+    "slow_snapshot_after_commit_refusal": "PASS",
+    "exit_code": 0,
+    "build": "PASS",
+    "fatal_arm_or_capture_diagnostic_present": false,
+    "deploys_to_game": false,
+    "full_corrected_migration": "PENDING",
+    "shared_Overstrike_single_WS_and_SF_visibility": "PENDING",
+    "Install_mods_and_Run_modded_game": "PENDING",
+    "actual_versioned_runtime_log": "PENDING",
+    "overall_real_PC_acceptance": "PENDING_full_migration_UI_and_game_log",
+    "code_runtime_and_release_assets_unchanged_from": "f2be95b40ea22c8568d7c39489ba0e75461f426e"
   }
 }
