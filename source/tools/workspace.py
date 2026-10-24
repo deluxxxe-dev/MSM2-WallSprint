@@ -1,7 +1,7 @@
 """Fail-closed WS-only Windows migration/update; platform-neutral core is fixture-tested."""
 from pathlib import Path
 import argparse,hashlib,json,os,re,shutil,stat,subprocess,sys,zipfile
-REMOTE='https://github.com/Deluxeee0811/WallSprint.git'
+REMOTE='https://github.com/deluxxxe-dev/MSM2-WallSprint.git'
 WS_NAME='MSM2-WS'
 ACTIVE=re.compile(r'MSM2-WS-v[0-9A-Za-z.]+\.script\Z')
 ARCHIVE_SUFFIXES={'.zip','.rar','.7z'}
