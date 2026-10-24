@@ -1,71 +1,47 @@
-# v0.1c15 writer branch-aware RDX diagnostics
+# Supported build and final local workspace
 
-Run `bash tools/test_position_proof.sh` and `bash tools/test_native_source.sh` (including `tools/test_source_lifecycle.sh`), `bash tools/test_reset_trace.sh` and `bash tools/test_third_writer.sh` after the Windows build for sustained native publication/MinHook A-B continuity, production async threshold, actual Toolhelp filtering, record-pressure, debug-register/second-thread capture and cleanup fixtures. It uses owned functions/memory only. No new external dependency is added in c4.
+Windows-local development uses **Windows Python 3.11+, Git for Windows, built-in Windows PowerShell and WSL2 x86-64 Debian/Ubuntu**. The supported compiler/test chain remains the existing Linux cross-build: MinGW GCC14 POSIX, Clang19 SEH, Capstone5.0.6, Wine and the analysis Python environment. Native MSVC/CMake is not an equivalent replacement; CMakeLists directs to build_windows.sh. Missing tools fail clearly and never skip validation.
 
-The Windows build fetches Capstone 5.0.6 from its upstream source archive, verifies SHA256 `240ebc834c51aae41ca9215d3190cc372fd132b9c5c8aa2d5f19ca0c325e28f9`, and statically builds its full x86 decoder (no diet/reduced ISA). `tools/setup_runtime_decoder.sh` caches only the archive under `/workspace/toolchains/decoder-cache`; generated sources/library stay under `build/deps`. No external Capstone DLL is needed. BSD/LLVM notices are in `vendor/capstone/`.
-
-For the private actual-byte regression after build and `tools/test_dual_source.sh`, run `WALLSPRINT_PATH_B_CAPTURE=/private/startup-excerpt.log bash tools/test_compact_proof.sh`. The input must contain exactly one authenticated original writer444/caller128 capture with the documented hashes. The harness compares the published c1 decoder with c2 and exercises the production installer in a nonexecuted owned image. It emits hashes, counts and derived offsets only, and removes temporary input binaries. Do not place the private input in Git or a release ZIP.
-
-Current version0.1.33: exact-build Path A and compact Path B consume one lock-free coherent orientation snapshot. Path B writes only its first nine floats and preserves row scale and all later metadata. See README_TEST.md and analysis/V01C11_GATE.md. Build with tools/build_windows.sh; run tools/test.sh, tools/smoke_windows.sh, tools/test_hooks_windows.sh and tools/release.py. Original game captures stay private.
-
-# WallSprint v0.1b8 build — package0.1.17
-
-Use the existing checkout; isolated cloud tasks do not need an extra worktree. From `/workspace/WallSprint/source`:
+Prepare WSL2 and the pinned toolchain outside Mods Library before migration. From a temporary checkout/source extraction in WSL:
 
 ```bash
+# /workspace must be writable by the WSL user; create/chown it deliberately
+# with the distro's normal administrative procedure if needed.
+cd "/path/to/temporary/WallSprint/source"
 WALLSPRINT_WITH_WINE=1 bash tools/setup_cloud.sh
 bash tools/setup_analysis.sh
-[[ -e /workspace/toolchains/wine/usr/share/wine/wine ]] || ln -s . /workspace/toolchains/wine/usr/share/wine/wine
-bash tools/test.sh
-bash tools/build_windows.sh
-bash tools/smoke_windows.sh
-bash tools/test_hooks_windows.sh
-python tools/release.py
 ```
 
-Pinned GCC14 POSIX, Clang19 SEH, MinHook1.3.4, Wine10 and hash-pinned Capstone5.0.6 remain. `smoke_windows.sh` restores the relocated Wine server wrapper after extraction. Never re-extract packages concurrently with Wine tests. CMake intentionally directs users to this cross-build path.
+The existing scripts expect the configured `/workspace/toolchains/windows`, `analysis-python`, `wine` and `wine-prefix`. Required host tools include Bash, Python (`python`), g++, make, objdump, tar, curl and sha256sum. A configured default WSL2 distribution is used; `MSM2_WS_WSL_DISTRO` explicitly selects another configured distribution. The wrapper verifies WSL2 and every required executable. Tool setup may require normal Linux package/network prerequisites; the updater does not auto-install a distribution or fall back to a weaker build.
 
-The hooks suite includes b7 prearm, original source/ABI/20k-call/stack/Position tests, dual native source transitions/retention/late same-update calls, real second-thunk MinHook vector/return/FPU preservation, exact-hash denial and offline gate negatives. No real game instructions are executed in synthetic fixtures. Private original-game replay is optional SKIP if unavailable, never a fake PASS.
+The unchanged required serial validation flow below assumes the full Git checkout root. For the standalone source ZIP, run from its `source` folder and omit the leading `source/` in these commands:
 
-Current outputs: `../WallSprint_v0.1c15_writer_branch_contract.zip`, `../WallSprint_v0.1c15_source.zip`; generated script/manifest in `output/WallSprint_v0.1c15/`. GitHub branch/implementation commit are in `docs/CODEX_RESULT.md`; the public source includes all build/test instructions and known files needed to reproduce the implementation, without private game captures.
-
-Offline real-log review:
+The required flow is:
 
 ```bash
-python tools/review_dual_source.py /path/to/log_wallsprint/WallSprint_YYYYMMDD-HHMMSS.log --a-session 1 --e-session 2 --output /path/to/DUAL_SOURCE_REVIEW.json
+bash source/tools/build_windows.sh
+bash source/tools/test.sh
+bash source/tools/smoke_windows.sh
+bash source/tools/test_hooks_windows.sh
+python source/tools/release.py
 ```
 
-A/E numbers are examples; confirm actual sessions from the user. For unknown reset stores, use the existing Capstone writer decoder with private bounded complete function captures. Native data-breakpoint RIP is post-store; do not guess its write address, function hash or source ABI. No real b8 ownership is verified until the accepted game supplies the entry/retention evidence. No adhesion is implemented.
+`source/tools/windows/workspace-build.sh` stages source/docs to an owned temporary WSL tree outside Mods Library, executes all commands above and returns validated disabled script/manifest/ZIP outputs. It never builds/unpacks a live `.script` into the authoritative `_source`. Source checkout is an independent Git clone; the update requires clean non-detached intended branch/upstream and `git pull --ff-only`. Branch is supplied explicitly during migration and stored in local Git config `wallsprint.expectedBranch`; an intentional future branch switch requires `Update-WS.cmd --expected-branch <new-development-branch>` and a matching upstream.
 
-C10 adds deterministic guarded-reader interposition only in the owned native fixture (no production test hook). A real owner Update/worker publication occurs after old secondary payload computation. Tests require latest diagonal/partial basis, latest stack scale/metadata, unchanged native owner, clean primary continuation, strict one-refresh bound and fail-closed identity/token/integrity/stale/stop races. Refresh records cap16/process, independent first record, full atomic counters.
+The final path and update/migration protocol are in docs/LOCAL_WORKSPACE.md. First run the complete release's `Migrate-WS.cmd --game-root "<actual game root>" --branch codex/v01c20-edi-value-provenance` outside Mods Library after preparing the shared `<game>/Overstrike/Overstrike.exe`, root scripts_proxy.dll and root winmm.dll. Afterwards use only the installed `MSM2-WS/Update-WS.cmd`. No personal C-/D-drive path, legacy clone link or AppData Overstrike copy is embedded.
 
-C11: tools/test_position_writer.sh exercises the shared real hardware engine after Up cleanup (foreign DR/caps/restore/anchored stores); tools/test_native_source.sh additionally builds the same production c10 source fixture with the real Position watch linked, A/E orientation retained through normal Deinit. Position causal certificate/negative tests live in test_position_proof.sh; cardinal/diagonal movement delta is also portable ASan/UBSan. No game bodies are supplied by the public source.
+Capstone5.0.6 is fetched from its official source archive and SHA256-checked against `240ebc834c51aae41ca9215d3190cc372fd132b9c5c8aa2d5f19ca0c325e28f9`. Full x86 decode, no diet/reduced ISA; no external Capstone DLL. Third-party notices remain in vendor/capstone and THIRD_PARTY_NOTICES. Do not copy reference mod source/binaries.
 
-C12: tools/test_movement_lineage.sh adds complete scalar/vector source maps, anchored direct caller/return verification, supported caller substitution/untyped arithmetic, invalid CFG/effect/W/overwrite cases and A/E correlation. test_position_writer.sh also reconstructs four owned scalar stores from real hardware exception contexts and checks new guard-page reads refuse without protection changes. Source contains no private 0x2cfc900/0x351eeb0 game body.
+The full hooks suite retains c7-c19 lifecycle/orientation/stale/publication/ABI/DR/entry/call/alias/finalization and cleanup tests. Prepared EDI owned tests remain, with production research disabled pending reauthorization. `test-workspace.py` adds real owned Git/filesystem migration/update/rollback/isolation fixtures. Logger smoke uses actual Windows filesystem APIs under Wine and new versioned workspace log names; no raw user logs are packaged.
 
-C13: tools/test_writer_entry.sh builds independent owned raw-thunk ABI, exact hash/boundary/lifecycle/guard gates, actual concurrent+nested hardware invocation pairing, candidate/chain and cleanup/foreign-ownership fixtures. It is included in test_hooks_windows.sh. The cross-build compiles WallSprint-owned writer_entry_snapshot.cpp / writer_entry_thunk.S; no new dependency or private game body. The original c12 source analyzer remains unchanged.
+Optional private historical replay remains optional rather than a fake PASS:
 
-C14: tools/test_rdx_contract.sh adds owned scalar/packed AVX/shuffle/double-lane RDX XYZ plus independent W, exact stack allocation/constructor and direct/wrapper/tail/indirect relation fixtures with refusal cases. tools/test_writer_entry.sh now tests sourceW0/destinationW1 in real concurrent+nested hardware maps and isolated session/duplicate/mismatch/partial/zero-capture accounting. Both are included in the hooks suite. Build links rdx_source_contract.cpp; no added dependency. C12 analyzer, source/lifecycle and hook cleanup are preserved. Actual c14 game causality/producer/lifetime remains pending.
+```bash
+WALLSPRINT_PATH_B_CAPTURE=/private/accepted-capture.log bash source/tools/test_compact_proof.sh
+```
 
-C15: tools/test_writer_branch.sh tests independently authored183-byte conditional fixtures at exact known store offsets: reconvergence/all-path provenance, one-leg mutations, bypass/unreachable sites, nested4 branches/all16 paths, caps/loops/indirect/outside/mid-instruction/unsupported/memory refusal and independent W. test_writer_entry.sh additionally checks real preactivation/active drains versus stop-only final summaries. Both are in test_hooks_windows.sh. The old c14 straight-line/caller/producer API and c12 analyzer remain unchanged; no new dependency or game body. All test scripts create their output directories.
+Never place private game bodies/logs under Git or release inputs. This historical444/128byte replay is not the current137byte callee or183byte writer.
 
-C16: tools/test_writer_call.sh adds independently authored nonexecuted exact-call/no-write-leaf/clobber/reload/memory/control/target/return/stack-alias/W tests. Included in full hooks suite. No new dependency or runtime observation hook; tests remain isolated from private game bytes.
+Outputs are `MSM2-WS-v<version>.zip`, optional `MSM2-WS-v<version>-source.zip`, and non-active `MSM2-WS-v<version>.script.disabled`/BUILD_MANIFEST. The install ZIP contains one virtual versioned active script member; source ZIP contains none. Test source ZIP extraction only outside Mods Library; never unpack the install ZIP into `_source`. Disabled intermediates and old archived scripts are not Overstrike-active. Full source/tests/licenses/docs are included for isolated reproduction.
 
-C17: tools/test_callee_alias.sh adds owned137byte callee/183byte writer fixtures for stack/home/source/Transform/global/argument/branch/conflict/unknown/control/exact-store continuation. test_writer_entry.sh adds pinned identity and runtime footprint/region refusal tests. Both are in hooks suite; no new dependencies/hooks/private bodies.
-
-C17 isolated logging: tools/test_log_file.sh uses actual Windows filesystem calls for path/timestamp/directory/collision/concurrent/open-failure/reopen/never-shared behavior. Included in smoke_windows.sh, whose actual DLL lifecycle integration reads only newly created timestamped files and verifies any old shared log remains byte-identical. Filename local time; existing telemetry line UTC format unchanged.
-
-
-## v0.1c18 local callee CFG
-
-Run tools/build_windows.sh, tools/test.sh, tools/smoke_windows.sh and tools/test_hooks_windows.sh serially. Focused tools/test_callee_branch_alias.sh adds6 groups to existing c17 alias7; uses independent nonexecuted fixtures, exact decoded count-derived caps and compact CFG/write summaries. Hard8branch storage ceiling is separate from measured runtime branch count; visits4096, writer16states and24write sites remain bounded. Private game body is unavailable/unpublished. Alias-safe paths alone may resume writer proof; no movement permission. Actual A/E pending. Logger/native lifecycle/entry ABI unchanged. tools/release.py emits c18 diagnostic/source ZIPs; rebuild fresh source ZIP with all focused contracts and DLL/logger smoke. See V01C18_CALLEE_BRANCH_ALIAS.md/CODEX_RESULT.md.
-
-
-## v0.1c19 exact Transform write
-
-Run build_windows.sh, test.sh, smoke_windows.sh, test_hooks_windows.sh serially. Focused test_transform_write.sh adds exact destination/value/conflict/read-dependency/continuation tests; test_writer_entry.sh includes extended Transform+[0,0x110) runtime range guards. Zero exact-site opt-in retains c18 alias behavior; no legacy State/Slice/native/logger changes. Source ZIP must rebuild from scratch and pass all focused entry/contract/branch/call/alias/write and DLL/logger tests. No private game captures are distributed. Actual c19 exact MOV operands/value/effects/next blocker pending human A/E; writable_source_proven remains0.
-
-
-## v0.1c20 EDI / development helper
-
-Run build_windows.sh, test.sh, smoke_windows.sh, test_hooks_windows.sh serially. New test_edi_value.sh covers low32 local definitions and honest coverage; test_update_helper.sh compiles an owned separated EXE/game-root DLL fixture and executes real Windows cmd/copy/start under Wine without a user C: drive or real Overstrike. tools/make_update_helper.py generates CRLF UpdateForTest.cmd from its reviewed template and current version label. release.py emits only MSM2-WS-version.zip and -source.zip current artifacts. Fresh source ZIP must rebuild and pass all focused contracts, DLL/logger and helper tests. No legacy address model, native lifecycle/logger/entry ABI/producer expansion. Actual c20 value/dependency outcome pending A/E.
+Cloud validation does not complete the user's real migration. Windows process stopping, WSL installation, real shared Overstrike recognition of ordinary mods + SF + WS, actual runtime logging and gameplay A/E remain local acceptance checks. The old environment is never automatically deleted.

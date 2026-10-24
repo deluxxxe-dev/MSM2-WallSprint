@@ -161,3 +161,5 @@ Infrastructure/layout tasks do not authorize advancement to a later gameplay mil
 Keep analysis files explicit about VERIFIED, CANDIDATE, and UNKNOWN findings. Do not upgrade a hypothesis into a verified field name or engine semantic without evidence.
 
 When local workspace requirements change, keep `docs/LOCAL_WORKSPACE.md`, `docs/LOGGING_CONVENTION.md`, `docs/PROJECT_STATE.md`, and the relevant tests synchronized.
+
+The supported Windows-local wrapper runs the preserved full Linux cross-build/regression chain in configured WSL2, staged outside the scanned `_source`. It must not replace that chain with a native MSVC/CMake shortcut or a prebuilt-package bypass. Root `WallSprint.script` is no longer tracked; disabled intermediates and virtual install-ZIP members preserve the one-active-script invariant. See `source/BUILD.md` for prerequisites.

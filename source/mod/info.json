@@ -3,7 +3,7 @@
   "type": "script",
   "author": "WallSprint project",
   "version": "0.1.38",
-  "description": "WallSprint v0.1c20 EDI Value Provenance. Exact callee identity and bounded write-address provenance relative to entry source and Transform. Position/source/input/movement writes remain disabled; producer edge is deferred. Dedicated timestamped log_wallsprint files preserve existing logs.",
+  "description": "WallSprint v0.1c20 final local workspace migration and versioned workspace logging. Prepared EDI research is paused; c19 gameplay guards and no Position/source/input/movement mutation remain.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

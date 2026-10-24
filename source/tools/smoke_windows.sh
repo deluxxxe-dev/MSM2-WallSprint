@@ -30,7 +30,7 @@ python - <<'PRECHECK'
 from pathlib import Path
 import json,hashlib
 old=Path('logs/WallSprint.log')
-Path('logger_before.json').write_text(json.dumps({'files':[p.name for p in Path('log_wallsprint').glob('*.log')], 'shared_hash':hashlib.sha256(old.read_bytes()).hexdigest() if old.exists() else None}))
+Path('logger_before.json').write_text(json.dumps({'files':[p.name for p in Path('Mods Library/Mods-Developing/MSM2-WS/logs').glob('*.log')], 'shared_hash':hashlib.sha256(old.read_bytes()).hexdigest() if old.exists() else None}))
 PRECHECK
 WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH="$wine_root/usr/lib/x86_64-linux-gnu/wine" WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' "$wine_root/usr/lib/wine/wine64" "$root/build/windows/lifecycle_smoke.exe" | tee "$root/logs/windows_lifecycle_smoke.log"
 WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH="$wine_root/usr/lib/x86_64-linux-gnu/wine" WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' "$wine_root/usr/lib/wine/wine64" "$root/build/windows/diagnostic_log_smoke.exe" | tee "$root/logs/windows_diagnostic_formatter.log"
@@ -38,8 +38,10 @@ python - <<'PY'
 from pathlib import Path
 import json,hashlib,re
 before=json.loads(Path('logger_before.json').read_text())
-files=[p for p in Path('log_wallsprint').glob('WallSprint_*.log') if p.name not in before['files']]
-assert files and all(re.fullmatch(r'WallSprint_\d{8}-\d{6}(?:_\d{2,4})?\.log',p.name) for p in files)
+version_header=Path('../../include/version.hpp').read_text()
+label=re.search(r'versionLabel\[\]="([^"]+)"',version_header)[1]
+files=[p for p in Path('Mods Library/Mods-Developing/MSM2-WS/logs').glob('MSM2-WS-*.log') if p.name not in before['files']]
+assert files and all(re.fullmatch(r'MSM2-WS-'+re.escape(label)+r'-\d{8}-\d{6}(?:-\d{2,4})?\.log',p.name) for p in files)
 log=max(files,key=lambda p:p.stat().st_mtime_ns).read_text()
 assert 'filename_clock=host_local line_clock=UTC shared_logs_fallback=0' in log
 old=Path('logs/WallSprint.log')

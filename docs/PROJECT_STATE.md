@@ -155,3 +155,9 @@ Infrastructure changes are to be committed/pushed to this same current developme
 ## Current action
 
 Run Codex on `docs/CODEX_NEXT.md` to implement the final local workspace migration/update tooling, logging destination update, repository live-script hygiene, and deterministic workspace tests. After cloud implementation, real Windows migration remains pending until the user runs the generated helper locally and confirms build/test/Overstrike/log acceptance. Then resume c20 EDI research.
+
+## Workspace implementation status (cloud)
+
+Final-layout migration/update engine, independent clone/upstream/ff-only checks, WS-only transactional version deployment and versioned workspace logger are implemented. The preserved full cross-build/regression chain is wrapped for configured WSL2; prerequisites fail clearly. Root generated live script tracking is removed, disabled intermediates/virtual ZIP members enforce source cleanliness. Cloud owned fixture validation is documented in CODEX_RESULT; real PC migration/shared Overstrike UI/runtime logs remain pending user execution.
+
+Prepared c20 EDI code/tests are preserved in commit9057d24 and remain production-disabled. The accepted c19 EDI blocker is still the next gameplay-research task after workspace acceptance; no research, producer or movement permission is added.

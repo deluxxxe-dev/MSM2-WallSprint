@@ -178,3 +178,19 @@ Automatic deletion of the legacy D-drive environment is forbidden.
 ## Scope
 
 This workspace migration is infrastructure-only. Preserve current WallSprint runtime behavior, reverse-engineering evidence, exact-build safety gates, and current c19/c20 research state unless a change is strictly required to implement the logging/deployment path.
+
+## Implemented entry points and tool prerequisites
+
+The release's complete bootstrap is `Migrate-WS.cmd` plus `tools/workspace.py` and its process-stop helper. Extract it outside Mods Library, then run:
+
+```bat
+Migrate-WS.cmd --game-root "<actual game root>" --branch codex/v01c20-edi-value-provenance
+```
+
+Windows Python3.11+, Git for Windows, PowerShell and a configured WSL2 cross-build/test toolchain are required. The optional `MSM2_WS_WSL_DISTRO` selects a configured distro. No missing compiler/test tool is silently skipped. Full commands and tool setup are in `source/BUILD.md`.
+
+`Update-WS.cmd` loads only its installed `_source` engine. Migration clones with no local/shared-object optimization and stores the explicit expected branch contract. Both update and migration reject dirty/detached/diverged/linked checkouts. An intentional future branch switch needs `--expected-branch` plus a matching upstream. Build/tests/package run in a temporary WSL source copy outside Mods Library; `_source` remains clean and contains no generated active script. The current script is not archived until package validation succeeds; a failed deployment/launch attempts to restore the exact prior active build and helper.
+
+Shared process stopping is limited to the validated game executable and shared Overstrike path; a different running Overstrike must be closed manually. The updater neither installs nor repairs shared Overstrike/DLLs. Disabled build artifacts and ZIPs may be retained under `_archive/_build`; they are not active scripts.
+
+Cloud tests use owned Git/filesystem and Windows logger fixtures. Real Windows process/WSL/toolchain behavior, shared Overstrike UI recognition and actual new runtime logs must be confirmed locally before considering manual removal of the old environment.

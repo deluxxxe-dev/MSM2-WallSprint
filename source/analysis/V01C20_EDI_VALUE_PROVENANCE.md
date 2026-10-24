@@ -1,5 +1,7 @@
 # c20 local EDI reaching definitions
 
+**PREPARED / PAUSED:** preserved in commit9057d24 before the workspace-priority instruction update. Production EDI tracing is disabled during infrastructure migration. Owned offline tests are retained; this document does not authorize research advancement or claim a real c20 result. Resume only when CODEX_NEXT re-authorizes it.
+
 ## VERIFIED input / UNKNOWN actual c20
 C19 actual A3844ms/E4094ms passed verified Deinit/retention/Up1/stale0/hard0/Position0,8entries/8complete maps each, XYZ7/sourceW0/destW1 and clean cleanup. Dedicated timestamped log_wallsprint/no fallback remains verified. Exact0x2B2358E is MOV dword [RCX+0x10C],EDI, original writer RCX/Transform root; direct Position/identity overlap0. Value source EDI remained unknown; no c19 protected-effect/XYZ/W certificate. See V01C19_RUNTIME_RESULT.md.
 

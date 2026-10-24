@@ -25,16 +25,18 @@ static std::string read(const std::wstring &p) {
 }
 int main() {
   SYSTEMTIME local{2026, 1, 0, 2, 3, 4, 5, 0};
-  assert(ws::logging::filename(local) == L"WallSprint_20260102-030405.log");
+  assert(ws::logging::filename(local) ==
+         L"MSM2-WS-v0.1c20-20260102-030405.log");
   assert(ws::logging::filename(local, 1) ==
-         L"WallSprint_20260102-030405_01.log");
+         L"MSM2-WS-v0.1c20-20260102-030405-01.log");
   assert(ws::logging::filename(local, 12) ==
-         L"WallSprint_20260102-030405_12.log");
+         L"MSM2-WS-v0.1c20-20260102-030405-12.log");
   assert(
       ws::logging::rootDirectory(L"C:\\Games\\Spider Man 2\\Spider-Man2.exe") ==
       L"C:\\Games\\Spider Man 2");
   assert(ws::logging::rootDirectory(L"game.exe").empty());
-  puts("PASS: c17 logger derives executable root, dedicated folder and "
+  puts("PASS: workspace logger derives executable root, versioned nested "
+       "project folder and "
        "zero-padded local SYSTEMTIME timestamp/suffix without hard-coded "
        "install path");
   wchar_t temp[MAX_PATH]{}, unique[MAX_PATH]{};
@@ -42,7 +44,10 @@ int main() {
   assert(GetTempFileNameW(temp, L"wsl", 0, unique));
   assert(DeleteFileW(unique));
   assert(CreateDirectoryW(unique, nullptr));
-  const std::wstring root = unique, exe = root + L"\\Spider-Man2.exe",
+  const std::wstring base = unique;
+  const std::wstring root = base + L"\\Game \u30c6\u30b9\u30c8 \u58c1 space";
+  assert(CreateDirectoryW(root.c_str(), nullptr));
+  const std::wstring exe = root + L"\\Spider-Man2.exe",
                      shared = root + L"\\logs";
   assert(CreateDirectoryW(shared.c_str(), nullptr));
   auto sentinel =
@@ -55,7 +60,9 @@ int main() {
   assert(f != INVALID_HANDLE_VALUE);
   write(f, "A_session\n");
   assert(first.path() ==
-         root + L"\\log_wallsprint\\WallSprint_20260102-030405.log");
+         root + L"\\Mods "
+                L"Library\\Mods-Developing\\MSM2-WS\\logs\\MSM2-WS-v0.1c20-"
+                L"20260102-030405.log");
   assert(first.openAt(exe, local) == INVALID_HANDLE_VALUE &&
          first.error() == ERROR_SHARING_VIOLATION);
   CloseHandle(f);
@@ -72,8 +79,8 @@ int main() {
   f = third.openAt(exe, local);
   write(f, "third");
   CloseHandle(f);
-  assert(second.path().find(L"_01.log") != std::wstring::npos &&
-         third.path().find(L"_02.log") != std::wstring::npos);
+  assert(second.path().find(L"-01.log") != std::wstring::npos &&
+         third.path().find(L"-02.log") != std::wstring::npos);
   assert(read(first.path()) == "A_session\nE_session\n" &&
          read(second.path()) == "second");
   std::mutex lock;
@@ -93,7 +100,8 @@ int main() {
     thread.join();
   assert(paths.size() == 4 &&
          read(shared + L"\\WallSprint.log") == "foreign_shared_log");
-  puts("PASS: c17 actual directory creation/atomic collision suffixes preserve "
+  puts("PASS: workspace actual Unicode/space directory creation/atomic "
+       "collision suffixes preserve "
        "existing and concurrent logs; A/E and reopen append to one fixed "
        "timestamped run file");
   ws::logging::Session exhausted;
@@ -102,9 +110,8 @@ int main() {
   assert(std::wstring(exhausted.stage()) == L"collision_limit");
   const auto blocked = root + L"\\blocked";
   assert(CreateDirectoryW(blocked.c_str(), nullptr));
-  auto block =
-      CreateFileW((blocked + L"\\log_wallsprint").c_str(), GENERIC_WRITE,
-                  FILE_SHARE_READ, nullptr, CREATE_NEW, 0, nullptr);
+  auto block = CreateFileW((blocked + L"\\Mods Library").c_str(), GENERIC_WRITE,
+                           FILE_SHARE_READ, nullptr, CREATE_NEW, 0, nullptr);
   write(block, "directory_blocker");
   CloseHandle(block);
   ws::logging::Session failure;
@@ -113,21 +120,30 @@ int main() {
          failure.error() == ERROR_DIRECTORY);
   assert(GetFileAttributesW((blocked + L"\\logs").c_str()) ==
              INVALID_FILE_ATTRIBUTES &&
-         read(blocked + L"\\log_wallsprint") == "directory_blocker");
+         read(blocked + L"\\Mods Library") == "directory_blocker");
   ws::logging::Session missingRoot;
   assert(missingRoot.openAt(L"game.exe", local) == INVALID_HANDLE_VALUE &&
          missingRoot.error() == ERROR_INVALID_NAME);
   assert(read(shared + L"\\WallSprint.log") == "foreign_shared_log");
-  puts("PASS: c17 directory/root/open/collision failures report explicit "
+  puts("PASS: workspace directory/root/open/collision failures report explicit "
        "stage/error and never use or modify the shared logs path");
   for (const auto &p : paths)
     assert(DeleteFileW(p.c_str()));
   for (const auto &p :
        {first.path(), second.path(), third.path(), shared + L"\\WallSprint.log",
-        blocked + L"\\log_wallsprint"})
+        blocked + L"\\Mods Library"})
     assert(DeleteFileW(p.c_str()));
-  assert(RemoveDirectoryW((root + L"\\log_wallsprint").c_str()));
+  assert(GetFileAttributesW((root + L"\\log_wallsprint").c_str()) ==
+         INVALID_FILE_ATTRIBUTES);
+  assert(GetFileAttributesW((root + L"\\Mods_Developing").c_str()) ==
+         INVALID_FILE_ATTRIBUTES);
+  for (const auto part :
+       {L"\\Mods Library\\Mods-Developing\\MSM2-WS\\logs",
+        L"\\Mods Library\\Mods-Developing\\MSM2-WS",
+        L"\\Mods Library\\Mods-Developing", L"\\Mods Library"})
+    assert(RemoveDirectoryW((root + part).c_str()));
   assert(RemoveDirectoryW(shared.c_str()));
   assert(RemoveDirectoryW(blocked.c_str()));
   assert(RemoveDirectoryW(root.c_str()));
+  assert(RemoveDirectoryW(base.c_str()));
 }

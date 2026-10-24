@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Full existing cross-build/regressions, staged OUTSIDE the scanned Git clone.
+set -euo pipefail
+repo=$1
+result=$2
+# The steady-state updater must not inherit a legacy-drive toolchain/capture.
+export WALLSPRINT_TOOLCHAIN_ROOT=/workspace/toolchains/windows
+export WALLSPRINT_DECODER_CACHE=/workspace/toolchains/decoder-cache
+unset WALLSPRINT_PATH_B_CAPTURE
+for tool in bash python g++ make objdump tar curl sha256sum; do
+ command -v "$tool" >/dev/null || { echo "WS ERROR: missing WSL prerequisite $tool; see source/BUILD.md" >&2; exit 1; }
+done
+for tool in /workspace/toolchains/windows/usr/bin/x86_64-w64-mingw32-g++-posix /workspace/toolchains/windows/usr/lib/llvm-19/bin/clang /workspace/toolchains/analysis-python/bin/python /workspace/toolchains/wine/usr/lib/wine/wine64; do
+ [[ -x "$tool" ]] || { echo "WS ERROR: missing configured WSL toolchain $tool; no validation is skipped" >&2; exit 1; }
+done
+stage=$(mktemp -d /tmp/msm2-ws-validation.XXXXXX)
+trap 'rm -rf -- "$stage"' EXIT
+mkdir -p "$stage/repository"
+# Copy sources/docs only. No legacy checkout/gitdir/reference/cache dependency.
+tar -C "$repo" --exclude=source/build --exclude=source/logs --exclude=source/output --exclude=__pycache__ -cf - AGENTS.md docs analysis source README.md README_TEST.md Update-WS.cmd Migrate-WS.cmd .gitattributes | tar -C "$stage/repository" -xf -
+cd "$stage/repository"
+bash source/tools/build_windows.sh
+bash source/tools/test.sh
+bash source/tools/smoke_windows.sh
+bash source/tools/test_hooks_windows.sh
+python source/tools/release.py
+python - "$result" <<'PY'
+from pathlib import Path
+import json,shutil,sys,zipfile
+root=Path.cwd();result=Path(sys.argv[1]);result.mkdir(parents=True,exist_ok=True)
+m=json.loads((root/'BUILD_MANIFEST.json').read_text());label=m['version']
+name='MSM2-WS-'+label+'.script.disabled'
+payload=root/name
+assert payload.is_file() and not list((root/'source').rglob('*.script'))
+with zipfile.ZipFile(payload) as z:assert z.testzip() is None
+shutil.copy2(payload,result/name);shutil.copy2(root/'BUILD_MANIFEST.json',result/'BUILD_MANIFEST.json')
+for path in root.glob('MSM2-WS-*.zip'):shutil.copy2(path,result/path.name)
+(result/'Build-WS-result.json').write_text(json.dumps({'artifact':name,'version':label},indent=2)+'\n')
+print('PASS: required full WSL build/test/package completed; disabled artifact staged for transactional WS-only deployment')
+PY

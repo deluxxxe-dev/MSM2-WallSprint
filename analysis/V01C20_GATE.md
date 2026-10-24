@@ -1,5 +1,7 @@
 # c20 gate
 
+**PREPARED / PAUSED:** preserved in commit9057d24 before the workspace-priority instruction update. Production EDI tracing is disabled during infrastructure migration. Owned offline tests are retained; this document does not authorize research advancement or claim a real c20 result. Resume only when CODEX_NEXT re-authorizes it.
+
 C19 actual diagnostic PASS: A3844ms/E4094ms, normal Deinit/retention/Up1/stale0/hard0/Position0,8entries/maps each; exact MOV0x2B2358E [RCX+0x10C],EDI and no direct Position/identity overlap. EDI value remained unknown. See V01C19_RUNTIME_RESULT.md.
 
 C20 implements a bounded reverse-CFG/forward-value local slice to EDI, separate raw low32 input identities and compact local producer/copy-chain metadata. Register-bit origins never become pointers. Same exact constant/input/memory/affine relation on all relevant local paths is required; partial/opaque/conflicting/capped/control effects refuse exactly. Local value coverage and complete writer-call/effect coverage are separate. Existing c19 source/Position/read dependency/TEB/image gates remain mandatory; literal Transform-no-write0 is preserved for real writes. A later CALL/read/write blocker stops whole-effect/XYZ/W proof.

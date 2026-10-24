@@ -921,7 +921,8 @@ void configure(const Spec &s, Gate validate) noexcept {
     writerAlias.imageSize = s.imageSize;
     writerAlias.authenticated = calleeCurrent;
     writerAlias.exactWrite.site = 0x2b2358e;
-    writerAlias.edi.enabled = true;
+    writerAlias.edi.enabled =
+        false; // Prepared research is paused during workspace migration.
     writerAlias.reason =
         calleeCurrent ? "writer_call_not_reached_in_bounded_prefix"
                       : "exact_c17_target_boundary_hash_not_authenticated";
