@@ -109,8 +109,8 @@
     "failure_channel": "OutputDebugString_stage_path_Win32Error"
   },
   "workspace_owned_Git_filesystem_fixtures": "PASS_8_groups_including_clone_ff_divergence_isolation_rollback_and_active_script_invariants",
-  "Windows_process_stop_WSL2_launcher_and_shared_Overstrike_UI": "old_real_helper_PASS_GUI_visible_but24_WallSprint_entries_BLOCKED_revalidate_archive_fix",
-  "actual_local_migration_and_new_runtime_log": "old_helper_PASS_archive_aware_rerun_and_actual_runtime_log_PENDING",
+  "Windows_process_stop_WSL2_launcher_and_shared_Overstrike_UI": "real_PC_helper_PASS_actual_UI_ordinary_mods_and_single_WS_PASS_SF_not_identifiable",
+  "actual_local_migration_and_new_runtime_log": "real_PC_full139_pipeline_and_deployment_PASS_actual_runtime_log_PENDING",
   "owned_A_E_orientation": [
     {
       "session": "1",
@@ -231,35 +231,35 @@
     "user_new_helper_result": "PASS_build_and_9_focused_records_1_optional_private_SKIP"
   },
   "real_PC_latest_migration": {
-    "evidence": "user_supplied_terminal_summary_no_raw_log_committed",
+    "tested_checkout_commit": "f1917b1d52175173ccae8c5ef04b2bcd896efa51",
+    "evidence": "user_supplied_complete_helper_output_and_two_shared_Overstrike_screenshots_no_raw_files_committed",
     "version": "v0.1c20",
-    "full_public_test_PASS_records": 131,
+    "full_public_test_PASS_records": 139,
     "optional_private_input_SKIP_records": 5,
-    "optional_maintainer_log_absences": 18,
-    "build_tests_package_and_staging": "PASS_reported_by_real_Windows_helper",
-    "deployment": "PASS_reported_by_real_Windows_helper",
+    "additional_packaging_staging_PASS_records": 2,
+    "optional_maintainer_log_absences": 27,
+    "build_tests_package_and_staging": "PASS",
+    "deployment": "PASS_final_helper_completion",
     "active_script": "MSM2-WS-v0.1c20.script",
-    "one_active_script_postcondition": "PASS_checked_by_helper",
-    "shared_Overstrike_launch_request": "PASS",
-    "GUI_recognition_ordinary_SF_WS": "FAILED_duplicate_WallSprint_entries",
+    "one_active_script_and_no_visible_archive_postconditions": "PASS_helper_completed_archive_aware_guards",
+    "shared_Overstrike_launch": "PASS_helper_and_actual_GUI",
+    "profile": "MSM2 (Steam)",
+    "ordinary_mods_visible": true,
+    "observed_WallSprint_entries": 1,
+    "WallSprint_checked": true,
+    "duplicate_resolution": "PASS_previous24_now1",
+    "SF_visibility": "not_identifiable_in_supplied_complete_list1_to25_filesystem_check_next",
     "Install_mods_and_Run_modded_game": "PENDING",
     "actual_versioned_runtime_log": "PENDING",
-    "overall_real_PC_acceptance": "BLOCKED_pending_archive_fix_rerun_and_GUI_runtime_checks",
-    "original_capture_failure_cause": "UNCONFIRMED_not_reproduced_in_focused_or_full_rerun",
-    "production_deadlines_assertions_and_gates_unchanged": true,
+    "overall_real_PC_acceptance": "PENDING_SF_visibility_install_and_actual_runtime_log",
     "local_generated_install_zip": {
-      "bytes": 3332536,
-      "reported_sha256": "236e9088014b244a0c7e044ef5dca0a135d922543de4ccc55b300246a9775374"
+      "bytes": 3362929,
+      "reported_sha256": "2310334098ebeb9996f054488ac563b244fa5e9331777fd616ae0596ecb38d20"
     },
     "local_generated_source_zip": {
-      "bytes": 764618,
-      "reported_sha256": "17a0263dd6d604cf15cec5b95a2b9a96e272b4be27cd65e3b709cb34de24b974"
-    },
-    "shared_Overstrike_UI_opened": true,
-    "ordinary_mods_visible": true,
-    "observed_WallSprint_entries": 24,
-    "SF_visibility": "not_identifiable_in_supplied_list",
-    "physical_one_script_postcondition_sufficient": false
+      "bytes": 782588,
+      "reported_sha256": "a35e6852bf2c6db3400e616c65a932fbeb2a3dc8a1a4f58a5d38efc88a58f8d3"
+    }
   },
   "original_infrastructure_implementation_commit": "a4ec9c0f2635e9f2594bf5972d1765332de73766",
   "fixture_consistency_commit": "31065f8228f415ef0f464aef6b88b727adafa63a",
@@ -302,7 +302,7 @@
     "original_cloud_hang_cause": "unconfirmed_no_deadline_assertion_or_gate_changes",
     "SF_ordinary_mods_old_D_and_shared_cache_profile_mutations": false,
     "EDI_production_enabled": false,
-    "user_corrected_migration_UI_and_runtime_acceptance": "PENDING"
+    "user_corrected_migration_UI_and_runtime_acceptance": "real_PC_full139_and_GUI_24_to1_PASS_SF_install_runtime_gate_PENDING"
   },
   "real_PC_archive_upgrade_rerun": {
     "delivery_commit": "890d23cec5878e364efe015838e274d1a5bd47fe",
@@ -357,7 +357,7 @@
     "full_optional_private_SKIP_records": 5,
     "production_sources_headers_and_version_unchanged": true,
     "runtime_payload": "exact_DLL_from_successful_current_full_pipeline",
-    "real_PC_corrected_focused_and_migration": "focused_PASS22_1_optional_SKIP_exit0_all5_repetitions; full_migration_PENDING",
+    "real_PC_corrected_focused_and_migration": "focused22_PASS_5_repetitions_exit0_and_full139_migration_PASS",
     "fresh_stage_helper_PASS_records": 22,
     "helper_optional_private_SKIP_records": 1,
     "extra_short_fixture_repetitions": 5
@@ -376,11 +376,42 @@
     "build": "PASS",
     "fatal_arm_or_capture_diagnostic_present": false,
     "deploys_to_game": false,
-    "full_corrected_migration": "PENDING",
-    "shared_Overstrike_single_WS_and_SF_visibility": "PENDING",
+    "full_corrected_migration": "PASS139_5_optional_private_SKIP_and_final_deployment",
+    "shared_Overstrike_single_WS_and_SF_visibility": "single_WS_PASS_SF_not_identifiable_readonly_check_next",
     "Install_mods_and_Run_modded_game": "PENDING",
     "actual_versioned_runtime_log": "PENDING",
-    "overall_real_PC_acceptance": "PENDING_full_migration_UI_and_game_log",
+    "overall_real_PC_acceptance": "PENDING_SF_visibility_install_and_actual_runtime_log",
     "code_runtime_and_release_assets_unchanged_from": "f2be95b40ea22c8568d7c39489ba0e75461f426e"
+  },
+  "real_PC_previous_pre_archive_migration": {
+    "evidence": "user_supplied_terminal_summary_no_raw_log_committed",
+    "version": "v0.1c20",
+    "full_public_test_PASS_records": 131,
+    "optional_private_input_SKIP_records": 5,
+    "optional_maintainer_log_absences": 18,
+    "build_tests_package_and_staging": "PASS_reported_by_real_Windows_helper",
+    "deployment": "PASS_reported_by_real_Windows_helper",
+    "active_script": "MSM2-WS-v0.1c20.script",
+    "one_active_script_postcondition": "PASS_checked_by_helper",
+    "shared_Overstrike_launch_request": "PASS",
+    "GUI_recognition_ordinary_SF_WS": "FAILED_duplicate_WallSprint_entries",
+    "Install_mods_and_Run_modded_game": "PENDING",
+    "actual_versioned_runtime_log": "PENDING",
+    "overall_real_PC_acceptance": "BLOCKED_pending_archive_fix_rerun_and_GUI_runtime_checks",
+    "original_capture_failure_cause": "UNCONFIRMED_not_reproduced_in_focused_or_full_rerun",
+    "production_deadlines_assertions_and_gates_unchanged": true,
+    "local_generated_install_zip": {
+      "bytes": 3332536,
+      "reported_sha256": "236e9088014b244a0c7e044ef5dca0a135d922543de4ccc55b300246a9775374"
+    },
+    "local_generated_source_zip": {
+      "bytes": 764618,
+      "reported_sha256": "17a0263dd6d604cf15cec5b95a2b9a96e272b4be27cd65e3b709cb34de24b974"
+    },
+    "shared_Overstrike_UI_opened": true,
+    "ordinary_mods_visible": true,
+    "observed_WallSprint_entries": 24,
+    "SF_visibility": "not_identifiable_in_supplied_list",
+    "physical_one_script_postcondition_sufficient": false
   }
 }
