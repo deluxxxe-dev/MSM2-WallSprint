@@ -1,6 +1,17 @@
-# WallSprint v0.1c20 — ローカル開発環境の移行
+# WallSprint v0.1c20 — EDI診断・実機A/Eテスト
 
-Package **0.1.38**。今回は配置・更新・ログ保存先の変更です。c19 のゲーム動作と安全ゲートを維持し、準備済みの EDI 研究はゲーム側で無効のまま保留します。Position・source・入力・移動の書き換えはありません。
+Package **0.1.38**。導入・起動・新しいログ保存先の実機確認を受け入れ、CODEX_NEXTの明示指示に従って準備済みEDI値由来診断を有効にしました。正しいゲームビルド・現在のcalleeコード等の既存認証を通った場合だけ診断します。c19のゲーム動作と安全ゲートは維持し、Position・source-position・入力・移動の書き換えはありません。実際のEDI由来は今回のA/Eログを解析するまで未確定です。
+
+## 今回の更新・テスト（移行済み環境）
+
+1. ゲームと共有Overstrikeを閉じ、`MSM2-WS\Update-WS.cmd` を実行します。Git更新・既存フル試験・検証・配置を行います。
+2. 起動した共有Overstrikeで通常MOD＋SF＋WSを確認し、`Install mods` → `Run modded game`。
+3. A/cardinalの平らな壁で約4秒 → WallRunを完全終了 → 移動/ファストトラベル → E/diagonalで約4秒。
+4. `MSM2-WS\logs` の最新の完全な `MSM2-WS-v0.1c20-YYYYMMDD-HHMMSS.log` を非公開で共有してください。動画は見た目の異常時だけです。
+
+`MOVEMENT_CALLEE_VALUE_CONTRACT` の `enabled=1`、producer/origin、局所全経路の一致・拒否、VALUE_DEFINITION/CHAIN、後続の正確なblockerを確認します。局所値の成功と、writer全体のcall/effect完了は別です。Position writes=0、通常Deinit/retention/Surface Up、stale/hard kill、entry/mapの最終化とcleanupも引き続き確認します。
+
+下の移行手順は未移行環境向けの参照です。デスクトップの `MSM2 - Overstrike` は普段の起動用で、WSの更新・ビルドは実行しません。
 
 ## 最初の移行
 
@@ -57,7 +68,7 @@ Migrate-WS.cmd --game-root "<実際のゲームルート>" --branch codex/v01c20
 
 起動するのは **`<game>\Overstrike\Overstrike.exe`** だけで、WorkingDirectory は必ずゲームルートです。共有 UI で通常 MOD＋SF＋WS を必要に応じて選び、**Install mods → Run modded game** を実行してください。
 
-クラウドでは実 PC の移行完了や実 Overstrike UI の認識を確認していません。ローカル検証と共有 UI の認識、新しい実行ログを確認するまでは旧環境を残してください。旧環境を自動削除する処理はありません。
+既存環境の実機移行・共有UI・起動・新ログは受け入れ済みです（analysis/LOCAL_WORKSPACE_RUNTIME_ACCEPTANCE_20261024.md）。今回のEDI診断版の実機A/Eは別途未確認です。新規の環境で移行する場合はその環境の確認が必要で、旧環境を自動削除する処理はありません。
 
 ## 実機ログと回帰試験
 

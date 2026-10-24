@@ -922,7 +922,7 @@ void configure(const Spec &s, Gate validate) noexcept {
     writerAlias.authenticated = calleeCurrent;
     writerAlias.exactWrite.site = 0x2b2358e;
     writerAlias.edi.enabled =
-        false; // Prepared research is paused during workspace migration.
+        calleeCurrent; // c20 diagnostic-only opt-in after exact current identity.
     writerAlias.reason =
         calleeCurrent ? "writer_call_not_reached_in_bounded_prefix"
                       : "exact_c17_target_boundary_hash_not_authenticated";
@@ -1040,6 +1040,7 @@ void configure(const Spec &s, Gate validate) noexcept {
                     writerAlias.readSites[i].at < 0x2b235e9;
     writeLog(
         "MOVEMENT_CALLEE_VALUE_CONTRACT site_rva=0x2b2358e value_register=edi "
+        "enabled=%u "
         "reaching_definition_count=%u producer_rva=0x%llx producer_kind=%s "
         "origin_kind=%s producer_root=%d producer_offset=%lld "
         "constant_bits=0x%x "
@@ -1056,7 +1057,7 @@ void configure(const Spec &s, Gate validate) noexcept {
         "conflict_root=%d conflict_offset=%lld "
         "definition_cap=16 copy_chain_cap=8 value_visit_cap=4096 "
         "full_bytes_logged=0 writable_source_proven=0 reason=%s",
-        ev.definitions, (unsigned long long)ev.origin.producer,
+        unsigned(ev.enabled), ev.definitions, (unsigned long long)ev.origin.producer,
         ev.origin.producerKind, ws::rdx::bitKindName(ev.origin.kind),
         ev.origin.root, (long long)ev.origin.offset, ev.origin.bits,
         ev.origin.addend, unsigned(ev.complete),

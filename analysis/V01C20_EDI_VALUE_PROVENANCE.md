@@ -1,6 +1,6 @@
 # c20 local EDI reaching definitions
 
-**PREPARED / PAUSED:** preserved in commit9057d24 before the workspace-priority instruction update. Production EDI tracing is disabled during infrastructure migration. Owned offline tests are retained; this document does not authorize research advancement or claim a real c20 result. Resume only when CODEX_NEXT re-authorizes it.
+**DIAGNOSTIC BUILD ENABLED / ACTUAL A/E PENDING:** after real-PC workspace acceptance, docs/CODEX_NEXT.md explicitly reauthorized the prepared9057d24 diagnostics. Production opts in only after the existing exact current callee authentication (calleeCurrent); unsupported or unauthenticated code still refuses. This enables bounded static value diagnostics, not gameplay writes. Actual c20 value/origin/dependency/XYZ/W conclusions remain pending the dedicated in-game A/E log.
 
 ## VERIFIED input / UNKNOWN actual c20
 C19 actual A3844ms/E4094ms passed verified Deinit/retention/Up1/stale0/hard0/Position0,8entries/8complete maps each, XYZ7/sourceW0/destW1 and clean cleanup. Dedicated timestamped log_wallsprint/no fallback remains verified. Exact0x2B2358E is MOV dword [RCX+0x10C],EDI, original writer RCX/Transform root; direct Position/identity overlap0. Value source EDI remained unknown; no c19 protected-effect/XYZ/W certificate. See V01C19_RUNTIME_RESULT.md.
@@ -28,12 +28,30 @@ all_reaching_states_examined in VALUE_CONTRACT covers all local paths for the an
 
 Only exact stable EDI relations feed the existing c19 one-site +0x10C model. All source no-write, Position protected-range and read-carrier exclusion/TEB/image/current-code/ordered invocation requirements still apply. Literal transform_no_write_proven stays0 for a real Transform write. Overlap/unknown read, nested CALL or later unsupported effect supplies its precise next blocker; full protected effects/XYZ/W do not advance merely because VALUE_CONTRACT passed.
 
-## Development package / helper
-Install filename is MSM2-WS-v0.1c20.zip; source archive MSM2-WS-v0.1c20-source.zip. Version-derived UpdateForTest.cmd is generated from a reviewed ASCII template and included in root/install/source artifacts. It uses only the exact current install basename, creates game-root/Mods Library/Mods-Developing, copies/replaces only that file and retains old WS/SF/unrelated files. No cleanup globs, deletion or source ZIP import. Existing SF is never touched.
+## Current development package / accepted workspace
 
-MSM2_WS_OVERSTRIKE_EXE must explicitly name the user's existing separated Overstrike.exe as an absolute file; no AppData path is guessed. Optional MSM2_WS_GAME_ROOT overrides the documented game root only when explicitly configured and must contain Spider-Man2.exe. MSM2_WS_PACKAGE can explicitly select the exact current ZIP; otherwise only that basename beside the helper or up to2parent folders is searched for normal extraction layouts. Missing path/game/ZIP or blocked library fails clearly. Both pushd and start /D use the game root; no alternate library/WorkingDirectory fallback. Cloud tests use owned cmd/EXE/DLL fixtures in temporary Z: paths, not real Overstrike or the user's C: drive. Runtime install remains Overstrike's normal WallSprint.script install; helper copy/launch is not a claimed automated runtime install.
+Install filename is MSM2-WS-v0.1c20.zip; source archive MSM2-WS-v0.1c20-source.zip.
+Package version remains0.1.38. The accepted independent clone is
+`<game>/Mods Library/Mods-Developing/MSM2-WS/_source`, tracking the Organization
+remote `https://github.com/deluxxxe-dev/MSM2-WallSprint.git` on
+`codex/v01c20-edi-value-provenance`. Do not merge main.
+
+For the migrated installation, use `MSM2-WS/Update-WS.cmd`: safe fast-forward,
+full WSL cross-build/regressions, package validation, one versioned root script,
+archive-excluding Git sparse checkout and shared Overstrike with cwd=game.
+Install mods -> Run modded game remains the human GUI step. SF/ordinary mods and
+old sources are preserved. Keep public ZIP downloads outside Mods Library;
+returned build ZIPs below WS use .zip.disabled. Migrate-WS.cmd is only for
+first-time/validated migration. Superseded UpdateForTest/AppData/ZIP-in-library
+instructions are not the current installation contract.
+
+The existing MOVEMENT_CALLEE_VALUE_CONTRACT now includes `enabled=1` only when
+exact callee authentication succeeds. Check local value coverage separately
+from `all_writer_call_states_examined` and WRITE/ALIAS full-effect coverage.
+Capture VALUE_CONTRACT, VALUE_DEFINITION/CHAIN and any precise later
+WRITE/ALIAS/WRITER blocker from the same run; no full bytes are emitted.
 
 ## Scope / validation
-Owned EDI tests cover32bit copy chains/raw RDX/R9 tokens, constants/memory/spills/affine modulo arithmetic, both branch legs/two equal definitions versus conflicts, partial/chain/tombstone/auth/control refusal, successful writer continuation and exact later CALL/read dependency with honest coverage. Real Windows cmd fixtures cover special-character paths, create/replace/idempotence, SF/unrelated preservation, game-root CWD/dependency resolution and clear missing/invalid/blocked configuration failures. Full c19 regressions/logger and fresh source rebuild are in CODEX_RESULT/V01C20_RELEASE.json.
+Owned EDI tests cover32bit copy chains/raw RDX/R9 tokens, constants/memory/spills/affine modulo arithmetic, both branch legs/two equal definitions versus conflicts, partial/chain/tombstone/auth/control refusal, successful writer continuation and exact later CALL/read dependency with honest coverage. Current workspace Git/filesystem fixtures cover independent clone, fast-forward/branch/dirty refusal, one active script, ZIP exclusion, package validation/rollback, protected SF/ordinary/legacy state and shared Overstrike CWD. Windows logger smoke covers real filesystem calls under Wine; actual current c20 game diagnostics remain a separate human check. Full c19 regressions/logger and fresh source rebuild are in CODEX_RESULT/V01C20_RELEASE.json.
 
-Native lifecycle/orientation, raw entry thunk/ABI/pairing/accounting/finalization/cleanup, exact guards and logger remain. writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/downstream_conflicts_proven_absent0; Position/source/input/movement writes0. No producer0x351EB00 traversal, movement/adhesion/camera/animation/physics, PAGE_GUARD/data-page mutation, guessed game call or raw private body. Actual c20 A/E remains pending; normal A~4s -> fully end -> move/fast-travel -> E~4s, privately send newest complete log_wallsprint run file.
+Native lifecycle/orientation, raw entry thunk/ABI/pairing/accounting/finalization/cleanup, exact guards and logger remain. writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/downstream_conflicts_proven_absent0; Position/source/input/movement writes0. No producer0x351EB00 traversal, movement/adhesion/camera/animation/physics, PAGE_GUARD/data-page mutation, guessed game call or raw private body. Actual c20 A/E remains pending; normal A~4s -> fully end -> move/fast-travel -> E~4s, privately send the newest complete `MSM2-WS-v0.1c20-YYYYMMDD-HHMMSS.log` from `MSM2-WS/logs`.

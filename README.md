@@ -1,6 +1,6 @@
 # WallSprint
 
-v0.1c20 / package0.1.38 finalizes the independent local workspace, safe full-validation updater and versioned workspace logs. Gameplay remains at the accepted c19 state; prepared EDI research is preserved but production-disabled. No Position/source/input/movement writes or producer traversal.
+v0.1c20 / package0.1.38 enables the prepared bounded EDI value-provenance diagnostics only after exact current callee authentication, for the actual-game A/E capture authorized by CODEX_NEXT. The accepted shared workspace, full-validation updater and versioned logs remain. Gameplay remains at the accepted c19 state; no Position/source/input/movement writes or producer traversal. Actual c20 EDI conclusions await the new in-game log.
 
 Use `MSM2-WS-v0.1c20.zip` and the included `Migrate-WS.cmd` outside Mods Library. The authoritative clone is `<game>/Mods Library/Mods-Developing/MSM2-WS/_source`; normal updates use `MSM2-WS/Update-WS.cmd`. Exactly one active versioned `.script` remains at workspace root. Overstrike also scans ZIP contents: the independent source clone excludes archives from its working tree using managed Git sparse checkout, and build-cache ZIPs are retained only as `.zip.disabled`. Code and release archive history/downloads remain in GitHub. Shared Overstrike is `<game>/Overstrike/Overstrike.exe` with game-root WorkingDirectory. SF/ordinary mods and the legacy environment are never cleaned or automatically removed.
 

@@ -1,19 +1,59 @@
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
 PASS: 4 real MinHook detours plus post-original wrapper on integer/FP/vector/probe returns; integer/FP/vector/24-arg/variadic/sret forwarding preserved; external caller, stack args, nonvolatiles, output RAX/RDX/flags and full vector state preserved; optional local callback enabled; x87/MXCSR and YMM0-15 preserved; concurrent capture accounting=20000 calls
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+SKIP: private original-byte positive replay unavailable; independent wrong-hash rejection executed; later bounded-reader admission is TEST-ONLY
 PASS: c8 actual observation-plan status API reports every verified/field/enabled/read/match gate, independent Init/Entry/Update/Deinit patch IDs/offsets, unreadable/disabled negatives, diagnostic-only field loss and bounded transition diagnostics without full code bytes
 PASS: production one-level source child pairing/point metrics/raw bounds/video timeline and event drain: verified Active/Inactive, Deinit/crawl isolation, bounded field summary, owner/epoch/drop/disable/ownership resets; TEST-ONLY injected events, no game execution
+Wrote logs/TEST_TIMELINE_SYNTHETIC.txt (29 timeline items)
 PASS: 1 checksum-verified function captures, 2 accesses, 2 one-level source paths, 6 four-face candidates; gate BLOCKED
 PASS: timeline/candidate tools parse production synthetic log; pair/positions/contact present; exactly two bounded endpoint dumps; gate blocked
 PASS: native function capture checksum/disassembly/access map and full child provenance; no synthetic fixture promoted to game evidence
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
 PASS: native this-access provenance; RCX/RBX copies, one-level field dereference, call/write/CFG-merge invalidation, indexed/RIP/truncated/BSWAP rejection
 PASS: grouped child offset identity across four faces/global sign inversion; constant axis and incomplete confirmed mapping rejected; no Verified promotion
+SKIP: private native replay files not distributed; synthetic AVX/CFG tests above executed
 PASS: AVX load/store direction, alias move/partial-write/call clobber/CFG intersection, one-level provenance, private replay if present, independent synthetic invariants
 PASS: targeted field A/B/C/D whole-sample correlation, opposite signs/global inversion, Side/Up invariance, constant/missing/outlier and short-session rejection; gate never promoted
 PASS: actual v0.1a8 baseline plus TEST-ONLY diagonal/control/Side-Up gate; quantization/sign/pair/missing/outlier/no-reversal/hash/unconfirmed/no-baseline cases rejected; never enables writes
 PASS: Direct Actor writes hard-disabled for old/current INI, all admission arguments and callback paths
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
 PASS: real hardware Up write-watch and VEH on two owned-memory native threads; WallRun/CrawlCandidate same writer, RIP/regs/callers/code, timeout/event-budget/identity/F8 DR restoration, occupied debug-slot refusal, unrelated exception pass-through, page protection/position/padding unchanged; no game execution
 PASS: actual hardware fixture RIP-after -> anchored store/effective Up address/source XMM, shared WallRun/CrawlCandidate writer; wrong PC/address/NOP/incomplete code rejected; synthetic capture never game evidence or upstream permission
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+SKIP: optional private game-body installer replay not redistributed; independent native tests continue
 PASS: actual MinHook entry/raw RCX/RDX/R8/R9/return snapshots on owned native functions, pre-original source, x87/MXCSR/YMM0..15/GPR/flags/stackargs/nonvolatiles/return unchanged; unreadable/cross-page/oversize rejection, event cap/F8 continue originals, wrong build refuses; synthetic only
 PASS: same RDX+0x10 across A/E/WallRun/Crawl basis, signed/absolute normalized scores, overlap/matrix/quaternion grouping; constant basis/wrong target/caller/pointer/unreadable/missing code/hash rejected; local RDX slice; synthetic never game PASS/write permission
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
 PASS: lock-free coherent A/B shared basis, A exact stack source, B compact36-only scale/metadata preservation, contended worker lock cannot reject hooks, A/E retention, identity/thread/lifecycle/auth/kill/degenerate gates; independent MinHook fixtures only
 PASS: production native publication/worker and real MinHook A/B commits persist beyond2s through a >=4s WallRun with concurrent reader, SurfaceUp and sustained retention; synchronous Deinit passthrough and once/session lifecycle summary; hard collision/Hero/time-order gates diagnose and remain closed
 PASS: c10 deterministic secondary publication refresh at diagonal t1/retention and latest partial basis, fixed native ownership with primary continuation/clean4.2s Deinit; same-ms update, one-refresh bound, 26 ownership/token/Deinit/integrity/stale/kill/context races, no hard revival, first ring-independent refresh event and16-record cap
@@ -21,9 +61,27 @@ PASS: c9 real secondary-thread MinHook B at1.75s after full retention, unchanged
 PASS: c8 production worker diagnostic-only field-plan loss at first0.7s A/B interpolation stops diagnostics without killing source, reaches t1 and retention; four independent real patch mutations stop A/B with precise first hook/offset, hot-entry and input attribution, immutable/racing first cause and no hard-close revival
 PASS: c7 real270ms stale gap blocks A/B before and after worker poll, same-session real Update resumes full target through verified Deinit; fresh-worker/stale-native gate and missed-worker signal; partial transition freeze/continue, bounded18 episodes/16 pairs, eleven stale-to-hard invalidations never revive
 PASS: c6 Position stays read-only with explicit proof rejection, authenticated-source provenance records and bounded valid plane samples/one summary; unreadable plane/out-of-range refuse candidate correction without stopping orientation, in-range request<=0.02, Position16 preserved; no plane reads after Deinit/kill
-PASS: production lifecycle publication sustained >=4s with four concurrent readers (62234411 reads, 3281 bounded misses); no native update dropped by a reader; coherent identity/time/update sequence and LastError preserved; genuine writer collision/owner mismatch/Deinit/disable fail closed
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+PASS: production lifecycle publication sustained >=4s with four concurrent readers (62636781 reads, 4653 bounded misses); no native update dropped by a reader; coherent identity/time/update sequence and LastError preserved; genuine writer collision/owner mismatch/Deinit/disable fail closed
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
 PASS: c11 production c10 primary A/B orientation retains cardinal/diagonal SurfaceUp with real Position hardware watch active, observed unchanged Position rows; diagnostic identity/session/owner/Hero/Transform/thread/generation/epoch/stale/Deinit rejects and normal close, zero Position source writes
 PASS: real independent native fixture logs show A/E retained orientation; source writes alone/position mismatch/nonstack/WorldUp/worker-only fail; synthetic never game PASS or next phase permission
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
 PASS: b9 characterization keeps hardware watch after first reset and captures second reset; cleanup restores debug registers
 PASS: b6 real hardware short watch + real MinHook raw entry; surface-to-world reset, independent second writer, raw RCX/RDX/R8/R9 and exactly64 source bytes, QPC, stop-on-reset, 30ms timeout, cancellation/F8/debug-register restoration; synthetic NEVER game verified
 PASS: b9 characterization keeps hardware watch after first reset and captures second reset; cleanup restores debug registers
@@ -31,25 +89,62 @@ PASS: b6 real hardware short watch + real MinHook raw entry; surface-to-world re
 PASS: real snapshot handed to unchanged legacy engine50ms after commit refuses30ms arm; zero leases/hits, owned memory and debug registers unchanged; synthetic only
 PASS: production async reset coordinator wake/identity/native gate + actual hardware event + stop/join/DR cleanup on owned synthetic memory; no game verification
 PASS: anchored hardware store decode, raw source association, explicit A/E mapping, timing/drop/target/source negative gates; synthetic cannot promote reset writer
+SKIP: optional private584byte game-writer normalization replay; independent synthetic decoder/source tests ran
 PASS: b7 first-override prearm/missing/false/drop/session-mapping gates; synthetic never verified
 PASS: b7 .60 prearm primary-only before .70 source commit, all-caller/invalid-source trace, surface/reset hardware events, positive PREARM_STATUS, unknown-writer non-correlation, Deinit cancellation and DR cleanup; synthetic NOT game evidence
 PASS: real hardware diagonal E sequential dword reset after dual commits; previous surface anchor captures final WorldUp despite non-surface intermediate row; synthetic only
 PASS: b7 .60 prearm primary-only before .70 source commit, all-caller/invalid-source trace, surface/reset hardware events, positive PREARM_STATUS, unknown-writer non-correlation, Deinit cancellation and DR cleanup; synthetic NOT game evidence
 PASS: production async helper crosses .60 to >=.85 once and uses real Toolhelp enumeration/filter/install on owned process threads: entries_total>1 owner_pid_matches>1 installed>1; helper excluded, guard loss before threshold has explicit stop reason and no expansion, stop/join/DR cleanup; no game evidence
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
 PASS: reset-copy exact-hash/wrong-build refusal, SHA256 known vector; actual second raw thunk/MinHook callback clobber restores YMM0..15/GPR/flags/stack/nonvolatiles/returns/x87-MXCSR; synthetic only
 PASS: dual source layout/caller/stack/target/Position/hash/admission/retention/unknown-reset/A-E gates; synthetic cannot verify game ownership
+............
+----------------------------------------------------------------------
+Ran 12 tests in 0.006s
+
+OK
+SKIP: private accepted-build capture replay; set WALLSPRINT_PATH_B_CAPTURE to its PATH_B_FUNCTION/PATH_B_CODE log (never redistribute). Independent proof tests execute in test_dual_source.sh.
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
 PASS: process-thread Up watch captures a second-thread unknown writer after dual commits, bounded identity/hash/caller evidence and once/session trigger; sequential reset after1.10s; foreign DR and all prior debug state preserved; timeout/Deinit/identity/F8/shutdown cleanup; Position/page protection unchanged; owned fixtures only
 PASS: production Toolhelp enumeration and >=0.85 transition after sparse samples; entries_total>1 owner_pid_matches>1 installed>1; pre-expansion common-ring overflow and event budget pressure preserve coordinator and reserve post-expansion evidence; one attempt only; explicit OpenThread OS error
 PASS: c11 full-function direct-only causal-positive certificate; computed/partial/control/multi-store/caller/stack/identity/W-mismatch/overwrite negatives; no Position permission; cardinal-diagonal finite-difference decomposition and invalid-time gates
 PASS: complete Capstone Position candidate inspection on owned584/168 fixtures; exact caller/stack relation, direct/computed/conditional/truncated/mutated negatives; copy/W/exclusive-effects gaps never admit Position writes; no game bytes
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
 PASS: c12 real scalar MOVSS hardware contexts reconstruct full XYZ/W with earlier partial-row negatives; PAGE_GUARD refused unchanged, owned module not admitted as game, exact debug restoration and unchanged c11 watch bounds
 PASS: c11 real Position Vec4 hardware watch after exclusive Up cleanup; two owned Position writers/anchored stores/fourth-component observations, unique identity aggregation/4-event cap, raw256 cap, foreign DR0 refusal/DR2 exact preservation, timeout/Deinit/F8/identity/timing/invalid-frame gates and full restore; no protection or orientation modification
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
 PASS: c12 complete scalar XYZ/W pointer lineage, guarded trap-time source reconstruction, exact target, invalid pointer, W mismatch/downstream overwrite negatives and metadata preservation
 PASS: c12 entry register/stack/pointer variants, supported prologue/epilogue and unavailable floating context refuse
 PASS: c12 complete caller decode/anchored direct E8 target/return, wrong target/return and embedded noninstruction E8 rejection
 PASS: c12 partial/multiple writes, branch/call/invalid decode fail closed; supported computed scalar retains expression without semantic upgrade
 PASS: c12 caller payload substitution/stack construction and target+delta/displacement/velocity-times-dt-shaped arithmetic stay untyped until provenance is independently established
 PASS: c12 A/cardinal and E/diagonal predicted-to-observed SurfaceFrame delta correlation is diagnostic only
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
 PASS: c13 exact build/boundary refusal, guard/noaccess/cross-page/null/overflow reads leave protection unchanged, exact/partial/no-observation candidate matching and conservative direct/indirect/unresolved chain classification
 PASS: c13 actual raw MinHook entry preserves integer/stack arguments, GPR/flags/nonvolatiles, all YMM0..15, XMM, x87/MXCSR, LastError and return value even when capture gate clobbers floating state
 PASS: c14 actual concurrent/nested hardware maps retain seven XYZ mask=0x7 matches with independent constant W=1 and untouched source W=0; session summary counts eight entries/seven complete maps without c12 or cross-session contamination
@@ -71,6 +166,12 @@ PASS: c15 nested reconvergence and all16 paths/31 states remain within explicit 
 PASS: c15 self/backedges, mid-instruction and out-of-writer transfers refuse with the exact branch site/target; no recursion, loop fixpoint or interprocedural traversal
 PASS: c15 unsupported/indirect/call/memory effects report exact next local RVA/mnemonic, and wrong store RVA/target/component cannot borrow a nearby store
 PASS: c15 W constant-one/independent/computed/conflicting provenance is classified separately from XYZ; destination equality never proves W origin or homogeneous semantics
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
 PASS: c16 exact direct leaf call/no memory writes resumes both nested local branch paths at exact return and four stores; default c15 call refusal retained
 PASS: c16 volatile GPR/XMM carriers never survive by equality; reload from preserved source alias succeeds, explicit nonvolatile source-alias clobber refuses
 PASS: c16 source XYZ/unknown pointer/stack/implicit writes and RSP effects fail closed at exact callee RVA; no ABI-based memory-safety assumption
@@ -98,27 +199,58 @@ PASS: c19 constant/entry-register/memory value origins are exact; computed and u
 PASS: c19 earlier/later overlapping writer reload carriers and unknown pointer reads reject even though the modeled write misses Position rows
 PASS: c19 modeled irrelevant Transform write plus later home store resumes XYZ/W; strictly later writer BSWAP or callee CALL remains an exact blocker
 PASS: c19 callee read-after-write and out-of-bounded-stack reads never reuse stale memory provenance or escape runtime TEB exclusion
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
+wine: failed to open L"C:\\windows\\system32\\winedevice.exe": c0000135
 PASS: c20 local EDI copies preserve low32 callee-entry RDX/R9 bit identity through 32-bit chains without upgrading integer bits into pointer types
 PASS: c20 constant, memory, stack-spill reload and exact affine computed EDI origins are bounded; low32 addition wraps modulo2^32
 PASS: c20 both local branch legs reach EDI; same constant via two local definitions joins exactly, differing constants/entry roots refuse
 PASS: c20 unsupported partial registers, copy-chain cap and partially overwritten spills refuse without invented input-memory or bit origins
 PASS: c20 exact all-local EDI definitions can precede a strictly later CALL/reload blocker; value coverage never substitutes for full protected effects
 PASS: c20 prior call/backedge and unauthenticated code remain exact refusals; no traversal outside the authenticated local callee
+WS update complete: MSM2-WS-v0.1c20.script; select ordinary mods + SF + WS, then Install mods -> Run modded game.
+Local migration checks passed; the old environment was not deleted. Only after confirming shared Overstrike UI recognition of ordinary mods + SF + WS and a new versioned runtime log under MSM2-WS/logs may the old WallSprint environment be manually removed.
 PASS: workspace migration creates exact Unicode/space layout, independent non-shared Git clone, root-only active version script and shared Overstrike CWD; legacy/SF/ordinary state untouched
+WS update complete: MSM2-WS-v0.1c20.script; select ordinary mods + SF + WS, then Install mods -> Run modded game.
+Local migration checks passed; the old environment was not deleted. Only after confirming shared Overstrike UI recognition of ordinary mods + SF + WS and a new versioned runtime log under MSM2-WS/logs may the old WallSprint environment be manually removed.
+WS update complete: MSM2-WS-v0.1c21.script; select ordinary mods + SF + WS, then Install mods -> Run modded game.
+WS update complete: MSM2-WS-v0.1c21.script; select ordinary mods + SF + WS, then Install mods -> Run modded game.
 PASS: safe ff-only update uses authoritative version, archives only owned old versions as .script.disabled, preserves archive collisions and exactly one recursively active WS script
+WS update complete: MSM2-WS-v0.1c20.script; select ordinary mods + SF + WS, then Install mods -> Run modded game.
+Local migration checks passed; the old environment was not deleted. Only after confirming shared Overstrike UI recognition of ordinary mods + SF + WS and a new versioned runtime log under MSM2-WS/logs may the old WallSprint environment be manually removed.
 PASS: failed stop/build/test/package/hash/launch retain or roll back the exact previous active WS bytes and helpers; no partial new deployment or sibling mutations
+WS update complete: MSM2-WS-v0.1c20.script; select ordinary mods + SF + WS, then Install mods -> Run modded game.
+Local migration checks passed; the old environment was not deleted. Only after confirming shared Overstrike UI recognition of ordinary mods + SF + WS and a new versioned runtime log under MSM2-WS/logs may the old WallSprint environment be manually removed.
 PASS: shared Overstrike duplicate DLL/missing game dependency and foreign active script fail closed without cleaning shared infrastructure or touching the old WS build
+WS update complete: MSM2-WS-v0.1c20.script; select ordinary mods + SF + WS, then Install mods -> Run modded game.
+Local migration checks passed; the old environment was not deleted. Only after confirming shared Overstrike UI recognition of ordinary mods + SF + WS and a new versioned runtime log under MSM2-WS/logs may the old WallSprint environment be manually removed.
 PASS: detached/unexpected branch, dirty source and nested active script refuse without discarding work, skipping validation or silently switching branches
+WS update complete: MSM2-WS-v0.1c20.script; select ordinary mods + SF + WS, then Install mods -> Run modded game.
+Local migration checks passed; the old environment was not deleted. Only after confirming shared Overstrike UI recognition of ordinary mods + SF + WS and a new versioned runtime log under MSM2-WS/logs may the old WallSprint environment be manually removed.
 PASS: alternates, worktree gitdir-file, nested symlink and source-root junction/symlink dependencies refuse; no legacy directory is copied, backed up or deleted
+WS update complete: MSM2-WS-v0.1c20.script; select ordinary mods + SF + WS, then Install mods -> Run modded game.
+Local migration checks passed; the old environment was not deleted. Only after confirming shared Overstrike UI recognition of ordinary mods + SF + WS and a new versioned runtime log under MSM2-WS/logs may the old WallSprint environment be manually removed.
 PASS: exact hyphenated workspace and exclusive update lock reject aliases/concurrent mutation without creating forbidden names or fallback libraries
 PASS: generated helpers have no personal drive/AppData dependency; supported WSL pipeline retains all existing build/test/package suites and no skip-validation interface
+WS update complete: MSM2-WS-v0.1c20.script; select ordinary mods + SF + WS, then Install mods -> Run modded game.
+Local migration checks passed; the old environment was not deleted. Only after confirming shared Overstrike UI recognition of ordinary mods + SF + WS and a new versioned runtime log under MSM2-WS/logs may the old WallSprint environment be manually removed.
+WS update complete: MSM2-WS-v0.1c20.script; select ordinary mods + SF + WS, then Install mods -> Run modded game.
 PASS: independent source Git sparse checkout excludes root/nested/mixed-case archives while preserving all tracked bytes/history, clean full code and safe ff-only archive updates
+WS update complete: MSM2-WS-v0.1c20.script; select ordinary mods + SF + WS, then Install mods -> Run modded game.
+Local migration checks passed; the old environment was not deleted. Only after confirming shared Overstrike UI recognition of ordinary mods + SF + WS and a new versioned runtime log under MSM2-WS/logs may the old WallSprint environment be manually removed.
+Disabled legacy WS build archive: _archive/_build/MSM2-WS-v0.1c20-source.zip -> _archive/MSM2-WS-v0.1c20-source.zip.disabled
+Disabled legacy WS build archive: _archive/_build/MSM2-WS-v0.1c20.zip -> _archive/MSM2-WS-v0.1c20.zip-01.disabled
+WS update complete: MSM2-WS-v0.1c20.script; select ordinary mods + SF + WS, then Install mods -> Run modded game.
 PASS: upgrades preserve legacy source archives in Git and move only positively identified old WS build ZIPs to disabled archives, retain bytes/mtime/collisions, and reduce modeled Overstrike duplicates3 to1
+WS update complete: MSM2-WS-v0.1c20.script; select ordinary mods + SF + WS, then Install mods -> Run modded game.
+Local migration checks passed; the old environment was not deleted. Only after confirming shared Overstrike UI recognition of ordinary mods + SF + WS and a new versioned runtime log under MSM2-WS/logs may the old WallSprint environment be manually removed.
 PASS: raw/untracked/foreign/misplaced/corrupt ZIP-RAR-7z archives refuse without cleanup, movement of unrelated files, loss of old active build or sibling mutations
+WS update complete: MSM2-WS-v0.1c20.script; select ordinary mods + SF + WS, then Install mods -> Run modded game.
+Local migration checks passed; the old environment was not deleted. Only after confirming shared Overstrike UI recognition of ordinary mods + SF + WS and a new versioned runtime log under MSM2-WS/logs may the old WallSprint environment be manually removed.
 PASS: custom sparse configuration is preserved/refused; direct release inside the scanned library refuses before producing ZIPs and never bypasses the mandatory full pipeline
+WS update complete: MSM2-WS-v0.1c20.script; select ordinary mods + SF + WS, then Install mods -> Run modded game.
+Local migration checks passed; the old environment was not deleted. Only after confirming shared Overstrike UI recognition of ordinary mods + SF + WS and a new versioned runtime log under MSM2-WS/logs may the old WallSprint environment be manually removed.
 PASS: independent extension/recursive-ZIP model detects unextracted nested scripts, ignores disabled containers, and a build that reintroduces a visible ZIP cannot deploy or launch
-SKIP: private original-byte positive replay unavailable; independent wrong-hash rejection executed; later bounded-reader admission is TEST-ONLY
-SKIP: private native replay files not distributed; synthetic AVX/CFG tests above executed
-SKIP: optional private game-body installer replay not redistributed; independent native tests continue
-SKIP: optional private584byte game-writer normalization replay; independent synthetic decoder/source tests ran
-SKIP: private accepted-build capture replay; set WALLSPRINT_PATH_B_CAPTURE to its PATH_B_FUNCTION/PATH_B_CODE log (never redistribute). Independent proof tests execute in test_dual_source.sh.
