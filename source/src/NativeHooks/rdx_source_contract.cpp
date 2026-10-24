@@ -1228,6 +1228,121 @@ unsigned testBranchTags(unsigned id, unsigned tags) {
   return id == X86_INS_JB || id == X86_INS_JAE ||
          id == X86_INS_JO || id == X86_INS_JNO ? 0u : tags;
 }
+bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
+                  ReadFlow &flow) {
+  auto &c = a.readDependency.call;
+  auto fail = [&](std::uintptr_t at, const char *mnemonic, const char *why) {
+    if (!c.barrier) {
+      c.barrier = at; c.reason = why;
+      copyName(c.unresolvedMnemonic, sizeof(c.unresolvedMnemonic), mnemonic);
+    }
+    return false;
+  };
+  if (!c.direct || !c.identity.instructionVerified)
+    return fail(call.address, call.mnemonic, "read_call_indirect_or_invalid_target_no_chase");
+  const auto begin = c.identity.begin, end = c.identity.end;
+  if (c.identity.target==0x351eb00 || (begin<=0x351eb00 && 0x351eb00<end))
+    return fail(call.address,call.mnemonic,"read_call_deferred_producer_refused");
+  if (end>begin && (end-begin>readCallByteCap ||
+      (begin<=call.address && call.address<end)))
+    return fail(call.address,call.mnemonic,"read_call_boundary_cap_or_recursion");
+  if (!c.authenticated || !c.identity.boundaryVerified || !c.code)
+    return fail(call.address, call.mnemonic, "read_call_target_boundary_hash_unavailable");
+  if (begin != c.identity.target || end <= begin || end > a.imageSize ||
+      end - begin != c.size || c.size > readCallByteCap ||
+      (begin <= 0x351eb00 && 0x351eb00 < end) ||
+      (begin <= call.address && call.address < end))
+    return fail(call.address, call.mnemonic, "read_call_boundary_cap_recursion_or_deferred_target");
+  Decode d;
+  if (!d.run(c.code, c.size, begin) || d.n > readCallInstructionCap)
+    return fail(begin, "decode", "read_call_full_decode_or_instruction_cap");
+  auto state = caller; auto tags = flow;
+  const auto oldSp = state.s.g[4];
+  auto sp = plus(oldSp, -8);
+  if (oldSp.kind != pointer || oldSp.root != 4 || sp.kind != pointer ||
+      sp.off < -4096 || sp.off + 8 > 4096 || tags.g[4] ||
+      overlaps(sp.off, 8, 0, 8) || overlaps(sp.off, 8, 0x28, 0x68))
+    return fail(call.address, call.mnemonic, "read_call_return_slot_alias_or_stack_unknown");
+  state.s.g[4] = sp;
+  if (!state.s.save(sp, {constant,0,0,std::uint32_t(call.address+call.size)},8,0) ||
+      !tags.save(sp,8,0))
+    return fail(call.address, call.mnemonic, "read_call_stack_slot_cap");
+  for (unsigned i = 0; i < d.n; ++i) {
+    const auto &ins = d.p[i]; const auto &x = ins.detail->x86;
+    if (++c.visits > 4096)
+      return fail(ins.address, ins.mnemonic, "read_call_cumulative_visit_cap");
+    if (ins.id == X86_INS_RET && x.op_count == 0) {
+      if (!equal(state.s.g[4], sp))
+        return fail(ins.address, ins.mnemonic, "read_call_stack_not_restored");
+      state.s.g[4] = oldSp;
+      caller = state; flow = tags; ++c.modeledStates;
+      for (unsigned k = 0; k < 16; ++k)
+        for (unsigned bit = 0; bit < 3; ++bit) {
+          if (tags.g[k] & (1u << bit)) c.returnedGpr[bit] |= 1u << k;
+          if (tags.x[k] & (1u << bit)) c.returnedXmm[bit] |= 1u << k;
+        }
+      c.returnedFlagsTags |= tags.flags;
+      if (!c.barrier) c.reason = "bounded_register_only_leaf_normal_return";
+      return true;
+    }
+    if (group(ins, CS_GRP_CALL) || group(ins, CS_GRP_JUMP) ||
+        group(ins, CS_GRP_RET) || group(ins, CS_GRP_INT) || group(ins, CS_GRP_IRET))
+      return fail(ins.address, ins.mnemonic, "read_call_nested_or_control_depth_limit");
+    if (ins.id == X86_INS_NOP || ins.id == X86_INS_ENDBR64) continue;
+    cs_regs reads{}, writes{}; std::uint8_t nr{}, nw{};
+    if (cs_regs_access(d.h, &ins, reads, &nr, writes, &nw) != CS_ERR_OK)
+      return fail(ins.address, ins.mnemonic, "read_call_register_access_unknown");
+    unsigned incoming = 0;
+    for (unsigned k = 0; k < nr; ++k) {
+      if (reads[k] == X86_REG_EFLAGS ||
+          (reg(reads[k]) < 0 && xmm(reads[k]) < 0))
+        return fail(ins.address, ins.mnemonic, "read_call_partial_or_flag_input_unmodeled");
+      incoming |= tags.get(reads[k]);
+    }
+    for (unsigned j = 0; j < x.op_count; ++j) if (x.operands[j].type == X86_OP_MEM) {
+      const auto &op = x.operands[j]; auto at = aliasAddress(state.s,ins,op,0);
+      if (at.kind == pointer && at.root == 2) { at.root = 4; at.off += 0x28; }
+      const bool store = (op.access & CS_AC_WRITE) ||
+          (j==0 && ins.id!=X86_INS_CMP && ins.id!=X86_INS_TEST);
+      if (store && (incoming & 1)) c.memoryEscape = true;
+      const char *why = at.kind != pointer ? "read_call_memory_alias_unknown"
+          : at.root == 1 ? "read_call_Transform_memory_effect_refused"
+          : at.root == 4 && overlaps(at.off,op.size,0x28,0x68)
+              ? "read_call_source_span_memory_effect_refused"
+          : at.root == 4 && at.off >= sp.off
+              ? "read_call_caller_home_or_return_memory_effect_refused"
+          : "read_call_memory_effect_outside_register_only_model";
+      return fail(ins.address, ins.mnemonic, why);
+    }
+    bool regPair = x.op_count == 2 && x.operands[0].type == X86_OP_REG &&
+                   x.operands[1].type == X86_OP_REG;
+    bool scalarPair = regPair && reg(x.operands[0].reg)>=0 && reg(x.operands[1].reg)>=0 &&
+        (x.operands[0].size==4 || x.operands[0].size==8) &&
+        x.operands[0].size==x.operands[1].size;
+    bool move = regPair && (ins.id==X86_INS_MOV || ins.id==X86_INS_MOVD ||
+                                ins.id==X86_INS_MOVAPS || ins.id==X86_INS_MOVUPS);
+    bool zero = regPair && x.operands[0].reg==x.operands[1].reg &&
+        (ins.id==X86_INS_XOR || ins.id==X86_INS_XORPS || ins.id==X86_INS_PXOR);
+    bool flags = scalarPair && (ins.id==X86_INS_TEST || ins.id==X86_INS_CMP);
+    if (x.prefix[0] || (!move && !zero && !flags))
+      return fail(ins.address, ins.mnemonic, "read_call_instruction_outside_register_leaf_model");
+    if (zero || (flags && ins.id==X86_INS_CMP && x.operands[0].reg==x.operands[1].reg))
+      incoming = 0;
+    for (unsigned k = 0; k < nw; ++k) {
+      if (reg(writes[k]) == 4 || !tags.put(writes[k], incoming))
+        return fail(ins.address, ins.mnemonic, "read_call_partial_or_stack_register_write");
+      if (reg(writes[k]) >= 0) c.clobberGpr |= 1u << reg(writes[k]);
+      if (xmm(writes[k]) >= 0) c.clobberXmm |= 1u << xmm(writes[k]);
+      if (writes[k] == X86_REG_EFLAGS) {
+        tags.logicalTestFlags = ins.id==X86_INS_TEST;
+        tags.pinnedTestFlags = false;
+      }
+    }
+    if (!state.step(ins,false))
+      return fail(ins.address, ins.mnemonic, "read_call_register_provenance_unmodeled");
+  }
+  return fail(end,"fallthrough","read_call_no_bounded_normal_return");
+}
 template <class Nodes>
 void inspectReadDependency(CalleeAlias &a, Decode &d, const Nodes &nodes,
                            const Slice &input, unsigned writeIndex) {
@@ -1261,6 +1376,23 @@ void inspectReadDependency(CalleeAlias &a, Decode &d, const Nodes &nodes,
     for (unsigned j = 0; j < d.n; ++j)
       if (d.p[j].address == test.site) describeTest(test, d.p[j], d.h);
     if (!test.decoded) test.reason = "test_not_on_authenticated_instruction_boundary";
+  }
+  auto &nested = r.call;
+  if (nested.site) {
+    for (unsigned j = 0; j < d.n; ++j) if (d.p[j].address == nested.site) {
+      const auto &ins = d.p[j]; nested.decoded = ins.id == X86_INS_CALL;
+      copyName(nested.mnemonic,sizeof(nested.mnemonic),ins.mnemonic);
+      copyName(nested.operand,sizeof(nested.operand),ins.op_str);
+      const auto exact = exactCall(a.code,a.size,d.p[0].address,a.imageSize,
+          unsigned(ins.address-d.p[0].address),unsigned(ins.address+ins.size-d.p[0].address));
+      const auto old = nested.identity;
+      if (old.target != exact.target) nested.authenticated = false;
+      nested.identity = exact;
+      nested.identity.begin=old.begin; nested.identity.end=old.end;
+      nested.identity.boundaryVerified=old.boundaryVerified && old.target==exact.target;
+      nested.direct = !std::strcmp(exact.kind,"direct_call");
+      if (!nested.samples) nested.reason = "decoded_call_not_reached_by_flow";
+    }
   }
   // Ordering is structural, over the fully checked forward local CFG, with
   // CALL fallthrough explicitly conditional on normal return (no expansion).
@@ -1344,6 +1476,34 @@ void inspectReadDependency(CalleeAlias &a, Decode &d, const Nodes &nodes,
           todo[pending] = w; todo[pending++].pc = unsigned(node.next[1]);
         }
         w.pc = unsigned(node.next[0]); continue;
+      }
+      if (group(ins, CS_GRP_CALL) && ins.address == nested.site) {
+        ++nested.samples;
+        for (unsigned k=0;k<16;++k) {
+          auto &arg=nested.gpr[k]; const auto value=w.slice.s.g[k];
+          if (nested.samples>1 && (arg.kind!=int(value.kind) || arg.root!=value.root ||
+              arg.offset!=value.off || arg.bits!=value.bits)) arg.same=false;
+          arg.kind=int(value.kind); arg.root=value.root; arg.offset=value.off; arg.bits=value.bits;
+          arg.tags |= w.flow.g[k]; nested.xmmTags[k] |= w.flow.x[k];
+        }
+        nested.flagsTags |= w.flow.flags;
+        for (const auto &slot:w.flow.stack)
+          if (slot.used && slot.off+slot.width>w.slice.s.g[4].off)
+            nested.callerStackTags |= slot.tags;
+        if (!readCallLeaf(a,ins,w.slice,w.flow)) {
+          if (nested.memoryEscape) {
+            r.memoryEscape=true;
+            if (!r.firstEscape) r.firstEscape=nested.barrier;
+          }
+          r.flowComplete=false;
+          if (!r.barrier) {
+            r.barrier=nested.barrier; r.reason=nested.reason;
+            copyName(r.unresolvedMnemonic,sizeof(r.unresolvedMnemonic),nested.unresolvedMnemonic);
+          }
+          break;
+        }
+        if (!node.count) { stop(ins,"read_flow_call_fallthrough"); break; }
+        w.pc=unsigned(node.next[0]); continue;
       }
       if (group(ins, CS_GRP_CALL) || group(ins, CS_GRP_INT) ||
           group(ins, CS_GRP_IRET) || group(ins, CS_GRP_RET)) {

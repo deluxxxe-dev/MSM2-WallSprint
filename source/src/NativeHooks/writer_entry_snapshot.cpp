@@ -82,6 +82,7 @@ bool calleeAliasIdentity(std::uintptr_t t, std::uintptr_t b, std::uintptr_t e,
 std::array<unsigned char, ws::rdx::calleeByteCap> writerCallee{};
 unsigned writerCalleeSize{};
 char writerCalleeHash[65]{};
+std::array<unsigned char, ws::rdx::readCallByteCap> readCallCode{};
 bool writerCallCurrent() noexcept;
 ws::rdx::Caller contractCaller{}, contractParent{};
 ws::rdx::Relation contractProducer{};
@@ -925,6 +926,32 @@ void configure(const Spec &s, Gate validate) noexcept {
         calleeCurrent; // c20 diagnostic-only opt-in after exact current identity.
     writerAlias.readDependency.site = calleeCurrent ? 0x2b23578 : 0;
     writerAlias.readDependency.test.site = calleeCurrent ? 0x2b235be : 0;
+    auto &nestedReadCall = writerAlias.readDependency.call;
+    nestedReadCall.site = calleeCurrent ? 0x2b235d4 : 0;
+    if (calleeCurrent) {
+      nestedReadCall.identity = ws::rdx::exactCall(writerCallee.data(),writerCalleeSize,
+          writerCall.begin,s.imageSize,0x74,0x79);
+      auto &nc=nestedReadCall.identity;
+      if (nc.instructionVerified && nc.target!=0x351eb00) {
+        DWORD64 nestedImage{};
+        auto nf=RtlLookupFunctionEntry(s.base+nc.target,&nestedImage,nullptr);
+        if (nf && nestedImage==s.base) {
+          nc.begin=nf->BeginAddress; nc.end=nf->EndAddress;
+          nc.boundaryVerified=nc.begin==nc.target && nc.end>nc.begin && nc.end<=s.imageSize;
+          const auto nb=nc.begin, ne=nc.end;
+          const bool excluded=(nb<=0x351eb00 && 0x351eb00<ne) ||
+              (nb<writerCall.end && writerCall.begin<ne) || (nb<s.end && s.begin<ne);
+          if (nc.boundaryVerified && !excluded && ne-nb<=readCallCode.size()) {
+            unsigned char again[ws::rdx::readCallByteCap]{};
+            nestedReadCall.size=unsigned(ne-nb);
+            nestedReadCall.authenticated=guardedRead(s.base+nb,readCallCode.data(),ne-nb) &&
+                digest(readCallCode.data(),ne-nb,nestedReadCall.hash) &&
+                guardedRead(s.base+nb,again,ne-nb) && !std::memcmp(again,readCallCode.data(),ne-nb);
+            if (nestedReadCall.authenticated) nestedReadCall.code=readCallCode.data();
+          }
+        }
+      }
+    }
     writerAlias.reason =
         calleeCurrent ? "writer_call_not_reached_in_bounded_prefix"
                       : "exact_c17_target_boundary_hash_not_authenticated";
@@ -1164,6 +1191,47 @@ void configure(const Spec &s, Gate validate) noexcept {
              rt.consumerSamples, rt.consumerTags,
              (unsigned long long)rt.firstDependentConsumer, rt.returnedFlagsTags);
     const auto &ac = writerAlias.counts;
+    const auto &rcall=writerAlias.readDependency.call;
+    writeLog("MOVEMENT_CALLEE_READ_CALL site_rva=0x2b235d4 enabled=%u decoded=%u "
+             "form=%s operand=%s direct=%u target_rva=0x%llx exact_target=%u target_reason=%s "
+             "target_begin_rva=0x%llx target_end_rva=0x%llx boundary_verified=%u "
+             "snapshot_authenticated=%u snapshot_sha256=%s bytes=%u "
+             "samples=%u modeled_states=%u nested_visits=%u "
+             "entry_flags_tags=0x%x caller_stack_tags=0x%x memory_escape=%u "
+             "barrier_rva=0x%llx barrier_instruction=%s reason=%s "
+             "expansion_depth_cap=1 leaf_byte_cap=128 leaf_instruction_cap=32 "
+             "identity_scope=startup_current_code_snapshot full_bytes_logged=0 effect_certificate=0",
+             unsigned(rcall.site!=0),unsigned(rcall.decoded),rcall.identity.kind,rcall.operand,
+             unsigned(rcall.direct),(unsigned long long)rcall.identity.target,
+             unsigned(rcall.identity.instructionVerified),rcall.identity.reason,(unsigned long long)rcall.identity.begin,
+             (unsigned long long)rcall.identity.end,unsigned(rcall.identity.boundaryVerified),
+             unsigned(rcall.authenticated),rcall.authenticated?rcall.hash:"unavailable",rcall.size,
+             rcall.samples,rcall.modeledStates,rcall.visits,rcall.flagsTags,rcall.callerStackTags,
+             unsigned(rcall.memoryEscape),(unsigned long long)rcall.barrier,rcall.unresolvedMnemonic,rcall.reason);
+    for (unsigned k=0;k<16;++k) {
+      const auto &arg=rcall.gpr[k];
+      const char *aliasClass=arg.kind!=1 ? "unknown_raw_bits_or_load"
+          : arg.root==1 ? "Hero_Transform" : arg.root==2 ? "writer_entry_RDX_source"
+          : arg.root==4 ? "caller_stack" : arg.root==16 ? "image_global" : "other_possible_alias";
+      writeLog("MOVEMENT_CALLEE_READ_CALL_CARRIER site_rva=0x2b235d4 gpr=%u "
+               "gpr_tags=0x%x xmm_same_index_tags=0x%x origin_kind=%d root=%d offset=%lld "
+               "alias_class=%s "
+               "constant_bits=0x%x same_origin_all_analyzed_states=%u "
+               "origin_scope=last_state_tags_union kind_0_unknown_1_pointer_2_mem32_3_mem64_4_constant_5_entry_6_computed=1 "
+               "raw_carriers_not_typed_arguments=1 tags_1_selected_2_postwrite_4_other_prewrite=1",
+               k,arg.tags,rcall.xmmTags[k],arg.kind,arg.root,(long long)arg.offset,aliasClass,arg.bits,unsigned(arg.same));
+    }
+    writeLog("MOVEMENT_CALLEE_READ_CALL_RETURN site_rva=0x2b235d4 "
+             "selected_gpr_mask=0x%x postwrite_gpr_mask=0x%x other_prewrite_gpr_mask=0x%x "
+             "selected_xmm_mask=0x%x postwrite_xmm_mask=0x%x other_prewrite_xmm_mask=0x%x "
+             "returned_flags_tags=0x%x modified_gpr_mask_analyzed_prefix=0x%x modified_xmm_mask_analyzed_prefix=0x%x "
+             "Win64_volatile_gpr_mask=0xf07 Win64_nonvolatile_gpr_mask=0xf0f8 "
+             "Win64_volatile_xmm_mask=0x3f Win64_nonvolatile_xmm_mask=0xffc0 "
+             "coverage=modeled_normal_returns_only unknown_calls_never_invalidate_then_continue=1 "
+             "downstream_XYZ_W_relevance=unknown cross_invocation_feedback=unknown effect_certificate=0",
+             rcall.returnedGpr[0],rcall.returnedGpr[1],rcall.returnedGpr[2],
+             rcall.returnedXmm[0],rcall.returnedXmm[1],rcall.returnedXmm[2],
+             rcall.returnedFlagsTags,rcall.clobberGpr,rcall.clobberXmm);
     writeLog(
         "MOVEMENT_CALLEE_ALIAS_CONTRACT target_rva=0x2b23560 "
         "target_end=0x2b235e9 "

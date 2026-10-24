@@ -1,5 +1,10 @@
 # c22 pinned TEST operand / flag flow
 
+**ACTUAL C22 ACCEPTED:** V01C22_RUNTIME_RESULT.md supersedes the original
+preparation/pending notes below: TEST r8b/r8b -> JE has no selected tags; the
+next exact barrier is CALL0x2B235D4. No complete writer/ownership proof follows.
+C23 preparation: V01C23_READ_CALL_FLOW.md.
+
 ## Accepted input and evidence boundary
 
 V01C21_RUNTIME_RESULT.md accepts exact read0x2B23578 from Transform+0x10C

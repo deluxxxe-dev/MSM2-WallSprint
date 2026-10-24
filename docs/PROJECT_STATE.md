@@ -168,3 +168,14 @@ Shared ordinary mods + SF + WS, shared Overstrike, modded launch and versioned W
 Continue from accepted c22 evidence. Classify only the exact `0x2B235D4` call sufficiently to determine whether the selected same-field read can escape through arguments, return/clobber state, aliases, memory or downstream control/data flow, then stop at the next exact proof boundary. Preserve all safety gates, do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
 
 Deferred user-facing features are tracked in `docs/FEATURE_ROADMAP.md` and remain intentionally out of scope until the movement ownership foundation is safe.
+
+## Prepared c23 implementation — actual CALL metadata pending
+
+v0.1c23/package0.1.41 adds only exact CALL0x2B235D4 target/form/current boundary/
+hash and all raw carrier/alias tags, with one optional authenticated register-only
+leaf128bytes/32instructions/depth1. Memory effects/branch/further CALL/partial/
+unknown identity stop exactly. Old effect and ownership gates remain closed.
+Current compact c22 evidence lacks the target snapshot/argument metadata, so
+actual c23 target/effect/next barrier require the new READ_CALL records in a
+shortest A/E log. No body dump, producer traversal or gameplay advancement.
+See analysis/V01C23_READ_CALL_FLOW.md and V01C23_GATE.md.

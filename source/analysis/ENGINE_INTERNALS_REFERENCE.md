@@ -266,3 +266,14 @@ whole-parent possible tags, partial writes/unmodeled forms still refuse.
 VERIFIED-STATIC implementation/owned-fixture scope only; actual c22 UNKNOWN.
 Existing read/effect certificate gate remains closed; no XYZ/W/cross-invocation/
 ownership inference or new game mutation. See V01C22_READ_TEST_FLOW.md.
+
+## Accepted c22 / prepared c23 call boundary
+
+VERIFIED-STATIC under authenticated actual-game identity: TEST r8b/r8b0x2B235BE
+and JE0x2B235C1 have parent/flag/consumer tags0 for analyzed states. This
+supersedes the prepared c22 pending-opcode note above. Next exact CALL0x2B235D4
+target/effects UNKNOWN; partial EAX return mask1 is not complete call-path
+coverage. See V01C22_RUNTIME_RESULT.md. C23 classifies only that CALL and an
+optional current-authenticated register-only leaf, depth1/128bytes/32instructions.
+Implementation/owned-fixture scope only; actual c23 UNKNOWN. No memory/branch/
+further call model or effect/XYZ/W/ownership certificate. Details: V01C23_READ_CALL_FLOW.md.

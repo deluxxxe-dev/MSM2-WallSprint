@@ -115,6 +115,29 @@ struct ReadTestContract {
   const char *consumerKind = "none";
   const char *reason = "test_diagnostic_not_enabled";
 };
+inline constexpr unsigned readCallByteCap = 128, readCallInstructionCap = 32;
+// Optional single leaf snapshot, supplied/rechecked by the runtime owner.
+// No recursion or pointer dereferences in this offline diagnostic API.
+struct ReadCallContract {
+  struct Carrier {
+    unsigned tags{}, bits{};
+    int kind{}, root = -1;
+    std::int64_t offset{};
+    bool same = true;
+  };
+  std::uintptr_t site{}, barrier{};
+  CallEffect identity{};
+  const unsigned char *code{};
+  unsigned size{}, samples{}, modeledStates{}, visits{}, flagsTags{}, callerStackTags{},
+      clobberGpr{}, clobberXmm{}, returnedFlagsTags{};
+  std::array<Carrier, 16> gpr{};
+  std::array<unsigned, 16> xmmTags{};
+  std::array<unsigned, 3> returnedGpr{}, returnedXmm{};
+  bool authenticated{}, decoded{}, direct{}, memoryEscape{};
+  const char *reason = "read_call_not_enabled";
+  char hash[65] = "unavailable", mnemonic[32] = "none", operand[32] = "none",
+       unresolvedMnemonic[32] = "none";
+};
 // Diagnostic sidecar only: cannot grant any alias/effect/write certificate.
 struct ReadDependencyContract {
   std::uintptr_t site{}, barrier{}, firstUse{}, firstControl{}, firstEscape{};
@@ -129,6 +152,7 @@ struct ReadDependencyContract {
   char mnemonic[32] = "none", base[32] = "none", index[32] = "none",
        carrier[32] = "none", unresolvedMnemonic[32] = "none";
   ReadTestContract test{};
+  ReadCallContract call{};
 };
 struct CalleeAlias {
   // Only authenticated current target bytes; never dereferenced process

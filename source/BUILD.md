@@ -60,3 +60,12 @@ v0.1c22/package0.1.40 extends only the authenticated pinned TEST read/flag sidec
 regressions. Low-byte TEST is read-only/conservative parent taint, never a partial
 register write model or a writer/effect certificate. See analysis/V01C22_READ_TEST_FLOW.md.
 Actual TEST operands/next blocker still require the shortest normal A/E game log.
+
+## Current c23 call diagnostic
+
+v0.1c23/package0.1.41 retains the full chain. test_read_dependency.sh now
+includes16 c21/c22 groups plus5 call groups. Only a single authenticated
+register-only leaf can continue (128bytes/32instructions/depth1); unknown
+calls and any memory/branch/further-call effect stop. Actual CALL metadata
+requires the new compact READ_CALL log, not the old TEST capture. See
+analysis/V01C23_READ_CALL_FLOW.md; all prior game-write gates remain.

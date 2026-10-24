@@ -30,17 +30,36 @@ struct Fixture {
     put(body,0x20,{0xbf,1,0,0,0});
     put(body,0x2e,{0x89,0xb9,0x0c,1,0,0,0x48,0x8b,0x7c,0x24,8,0xc3});
   }
-  ws::rdx::Writer run(unsigned read=5,bool auth=true,bool enabled=true,bool edi=true,unsigned test=0) {
+  ws::rdx::Writer run(unsigned read=5,bool auth=true,bool enabled=true,bool edi=true,unsigned test=0,
+                      const ws::rdx::ReadCallContract *nested=nullptr) {
     call=ws::rdx::exactCall(writer.data(),writer.size(),wr,0x5000,0x27,0x2c);
     ws::rdx::classifyCallee(call,body.data(),body.size(),cr,cr+body.size());
     alias={}; alias.code=body.data(); alias.size=body.size(); alias.imageSize=0x5000;
     alias.authenticated=auth; alias.exactWrite.site=cr+0x2e; alias.edi.enabled=edi;
     alias.readDependency.site=enabled?cr+read:0;
     alias.readDependency.test.site=test?cr+test:0;
+    if (nested) alias.readDependency.call=*nested;
     return ws::rdx::branchWriter(writer.data(),writer.size(),{0x36,0x3c,0x42,0x45},&call,&alias);
   }
   void denied() const {
     assert(!alias.resolved && !alias.relevantEffectsResolved && !alias.sourceNoWrite && !call.noWrite);
+  }
+};
+struct CallFixture : Fixture {
+  std::array<unsigned char,16> leaf{};
+  ws::rdx::ReadCallContract target{};
+  CallFixture() {
+    leaf.fill(0x90);leaf.back()=0xc3;
+    put(body,5,{0x8b,0x81,0x0c,1,0,0});
+    put(body,0x34,{0xe8,0,0,0,0,0x48,0x8b,0x7c,0x24,8,0xc3});
+    const std::int32_t disp=0x3000-(cr+0x39);
+    std::memcpy(body.data()+0x35,&disp,4);
+  }
+  ws::rdx::Writer invoke(bool authenticated=true,unsigned size=16) {
+    target={};target.site=cr+0x34;target.code=leaf.data();target.size=size;
+    target.authenticated=authenticated;target.identity.target=target.identity.begin=0x3000;
+    target.identity.end=0x3000+size;target.identity.boundaryVerified=true;
+    return run(5,true,true,true,0,&target);
   }
 };
 int main() {
@@ -272,4 +291,79 @@ int main() {
   assert(!testLive.run(5,true,false,true,11).xyz && !testLive.alias.readDependency.test.decoded);
   assert(!testLive.run(5,true,true,true,12).xyz && !testLive.alias.readDependency.test.decoded);
   std::puts("PASS: c22 unsupported flag use/CALL stop precisely; authenticated, disabled and instruction-boundary controls preserve c19/c20/c21 gates");
+
+  CallFixture argument;
+  Fixture::put(argument.body,11,{0x89,0xc2});
+  assert(!argument.invoke().xyz); argument.denied(); r=argument.alias.readDependency;
+  assert(r.call.direct && r.call.identity.target==0x3000 && r.call.samples==1 &&
+         r.call.gpr[2].tags==1 && r.call.modeledStates==1 && r.flowComplete && (r.returnedGpr&1));
+  assert(argument.alias.edi.complete && argument.alias.edi.exact && r.orderMask==1);
+  CallFixture disjoint;
+  Fixture::put(disjoint.body,11,{0x31,0xc0});
+  assert(!disjoint.invoke().xyz);r=disjoint.alias.readDependency;
+  assert(r.flowComplete && !r.returnedGpr && !r.call.gpr[0].tags && !r.call.gpr[2].tags);
+  std::puts("PASS: c23 pinned direct target and all raw argument/carrier tags distinguish selected and disjoint inputs without effect permission");
+
+  CallFixture returned;
+  Fixture::put(returned.body,11,{0x89,0xc2,0x31,0xc0});
+  Fixture::put(returned.leaf,0,{0x89,0xd0});
+  assert(!returned.invoke().xyz);r=returned.alias.readDependency;
+  assert(r.flowComplete && (r.returnedGpr&1) && (r.call.returnedGpr[0]&1) && (r.call.clobberGpr&1));
+  CallFixture callKilled;
+  Fixture::put(callKilled.leaf,0,{0x31,0xc0});
+  assert(!callKilled.invoke().xyz);r=callKilled.alias.readDependency;
+  assert(r.flowComplete && !r.returnedGpr && !r.call.returnedGpr[0] && !r.returnedFlags);
+  CallFixture vector;
+  Fixture::put(vector.leaf,0,{0x66,0x0f,0x6e,0xc0}); // MOVD XMM0,EAX.
+  assert(!vector.invoke().xyz);r=vector.alias.readDependency;
+  assert(r.flowComplete && (r.call.returnedXmm[0]&1) && (r.returnedXmm&1));
+  CallFixture flagReturn;
+  Fixture::put(flagReturn.leaf,0,{0x85,0xc0});
+  assert(!flagReturn.invoke().xyz);r=flagReturn.alias.readDependency;
+  assert(r.flowComplete && r.returnedFlags && r.call.returnedFlagsTags==1);
+  std::puts("PASS: c23 one register-only leaf preserves returned GPR/XMM dependence and proves explicit self-zero clobbers without ABI invalidation guesses");
+
+  CallFixture callHome;
+  Fixture::put(callHome.leaf,0,{0x89,0x44,0x24,8});
+  assert(!callHome.invoke().xyz);r=callHome.alias.readDependency;
+  assert(!r.flowComplete && r.call.memoryEscape && r.memoryEscape && r.barrier==0x3000 &&
+         !std::strcmp(r.reason,"read_call_caller_home_or_return_memory_effect_refused"));
+  CallFixture transform;
+  Fixture::put(transform.leaf,0,{0x89,0x81,0x0c,1,0,0});
+  assert(!transform.invoke().xyz);r=transform.alias.readDependency;
+  assert(!r.flowComplete && r.call.memoryEscape &&
+         !std::strcmp(r.reason,"read_call_Transform_memory_effect_refused"));
+  CallFixture source;
+  Fixture::put(source.leaf,0,{0x89,6}); // RSI retains exact writer-entry RDX root.
+  assert(!source.invoke().xyz);r=source.alias.readDependency;
+  assert(!r.flowComplete && !std::strcmp(r.reason,"read_call_source_span_memory_effect_refused"));
+  std::puts("PASS: c23 caller/home stack escape and exact Transform/source-span aliases stop at the nested memory instruction; no protected effect certificate");
+
+  CallFixture indirect;
+  Fixture::put(indirect.body,0x34,{0xff,0xd0,0x90,0x90,0x90});
+  assert(!indirect.invoke().xyz);r=indirect.alias.readDependency;
+  assert(!r.flowComplete && !r.call.direct && !r.call.identity.instructionVerified && r.barrier==cr+0x34);
+  CallFixture callNested;
+  Fixture::put(callNested.leaf,0,{0xe8,0,0,0,0});
+  assert(!callNested.invoke().xyz);r=callNested.alias.readDependency;
+  assert(!r.flowComplete && r.barrier==0x3000 && !r.call.modeledStates);
+  CallFixture partial;
+  Fixture::put(partial.leaf,0,{0xb0,0});
+  assert(!partial.invoke().xyz && !partial.alias.readDependency.flowComplete);
+  assert(!returned.invoke(false).xyz);r=returned.alias.readDependency;
+  assert(!r.flowComplete && !r.call.modeledStates && r.barrier==cr+0x34);
+  std::puts("PASS: c23 indirect, unauthenticated, partial-register and depth-two call cases retain exact refusal without pointer chasing or recursion");
+
+  CallFixture capCall;
+  assert(!capCall.invoke(true,129).xyz);r=capCall.alias.readDependency;
+  assert(!r.flowComplete && !r.call.visits && !r.call.modeledStates);
+  CallFixture noReturn;
+  noReturn.leaf.fill(0x90);
+  assert(!noReturn.invoke().xyz);r=noReturn.alias.readDependency;
+  assert(!r.flowComplete && !std::strcmp(r.reason,"read_call_no_bounded_normal_return"));
+  CallFixture unknownAlias;
+  Fixture::put(unknownAlias.leaf,0,{0x41,0x89,0x14,0x81});
+  assert(!unknownAlias.invoke().xyz);r=unknownAlias.alias.readDependency;
+  assert(!r.flowComplete && !std::strcmp(r.reason,"read_call_memory_alias_unknown"));
+  std::puts("PASS: c23 target byte/return and unknown indexed alias boundaries stay closed; actual target code is never inferred from a CALL alone");
 }
