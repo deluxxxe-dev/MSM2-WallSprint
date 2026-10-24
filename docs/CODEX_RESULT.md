@@ -1,3 +1,101 @@
+# Codex result — c21 bounded read-dependency diagnostic (2026-10-25)
+
+Branch: **codex/v01c20-edi-value-provenance**; base **897381a**.
+Implementation: **9b3b7b0ab9c1bfbd932693fceb60530fca77fe34**.
+Outputs: **MSM2-WS-v0.1c21.zip**, **MSM2-WS-v0.1c21-source.zip**,
+**MSM2-WS-v0.1c21.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C21_RELEASE.json**. Version **v0.1c21 / package0.1.39**.
+Exact final archive/script/DLL hashes are recorded in the release metadata.
+
+## Result / evidence scope
+
+Read the required project manual/rules/state/task and c20/runtime/value/write/RDX
+evidence, plus the accessible Wisdoms operational/engine/RE guides and WS references.
+Accepted c20 EDI origin remains0x2B2356F -> image-global root16+0x0C323788, with
+semantic meaning UNKNOWN. The current read0x2B23578 opcode/address/carrier are
+not present in compact c20 evidence and are not guessed or reconstructed here.
+
+Added a small diagnostic sidecar within the already authenticated137-byte callee
+snapshot. Production opts in only for exact read0x2B23578 under calleeCurrent.
+It reports operand/mnemonic/width/base/index/scale/displacement, modeled address
+root/offset/class and overlap, destination carrier, both-path structural ordering,
+and separate conservative possible-value-flow metadata. GPR/XMM/flags/caller
+stack, later same-field reloads, possible first/control/escape uses and exact
+unsupported/CALL/cap blockers are distinguished. Structural CALL fallthrough is
+explicitly conditional on normal return; it is not a call-effect certificate.
+
+**Bounded Outcome C diagnostic preparation:** existing earlier-read/effect
+refusal is retained even if a local fixture value is dead. The sidecar cannot
+grant/relax any alias, source-no-write, Position/effect, XYZ/W, ownership or write
+certificate. Downstream relevance and cross-invocation feedback stay unknown.
+Actual narrower game blocker/classification requires the new compact READ log
+records. No private game body or new live observation/call/hook is added.
+
+## Files / safety
+
+- rdx_source_contract.hpp/.cpp: diagnostic fields and bounded private sidecar,
+  called after existing identity/CFG/EDI checks. Legacy State/Slice, readMayDepend,
+  recordRead, c19/c20 certificates and writer/caller/producer proof logic unchanged.
+- writer_entry_snapshot.cpp: pinned opt-in and READ_DEPENDENCY/READ_FLOW reporting.
+- read_dependency_smoke.cpp/test_read_dependency.sh plus full hooks integration:
+  eight independently authored fixture groups; no captured function bytes.
+- version.hpp/info.json, package/release metadata, new c21 analysis/gate, accepted
+  c20 source mirrors, README/README_TEST/BUILD, AGENTS, PROJECT_STATE and derived
+  engine-reference checkpoint synchronized. CODEX_NEXT is preserved.
+- Logger smoke now derives its expected version from version.hpp while retaining
+  independent path/time/suffix/filesystem assertions. Production logger unchanged.
+
+Native lifecycle/orientation, raw entry/hardware/ABI/pairing/accounting/cleanup,
+exact-build/current-code/region admission and all deadlines/assertions remain.
+writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/
+downstream_conflicts_proven_absent0; Position/source-position/input/movement
+writes0. No producer0x351EB00, movement/adhesion/camera/animation/physics work.
+No SF/ordinary mod/toolkit change, no main merge, no old-workspace deletion.
+
+## Validation and a non-reproduced existing fixture failure
+
+- Warnings-as-errors Windows x64 build PASS.
+- Final required chain: portable **13 PASS**, DLL/logger **7 PASS**, full
+  hooks/native/c19/c20/c21/workspace **127 PASS / 5 private-input SKIP**;
+  **147 public PASS / 5 optional SKIP**, all final suites exit0.
+- Eight c21 fixture groups cover dead and surviving pre-write values/protected
+  writer carrier, caller homes/partial overwrites, post-write/new-value reloads,
+  mixed branch presence/field order, disjoint source/stack/image, unknown/indexed/
+  conflicting addresses, flags/control, partial registers, calls, boundaries,
+  loops, cap and disabled/auth-negative controls. Existing c20/c19 checks retained.
+- An earlier final-chain attempt stopped at unchanged
+  native_source_override_smoke.cpp:376 (exact stale suspend/resume/write counters).
+  The unchanged focused native chain then passed9 records, and unchanged full
+  rerun passed127/5. **Root cause UNKNOWN/not separately measured**; do not claim
+  it was fixed, lower a deadline or weaken the assertion. This fixture/source
+  path was not changed. Record the transient rather than hiding a retry.
+- Actual source-ZIP fresh extraction: rebuild PASS; **62 focused entry/c14-c21**,
+  **7 DLL/logger**, **13 workspace** = **82 separate source-reproduction records**,
+  all exit0/no private inputs. Do not add these duplicates to147.
+- Final packaging checks CRC, complete current source/docs/analysis/licenses,
+  manifest/script/DLL hashes, new compiled READ markers, single virtual active
+  install script, no live/compiled/private body members in source and correct
+  Organization helper/log/version contracts. Final native sources match that
+  tested snapshot; final reporting/package-check text changes are revalidated.
+
+Wisdoms RE guide and WS internals checkpoint are synchronized with the reusable
+method (order/possible flow/flags/caller stack/certificate separation), explicitly
+implementation/owned-fixture scope only. Actual c21 engine read result remains
+UNKNOWN. Detailed proof stays in this project; no raw logs/personal data copied.
+
+## Next human step
+
+Run installed **MSM2-WS/Update-WS.cmd**, then shared Overstrike **Install mods ->
+Run modded game**. Test **A/cardinal ~4s -> fully end WallRun -> move/fast-travel
+-> E/diagonal ~4s**. Return the newest complete
+**MSM2-WS/logs/MSM2-WS-v0.1c21-YYYYMMDD-HHMMSS.log** privately.
+Only READ_DEPENDENCY/READ_FLOW are new requested keys; existing VALUE/WRITE/ALIAS/
+WRITER and Deinit/retention/Up/stale recovery/hard0/Position0/entry-map-finalization/
+cleanup records remain part of the same log. Video only for a visible anomaly.
+No link or manual ZIP placement is needed for normal updater-based handoff.
+
+---
+
 # Codex result — updater-first handoff, no unsolicited links (2026-10-25)
 
 Branch: **codex/v01c20-edi-value-provenance**; policy base **c30acd3**.
