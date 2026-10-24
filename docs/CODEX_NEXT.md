@@ -107,6 +107,51 @@ and continue the existing writer XYZ/W proof.
 
 If another exact callee/writer instruction becomes the blocker, report that exact RVA/mnemonic/effect and stop.
 
+## Development package / Overstrike workflow
+WS must use the same development-library scheme already adopted by SF.
+
+Development package directory on the user's PC:
+```text
+C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2\Mods Library\Mods-Developing
+```
+
+Overstrike recursively reads `Mods Library`, so `Mods-Developing` is the required shared location for active development packages.
+
+For c20 and future WS development builds:
+- user-facing install ZIP is exactly `MSM2-WS-v0.1c20.zip` for c20 and `MSM2-WS-v<version>.zip` thereafter;
+- no task-description suffixes in the install ZIP name;
+- local update/copy helpers must place the current WS ZIP under `Mods Library\Mods-Developing`, not `Mods Library` root;
+- never move/rename/delete/overwrite any `MSM2-SF-*` file or other unrelated mod;
+- create `Mods-Developing` locally if missing;
+- when cleaning/replacing old WS builds, only target `MSM2-WS-*` artifacts.
+
+The separated development `Overstrike.exe` remains in its AppData-side location used by the shared SF/WS workflow, but **its WorkingDirectory must be the MSM2 game root**:
+```text
+C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2
+```
+Do not run it with the AppData directory as WorkingDirectory. This is required so game-root `Mods Library\Mods-Developing` is used and game-root dependencies such as `scripts_proxy.dll` can resolve normally.
+
+Add/update a double-click local helper named:
+```text
+UpdateForTest.cmd
+```
+It must be safe and WS-only. Its local behavior should:
+1. ensure `Mods Library\Mods-Developing` exists;
+2. copy/update only the current `MSM2-WS-v0.1c20.zip` development package there;
+3. not touch any `MSM2-SF-*` artifact;
+4. launch or hand off to the separated Overstrike executable while explicitly using the MSM2 game root as WorkingDirectory;
+5. fail clearly rather than silently falling back to another Mods Library or WorkingDirectory if the separated Overstrike path cannot be resolved.
+
+Do not invent or hardcode an unverified AppData Overstrike executable path. If the repository does not already contain an authenticated/configured path, make the helper resolve it from an explicit configurable variable or clearly documented existing local path contract and fail closed when unavailable.
+
+Cloud Codex cannot write the user's `C:` drive. The cloud job should create/test the package/helper logic and document the exact local behavior; the user's local execution performs the actual copy/update.
+
+This storage workflow does not change the runtime log location:
+```text
+log_wallsprint\WallSprint_YYYYMMDD-HHMMSS.log
+```
+with no fallback to shared `logs`.
+
 ## Safety boundary
 Keep unchanged:
 ```text
@@ -118,19 +163,6 @@ downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
 No Actor/Transform Position writes, source mutation, input rewrite, movement/velocity/gravity/adhesion, camera/animation/traversal, PAGE_GUARD, data-page protection mutation, guessed game calls, or producer `0x351EB00` traversal.
-
-Preserve dedicated logging:
-```text
-log_wallsprint\WallSprint_YYYYMMDD-HHMMSS.log
-```
-with no fallback to shared `logs`.
-
-## Release naming
-The user-facing install ZIP must be named exactly:
-```text
-MSM2-WS-v0.1c20.zip
-```
-Do not append task descriptions such as `edi_value_provenance` or any other explanatory suffix. Follow `docs/DEV_RULES.md` for future versions as well.
 
 ## Human test
 If actual-game evidence is required:
@@ -144,6 +176,8 @@ A. EDI reaching definitions and relevance are exact; the +0x10C write is safely 
 
 B. One narrower exact value/dependency blocker is identified with all safety gates preserved.
 
+The package/local workflow must also satisfy the shared SF/WS `Mods-Developing` and game-root WorkingDirectory rules above.
+
 Do not implement movement automatically.
 
 ## Required outputs
@@ -156,5 +190,6 @@ analysis/RDX_XYZ_SOURCE_CONTRACT.md
 README_TEST.md
 docs/PROJECT_STATE.md
 docs/CODEX_RESULT.md
+UpdateForTest.cmd
 ```
 Package the user-facing install release as `MSM2-WS-v0.1c20.zip`.
