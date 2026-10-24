@@ -1,3 +1,59 @@
+# Codex result — Organization development baseline accepted (2026-10-24)
+
+Repository: **deluxxxe-dev/MSM2-WallSprint**.
+Branch: **codex/v01c20-edi-value-provenance**.
+Owner-confirmed implementation baseline:
+**5192f05f32313919fdf4049bd734b971655d163f**.
+
+## Result and files
+
+Fetched only the designated development branch from the Organization remote and
+fast-forwarded the cloud checkout from 13c76f0 to the exact supplied baseline.
+Updated this checkout's origin to the canonical Organization URL. No main merge,
+history rewrite, reset or removal of existing untracked artifacts occurred.
+The baseline's only change since 13c76f0 is workspace.py's canonical remote.
+
+AGENTS.md now persists the owner's branch/source-of-truth, baseline and no-main-
+merge instructions for later isolated tasks. This CODEX_RESULT entry records the
+review and verification. No source, runtime, version or package changes were
+needed in this handoff; existing output names remain MSM2-WS-v0.1c20.zip,
+MSM2-WS-v0.1c20-source.zip and MSM2-Mod-Tools-v1.0.0.zip. Existing archives were
+not regenerated and should not be represented as new baseline builds.
+
+## Reviewed state and validation
+
+- Read AGENTS, DEV_RULES, LOCAL_WORKSPACE, PROJECT_STATE and CODEX_NEXT in order,
+  plus LOGGING_CONVENTION, BUILD, current result, c19 runtime evidence, c20
+  prepared research/gate and the shared-runtime acceptance analysis.
+- GitHub's designated branch resolves to the exact supplied full baseline SHA;
+  source/tools/workspace.py uses the Organization remote.
+- `python3 source/tools/test-workspace.py`: **13 PASS records, exit 0**. Owned
+  filesystem/Git fixtures cover migration, fast-forward updates, rollback,
+  independent archive-excluding clones, one active script, protected sibling
+  preservation and fail-closed checks. They do not launch the real game.
+- Native runtime files are unchanged. No new native build/gameplay regression or
+  actual Windows run is claimed for this documentation handoff.
+
+## Next work and unchanged gates
+
+The latest derived actual-game evidence in
+analysis/LOCAL_WORKSPACE_RUNTIME_ACCEPTANCE_20261024.md accepts shared startup,
+loading and versioned WS logs. PROJECT_STATE/CODEX_NEXT still describe the older
+acceptance wait; this handoff preserves them as instructed by AGENTS rather than
+silently rewriting the gameplay task. Both c20 research documents require an
+explicit CODEX_NEXT reauthorization before research resumes. Production
+writerAlias.edi.enabled remains false; the unresolved edge is EDI at 0x2B2358E,
+not an authorized movement source. Preserve exact-build and all ownership gates,
+zero Position/source/input/movement writes, and deferred producer 0x351EB00.
+
+Continue future work from this branch and its subsequent commits. The next
+gameplay task needs an explicit updated CODEX_NEXT using the accepted workspace
+evidence. Separately, Mod-Tools' real Windows shortcut/backup/restore acceptance
+remains pending; preserve the healthy environment. SF development stays with
+SF Codex. No new runtime test or local migration is requested by this handoff.
+
+---
+
 # Codex result — shared launch and private environment recovery
 
 Branch: **codex/v01c20-edi-value-provenance**. Toolkit implementation commit:

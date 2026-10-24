@@ -1,5 +1,12 @@
 # WallSprint Codex instructions
 
+## Repository and development baseline
+
+- Canonical remote: `https://github.com/deluxxxe-dev/MSM2-WallSprint.git`.
+- Current implementation source of truth: `codex/v01c20-edi-value-provenance`.
+- The owner confirmed the pushed/local baseline as `5192f05f32313919fdf4049bd734b971655d163f` on 2026-10-24. Continue from this commit and subsequent commits on that branch; do not reset later work to the baseline.
+- `main` has diverged substantially. Do not merge `main` into the current development branch. Its independent documentation/analysis changes do not supersede this branch's implementation or task instructions.
+
 Before starting any implementation task, read these files in order:
 
 1. `docs/DEV_RULES.md`
