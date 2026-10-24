@@ -13,3 +13,6 @@ The separate [MSM2 Mod-Tools](environment/README.md) provide checked desktop
 Overstrike/modded-game launchers, complete shared MOD-environment backup and verified same-path recovery
 onto the matching Vanilla game build. They do not change WS/SF runtime code.
 [Validation and Windows handoff](environment/TEST_REPORT.md).
+
+For future changes, see the [Mod-Tools manual and specifications](docs/mod-tools/README.md)
+or the [complete single-file manual](docs/mod-tools/MANUAL.md).

@@ -118,3 +118,13 @@ Update `docs/CODEX_RESULT.md` with:
 Do not overwrite `docs/PROJECT_STATE.md` or `docs/CODEX_NEXT.md` unless the task explicitly asks you to. The current workspace migration task explicitly authorizes the documentation updates listed in `docs/CODEX_NEXT.md`.
 
 Implementation note: current Windows entry points are `Migrate-WS.cmd` / `Update-WS.cmd`; the reviewed engine is `source/tools/workspace.py`. Build intermediates use `.script.disabled` and only the install ZIP virtualizes its versioned active script member. Prepared EDI research commit `9057d24` remains production-disabled until separately authorized.
+
+## Shared Mod-Tools manual
+
+For shared launch/backup/recovery changes, read `docs/mod-tools/README.md` and the
+relevant `OVERSTRIKE.md`, `PLAY_MODDED.md` or `BACKUP_MODS.md` in that directory.
+They map the three shortcuts to entrypoints, settings, functions, safety limits
+and regression checks. `docs/mod-tools/MANUAL.md` combines all four for browsing.
+Update the individual specification and combined manual together when behavior
+changes. Keep runtime evidence distinct from authored specifications; a manual
+does not authorize gameplay/SF changes or claim an unperformed real-PC test.
