@@ -1,3 +1,54 @@
+# Codex result — shared Mod-Tools manual and specifications (2026-10-24)
+
+Branch: **codex/v01c20-edi-value-provenance**.
+Documentation commit: **735c6fe17bd40ec9db5eef53baffedc252a8b913**.
+Documented implementation: Mod-Tools v1.1.0, commit
+**845e33cafecae352e5194d790358500bb0066081**.
+
+The user requested a specification for each of the three shortcuts as future
+modification references, then selected GitHub as the sole documentation
+destination. This is a documentation task, not the separate native c20 task.
+
+## Outputs and discoverability
+
+- docs/mod-tools/README.md: index, operation selection, installation/update,
+  common layout/dependencies/settings/locking, moved shortcut behavior and
+  maintenance rules.
+- OVERSTRIKE.md: start/initial setup/layout checks and manager reuse contract.
+- PLAY_MODDED.md: profile/installed-DLL gates, -scripts handling, existing-game
+  reuse and post-restore installation acknowledgement.
+- BACKUP_MODS.md: complete private capture scope, manifest/publication/verification,
+  recovery/rollback, exclusions, limitations and format compatibility.
+- MANUAL.md: complete combined edition with anchors and implementation links
+  pinned to the documented source commit; individual and combined editions are
+  maintained together.
+- Root README links the manual; AGENTS directs future agents to the relevant
+  specifications before shared-tool changes. This delivery updates CODEX_RESULT.
+
+Each specification lists inputs/outputs, exact entrypoints/functions, operation
+order, side effects/refusals, modification points and regression/human checks.
+The documents distinguish a launch request from actual application readiness,
+shortcut presence from execution acceptance, and metadata change detection from
+an atomic live snapshot. No private user log or backup is included.
+
+## Verification and next use
+
+Reviewed the current Python/CMD/PowerShell implementation and existing test report.
+Checked six manual/root Markdown files, all29 local links/anchors, balanced code
+fences, whitespace, referenced Python function existence and the AGENTS discovery
+path. Git whitespace checks pass. Existing27 Python/16 PowerShell results are
+identified as prior v1.1.0 evidence; no runtime suite or Windows action was rerun
+for authored Markdown. Source/runtime/KIT/version/release metadata and ZIP bytes,
+CODEX_NEXT and PROJECT_STATE are unchanged. Output is the Markdown manual set;
+no new binary package/version is produced.
+
+Future agents should begin at docs/mod-tools/README.md and select the relevant
+specification; use MANUAL.md for comprehensive browsing. Actual full backup and
+Vanilla recovery remain separate Windows acceptance tasks. GitHub is the user's
+selected destination; no ChatGPT library registration is requested or claimed.
+
+---
+
 # Codex result — one-click shared Overstrike startup (2026-10-24)
 
 Branch: **codex/v01c20-edi-value-provenance**.
