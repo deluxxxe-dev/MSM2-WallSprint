@@ -31,6 +31,32 @@ Do not append implementation/task descriptions such as `transform_write_contract
 
 If a separate source archive is required for development/reproducibility, it may use `MSM2-WS-v<version>-source.zip`; the user-facing install ZIP must remain the plain version-only name above.
 
+## Development mod library / Overstrike workflow
+
+WS and SF development packages share this local development-only library:
+
+```text
+C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2\Mods Library\Mods-Developing
+```
+
+Overstrike recursively scans `Mods Library`, so development packages may live under `Mods-Developing` and remain visible to Overstrike.
+
+For WallSprint:
+- all current WS development install artifacts (`MSM2-WS-*`) must be copied/updated under `Mods Library\Mods-Developing` rather than directly under `Mods Library`;
+- do not move, rename, overwrite, delete, or otherwise modify any `MSM2-SF-*` file;
+- local update/install helpers should create `Mods-Developing` if missing;
+- when replacing an older WS development build, only replace/remove the matching WS development artifact(s), never unrelated mods.
+
+The separated development copy of `Overstrike.exe` may remain under the AppData-side location used by the SF workflow, but its **WorkingDirectory must be the MSM2 game root**:
+
+```text
+C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2
+```
+
+Do not switch its WorkingDirectory to the AppData folder. This keeps Overstrike using the game-root `Mods Library\Mods-Developing` and allows game-root dependencies such as `scripts_proxy.dll` to resolve from the intended location.
+
+This development-library rule does not change WallSprint runtime logging (`log_wallsprint`) or the actual runtime/script install destination required by the game. Cloud Codex cannot directly write the user's `C:` drive; it must produce the correctly named package and any local helper/update script so the user's local execution places the WS package in the path above.
+
 ## Native safety
 
 - Current target build: Spider-Man2.exe 2.810.0.0.
