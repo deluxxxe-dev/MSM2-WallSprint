@@ -1,3 +1,116 @@
+# Codex result — c25 finite large-table validation / lookup coverage (2026-10-25)
+
+Branch: **codex/v01c20-edi-value-provenance**; accepted task base **4e4d900**.
+Implementation: **eee37b68095fd5ab8f09339982020c58cbb0eee2**.
+Version: **v0.1c25 / package0.1.43**. Outputs:
+**MSM2-WS-v0.1c25.zip**, **MSM2-WS-v0.1c25-source.zip**,
+**MSM2-WS-v0.1c25.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C25_RELEASE.json**. Exact final hashes are in release metadata.
+
+## Accepted input / interpretation
+
+Read AGENTS/manual/rules/workspace/state/NEXT, accepted c24 runtime, c24 identity
+contract and relevant code/tests, plus accessible Wisdoms references. C24 reported
+527161 derived entries at the combined malformed_or_cap refusal before validation.
+The old262144 limit was smaller. This proves neither corruption nor absent entry,
+leaf identity or effects. Raw GPR0 still carries selected Transform+0x10C tag1.
+C24 session1 reached the existing5second diagnostic limit before verified Deinit;
+session2 exited normally around4.16s. Position writes0; process-cumulative hard
+counter does not mean a second new episode. No limit/assertion was relaxed.
+
+VERIFIED-STATIC correction: in c24 source, OS lookup assignment followed both
+the cap guard and the complete table loop. At this refusal the callback did not
+run. The found0/same_image1/readable1 fields were defaults, not measured OS absence.
+The observed count is floor(size/12);6325932bytes is the aligned size implied by
+that count, not a supplied measurement of directory bytes/divisibility.
+
+**Outcome C diagnostic preparation:** validate actual metadata under justified
+finite budgets, then and only then determine target status/identity/next barrier.
+The game's actual rows/byte size are unavailable in compact cloud evidence;
+**actual c25 structure/lookup/identity/effects remain PENDING the new log**.
+No proprietary table/body is reconstructed/requested/distributed. All downstream
+XYZ/W/cross-invocation/ownership/write questions remain separate and unproven.
+
+## Implementation / files
+
+- read_target_identity.hpp + rdx_source_contract.cpp: explicit600000-entry and
+  8MiB(8388608byte) hard ceilings cover the reported527161 floor count if aligned,
+  with72839 entry headroom. At most7200000 actual table bytes/9375 guarded reads,
+  same64entry/768byte stack chunk and no table-sized allocation or memory search.
+- Derive count from the admitted directory's byte size; distinguish invalid RVA/
+  size pair, out-of-image/overflow range, nondivisible size, byte-cap and entry-cap
+  refusal. Structural checks precede budgets. Cap refusal explicitly marks skipped
+  entry validation and never implies malformed metadata or a missing-unwind leaf.
+- Preserve every c24 ordered/nonoverlap/begin-end/image/unwind-RVA check and scan
+  every entry, including tails after target matches. Report bytes read/entries
+  validated, exact chunk read failure and full-table completion. No target lookup,
+  code snapshot or identity can occur on incomplete validation. New lookupQueried
+  records actual callback execution, not initialized result values.
+- The entire c24 post-lookup rule is byte-for-byte unchanged from task base:
+  exact target0x2CF7FE0, PE/OS agreement, ordinary runtime entry or strict no-entry
+  128byte/32instruction linear register-only RET exit set, stable guarded code,
+  no memory/stack/branch/further CALL/partial effect or runtime-region crossing.
+  Only admitted identity feeds c23; no c19/c20 read/effect waiver/certificate.
+- writer_entry_snapshot.cpp adds compact READ_RUNTIME_TABLE and queried flag in
+  TARGET_IDENTITY. No directory bytes or raw live values/full code are logged.
+  Warnings-as-errors format checks pass; records fit4096byte formatter.
+- read_target_identity_smoke.cpp adds6 independently authored large-table groups,
+  retaining9 c24 groups and21 c21-c23 read/call groups. Version/info, README/
+  README_TEST/BUILD, package metadata, accepted c24 source mirror, c25 analysis/
+  gate, PROJECT_STATE and derived engine index updated. CODEX_NEXT preserved.
+
+Exact build/current code/image/parent-call gates, c19-c24 models, native lifecycle/
+orientation/ABI/pairing/hardware cleanup/deadlines/assertions and ordinary update/
+archive/shared-Overstrike/log contracts remain. No new hook or game call, producer
+0x351EB00 body traversal, PAGE_GUARD/data-page mutation, guessed ABI, SF/ordinary
+mod implementation, main merge or old-workspace deletion.
+writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/
+downstream_conflicts_proven_absent0; Position/source-position/input/movement
+writes0. Movement/adhesion/camera/animation/physics remain deferred.
+
+## Validation
+
+- Warnings-as-errors Windows x64 build PASS.
+- Full chain **13 portable + 7 DLL/logger + 155 hooks/native/contracts/workspace
+  PASS records = 175 public PASS / 5 optional private-input SKIP**, all exit0.
+- Six new groups cover262143/262145/527161/600000 valid owned entries, finite entry/
+  byte excess, nondivisibility/pair/image/overflow errors, late unordered/overlap/
+  zero/reversed/out-of-image ranges and invalid unwind RVAs, guarded chunk failure,
+  containing-entry identity/lookup disagreement and validated absence. Tests check
+  full scan/count/byte coverage, bounded chunks and zero lookup/code reads on refusal.
+- Existing c24 first-RET trap/branch/call/memory/stack/crossing/unstable/pin/128-32
+  rules and c23/c22/c21/c20/c19 regressions remain. No private game-table replay;
+  matching527161 is a generated fixture shape, not proof about actual rows.
+- Actual source ZIP extracted fresh: build PASS; **90 focused entry/c14-c25 +
+  7 DLL/logger + 13 workspace = 110 separate PASS records**, all exit0/no private
+  inputs. Package verifier PASS separately; don't add duplicates to175.
+- Final archives check CRC, payload/DLL/version/table-marker hashes, complete
+  current source/docs/analysis/licenses/helpers/owned logs, one virtual active
+  install script, private/compiled exclusions and unchanged task/native safety
+  files. Final report-doc refresh uses identical tested native/tool sources and
+  a standalone package recheck. No semantic implementation change after validation.
+
+Wisdoms ENGINE_INTERNALS/RE guide/WS internals preserve the c24 cap/default-field
+clarification and finite-budget/full-coverage method as VERIFIED-STATIC source/
+owned-fixture scope only; actual c25 remains UNKNOWN. Detailed proof stays here.
+No raw private logs, table dump, full game body or personal data published.
+
+## Next human step / specific missing evidence
+
+Compact c24 has only a floor count and combined refusal, not actual directory
+bytes/rows or an executed target lookup. A new RUNTIME_TABLE record is genuinely
+needed to adjudicate actual structure/lookup/next identity boundary; no habitual
+rerun or full raw table/body request. Close game/Overstrike, run installed
+**MSM2-WS/Update-WS.cmd**, then shared Overstrike **Install mods -> Run modded game**.
+Test **A/cardinal ~3s -> fully end WallRun -> move/fast-travel -> E/diagonal ~3s**;
+finish each below the unchanged5s diagnostic limit. Return newest complete private
+**MSM2-WS/logs/MSM2-WS-v0.1c25-YYYYMMDD-HHMMSS.log**.
+Only RUNTIME_TABLE and lookup_queried are new; existing TARGET_IDENTITY/CALL/READ/
+TEST/VALUE/WRITE/ALIAS/WRITER and safety/cleanup remain in the same log.
+No body dump/video unless visible anomaly; no manual ZIP placement or link needed.
+
+---
+
 # Codex result — c24 single-target boundary / no-unwind identity (2026-10-25)
 
 Branch: **codex/v01c20-edi-value-provenance**; accepted task base **432f8a1**.
