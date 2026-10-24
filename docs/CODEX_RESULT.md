@@ -1,3 +1,104 @@
+# Codex result — c22 pinned TEST operand / flag flow (2026-10-25)
+
+Branch: **codex/v01c20-edi-value-provenance**; accepted task base **a180b6b**.
+Implementation: **14c0027b4d3c96c1ab9ea3dfae452b61650eedbd**.
+Version: **v0.1c22 / package0.1.40**. Outputs:
+**MSM2-WS-v0.1c22.zip**, **MSM2-WS-v0.1c22-source.zip**,
+**MSM2-WS-v0.1c22.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C22_RELEASE.json**. Final hashes are in the release metadata.
+
+## Accepted input / bounded result
+
+Read AGENTS/manual/rules/workspace/state/NEXT, c21 read design and accepted c20
+runtime/value/RDX evidence, relevant source/tests and accessible Wisdoms technical
+references. Consolidated the owner's c21 compact acceptance from task/state
+into V01C21_RUNTIME_RESULT.md: exact MOV4 Transform+0x10C -> EAX at0x2B23578,
+possible use0x2B23581/control0x2B23583, prefix memory_escape0, next TEST0x2B235BE.
+Do not extend prefix observations over the unanalyzed suffix. C20 EDI image-global
+origin remains accepted; no semantic field name or pointer type is assigned.
+
+**Outcome C diagnostic preparation:** compact c21 evidence omits TEST operands.
+No game body is reconstructed/requested. The new authenticated snapshot diagnostic
+reports exact operand names/classes/widths and parent tags, modeled flag effects,
+local consumers, normal-return-flow coverage or exact next unsupported point.
+Actual c22 operands/completion/next barrier remain **PENDING a new game log**.
+Local possible flow never becomes a numeric downstream XYZ/W or cross-invocation
+proof. The existing c19/c20 read/effect refusal is retained, even in dead-value
+fixtures; no ownership/write permission is granted.
+
+## Implementation / files
+
+- rdx_source_contract.hpp/.cpp: one pinned ReadTestContract; same-width register
+  TEST32/64 and opted-in read-only low8bit aliases, after existing identity/CFG/
+  EDI gates. Decoder must confirm operand reads/EFLAGS-only write. Low-byte reads
+  retain conservative whole-parent tags; they do not obtain exact byte provenance
+  or general partial-register write semantics. High8/16bit/immediate/memory/indexed
+  forms, unknown effects, partial writes and non-Jcc flag consumers still refuse.
+- TEST does not read old flags, write operands or kill self-test dependence.
+  ZF/SF/PF may depend on either AND operand; CF/OF0, AF undefined. Track through
+  local Jcc, separate CF/OF-only conditions, kill provenance on later flag writes,
+  retain both CFG legs. Selected/new/other field origins remain masks1/2/4.
+- writer_entry_snapshot.cpp: current authenticated opt-in0x2B235BE and compact
+  READ_TEST / READ_TEST_OPERAND / READ_TEST_FLAGS logs; existing READ_FLOW still
+  reports return carriers/caller homes/control/escape/precise barrier. At most
+  two operand records; no full instruction bytes or new observation hooks.
+- read_dependency_smoke.cpp:8 new fixture groups plus8 existing c21 groups.
+  Version/info, README/README_TEST/BUILD, package/release metadata, c21 acceptance,
+  new c22 design/gate and source analysis mirrors synchronized. PROJECT_STATE
+  records prepared c22; CODEX_NEXT preserved. Stale seed c21-pending statements
+  explicitly superseded by actual acceptance; shared root16 clarification kept.
+
+Legacy State/Slice/address and EDI models, readMayDepend/recordRead, c19/c20
+certificates, native source lifecycle/orientation, ABI/entry pairing, deadlines/
+assertions, hardware accounting and cleanup remain unchanged.4096visits/pass,
+9pending,128stack,8branch/16writer-call bounds and no-call-expansion remain.
+writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/
+downstream_conflicts_proven_absent0; Position/source-position/input/movement
+writes0. No producer0x351EB00, movement/adhesion/camera/animation/physics work,
+SF/ordinary mod mutation, main merge or old-environment deletion.
+
+## Validation
+
+- Warnings-as-errors Windows x64 build PASS.
+- Full required chain: portable **13 PASS**, DLL/logger **7 PASS**, hooks/native/
+  c19/c20/c21/c22/workspace **135 PASS / 5 optional private-input SKIP**.
+  **155 public PASS records / 5 SKIP**, every final suite exit0.
+-16 read groups include self-test/both operands, killed/dead/unrelated values,
+  low8/DIL/64bit, all16 Jcc/CF-OF constants, overwritten flags, separate post-write/
+  other-field tags, both reaching paths, partial-write/high8/16bit/immediate/
+  indexed/non-TEST refusal, unsupported flag use/CALL and auth/disable/boundary.
+- During fixture construction, an indexed negative placed before EDI's definition
+  correctly stopped at the old EDI gate before TEST metadata. Place that owned
+  negative after the native write to test the new sidecar, preserving gate order.
+  A CALL case's reaching-state expectation was corrected to both CFG legs.
+  No old assertion/deadline/production gate was weakened. Final full chain passed.
+- Actual source ZIP extracted into a separate directory: fresh build PASS;
+  **70 focused entry/c14-c22**, **7 DLL/logger**, **13 workspace** = **90 separate
+  source-reproduction records**; all exit0/no private inputs. Package verifier
+  also PASS; don't add these duplicate records to155.
+- Final archive validation checks CRC/source completeness/analysis/manuals/licenses,
+  exact payload/DLL/version/marker hashes, one virtual active install script,
+  source exclusions and unchanged old task/lifecycle/ABI/source assertions.
+  Final documentation-only reporting changes use the same tested native sources.
+
+Wisdoms RE guide/WS internals preserve the TEST/flag/partial-register method as
+VERIFIED-STATIC implementation/owned-fixture scope; actual c22 remains UNKNOWN.
+ENGINE_INTERNALS clarifies root16 is the dedicated executable-image globalRoot,
+while raw entry-register tokens and loaded game semantic types stay separate.
+No raw log/private body/personal data is published.
+
+## Next human step
+
+Close game/Overstrike, run installed **MSM2-WS/Update-WS.cmd**, then shared
+Overstrike **Install mods -> Run modded game**. Test **A/cardinal ~4s -> fully end
+WallRun -> move/fast-travel -> E/diagonal ~4s**. Return newest complete private
+**MSM2-WS/logs/MSM2-WS-v0.1c22-YYYYMMDD-HHMMSS.log**.
+The three READ_TEST families are the only new fields needed; existing READ_FLOW,
+VALUE/WRITE/ALIAS/WRITER and safety/finalization/cleanup stay in the same log.
+No body dump/video unless a visible anomaly, no manual ZIP placement or link needed.
+
+---
+
 # Codex result — c21 bounded read-dependency diagnostic (2026-10-25)
 
 Branch: **codex/v01c20-edi-value-provenance**; base **897381a**.

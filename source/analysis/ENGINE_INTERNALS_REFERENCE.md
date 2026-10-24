@@ -157,9 +157,9 @@ The semantic meaning of the image-global value and EDI remains **UNKNOWN**.
 
 Sources: `analysis/V01C20_RUNTIME_RESULT.md`, `analysis/V01C20_EDI_VALUE_PROVENANCE.md`, `source/src/NativeHooks/rdx_source_contract.cpp`.
 
-### Current exact effect blocker
+### Retained effect gate / accepted c21 read classification
 
-**VERIFIED-STATIC diagnostic boundary from actual c20 run**
+**VERIFIED-STATIC under actual-game authenticated identity**
 
 ```text
 0x2B23578
@@ -170,9 +170,12 @@ The read occurs before the native `0x2B2358E` write. Current conservative analys
 
 Important reusable lesson: **instruction ordering and causal relevance are separate proofs.** A read-before-write should not be automatically declared irrelevant if state can persist across invocations or the read value survives into later state; but a conservative dependency stop is also not itself proof of causality.
 
-The next bounded research must classify read address/root/offset/width, path ordering and the minimal relevant value flow.
+Accepted c21 narrows the read to exact MOV dword Transform+0x10C -> EAX,
+with possible first use0x2B23581/control0x2B23583. The effect gate above stays
+closed; the local value-flow walk stops at0x2B235BE TEST, operands UNKNOWN.
+See V01C21_RUNTIME_RESULT.md. XYZ/W and cross-invocation effects stay unproven.
 
-### Prepared c21 method — actual read result still UNKNOWN
+### c21 method — accepted read, incomplete suffix
 
 **VERIFIED-STATIC implementation/owned-fixture scope only:** c21 adds a bounded
 diagnostic sidecar for the selected read. It separates forward local CFG ordering
@@ -183,9 +186,10 @@ carrier/control path is not a causal XYZ/W result, and a dead local value is not
 a proof against cross-invocation persistence. Partial/unknown/CALL/cap failures
 remain exact blockers. This sidecar cannot grant or relax any c19/c20 certificate.
 
-The actual0x2B23578 opcode/address/carrier/order/next blocker remain UNKNOWN until
-the new versioned game log; no engine semantic is assigned. Detailed design,
-scope and tests: analysis/V01C21_READ_DEPENDENCY.md and CODEX_RESULT.md.
+The read address/width/carrier is now accepted; its semantic field meaning and
+downstream/cross-invocation relevance remain UNKNOWN. Detailed design and
+historical preparation: analysis/V01C21_READ_DEPENDENCY.md; current acceptance:
+V01C21_RUNTIME_RESULT.md. The prepared c22 TEST model is summarized below.
 
 ## Mutation / ownership status
 
