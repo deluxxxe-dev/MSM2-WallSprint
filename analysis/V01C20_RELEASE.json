@@ -110,7 +110,7 @@
   },
   "workspace_owned_Git_filesystem_fixtures": "PASS_8_groups_including_clone_ff_divergence_isolation_rollback_and_active_script_invariants",
   "Windows_process_stop_WSL2_launcher_and_shared_Overstrike_UI": "PASS_real_helper_and_actual_shared_UI_ordinary_SF1_WS1",
-  "actual_local_migration_and_new_runtime_log": "real_PC_full139_pipeline_and_deployment_PASS_actual_runtime_log_PENDING",
+  "actual_local_migration_and_new_runtime_log": "PASS_real_PC_full_pipeline_deployment_shared_UI_launch_and_canonical_new_WS_SF_logs",
   "owned_A_E_orientation": [
     {
       "session": "1",
@@ -249,9 +249,9 @@
     "WallSprint_checked": true,
     "duplicate_resolution": "PASS_previous24_now1",
     "SF_visibility": "PASS_one_checked_SocialFeedProbe_together_with_one_checked_WallSprint",
-    "Install_mods_and_Run_modded_game": "PENDING",
-    "actual_versioned_runtime_log": "PENDING",
-    "overall_real_PC_acceptance": "PENDING_install_run_and_actual_runtime_logs",
+    "Install_mods_and_Run_modded_game": "PASS_user_launch_and_both_actual_runtime_logs",
+    "actual_versioned_runtime_log": "PASS_canonical_WS_and_SF_20261024_180229",
+    "overall_real_PC_acceptance": "PASS_infrastructure_no_gameplay_reauthorization",
     "local_generated_install_zip": {
       "bytes": 3362929,
       "reported_sha256": "2310334098ebeb9996f054488ac563b244fa5e9331777fd616ae0596ecb38d20"
@@ -302,7 +302,7 @@
     "original_cloud_hang_cause": "unconfirmed_no_deadline_assertion_or_gate_changes",
     "SF_ordinary_mods_old_D_and_shared_cache_profile_mutations": false,
     "EDI_production_enabled": false,
-    "user_corrected_migration_UI_and_runtime_acceptance": "migration_and_GUI_ordinary_SF1_WS1_PASS_install_run_logs_PENDING"
+    "user_corrected_migration_UI_and_runtime_acceptance": "PASS_full_pipeline_shared_SF1_WS1_UI_user_launch_and_both_new_logs"
   },
   "real_PC_archive_upgrade_rerun": {
     "delivery_commit": "890d23cec5878e364efe015838e274d1a5bd47fe",
@@ -378,9 +378,9 @@
     "deploys_to_game": false,
     "full_corrected_migration": "PASS139_5_optional_private_SKIP_and_final_deployment",
     "shared_Overstrike_single_WS_and_SF_visibility": "PASS_actual_shared_UI_ordinary_SF1_WS1",
-    "Install_mods_and_Run_modded_game": "PENDING",
-    "actual_versioned_runtime_log": "PENDING",
-    "overall_real_PC_acceptance": "PENDING_install_run_and_actual_runtime_logs",
+    "Install_mods_and_Run_modded_game": "PASS_user_and_actual_logs",
+    "actual_versioned_runtime_log": "PASS_both_new_project_logs",
+    "overall_real_PC_acceptance": "PASS_infrastructure_no_gameplay_reauthorization",
     "code_runtime_and_release_assets_unchanged_from": "f2be95b40ea22c8568d7c39489ba0e75461f426e"
   },
   "real_PC_previous_pre_archive_migration": {
@@ -431,9 +431,140 @@
     "SF_checked": true,
     "WS_checked": true,
     "shared_list_recognition": "PASS",
-    "Install_mods": "PENDING",
-    "Run_modded_game": "PENDING",
-    "actual_versioned_SF_WS_runtime_logs": "PENDING",
+    "Install_mods": "PASS_effective_install_confirmed_by_loaded_game_modules",
+    "Run_modded_game": "PASS_user_and_actual_logs",
+    "actual_versioned_SF_WS_runtime_logs": "PASS_both_canonical_new_logs",
     "gameplay_or_EDI_reauthorized": false
+  },
+  "real_shared_runtime_acceptance": {
+    "log_filename": "MSM2-WS-v0.1c20-20261024-180229.log",
+    "paired_SF_log": "MSM2-SF-v0.1.3-20261024-180229.log",
+    "user_reports_launch_and_WS_visible_operation": true,
+    "canonical_WS_log_and_no_shared_fallback": "PASS",
+    "WS_lifecycle": [
+      {
+        "session": "1",
+        "wallrun_duration_ms": "1594",
+        "source_entry_elapsed": "0.703000",
+        "source_exit_reason": "verified_native_Deinit",
+        "source_active_until_deinit": "1",
+        "verified_deinit": "1",
+        "path_a_writes": "47",
+        "path_b_writes": "46",
+        "retention_pass": "1",
+        "max_held_ms": "641",
+        "max_held_updates": "37",
+        "last_actor_up_dot_surface": "1",
+        "last_actor_observation_valid": "1",
+        "last_actor_observation_ms": "52245515",
+        "last_actor_observation_scope": "active_source_worker_snapshot",
+        "stale_suspend_count": "0",
+        "stale_resume_count": "0",
+        "max_stale_duration_ms": "0",
+        "stale_log_pair_cap": "16",
+        "first_hard_kill": "none",
+        "hard_kill_calls": "0"
+      },
+      {
+        "session": "2",
+        "wallrun_duration_ms": "2234",
+        "source_entry_elapsed": "0.703000",
+        "source_exit_reason": "verified_native_Deinit",
+        "source_active_until_deinit": "1",
+        "verified_deinit": "1",
+        "path_a_writes": "79",
+        "path_b_writes": "80",
+        "retention_pass": "1",
+        "max_held_ms": "1281",
+        "max_held_updates": "67",
+        "last_actor_up_dot_surface": "1",
+        "last_actor_observation_valid": "1",
+        "last_actor_observation_ms": "52248921",
+        "last_actor_observation_scope": "active_source_worker_snapshot",
+        "stale_suspend_count": "0",
+        "stale_resume_count": "0",
+        "max_stale_duration_ms": "0",
+        "stale_log_pair_cap": "16",
+        "first_hard_kill": "none",
+        "hard_kill_calls": "0"
+      }
+    ],
+    "WS_Position_watch": [
+      {
+        "session": "1",
+        "watch_armed": "1",
+        "threads_seen": "128",
+        "threads_installed": "126",
+        "unique_writers": "12",
+        "total_write_events": "36",
+        "unknown_writer_events": "36",
+        "writer_table_overflow": "0",
+        "dropped": "0",
+        "cleanup_restored": "1",
+        "cleanup_pending": "0",
+        "complete_thread_coverage": "0",
+        "rescan_count": "0",
+        "event_cap": "256",
+        "per_writer_print_cap": "4",
+        "Position_writes_by_mod": "0"
+      },
+      {
+        "session": "2",
+        "watch_armed": "1",
+        "threads_seen": "128",
+        "threads_installed": "126",
+        "unique_writers": "14",
+        "total_write_events": "256",
+        "unknown_writer_events": "220",
+        "writer_table_overflow": "0",
+        "dropped": "0",
+        "cleanup_restored": "1",
+        "cleanup_pending": "0",
+        "complete_thread_coverage": "0",
+        "rescan_count": "0",
+        "event_cap": "256",
+        "per_writer_print_cap": "4",
+        "Position_writes_by_mod": "0"
+      }
+    ],
+    "WS_final_entry_capture": [
+      {
+        "session": "2",
+        "capture_activated": "1",
+        "true_entry_snapshots": "8",
+        "complete_invocation_maps": "8",
+        "xyz_source_candidate": "20",
+        "xyz_match_count": "8",
+        "xyz_match_mask": "0x7",
+        "xyz_stable_across_invocations": "1",
+        "source_w_pattern": "constant_observed",
+        "source_w_bits": "0x0",
+        "destination_w_pattern": "constant_observed",
+        "destination_w_bits": "0x3f800000",
+        "stability_scope": "session_XYZ_match_pattern",
+        "storage_lifetime_proven": "0",
+        "stable_across_surfaces": "0",
+        "writable_source_proven": "0",
+        "Position_writes_by_mod": "0",
+        "phase": "finalized",
+        "summary_final": "1"
+      }
+    ],
+    "diagnostic_log_drops": [
+      {
+        "count": "1",
+        "writes_unaffected": "1"
+      }
+    ],
+    "long4s_A_E_test_in_this_capture": false,
+    "SF_bootstrap_and_worker_and_logging": "PASS",
+    "SF_candidate_summaries": 20,
+    "SF_ready_summaries": 18,
+    "SF_valid_handle_candidates": 0,
+    "SF_Transform_gate": "closed",
+    "overall_workspace_install_launch_logging": "PASS",
+    "SF_player_signal_acceptance": false,
+    "EDI_research_reauthorized": false,
+    "raw_logs_or_full_game_bodies_committed": false
   }
 }
