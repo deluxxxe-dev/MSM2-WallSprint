@@ -35,7 +35,7 @@ for directory in ['src','include','tools','mod','vendor']:
 for name in ['README.md','README_TEST.md','BUILD.md','WORKLOG.md','CMakeLists.txt','LICENSE.txt','THIRD_PARTY_NOTICES.md']:shutil.copy2(root/name,source/name)
 docs=root.parent/'docs' if (root.parent/'docs').is_dir() else root/'docs'
 if docs.is_dir():
- for name in ['DEVELOPMENT_MANUAL.md','DEV_RULES.md','PROJECT_STATE.md','CODEX_NEXT.md','CODEX_RESULT.md','LOGGING_CONVENTION.md','LOCAL_WORKSPACE.md']:
+ for name in ['DEVELOPMENT_MANUAL.md','DEV_RULES.md','PROJECT_STATE.md','CODEX_NEXT.md','CODEX_RESULT.md','LOGGING_CONVENTION.md','LOCAL_WORKSPACE.md','FEATURE_ROADMAP.md']:
   if (docs/name).exists():
    (source/'docs').mkdir(exist_ok=True);shutil.copy2(docs/name,source/'docs'/name)
 agent=root.parent/'AGENTS.md' if (root.parent/'AGENTS.md').exists() else root/'AGENTS.md'

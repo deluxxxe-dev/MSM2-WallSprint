@@ -79,7 +79,7 @@ SF/ordinary mod mutation, main merge or old-environment deletion.
 - Final archive validation checks CRC/source completeness/analysis/manuals/licenses,
   exact payload/DLL/version/marker hashes, one virtual active install script,
   source exclusions and unchanged old task/lifecycle/ABI/source assertions.
-  Final documentation-only reporting changes use the same tested native sources.
+  Final reporting/roadmap-only packaging changes use the same tested native sources.
 
 Wisdoms RE guide/WS internals preserve the TEST/flag/partial-register method as
 VERIFIED-STATIC implementation/owned-fixture scope; actual c22 remains UNKNOWN.
