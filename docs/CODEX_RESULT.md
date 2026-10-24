@@ -1,3 +1,22 @@
+# Codex result — updater-first handoff, no unsolicited links (2026-10-25)
+
+Branch: **codex/v01c20-edi-value-provenance**; policy base **c30acd3**.
+The owner replaced the previous direct-download preference: after verified
+commit/push, prompt Update-WS.cmd and give a short task-specific test/log request.
+Do not send download/repository/test links unless explicitly requested.
+AGENTS and DEVELOPMENT_MANUAL are synchronized; historical entries below retain
+the prior preference as history. Detailed artifacts/tests/hashes stay in GitHub.
+
+Documentation-only change: whitespace and policy consistency reviewed; no native
+or tool source, version, package, CODEX_NEXT or PROJECT_STATE changes, and no
+runtime suite rerun. Current diagnostic implementation/delivery remains cad74ab;
+actual EDI A/E is still pending. When that build is tested, use the accepted
+Update-WS -> Install mods -> Run modded game flow, A~4s -> fully end -> move -> E~4s,
+and the newest complete versioned MSM2-WS/logs file. This policy-only update does
+not itself require another build/game test.
+
+---
+
 # Codex result — direct-download handoff preference (2026-10-25)
 
 Branch: **codex/v01c20-edi-value-provenance**; policy base **0c1b942**.

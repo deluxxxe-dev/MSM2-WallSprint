@@ -138,15 +138,17 @@ The next isolated Codex task must be able to reproduce the current implementatio
 
 ## After completing a task
 
-For every published version, the owner's preferred handoff is a clickable direct
-archive-download URL, not a GitHub blob/repository preview page. Pin the URL to
-the published commit/release and keep a separate GitHub link for test procedures.
-Before presenting the download as verified, GET the archive and check HTTP
-success, ZIP CRC and its recorded SHA256. Authenticated Git clone success alone
-does not prove that a browser download works. If direct access is unavailable,
-report that limitation and provide the existing updater/authenticated Git route;
-do not claim a preview link, 404 response or local file link is a working download.
-Do not change repository visibility or publish private backups to achieve this.
+The owner's latest handoff preference supersedes the earlier download-link rule:
+after committing/pushing and verifying publication, tell the user to run the
+installed `MSM2-WS/Update-WS.cmd`, then give a brief task-specific human test and
+the exact log to return when needed. Do not send download, repository or test-page
+links unless the user explicitly asks. Keep artifacts, detailed tests, hashes and
+results in the repository for future agents. Do not claim publication before a
+successful push. Distinguish Update-WS (fetch/build/test/deploy/open manager) from
+the desktop Mod-Tools launchers (launch only), and leave Install mods / Run modded
+game as the human Overstrike steps. Documentation-only changes do not require a
+new game test or runtime rebuild. If a download is explicitly requested later,
+verify its actual access/CRC/hash and keep archives outside Mods Library.
 
 Update `docs/CODEX_RESULT.md` with:
 
