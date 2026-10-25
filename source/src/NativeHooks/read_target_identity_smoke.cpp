@@ -1045,6 +1045,11 @@ int main() {
   {
     Image wrong;writableUnknown(wrong);wrong.code[16]=0x90;const unsigned char bytes[]={0xc5,0xf8,0x10,1};std::copy(std::begin(bytes),std::end(bytes),wrong.code.begin()+17);
     r=wrong.run(true,target,Image::sourceImageSize,&evidence);assert(!r.vector.detail.decoded && r.barrier==target+17 && !r.admitted);
+    for (const auto &bytes:std::vector<std::vector<unsigned char>>{{0x62,0xf1,0x7c,0x18,0x10,1},{0xf0,0xc5,0xf8,0x10,1},{0xc4,0xe2,0x78,0x10,1},{0xc5,0xf9,0x10,1}}) {
+      Image unsupported;writableUnknown(unsupported);std::copy(bytes.begin(),bytes.end(),unsupported.code.begin()+16);
+      r=unsupported.run(true,target,Image::sourceImageSize,&evidence);
+      assert(!r.admitted && !r.vector.detail.decoded && r.barrier==target+16 && !unsupported.sourceReads);
+    }
     Image unstable;vectorAt(unstable,{0xc5,0xf8,0x10,1});unstable.changeFinal=true;r=unstable.run(true,target,Image::sourceImageSize,&evidence);
     assert(!r.admitted && !r.stable && !r.unknownLoad.admitted && !unstable.sourceReads);
     Image safeTaken;vectorAt(safeTaken,{0xc5,0xf8,0x10,1});safeTaken.code[40]=0xc3;
