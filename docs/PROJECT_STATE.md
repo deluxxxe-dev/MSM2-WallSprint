@@ -330,3 +330,14 @@ If the exact form is representable by the existing GPR dependency model, add onl
 Preserve c30 RAX `0x7`, c32 YMM0 low/high `0x7`, `above256_known_zero=1`, both c27 JA paths, all ownership gates, and zero gameplay write permission.
 
 Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
+
+## c33 prepared — pinned MOVSXD form and conditional register effect
+
+v0.1c33/package0.1.51 classifies only MOVSXD0x2CF7FF4. Current verified REX.W
+opcode63 register32/full64 form can replace destination with source-parent tags
+and unknown non-pointer origin; no stale destination union. All memory forms
+remain diagnostic refusals pending actual source evidence. No raw source value
+read/numeric interpretation. Other GPR/YMM low-high/flags/SP/memory unchanged;
+c30/c32 and all original current-code/runtime/cap/RET/ownership/write gates remain.
+Actual MOVSXD operands/next barrier UNKNOWN until minimum MOVSXD metadata A/E
+capture. NEXT preserved; analysis/V01C33_MOVSXD.md details limits and tests.

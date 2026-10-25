@@ -12,7 +12,7 @@ struct Image {
   std::array<unsigned char,24> table{};
   std::array<unsigned char,128> code{};
   unsigned snapshots{},codeEndRead{},sourceReads{},queries{};
-  bool vectorMode{},unknownMode{},sourceFirstFail{},sourceFinalFail{},sourceChange{},queryFail{},pageChange{},metadataChange{};
+  bool signMode{},vectorMode{},unknownMode{},sourceFirstFail{},sourceFinalFail{},sourceChange{},queryFail{},pageChange{},metadataChange{};
   std::array<unsigned char,8> sourceData{{11,22,33,44,55,66,77,88}};
   ws::rdx::ReadImagePage page{true,true,ws::rdx::readImageSource&~4095u,0x1000,0x1000000,0x02,0x02,4096};
   static constexpr std::uint32_t sourceImageSize=0xd000000;
@@ -88,7 +88,7 @@ struct Image {
   }
   ws::rdx::ReadTargetIdentity run(bool admitted=true,std::uint32_t t=target,std::uint32_t size=imageSize,const ws::rdx::ReadEntryTags *tags=nullptr) {
     snapshots=codeEndRead=sourceReads=queries=0;
-    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this,tags,query,unknownMode,vectorMode);
+    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this,tags,query,unknownMode,vectorMode,signMode);
   }
 };
 constexpr std::uint32_t largeFunctionBase=0x1100000;
@@ -1153,5 +1153,93 @@ int main() {
     assert(!(a.readDependency.call.outcomes[0].returnedXmm[0]&1) && (a.readDependency.call.outcomes[0].returnedXmmHigh[0]&1));
   }
   std::puts("PASS: c32 low/high return dependencies and above256 knowledge stay path-dependent; conservative union preserves selected high-half dependence even when modeled legacy XMM zero removes only low-half tags");
+
+  auto signAt=[&](Image &f,std::initializer_list<unsigned char> bytes) {
+    vector256(f);f.signMode=true;std::copy(bytes.begin(),bytes.end(),f.code.begin()+20);f.code[20+bytes.size()]=0xc3;
+  };
+  {
+    Image f;signAt(f,{0x49,0x63,0xc8});r=f.run(true,target,Image::sourceImageSize,&ve);const auto &s=r.signExtend;
+    assert(r.admitted && s.modeled && s.registerForm && s.full64 && s.encodingKnown && s.detail.instructionBytes==3 &&
+        s.destinationParent==1 && s.sourceParent==8 && s.sourceBits==32 && s.destinationBits==64 &&
+        s.detail.operands[0].access==2 && s.detail.operands[1].access==1 && !s.detail.memoryOperands &&
+        s.detail.flagsPreserved && s.detail.fullGprWrites==2 && !s.detail.partialGprWrites && !s.detail.stackPointerWrite && !s.resultTags && !f.sourceReads);
+  }
+  std::puts("PASS: c33 exact pinned REX.W opcode63 full64-from-reg32 form is decoded before conditional sign-extension modeling, with exact parent/access/width/full-write metadata and zero value observation");
+  {
+    for (unsigned sourceTags:{0u,1u,2u,4u,7u}) {
+      Image f;signAt(f,{0x48,0x63,0xc3});f.code[23]=0x8b;f.code[24]=1;auto tags=ve;tags.gpr[3]=sourceTags;
+      r=f.run(true,target,Image::sourceImageSize,&tags);
+      assert(!r.admitted && r.signExtend.modeled && r.barrier==target+23 && r.boundary.gpr[0]==sourceTags &&
+          r.signExtend.sourceTags==sourceTags && r.signExtend.resultTags==sourceTags && !f.sourceReads);
+    }
+    Image same;signAt(same,{0x48,0x63,0xc0});same.code[23]=0x8b;same.code[24]=1;r=same.run(true,target,Image::sourceImageSize,&ve);
+    assert(r.boundary.gpr[0]==7 && r.signExtend.sourceTags==7);
+  }
+  std::puts("PASS: c33 source-parent tags0/1/2/4/7 replace the full destination without stale tag union; a same-parent signed32 read stays conservative and no numeric source bits or pointer identity are inferred");
+  {
+    for (unsigned dest=0;dest<16;++dest) {
+      if (dest==4) continue;
+      Image f;signAt(f,{(unsigned char)(0x48+(dest>=8?4:0)),0x63,(unsigned char)(0xc0+8*(dest&7)+3)});
+      f.code[23]=0x8b;f.code[24]=1;auto tags=ve;tags.gpr[3]=2;
+      r=f.run(true,target,Image::sourceImageSize,&tags);assert(r.signExtend.modeled && r.boundary.gpr[dest]==2);
+      assert(r.boundary.gpr[0]==(dest==0?2u:7u) && r.boundary.xmm[0]==7 && r.boundary.xmmHigh[0]==7 &&
+          r.boundary.above256Zero[0] && !r.boundary.flagsTags && !r.boundary.gpr[4]);
+    }
+    Image stack;signAt(stack,{0x48,0x63,0xe0});r=stack.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && !r.signExtend.modeled && r.signExtend.detail.stackPointerWrite && r.barrier==target+20);
+  }
+  std::puts("PASS: c33 full64 replacement is limited to the decoded non-SP destination across GPR aliases; unrelated RAX/vector halves/zero knowledge/flags/SP/memory remain intact and RSP destinations refuse");
+  {
+    Image f;signAt(f,{0x48,0x63,1});auto a=flowThroughIdentity(f,false,false,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    const auto &s=a.readDependency.call.targetIdentity.signExtend;
+    assert(s.detail.parentState && s.detail.samples && s.detail.memoryRead && !s.detail.memoryWrite && !s.modeled &&
+        s.detail.addressExact && s.detail.addressRoot==16 && s.detail.aliasMayMask==ws::rdx::movImage && s.detail.loadedMayTags==7 && !f.sourceReads);
+    Image chase;signAt(chase,{0x48,0x63,0});a=flowThroughIdentity(chase,false,false,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    assert(!a.readDependency.call.targetIdentity.signExtend.detail.addressExact && a.readDependency.call.targetIdentity.signExtend.detail.addressTags==7 && !chase.sourceReads);
+    Image indexed;signAt(indexed,{0x48,0x63,0x44,0x81,0xf0});a=flowThroughIdentity(indexed,false,false,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    const auto &op=a.readDependency.call.targetIdentity.signExtend.detail.operands[1];assert(op.scale==4 && op.displacement==-16 && op.indexTags==7);
+  }
+  std::puts("PASS: c33 memory MOVSXD exact width/read/address/index/alias/tag metadata is diagnosed but every unproven source remains refused; image membership or tagged unknown RAX never grants tag0/load permission or pointer chasing");
+  {
+    Image hero;signAt(hero,{0x48,0x63,2});auto a=flowThroughIdentity(hero,false,false,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    assert(a.readDependency.call.targetIdentity.signExtend.detail.aliasMayMask==ws::rdx::movHero);
+    Image home;signAt(home,{0x48,0x63,0x44,0x24,8});a=flowThroughIdentity(home,false,false,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    assert(a.readDependency.call.targetIdentity.signExtend.detail.aliasMayMask&ws::rdx::movCallerHome);
+    Image below;signAt(below,{0x48,0x63,0x44,0x24,0xf0});a=flowThroughIdentity(below,false,false,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    assert((a.readDependency.call.targetIdentity.signExtend.detail.aliasMayMask&(ws::rdx::movPrivateStack|ws::rdx::movUnknown))==(ws::rdx::movPrivateStack|ws::rdx::movUnknown));
+    Image segment;signAt(segment,{0x64,0x48,0x63,1});a=flowThroughIdentity(segment,false,false,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    assert(!a.readDependency.call.targetIdentity.signExtend.detail.addressExact);
+  }
+  std::puts("PASS: c33 parent-state Hero/home/below-SP/segment source facts remain conditional aliases and refusals, with no storage allocation, ABI, lifetime or memory-value assumptions");
+  {
+    for (const auto &bytes:std::vector<std::vector<unsigned char>>{{0x66,0x48,0x63,0xc8},{0x48,0x0f,0xbf,0xc8},{0x48,0x89,1},{0x48,0x87,1},{0x0f,0xbe,0xc8}}) {
+      Image f;vector256(f);f.signMode=true;std::copy(bytes.begin(),bytes.end(),f.code.begin()+20);
+      // A plain store/RMW or unsupported partial form cannot borrow MOVSXD rules.
+      r=f.run(true,target,Image::sourceImageSize,&ve);assert(!r.admitted && !r.signExtend.modeled && !f.sourceReads);
+    }
+    Image other;vector256(other);other.signMode=true;other.code[20]=0x90;other.code[21]=0x48;other.code[22]=0x63;other.code[23]=0xc8;
+    r=other.run(true,target,Image::sourceImageSize,&ve);assert(!r.admitted && !r.signExtend.detail.decoded && r.barrier==target+21);
+    Image disabled;signAt(disabled,{0x48,0x63,0xc8});disabled.signMode=false;r=disabled.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && r.signExtend.registerForm && !r.signExtend.modeled);
+  }
+  std::puts("PASS: c33 wrong site/encoding/source width/mnemonic, store/RMW/partial and explicitly disabled forms refuse without broad MOVSX/MOVZX or memory semantics");
+  {
+    Image f;signAt(f,{0x49,0x63,0xc8});f.code[23]=0xe8;Image::put32(f.code,24,0);r=f.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && r.signExtend.modeled && r.barrier==target+23 && r.boundary.path==0 && r.boundary.edgeTarget==target+9 &&
+        r.boundary.gpr[0]==7 && r.boundary.xmmHigh[0]==7 && !r.boundary.gpr[1]);
+    Image unsafe;signAt(unsafe,{0x49,0x63,0xc8});unsafe.code[40]=0x50;r=unsafe.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && r.signExtend.modeled && r.paths==1 && r.barrier==target+40 && r.boundary.path==1);
+    Image changing;signAt(changing,{0x49,0x63,0xc8});changing.changeFinal=true;r=changing.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && !r.stable && !r.unknownLoad.admitted);
+  }
+  std::puts("PASS: c33 continuation stops at exact next CALL/effect with pre-instruction GPR/vector/flags state; one unsafe JA leg or changed code denies whole identity under unchanged caps");
+  {
+    Image f;signAt(f,{0x49,0x63,0xc8});auto a=flowThroughIdentity(f,true,true,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    assert(a.readDependency.call.targetIdentity.signExtend.modeled && a.readDependency.call.returnPaths==2 && a.readDependency.call.pathEffectsDiffer && !f.sourceReads);
+    for (unsigned bit=0;bit<3;++bit) assert(a.readDependency.call.returnedXmmHigh[bit]&1);
+    LargeImage large(527161);signAt(large,{0x49,0x63,0xc8});r=ws::rdx::authenticateReadTarget(true,target,Image::sourceImageSize,LargeImage::readLarge,LargeImage::lookupLarge,&large,&ve,Image::query,true,true,true);
+    assert(r.admitted && r.signExtend.modeled && r.validatedEntries==527161 && !large.sourceReads);
+  }
+  std::puts("PASS: c33 current actual-parent replay and both-path return unions preserve c30/c32 upper-bound effects, full527161 runtime metadata and no ownership/gameplay-write certificate");
 
 }

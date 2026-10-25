@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.50",
-  "description": "WallSprint v0.1c32 adds bounded low/high128 vector dependency state for only exact VEX256 YMM0 m256 RDX load. Both halves unknown-top7, above256 zero marker; all future ZMM/EVEX and other vector loads refuse. No source-value reads or gameplay writes.",
+  "version": "0.1.51",
+  "description": "WallSprint v0.1c33 classifies pinned MOVSXD0x2CF7FF4 and conditionally models only verified reg32-to-full64 sign extension, with opaque non-pointer result and conservative source-parent tags. Memory sources remain refused. C30/C32 state and all safety gates preserved.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

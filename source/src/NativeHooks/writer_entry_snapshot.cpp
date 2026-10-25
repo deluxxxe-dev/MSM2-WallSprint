@@ -959,7 +959,7 @@ void configure(const Spec &s, Gate validate) noexcept {
         page.protect=mbi.Protect;page.allocationProtect=mbi.AllocationProtect;return true;
       };
       auto proof=ws::rdx::authenticateReadTarget(nc.instructionVerified && s.imageSize<=UINT32_MAX,
-          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner,entryTags,queryImage,true,true);
+          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner,entryTags,queryImage,true,true,true);
       if (expected && (!proof.stable || proof.scanBytes!=expected->scanBytes ||
           std::memcmp(proof.snapshot.data(),expected->snapshot.data(),proof.scanBytes))) {
         proof.admitted=false;proof.load.admitted=false;proof.unknownLoad.admitted=false;proof.mov.loadedMayTags=7;proof.size=0;proof.reason="target_code_changed_between_tag_prepass_and_reproof";
@@ -1408,6 +1408,33 @@ void configure(const Spec &s, Gate validate) noexcept {
                "above256_zero_parent_mask=0x%x path_dependent=%u upper_bound_not_observed=1 effect_certificate=0",
                path,returned.ret,1u<<bit,returned.returnedXmm[bit],returned.returnedXmmHigh[bit],zero,unsigned(rcall.pathEffectsDiffer));
     }
+    const auto &sx=identity.signExtend;const auto &sm=sx.detail;
+    writeLog("MOVEMENT_CALLEE_READ_MOVSXD site_rva=0x%x decoded=%u instruction=%s bytes=%u encoding=%s encoding_known=%u "
+             "operands=%u source_bits=%u destination_bits=%u source_parent=%d destination_parent=%d full64_replacement=%u "
+             "register_form_supported=%u tags_known=%u source_parent_may_tags=0x%x result_may_tags=0x%x "
+             "memory_read=%u memory_write=%u memory_RMW=%u flags_preserved=%u GPR_writes=0x%x partial_GPR_writes=0x%x "
+             "vector_writes=0x%x SP_write=%u semantic_modeled=%u snapshot_stable=%u current_code_rechecked=%u "
+             "sign_rule=source_bit31_replicated_to_destination63_32 no_source_numeric_interpretation=1 "
+             "result_origin=unknown_non_pointer no_value_reads=1 raw_values=0 effect_certificate=0 reason=%s",
+             sm.site,unsigned(sm.decoded),sm.mnemonic,sm.instructionBytes,sx.encoding,unsigned(sx.encodingKnown),sm.operandCount,
+             sx.sourceBits,sx.destinationBits,sx.sourceParent,sx.destinationParent,unsigned(sx.full64),unsigned(sx.registerForm),unsigned(sx.tagsKnown),
+             sx.sourceTags,sx.resultTags,unsigned(sm.memoryRead),unsigned(sm.memoryWrite),unsigned(sm.memoryRmw),unsigned(sm.flagsPreserved),
+             sm.fullGprWrites,sm.partialGprWrites,sm.xmmWrites,unsigned(sm.stackPointerWrite),
+             unsigned(sx.modeled && identity.stable && identity.unknownLoad.admitted),unsigned(identity.stable),unsigned(identity.unknownLoad.targetCodeRechecked),sm.reason);
+    for (unsigned j=0;j<std::min(sm.operandCount,2u);++j) {
+      const auto &o=sm.operands[j];
+      writeLog("MOVEMENT_CALLEE_READ_MOVSXD_OPERAND site_rva=0x%x index=%u kind=%s register=%s parent=%d width=%u access=%u "
+               "register_tags=0x%x origin_kind=%d origin_root=%d origin_offset=%lld base=%s base_tags=0x%x "
+               "memory_index=%s index_tags=0x%x scale=%u displacement=%lld segment=%s address_bits=%u raw_values=0",
+               sm.site,j,o.kind,o.name,o.parentGpr,o.width,o.access,o.registerTags,o.originKind,o.originRoot,(long long)o.originOffset,
+               o.base,o.baseTags,o.index,o.indexTags,o.scale,(long long)o.displacement,o.segment,sm.addressWidth);
+    }
+    writeLog("MOVEMENT_CALLEE_READ_MOVSXD_ADDRESS site_rva=0x%x parent_state=%u samples=%u address_exact=%u same_address_all_samples=%u "
+             "class=%s root=%d offset=%lld address_component_tags=0x%x alias_may_mask=0x%x "
+             "alias_Hero1_field10C2_source4_callerHome8_privateStack16_image32_unknown64=1 "
+             "memory_load_semantics_added=0 loaded_value_tags_known=0 loaded_may_top=0x%x pointer_chase=0 raw_values=0 effect_certificate=0",
+             sm.site,unsigned(sm.parentState),sm.samples,unsigned(sm.addressExact),unsigned(sm.addressSame),sm.addressClass,
+             sm.addressRoot,(long long)sm.addressOffset,sm.addressTags,sm.aliasMayMask,sm.loadedMayTags);
     const auto &unknown=identity.unknownLoad;
     writeLog("MOVEMENT_CALLEE_READ_UNKNOWN_LOAD site_rva=0x%x enabled=%u attempted=%u source_rva=0x%x width=8 "
              "metadata_passed=%u metadata_rechecked=%u PE_metadata_equal=%u page_metadata_equal=%u target_code_rechecked=%u "

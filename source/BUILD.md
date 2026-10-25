@@ -155,3 +155,12 @@ and all prior regressions. Covers low/high128 aliasing/full write, intrinsic7
 without data reads, current Hero source pins, legacy low-only writes, VEX128/
 other YMM/ZMM/EVEX refusal, next-barrier halves, all-path return unions and
 above256 zero intersection, code/runtime/caps. See V01C32_VECTOR256_STATE.md.
+
+## c33 exact MOVSXD
+
+v0.1c33/package0.1.51 adds8 owned identity groups (76 total), retaining21
+read/call and all prior regressions. Covers register32/full64 sign extension,
+source-parent tag propagation/full replacement/no stale destination, aliases
+and memory-source refusal, stack/width/site/prefix/other-form refusal, preserved
+YMM halves/flags/other GPRs, next barrier/all-path/code/table and parent replay.
+Actual form remains pending; no memory semantics added. See V01C33_MOVSXD.md.

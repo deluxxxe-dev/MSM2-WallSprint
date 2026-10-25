@@ -152,8 +152,16 @@ struct ReadVectorContract {
       destinationRepresented{},upperStateRepresented{};
   const char *encoding="unsupported",*upperEffect="unknown";
 };
+inline constexpr std::uint32_t readIdentitySignExtend=0x2cf7ff4;
+struct ReadSignExtendContract {
+  ReadMovContract detail{};
+  bool isMovsxd{},encodingKnown{},registerForm{},full64{},tagsKnown{},modeled{};
+  int destinationParent=-1,sourceParent=-1;
+  unsigned sourceBits{},destinationBits{},sourceTags{},resultTags{};
+  const char *encoding="unsupported";
+};
 struct ReadTargetIdentity {
-  bool vector256Enabled{},enabled{}, admitted{}, missingRuntime{}, stable{}, tableValid{};
+  bool signExtendEnabled{},vector256Enabled{},enabled{}, admitted{}, missingRuntime{}, stable{}, tableValid{};
   bool directoryPairValid{}, directoryRangeInImage{}, directorySizeDivisible{},
       tableBudgetAdmitted{}, entryCapExceeded{}, byteCapExceeded{},
       validationSkippedByCap{}, tableReadFailed{}, tableReadComplete{}, lookupQueried{};
@@ -165,6 +173,7 @@ struct ReadTargetIdentity {
   ReadLeafBranch branch{};
   ReadMovContract mov{};
   ReadVectorContract vector{};
+  ReadSignExtendContract signExtend{};
   ReadImageLoad load{};
   ReadUnknownLoad unknownLoad{};
   ReadLeafBoundary boundary{};
@@ -178,5 +187,5 @@ struct ReadTargetIdentity {
 ReadTargetIdentity authenticateReadTarget(bool buildAndCallVerified,
     std::uint32_t target, std::uint32_t imageSize, IdentityRead,
     IdentityLookup, void *context, const ReadEntryTags *entryTags = nullptr,
-    IdentityPageQuery pageQuery = nullptr, bool pinnedUnknownLoad = false, bool pinnedVector256 = false) noexcept;
+    IdentityPageQuery pageQuery = nullptr, bool pinnedUnknownLoad = false, bool pinnedVector256 = false, bool pinnedSignExtend = false) noexcept;
 }

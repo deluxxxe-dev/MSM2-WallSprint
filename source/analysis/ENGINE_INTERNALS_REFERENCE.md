@@ -1,3 +1,15 @@
+## C32 accepted / c33 pinned MOVSXD conditional rule prepared
+
+VERIFIED-RUNTIME c32 exact YMM0 load is modeled (low/high7/above256zero/no data
+read); new barrier MOVSXD0x2CF7FF4, actual operands/memory use UNKNOWN. C33
+classifies exact width/access/address/effects, conditionally models only current
+REX.W opcode63 reg32->GPR64 full replacement with conservative source tags and
+unknown non-pointer origin. Memory forms remain refused; no raw values/numeric
+interpretation. Prior vector/GPR/flags state unaffected except decoded dest;
+all original all-path/RET/code/runtime/cap/ownership/write gates remain.
+Sources V01C32_RUNTIME_RESULT.md / V01C33_MOVSXD.md; earlier pending c32 notes
+below are historical, superseded by accepted runtime result.
+
 ## C31 accepted / c32 exact YMM0 dependency state prepared
 
 VERIFIED-RUNTIME: VMOVUPS0x2CF7FF0 VEX2.256 YMM0 <-m256[RDX], current Hero
