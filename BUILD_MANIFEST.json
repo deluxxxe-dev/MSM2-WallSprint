@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c27",
-  "package_version": "0.1.45",
-  "artifact": "MSM2-WS-v0.1c27.script.disabled",
-  "sha256": "da6972fa4f6edf83f85f5561717b2a6da12607e4ab9cd86fbb1a29bbc63a810a",
-  "dll_sha256": "bcfff81c7849cd82d4ab4b4c6b4d2fb5e41f8db2a9283efbb59d34ff36d9bbfd",
+  "version": "v0.1c28",
+  "package_version": "0.1.46",
+  "artifact": "MSM2-WS-v0.1c28.script.disabled",
+  "sha256": "8d37978a8fea33d9f5f837ff1e7717d2e5ef2a08864d10d9e06808f868bf8f32",
+  "dll_sha256": "e89b8b8eadde3206088aba42e07444d1a8024964203ac54f3791ecf83e0e253e",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -130,7 +130,7 @@
   },
   "validation": "Warnings-as-errors cross-build; portable/DLL/native/c19/owned EDI/logger/workspace regressions and standalone source validation; exact current results in CODEX_RESULT.",
   "limitations": [
-    "C26 exact CMP r8d,0x3fff flags-only/tag0 accepted; c27 exact JA edges/path effects pending. Only current-tag-disjoint1-JA/2-path all-RET proof may complete identity; no single-leg or numerical-outcome shortcut, ownership/write/effect gates remain closed.",
+    "C27 exact JA both-edge fan-out accepted; fallthrough MOV0x2cf7fe9 memory barrier remains. C28 only classifies operands/access/address/alias provenance; no memory-load semantics or value observations. Actual MOV form pending; all identity/effect/ownership/write gates remain closed.",
     "Stack/global disjointness is conditional on per-invocation TEB/source/nonstack Transform/image region admission",
     "Unknown/conflicting pointer origins, unsupported effects and nested calls refuse at exact site",
     "Startup/current code snapshots are not atomic execution attestation; equality does not exclude transient writes",
@@ -656,7 +656,7 @@
   },
   "isolated_logging": {
     "directory": "game-root/Mods Library/Mods-Developing/MSM2-WS/logs",
-    "filename": "MSM2-WS-v0.1c27-YYYYMMDD-HHMMSS.log",
+    "filename": "MSM2-WS-v0.1c28-YYYYMMDD-HHMMSS.log",
     "filename_clock": "host_local_GetLocalTime",
     "line_clock": "UTC_unchanged",
     "collision_creation": "CREATE_NEW_atomic",
@@ -732,8 +732,8 @@
     "source": "_source_independent_clone",
     "archive": "_archive_disabled_only",
     "runtime_logs": "logs",
-    "active_script": "MSM2-WS-v0.1c27.script",
-    "artifact": "MSM2-WS-v0.1c27.script.disabled",
+    "active_script": "MSM2-WS-v0.1c28.script",
+    "artifact": "MSM2-WS-v0.1c28.script.disabled",
     "update_helper": "Update-WS.cmd",
     "migration_helper": "Migrate-WS.cmd",
     "overstrike": "game-root/Overstrike/Overstrike.exe",
@@ -827,7 +827,7 @@
     "branches_memory_stack_nested_CALL": "one_pinned_tag_disjoint_forward_JA_only_all_other_transfers_memory_stack_calls_refuse",
     "snapshot": "guarded_double_read_equality_SHA256_admitted_prefix",
     "current_metadata_recheck": true,
-    "actual_result": "c26_exact_CMP_flags_only_tag0_accepted_JA0x2cf7fe7_barrier_c27_edges_pending",
+    "actual_result": "c27_exact_JA_edges_accepted_fallthrough_MOV_memory_barrier_c28_metadata_pending",
     "effect_certificate": false,
     "existing_c19_c20_refusal_preserved": true,
     "Position_source_input_movement_writes": 0
@@ -854,7 +854,7 @@
     "Position_source_input_movement_writes": 0,
     "actual_form": "accepted_cmp_r8d_0x3fff_flags_only_tag0"
   },
-  "v01c27_gate": "BOUNDED_PINNED_JA_EDGES_BOTH_PATHS_ACTUAL_RESULT_PENDING",
+  "v01c27_gate": "ACTUAL_SHORT_JA_EDGES_FANOUT_ACCEPTED_FALLTHROUGH_MOV_MEMORY_BARRIER",
   "read_JA_contract": {
     "site": "0x2cf7fe7",
     "producer": "0x2cf7fe0_cmp_r8d_0x3fff",
@@ -876,7 +876,28 @@
     "no_memory_stack_call_partial_loop_or_other_branch": true,
     "effect_certificate": false,
     "Position_source_input_movement_writes": 0,
-    "actual_edges_paths": "pending_compact_runtime_metadata"
+    "actual_edges_paths": "accepted_fall0x2cf7fe9_taken0x2cf8013_MOV_memory_barrier_no_return"
+  },
+  "v01c28_gate": "PINNED_MOV_CLASSIFICATION_ONLY_ACTUAL_FORM_PENDING",
+  "read_MOV_contract": {
+    "site": "0x2cf7fe9",
+    "diagnostic_only": true,
+    "operand_cap": 2,
+    "decoded_access_flags_and_writes": true,
+    "address_components_and_parent_tags": true,
+    "actual_parent_state_scope": "conditional_abstract_affine_not_typed_ABI",
+    "address_and_loaded_value_provenance_separate": true,
+    "unknown_loaded_may_tags_upper_bound": 7,
+    "loaded_value_observation": false,
+    "memory_load_semantics_added": false,
+    "immutable_image_load_rule_added": false,
+    "memory_write_RMW": "immediate_refusal",
+    "unknown_dynamic_Transform_source_stack_image_value": "refuse",
+    "source_capture_alias_window": "writer_entry_RSP_0x28_0x68_conservative",
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "Position_source_input_movement_writes": 0,
+    "actual_form": "pending_minimal_guarded_metadata"
   },
   "runtime_table_validation": {
     "observed_c24_entries": 527161,
