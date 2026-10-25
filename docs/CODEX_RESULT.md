@@ -1,3 +1,123 @@
+# Codex result — c34 pinned SHL count/data/flag diagnostics and conditional constant GPR rule
+
+Branch **codex/v01c20-edi-value-provenance**; accepted task base **c32c1fc**.
+Implementation **15def15c22b96272df0b205fbc3c7184f18d950f**. Version **v0.1c34 / package0.1.52**.
+Outputs **MSM2-WS-v0.1c34.zip**, **MSM2-WS-v0.1c34-source.zip**,
+**MSM2-WS-v0.1c34.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C34_RELEASE.json** (hashes/sizes/current source-snapshot commit).
+
+## Accepted evidence / scope
+
+Read AGENTS/manual/rules/workspace/state/NEXT/c33 evidence, relevant code and
+Wisdoms instructions/manual/WS/engine/method references. Fast-forwarded only the
+intended WS development branch. No main merge/reset/force push. Original five
+untracked historic archives/bundle preserved; CODEX_NEXT byte-identical to base.
+
+VERIFIED-RUNTIME c33: MOVSXD0x2CF7FF4 exactly R8 <-signextend(R8D), full64,
+source/result tags0/no memory/flags/SP/vector effects/no values. Next barrier
+SHL0x2CF7FF7/path0, edge0x2CF7FE7 ->0x2CF7FE9,6instructions/6visits/0returns/
+identity/effects. Incoming RAX7/YMM0 low-high7/above256zero/flags0 retained.
+**Actual SHL operand/width/count/memory form UNKNOWN**. Cloud has no private
+current-code snapshot; production decodes authenticated saved current code.
+Owned SHL fixtures are not actual game bytes/form or runtime acceptance.
+
+## Implementation / files
+
+- read_target_identity.hpp: ReadShiftContract, pinned site0x2CF7FF7 and explicit
+  production enable, independent of retained c30/c32/c33 modes.
+- rdx_source_contract.cpp: classify exact SHL group2 /4 implicit1/imm8/CL,
+  instruction length/encoding/destination width/parent/access/write width,
+  count source/encoded immediate/mask/effective class, flags/other effects,
+  current-parent address/alias/tag facts. Only canonical no-legacy-prefix
+  register32/64 implicit1 or verified imm8, sole complete non-SP GPR write plus
+  EFLAGS, destination READ|WRITE/no memory/vector/other effects may advance.
+- Count mask =63 for64bits,31 for8/16/32. No numeric register observation. CL
+  remains refusal even when parent tags0. Partial8/16/memory RMW/SP/wrong-site/
+  wrong-form refuse. Partial counts >=operand width additionally classify CF
+  undefined, never execute a partial-shift abstract rule.
+- Effective0 preserves operand/arithmetic flags. A register32 parent STILL
+  zero-extends, so drop stale64bit pointer provenance; register64 retains its
+  unchanged origin. Nonzero result conservatively keeps destination-input tags,
+  constant count adds0; full destination replaced once with opaque non-pointer
+  origin. SHL reads its own old destination: this required RMW dependency differs
+  from unrelated stale destination union during MOVSXD full replacement.
+- Count1 CF/OF and result SF/ZF/PF have destination input dependence, AF undefined.
+  Count>1 additionally has OF undefined. Undefined flags inject aggregate top7
+  in existing single flag lattice; defined-flag tags/masks are separately logged.
+  No guessed numeric flag values. Disable TEST shortcuts on nonzero replacement;
+  preserve old flags/producer on count0. Existing flag-consuming unsupported
+  instructions/extra branches still refuse; returns/path unions retain top7.
+  Existing proven full flag replacements retain their prior rules. No generic
+  shift/arithmetic/partial-flag consumer is introduced.
+- Memory destination values remain unknown/top7, distinguished from known current
+  parent/address tags; every memory RMW refuses with no data read. Reuse existing
+  bounded actual-parent replay, unions/conflict loss, no extra traversal.
+- writer_entry_snapshot.cpp: SHL/SHL_FLAGS/SHL_OPERAND/SHL_ADDRESS records with
+  current-code/snapshot/model status, count and flags classes, pre/post may tags,
+  address components/conditional aliases, no raw register/memory/vector values.
+  Existing next exact boundary/path/GPR/vector halves/flags/CFG/safety retained.
+- read_target_identity_smoke.cpp:11 new groups, identity87/read-call21. Retained
+  c19-c33/native regressions. Versions/info/README_TEST/BUILD/package metadata,
+  accepted c33 mirror, c34 analysis/gate/index, AGENTS/state updated. NEXT untouched.
+
+C30 qword/source policy, c32 vector low/high/upper knowledge and c33 classifier
+remain unchanged. Legitimate decoded destination write affects only that GPR;
+other RAX/vector/SP/memory/flags state stays conservative. Both JA legs, all
+normal RETs,128bytes/32unique/64visits/1branch/2paths,current code/source/PE/runtime
+checks and4096 cumulative visits remain. No next unsupported instruction rule.
+
+## Validation
+
+- Final full Windows x64 warnings-as-errors build PASS; **13 portable +7 DLL/
+  logger +227 hooks/native/contracts/workspace =247 public PASS records**,
+  **5 optional private-input SKIP**, all final commands exit0. Identity87/read21.
+- During implementation an initial full invocation reached the newly refined
+  memory-diagnostic assertion while linked against the preceding object build:
+  exit3 at shift destination/result unknown-top assertion. Rebuilt final sources
+  before rerunning focused87, DLL/logger and the complete unmodified full chain.
+  Final passes use current inputs; no production/native assertion/deadline or
+  safety guard was relaxed. Initial log retained locally as pre-refinement run.
+- Additional owned host x86 probe verified register32 shift0 zero-extends parent,
+  register64 shift0 preserves parent. Not a game test or counted in247.
+- Fresh extracted source ZIP independent full build PASS; **162 focused entry/
+  c14-c34 +7 DLL/logger +13 workspace =182 separate PASS records**, all exits0,
+  no private skips. Standalone package verifier PASS separately. Do not add
+  duplicate182 to247. Final reporting refresh retains identical228 tested native/
+  tool inputs and rechecks current standalone packager.
+- Static comparison: c28 MOV/c31 vector/c33 MOVSXD classifiers, c32 dependency
+  policy, owned native orientation assertions, updater/Windows launch helpers,
+  NEXT and shared tooling unchanged. No SF/ordinary mod/environment edits.
+- Source/install CRC/hash/version/DLL markers/current docs/evidence/license/helper
+  membership and exactly1 virtual active install script verified; source contains
+  no active script/compiled/private raw game log/body. Build artifacts disabled
+  outside Mods Library. Known Wine winedevice startup warnings remain; final
+  commands exit0, not a real Windows/game claim.
+
+Wisdoms **6091289113eafe4ebd1b522d759b819c5bec3880** pushed: correct stale pending
+c33 form to accepted r8/r8d, retain unknown SHL form/count, pinned width/count and
+undefined-flag method,32bit zero-count parent distinction, memory/CL refusals.
+No raw private logs/proprietary bodies or unrelated SF knowledge overwritten.
+
+## Safety / minimum human action
+
+writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/
+downstream_conflicts_proven_absent0; Position/source-position/input/movement
+writes0; producer0x351EB00 deferred. No new hook/game call/data-page mutation,
+guessed ABI or gameplay/adhesion/camera/animation/physics change. Existing guarded
+orientation-source behavior remains separate from denied translation writes.
+
+After verified push: close game and shared Overstrike, run installed
+MSM2-WS/Update-WS.cmd (fetch/build/test/verify/deploy/open manager), then manually
+Install mods -> Run modded game. A/cardinal~3s -> fully end WallRun -> move/fast-
+travel -> E/diagonal~3s, each below unchanged5s diagnostic limit. Return newest
+MSM2-WS/logs/MSM2-WS-v0.1c34-YYYYMMDD-HHMMSS.log privately. Minimum new evidence:
+SHL/FLAGS/OPERAND/ADDRESS plus existing MOVSXD/VECTOR256/next barrier/path/GPR/
+vector low-high/flags/CFG/current identity/safety/cleanup. Actual SHL form/next
+boundary pending; no full private body/raw values requested. No normal download
+or test-page links; desktop launchers do not update projects.
+
+---
+
 # Codex result — c33 pinned MOVSXD classification and conditional register sign extension
 
 Branch **codex/v01c20-edi-value-provenance**; accepted task base **f609ee0**.
