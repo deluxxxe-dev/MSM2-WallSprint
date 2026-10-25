@@ -1,165 +1,165 @@
-# Next task — classify exact fallthrough MOV at 0x2CF7FE9 after accepted c27
+# Next task — prove or refuse exact image-backed load at 0x2CF7FE9 after accepted c28
 
 ## Status
 
-The v0.1c27 actual-game capture is accepted for the current bounded diagnostic question.
+The v0.1c28 actual-game capture is accepted for the current bounded diagnostic question.
 
 Source log supplied by the owner:
 
 ```text
-MSM2-WS-v0.1c27-20261025-113718.log
+MSM2-WS-v0.1c28-20261025-122112.log
 ```
 
 Do not merge `main`. Continue from the latest `codex/v01c20-edi-value-provenance` history.
 
-See `analysis/V01C27_RUNTIME_RESULT.md`.
+See `analysis/V01C28_RUNTIME_RESULT.md`.
 
-## Accepted c27 facts
+## Accepted c28 facts
 
-The c25/c26 prerequisite chain remains accepted:
+The prerequisite chain remains accepted:
 
-- authenticated PE runtime-function table fully validated: 527161 entries / 6325932 bytes;
-- actual OS lookup queried;
-- exact target `0x2CF7FE0` has no containing runtime-function entry;
-- pinned no-unwind fallback is active;
-- `0x2CF7FE0: cmp r8d,0x3FFF` is a supported read-only flags effect for the analyzed state;
-- its relevant R8/flag tags are zero.
+- c25: authenticated PE runtime-function table fully validated, 527161 entries / 6325932 bytes; actual OS lookup queried; `0x2CF7FE0` has no containing runtime-function entry; next runtime region `0x2CF8020`.
+- c26: `0x2CF7FE0: cmp r8d,0x3FFF`, read-only flags effect, relevant R8/flags tags zero.
+- c27: `0x2CF7FE7: ja` exact short rel8, displacement 42, taken `0x2CF8013`, fallthrough `0x2CF7FE9`; both forward/in allowance/no runtime crossing; both outcomes explored without numerical narrowing.
 
-C27 classifies the exact `JA` and successfully performs the authorized bounded fan-out:
+C28 classifies the exact fallthrough instruction:
 
 ```text
-site_rva=0x2CF7FE7
-instruction=ja
-encoding=short_JA_rel8
-instruction_bytes=2
-displacement=42
-condition=CF0_and_ZF0
-consumer_may_depend_tags=0x0
-edges_exact=1
-taken_rva=0x2CF8013
-fallthrough_rva=0x2CF7FE9
-taken_in_code=1
-fallthrough_in_code=1
-taken_in_allowance=1
-fallthrough_in_allowance=1
-taken_forward=1
-fallthrough_forward=1
-taken_runtime_cross=0
-fallthrough_runtime_cross=0
+0x2CF7FE9: mov rax, qword ptr [rcx+0x100]
+instruction_bytes=7
+operand_count=2
+memory_read=1
+memory_write=0
+memory_RMW=0
+pure_load_form=1
+flags_preserved=1
+full_GPR_writes=RAX
+partial_GPR_writes=0
+XMM_writes=0
+SP_write=0
 snapshot_stable=1
-control_expanded=1
-numerical_outcome=unknown
-outcome_narrowing=0
-rule=pinned_JA_both_forward_paths
 ```
 
-No branch direction is selected. Both outcomes remain possible.
-
-The all-path target proof now fails at the first instruction on the fallthrough leg:
+For the analyzed parent state the source address is exact:
 
 ```text
+base=RCX
+base_tags=0
+base_origin_root=16
+base_origin_offset=204285056
+displacement=256
+address_expression_exact=1
+same_address_all_samples=1
+address_root=16
+address_offset=204285312
+address_component_tags=0
+address_class=image_address_mutability_unproven
+alias_may_mask=0x20   # image only
+image_range_known=1
+current_code_range_known=0
+```
+
+The loaded value itself remains unresolved:
+
+```text
+readonly_value_proof=not_implemented
+loaded_value_tags_known=0
+loaded_may_tags_upper_bound=0x7
+loaded_value_observed=0
+unknown_not_untainted=1
+semantics_admitted=0
+reason=target_MOV_loaded_value_provenance_unproven
+```
+
+Incoming RAX carries selected tag1 before this full-width MOV. Do not kill tag1 merely because the address is in the image. Address provenance is not loaded-value provenance.
+
+Current target state:
+
+```text
+admitted=0
 barrier_rva=0x2CF7FE9
 barrier_instruction=mov
-reason=target_cfg_memory_operand_refused
-```
-
-Current CFG summary:
-
-```text
-complete=0
+LEAF_CFG complete=0
 return_paths=0
 unique_instructions=3
 visits=3
-branch_cap=1
-path_cap=2
-byte_cap=128
-instruction_cap=32
-visit_cap=64
-all_paths_required=1
 final_code_rechecked=0
 effect_certificate=0
-```
-
-Parent selected-read flow correspondingly reports:
-
-```text
-first_unresolved_rva=0x2CF7FE9
-first_unresolved_instruction=mov
-returned_gpr_may_depend_mask=0x1
-memory_escape=0
-downstream_XYZ_W_relevance=unknown
-cross_invocation_feedback=unknown
 writable_source_proven=0
-reason=target_cfg_memory_operand_refused
 ```
-
-The log does **not** establish the exact MOV operands, width, read/write direction, address expression, memory region, alias class, or value provenance. Do not infer them from the mnemonic or refusal reason.
 
 ## Current bounded Codex task
 
-Implement the smallest fail-closed extension needed to classify the exact `MOV` at `0x2CF7FE9` and, only if its memory effect can be proven safe under a narrowly justified read-only model, continue the existing two-path target proof to the next exact boundary.
+Implement the smallest fail-closed proof needed to determine whether this **one exact qword image load** can receive a sound loaded-value tag classification. Do not add a generic memory emulator.
 
-### 1. Classify the exact MOV before adding any semantics
+### 1. Prove the source region before reading/using its value
 
-Emit compact diagnostic metadata for `0x2CF7FE9` sufficient to establish:
+For the exact effective image address already proven by c28, classify compact authenticated metadata sufficient to establish current mutability:
 
-- operand count;
-- source and destination operand classes (GPR/XMM/immediate/memory);
-- exact operand widths;
-- read/write access for each operand;
-- exact register aliases and parent registers;
-- for a memory operand: base, index, scale, signed displacement, segment, address width and effective address class/provenance derived from owned symbolic state;
-- whether the memory operand is a read, write, or read-modify-write;
-- whether the memory range could alias Hero Transform, `Transform+0x10C`, the writer source span, caller/home stack, callee-private stack, image globals/code, or an unknown region;
-- incoming selected/post-write/other-prewrite tags on all register/address components;
-- whether the operation changes flags;
-- exact GPR/XMM/memory writes performed by the decoded form;
-- snapshot/current-code stability for the instruction bytes used.
+- exact image-relative source range and width (8 bytes);
+- containing PE section/range and section characteristics;
+- whether the section is readable/writable/executable;
+- whether all 8 source bytes remain in that same admitted section/range;
+- current mapped page allocation base/type/protection for the entire 8-byte range;
+- whether any page in the range is writable, copy-on-write, guard, noaccess, or otherwise unsupported;
+- whether the address falls in a known loader-mutated table/range that the implementation explicitly treats as unsafe (for example unresolved import/IAT/delay-load/TLS-style mutable metadata), if such ranges are already available from authenticated PE metadata;
+- current image identity and range agreement with the exact admitted executable.
 
-Do not log arbitrary memory contents merely to classify the instruction. Do not assign semantic ABI/type names from register indices.
+Do not infer immutability from an `image_global` label alone.
 
-### 2. Memory write / RMW remains an immediate refusal
+### 2. Add only a narrow current-proof stable-value rule if justified
 
-If the exact MOV writes memory or has any read-modify-write behavior, stop at `0x2CF7FE9` with the exact reason.
+A semantic load may be considered only if the exact source range is proven non-writable under both authenticated PE metadata and current mapped-page protection.
 
-Do not authorize a memory write because the destination appears disjoint from Position. This task is about completing the selected-read target effect proof, not granting new game-state writes.
+If justified, use a bounded stability check of exactly those 8 source bytes without publishing their raw value:
 
-### 3. Consider only a narrowly proven read-only load
+- guarded read of exactly 8 bytes before local effect analysis;
+- guarded re-read after the bounded target walk / before final admission;
+- equality required;
+- report only equality/hash or another non-value compact identity, not the raw qword;
+- no pointer chase and no second dereference;
+- no numerical interpretation of the loaded bits.
 
-If the exact form is a pure memory-to-register load, do **not** add a generic memory-load emulator.
+The purpose is provenance/stability, not semantic interpretation.
 
-It may be admitted only if all information needed for conservative tag/effect propagation is already provable from owned state and authenticated region metadata. At minimum require:
+If the page/section is writable, COW/guarded, crosses an unsupported boundary, cannot be authenticated to the admitted image, or the two bounded reads differ/fail, stop at `0x2CF7FE9`.
 
-- exact address expression and width;
-- no memory write;
-- no stack-pointer mutation or hidden stack construction;
-- no alias ambiguity with tracked mutable ranges that could carry selected/post-write/other-prewrite state;
-- no arbitrary pointer chase or second memory dereference;
-- no live memory-value observation used as a semantic shortcut;
-- a justified source-region/value-provenance rule that can assign the loaded destination tags conservatively without guessing.
+Current snapshot stability is not a global lifetime guarantee. State that scope explicitly.
 
-Examples of potentially admissible evidence are intentionally narrow: an authenticated immutable/read-only image source whose bytes/value provenance are already covered by the current-code/image proof, or another existing exact owned provenance class that can soundly determine the destination tags. Do not assume that an `image_global` name means immutable; prove the relevant PE protection/range and current snapshot rule.
+### 3. Assign loaded tags conservatively
 
-If the source is dynamic memory, stack/home storage, Transform/hero data, unknown memory, pointer-derived memory with unresolved aliasing, or otherwise cannot receive a sound loaded-value tag classification, stop with Outcome C at this exact MOV.
+Only if the exact source passes the narrow immutable/current-stable rule above may the loaded qword be assigned tag0 for this current target proof.
 
-Address-register tag dependence alone is not equivalent to loaded-value dependence. Keep address provenance and loaded-value provenance separate.
+Rationale must be structural:
 
-### 4. If admitted, model only the exact MOV form
+- source address carries no relevant tags;
+- source is in an authenticated non-writable image range;
+- exact 8-byte value is stable across the bounded proof window;
+- there is no second dereference or modeled memory write.
 
-For an admitted pure load:
+Do not use the numerical value itself to decide tags.
 
-- propagate only the exact destination register effect and correct x86 zero/upper-lane semantics for the decoded width;
-- preserve all unaffected GPR/XMM state;
-- do not invent ABI volatile clobbers;
-- preserve flags if the exact MOV does not modify them;
-- record whether selected/post-write/other-prewrite tags are introduced, preserved, or killed in the destination;
-- record any path-specific effect separately.
+If any of these conditions is missing, loaded tags remain unknown upper bound7 and the MOV remains refused.
 
-Do not generalize this permission to arbitrary MOV memory forms or other sites.
+### 4. If admitted, model only this exact MOV
 
-### 5. Resume c27 all-path proof only after the MOV passes
+For this exact full64 GPR load only:
 
-The c27 contract remains unchanged:
+```text
+RAX <- loaded tag set (expected 0 only if proven)
+all other GPR/XMM tags unchanged
+flags unchanged
+memory unchanged
+SP unchanged
+```
+
+Because this is a full 64-bit write, prior RAX selected tag1 is replaced only if the load itself is admitted.
+
+Do not generalize to other memory MOVs, widths, sites, sections, or dynamic image data.
+
+### 5. Resume the existing c27 all-path proof only after the MOV passes
+
+Unchanged caps/contracts:
 
 ```text
 pinned target=0x2CF7FE0
@@ -172,28 +172,26 @@ both JA outcomes required
 all reachable paths must end in modeled normal RET
 ```
 
-Continue from `0x2CF7FE9` only if its exact effect is admitted. The taken path at `0x2CF8013` must still be analyzed; no one-leg authentication is allowed.
+If the MOV is admitted, continue both paths to the next exact unsupported effect. Stop and report that exact RVA/mnemonic/reason rather than opportunistically widening semantics.
 
-Every reachable path must still refuse on:
+Still refuse on:
 
-- unsupported memory effect;
+- any other unproven memory operation;
 - stack construction/change;
 - nested CALL;
 - indirect transfer;
-- another conditional/unconditional branch beyond the single authorized JA;
+- any additional branch beyond the already authorized pinned JA;
 - loop/backedge;
 - unsupported partial-register effect;
 - runtime-region crossing;
-- unstable/current-code mismatch;
+- snapshot/protection/value-stability mismatch;
 - cap exhaustion or unresolved exit.
 
-If the next exact barrier is reached after an admitted MOV, report its RVA/mnemonic/reason and stop there rather than broadening the model opportunistically.
+### 6. Identity/effect admission remains all-path only
 
-### 6. Identity/effect admission still requires all outcomes
+Target begin/end/hash/effect may be admitted only if every reachable c27 path safely terminates in modeled normal RET and all final code/runtime/source-value checks still pass.
 
-Target begin/end/size/hash/effect may be admitted only if **all** reachable c27 paths terminate in modeled normal RET and final snapshot/runtime coverage checks pass.
-
-If target identity passes, feed only the fully admitted all-path effect set into the existing c23 parent CALL sidecar and conservatively merge returned GPR/XMM/flags/origins. Path-dependent effects must remain explicit.
+Only then feed the complete all-path effect set to the existing c23 parent CALL sidecar and conservatively merge returned tags/origins.
 
 Even successful local completion does not establish:
 
@@ -214,8 +212,9 @@ Still forbidden:
 - input/movement/adhesion/camera/animation/physics changes;
 - producer `0x351EB00` traversal;
 - guessed ABI/type names;
-- arbitrary data-page mutation/PAGE_GUARD shortcuts;
-- arbitrary memory-value logging;
+- arbitrary PAGE_GUARD/data-page mutation;
+- raw memory-value logging;
+- generic memory-load semantics;
 - weakening ownership/lifetime/exclusivity requirements.
 
 Safety state remains:
@@ -233,24 +232,23 @@ Position/source/input/movement writes=0
 
 Add fixtures covering at minimum:
 
-- exact MOV operand/access classification;
-- pure memory-read vs memory-write/RMW distinction;
-- exact base/index/scale/displacement and width reporting;
-- address provenance separate from loaded-value provenance;
-- unknown/dynamic memory read refusal;
-- Transform/source/stack/home alias refusal;
-- memory write/RMW refusal;
-- authenticated immutable/read-only image load admission only if such a rule is actually implemented and fully proven;
-- exact destination zero/upper-lane semantics for any newly supported load width;
-- flags preserved by MOV when appropriate;
-- selected/post-write/other-prewrite loaded-tag propagation;
-- one path failing at the MOV still refuses the entire c27 target;
-- c27 exact JA edges/fan-out regression;
-- c26 CMP regression;
-- c25 full large-table validation / genuine missing-entry regression;
-- c24 no-unwind safeguards;
-- c23 call carrier, c22 TEST/JE, c21 same-field read, c20 EDI provenance and c19 Transform protection.
+- exact 8-byte source wholly inside non-writable PE section + non-writable mapped page;
+- writable section refusal;
+- writable/COW/guard/noaccess mapped-page refusal;
+- cross-page/cross-section/overflow refusal;
+- wrong image/allocation-base refusal;
+- known mutable loader-table/range refusal if such classification is implemented;
+- guarded first/second 8-byte read equality and mismatch/failure refusal without raw-value logging;
+- tag0 assignment only after all structural/stability gates;
+- no tag0 merely from image address or address-component tags0;
+- full64 RAX overwrite kills prior selected tag only after admitted load;
+- flags/other registers preserved;
+- next exact barrier propagation after an admitted load;
+- one unsafe JA leg still refuses whole target;
+- c28 MOV operand/address regression;
+- c27 JA fan-out regression;
+- c26 CMP, c25 large-table, c24 no-unwind and c23-c19 provenance/protection regressions.
 
-Run the relevant full build/regression chain. Update a successor analysis/result file, `docs/PROJECT_STATE.md`, `docs/CODEX_RESULT.md`, and reusable confirmed/corrected facts in `deluxxxe-dev/MSM2-Wisdoms` when accessible.
+Run the relevant full build/regression chain. Update `analysis/`, `docs/PROJECT_STATE.md`, `docs/CODEX_RESULT.md`, and reusable Wisdoms facts when appropriate.
 
-If authenticated current-code/static evidence after adding MOV diagnostics is sufficient, do not request another runtime test by habit. If actual MOV operand/address metadata is genuinely unavailable outside the guarded live snapshot, emit only the minimal MOV/next-boundary fields and request the shortest A/E-style capture necessary. Commit and push all authorized changes to the current development line.
+If authenticated static/current-code metadata is sufficient to prove/refuse the exact image source and determine the next barrier, do not request a runtime run by habit. If the current page protection/stable-value evidence exists only in the live process, emit the minimum new source-protection/stability/next-barrier records and request one shortest A/E-style capture. Commit and push all authorized changes to the current development line.
