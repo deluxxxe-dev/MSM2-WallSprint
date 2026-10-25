@@ -1,3 +1,135 @@
+# Codex result — c30 pinned writable-image load with unknown may-top7
+
+Branch **codex/v01c20-edi-value-provenance**; accepted task base **bd120c5**.
+Implementation **f97d38f95d0123541e0abf0cf0654dffa24430f9**. Version **v0.1c30 / package0.1.48**.
+Outputs **MSM2-WS-v0.1c30.zip**, **MSM2-WS-v0.1c30-source.zip**,
+**MSM2-WS-v0.1c30.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C30_RELEASE.json** (final hashes/sizes/source-snapshot commit).
+
+## Accepted input / decision
+
+Read AGENTS/manual/rules/workspace/state/NEXT, referenced compact runtime and
+relevant source/contracts; refreshed Wisdoms and read instructions/common manual/
+WS/engine/method references. Fetched/fast-forwarded intended WS branch only,
+no WS main merge/reset/force push; original5 untracked legacy artifacts retained.
+
+VERIFIED-RUNTIME c29: exact source0xC2D2580 is readable/writable/nonexec .data
+0x9B24000..0xC565A28/0xC0000040 on current committed same-image MEM_IMAGE/
+PAGE_READWRITE. C29 tag0 rule correctly refused BEFORE value reads (0), not
+proof of observed taint. C28 exact7byte full64 RAX <- [RCX+0x100], current same
+image-root16 RCX source/tags0; prior RAX selected1. C25 full527161-entry table/
+queried no-entry, c26 CMP tag0 and c27 short JA both forward edges remain accepted.
+
+**Implemented only exact-load abstract top continuation; actual next boundary
+pending.** Loaded dependence is unknown upper bound7, never measured1/2/4,
+not tag0, constant/pointer/type/lifetime proof or killed selected dependence.
+No qword read/value sample/log/hash/numerical interpretation/chase is used.
+The accepted compact evidence stops at this MOV; next actual opcode/bytes are
+absent from the repository. A minimum guarded next-boundary capture is needed;
+no undirected raw body/qword request or habitual repetition of c29 tag0 test.
+
+## Implementation / files
+
+- read_target_identity.hpp: distinct ReadUnknownLoad and pre-stop path/edge/
+  actual category-tag boundary records; explicit top=1|2|4=7; optional pinned
+  unknown policy is explicitly selected by production, not a generic load grant.
+- rdx_source_contract.cpp: only existing exact MOV/source form/current parent
+  origin/tags can enter the rule. Before and after bounded walk, authenticated
+  PE source section/range/flags must match accepted readable/writable/nonexec
+  .data exactly, unique full8byte containment/no overlap, explicitly checked
+  direct loader directories disjoint. Current whole8byte mapping must still
+  be committed same-image MEM_IMAGE/PAGE_READWRITE with valid bounds. Exact
+  PE/page equality and target-code recheck required, even on a later barrier.
+- Existing c29 readonly/value policy remains byte-for-byte unchanged and records
+  its structural readonly refusal separately. C30 uses its bounded PE/page
+  classifier solely for metadata, never begin/finish value reads. Actual page
+  outside this narrow accepted policy refuses; no permission broadening.
+- Only RAX abstract contents become opaque unknown(globalRoot16,source), tags7.
+  Unknown kind is not pointer/constant. All other GPR/XMM/flags/SP/memory remain.
+  Selected bit1 is still possible; no claim that selected dependence is killed.
+- Identity carrier masks and actual three-category tags are different domains.
+  Convert a symbolic path through current entry tags exactly once BEFORE injecting
+  intrinsic top7. Already-actual caller walks do not remap; other JA leg normalizes
+  before merging. This prevents all-entry-tags0 from erasing unknown dependence.
+  Existing register-only propagation/zero precision and JA tag checks retained.
+- Exact first unsupported effect retains RVA/mnemonic/reason/path/incoming JA
+  edge and GPR/XMM/flags state immediately before that instruction. Both legs
+  required; current source disagreement, next memory/stack/CALL/indirect/partial/
+  branch/crossing/cap/code/metadata/runtime failures still refuse whole target.
+- writer_entry_snapshot.cpp: compact UNKNOWN_LOAD / LEAF_BARRIER / BARRIER_TAGS
+  telemetry plus existing CFG/identity/safety. Source-value reads explicitly0;
+  upper-bound tags distinct from precise provenance or observed taint. Existing
+  two parent passes/reset seeds/code equality and current caller checks retained.
+- read_target_identity_smoke.cpp:8 new groups,52 identity total; read/call21 and
+  all c19-c29/native regressions retained. Updated version/info/README/TEST/BUILD,
+  package metadata, accepted c29 source mirror, c30 design/gate/index, AGENTS/
+  PROJECT_STATE. **CODEX_NEXT preserved byte-for-byte**.
+
+All target begin/end/hash checks still require both modeled normal RETs under
+unchanged target0x2CF7FE0/1JA/2paths/128bytes/32unique instructions/64visits,
+plus final code/runtime coverage. Returned category summaries union both paths,
+keeping differences explicit. No whole-writer/effect certificate or write gate
+is granted by either local load success or owned-fixture target completion.
+
+## Validation
+
+- Windows x64 full warnings-as-errors build PASS.
+- **13 portable +7 DLL/logger +192 hooks/native/contracts/workspace =212 public
+  PASS records /5 optional private-input SKIP**, all commands exit0 on first
+  full attempt. No native assertion/deadline/cleanup rule relaxed.
+- New fixtures: exact source writable top-only/no value reads vs unchanged c29
+  tag0 refusal; RAX incoming0..7 and all-entry-tags0 top preservation/copy/later
+  zero; GPR/XMM/flags/SP preservation and existing propagation; wrong source/
+  destination/width/store/RMW/partial/XMM/index/segment/address32/chase refusal;
+  missing/conflicting/tainted parent evidence and actual caller disagreement;
+  PE/page/code/runtime change refusal; full527161-entry table; exact next barrier/
+  path/tag-state and unsafe second leg; union of different both-return tags.
+  Source qword callbacks deliberately fail, proving no hidden read is required.
+- Provisional source ZIP extracted fresh, independent full build PASS; **127
+  focused entry/c14-c30 +7 DLL/logger +13 workspace =147 separate PASS records**,
+  no private skips; standalone package verifier PASS separately. Do not add147
+  duplicates to212. Final report-only refresh retains identical tested native/
+  tool inputs and separately rechecks standalone package.
+- Static byte checks preserve original scalar/CMP/JA/MOV-descriptor helpers,
+  entire c29 readonly/value policy, complete c25 table/lookup/snapshot block,
+  native orientation/lifecycle/ABI/assertions, workspace/updater/shared launchers
+  and NEXT. No environment/SF/ordinary MOD implementation changed.
+- Final archive checks: CRC/hash/version/new DLL diagnostic/refusal markers,
+  all current sources/docs/analysis/helpers/licenses, one virtual active install
+  script, no active source script or compiled/private game-body payload.
+- Known cloud Wine winedevice.exe startup diagnostics occur; final commands
+  nevertheless exit0. Synthetic fixtures and cloud checks are not real-game PASS.
+
+Wisdoms **d5a7dda31816d5750d4a5f0f19902f9838051fbe** pushed: accepted c29 writable
+source refusal, exact c30 abstract-top scope, carrier/category domain separation,
+upper-bound vs observed-taint distinction and current proof/ownership limits.
+Existing SF shared knowledge retained. No raw private log/body/value published.
+
+## Safety / minimum human action
+
+writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/
+downstream_conflicts_proven_absent0; Position/source-position/input/movement
+writes0; producer0x351EB00 deferred. No game ABI, new hook, PAGE_GUARD/data-page
+mutation or gameplay/adhesion/camera/animation/physics change. Existing orientation
+source writes remain governed by unchanged native gates; separate from denied
+new translation/source-position writes.
+
+Top7 means every tracked subset remains possible, not precise value provenance,
+semantic type/pointer identity/constantness/immutability or observed dependence.
+A completed target would not prove writer XYZ/W causality, cross-invocation
+feedback, storage ownership, lifetime/exclusivity/conflict absence or writability.
+
+After verified push: close game/shared Overstrike, run installed
+**MSM2-WS\Update-WS.cmd**. Shared UI **Install mods -> Run modded game**.
+A/cardinal~3sec -> fully end WallRun -> move/fast-travel -> E/diagonal~3sec,
+both below unchanged5sec limit. Return newest private
+**MSM2-WS\logs\MSM2-WS-v0.1c30-YYYYMMDD-HHMMSS.log**. Minimum new keys:
+MOVEMENT_CALLEE_READ_UNKNOWN_LOAD / LEAF_BARRIER / LEAF_BARRIER_TAGS / LEAF_CFG
+plus existing JA/current identity/safety/cleanup. No raw qword/full body/public
+runtime log needed. Desktop launchers launch only, not update/build.
+
+---
+
 # Codex result — c29 exact image qword current-proof rule, actual mapping pending
 
 Branch **codex/v01c20-edi-value-provenance**; accepted task base **822993e**.
