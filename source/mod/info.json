@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.51",
-  "description": "WallSprint v0.1c33 classifies pinned MOVSXD0x2CF7FF4 and conditionally models only verified reg32-to-full64 sign extension, with opaque non-pointer result and conservative source-parent tags. Memory sources remain refused. C30/C32 state and all safety gates preserved.",
+  "version": "0.1.52",
+  "description": "WallSprint v0.1c34 classifies pinned SHL0x2CF7FF7 including width/count masking/flags, conditionally modeling only constant-count register32/64 forms with conservative undefined-flag top. CL/partial/memory forms refuse. C30-C33 and all safety gates preserved.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

@@ -1,3 +1,15 @@
+## Current c33 accepted / c34 conditional SHL count and flags
+
+VERIFIED-RUNTIME V01C33_RUNTIME_RESULT.md: MOVSXD r8,r8d at0x2CF7FF4 modeled,
+tags0; next SHL0x2CF7FF7, operands/count UNKNOWN. C34 classifies exact encoding,
+width/count/access/flags/current-parent tags and only models pinned canonical
+register32/64 statically known count. Mask63/31; count0 operand/flags unchanged
+with32bit parent zero-extension; nonzero undefined AF/OF conservatively inject
+aggregate top7. CL/partial/memory/SP refuse. No value reads. All prior c30-c33,
+all-path/RET/current-code/runtime/caps/ownership/write gates remain. Sources
+V01C33_RUNTIME_RESULT.md / V01C34_SHL_FLAGS.md; earlier pending c33/c32 notes
+below are historical and superseded by accepted actual evidence above.
+
 ## C32 accepted / c33 pinned MOVSXD conditional rule prepared
 
 VERIFIED-RUNTIME c32 exact YMM0 load is modeled (low/high7/above256zero/no data

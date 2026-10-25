@@ -959,7 +959,7 @@ void configure(const Spec &s, Gate validate) noexcept {
         page.protect=mbi.Protect;page.allocationProtect=mbi.AllocationProtect;return true;
       };
       auto proof=ws::rdx::authenticateReadTarget(nc.instructionVerified && s.imageSize<=UINT32_MAX,
-          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner,entryTags,queryImage,true,true,true);
+          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner,entryTags,queryImage,true,true,true,true);
       if (expected && (!proof.stable || proof.scanBytes!=expected->scanBytes ||
           std::memcmp(proof.snapshot.data(),expected->snapshot.data(),proof.scanBytes))) {
         proof.admitted=false;proof.load.admitted=false;proof.unknownLoad.admitted=false;proof.mov.loadedMayTags=7;proof.size=0;proof.reason="target_code_changed_between_tag_prepass_and_reproof";
@@ -1435,6 +1435,37 @@ void configure(const Spec &s, Gate validate) noexcept {
              "memory_load_semantics_added=0 loaded_value_tags_known=0 loaded_may_top=0x%x pointer_chase=0 raw_values=0 effect_certificate=0",
              sm.site,unsigned(sm.parentState),sm.samples,unsigned(sm.addressExact),unsigned(sm.addressSame),sm.addressClass,
              sm.addressRoot,(long long)sm.addressOffset,sm.addressTags,sm.aliasMayMask,sm.loadedMayTags);
+    const auto &sh=identity.shift;const auto &hm=sh.detail;
+    writeLog("MOVEMENT_CALLEE_READ_SHL site_rva=0x%x decoded=%u instruction=%s bytes=%u encoding=%s encoding_known=%u operands=%u "
+             "destination_bits=%u destination_parent=%d full64=%u zero_extend32=%u partial=%u count_source=%s count_known=%u "
+             "encoded_count_bits=%u encoded_count=%u count_mask=0x%x effective_count=%u count_class=%s count_parent=%d "
+             "tags_known=%u destination_value_tags_known=%u destination_tags=0x%x count_tags=0x%x result_tags=0x%x operand_unchanged=%u "
+             "memory_read=%u memory_write=%u memory_RMW=%u GPR_writes=0x%x partial_GPR_writes=0x%x vector_writes=0x%x SP_write=%u "
+             "semantic_modeled=%u snapshot_stable=%u current_code_rechecked=%u raw_values=0 no_value_reads=1 effect_certificate=0 reason=%s",
+             hm.site,unsigned(hm.decoded),hm.mnemonic,hm.instructionBytes,sh.encoding,unsigned(sh.encodingKnown),hm.operandCount,
+             sh.destinationBits,sh.destinationParent,unsigned(sh.full64),unsigned(sh.zeroExtend32),unsigned(sh.partial),sh.countSource,
+             unsigned(sh.countKnown),sh.encodedCountBits,sh.encodedCount,sh.countMask,sh.effectiveCount,sh.countClass,sh.countParent,
+             unsigned(sh.tagsKnown),unsigned(sh.tagsKnown && sh.destinationParent>=0),sh.destinationTags,sh.countTags,sh.resultTags,unsigned(sh.operandUnchanged),
+             unsigned(hm.memoryRead),unsigned(hm.memoryWrite),unsigned(hm.memoryRmw),hm.fullGprWrites,hm.partialGprWrites,hm.xmmWrites,
+             unsigned(hm.stackPointerWrite),unsigned(sh.modeled && identity.stable && identity.unknownLoad.admitted),unsigned(identity.stable),
+             unsigned(identity.unknownLoad.targetCodeRechecked),hm.reason);
+    writeLog("MOVEMENT_CALLEE_READ_SHL_FLAGS site_rva=0x%x decoded_eflags=0x%llx defined_mask=0x%x undefined_mask=0x%x preserved_mask=0x%x "
+             "mask_CF1_PF4_AF16_ZF64_SF128_OF2048=1 count_dynamic=%u defined_flag_may_tags=0x%x pre_flags_tags=0x%x post_flags_tags=0x%x "
+             "aggregate_undefined_top7=1 other_flags_preserved=1 CF_rule=last_shifted_out OF_count1_rule=result_MSB_xor_CF "
+             "SF_ZF_PF_rule=result AF_nonzero=undefined numerical_flag_values=unknown raw_values=0",
+             hm.site,(unsigned long long)hm.decodedEflags,sh.flagsDefined,sh.flagsUndefined,sh.flagsPreserved,unsigned(sh.flagsDynamic),
+             sh.definedFlagTags,sh.flagsBefore,sh.flagsAfter);
+    for (unsigned j=0;j<std::min(hm.operandCount,2u);++j) {
+      const auto &o=hm.operands[j];
+      writeLog("MOVEMENT_CALLEE_READ_SHL_OPERAND site_rva=0x%x index=%u kind=%s register=%s parent=%d width=%u access=%u "
+               "register_tags=0x%x base=%s base_tags=0x%x memory_index=%s index_tags=0x%x scale=%u displacement=%lld segment=%s address_bits=%u raw_values=0",
+               hm.site,j,o.kind,o.name,o.parentGpr,o.width,o.access,o.registerTags,o.base,o.baseTags,o.index,o.indexTags,o.scale,
+               (long long)o.displacement,o.segment,hm.addressWidth);
+    }
+    writeLog("MOVEMENT_CALLEE_READ_SHL_ADDRESS site_rva=0x%x parent_state=%u samples=%u address_exact=%u same_address_all_samples=%u "
+             "class=%s root=%d offset=%lld address_component_tags=0x%x alias_may_mask=0x%x memory_semantics_added=0 raw_values=0",
+             hm.site,unsigned(hm.parentState),hm.samples,unsigned(hm.addressExact),unsigned(hm.addressSame),hm.addressClass,hm.addressRoot,
+             (long long)hm.addressOffset,hm.addressTags,hm.aliasMayMask);
     const auto &unknown=identity.unknownLoad;
     writeLog("MOVEMENT_CALLEE_READ_UNKNOWN_LOAD site_rva=0x%x enabled=%u attempted=%u source_rva=0x%x width=8 "
              "metadata_passed=%u metadata_rechecked=%u PE_metadata_equal=%u page_metadata_equal=%u target_code_rechecked=%u "

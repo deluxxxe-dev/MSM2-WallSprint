@@ -160,8 +160,21 @@ struct ReadSignExtendContract {
   unsigned sourceBits{},destinationBits{},sourceTags{},resultTags{};
   const char *encoding="unsupported";
 };
+inline constexpr std::uint32_t readIdentityShift=0x2cf7ff7;
+// Arithmetic EFLAGS bit positions, not entry-carrier masks. Undefined flags
+// inject intrinsic may-top into the aggregate; never treat them as tag0.
+struct ReadShiftContract {
+  ReadMovContract detail{};
+  bool isShl{},encodingKnown{},countKnown{},registerForm{},full64{},zeroExtend32{},
+      partial{},tagsKnown{},modeled{},operandUnchanged{},flagsDynamic{};
+  int destinationParent=-1,countParent=-1;
+  unsigned destinationBits{},encodedCountBits{},encodedCount{},countMask{},effectiveCount{},
+      destinationTags{},countTags{},resultTags{},flagsBefore{},flagsAfter{},definedFlagTags{},
+      flagsDefined{},flagsUndefined{},flagsPreserved{};
+  const char *encoding="unsupported",*countSource="unknown",*countClass="unknown";
+};
 struct ReadTargetIdentity {
-  bool signExtendEnabled{},vector256Enabled{},enabled{}, admitted{}, missingRuntime{}, stable{}, tableValid{};
+  bool shiftEnabled{},signExtendEnabled{},vector256Enabled{},enabled{}, admitted{}, missingRuntime{}, stable{}, tableValid{};
   bool directoryPairValid{}, directoryRangeInImage{}, directorySizeDivisible{},
       tableBudgetAdmitted{}, entryCapExceeded{}, byteCapExceeded{},
       validationSkippedByCap{}, tableReadFailed{}, tableReadComplete{}, lookupQueried{};
@@ -174,6 +187,7 @@ struct ReadTargetIdentity {
   ReadMovContract mov{};
   ReadVectorContract vector{};
   ReadSignExtendContract signExtend{};
+  ReadShiftContract shift{};
   ReadImageLoad load{};
   ReadUnknownLoad unknownLoad{};
   ReadLeafBoundary boundary{};
@@ -187,5 +201,5 @@ struct ReadTargetIdentity {
 ReadTargetIdentity authenticateReadTarget(bool buildAndCallVerified,
     std::uint32_t target, std::uint32_t imageSize, IdentityRead,
     IdentityLookup, void *context, const ReadEntryTags *entryTags = nullptr,
-    IdentityPageQuery pageQuery = nullptr, bool pinnedUnknownLoad = false, bool pinnedVector256 = false, bool pinnedSignExtend = false) noexcept;
+    IdentityPageQuery pageQuery = nullptr, bool pinnedUnknownLoad = false, bool pinnedVector256 = false, bool pinnedSignExtend = false, bool pinnedShift = false) noexcept;
 }

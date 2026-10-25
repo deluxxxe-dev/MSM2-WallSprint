@@ -1622,6 +1622,81 @@ ReadSignExtendContract describeSignExtend(const cs_insn &ins,csh decoder,const S
       :"target_MOVSXD_full64_from_reg32_supported";
   return s;
 }
+ReadShiftContract describeShift(const cs_insn &ins,csh decoder,const Slice &state,
+    const ReadFlow &flow,bool parent,bool tagsKnown,std::size_t imageSize,std::uint32_t codeBegin,std::uint32_t codeEnd) {
+  ReadShiftContract s{};s.detail=describeMov(ins,decoder,state,flow,parent,imageSize,codeBegin,codeEnd);
+  auto &m=s.detail;const auto &x=ins.detail->x86;s.isShl=ins.id==X86_INS_SHL;s.tagsKnown=tagsKnown;
+  unsigned at=0;
+  while (at<ins.size && (ins.bytes[at]==0x66 || ins.bytes[at]==0x67 || ins.bytes[at]==0x64 || ins.bytes[at]==0x65)) ++at;
+  if (at<ins.size && (ins.bytes[at]&0xf0)==0x40) ++at;
+  const unsigned opcode=at<ins.size?ins.bytes[at]:0;
+  const bool implicit=opcode==0xd0 || opcode==0xd1, immediate=opcode==0xc0 || opcode==0xc1,
+      cl=opcode==0xd2 || opcode==0xd3;
+  s.encodingKnown=s.isShl && at+1<ins.size && ((ins.bytes[at+1]>>3)&7)==4 && (implicit||immediate||cl);
+  if (s.encodingKnown) s.encoding=implicit?"group2_D0_D1_slash4":immediate?"group2_C0_C1_slash4_imm8":"group2_D2_D3_slash4_CL";
+  if (x.op_count==2) {
+    s.destinationBits=x.operands[0].size*8;s.destinationParent=x.operands[0].type==X86_OP_REG?cmpParent(x.operands[0].reg):-1;
+    s.full64=s.destinationBits==64;s.zeroExtend32=s.destinationBits==32;s.partial=s.destinationBits==8 || s.destinationBits==16;
+    s.countMask=s.destinationBits==64?63:(s.destinationBits==8 || s.destinationBits==16 || s.destinationBits==32)?31:0;
+    if (s.encodingKnown && implicit && x.operands[1].type==X86_OP_IMM && x.operands[1].imm==1 && !x.encoding.imm_size) {
+      s.countSource="implicit_1";s.countKnown=true;s.encodedCount=1;
+    } else if (s.encodingKnown && immediate && x.operands[1].type==X86_OP_IMM && x.encoding.imm_size==1 &&
+        x.encoding.imm_offset==ins.size-1 && std::uint8_t(x.operands[1].imm)==ins.bytes[ins.size-1]) {
+      s.countSource="immediate";s.countKnown=true;s.encodedCountBits=8;s.encodedCount=ins.bytes[ins.size-1];
+    } else if (s.encodingKnown && cl && x.operands[1].type==X86_OP_REG && x.operands[1].reg==X86_REG_CL && x.operands[1].access==CS_AC_READ) {
+      s.countSource="CL";s.countParent=1;s.flagsDynamic=true;
+    }
+    for (unsigned j=0;j<2;++j) {
+      auto &op=m.operands[j];
+      if (tagsKnown && op.parentGpr>=0) op.registerTags=flow.g[op.parentGpr];
+      if (tagsKnown && op.baseParent>=0) op.baseTags=flow.g[op.baseParent];
+      if (tagsKnown && op.indexParent>=0) op.indexTags=flow.g[op.indexParent];
+      m.addressTags |= op.baseTags|op.indexTags;
+    }
+  }
+  constexpr unsigned arithmetic=0x8d5,cf=1,af=0x10,of=0x800;
+  if (s.countKnown && s.countMask) {
+    s.effectiveCount=s.encodedCount&s.countMask;s.operandUnchanged=!s.effectiveCount;
+    s.countClass=!s.effectiveCount?"zero":s.effectiveCount==1?"one":s.effectiveCount<s.destinationBits?"multiple_within_width":"at_or_above_width";
+    if (!s.effectiveCount) s.flagsPreserved=arithmetic;
+    else {
+      s.flagsUndefined=af|(s.effectiveCount>1?of:0)|(s.effectiveCount>=s.destinationBits?cf:0);
+      s.flagsDefined=arithmetic&~s.flagsUndefined;
+    }
+  } else if (s.flagsDynamic) {
+    s.countClass="dynamic_masked_count_no_numeric_observation";s.flagsPreserved=arithmetic;
+    s.flagsDefined=arithmetic&~af;s.flagsUndefined=af|of|(s.partial?cf:0);
+  }
+  s.destinationTags=m.memoryOperands?readMayTagTop:tagsKnown && s.destinationParent>=0?flow.g[s.destinationParent]:0;
+  s.countTags=tagsKnown && s.countParent>=0?flow.g[s.countParent]:0;
+  s.resultTags=s.destinationTags|s.countTags;s.flagsBefore=tagsKnown?flow.flags:0;
+  s.definedFlagTags=(s.effectiveCount || s.flagsDynamic)?s.resultTags:0;
+  s.flagsAfter=s.countKnown?(s.effectiveCount?s.definedFlagTags|(s.flagsUndefined?readMayTagTop:0):s.flagsBefore):readMayTagTop;
+  // Only canonical no-prefix register32/64 constant-count encodings. Decode
+  // register effects independently; never let a mnemonic alone grant admission.
+  cs_regs reads{},writes{};std::uint8_t nr{},nw{};
+  bool effects=cs_regs_access(decoder,&ins,reads,&nr,writes,&nw)==CS_ERR_OK;
+  unsigned destinations=0,flagWrites=0;
+  for (unsigned j=0;j<nr;++j) effects &= x.op_count==2 && reads[j]==x.operands[0].reg;
+  for (unsigned j=0;j<nw;++j) {
+    if (writes[j]==X86_REG_EFLAGS) ++flagWrites;
+    else if (x.op_count==2 && writes[j]==x.operands[0].reg) ++destinations;
+    else effects=false;
+  }
+  const unsigned rexBytes=x.rex?1:0;
+  const bool canonical=s.encodingKnown && !x.prefix[0] && !x.prefix[1] && !x.prefix[2] && !x.prefix[3] &&
+      (!x.rex || x.rex==0x40 || x.rex==0x41 || x.rex==0x48 || x.rex==0x49) &&
+      at==rexBytes && ins.size==rexBytes+2+(immediate?1:0) && (ins.bytes[at+1]&0xc0)==0xc0;
+  s.registerForm=canonical && s.countKnown && (s.full64||s.zeroExtend32) && s.destinationParent>=0 &&
+      s.destinationParent!=4 && x.op_count==2 && x.operands[0].type==X86_OP_REG &&
+      x.operands[0].access==(CS_AC_READ|CS_AC_WRITE) && !m.memoryOperands && effects && nr==1 &&
+      destinations==1 && flagWrites==1 && m.fullGprWrites==(1u<<s.destinationParent) &&
+      !m.partialGprWrites && !m.xmmWrites && !m.otherRegisterWrites && !m.stackPointerWrite;
+  m.reason=m.memoryOperands?"target_SHL_memory_RMW_refused":m.stackPointerWrite?"target_SHL_stack_destination_refused"
+      :s.flagsDynamic?"target_SHL_CL_count_not_statically_known_refused":s.partial?"target_SHL_partial_destination_refused"
+      :!s.registerForm?"target_SHL_encoding_count_width_or_effect_unproven":"target_SHL_constant_GPR_form_supported";
+  return s;
+}
 struct LeafCfgResult {
   bool complete{}, effectsDiffer{};
   unsigned size{}, instructions{}, visits{}, paths{};
@@ -1633,6 +1708,7 @@ struct LeafCfgResult {
   ReadMovContract mov{};
   ReadVectorContract vector{};
   ReadSignExtendContract signExtend{};
+  ReadShiftContract shift{};
   ReadLeafBoundary boundary{};
   std::array<ReadLeafOutcome,readLeafPathCap> outcomes{};
 };
@@ -1642,7 +1718,7 @@ struct LeafCfgResult {
 LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
     std::uint32_t codeBegin,std::uint32_t codeEnd,std::uint32_t nextRuntime,
     const ReadEntryTags *entry,bool symbolic,Slice &merged,ReadFlow &mergedTags,std::size_t imageSize,
-    ReadImageLoad *load=nullptr,IdentityRead sourceRead=nullptr,IdentityPageQuery pageQuery=nullptr,void *sourceContext=nullptr,ReadUnknownLoad *unknownLoad=nullptr,bool vector256=false,bool signExtend=false) {
+    ReadImageLoad *load=nullptr,IdentityRead sourceRead=nullptr,IdentityPageQuery pageQuery=nullptr,void *sourceContext=nullptr,ReadUnknownLoad *unknownLoad=nullptr,bool vector256=false,bool signExtend=false,bool shift=false) {
   static_assert(readLeafBranchCap==1 && readLeafPathCap==2 && readLeafVisitCap==64,"Review bounded fan-out before changing budgets");
   LeafCfgResult out{};
   struct Path { Slice slice{};ReadFlow flow{};unsigned pc{},clobberGpr{},clobberXmm{};
@@ -1827,6 +1903,26 @@ LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
         p.clobberGpr |= 1u<<s.destinationParent;s.modeled=s.tagsKnown=true;s.sourceTags=s.resultTags=sourceTags;
         s.detail.reason="target_MOVSXD_pinned_reg32_signextend_full64_modeled";p.pc+=ins.size;continue;
       }
+      if (at==readIdentityShift && ins.id==X86_INS_SHL) {
+        auto &s=out.shift;s=describeShift(ins,d.h,p.slice,p.flow,!symbolic,!symbolic||p.actualTags,imageSize,codeBegin,codeEnd);
+        if (!shift || !s.registerForm) {
+          if (!shift && s.registerForm) s.detail.reason="target_SHL_diagnostic_only_semantics_disabled";
+          return fail(&ins,at,s.detail.reason);
+        }
+        if (!actualize(p)) return fail(&ins,at,"target_SHL_current_tags_required");
+        s=describeShift(ins,d.h,p.slice,p.flow,!symbolic,true,imageSize,codeBegin,codeEnd);
+        // At count0 retain the operand and flags. A 32-bit destination still
+        // zero-extends its parent; drop pointer provenance even for count0.
+        if (s.effectiveCount || s.zeroExtend32) {
+          p.slice.s.g[s.destinationParent]={unknown,-1,0};p.flow.g[s.destinationParent]=s.resultTags;
+          p.clobberGpr |= 1u<<s.destinationParent;
+        }
+        if (s.effectiveCount) {
+          p.flow.flags=s.flagsAfter;p.flow.logicalTestFlags=p.flow.pinnedTestFlags=false;
+          p.flagsKnown=true;p.producer=at;
+        }
+        s.modeled=true;s.detail.reason="target_SHL_pinned_constant_GPR_flags_top_modeled";p.pc+=ins.size;continue;
+      }
       for (unsigned j=0;j<x.op_count;++j) if (x.operands[j].type==X86_OP_MEM)
         return fail(&ins,at,"target_cfg_memory_operand_refused");
       if (ins.id==X86_INS_NOP || ins.id==X86_INS_ENDBR64) { p.pc+=ins.size;continue; }
@@ -1922,7 +2018,7 @@ void sampleVectorBoundary(ReadTargetIdentity &t,const Slice &caller,const ReadFl
   auto child=caller;child.s.g[4]=plus(caller.s.g[4],-8);auto tags=flow;
   auto load=t.load;auto unknown=t.unknownLoad;
   const auto cfg=walkPinnedLeaf(t.snapshot.data(),t.scanBytes,t.codeBegin,t.codeEnd,t.nextRuntime,
-      nullptr,false,child,tags,imageSize,&load,nullptr,nullptr,nullptr,&unknown,t.vector256Enabled,t.signExtendEnabled);
+      nullptr,false,child,tags,imageSize,&load,nullptr,nullptr,nullptr,&unknown,t.vector256Enabled,t.signExtendEnabled,t.shiftEnabled);
   if (cfg.signExtend.detail.decoded) {
     auto fresh=cfg.signExtend;auto &old=t.signExtend;fresh.detail.samples=old.detail.samples+1;
     if (old.detail.samples) {
@@ -1935,6 +2031,20 @@ void sampleVectorBoundary(ReadTargetIdentity &t,const Slice &caller,const ReadFl
       if (!fresh.detail.addressSame) {fresh.detail.addressExact=false;fresh.detail.aliasMayMask |= movUnknown;fresh.detail.addressClass="conflicting_analyzed_signextend_addresses";}
     }
     t.signExtend=fresh;
+  }
+  if (cfg.shift.detail.decoded) {
+    auto fresh=cfg.shift;const auto &old=t.shift;fresh.detail.samples=old.detail.samples+1;
+    if (old.detail.samples) {
+      fresh.destinationTags |= old.destinationTags;fresh.countTags |= old.countTags;fresh.resultTags |= old.resultTags;
+      fresh.flagsBefore |= old.flagsBefore;fresh.flagsAfter |= old.flagsAfter;fresh.definedFlagTags |= old.definedFlagTags;
+      fresh.detail.addressSame=old.detail.addressSame && fresh.detail.addressExact==old.detail.addressExact &&
+          fresh.detail.addressRoot==old.detail.addressRoot && fresh.detail.addressOffset==old.detail.addressOffset;
+      fresh.detail.addressTags |= old.detail.addressTags;fresh.detail.aliasMayMask |= old.detail.aliasMayMask;
+      for (unsigned j=0;j<2;++j) {fresh.detail.operands[j].registerTags |= old.detail.operands[j].registerTags;
+        fresh.detail.operands[j].baseTags |= old.detail.operands[j].baseTags;fresh.detail.operands[j].indexTags |= old.detail.operands[j].indexTags;}
+      if (!fresh.detail.addressSame) {fresh.detail.addressExact=false;fresh.detail.aliasMayMask |= movUnknown;fresh.detail.addressClass="conflicting_analyzed_shift_addresses";}
+    }
+    t.shift=fresh;
   }
   const unsigned visits=v.replayVisits+cfg.visits;
   if (!cfg.vector.detail.decoded || (!t.vector256Enabled && cfg.barrier!=readIdentityVector)) {
@@ -2007,7 +2117,7 @@ bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
         std::memcmp(c.code,proof.snapshot.data(),c.size))
       return fail(begin,"snapshot","read_call_CFG_identity_pin_or_snapshot_mismatch");
     const auto cfg=walkPinnedLeaf(c.code,c.size,c.targetIdentity.codeBegin,c.targetIdentity.codeEnd,
-        c.targetIdentity.nextRuntime,nullptr,false,state,tags,a.imageSize,&c.targetIdentity.load,nullptr,nullptr,nullptr,&c.targetIdentity.unknownLoad,c.targetIdentity.vector256Enabled,c.targetIdentity.signExtendEnabled);
+        c.targetIdentity.nextRuntime,nullptr,false,state,tags,a.imageSize,&c.targetIdentity.load,nullptr,nullptr,nullptr,&c.targetIdentity.unknownLoad,c.targetIdentity.vector256Enabled,c.targetIdentity.signExtendEnabled,c.targetIdentity.shiftEnabled);
     c.visits+=cfg.visits;
     if (!cfg.complete || c.visits>4096)
       return fail(cfg.barrier?cfg.barrier:begin,cfg.mnemonic,c.visits>4096?"read_call_cumulative_visit_cap":cfg.reason);
@@ -3532,10 +3642,10 @@ ReadEntryTags currentReadEntryEvidence(const ReadCallContract &c) noexcept {
   return e;
 }
 ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
-    std::uint32_t imageSize, IdentityRead read, IdentityLookup lookup, void *ctx, const ReadEntryTags *entryTags,IdentityPageQuery pageQuery,bool pinnedUnknownLoad,bool pinnedVector256,bool pinnedSignExtend) noexcept {
+    std::uint32_t imageSize, IdentityRead read, IdentityLookup lookup, void *ctx, const ReadEntryTags *entryTags,IdentityPageQuery pageQuery,bool pinnedUnknownLoad,bool pinnedVector256,bool pinnedSignExtend,bool pinnedShift) noexcept {
   static_assert(readCallByteCap==128 && readCallInstructionCap<=32,
                 "No-unwind admission may not silently widen c23 leaf caps");
-  ReadTargetIdentity out{}; out.enabled=true; out.target=target;out.unknownLoad.enabled=pinnedUnknownLoad;out.vector256Enabled=pinnedVector256;out.signExtendEnabled=pinnedSignExtend;
+  ReadTargetIdentity out{}; out.enabled=true; out.target=target;out.unknownLoad.enabled=pinnedUnknownLoad;out.vector256Enabled=pinnedVector256;out.signExtendEnabled=pinnedSignExtend;out.shiftEnabled=pinnedShift;
   if (entryTags && entryTags->samples) {
     out.entryTagsKnown=true;out.entryTagSamples=entryTags->samples;
     for (unsigned k=0;k<16;++k) if ((entryTags->gpr[k]|entryTags->xmm[k])&~7u) out.entryTagsKnown=false;
@@ -3691,8 +3801,8 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
           Slice merged;ReadFlow tags;
           for (unsigned k=0;k<16;++k) { tags.g[k]=1u<<k;tags.x[k]=1u<<(16+k); }
           const auto cfg=walkPinnedLeaf(out.snapshot.data(),limit,out.codeBegin,out.codeEnd,out.nextRuntime,
-              out.entryTagsKnown?entryTags:nullptr,true,merged,tags,imageSize,&out.load,read,pageQuery,ctx,&out.unknownLoad,out.vector256Enabled,out.signExtendEnabled);
-          out.cmp=cfg.cmp;out.branch=cfg.branch;out.mov=cfg.mov;out.vector=cfg.vector;out.signExtend=cfg.signExtend;out.instructions=cfg.instructions;
+              out.entryTagsKnown?entryTags:nullptr,true,merged,tags,imageSize,&out.load,read,pageQuery,ctx,&out.unknownLoad,out.vector256Enabled,out.signExtendEnabled,out.shiftEnabled);
+          out.cmp=cfg.cmp;out.branch=cfg.branch;out.mov=cfg.mov;out.vector=cfg.vector;out.signExtend=cfg.signExtend;out.shift=cfg.shift;out.instructions=cfg.instructions;
           out.paths=cfg.paths;out.visits=cfg.visits;out.cfgComplete=cfg.complete;
           out.pathEffectsDiffer=cfg.effectsDiffer;out.boundary=cfg.boundary;out.outcomes=cfg.outcomes;
           if (out.unknownLoad.attempted) {

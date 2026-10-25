@@ -12,7 +12,7 @@ struct Image {
   std::array<unsigned char,24> table{};
   std::array<unsigned char,128> code{};
   unsigned snapshots{},codeEndRead{},sourceReads{},queries{};
-  bool signMode{},vectorMode{},unknownMode{},sourceFirstFail{},sourceFinalFail{},sourceChange{},queryFail{},pageChange{},metadataChange{};
+  bool shiftMode{},signMode{},vectorMode{},unknownMode{},sourceFirstFail{},sourceFinalFail{},sourceChange{},queryFail{},pageChange{},metadataChange{};
   std::array<unsigned char,8> sourceData{{11,22,33,44,55,66,77,88}};
   ws::rdx::ReadImagePage page{true,true,ws::rdx::readImageSource&~4095u,0x1000,0x1000000,0x02,0x02,4096};
   static constexpr std::uint32_t sourceImageSize=0xd000000;
@@ -88,7 +88,7 @@ struct Image {
   }
   ws::rdx::ReadTargetIdentity run(bool admitted=true,std::uint32_t t=target,std::uint32_t size=imageSize,const ws::rdx::ReadEntryTags *tags=nullptr) {
     snapshots=codeEndRead=sourceReads=queries=0;
-    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this,tags,query,unknownMode,vectorMode,signMode);
+    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this,tags,query,unknownMode,vectorMode,signMode,shiftMode);
   }
 };
 constexpr std::uint32_t largeFunctionBase=0x1100000;
@@ -1241,5 +1241,126 @@ int main() {
     assert(r.admitted && r.signExtend.modeled && r.validatedEntries==527161 && !large.sourceReads);
   }
   std::puts("PASS: c33 current actual-parent replay and both-path return unions preserve c30/c32 upper-bound effects, full527161 runtime metadata and no ownership/gameplay-write certificate");
+
+  // All shift bytes below are owned fixtures, not an assertion of actual game form.
+  auto shiftAt=[&](Image &f,std::initializer_list<unsigned char> bytes) {
+    signAt(f,{0x4d,0x63,0xc0});f.shiftMode=true;
+    std::copy(bytes.begin(),bytes.end(),f.code.begin()+23);f.code[23+bytes.size()]=0xc3;
+  };
+  {
+    Image f;shiftAt(f,{0x49,0xc1,0xe0,4});r=f.run(true,target,Image::sourceImageSize,&ve);const auto &s=r.shift;
+    assert(r.admitted && s.modeled && s.encodingKnown && s.registerForm && s.full64 && !s.zeroExtend32 &&
+        s.destinationParent==8 && s.destinationBits==64 && s.detail.instructionBytes==4 && s.detail.operandCount==2 &&
+        s.detail.operands[0].access==3 && s.countKnown && s.encodedCountBits==8 && s.encodedCount==4 &&
+        s.countMask==63 && s.effectiveCount==4 && !s.detail.memoryOperands && !f.sourceReads);
+  }
+  std::puts("PASS: c34 exact pinned SHL encoding/operand/access/width/full64 constant-count metadata precedes admission; owned R8 fixture does not assert actual game form");
+  {
+    Image one;shiftAt(one,{0x48,0xd1,0xe3});r=one.run(true,target,Image::sourceImageSize,&ve);
+    assert(r.shift.modeled && !std::strcmp(r.shift.countSource,"implicit_1") && r.shift.encodedCount==1 && !r.shift.encodedCountBits);
+    Image immediate;shiftAt(immediate,{0x48,0xc1,0xe3,1});r=immediate.run(true,target,Image::sourceImageSize,&ve);
+    assert(r.shift.modeled && !std::strcmp(r.shift.countSource,"immediate") && r.shift.encodedCountBits==8);
+    Image cl;shiftAt(cl,{0x48,0xd3,0xe3});r=cl.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && !r.shift.modeled && r.shift.flagsDynamic && !r.shift.countKnown && r.shift.countParent==1 &&
+        !std::strcmp(r.shift.countSource,"CL") && r.shift.detail.operands[1].access==1 && r.barrier==target+23 && !cl.sourceReads);
+  }
+  std::puts("PASS: c34 implicit1/immediate8/CL count sources are distinct; dynamic masked CL refuses with exact parent/access and no numeric observation");
+  {
+    for (unsigned count:{0u,1u,2u,15u,16u,31u,32u,63u,64u,65u,127u,128u,255u}) {
+      Image a;shiftAt(a,{0x48,0xc1,0xe3,(unsigned char)count});r=a.run(true,target,Image::sourceImageSize,&ve);
+      assert(r.admitted && r.shift.modeled && r.shift.countMask==63 && r.shift.effectiveCount==(count&63));
+      Image b;shiftAt(b,{0xc1,0xe3,(unsigned char)count});r=b.run(true,target,Image::sourceImageSize,&ve);
+      assert(r.admitted && r.shift.modeled && r.shift.zeroExtend32 && !r.shift.full64 && r.shift.countMask==31 && r.shift.effectiveCount==(count&31));
+    }
+    Image byte;shiftAt(byte,{0xc0,0xe3,8});r=byte.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && r.shift.partial && r.shift.destinationBits==8 && r.shift.countMask==31 && r.shift.effectiveCount==8 && (r.shift.flagsUndefined&1));
+    Image word;shiftAt(word,{0x66,0xc1,0xe3,16});r=word.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && r.shift.destinationBits==16 && r.shift.countMask==31 && r.shift.effectiveCount==16 && (r.shift.flagsUndefined&1));
+  }
+  std::puts("PASS: c34 width-derived masks63/31 apply to encoded counts including0/32/64/255; partial8/16 and count-at-width CF uncertainty are classified but refused");
+  {
+    for (unsigned bits:{32u,64u}) for (unsigned tagsValue:{0u,1u,2u,4u,7u}) {
+      Image f;
+      if (bits==64) shiftAt(f,{0x48,0xc1,0xe3,3});else shiftAt(f,{0xc1,0xe3,3});
+      const unsigned end=bits==64?27:26;f.code[end]=0xe8;Image::put32(f.code,end+1,0);
+      auto tags=ve;tags.gpr[3]=tagsValue;r=f.run(true,target,Image::sourceImageSize,&tags);
+      assert(r.shift.modeled && !r.admitted && r.boundary.gpr[3]==tagsValue && r.shift.resultTags==tagsValue && !r.shift.countTags &&
+          r.boundary.gpr[0]==7 && r.boundary.gpr[8]==0 && r.boundary.xmm[0]==7 && r.boundary.xmmHigh[0]==7 &&
+          r.boundary.above256Zero[0] && r.boundary.flagsTags==7 && !f.sourceReads);
+    }
+  }
+  std::puts("PASS: c34 register32/64 shift keeps conservative destination-input tags0/1/2/4/7 with constant-count tags0 and no unrelated stale union; c30 RAX and c32 vector halves remain top7");
+  {
+    for (unsigned count:{0u,64u,128u}) {
+      Image f;shiftAt(f,{0x48,0xc1,0xe3,(unsigned char)count});f.code[27]=0xe8;Image::put32(f.code,28,0);auto tags=ve;tags.gpr[3]=2;
+      r=f.run(true,target,Image::sourceImageSize,&tags);
+      assert(r.shift.modeled && r.shift.operandUnchanged && !r.shift.flagsDefined && !r.shift.flagsUndefined &&
+          r.shift.flagsPreserved==0x8d5 && !r.shift.flagsAfter && !r.boundary.flagsTags && r.boundary.gpr[3]==2);
+    }
+    Image priorFlags;shiftAt(priorFlags,{0x48,0xc1,0xe3,0});
+    // Existing proven CMP replaces the MOVSXD fixture, leaving nonzero flags.
+    priorFlags.code[20]=0x39;priorFlags.code[21]=0xd8;priorFlags.code[22]=0x90;
+    r=priorFlags.run(true,target,Image::sourceImageSize,&ve);
+    assert(r.shift.modeled && r.shift.flagsBefore==7 && r.shift.flagsAfter==7 && r.outcomes[0].flagsTags==7);
+    Image parent32;shiftAt(parent32,{0xc1,0xe3,0});r=parent32.run(true,target,Image::sourceImageSize,&ve);
+    assert(r.shift.modeled && r.shift.operandUnchanged && r.shift.zeroExtend32 && !r.shift.flagsAfter && (r.outcomes[0].clobberGpr&8));
+  }
+  std::puts("PASS: c34 masked zero count preserves operand and all arithmetic flags; 64-bit state stays intact while register32 retains architectural parent zero-extension and drops pointer provenance");
+  {
+    Image f;shiftAt(f,{0x48,0xd1,0xe3});auto tags=ve;tags.gpr[3]=2;r=f.run(true,target,Image::sourceImageSize,&tags);
+    assert(r.shift.modeled && r.shift.flagsDefined==0x8c5 && r.shift.flagsUndefined==0x10 && !r.shift.flagsPreserved &&
+        r.shift.definedFlagTags==2 && r.shift.flagsAfter==7 && r.outcomes[0].flagsTags==7 && !r.outcomes[1].flagsTags);
+    Image multiple;shiftAt(multiple,{0x48,0xc1,0xe3,2});r=multiple.run(true,target,Image::sourceImageSize,&ve);
+    assert(r.shift.flagsDefined==0xc5 && r.shift.flagsUndefined==0x810 && !r.shift.definedFlagTags && r.shift.flagsAfter==7);
+  }
+  std::puts("PASS: c34 count1 defines CF/OF/SF/ZF/PF with result dependence and AF unknown; count>1 additionally makes OF unknown, injecting aggregate top7 without observing any flag values");
+  {
+    for (const auto &tail:std::vector<std::vector<unsigned char>>{{0x0f,0x97,0xc3},{0x48,0x11,0xc3},{0x77,0x01},{0x9f}}) {
+      Image f;shiftAt(f,{0x48,0xd1,0xe3});std::copy(tail.begin(),tail.end(),f.code.begin()+26);
+      r=f.run(true,target,Image::sourceImageSize,&ve);
+      assert(!r.admitted && r.shift.modeled && r.boundary.flagsTags==7 && r.barrier==target+26);
+    }
+    Image overwritten;shiftAt(overwritten,{0x48,0xd1,0xe3});const unsigned char clear[]={0x31,0xdb,0xc3};std::copy(std::begin(clear),std::end(clear),overwritten.code.begin()+26);
+    r=overwritten.run(true,target,Image::sourceImageSize,&ve);assert(r.admitted && r.shift.flagsAfter==7 && !r.outcomes[0].flagsTags);
+  }
+  std::puts("PASS: c34 aggregate undefined top7 reaches returns/next consumers conservatively; SETcc/ADC/LAHF/additional branches refuse and only an existing proven full flag replacement can clear dependency");
+  {
+    Image f;shiftAt(f,{0x48,0xc1,0x64,0x81,0xf0,4});auto a=flowThroughIdentity(f,false,false,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    const auto &s=a.readDependency.call.targetIdentity.shift;
+    assert(s.destinationTags==7 && s.resultTags==7 && s.detail.samples && s.detail.parentState && s.detail.memoryRmw && s.detail.memoryRead && s.detail.memoryWrite && !s.modeled &&
+        s.detail.operands[0].scale==4 && s.detail.operands[0].displacement==-16 && s.detail.operands[0].indexTags==7 && !s.detail.addressExact && !f.sourceReads);
+    Image hero;shiftAt(hero,{0x48,0xd1,0x22});a=flowThroughIdentity(hero,false,false,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    assert(a.readDependency.call.targetIdentity.shift.detail.aliasMayMask==ws::rdx::movHero && !a.readDependency.call.targetIdentity.shift.modeled);
+  }
+  std::puts("PASS: c34 memory shift RMW exposes exact base/index/scale/signed displacement/access/alias/current-parent tags but never gains memory semantics or any data reads");
+  {
+    for (const auto &bytes:std::vector<std::vector<unsigned char>>{{0x48,0xd1,0xe4},{0xc1,0xe4,1},{0x66,0xd1,0xe3},{0xd0,0xe3},{0x48,0xc1,0xeb,1},{0x67,0x48,0xd1,0xe3}}) {
+      Image f;signAt(f,{0x4d,0x63,0xc0});f.shiftMode=true;std::copy(bytes.begin(),bytes.end(),f.code.begin()+23);
+      r=f.run(true,target,Image::sourceImageSize,&ve);assert(!r.admitted && !r.shift.modeled && !f.sourceReads);
+    }
+    Image wrong;shiftAt(wrong,{0x48,0xd1,0xe3});wrong.code[23]=0x90;wrong.code[24]=0x48;wrong.code[25]=0xd1;wrong.code[26]=0xe3;
+    r=wrong.run(true,target,Image::sourceImageSize,&ve);assert(!r.admitted && !r.shift.detail.decoded && r.barrier==target+24);
+    Image disabled;shiftAt(disabled,{0x48,0xd1,0xe3});disabled.shiftMode=false;r=disabled.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && r.shift.registerForm && !r.shift.modeled);
+  }
+  std::puts("PASS: c34 SP/partial/wrong-site/wrong-mnemonic/prefix/disabled forms refuse; no generic shift emulation, next-instruction rule or safety relaxation");
+  {
+    Image f;shiftAt(f,{0x49,0xc1,0xe0,4});f.code[27]=0xe8;Image::put32(f.code,28,0);r=f.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && r.signExtend.modeled && r.vector.modeled && r.shift.modeled && r.barrier==target+27 &&
+        r.boundary.path==0 && r.boundary.edgeFrom==target+7 && r.boundary.edgeTarget==target+9 && r.boundary.flagsTags==7);
+    Image unsafe;shiftAt(unsafe,{0x49,0xc1,0xe0,4});unsafe.code[40]=0x50;r=unsafe.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && r.paths==1 && r.shift.modeled && r.boundary.path==1);
+    Image changed;shiftAt(changed,{0x49,0xc1,0xe0,4});changed.changeFinal=true;r=changed.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && !r.stable && !r.unknownLoad.admitted);
+  }
+  std::puts("PASS: c34 exact next CALL/path/edge/pre-state refusal, one unsafe JA leg and changed current code keep full identity/effect gates closed under original128/32/64/1/2 caps");
+  {
+    Image f;shiftAt(f,{0x49,0xc1,0xe0,4});auto a=flowThroughIdentity(f,true,true,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    assert(a.readDependency.call.targetIdentity.shift.modeled && a.readDependency.call.targetIdentity.shift.detail.samples &&
+        a.readDependency.call.returnPaths==2 && a.readDependency.call.returnedFlagsTags==7 && !f.sourceReads);
+    LargeImage large(527161);shiftAt(large,{0x49,0xc1,0xe0,4});r=ws::rdx::authenticateReadTarget(true,target,Image::sourceImageSize,LargeImage::readLarge,LargeImage::lookupLarge,&large,&ve,Image::query,true,true,true,true);
+    assert(r.admitted && r.shift.modeled && r.signExtend.modeled && r.validatedEntries==527161 && !large.sourceReads);
+  }
+  std::puts("PASS: c34 actual-parent replay and both-return flag/category unions retain c19-c33 regressions/full527161 table with no source/Position/input/movement/ownership permission");
 
 }

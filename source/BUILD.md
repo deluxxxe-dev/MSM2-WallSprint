@@ -164,3 +164,13 @@ source-parent tag propagation/full replacement/no stale destination, aliases
 and memory-source refusal, stack/width/site/prefix/other-form refusal, preserved
 YMM halves/flags/other GPRs, next barrier/all-path/code/table and parent replay.
 Actual form remains pending; no memory semantics added. See V01C33_MOVSXD.md.
+
+## c34 exact SHL
+
+v0.1c34/package0.1.52 adds11 owned identity groups (87 total), retaining21
+read/call and all prior regressions. Exact encoding/access/count sources,
+width-derived masks, register32 parent zero-extension vs register64/partial,
+masked zero/one/multiple counts, defined CF/OF/SF/ZF/PF and undefined AF/OF
+aggregate top7, downstream consumers/return merging, CL/stack/memory refusal,
+c30-c33 preservation and both-path/code/table/next barrier/replay.
+See V01C34_SHL_FLAGS.md. Actual SHL form/next barrier still pending.

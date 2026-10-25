@@ -288,3 +288,16 @@ Classify exact encoding, destination operand/width, count source and x86 count-m
 Preserve c30 RAX `0x7`, c32 YMM0 low/high `0x7`, `above256_known_zero=1`, c33 R8 state, both c27 JA paths, runtime/cap/RET constraints, and all ownership/write gates.
 
 Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
+
+## c34 prepared — exact SHL count/data/flag classification
+
+v0.1c34/package0.1.52 adds pinned SHL0x2CF7FF7 diagnostics and conditional
+canonical register32/64 constant-count semantics. Mask63/31 is width-derived;
+count0 keeps operand/flags (register32 parent still zero-extends), nonzero
+counts retain destination dependence and undefined AF/OF yield aggregate7.
+CL/partial/SP/memory RMW refuse, no live numerical count/value observations.
+C30 RAX7/c32 low-high7/abovezero/c33 remain unless a legitimate destination
+write replaces that register. Both JA legs/RET/current-code/runtime/caps and
+all ownership/write gates remain. Actual SHL form/next barrier UNKNOWN, minimum
+SHL/FLAGS/OPERAND/ADDRESS plus next-barrier/CFG/state/safety A/E capture pending.
+NEXT unchanged. See analysis/V01C34_SHL_FLAGS.md and CODEX_RESULT.md.
