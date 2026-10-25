@@ -58,6 +58,24 @@ ReadImageLoad beginReadImageLoad(bool buildAndAddressVerified,std::uint32_t sour
     std::uint32_t imageSize,IdentityRead,IdentityPageQuery,void *) noexcept;
 bool finishReadImageLoad(ReadImageLoad &,std::uint32_t imageSize,
     IdentityRead,IdentityPageQuery,void *) noexcept;
+// Separate from entry-carrier masks: top of the three-category may-tag lattice.
+inline constexpr unsigned readMayTagTop=1u|2u|4u;
+struct ReadUnknownLoad {
+  bool enabled{},attempted{},metadataPassed{},metadataRechecked{},metadataSame{},
+      pageSame{},targetCodeRechecked{},admitted{};
+  const char *reason="pinned_unknown_load_not_attempted";
+};
+struct ReadLeafBoundary {
+  bool tagsKnown{};
+  unsigned path{};
+  std::uint32_t edgeFrom{},edgeTarget{};
+  unsigned flagsTags{};
+  std::array<unsigned,16> gpr{},xmm{};
+};
+bool beginPinnedUnknownLoad(ReadUnknownLoad &,ReadImageLoad &,std::uint32_t,
+    IdentityRead,IdentityPageQuery,void *) noexcept;
+bool finishPinnedUnknownLoad(ReadUnknownLoad &,ReadImageLoad &,std::uint32_t,
+    IdentityRead,IdentityPageQuery,void *) noexcept;
 struct ReadEntryTags {
   bool imageLoadAddressVerified{};
   std::uint32_t imageLoadSource{};
@@ -124,6 +142,8 @@ struct ReadTargetIdentity {
   ReadLeafBranch branch{};
   ReadMovContract mov{};
   ReadImageLoad load{};
+  ReadUnknownLoad unknownLoad{};
+  ReadLeafBoundary boundary{};
   bool entryTagsKnown{}, cfgComplete{}, finalCodeRechecked{}, pathEffectsDiffer{};
   unsigned entryTagSamples{}, paths{}, visits{};
   const char *method = "none", *reason = "target_identity_not_enabled";
@@ -133,5 +153,5 @@ struct ReadTargetIdentity {
 ReadTargetIdentity authenticateReadTarget(bool buildAndCallVerified,
     std::uint32_t target, std::uint32_t imageSize, IdentityRead,
     IdentityLookup, void *context, const ReadEntryTags *entryTags = nullptr,
-    IdentityPageQuery pageQuery = nullptr) noexcept;
+    IdentityPageQuery pageQuery = nullptr, bool pinnedUnknownLoad = false) noexcept;
 }

@@ -12,7 +12,7 @@ struct Image {
   std::array<unsigned char,24> table{};
   std::array<unsigned char,128> code{};
   unsigned snapshots{},codeEndRead{},sourceReads{},queries{};
-  bool sourceFirstFail{},sourceFinalFail{},sourceChange{},queryFail{},pageChange{},metadataChange{};
+  bool unknownMode{},sourceFirstFail{},sourceFinalFail{},sourceChange{},queryFail{},pageChange{},metadataChange{};
   std::array<unsigned char,8> sourceData{{11,22,33,44,55,66,77,88}};
   ws::rdx::ReadImagePage page{true,true,ws::rdx::readImageSource&~4095u,0x1000,0x1000000,0x02,0x02,4096};
   static constexpr std::uint32_t sourceImageSize=0xd000000;
@@ -57,7 +57,7 @@ struct Image {
     }
     if (rva<=f.headers.size() && n<=f.headers.size()-rva) {
       std::memcpy(dst,f.headers.data()+rva,n);
-      if (f.metadataChange && f.sourceReads && rva==0) static_cast<unsigned char*>(dst)[2]^=1;
+      if (f.metadataChange && (f.sourceReads || (f.unknownMode && f.queries)) && rva==0) static_cast<unsigned char*>(dst)[2]^=1;
       return true;
     }
     if (rva>=0x2000 && rva-0x2000<=f.table.size() && n<=f.table.size()-(rva-0x2000)) {
@@ -88,7 +88,7 @@ struct Image {
   }
   ws::rdx::ReadTargetIdentity run(bool admitted=true,std::uint32_t t=target,std::uint32_t size=imageSize,const ws::rdx::ReadEntryTags *tags=nullptr) {
     snapshots=codeEndRead=sourceReads=queries=0;
-    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this,tags,query);
+    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this,tags,query,unknownMode);
   }
 };
 constexpr std::uint32_t largeFunctionBase=0x1100000;
@@ -806,5 +806,150 @@ int main() {
     assert(!r.admitted && !r.load.admitted && r.barrier==target+9 && r.mov.loadedMayTags==7 && !r.size);
   }
   std::puts("PASS: c29 admitted exact load advances only to the next precise barrier; one unsafe leg or final source instability refuses all target identity/effects without widening c27 limits");
+
+  // C30 authored writable-source metadata; the private qword read callback is
+  // deliberately set to fail so any accidental value observation is detectable.
+  auto writableUnknown=[&](Image &f) {
+    exactLoad(f);f.unknownMode=true;f.sourceFirstFail=f.sourceFinalFail=true;
+    constexpr unsigned sec=0x188+80;
+    std::fill(f.headers.begin()+sec,f.headers.begin()+sec+8,0);
+    std::memcpy(f.headers.data()+sec,".data",5);
+    Image::put32(f.headers,sec+8,0xc565a28-0x9b24000);
+    Image::put32(f.headers,sec+12,0x9b24000);Image::put32(f.headers,sec+36,0xc0000040);
+    f.page={true,true,0xc2d2000,0x1000,0x1000000,0x04,0x04,2703360};
+  };
+  {
+    Image f;writableUnknown(f);r=f.run(true,target,Image::sourceImageSize,&evidence);
+    assert(r.admitted && r.cfgComplete && r.paths==2 && r.finalCodeRechecked && r.unknownLoad.admitted &&
+        r.unknownLoad.metadataPassed && r.unknownLoad.metadataRechecked && r.unknownLoad.metadataSame &&
+        r.unknownLoad.pageSame && r.unknownLoad.targetCodeRechecked && r.mov.loadedMayTags==7 && !f.sourceReads && f.queries==2);
+    assert(!r.load.admitted && !r.load.policyPassed && !r.load.valueReadAttempts &&
+        !std::strcmp(r.load.reason,"image_load_section_not_readonly"));
+    // Explicit old readonly policy still refuses the same writable source.
+    f.unknownMode=false;r=f.run(true,target,Image::sourceImageSize,&evidence);
+    assert(!r.admitted && !r.load.admitted && !f.sourceReads && r.barrier==target+9);
+  }
+  std::puts("PASS: c30 exact pinned writable image qword admits only unknown-top effect after current metadata/code recheck with zero source-value reads; c29 tag0 refusal remains unchanged");
+
+  {
+    for (unsigned incoming=0;incoming<=7;++incoming) {
+      Image f;writableUnknown(f);auto tags=evidence;tags.gpr.fill(0);tags.xmm.fill(0);tags.gpr[0]=incoming;
+      // Move the freshly loaded top to another register, clear RAX, then stop.
+      const unsigned char tail[]={0x48,0x89,0xc2,0x31,0xc0,0x8b,0x01};
+      std::copy(std::begin(tail),std::end(tail),f.code.begin()+16);
+      r=f.run(true,target,Image::sourceImageSize,&tags);
+      assert(!r.admitted && r.unknownLoad.admitted && r.barrier==target+21 && r.boundary.tagsKnown &&
+          r.boundary.gpr[0]==0 && r.boundary.gpr[2]==7 && r.mov.loadedMayTags==7 && !f.sourceReads);
+    }
+    // Top7 is intrinsic, not entry-carrier mask bits0/1/2: all entry tags0 still yields top7.
+    for (unsigned subset=0;subset<=7;++subset) assert((subset&ws::rdx::readMayTagTop)==subset);
+  }
+  std::puts("PASS: c30 every possible three-category dependency is contained in top7; incoming RAX0..7 is structurally replaced, top survives copies even with all entry tags0 and only an admitted later zero clears it");
+
+  {
+    Image f;writableUnknown(f);auto tags=evidence;tags.gpr[3]=2;tags.xmm[5]=4;
+    f.code[16]=0x8b;f.code[17]=1;r=f.run(true,target,Image::sourceImageSize,&tags);
+    assert(!r.admitted && r.boundary.tagsKnown && r.boundary.gpr[0]==7 && r.boundary.gpr[3]==2 &&
+        r.boundary.xmm[5]==4 && !r.boundary.gpr[4] && !r.boundary.flagsTags && !f.sourceReads);
+    Image vector;writableUnknown(vector);const unsigned char tail[]={0x66,0x0f,0x6e,0xc0,0x48,0x85,0xc0,0x8b,1};
+    std::copy(std::begin(tail),std::end(tail),vector.code.begin()+16);
+    r=vector.run(true,target,Image::sourceImageSize,&tags);
+    assert(r.barrier==target+23 && r.boundary.xmm[0]==7 && r.boundary.flagsTags==7 && r.boundary.xmm[5]==4);
+  }
+  std::puts("PASS: c30 exact load preserves flags/other GPR/XMM/SP and no memory is touched; existing register moves and TEST conservatively propagate new intrinsic top7 into XMM and flags");
+
+  {
+    const std::vector<std::vector<unsigned char>> wrong={
+      {0x48,0x8b,0x81,8,1,0,0}, {0x48,0x8b,0x99,0,1,0,0}, {0x8b,0x81,0,1,0,0},
+      {0x48,0x89,0x81,0,1,0,0}, {0x48,0x87,0x81,0,1,0,0}, {0x8a,0x81,0,1,0,0},
+      {0xf3,0x0f,0x7e,0x81,0,1,0,0}, {0x48,0x8b,0x84,0x01,0,1,0,0},
+      {0x64,0x48,0x8b,0x81,0,1,0,0}, {0x67,0x48,0x8b,0x81,0,1,0,0}};
+    for (const auto &bytes:wrong) {
+      Image f;writableUnknown(f);std::copy(bytes.begin(),bytes.end(),f.code.begin()+9);
+      r=f.run(true,target,Image::sourceImageSize,&evidence);
+      assert(!r.admitted && !r.unknownLoad.attempted && !f.sourceReads && r.barrier==target+9);
+    }
+    Image chase;writableUnknown(chase);chase.code[16]=0x48;chase.code[17]=0x8b;chase.code[18]=0;
+    r=chase.run(true,target,Image::sourceImageSize,&evidence);
+    assert(!r.admitted && r.unknownLoad.admitted && r.barrier==target+16 && r.boundary.gpr[0]==7 && !chase.sourceReads);
+  }
+  std::puts("PASS: c30 wrong source/form/destination/width, store/RMW/partial/XMM/index/segment/address32 loads cannot borrow the rule; a second dereference of unknown RAX stops without chasing or value reads");
+
+  {
+    for (unsigned defect=0;defect<6;++defect) {
+      Image f;writableUnknown(f);auto bad=evidence;
+      if (defect==0) bad.imageLoadAddressVerified=false;
+      if (defect==1) ++bad.imageLoadSource;
+      if (defect>=2 && defect<=4) bad.gpr[1]=1u<<(defect-2);
+      if (defect==5) bad.samples=0;
+      r=f.run(true,target,Image::sourceImageSize,&bad);assert(!r.admitted && !r.unknownLoad.attempted && !f.sourceReads);
+    }
+    Image f;writableUnknown(f);
+    auto pre=flowThroughIdentity(f,false,false,nullptr,true,true,false,false,false,true,Image::sourceImageSize);
+    auto observed=ws::rdx::currentReadEntryEvidence(pre.readDependency.call);assert(observed.imageLoadAddressVerified);
+    auto conflict=pre.readDependency.call;conflict.gpr[1].same=false;
+    assert(!ws::rdx::currentReadEntryEvidence(conflict).imageLoadAddressVerified);
+    auto a=flowThroughIdentity(f,true,false,&observed,true,false,false,false,false,false,Image::sourceImageSize);
+    assert(!a.readDependency.call.modeledStates && !a.readDependency.flowComplete && !f.sourceReads);
+  }
+  std::puts("PASS: c30 unknown-top eligibility requires current exact same-origin image source, sampled tag0 address and nonconflicting parent proof; actual caller disagreement refuses even after identity passed");
+
+  {
+    for (unsigned defect=0;defect<9;++defect) {
+      Image f;writableUnknown(f);
+      if (defect==0) Image::put32(f.headers,0x188+80+36,0x40000040);
+      if (defect==1) ++f.page.begin,f.page.bytes=1;
+      if (defect==2) f.page.sameAllocation=false;
+      if (defect==3) f.page.protect=0x104;
+      if (defect==4) f.queryFail=true;
+      if (defect==5) f.pageChange=true;
+      if (defect==6) f.metadataChange=true; // mutate metadata on second query below.
+      if (defect==7) f.changeFinal=true;
+      if (defect==8) f.coverageChanges=true;
+      r=f.run(true,target,Image::sourceImageSize,&evidence);
+      assert(!r.admitted && !r.unknownLoad.admitted);
+      assert(!f.sourceReads && r.mov.loadedMayTags==7);
+    }
+    Image noValues;writableUnknown(noValues);noValues.sourceChange=true;
+    r=noValues.run(true,target,Image::sourceImageSize,&evidence);assert(r.admitted && !noValues.sourceReads);
+    LargeImage large(527161);writableUnknown(large);
+    r=ws::rdx::authenticateReadTarget(true,target,Image::sourceImageSize,LargeImage::readLarge,LargeImage::lookupLarge,&large,&evidence,Image::query,true);
+    assert(r.admitted && r.unknownLoad.admitted && r.validatedEntries==527161 && r.metadataBytesRead==6325932 && !large.sourceReads);
+  }
+  std::puts("PASS: c30 current metadata/mapping/protection/code/runtime mismatch refuses; numerical qword content never matters and full527161-entry validation/current code gates remain mandatory");
+
+  {
+    Image next;writableUnknown(next);next.code[16]=0x8b;next.code[17]=1;
+    r=next.run(true,target,Image::sourceImageSize,&evidence);
+    assert(!r.admitted && !r.size && r.unknownLoad.admitted && r.barrier==target+16 &&
+        !std::strcmp(r.mnemonic,"mov") && r.boundary.path==0 && r.boundary.edgeFrom==target+7 &&
+        r.boundary.edgeTarget==target+9 && r.boundary.gpr[0]==7);
+    for (unsigned kind=0;kind<5;++kind) {
+      Image unsafe;writableUnknown(unsafe);
+      if (kind==0) unsafe.code[40]=0x50;
+      if (kind==1) {unsafe.code[40]=0xe8;Image::put32(unsafe.code,41,0);}
+      if (kind==2) {unsafe.code[40]=0xff;unsafe.code[41]=0xe0;}
+      if (kind==3) {unsafe.code[40]=0x75;unsafe.code[41]=0;}
+      if (kind==4) {unsafe.code[40]=0xb0;unsafe.code[41]=0;}
+      r=unsafe.run(true,target,Image::sourceImageSize,&evidence);
+      assert(!r.admitted && !r.cfgComplete && !r.size && r.unknownLoad.admitted && r.paths==1 &&
+          r.barrier==target+40 && r.boundary.path==1 && r.boundary.edgeTarget==target+40 &&
+          r.boundary.gpr[0]==1 && !unsafe.sourceReads);
+    }
+  }
+  std::puts("PASS: c30 next exact refusal retains path/JA edge and complete actual may-tag state before the unsupported instruction; one unsafe other leg still denies whole target span/hash/effects");
+
+  {
+    Image f;writableUnknown(f);f.code[40]=0x31;f.code[41]=0xc0;f.code[42]=0xc3;
+    auto a=flowThroughIdentity(f,true,true,&evidence,true,true,false,false,false,true,Image::sourceImageSize);
+    const auto &call=a.readDependency.call;assert(call.returnPaths==2 && call.pathEffectsDiffer && !f.sourceReads);
+    for (unsigned bit=0;bit<3;++bit) assert((call.outcomes[0].returnedGpr[bit]&1) &&
+        !(call.outcomes[1].returnedGpr[bit]&1) && (call.returnedGpr[bit]&1));
+    Image reverse;writableUnknown(reverse);reverse.code[16]=0x31;reverse.code[17]=0xc0;reverse.code[18]=0xc3;
+    a=flowThroughIdentity(reverse,true,true,&evidence,true,true,false,false,false,true,Image::sourceImageSize);
+    assert(!(a.readDependency.call.outcomes[0].returnedGpr[0]&1) && (a.readDependency.call.outcomes[1].returnedGpr[0]&1) &&
+        !(a.readDependency.call.returnedGpr[1]&1) && !(a.readDependency.call.returnedGpr[2]&1));
+  }
+  std::puts("PASS: c30 both normal RET effects remain explicit; conservative union retains all possible loaded categories and selected dependence, with narrowing only through already-admitted later register effects on every relevant path");
 
 }

@@ -327,3 +327,17 @@ SP unchanged
 No raw qword read/value interpretation is needed. Because `0x7` includes selected tag1, this does **not** claim that the prior selected dependence is killed; it merely avoids inventing precision while allowing the existing bounded c27 two-path proof to advance to the next exact unsupported effect.
 
 Do not generalize this rule to arbitrary memory loads, do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
+
+## c30 prepared — pinned unknown-top continuation
+
+v0.1c30/package0.1.48 implements only accepted MOV0x2CF7FE9/source0xC2D2580
+as an unknown loaded value with may-depend top7 (not observed taint). No qword
+read/log/numeric interpretation/pointer chase. C29 tag0/writable-source refusal
+remains. Exact current parent/source/accepted PE/page metadata and target code
+are rechecked, retaining all c27 both-path/RET/caps/runtime gates. The identity
+walk converts entry-carrier masks to actual tags before intrinsic top injection;
+actual c23 walks retain all possible returned categories and path differences.
+Next unsupported op is logged with exact path/edge/pre-instruction GPR/XMM/flags
+tags; actual next barrier/full target result still UNKNOWN. Minimal A~3s/end/
+move/E~3s capture needed; no full private body/qword requested. Detailed policy
+in analysis/V01C30_UNKNOWN_LOAD.md; NEXT preserved, all gameplay/ownership gates0.

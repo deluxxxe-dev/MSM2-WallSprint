@@ -126,3 +126,13 @@ allocation/type/state/protection, source and metadata/code equality, guarded
 first/second read failures, current caller address/tag proof, exact full64 RAX
 replacement, preserved flags/other registers, and next-barrier/unsafe-leg refusal.
 No private game bytes/value fixture needed; details analysis/V01C29_IMAGE_LOAD_PROOF.md.
+
+## c30 pinned unknown-top load
+
+v0.1c30/package0.1.48 adds8 owned groups to test_read_target_identity.sh
+(52 total), with21 read/call groups and all c19-c29/native regressions retained.
+Covers intrinsic may-top7 independent of all entry tags/incoming RAX0..7, exact
+source/form/current-parent and PE/page/code rechecks, zero qword reads, register/
+flag preservation/propagation, wrong forms/chases, next path/edge/tag-state
+barriers, unsafe leg and conservative returned-tag unions. Existing c29 writable
+source tag0 refusal remains. Details analysis/V01C30_UNKNOWN_LOAD.md.

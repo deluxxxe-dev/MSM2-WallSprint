@@ -1,3 +1,17 @@
+## C29 accepted / c30 pinned unknown-top continuation prepared
+
+VERIFIED-RUNTIME c29: source0xC2D2580 is writable .data0x9B24000..0xC565A28/
+0xC0000040 and current same-image MEM_COMMIT/MEM_IMAGE/PAGE_READWRITE. Tag0
+route refused BEFORE value reads (0). This rejects immutable-source precision,
+not proof of observed taint. C30 models only exact full64 RAX image load as
+unknown may-top7 with opaque non-pointer origin, without reading any value.
+Convert symbolic entry-carrier masks to actual category tags before intrinsic
+top injection; all entry tags0 must still yield7. Exact current source/parent/
+PE/page/code gates and both-path RET/caps/runtime checks remain. Actual next
+barrier/path/tag state UNKNOWN; ownership/game-write gates0. Sources:
+V01C29_RUNTIME_RESULT.md / V01C30_UNKNOWN_LOAD.md. Earlier checkpoints below
+are historical; their pending c29 source state is superseded by accepted result.
+
 ## C28 accepted / c29 exact image-load proof prepared
 
 VERIFIED-RUNTIME: MOV0x2CF7FE9 is full64 RAX <- [RCX+0x100], flags preserved;

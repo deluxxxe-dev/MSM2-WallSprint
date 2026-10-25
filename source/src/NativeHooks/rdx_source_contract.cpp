@@ -1483,6 +1483,7 @@ struct LeafCfgResult {
   ReadCmpContract cmp{};
   ReadLeafBranch branch{};
   ReadMovContract mov{};
+  ReadLeafBoundary boundary{};
   std::array<ReadLeafOutcome,readLeafPathCap> outcomes{};
 };
 // Exactly one pinned JA, both forward legs, no generic CFG/recursive expansion.
@@ -1491,11 +1492,28 @@ struct LeafCfgResult {
 LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
     std::uint32_t codeBegin,std::uint32_t codeEnd,std::uint32_t nextRuntime,
     const ReadEntryTags *entry,bool symbolic,Slice &merged,ReadFlow &mergedTags,std::size_t imageSize,
-    ReadImageLoad *load=nullptr,IdentityRead sourceRead=nullptr,IdentityPageQuery pageQuery=nullptr,void *sourceContext=nullptr) {
+    ReadImageLoad *load=nullptr,IdentityRead sourceRead=nullptr,IdentityPageQuery pageQuery=nullptr,void *sourceContext=nullptr,ReadUnknownLoad *unknownLoad=nullptr) {
   static_assert(readLeafBranchCap==1 && readLeafPathCap==2 && readLeafVisitCap==64,"Review bounded fan-out before changing budgets");
   LeafCfgResult out{};
+  struct Path { Slice slice{};ReadFlow flow{};unsigned pc{},clobberGpr{},clobberXmm{};
+    bool flagsKnown{},actualTags{};std::uint32_t producer{},edgeFrom{},edgeTarget{}; };
+  Path *current=nullptr;unsigned currentPath=0;
+  // A carrier mask is NOT a may-tag set. Convert exactly once before injecting
+  // intrinsic top7; subsequent admitted operations use the actual three-bit lattice.
+  auto actualize=[&](Path &p) {
+    if (!symbolic || p.actualTags) return true;
+    if (!entry || !entry->samples) return false;
+    ReadFlow basis;basis.g=entry->gpr;basis.x=entry->xmm;
+    for (unsigned k=0;k<16;++k) { p.flow.g[k]=carrierTags(p.flow.g[k],basis);p.flow.x[k]=carrierTags(p.flow.x[k],basis); }
+    p.flow.flags=carrierTags(p.flow.flags,basis);p.actualTags=true;return true;
+  };
   auto fail=[&](const cs_insn *ins,std::uint32_t at,const char *why) {
     out.barrier=at;out.reason=why;
+    if (current) {
+      auto tags=*current;
+      out.boundary.path=currentPath;out.boundary.edgeFrom=tags.edgeFrom;out.boundary.edgeTarget=tags.edgeTarget;
+      if (actualize(tags)) {out.boundary.tagsKnown=true;out.boundary.gpr=tags.flow.g;out.boundary.xmm=tags.flow.x;out.boundary.flagsTags=tags.flow.flags;}
+    }
     copyName(out.mnemonic,sizeof(out.mnemonic),ins?ins->mnemonic:"decode");return out;
   };
   if (!code || !limit || limit>readCallByteCap) return fail(nullptr,readIdentityTarget,"target_cfg_byte_cap");
@@ -1504,15 +1522,13 @@ LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
   cs_option(d.h,CS_OPT_DETAIL,CS_OPT_ON);cs_option(d.h,CS_OPT_SKIPDATA,CS_OPT_OFF);
   d.p=cs_malloc(d.h);d.n=1;
   if (!d.p) return fail(nullptr,readIdentityTarget,"target_cfg_decoder_allocation_failed");
-  struct Path { Slice slice{};ReadFlow flow{};unsigned pc{},clobberGpr{},clobberXmm{};
-    bool flagsKnown{};std::uint32_t producer{}; };
   std::array<Path,readLeafPathCap> paths{};
   paths[0].slice=merged;paths[0].flow=mergedTags;
   std::array<std::uint16_t,readCallByteCap> owner{};
   unsigned scheduled=1;
   bool haveReturn=false;
   for (unsigned path=0;path<scheduled;++path) {
-    auto &p=paths[path];
+    auto &p=paths[path];current=&p;currentPath=path;
     for (;;) {
       const auto at=readIdentityTarget+p.pc;
       if (p.pc>=limit) return fail(nullptr,at,"target_cfg_path_falls_outside_allowance_without_RET");
@@ -1529,6 +1545,7 @@ LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
       }
       out.size=std::max(out.size,p.pc+ins.size);
       if (ins.id==X86_INS_RET && ins.size==1 && ins.bytes[0]==0xc3 && !x.op_count) {
+        if (unknownLoad && unknownLoad->enabled && !actualize(p)) return fail(&ins,at,"target_unknown_load_current_tags_required");
         auto &e=out.outcomes[out.paths++];e.ret=at;e.flagsTags=p.flow.flags;
         e.clobberGpr=p.clobberGpr;e.clobberXmm=p.clobberXmm;
         for (unsigned k=0;k<16;++k) for (unsigned bit=0;bit<3;++bit) {
@@ -1573,7 +1590,9 @@ LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
         out.branch.samples=1;out.branch.flagsTags=tags;
         if (tags&7u) return fail(&ins,at,"target_JA_tracked_condition_dependence_refused");
         if (scheduled>=readLeafPathCap) return fail(&ins,at,"target_cfg_path_cap");
-        paths[scheduled]=p;paths[scheduled++].pc=out.branch.taken-readIdentityTarget;
+        paths[scheduled]=p;paths[scheduled].edgeFrom=at;paths[scheduled].edgeTarget=out.branch.taken;
+        paths[scheduled++].pc=out.branch.taken-readIdentityTarget;
+        p.edgeFrom=at;p.edgeTarget=out.branch.fallthrough;
         p.pc=out.branch.fallthrough-readIdentityTarget;out.branch.expanded=true;
         continue;
       }
@@ -1600,6 +1619,16 @@ LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
               entry->imageLoadSource==readImageSource && !entry->gpr[1]
               : base.kind==pointer && base.root==globalRoot && base.off==readImageBaseOrigin && !p.flow.g[1];
           if (!exact || !addressProven || !load) return fail(&ins,at,out.mov.reason);
+          if (unknownLoad && unknownLoad->enabled) {
+            if (symbolic && !beginPinnedUnknownLoad(*unknownLoad,*load,std::uint32_t(imageSize),sourceRead,pageQuery,sourceContext))
+              return fail(&ins,at,unknownLoad->reason);
+            if (!symbolic && (!unknownLoad->admitted || !unknownLoad->targetCodeRechecked || !unknownLoad->metadataSame || !unknownLoad->pageSame))
+              return fail(&ins,at,"target_unknown_load_current_metadata_proof_required");
+            if (!actualize(p)) return fail(&ins,at,"target_unknown_load_current_tags_required");
+            p.slice.s.g[0]={unknown,globalRoot,readImageSource};p.flow.g[0]=readMayTagTop;p.clobberGpr |= 1;
+            out.mov.loadedMayTags=readMayTagTop;out.mov.reason="target_MOV_exact_source_unknown_may_top_modeled";
+            p.pc+=ins.size;continue;
+          }
           if (symbolic) *load=beginReadImageLoad(true,readImageSource,std::uint32_t(imageSize),sourceRead,pageQuery,sourceContext);
           if (symbolic?!load->firstRead:!load->admitted || !load->stable || !load->targetCodeRechecked || !load->firstRead || !load->finalRead || load->source!=readImageSource)
             return fail(&ins,at,load->reason);
@@ -1671,6 +1700,10 @@ void sampleMovBoundary(ReadTargetIdentity &t,const Slice &caller,const ReadFlow 
   if (!cs_disasm_iter(d.h,&cursor,&left,&address,d.p) || d.p->size!=t.mov.instructionBytes) return;
   auto child=caller;child.s.g[4]=plus(caller.s.g[4],-8); // existing natural CALL delta, no live stack read.
   auto fresh=describeMov(*d.p,d.h,child,flow,true,imageSize,t.codeBegin,t.codeEnd);
+  if (t.unknownLoad.admitted && fresh.pureLoad && fresh.addressExact && fresh.addressRoot==globalRoot &&
+      fresh.addressOffset==readImageSource && !fresh.addressTags) {
+    fresh.loadedMayTags=readMayTagTop;fresh.reason="target_MOV_exact_source_unknown_may_top_modeled";
+  }
   if (t.load.admitted && fresh.pureLoad && fresh.addressExact && fresh.addressRoot==globalRoot &&
       fresh.addressOffset==readImageSource && !fresh.addressTags) {
     fresh.loadedMayTags=0;fresh.reason="target_MOV_exact_current_stable_image_load_modeled";
@@ -1739,7 +1772,7 @@ bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
         std::memcmp(c.code,proof.snapshot.data(),c.size))
       return fail(begin,"snapshot","read_call_CFG_identity_pin_or_snapshot_mismatch");
     const auto cfg=walkPinnedLeaf(c.code,c.size,c.targetIdentity.codeBegin,c.targetIdentity.codeEnd,
-        c.targetIdentity.nextRuntime,nullptr,false,state,tags,a.imageSize,&c.targetIdentity.load);
+        c.targetIdentity.nextRuntime,nullptr,false,state,tags,a.imageSize,&c.targetIdentity.load,nullptr,nullptr,nullptr,&c.targetIdentity.unknownLoad);
     c.visits+=cfg.visits;
     if (!cfg.complete || c.visits>4096)
       return fail(cfg.barrier?cfg.barrier:begin,cfg.mnemonic,c.visits>4096?"read_call_cumulative_visit_cap":cfg.reason);
@@ -3213,6 +3246,42 @@ bool finishReadImageLoad(ReadImageLoad &p,std::uint32_t imageSize,
   if (std::memcmp(p.valuePrivate.data(),again,8)) {p.reason="image_load_qword_changed_across_proof";return false;}
   p.stable=p.admitted=true;p.reason="exact_qword_readonly_image_current_window_stable";return true;
 }
+namespace {
+bool pinnedUnknownMetadata(const ReadImageLoad &p,std::uint32_t imageSize) {
+  const auto &page=p.page;
+  return p.source==readImageSource && p.width==8 && p.metadataValid && p.sectionUnique &&
+      p.sectionReadable && p.sectionWritable && !p.sectionExecutable &&
+      p.sectionBegin==0x9b24000 && p.sectionEnd==0xc565a28 && p.sectionFlags==0xc0000040 &&
+      !std::strcmp(p.sectionName,".data") && p.loaderRangesChecked && !p.loaderOverlap &&
+      p.pageQueried && page.sameAllocation && page.rangeInImage && page.state==0x1000 && page.type==0x1000000 &&
+      page.protect==0x04 && page.begin<=readImageSource && page.begin<=imageSize && page.bytes &&
+      page.bytes<=std::uint64_t(imageSize)-page.begin && std::uint64_t(readImageSource)+8<=std::uint64_t(page.begin)+page.bytes &&
+      !p.valueReadAttempts && !p.firstRead && !p.finalRead && !p.admitted;
+}
+}
+bool beginPinnedUnknownLoad(ReadUnknownLoad &u,ReadImageLoad &p,std::uint32_t imageSize,
+    IdentityRead read,IdentityPageQuery query,void *ctx) noexcept {
+  u.attempted=true;u.admitted=false;
+  p=classifyImageLoad(true,readImageSource,imageSize,read,query,ctx);
+  u.metadataPassed=pinnedUnknownMetadata(p,imageSize);
+  u.reason=u.metadataPassed?"pinned_unknown_top_metadata_pending_recheck":"pinned_unknown_top_current_source_metadata_refused";
+  return u.metadataPassed;
+}
+bool finishPinnedUnknownLoad(ReadUnknownLoad &u,ReadImageLoad &p,std::uint32_t imageSize,
+    IdentityRead read,IdentityPageQuery query,void *ctx) noexcept {
+  u.admitted=false;
+  if (!u.enabled || !u.attempted || !u.metadataPassed || u.metadataRechecked) {
+    u.reason="pinned_unknown_top_recheck_state_or_budget_invalid";return false;
+  }
+  u.metadataRechecked=true;
+  const auto now=classifyImageLoad(true,readImageSource,imageSize,read,query,ctx);
+  u.metadataSame=p.metadataBytes==now.metadataBytes && !std::memcmp(p.metadataPrivate.data(),now.metadataPrivate.data(),p.metadataBytes);
+  u.pageSame=now.pageQueried && sameImagePage(p.page,now.page);
+  if (!pinnedUnknownMetadata(now,imageSize) || !u.metadataSame || !u.pageSame) {
+    u.reason="pinned_unknown_top_source_metadata_or_page_changed";return false;
+  }
+  u.reason="pinned_unknown_top_metadata_rechecked_no_value_read";return true;
+}
 ReadEntryTags currentReadEntryEvidence(const ReadCallContract &c) noexcept {
   ReadEntryTags e{};e.samples=c.samples;
   for (unsigned k=0;k<16;++k) {e.gpr[k]=c.gpr[k].tags;e.xmm[k]=c.xmmTags[k];}
@@ -3223,10 +3292,10 @@ ReadEntryTags currentReadEntryEvidence(const ReadCallContract &c) noexcept {
   return e;
 }
 ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
-    std::uint32_t imageSize, IdentityRead read, IdentityLookup lookup, void *ctx, const ReadEntryTags *entryTags,IdentityPageQuery pageQuery) noexcept {
+    std::uint32_t imageSize, IdentityRead read, IdentityLookup lookup, void *ctx, const ReadEntryTags *entryTags,IdentityPageQuery pageQuery,bool pinnedUnknownLoad) noexcept {
   static_assert(readCallByteCap==128 && readCallInstructionCap<=32,
                 "No-unwind admission may not silently widen c23 leaf caps");
-  ReadTargetIdentity out{}; out.enabled=true; out.target=target;
+  ReadTargetIdentity out{}; out.enabled=true; out.target=target;out.unknownLoad.enabled=pinnedUnknownLoad;
   if (entryTags && entryTags->samples) {
     out.entryTagsKnown=true;out.entryTagSamples=entryTags->samples;
     for (unsigned k=0;k<16;++k) if ((entryTags->gpr[k]|entryTags->xmm[k])&~7u) out.entryTagsKnown=false;
@@ -3382,10 +3451,21 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
           Slice merged;ReadFlow tags;
           for (unsigned k=0;k<16;++k) { tags.g[k]=1u<<k;tags.x[k]=1u<<(16+k); }
           const auto cfg=walkPinnedLeaf(out.snapshot.data(),limit,out.codeBegin,out.codeEnd,out.nextRuntime,
-              out.entryTagsKnown?entryTags:nullptr,true,merged,tags,imageSize,&out.load,read,pageQuery,ctx);
+              out.entryTagsKnown?entryTags:nullptr,true,merged,tags,imageSize,&out.load,read,pageQuery,ctx,&out.unknownLoad);
           out.cmp=cfg.cmp;out.branch=cfg.branch;out.mov=cfg.mov;out.instructions=cfg.instructions;
           out.paths=cfg.paths;out.visits=cfg.visits;out.cfgComplete=cfg.complete;
-          out.pathEffectsDiffer=cfg.effectsDiffer;
+          out.pathEffectsDiffer=cfg.effectsDiffer;out.boundary=cfg.boundary;
+          if (out.unknownLoad.attempted) {
+            if (!finishPinnedUnknownLoad(out.unknownLoad,out.load,imageSize,read,pageQuery,ctx)) {
+              out.boundary={};return fail(out.unknownLoad.reason,readIdentityMov,"mov");
+            }
+            if (!grab(target,again,limit) || std::memcmp(again,out.snapshot.data(),limit)) {
+              out.stable=false;out.boundary={};out.unknownLoad.reason="pinned_unknown_top_target_code_changed";
+              return fail(out.unknownLoad.reason,readIdentityMov,"mov");
+            }
+            out.unknownLoad.targetCodeRechecked=out.unknownLoad.admitted=true;
+            out.unknownLoad.reason="exact_source_unknown_may_top_current_proof_no_value_read";
+          }
           if (out.load.firstRead && !finishReadImageLoad(out.load,imageSize,read,pageQuery,ctx)) {
             out.mov.loadedMayTags=7;out.mov.reason=out.load.reason;
             return fail(out.load.reason,readIdentityMov,"mov");
@@ -3400,7 +3480,7 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
           }
           if (!cfg.complete) return fail(cfg.reason,cfg.barrier,cfg.mnemonic);
           // All paths must pass before any span/hash can exist; pin current bytes again.
-          if (!out.load.targetCodeRechecked && (!grab(target,again,limit) || std::memcmp(again,out.snapshot.data(),limit))) {
+          if (!out.load.targetCodeRechecked && !out.unknownLoad.targetCodeRechecked && (!grab(target,again,limit) || std::memcmp(again,out.snapshot.data(),limit))) {
             out.stable=false;return fail("target_cfg_final_snapshot_changed",target,"snapshot");
           }
           out.finalCodeRechecked=true;out.size=cfg.size;
@@ -3461,7 +3541,7 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
     const auto now=lookup(ctx,target+k);
     if (!now.readable || now.found!=rf.found || (now.found &&
         (!now.sameImage || now.begin!=rf.begin || now.end!=rf.end || now.unwind!=rf.unwind))) {
-      out.load.admitted=false;if (out.load.attempted) out.mov.loadedMayTags=7;
+      out.load.admitted=false;out.unknownLoad.admitted=false;if (out.load.attempted) out.mov.loadedMayTags=7;
       return fail("target_runtime_coverage_changed_before_admission",target+k);
     }
   }

@@ -959,10 +959,10 @@ void configure(const Spec &s, Gate validate) noexcept {
         page.protect=mbi.Protect;page.allocationProtect=mbi.AllocationProtect;return true;
       };
       auto proof=ws::rdx::authenticateReadTarget(nc.instructionVerified && s.imageSize<=UINT32_MAX,
-          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner,entryTags,queryImage);
+          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner,entryTags,queryImage,true);
       if (expected && (!proof.stable || proof.scanBytes!=expected->scanBytes ||
           std::memcmp(proof.snapshot.data(),expected->snapshot.data(),proof.scanBytes))) {
-        proof.admitted=false;proof.load.admitted=false;proof.mov.loadedMayTags=7;proof.size=0;proof.reason="target_code_changed_between_tag_prepass_and_reproof";
+        proof.admitted=false;proof.load.admitted=false;proof.unknownLoad.admitted=false;proof.mov.loadedMayTags=7;proof.size=0;proof.reason="target_code_changed_between_tag_prepass_and_reproof";
         proof.barrier=proof.target;
       }
       nestedReadCall.targetIdentity=proof;
@@ -974,7 +974,7 @@ void configure(const Spec &s, Gate validate) noexcept {
         std::copy_n(proof.snapshot.data(),proof.size,readCallCode.data());
         nestedReadCall.authenticated=digest(readCallCode.data(),proof.size,nestedReadCall.hash);
         if (nestedReadCall.authenticated) nestedReadCall.code=readCallCode.data();
-        else { nestedReadCall.targetIdentity.admitted=false;
+        else { nestedReadCall.targetIdentity.admitted=false;nestedReadCall.targetIdentity.unknownLoad.admitted=false;
           nestedReadCall.targetIdentity.reason="target_snapshot_SHA256_failed";
           nestedReadCall.targetIdentity.barrier=proof.target; }
       }
@@ -1304,7 +1304,7 @@ void configure(const Spec &s, Gate validate) noexcept {
              mov.addressWidth,mov.memoryOperands,unsigned(mov.effectsKnown),unsigned(mov.flagsPreserved),(unsigned long long)mov.decodedEflags,
              unsigned(mov.memoryRead),unsigned(mov.memoryWrite),unsigned(mov.memoryRmw),unsigned(mov.memoryAccessKnown),unsigned(mov.pureLoad),
              mov.fullGprWrites,mov.partialGprWrites,mov.xmmWrites,mov.otherRegisterWrites,unsigned(mov.stackPointerWrite),
-             unsigned(identity.stable),unsigned(identity.load.admitted && mov.samples && mov.loadedMayTags==0 && mov.addressSame),mov.reason);
+             unsigned(identity.stable),unsigned((identity.load.admitted || identity.unknownLoad.admitted) && mov.samples && mov.addressSame),mov.reason);
     for (unsigned j=0;j<std::min(mov.operandCount,2u);++j) {
       const auto &op=mov.operands[j];
       writeLog("MOVEMENT_CALLEE_READ_MOV_OPERAND site_rva=0x%x index=%u kind=%s register=%s "
@@ -1333,7 +1333,7 @@ void configure(const Spec &s, Gate validate) noexcept {
              mov.addressClass,mov.addressRoot,(long long)mov.addressOffset,mov.addressTags,mov.aliasMayMask,
              unsigned(mov.imageRangeKnown),unsigned(mov.codeRangeKnown),identity.load.attempted?"bounded_PE_page_value_window":"not_attempted",
              unsigned(identity.load.admitted && mov.samples && mov.loadedMayTags==0 && mov.addressSame),mov.loadedMayTags,
-             unsigned(identity.load.admitted && mov.samples && mov.loadedMayTags==0 && mov.addressSame));
+             unsigned((identity.load.admitted || identity.unknownLoad.admitted) && mov.samples && mov.addressSame));
     const auto &load=identity.load;
     writeLog("MOVEMENT_CALLEE_READ_IMAGE_SOURCE expected_source_rva=0x%x attempted=%u source_rva=0x%x width=%u "
              "metadata_valid=%u section_unique=%u section_overlaps=%u section=%s section_begin_rva=0x%x section_end_rva=0x%x "
@@ -1359,6 +1359,31 @@ void configure(const Spec &s, Gate validate) noexcept {
              "scope=bounded_current_target_proof_not_global_lifetime reason=%s effect_certificate=0",
              load.source,load.valueReadAttempts,unsigned(load.firstRead),unsigned(load.finalRead),unsigned(load.metadataSame),unsigned(load.pageSame),
              unsigned(load.stable),unsigned(load.targetCodeRechecked),unsigned(load.admitted),unsigned(load.admitted),load.reason);
+    const auto &unknown=identity.unknownLoad;
+    writeLog("MOVEMENT_CALLEE_READ_UNKNOWN_LOAD site_rva=0x%x enabled=%u attempted=%u source_rva=0x%x width=8 "
+             "metadata_passed=%u metadata_rechecked=%u PE_metadata_equal=%u page_metadata_equal=%u target_code_rechecked=%u "
+             "abstract_effect_admitted=%u loaded_may_depend_top=0x7 precise_value_tags_known=0 observed_taint=0 "
+             "selected_dependence_killed=0 source_value_reads=0 raw_value_logged=0 numeric_interpretation=0 pointer_chase=0 "
+             "origin=unknown_loaded_qword_not_pointer flags_other_GPR_XMM_SP_memory_preserved=1 "
+             "scope=current_pinned_load_not_whole_target effect_certificate=0 reason=%s",
+             ws::rdx::readIdentityMov,unsigned(unknown.enabled),unsigned(unknown.attempted),ws::rdx::readImageSource,
+             unsigned(unknown.metadataPassed),unsigned(unknown.metadataRechecked),unsigned(unknown.metadataSame),unsigned(unknown.pageSame),
+             unsigned(unknown.targetCodeRechecked),unsigned(unknown.admitted),unknown.reason);
+    const auto &boundary=identity.boundary;
+    writeLog("MOVEMENT_CALLEE_READ_LEAF_BARRIER target_rva=0x%x barrier_rva=0x%x instruction=%s reason=%s "
+             "path=%u edge_from_rva=0x%x edge_target_rva=0x%x tags_known=%u flags_may_depend_tags=0x%x "
+             "state=before_unsupported_instruction tags_kind=may_upper_bound_not_observed effect_certificate=0",
+             identity.target,identity.barrier,identity.mnemonic,identity.reason,boundary.path,boundary.edgeFrom,boundary.edgeTarget,
+             unsigned(boundary.tagsKnown),boundary.flagsTags);
+    if (boundary.tagsKnown) for (unsigned vector=0;vector<2;++vector) {
+      const auto &tags=vector?boundary.xmm:boundary.gpr;
+      writeLog("MOVEMENT_CALLEE_READ_LEAF_BARRIER_TAGS barrier_rva=0x%x path=%u bank=%s "
+               "r0=0x%x r1=0x%x r2=0x%x r3=0x%x r4=0x%x r5=0x%x r6=0x%x r7=0x%x "
+               "r8=0x%x r9=0x%x r10=0x%x r11=0x%x r12=0x%x r13=0x%x r14=0x%x r15=0x%x "
+               "tags_1_selected_2_postwrite_4_other_prewrite=1 upper_bound_not_observed=1 raw_values=0",
+               identity.barrier,boundary.path,vector?"XMM":"GPR",tags[0],tags[1],tags[2],tags[3],tags[4],tags[5],tags[6],tags[7],
+               tags[8],tags[9],tags[10],tags[11],tags[12],tags[13],tags[14],tags[15]);
+    }
     const auto &branch=identity.branch;
     writeLog("MOVEMENT_CALLEE_READ_LEAF_BRANCH site_rva=0x%x decoded=%u instruction=%s "
              "conditional=%u condition=%s flags_read=%s flags_producer_rva=0x%x "

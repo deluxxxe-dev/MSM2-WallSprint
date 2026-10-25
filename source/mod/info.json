@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.47",
-  "description": "WallSprint v0.1c29 exact qword image-load proof: authenticated non-writable PE section/current page and two equal guarded8byte reads. Only pinned full64 RAX load may receive tag0 within the current proof. Existing all-path/ownership/Position/source/input/movement gates remain.",
+  "version": "0.1.48",
+  "description": "WallSprint v0.1c30 models only pinned full64 RAX image qword load with unknown may-depend top7, without reading its value. Exact source/form/current parent/PE/page/code checks and all-path RET/cap gates remain. No tag0, generic load rule or ownership/gameplay write permission.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1
