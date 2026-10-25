@@ -1,3 +1,131 @@
+# Codex result — c28 exact MOV operands/address provenance, diagnostic-only Outcome C
+
+Branch **codex/v01c20-edi-value-provenance**; accepted task base **e420e61**.
+Implementation **95a2aec20e53913b64c245691a081658862c7d29**. Version **v0.1c28 / package0.1.46**.
+Outputs **MSM2-WS-v0.1c28.zip**, **MSM2-WS-v0.1c28-source.zip**,
+**MSM2-WS-v0.1c28.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C28_RELEASE.json** (final hashes/sizes/source-snapshot commit).
+
+## Accepted input / decision
+
+Read AGENTS/manual/rules/workspace/state/NEXT, relevant source/contracts, accepted
+compact runtime and accessible Wisdoms instructions/manual/engine/method/project
+references. Fetched/fast-forwarded intended WS branch only, no main merge/reset.
+Preserved incoming Overstrike updater/WINMM recovery helpers and ordinary updater.
+
+C27 actual evidence accepts short JA0x2CF7FE7 disp42 -> fall0x2CF7FE9/taken0x2CF8013,
+both forward/in-window/no runtime crossing, current tag-disjoint fan-out with no
+numerical outcome choice. First fallthrough MOV memory operand refuses:3 unique
+instructions/3 visits/0 returns/identity/hash/effects. C25 full527161-entry table/
+queried no-entry and c26 CMP r8d,0x3FFF/tag0 remain accepted. Native Deinit/
+retention clean, hard kills/Position/source-position/corrections0.
+
+**Outcome C, diagnostic implementation complete.** Exact actual MOV form/access/
+address/value provenance is not in supplied compact evidence. Add classification
+first; no new memory-load/immutable-image/partial/XMM destination semantics.
+Address provenance or a read-only-looking image name cannot supply the missing
+loaded-value proof. All memory writes/RMW and unproven reads remain refusals.
+No actual MOV or downstream target/effect success claimed from owned fixtures.
+
+## Implementation / files
+
+- read_target_identity.hpp: pinned MOV0x2CF7FE9 compact operand/access/width/alias,
+  flags/decoded write and conditional address-provenance records. Alias masks
+  distinguish Hero1/field10C2/source4/caller-home8/private-candidate16/image32/
+  unknown64. Unknown addresses retain all possible bits; below-SP isn't allocation.
+- rdx_source_contract.cpp: classify only this reachable instruction from the
+  stable c27 snapshot, before the existing memory refusal. Describe exact GPR/
+  XMM/immediate/memory classes, full/partial aliases/parents, base/index/scale/
+  signed displacement/segment/address width, decoded read/write/RMW and complete
+  register-write/flag metadata. Pure-load FORM is distinct from load permission.
+  Unexpected/unmodeled memory forms refuse; store/RMW stops immediately.
+- Initial Slice entry roots remain untyped tokens. At the already-analyzed parent
+  CALL, re-decode only the saved pinned instruction and refine using owned Slice/
+  ReadFlow state with existing natural CALL delta(-8), no stack/value read. Known
+  affine roots may report conditional Hero/field/source/stack/image address ranges;
+  loaded raw bits, other tokens, index/segment/address32/range ambiguities stay
+  unproven. RIP image/code membership grants no loaded-value rule. Across parent
+  states union possible aliases/tags and lose exactness on conflicting addresses.
+  Origins explicitly describe first sampled state, not universal typed arguments.
+- Register/base/index input tags are separate from loaded-value tags. Loaded
+  values remain UNKNOWN with may-tag upper bound7, never untainted0 or a state
+  update; samples0 means no current-parent refinement. No memory contents or
+  physical operand values are observed. Only instruction constants/displacements
+  and abstract roots/offsets are emitted. No second dereference, reader or hook.
+- writer_entry_snapshot.cpp: compact READ_MOV / READ_MOV_OPERAND / READ_MOV_ADDRESS
+  records alongside unchanged next-boundary/JA/table/native safety records.
+  Decoded writes are explicitly not executed writes. No raw code/value dump.
+- Eight new owned groups in read_target_identity_smoke.cpp (36 identity groups),
+  existing21 call/read and c19-c27/native regressions retained. Version/info,
+  package metadata, README/README_TEST/BUILD, accepted c27 source mirror, c28 design/
+  gate, AGENTS/PROJECT_STATE and engine index updated. **CODEX_NEXT unchanged**.
+  Detailed method/limitations: analysis/V01C28_MOV_CLASSIFICATION.md.
+
+No change to c27 one-JA/two-path/128byte/32unique-instruction/64visit all-RET proof,
+c25 table/lookup budgets, c26 CMP/JA disjointness, code/coverage rechecks, native
+lifecycle/orientation/ABI/assertions/deadlines/cleanup, or workspace isolation.
+A failed MOV refuses the whole target; one safe other leg grants no identity.
+
+## Validation
+
+- Final Windows x64 warnings-as-errors build PASS.
+- Full chain **13 portable + 7 DLL/logger + 176 hooks/native/contracts/workspace
+  =196 public PASS /5 optional private-input SKIP**, all final commands exit0.
+- New cases cover exact operand/access/width/writes/flag preservation; parent vs
+  entry-token/loaded-raw-bit address provenance; selected1/postwrite2/other4 input
+  tags vs unknown loaded7; conflicting caller addresses; indexed/segmented/32-bit
+  metadata; Hero/field/source/home/below-SP alias refusal and correct CALL delta;
+  store/RMW/immediate and partial/full GPR/XMM metadata; image/code read refusal;
+  pin/stability/branch-current-tag gates and unsafe-leg whole-target refusal.
+  No load rule is implemented, so destination zero/upper-lane semantic admission
+  tests are inapplicable; these widths only receive metadata and refusal tests.
+- A new negative test initially assumed no record after an earlier pinned register
+  MOV, though a later non-pinned memory instruction failed. Corrected it to require
+  that earlier pinned no-memory record plus the exact later refusal. No guard or
+  test assertion weakened to admit memory.
+- Initial full run hit an unchanged native_source_override_smoke.cpp reject-reason
+  assertion (exit3). The isolated native fixture then passed all its7 groups and
+  lifecycle passed; a60s whole-script diagnostic wrapper ended during the later
+  integration executable (124), not on another assertion. Final normal full hooks
+  run passed both native/integration and all remaining suites. No native source,
+  rejection criterion, freshness limit or assertion changed. Cause of the initial
+  unexpected reason is not established; don't represent it as a real-game result.
+- Actual provisional source ZIP extracted fresh: build PASS; **111 focused
+  entry/c14-c28 +7 DLL/logger +13 workspace =131 separate PASS**, no private skips;
+  package verifier PASS separately. Don't add duplicate131 to196.
+- Static byte checks preserve pre-existing scalar/CMP/JA-edge helpers, complete
+  table/lookup/snapshot guard segment, native lifecycle/orientation/ABI code,
+  updater/recovery helpers and CODEX_NEXT. Final reporting refresh retains identical
+  tested native/tool inputs and rechecks package, ZIP CRC/hash/version/DLL MOV/
+  refusal markers, complete current source/docs/analysis/helpers/licenses, single
+  active virtual install member and private/compiled exclusions.
+
+Shared Wisdoms **4e98687** accepts c27 exact geometry/MOV boundary and records
+address-vs-value/unknown-tag/conditional alias method as VERIFIED-STATIC owned
+fixture scope, actual c28 UNKNOWN. Concurrent SF knowledge changes retained.
+No raw private log, proprietary target body or arbitrary memory value published.
+
+## Safety / next human evidence
+
+All writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/
+downstream_conflicts_proven_absent0; Position/source-position/input/movement0.
+Producer0x351EB00 deferred. No gameplay/adhesion/camera/animation/physics, guessed
+ABI, data-page/PAGE_GUARD, new hook or SF/ordinary mod changes. Local address or
+all-path diagnostics never prove whole writer XYZ/W, feedback, storage/lifetime/
+exclusive ownership or writability. No effect certificate issued.
+
+Exact MOV metadata is genuinely absent from compact c27; one short live capture
+is needed. Minimum new fields: READ_MOV / READ_MOV_OPERAND / READ_MOV_ADDRESS and
+existing TARGET_IDENTITY/READ_CALL next barrier plus native safety. No body,
+memory-value dump or habitual repeat once current evidence is sufficient.
+Close game/Overstrike; installed **MSM2-WS/Update-WS.cmd**; shared Overstrike
+**Install mods -> Run modded game**. **A ~3s -> fully end WallRun -> move/fast-travel
+-> E ~3s**, each below unchanged5s. Return newest private complete
+**MSM2-WS/logs/MSM2-WS-v0.1c28-YYYYMMDD-HHMMSS.log**. No manual ZIP placement or
+links required. Actual MOV classification/next justified model remains pending.
+
+---
+
 # Codex result — c27 exact JA edges / bounded all-path target proof
 
 Branch **codex/v01c20-edi-value-provenance**; accepted task base **7f0c4d9**.
