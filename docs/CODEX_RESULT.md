@@ -1,3 +1,130 @@
+# Codex result — c32 exact YMM0 load with bounded low/high128 dependencies
+
+Branch **codex/v01c20-edi-value-provenance**; accepted task base **b12d7fe**.
+Implementation **e13d4a0b11c1ed32d004d697f5099377aa62778f**. Version **v0.1c32 / package0.1.50**.
+Outputs **MSM2-WS-v0.1c32.zip**, **MSM2-WS-v0.1c32-source.zip**,
+**MSM2-WS-v0.1c32.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C32_RELEASE.json** (final hashes/sizes/source-snapshot commit).
+
+## Accepted input / bounded result
+
+Read AGENTS and previously read unchanged operational manual/rules/workspace/
+logging, latest state/NEXT/compact c31 result, relevant code and refreshed Wisdoms
+instructions/manual/WS/engine/method references. Fast-forwarded intended WS branch
+only; no WS main merge/reset/force push,5 original untracked artifacts preserved.
+
+VERIFIED-RUNTIME c31: VMOVUPS0x2CF7FF0 is4byte VEX2.256 YMM0 <-m256[RDX], current
+same Hero root1+0/address tags0/Hero-only alias, no store/RMW/GPR/SP/flags effect.
+C31 correctly refused missing upper-state representation. C30 RAX unknown/top7/
+no qword reads, c29 tag0 refusal and c25-c28 prerequisite chain remain accepted.
+
+**Implemented only the requested representation and exact-load continuation.**
+Low/high128 dependencies are represented, both become may-top7 without vector
+reads, above256 becomes known zero. Every future ZMM/EVEX/>256 use still refuses;
+no generic AVX emulator. Exact actual next instruction/full-target completion
+remain UNKNOWN: compact c31 evidence stops at this load and cloud has no private
+current target body. Minimum new vector-state/next-barrier capture is needed.
+
+## Implementation / changed files
+
+- New owned vector_dependency.hpp:16 low128 XMM alias banks,16 high128 may-tag
+  banks (unknown upper input starts top7) and per-parent above256-known-zero
+  markers. No physical bits, generic lanes, semantic types or pointer values.
+  XMM reads low; YMM dependency reads union halves. Legacy XMM writes preserve
+  upper state; only pinnedYmm0Unknown replaces both halves/top7 and zero marker.
+- read_target_identity.hpp / rdx_source_contract.hpp: current Hero-source proof,
+  upper entry tags/zero facts, pre-barrier low/high state and distinct returned
+  high-category summaries/path outcomes. Explicit optional vector256 mode is
+  enabled by production; original diagnostic-only mode retained for regression.
+- rdx_source_contract.cpp: pin exact site/4bytes/VEX2/VL256/YMM0/m256[RDX], no
+  index/displacement/segment/prefix/modifier, pure read, no flags/GPR/SP effects.
+  Identity entry evidence requires sampled same-origin Hero root1/offset0/tags0;
+  actual c23 walk repeats source check per state. RDX numeric bits are never
+  read/interpreted; no data reader observes the32 source bytes.
+- Only this load sets both halves7 and opaque unknown low Slice origins, records
+  above256 zero, preserves other vector parents/GPR (including RAX7)/flags/SP/
+  memory. Known-zero marker does not permit ZMM/EVEX. Other sites, widths,
+  destinations, VEX128/YMM forms, stores/RMW/masks/merge/modifiers remain refused.
+- Clone both halves per path, retain separate returned low/high category masks,
+  union tags and intersect above256 zero knowledge. Legacy low-only zero never
+  kills possible selected dependence in high. Symbolic entry-carrier masks are
+  converted once to actual categories; upper category state stays a separate
+  domain. Current caller conflicts/missing tags refuse, never infer observed taint.
+- writer_entry_snapshot.cpp: VECTOR256 / relevant VECTOR_STATE / VECTOR_RETURN
+  alongside existing rich classification, UNKNOWN_LOAD, exact barrier/path/tag/
+  CFG/safety records. Report modeled effect only after current code/source gates;
+  no raw vector/qword data. High and low state immediately before the next
+  unsupported instruction are distinct, with path-dependent return masks.
+- read_target_identity_smoke.cpp:8 new groups,68 identity total/read-call21;
+  original c19-c31/native regressions retained. Updated version/info/README/TEST/
+  BUILD/package metadata, accepted c31 mirror, c32 analysis/gate/index and AGENTS/
+  state. **docs/CODEX_NEXT.md preserved byte-for-byte**.
+
+Only the exact VMOVUPS is new semantics. Existing proven legacy register rules
+continue; no next new instruction is opportunistically modeled. Both JA outcomes,
+all modeled normal RETs and final current code/runtime/source checks still gate
+target begin/end/hash. Caps unchanged1JA/2paths/128bytes/32unique/64visits, caller/
+replay4096; one safe leg does not certify the other or whole writer effects.
+
+## Validation
+
+- Windows x64 full warnings-as-errors build PASS.
+- **13 portable +7 DLL/logger +208 hooks/native/contracts/workspace =228 public
+  PASS records /5 optional private-input SKIP**, all commands exit0 on first full
+  attempt. No native assertion/deadline/cleanup guard relaxed.
+- New groups cover full YMM overwrite/low alias/high preservation/parent isolation;
+  current-derived exact Hero load/top7/no reads; flags/GPR/SP/memory preservation;
+  legacy XMM zero/copy vs unsupported VEX128; wrong source/width/parent/encoding/
+  direction/modifier refusal; current caller/conflicting evidence; above256 zero
+  with ZMM refusal; exact next barrier/unsafe leg/code mismatch/full527161 table;
+  distinct low/high returns and conservative path merge/zero knowledge.
+  Existing c31 diagnostic refusal, c30 top/c29 readonly negatives retained.
+- Actual provisional source ZIP extracted fresh; independent full build PASS;
+  **143 focused entry/c14-c32 +7 DLL/logger +13 workspace =163 separate PASS
+  records**, no private skips; standalone package verifier PASS separately. Do not
+  add duplicate163 to228. Final report/package-metadata refresh retains identical
+  tested native inputs and separately rechecks the current standalone packager.
+- Static byte checks preserve NEXT, native lifecycle/orientation/raw ABI/assertions,
+  workspace/updater/shared launchers, entire c25 table/lookup/snapshot block,
+  c29/c30 source metadata policies and c31 vector classifier. ReadFlow gains only
+  the required category state/alias handling; no game-hook ABI/layout changes.
+- Final archives verified for CRC/hash/version/new DLL markers, complete current
+  sources/docs/evidence/helpers/licenses, one virtual active install script,
+  no active source script, compiled/private body or raw runtime/vector payload.
+- Known cloud Wine winedevice.exe startup diagnostics occur; final commands exit0.
+  Owned fixtures/cloud tests are not actual-game full-target or gameplay PASS.
+
+Wisdoms **3a07fb54092ac5066011af63295b420aaed3492d** pushed: accepted exact c31
+form, minimal c32 halves/aliasing/upper unknown initialization, return union vs
+zero-knowledge intersection, unsupported wider forms and safety limits. Concurrent
+SF updates preserved; append conflict resolved keeping both independent sections.
+No private logs, complete proprietary function bodies or vector values published.
+
+## Safety / minimum human evidence
+
+writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/
+downstream_conflicts_proven_absent0; Position/source-position/input/movement
+writes0; producer0x351EB00 deferred. No new hook/game function, PAGE_GUARD/data-page
+mutation, ABI guess or gameplay/adhesion/camera/animation/physics change. Existing
+orientation source writes remain under unchanged native guards, separate from
+denied translation/source-position writes.
+
+May-top7 does not observe taint, kill selected dependence, prove a vector type,
+semantic matrix meaning, pointer/constant/value identity or ownership. Even a
+complete bounded target is not whole writer XYZ/W/feedback/storage/lifetime/
+exclusive-conflict/writable movement-source proof.
+
+After verified push: close game/shared Overstrike, run installed
+**MSM2-WS\Update-WS.cmd**; shared UI **Install mods -> Run modded game**.
+A/cardinal~3sec -> fully end WallRun -> move/fast-travel -> E/diagonal~3sec,
+below unchanged5sec limit. Return newest private
+**MSM2-WS\logs\MSM2-WS-v0.1c32-YYYYMMDD-HHMMSS.log**. Minimum new records:
+MOVEMENT_CALLEE_READ_VECTOR256 / VECTOR_STATE / VECTOR_RETURN plus existing
+next barrier/path/tag/CFG/current identity/safety/cleanup. No vector bytes,
+qword/body dump or public raw log requested. Desktop launchers launch only.
+
+---
+
 # Codex result — c31 exact VMOVUPS classification, diagnostic-only Outcome C
 
 Branch **codex/v01c20-edi-value-provenance**; accepted task base **b78cd42**.
