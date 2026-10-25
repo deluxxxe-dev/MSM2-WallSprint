@@ -1,3 +1,132 @@
+# Codex result — c33 pinned MOVSXD classification and conditional register sign extension
+
+Branch **codex/v01c20-edi-value-provenance**; accepted task base **f609ee0**.
+Implementation **1f5d31efbe11772fdee32737032b8d4cee287e93**. Version **v0.1c33 / package0.1.51**.
+Outputs **MSM2-WS-v0.1c33.zip**, **MSM2-WS-v0.1c33-source.zip**,
+**MSM2-WS-v0.1c33.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C33_RELEASE.json** (final hashes/sizes/source-snapshot commit).
+
+## Accepted input / bounded decision
+
+Read AGENTS, previously read unchanged manual/rules/workspace/logging, latest
+state/NEXT/c32 runtime result and relevant code, refreshed Wisdoms instructions/
+manual/WS/engine/method references. Fast-forwarded intended WS branch only;
+no WS main merge/reset/force push. Five original untracked artifacts preserved.
+
+VERIFIED-RUNTIME c32: exact YMM0 m256[RDX] now modeled with low/high128 top7,
+above256 zero and no value reads; C30 RAX unknown/top7 retained. New barrier
+MOVSXD0x2CF7FF4/path0,5instructions/5visits/0returns/identity/effects. Actual
+MOVSXD operands/width/registers/memory use are UNKNOWN, not inferred from mnemonic.
+
+**Classify first, conditionally model only the sound register form at this site.**
+REX.W opcode63 GPR64<-GPR32 register form can be verified from current decoder/
+encoding evidence without observing values. All memory forms stay diagnostic
+refusals because no exact source contract is in accepted evidence. No generic
+MOVSX/MOVZX/integer/memory emulator or guessed actual operands. Actual form and
+next barrier require the minimal new live metadata, not a private function dump.
+
+## Implementation / files
+
+- read_target_identity.hpp: pinned sign-extension contract with exact encoding,
+  source/destination widths/parents/access, sole full64 effect and source/result
+  category tags; explicit production enable and retained diagnostic-only mode.
+- rdx_source_contract.cpp: classify only reachable MOVSXD0x2CF7FF4 in authenticated
+  bounded snapshot. Gate reg32/full64 semantics on3bytes REX.W+63/register ModRM,
+  no prefixes/memory, decoded source READ/destination WRITE, complete sole full
+  destination write, no partial/vector/flags/SP/other effect. RSP destination
+  refuses; wrong sites/forms/widths/encodings do not borrow the rule.
+- Sign-extension dependence is a conservative copy of source-parent tags: low32
+  and replicated sign bit31 are included in that whole-parent upper bound.
+  Read source tags BEFORE full replacement, discard stale destination tags,
+  set destination origin opaque unknown/non-pointer, never infer numeric sign,
+  constant or pointer identity. Same-parent source remains conservative. Only
+  decoded destination changes; unrelated c30 RAX7/c32 halves7/above-zero state,
+  other GPR/flags/SP/memory are preserved. If MOVSXD writes RAX itself, its
+  legitimate full replacement is governed by source tags rather than stale7.
+- Memory sources: classify read/access/width/full destination, exact base/index/
+  scale/displacement/segment/address width/current-parent conditional aliases
+  Hero/field10C/source/home/below-SP/image/unknown, source/address tags; refuse
+  every memory form pending actual exact-source evidence. Loaded may7 is metadata,
+  not tag0/admission. No data read, numerical narrowing, second dereference,
+  private-stack allocation or ABI type. Stores/RMW/stack changes still refuse.
+- Reuse the existing bounded parent replay (no new traversal) for actual caller
+  metadata, union source/address tags/aliases and lose exactness on conflicts.
+  Existing cumulative4096/per-walk64visit/128byte/32unique/1JA/2path caps remain.
+- writer_entry_snapshot.cpp: compact MOVSXD / MOVSXD_OPERAND / MOVSXD_ADDRESS
+  alongside existing next barrier/path/GPR/vector low-high/flags/CFG/safety.
+  Distinguish sign-extension form vs actual modeling, current-byte stability,
+  source-parent vs unproven loaded tags, decoded writes vs executed effects.
+- read_target_identity_smoke.cpp:8 new groups, identity76/read-call21 total;
+  c19-c32/native regressions retained. Version/info/README/TEST/BUILD/package
+  contracts, accepted c32 mirror, c33 analysis/gate/index and AGENTS/state updated.
+  **docs/CODEX_NEXT.md preserved byte-for-byte**.
+
+Only this register form is new semantics. Stop at next unsupported effect without
+adding its rule. Both JA legs/all modeled normal RETs/final current code/runtime/
+source checks still gate target begin/end/hash; returned tags union conservatively.
+No local target or diagnostic completes writer XYZ/W/feedback/ownership/writability.
+
+## Validation and inherited fixture failure
+
+- Final Windows x64 warnings-as-errors build PASS.
+- Final **13 portable +7 DLL/logger +216 hooks/native/contracts/workspace =236
+  public PASS records /5 optional private-input SKIP**, all final commands exit0.
+- Initial full hooks run exited3 in unchanged orientation_trace_smoke.cpp:59:
+  `windows[capped].hits>=config.maxEvents` was false. Initial failure log/status
+  preserved during investigation. A normal isolated run then did not complete;
+  stopped only its own fixture PID (exit143), no production/user process.
+- A temporary owned fixture copy with main-thread phase prints (same optimization,
+  assertions/500ms event window/deadlines) passed through all original stages.
+  Initial probe insertion was corrected before execution after a compile error;
+  repository fixture/production source unchanged. Final original full hooks run
+  then passed the normal hardware fixture and every remaining suite. Root cause
+  of the first failure/hang is NOT established; no assertion/deadline/guard was
+  relaxed, no diagnostic copy is shipped or counted in236.
+- New groups cover exact operand/encoding/access/32-to64 effect, source tags
+  0/1/2/4/7 and no stale destination, all non-SP GPR destination banks/same-parent
+  source, current-parent memory alias diagnostics/no reads, wrong sites/widths/
+  prefix/MOVSX/store/RMW/stack refusal, preserved YMM halves/flags, next CALL/unsafe
+  leg/code mismatch, full527161 metadata and conservative return unions.
+- Actual provisional source ZIP extracted fresh; independent full build PASS;
+  **151 focused entry/c14-c33 +7 DLL/logger +13 workspace =171 separate PASS
+  records**, no private skips; standalone package verifier PASS separately.
+  Do not add duplicate171 to236. Final report/package metadata refresh retains
+  identical tested native inputs and separately rechecks current standalone packager.
+- Static checks preserve preexisting scalar/CMP/JA/MOV/vector helpers, c29/c30
+  source and c32 vector dependency policies, full c25 table/lookup/snapshot block,
+  native orientation/lifecycle/raw ABI/assertions and workspace/launchers/NEXT.
+  No SF/ordinary mod/environment code changed. Archives checked for CRC/hash/
+  version/DLL markers/current sources/docs/evidence/helpers/licenses, one virtual
+  active install script, no active source script/compiled/private game payload.
+- Known cloud Wine winedevice.exe startup diagnostics occur; final commands exit0.
+  Owned fixture tests/cloud checks do not claim actual game form/full target PASS.
+
+Wisdoms **4e2139515a0034bb9cfb3e13571e4a2ebc55d2c8** pushed: accepted c32 MOVSXD
+boundary, conditional pinned register sign-extension dependence/full replacement,
+unknown non-pointer results and memory-source refusal. Existing SF knowledge retained.
+No raw private game log/body/source/vector values published.
+
+## Safety / minimum human evidence
+
+writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/
+downstream_conflicts_proven_absent0; Position/source-position/input/movement
+writes0; producer0x351EB00 deferred. No new hook/game call, PAGE_GUARD/data-page
+mutation, ABI guess or gameplay/adhesion/camera/animation/physics change. Existing
+orientation source writes remain under unchanged native guards, separate from
+denied new translation/source-position writes.
+
+After verified push: close game/shared Overstrike, run installed
+**MSM2-WS\Update-WS.cmd**; shared UI **Install mods -> Run modded game**.
+A/cardinal~3sec -> fully end WallRun -> move/fast-travel -> E/diagonal~3sec,
+below unchanged5sec limit. Return newest private
+**MSM2-WS\logs\MSM2-WS-v0.1c33-YYYYMMDD-HHMMSS.log**. Minimum new keys:
+MOVEMENT_CALLEE_READ_MOVSXD / MOVSXD_OPERAND / MOVSXD_ADDRESS plus existing
+next barrier/path/GPR/vector low-high/flags/CFG/current identity/safety/cleanup.
+Actual form/next opcode are absent from compact c32 evidence and unavailable
+in cloud; no raw source/whole body requested. Desktop launchers launch only.
+
+---
+
 # Codex result — c32 exact YMM0 load with bounded low/high128 dependencies
 
 Branch **codex/v01c20-edi-value-provenance**; accepted task base **b12d7fe**.
