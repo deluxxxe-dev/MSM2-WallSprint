@@ -83,13 +83,9 @@ exact_target=1
 
 Selected `Transform+0x10C` dependence reaches this boundary in raw GPR carrier index 0 (`gpr_tags=0x1`, mem32 Hero Transform+0x10C). This is not a typed ABI declaration.
 
-## c24 accepted result — old runtime-table cap refusal
+## c24/c25 accepted runtime-table result
 
-C24 observed 527161 derived PE runtime-function entries against its old 262144-entry diagnostic cap. This was accepted only as a cap refusal, not malformed metadata or missing-entry proof.
-
-## c25 accepted result — full table valid, target genuinely has no runtime entry
-
-Evidence: `analysis/V01C25_RUNTIME_RESULT.md`.
+C24 observed 527161 derived PE runtime-function entries against an old 262144-entry diagnostic cap. C25 resolved that ambiguity by validating the complete authenticated table under finite budgets:
 
 ```text
 directory_rva=0xC566000
@@ -119,11 +115,9 @@ PE_runtime_table_valid=1
 
 Therefore the strict pinned no-unwind fallback legitimately starts.
 
-## c26 accepted actual runtime result — exact CMP crossed, JA is next barrier
+## c26 accepted actual runtime result — exact CMP
 
-Evidence: `analysis/V01C26_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c26-20261025-054449.log`.
-
-Exact first target instruction:
+Evidence: `analysis/V01C26_RUNTIME_RESULT.md`.
 
 ```text
 0x2CF7FE0: cmp r8d, 0x3FFF
@@ -133,45 +127,97 @@ flags_only=1
 form_supported=1
 GPR_XMM_memory_writes=0
 flags_written=CF_PF_AF_ZF_SF_OF
-```
-
-For the analyzed selected-read state:
-
-```text
 R8 parent_may_depend_tags=0x0
 CMP flags_may_depend_tags=0x0
 ```
 
-Thus the c26 narrow CMP model is accepted: it is a read-only flags effect and does not carry selected tag 1 into flags for this state.
+Thus the narrow read-only CMP model is accepted for the analyzed state.
 
-The strict walk now stops at the next exact instruction:
+The next instruction is:
 
 ```text
 0x2CF7FE7: ja
 condition=CF0_and_ZF0
 flags_read=CF_ZF
 flags_producer_rva=0x2CF7FE0
-flags_dependency_known=1
 consumer_may_depend_tags=0x0
-control_expanded=0
 numerical_outcome=unknown
-both_outcomes_unresolved=1
-reason=target_leaf_control_or_nested_call_refused
 ```
 
-Target identity/effect remains unadmitted:
+## c27 accepted actual runtime result — JA fan-out crossed, MOV memory barrier
+
+Evidence: `analysis/V01C27_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c27-20261025-113718.log`.
+
+The exact pinned JA is now classified and safely expanded without choosing a numerical outcome:
 
 ```text
-admitted=0
-boundary_verified=0
-snapshot_authenticated=0
-effect_certificate=0
-first_unresolved_rva=0x2CF7FE7
-first_unresolved_instruction=ja
-writable_source_proven=0
+site_rva=0x2CF7FE7
+encoding=short_JA_rel8
+instruction_bytes=2
+displacement=42
+edges_exact=1
+taken_rva=0x2CF8013
+fallthrough_rva=0x2CF7FE9
+taken_in_code=1
+fallthrough_in_code=1
+taken_in_allowance=1
+fallthrough_in_allowance=1
+taken_forward=1
+fallthrough_forward=1
+taken_runtime_cross=0
+fallthrough_runtime_cross=0
+snapshot_stable=1
+control_expanded=1
+numerical_outcome=unknown
+outcome_narrowing=0
+rule=pinned_JA_both_forward_paths
 ```
 
-Interpretation: JA control dependence is proven disjoint from selected tag 1 for this analyzed state, but the numerical outcome is unknown. Do not follow only one edge. A successor proof must classify exact taken/fallthrough edges and, if authorized by a narrow bounded rule, enumerate both and merge their effects conservatively.
+The all-path proof remains incomplete because the fallthrough leg immediately reaches a memory operand that the current strict leaf model refuses:
+
+```text
+barrier_rva=0x2CF7FE9
+barrier_instruction=mov
+reason=target_cfg_memory_operand_refused
+```
+
+Bounded target CFG state:
+
+```text
+complete=0
+return_paths=0
+unique_instructions=3
+visits=3
+branch_cap=1
+path_cap=2
+byte_cap=128
+instruction_cap=32
+visit_cap=64
+all_paths_required=1
+final_code_rechecked=0
+effect_certificate=0
+```
+
+Parent selected-read flow therefore advances to:
+
+```text
+first_unresolved_rva=0x2CF7FE9
+first_unresolved_instruction=mov
+returned_gpr_may_depend_mask=0x1
+memory_escape=0
+downstream_XYZ_W_relevance=unknown
+cross_invocation_feedback=unknown
+writable_source_proven=0
+reason=target_cfg_memory_operand_refused
+```
+
+Important interpretation:
+
+- c27 proves exact JA geometry and the bounded both-leg fan-out mechanism.
+- It does **not** authenticate one leg independently; `return_paths=0` and all-path completion is still required.
+- The log does not establish the MOV's exact operands, width, memory read/write direction, address expression, memory region, alias class, or loaded-value provenance.
+- Do not infer those facts from `mov` or `target_cfg_memory_operand_refused`.
+- The next task is exact MOV classification first; no generic memory model is authorized.
 
 ## Current safety gate
 
@@ -184,7 +230,7 @@ source_lifetime_exclusive=0
 downstream_conflicts_proven_absent=0
 ```
 
-C26 runtime safety remained closed across two WallRun sessions: verified native Deinit, retention pass, hard kills 0, MOD Position writes 0, source-position writes 0, adhesion corrections 0.
+C27 runtime safety remained closed across two WallRun sessions: verified native Deinit, retention pass, hard kills 0, MOD Position writes 0, source-position writes 0, adhesion corrections 0.
 
 Producer `0x351EB00` remains deferred. No movement, adhesion, camera, animation or physics advancement is authorized.
 
@@ -203,7 +249,7 @@ Canonical workspace:
 
 Shared ordinary mods + SF + WS, shared Overstrike, modded launch and versioned WS/SF runtime logs are accepted.
 
-A 2026-10-25 local failure was traced to game-root `Check for updates.exe` (Overstrike Updater, Tkachov) loading the game-root proxy `WINMM.dll`, thereby preventing Overstrike from deleting/replacing it during `.script support` installation. The WS helper now includes path-validated updater shutdown / launch-time prevention logic. `winmm.dll` absence is treated as a recoverable `.script support` repair state rather than an unconditional preflight failure. Do not stop unrelated same-named processes.
+A 2026-10-25 local failure was traced to game-root `Check for updates.exe` (Overstrike Updater, Tkachov) loading the game-root proxy `WINMM.dll`, preventing Overstrike from deleting/replacing it during `.script support` installation. The WS helper now includes path-validated updater shutdown / launch-time prevention logic. `winmm.dll` absence is treated as a recoverable `.script support` repair state rather than an unconditional preflight failure. Do not stop unrelated same-named processes.
 
 ## Current stages
 
@@ -228,35 +274,24 @@ A 2026-10-25 local failure was traced to game-root `Check for updates.exe` (Over
 19. c23 direct target `0x2CF7FE0` + carrier classification ✅ actual game
 20. c24 target identity failure narrowed to PE runtime-table cap ✅ actual game
 21. c25 full 527161-entry table validation + genuine missing runtime entry ✅ actual game
-22. c26 exact `cmp r8d,0x3FFF` flags-only model + next `JA` barrier ✅ actual game
-23. bounded exact `0x2CF7FE7 JA` edge classification / both-leg proof ▶ CURRENT
-24. resume full writer XYZ/W causal proof ⏸ after local effect classification
-25. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-26. safe writable upstream movement source ⬜ NOT AUTHORIZED
-27. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-28. adhesion/contact refinement ⏸ deferred
-29. animation/camera/later traversal ⬜
+22. c26 exact `cmp r8d,0x3FFF` flags-only model ✅ actual game
+23. c27 exact `JA` taken/fallthrough classification + bounded both-leg fan-out ✅ actual game
+24. classify exact `0x2CF7FE9 MOV` memory operand/effect ▶ CURRENT
+25. resume full writer XYZ/W causal proof ⏸ after local effect classification
+26. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+27. safe writable upstream movement source ⬜ NOT AUTHORIZED
+28. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+29. adhesion/contact refinement ⏸ deferred
+30. animation/camera/later traversal ⬜
 
 ## Current action
 
 Follow `docs/CODEX_NEXT.md`.
 
-Classify exact taken and fallthrough edges of `0x2CF7FE7 JA`. Only add a narrowly bounded tag-disjoint conditional fan-out if both edges are exact, forward/acyclic, remain inside the pinned allowed code region and runtime-region boundary, and every reachable path remains within the existing no-memory/no-stack/no-call/no-unsupported-effect contract. Both outcomes must be explored; numerical direction must not be guessed. Target identity is admitted only if every reachable path terminates in modeled normal RET with all effects/caps satisfied.
+Classify the exact operands/effects of `0x2CF7FE9: mov` before adding any memory semantics. Memory write/RMW remains immediate refusal. A pure read-only load may be modeled only if the source range and loaded-value provenance can be conservatively established from owned symbolic/authenticated state without arbitrary live memory-value observation or guessed aliasing. Address provenance and loaded-value provenance must remain separate.
+
+If and only if that exact MOV is admitted, resume the existing c27 two-path proof. Both JA outcomes remain required and every reachable path must safely end in modeled normal RET before target identity/hash/effects can be admitted.
 
 Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
 
 Deferred user-facing features remain tracked in `docs/FEATURE_ROADMAP.md`.
-
-## C27 prepared successor
-
-v0.1c27/package0.1.45 adds exact JA short/near edge/range/runtime diagnostics and
-only a current-call tag-disjoint bounded fan-out:1 conditional/2 paths/128bytes/
-32 unique instructions/64 visits. At most2 guarded proof/parent-analysis passes;
-metadata/code rechecked and compared to prepass, per-state effects repeat tag0
-requirements. Every path must safely RET before identity/hash; path-dependent
-GPR/XMM/flags/origins merge conservatively. One safe path grants nothing. No
-memory/stack/call/partial/loop/other-branch effect or gameplay gate relaxed.
-Actual edges/next barrier remain pending compact runtime metadata. Seven owned
-groups added to identity suite (28 total); exact counts/results in CODEX_RESULT.
-Incoming Overstrike updater/WINMM recovery helpers are preserved. CODEX_NEXT
-remains the task authority; no producer0x351EB00 or writable ownership advancement.
