@@ -121,8 +121,6 @@ R8 tags=0
 CMP flags tags=0
 ```
 
-This exact CMP is admitted as a read-only flags effect for the analyzed state.
-
 ## c27 accepted runtime result — exact JA fan-out
 
 ```text
@@ -141,9 +139,7 @@ Both outcomes are explored; no numerical branch direction is chosen.
 
 ## c28 accepted runtime result — exact MOV classified
 
-Evidence: `analysis/V01C28_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c28-20261025-122112.log`.
-
-Exact fallthrough instruction:
+Evidence: `analysis/V01C28_RUNTIME_RESULT.md`.
 
 ```text
 0x2CF7FE9: mov rax,qword ptr [rcx+0x100]
@@ -154,97 +150,112 @@ memory_RMW=0
 pure_load_form=1
 flags_preserved=1
 full_GPR_write=RAX
-partial_GPR_writes=0
-XMM_writes=0
 SP_write=0
 snapshot_stable=1
 ```
 
-Parent-state source address is exact:
-
-```text
-base=RCX
-base_tags=0
-base_origin_root=16
-base_origin_offset=204285056
-displacement=256
-address_expression_exact=1
-same_address_all_samples=1
-address_root=16
-address_offset=204285312
-address_component_tags=0
-address_class=image_address_mutability_unproven
-alias_may_mask=0x20
-image_range_known=1
-```
-
-This proves the address class, not loaded-value provenance. Incoming RAX carries selected tag1 before this full-width MOV.
-
-## c29 accepted runtime result — image source is writable, tag0 proof refused
-
-Evidence: `analysis/V01C29_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c29-20261025-130401.log`.
-
-The exact source qword is:
+Exact source for the analyzed parent state:
 
 ```text
 source_rva=0xC2D2580
-width=8
+address_component_tags=0
+alias=image only
 ```
 
-Authenticated PE section metadata:
+## c29 accepted runtime result — tag0 image proof refused
+
+Evidence: `analysis/V01C29_RUNTIME_RESULT.md`.
+
+The exact source is writable:
 
 ```text
 section=.data
-section_begin_rva=0x9B24000
-section_end_rva=0xC565A28
 section_characteristics=0xC0000040
 readable=1
 writable=1
 executable=0
-loader_ranges_checked=1
-loader_overlap=0
-policy_passed=0
-reason=image_load_section_not_readonly
+current page=PAGE_READWRITE
 ```
 
-Current mapped page metadata likewise shows a writable image mapping:
-
-```text
-allocation_base_matches_image=1
-range_in_image=1
-region_begin_rva=0xC2D2000
-region_bytes=2703360
-state=0x1000
- type=0x1000000
-protection=0x4  # PAGE_READWRITE
-```
-
-Therefore the c29 non-writable/current-stable rule correctly refuses before reading the qword:
+Therefore the narrow non-writable/tag0 rule correctly refuses before reading the qword:
 
 ```text
 read_attempts=0
 admitted=0
 loaded_tags_known=0
 raw_value_logged=0
-pointer_chase=0
 reason=image_load_section_not_readonly
 ```
 
-This disproves only the narrow **tag0 via immutable image source** route. It does not prove that the qword actually carries any tracked tag. The sound conservative loaded-value upper bound remains `0x7`.
+This disproves only the tag0/immutable-source route. It does not prove actual taint.
 
-Target and parent CALL remain fail-closed at the same instruction:
+## c30 accepted runtime result — exact unknown-top load modeled
+
+Evidence: `analysis/V01C30_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c30-20261025-133648.log`.
+
+C30 admits only the exact c28/c29 full64 load as a conservative abstract unknown effect:
+
+```text
+site_rva=0x2CF7FE9
+source_rva=0xC2D2580
+width=8
+abstract_effect_admitted=1
+loaded_may_depend_top=0x7
+precise_value_tags_known=0
+observed_taint=0
+selected_dependence_killed=0
+source_value_reads=0
+raw_value_logged=0
+numeric_interpretation=0
+pointer_chase=0
+origin=unknown_loaded_qword_not_pointer
+flags/other GPR/XMM/SP/memory preserved
+```
+
+`0x7` is a may-depend upper bound over selected/postwrite/other-prewrite, not an observation that all categories are present. It keeps selected dependence possible while avoiding any qword value read.
+
+The exact MOV now reports:
+
+```text
+semantic_load_modeled=1
+reason=target_MOV_exact_source_unknown_may_top_modeled
+```
+
+Pre-next-barrier state on the fallthrough path:
+
+```text
+RAX/GPR0 tags=0x7
+other logged GPR tags=0
+logged XMM tags=0
+flags_may_depend_tags=0
+upper_bound_not_observed=1
+```
+
+The walk advances one instruction to the new exact barrier:
+
+```text
+barrier_rva=0x2CF7FF0
+barrier_instruction=vmovups
+reason=target_cfg_memory_operand_refused
+path=0
+edge_from_rva=0x2CF7FE7
+edge_target_rva=0x2CF7FE9
+```
+
+Current target state:
 
 ```text
 TARGET_IDENTITY admitted=0
-barrier_rva=0x2CF7FE9
-barrier_instruction=mov
+instructions=4
 LEAF_CFG complete=0
 return_paths=0
-unique_instructions=3
-visits=3
+unique_instructions=4
+visits=4
+final_code_rechecked=0
 effect_certificate=0
-reason=image_load_section_not_readonly
 ```
+
+Do not infer VMOVUPS operand classes, vector width, memory direction, address expression, alias class, destination vector register, or AVX upper-lane behavior from the mnemonic/refusal alone.
 
 ## Current safety gate
 
@@ -257,7 +268,7 @@ downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
 
-C29 runtime safety remained closed in the observed WallRun sessions: verified native Deinit, retention pass, hard kills 0, MOD Position writes 0, source-position writes 0, adhesion corrections 0.
+C30 runtime safety remained closed in observed WallRun sessions: verified native Deinit, retention pass, hard kills 0, MOD Position writes 0, source-position writes 0, adhesion corrections 0.
 
 Producer `0x351EB00` remains deferred. No movement, adhesion, camera, animation or physics advancement is authorized.
 
@@ -298,46 +309,22 @@ The prior Overstrike failure was traced to game-root `Check for updates.exe` loa
 16. c26 exact CMP effect ✅ actual game
 17. c27 exact JA edges + bounded two-path fan-out ✅ actual game
 18. c28 exact MOV form/address provenance ✅ actual game
-19. c29 non-writable/tag0 image-load route refused by writable `.data` + PAGE_READWRITE ✅ actual game
-20. model exact pinned load conservatively as unknown tag upper bound and continue ▶ CURRENT
-21. resume full writer XYZ/W causal proof ⏸ after local effect classification
-22. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-23. safe writable upstream movement source ⬜ NOT AUTHORIZED
-24. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-25. adhesion/contact refinement ⏸ deferred
-26. animation/camera/later traversal ⬜
+19. c29 writable `.data` tag0 route refused ✅ actual game
+20. c30 exact qword unknown-top abstraction + continuation ✅ actual game
+21. classify exact `0x2CF7FF0 VMOVUPS` operand/effect ▶ CURRENT
+22. resume full writer XYZ/W causal proof ⏸ after local effect classification
+23. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+24. safe writable upstream movement source ⬜ NOT AUTHORIZED
+25. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+26. adhesion/contact refinement ⏸ deferred
+27. animation/camera/later traversal ⬜
 
 ## Current action
 
 Follow `docs/CODEX_NEXT.md`.
 
-Do **not** retry the c29 immutable-image proof against this exact source: the authenticated `.data` section and current page are writable, so tag0 is not justified.
+The exact next question is the form/effect of `0x2CF7FF0: vmovups`. Classify vector width, register/memory direction, exact operands, effective address/alias classes, and VEX/EVEX upper-lane semantics before adding any new vector-memory rule.
 
-The next bounded question is whether this **one exact already-classified full64 load** can be admitted only as a conservative abstract effect:
+If it is a memory store/RMW or the existing vector tag representation cannot soundly model the architectural destination effect, refuse. If it is an exact pure load and the complete vector overwrite/upper-lane semantics are representable, a narrowly pinned unknown-value may-top rule may be considered without reading/logging the vector contents.
 
-```text
-RAX tags <- 0x7   # may-depend upper bound, not observed taint
-RAX origin <- unknown loaded value from exact source
-all other GPR/XMM tags unchanged
-flags unchanged
-memory unchanged
-SP unchanged
-```
-
-No raw qword read/value interpretation is needed. Because `0x7` includes selected tag1, this does **not** claim that the prior selected dependence is killed; it merely avoids inventing precision while allowing the existing bounded c27 two-path proof to advance to the next exact unsupported effect.
-
-Do not generalize this rule to arbitrary memory loads, do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
-
-## c30 prepared — pinned unknown-top continuation
-
-v0.1c30/package0.1.48 implements only accepted MOV0x2CF7FE9/source0xC2D2580
-as an unknown loaded value with may-depend top7 (not observed taint). No qword
-read/log/numeric interpretation/pointer chase. C29 tag0/writable-source refusal
-remains. Exact current parent/source/accepted PE/page metadata and target code
-are rechecked, retaining all c27 both-path/RET/caps/runtime gates. The identity
-walk converts entry-carrier masks to actual tags before intrinsic top injection;
-actual c23 walks retain all possible returned categories and path differences.
-Next unsupported op is logged with exact path/edge/pre-instruction GPR/XMM/flags
-tags; actual next barrier/full target result still UNKNOWN. Minimal A~3s/end/
-move/E~3s capture needed; no full private body/qword requested. Detailed policy
-in analysis/V01C30_UNKNOWN_LOAD.md; NEXT preserved, all gameplay/ownership gates0.
+Do not narrow c30's RAX `0x7`, do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
