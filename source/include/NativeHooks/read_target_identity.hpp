@@ -129,6 +129,23 @@ struct ReadMovContract {
   char mnemonic[32]="none";
   const char *addressClass="not_classified",*reason="pinned_MOV_not_decoded";
 };
+inline constexpr std::uint32_t readIdentityVector=0x2cf7ff0;
+struct ReadVectorContract {
+  struct Operand {
+    ReadMovContract::Operand detail{};
+    int vectorParent=-1;
+    unsigned vectorBits{},decodedAccess{},resolvedAccess{},broadcast{};
+    bool zeroMask{};
+  };
+  ReadMovContract detail{};
+  std::array<Operand,8> operands{};
+  unsigned vectorBits{},encodedBits{},vectorWrites{},mask{},replayVisits{},replayRefused{};
+  int destinationParent=-1;
+  bool isVmovups{},encodingKnown{},tagsKnown{},directionKnown{},accessConflict{},
+      masked{},zeroMask{},broadcast{},rounding{},upperZero{},upperPreserved{},
+      destinationRepresented{},upperStateRepresented{};
+  const char *encoding="unsupported",*upperEffect="unknown";
+};
 struct ReadTargetIdentity {
   bool enabled{}, admitted{}, missingRuntime{}, stable{}, tableValid{};
   bool directoryPairValid{}, directoryRangeInImage{}, directorySizeDivisible{},
@@ -141,6 +158,7 @@ struct ReadTargetIdentity {
   ReadCmpContract cmp{};
   ReadLeafBranch branch{};
   ReadMovContract mov{};
+  ReadVectorContract vector{};
   ReadImageLoad load{};
   ReadUnknownLoad unknownLoad{};
   ReadLeafBoundary boundary{};

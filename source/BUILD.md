@@ -136,3 +136,14 @@ source/form/current-parent and PE/page/code rechecks, zero qword reads, register
 flag preservation/propagation, wrong forms/chases, next path/edge/tag-state
 barriers, unsafe leg and conservative returned-tag unions. Existing c29 writable
 source tag0 refusal remains. Details analysis/V01C30_UNKNOWN_LOAD.md.
+
+## c31 pinned VMOVUPS classification
+
+v0.1c31/package0.1.49 adds8 owned groups to test_read_target_identity.sh
+(60 total), retaining21 read/call and all c19-c30/native regressions.
+Covers VEX2/3/EVEX widths/access/aliases, encoding-verified store refusal despite
+Capstone5 access mismatch, parent source/Hero/stack/image/unknown provenance,
+masked/merge/zero and XMM/YMM/ZMM upper-state refusal, snapshot/site/all-path
+gates and retained c30 top7/no value reads. No vector load semantics admitted
+because actual form and complete upper-state representation are unavailable.
+Details analysis/V01C31_VMOVUPS_CLASSIFICATION.md.

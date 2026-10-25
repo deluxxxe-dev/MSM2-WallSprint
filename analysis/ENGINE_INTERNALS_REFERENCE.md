@@ -1,3 +1,15 @@
+## C30 accepted / c31 exact VMOVUPS classification prepared
+
+VERIFIED-RUNTIME c30 exact qword unknown-top7/no value reads works; new barrier
+VMOVUPS0x2CF7FF0/path0 with RAX7, other GPR/XMM/flags0. Actual operands/width/
+direction/upper semantics UNKNOWN. C31 records only exact metadata/current
+parent aliases and refuses all vector memory semantics: XMM128-only state lacks
+complete YMM/ZMM/upper representation. Owned Capstone5 fixture shows opcode11
+store may be labeled READ; verify exact encoding/layout, never grant a write.
+No raw values, body or new rules. C30/c29/c25/c27/all ownership/write gates
+unchanged. Sources V01C30_RUNTIME_RESULT.md / V01C31_VMOVUPS_CLASSIFICATION.md.
+Earlier pending c30 checkpoints below are historical, superseded by runtime.
+
 ## C29 accepted / c30 pinned unknown-top continuation prepared
 
 VERIFIED-RUNTIME c29: source0xC2D2580 is writable .data0x9B24000..0xC565A28/

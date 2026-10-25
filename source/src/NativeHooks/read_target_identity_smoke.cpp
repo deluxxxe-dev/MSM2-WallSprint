@@ -129,7 +129,7 @@ struct LargeImage : Image {
 };
 ws::rdx::CalleeAlias flowThroughIdentity(Image &image,bool expectAdmission,bool expectLiveValue,const ws::rdx::ReadEntryTags *entry=nullptr,
     bool disjointR8=false,bool expectLeafFlow=true,bool mismatchedCode=false,bool otherR9=false,bool conflictingAddresses=false,
-    bool imageBaseArgument=false,std::uint32_t moduleSize=imageSize) {
+    bool imageBaseArgument=false,std::uint32_t moduleSize=imageSize,bool heroR9=false) {
   std::array<unsigned char,183> writer{};std::array<unsigned char,137> parent{};
   writer.fill(0x90);parent.fill(0x90);
   auto put=[](auto &b,unsigned at,std::initializer_list<unsigned char> v) {
@@ -147,6 +147,7 @@ ws::rdx::CalleeAlias flowThroughIdentity(Image &image,bool expectAdmission,bool 
   if (conflictingAddresses) put(parent,0xb,{0x49,0x89,0xc9,0x75,3,0x49,0x89,0xf1});
   put(parent,0x20,{0xbf,1,0,0,0});put(parent,0x2e,{0x89,0xb9,0x0c,1,0,0});
   put(parent,0x34,{0x8b,0x91,0x0c,1,0,0}); // postwrite tag2 in EDX.
+  if (heroR9) put(parent,0xb,{0x49,0x89,0xc9});
   if (imageBaseArgument) {
     put(parent,0x3c,{0x48,0x8d,0x0d,0,0,0,0});
     Image::put32(parent,0x3f,ws::rdx::readImageBaseOrigin-(0x2000+0x43));
@@ -951,5 +952,122 @@ int main() {
         !(a.readDependency.call.returnedGpr[1]&1) && !(a.readDependency.call.returnedGpr[2]&1));
   }
   std::puts("PASS: c30 both normal RET effects remain explicit; conservative union retains all possible loaded categories and selected dependence, with narrowing only through already-admitted later register effects on every relevant path");
+
+  auto vectorAt=[&](Image &f,std::initializer_list<unsigned char> bytes) {
+    writableUnknown(f);std::copy(bytes.begin(),bytes.end(),f.code.begin()+16);f.code[16+bytes.size()]=0xc3;
+  };
+  {
+    Image f;vectorAt(f,{0xc5,0xf8,0x10,0x41,0x20});
+    auto a=flowThroughIdentity(f,false,false,&evidence,true,true,false,false,false,true,Image::sourceImageSize);
+    const auto &id=a.readDependency.call.targetIdentity;const auto &v=id.vector;const auto &m=v.detail;
+    assert(!id.admitted && id.unknownLoad.admitted && id.barrier==target+16 && m.decoded && v.isVmovups &&
+        !std::strcmp(v.encoding,"VEX2") && v.encodingKnown && m.instructionBytes==5 && v.vectorBits==128 && v.encodedBits==128 &&
+        m.operandCount==2 && v.operands[0].vectorParent==0 && v.operands[0].resolvedAccess==2 &&
+        v.operands[1].resolvedAccess==1 && m.memoryRead && !m.memoryWrite && !m.memoryRmw && m.pureLoad &&
+        m.flagsPreserved && !m.fullGprWrites && !m.stackPointerWrite && v.vectorWrites==1 && !f.sourceReads);
+    assert(m.parentState && m.samples && m.addressExact && m.addressSame && m.addressRoot==16 &&
+        m.addressOffset==ws::rdx::readImageBaseOrigin+0x20 && m.aliasMayMask==ws::rdx::movImage && !m.addressTags &&
+        m.loadedMayTags==7 && id.boundary.gpr[0]==7 && !id.boundary.flagsTags && !id.boundary.xmm[0]);
+  }
+  std::puts("PASS: c31 pinned VMOVUPS VEX128 exact operand/access/width/writes/flags and current image-source metadata are diagnosed without semantic admission, value reads or changing c30 RAX top7");
+
+  {
+    for (const auto &bytes:std::vector<std::vector<unsigned char>>{{0xc5,0xf8,0x11,0x41,0x20},{0xc4,0xe1,0x78,0x11,1},{0x62,0xf1,0x7c,8,0x11,1}}) {
+      Image f;writableUnknown(f);std::copy(bytes.begin(),bytes.end(),f.code.begin()+16);
+      r=f.run(true,target,Image::sourceImageSize,&evidence);const auto &v=r.vector;
+      assert(!r.admitted && v.detail.memoryWrite && !v.detail.pureLoad && v.directionKnown &&
+          v.operands[0].resolvedAccess==2 && v.operands[1].resolvedAccess==1 &&
+          !std::strcmp(r.reason,"target_VMOVUPS_memory_write_or_RMW_refused") && !f.sourceReads);
+      if (bytes[0]==0xc5) assert(v.accessConflict && v.operands[0].decodedAccess==1 && !v.vectorWrites);
+    }
+  }
+  std::puts("PASS: c31 VEX2/VEX3/EVEX memory stores refuse immediately; opcode/layout verified write direction overrides Capstone5 store-as-read diagnostics while retaining the decoder conflict explicitly");
+
+  {
+    Image indexed;vectorAt(indexed,{0xc5,0xf8,0x10,0x44,0x81,0xf0});
+    auto a=flowThroughIdentity(indexed,false,false,&evidence,true,true,false,false,false,true,Image::sourceImageSize);
+    const auto &v=a.readDependency.call.targetIdentity.vector;const auto &op=v.operands[1].detail;
+    assert(!v.detail.addressExact && op.baseParent==1 && op.indexParent==0 && op.scale==4 && op.displacement==-16 &&
+        op.indexTags==7 && v.detail.addressTags==7 && v.detail.aliasMayMask==ws::rdx::movAnyAlias);
+    Image chase;vectorAt(chase,{0xc5,0xf8,0x10,0});a=flowThroughIdentity(chase,false,false,&evidence,true,true,false,false,false,true,Image::sourceImageSize);
+    assert(!a.readDependency.call.targetIdentity.vector.detail.addressExact && a.readDependency.call.targetIdentity.vector.operands[1].detail.baseTags==7 && !chase.sourceReads);
+    Image segment;vectorAt(segment,{0x64,0xc5,0xf8,0x10,1});a=flowThroughIdentity(segment,false,false,&evidence,true,true,false,false,false,true,Image::sourceImageSize);
+    assert(!a.readDependency.call.targetIdentity.vector.detail.addressExact && !std::strcmp(a.readDependency.call.targetIdentity.vector.operands[1].detail.segment,"fs"));
+    Image addr32;vectorAt(addr32,{0x67,0xc5,0xf8,0x10,1});a=flowThroughIdentity(addr32,false,false,&evidence,true,true,false,false,false,true,Image::sourceImageSize);
+    assert(a.readDependency.call.targetIdentity.vector.detail.addressWidth==4 && !a.readDependency.call.targetIdentity.vector.detail.addressExact);
+  }
+  std::puts("PASS: c31 exact base/index/scale/signed displacement/segment/address32 metadata preserves address-component top7 and unknown aliases; loaded RAX bits are never pointer provenance or a second dereference");
+
+  {
+    Image source;vectorAt(source,{0xc5,0xf8,0x10,6});auto a=flowThroughIdentity(source,false,false,&evidence,true,true,false,false,false,true,Image::sourceImageSize);
+    assert(a.readDependency.call.targetIdentity.vector.detail.aliasMayMask&ws::rdx::movSource);
+    Image home;vectorAt(home,{0xc5,0xf8,0x10,0x44,0x24,8});a=flowThroughIdentity(home,false,false,&evidence,true,true,false,false,false,true,Image::sourceImageSize);
+    assert(a.readDependency.call.targetIdentity.vector.detail.aliasMayMask&ws::rdx::movCallerHome);
+    Image below;vectorAt(below,{0xc5,0xf8,0x10,0x44,0x24,0xf0});a=flowThroughIdentity(below,false,false,&evidence,true,true,false,false,false,true,Image::sourceImageSize);
+    assert((a.readDependency.call.targetIdentity.vector.detail.aliasMayMask&(ws::rdx::movPrivateStack|ws::rdx::movUnknown))==(ws::rdx::movPrivateStack|ws::rdx::movUnknown));
+    Image field;vectorAt(field,{0xc4,0xc1,0x78,0x10,0x81,0x0c,1,0,0});
+    a=flowThroughIdentity(field,false,false,&evidence,true,true,false,false,false,true,Image::sourceImageSize,true);
+    assert(a.readDependency.call.targetIdentity.vector.detail.aliasMayMask==(ws::rdx::movHero|ws::rdx::movField10c));
+    Image conflict;vectorAt(conflict,{0xc4,0xc1,0x78,0x10,1});
+    a=flowThroughIdentity(conflict,false,false,&evidence,true,true,false,false,true,true,Image::sourceImageSize);
+    const auto &m=a.readDependency.call.targetIdentity.vector.detail;
+    assert(m.samples==2 && !m.addressSame && !m.addressExact && (m.aliasMayMask&ws::rdx::movHero) && (m.aliasMayMask&ws::rdx::movSource) && (m.aliasMayMask&ws::rdx::movUnknown));
+  }
+  std::puts("PASS: c31 caller-state vector aliases distinguish Hero/field10C/source/home/below-SP candidates and union conflicting parent addresses conservatively; no private-stack allocation or typed ABI is invented");
+
+  {
+    for (bool wide:{false,true}) {
+      Image f;vectorAt(f,{0xc5,(unsigned char)(wide?0xfc:0xf8),0x10,0x49,0x20});r=f.run(true,target,Image::sourceImageSize,&evidence);
+      const auto &v=r.vector;assert(!r.admitted && v.destinationParent==1 && v.vectorBits==(wide?256u:128u) &&
+          v.upperZero && !v.upperPreserved && !v.upperStateRepresented && v.destinationRepresented==!wide &&
+          !std::strcmp(r.reason,"target_VMOVUPS_upper_vector_state_not_represented") && !f.sourceReads);
+    }
+    Image reg;vectorAt(reg,{0xc5,0xf8,0x10,0xc1});r=reg.run(true,target,Image::sourceImageSize,&evidence);
+    assert(!r.admitted && !r.vector.detail.memoryOperands && r.vector.upperZero && !r.vector.upperStateRepresented);
+  }
+  std::puts("PASS: c31 XMM low128 metadata does not cover VEX upper zeroing and YMM256 exceeds current representation; both loads and register forms remain refused without inventing a whole-vector state");
+
+  {
+    for (auto p2:{0x08u,0x09u,0x89u,0x49u}) {
+      Image f;vectorAt(f,{0x62,0xf1,0x7c,(unsigned char)p2,0x10,1});
+      auto a=flowThroughIdentity(f,false,false,&evidence,true,true,false,false,false,true,Image::sourceImageSize);
+      const auto &v=a.readDependency.call.targetIdentity.vector;
+      assert(!a.readDependency.call.targetIdentity.admitted && !std::strcmp(v.encoding,"EVEX") && v.encodingKnown &&
+          v.detail.memoryRead && !v.detail.memoryWrite && !v.upperStateRepresented && !f.sourceReads);
+      if (p2&7) {
+        assert(v.masked && v.mask==1 && v.detail.operandCount==3 && v.operands[2].resolvedAccess==1 && v.detail.addressExact);
+        assert(v.operands[0].resolvedAccess==((p2&128)?2u:3u));
+      }
+    }
+  }
+  std::puts("PASS: c31 EVEX masked/merge/zero and ZMM forms expose all operand access and encoding modifiers but refuse; vector merge is distinct from memory RMW, no hidden lane semantics or vector values observed");
+
+  {
+    Image wrong;writableUnknown(wrong);wrong.code[16]=0x90;const unsigned char bytes[]={0xc5,0xf8,0x10,1};std::copy(std::begin(bytes),std::end(bytes),wrong.code.begin()+17);
+    r=wrong.run(true,target,Image::sourceImageSize,&evidence);assert(!r.vector.detail.decoded && r.barrier==target+17 && !r.admitted);
+    Image unstable;vectorAt(unstable,{0xc5,0xf8,0x10,1});unstable.changeFinal=true;r=unstable.run(true,target,Image::sourceImageSize,&evidence);
+    assert(!r.admitted && !r.stable && !r.unknownLoad.admitted && !unstable.sourceReads);
+    Image safeTaken;vectorAt(safeTaken,{0xc5,0xf8,0x10,1});safeTaken.code[40]=0xc3;
+    r=safeTaken.run(true,target,Image::sourceImageSize,&evidence);
+    assert(!r.admitted && !r.cfgComplete && !r.size && !r.paths && r.barrier==target+16 && r.boundary.path==0 &&
+        r.boundary.edgeFrom==target+7 && r.boundary.edgeTarget==target+9 && r.boundary.gpr[0]==7);
+  }
+  std::puts("PASS: c31 wrong vector site/current snapshot and one safe other JA leg cannot grant vector/target admission; exact vector barrier/path/pre-state and all c27 caps remain unchanged");
+
+  {
+    Image f;vectorAt(f,{0xc5,0xf8,0x10,1});auto tagged=evidence;tagged.xmm[0]=4;
+    r=f.run(true,target,Image::sourceImageSize,&tagged);
+    assert(!r.admitted && r.vector.detail.loadedMayTags==7 && r.boundary.xmm[0]==4 && !r.boundary.flagsTags && r.boundary.gpr[0]==7 && !r.boundary.gpr[4] && !f.sourceReads);
+    Image badSource;vectorAt(badSource,{0xc5,0xf8,0x10,1});auto bad=evidence;bad.imageLoadAddressVerified=false;
+    r=badSource.run(true,target,Image::sourceImageSize,&bad);assert(!r.vector.detail.decoded && r.barrier==target+9);
+    Image wrongParent;vectorAt(wrongParent,{0xc5,0xf8,0x10,1});
+    auto wrongAlias=flowThroughIdentity(wrongParent,false,false,&evidence,true,true,false,false,false,false,Image::sourceImageSize);
+    assert(wrongAlias.readDependency.call.targetIdentity.vector.replayRefused && !wrongAlias.readDependency.call.targetIdentity.vector.detail.addressExact &&
+        wrongAlias.readDependency.call.targetIdentity.vector.detail.aliasMayMask==ws::rdx::movAnyAlias);
+    LargeImage large(527161);vectorAt(large,{0xc5,0xf8,0x10,1});
+    r=ws::rdx::authenticateReadTarget(true,target,Image::sourceImageSize,LargeImage::readLarge,LargeImage::lookupLarge,&large,&evidence,Image::query,true);
+    assert(!r.admitted && r.vector.detail.decoded && r.validatedEntries==527161 && r.unknownLoad.admitted && !large.sourceReads);
+  }
+  std::puts("PASS: c31 metadata never updates vector/GPR/flags/SP state or turns tag0 image addresses into tag0 loads; c30 top7/current-source and complete527161 metadata gates remain mandatory with zero source/vector reads");
 
 }

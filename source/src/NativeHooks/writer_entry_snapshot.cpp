@@ -1359,6 +1359,38 @@ void configure(const Spec &s, Gate validate) noexcept {
              "scope=bounded_current_target_proof_not_global_lifetime reason=%s effect_certificate=0",
              load.source,load.valueReadAttempts,unsigned(load.firstRead),unsigned(load.finalRead),unsigned(load.metadataSame),unsigned(load.pageSame),
              unsigned(load.stable),unsigned(load.targetCodeRechecked),unsigned(load.admitted),unsigned(load.admitted),load.reason);
+    const auto &vector=identity.vector;const auto &vm=vector.detail;
+    writeLog("MOVEMENT_CALLEE_READ_VECTOR site_rva=0x%x decoded=%u instruction=%s bytes=%u encoding=%s encoding_known=%u "
+             "vector_bits=%u encoded_bits=%u operands=%u address_bits=%u memory_read=%u memory_write=%u memory_RMW=%u "
+             "direction_encoding_verified=%u decoder_access_conflict=%u pure_load_form=%u flags_preserved=%u "
+             "GPR_writes=0x%x partial_GPR_writes=0x%x vector_writes=0x%x other_writes=%u SP_write=%u "
+             "snapshot_stable=%u current_code_rechecked=%u semantic_load_modeled=0 raw_values=0 effect_certificate=0 reason=%s",
+             vm.site,unsigned(vm.decoded),vm.mnemonic,vm.instructionBytes,vector.encoding,unsigned(vector.encodingKnown),vector.vectorBits,vector.encodedBits,
+             vm.operandCount,vm.addressWidth,unsigned(vm.memoryRead),unsigned(vm.memoryWrite),unsigned(vm.memoryRmw),unsigned(vector.directionKnown),
+             unsigned(vector.accessConflict),unsigned(vm.pureLoad),unsigned(vm.flagsPreserved),vm.fullGprWrites,vm.partialGprWrites,vector.vectorWrites,
+             vm.otherRegisterWrites,unsigned(vm.stackPointerWrite),unsigned(identity.stable),unsigned(identity.unknownLoad.targetCodeRechecked),vm.reason);
+    for (unsigned j=0;j<std::min(vm.operandCount,8u);++j) {
+      const auto &o=vector.operands[j];const auto &op=o.detail;
+      writeLog("MOVEMENT_CALLEE_READ_VECTOR_OPERAND site_rva=0x%x index=%u kind=%s register=%s width=%u vector_parent=%d vector_bits=%u "
+               "decoded_access=%u encoding_resolved_access=%u register_tags=0x%x base=%s base_parent=%d base_tags=0x%x "
+               "memory_index=%s index_parent=%d index_tags=0x%x scale=%u displacement=%lld segment=%s base_kind=%d base_root=%d base_offset=%lld index_kind=%d index_root=%d index_offset=%lld "
+               "broadcast=%u zero_mask=%u tags_known=%u tags_scope=GPR_address_and_low128_XMM_only upper_tags_known=0 upper_bound_not_observed=1 raw_values=0",
+               vm.site,j,op.kind,op.name,op.width,o.vectorParent,o.vectorBits,o.decodedAccess,o.resolvedAccess,op.registerTags,
+               op.base,op.baseParent,op.baseTags,op.index,op.indexParent,op.indexTags,op.scale,(long long)op.displacement,op.segment,op.baseKind,op.baseRoot,(long long)op.baseOffset,op.indexKind,op.indexRoot,(long long)op.indexOffset,
+               o.broadcast,unsigned(o.zeroMask),unsigned(vector.tagsKnown));
+    }
+    writeLog("MOVEMENT_CALLEE_READ_VECTOR_ADDRESS site_rva=0x%x parent_state=%u samples=%u replay_visits=%u replay_refused=%u replay_cap=4096 "
+             "address_exact=%u same_address_all_samples=%u class=%s root=%d offset=%lld component_tags=0x%x alias_may_mask=0x%x "
+             "alias_Hero1_field10C2_source4_callerHome8_privateStack16_image32_unknown64=1 loaded_may_top=0x%x loaded_tags_known=0 "
+             "source_value_reads=0 pointer_chase=0 effect_certificate=0",
+             vm.site,unsigned(vm.parentState),vm.samples,vector.replayVisits,vector.replayRefused,unsigned(vm.addressExact),unsigned(vm.addressSame),
+             vm.addressClass,vm.addressRoot,(long long)vm.addressOffset,vm.addressTags,vm.aliasMayMask,vm.loadedMayTags);
+    writeLog("MOVEMENT_CALLEE_READ_VECTOR_ARCH site_rva=0x%x destination_parent=%d decoded_vector_bits=%u represented_bits=128 represented_banks=16 "
+             "destination_low_state_represented=%u upper_state_represented=%u upper_effect=%s upper_zero=%u upper_preserved=%u "
+             "mask=%u masked=%u zero_mask=%u broadcast=%u rounding=%u partial_vector_semantics=0 "
+             "YMM_ZMM_upper_lane_rule_added=0 fault_suppression_supported=0 no_value_observation=1 semantic_load_modeled=0 effect_certificate=0",
+             vm.site,vector.destinationParent,vector.vectorBits,unsigned(vector.destinationRepresented),unsigned(vector.upperStateRepresented),vector.upperEffect,
+             unsigned(vector.upperZero),unsigned(vector.upperPreserved),vector.mask,unsigned(vector.masked),unsigned(vector.zeroMask),unsigned(vector.broadcast),unsigned(vector.rounding));
     const auto &unknown=identity.unknownLoad;
     writeLog("MOVEMENT_CALLEE_READ_UNKNOWN_LOAD site_rva=0x%x enabled=%u attempted=%u source_rva=0x%x width=8 "
              "metadata_passed=%u metadata_rechecked=%u PE_metadata_equal=%u page_metadata_equal=%u target_code_rechecked=%u "

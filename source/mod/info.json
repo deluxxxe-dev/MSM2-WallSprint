@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.48",
-  "description": "WallSprint v0.1c30 models only pinned full64 RAX image qword load with unknown may-depend top7, without reading its value. Exact source/form/current parent/PE/page/code checks and all-path RET/cap gates remain. No tag0, generic load rule or ownership/gameplay write permission.",
+  "version": "0.1.49",
+  "description": "WallSprint v0.1c31 classifies only pinned VMOVUPS0x2CF7FF0 encoding/vector width/operands/access/upper lanes/current-parent aliases. Stores refuse; unsupported whole-vector state remains refused. C30 qword top7/no value reads and all safety gates unchanged.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

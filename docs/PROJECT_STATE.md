@@ -328,3 +328,15 @@ The exact next question is the form/effect of `0x2CF7FF0: vmovups`. Classify vec
 If it is a memory store/RMW or the existing vector tag representation cannot soundly model the architectural destination effect, refuse. If it is an exact pure load and the complete vector overwrite/upper-lane semantics are representable, a narrowly pinned unknown-value may-top rule may be considered without reading/logging the vector contents.
 
 Do not narrow c30's RAX `0x7`, do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
+
+## c31 prepared — exact VMOVUPS diagnostic
+
+v0.1c31/package0.1.49 classifies only VMOVUPS0x2CF7FF0. Actual operands/width/
+direction/address/upper state remain UNKNOWN pending compact VECTOR records.
+No new vector semantics: represented XMM128 does not cover whole VEX/YMM/ZMM
+upper state, and stores/RMW/masks/merge/modifiers remain refused. Decoder-store
+READ discrepancy is reported with encoding/layout-verified direction. Current
+parent replay uses saved bytes/owned state only, no data/vector read. C30 RAX7/
+no qword reads and all all-path/cap/runtime/ownership/write gates unchanged.
+NEXT preserved. Minimal A~3s/end/move/E~3s vector metadata capture required;
+analysis/V01C31_VMOVUPS_CLASSIFICATION.md details decision/tests/limits.

@@ -1474,6 +1474,121 @@ ReadMovContract describeMov(const cs_insn &ins,csh decoder,const Slice &state,
       : "target_MOV_no_memory_existing_register_rules_only";
   return m;
 }
+int vectorParent(unsigned id) {
+  if (id>=X86_REG_XMM0 && id<=X86_REG_XMM31) return int(id-X86_REG_XMM0);
+  if (id>=X86_REG_YMM0 && id<=X86_REG_YMM31) return int(id-X86_REG_YMM0);
+  if (id>=X86_REG_ZMM0 && id<=X86_REG_ZMM31) return int(id-X86_REG_ZMM0);
+  return -1;
+}
+ReadVectorContract describeVector(const cs_insn &ins,csh decoder,const Slice &state,
+    const ReadFlow &flow,bool parent,bool tagsKnown,std::size_t imageSize,std::uint32_t codeBegin,std::uint32_t codeEnd) {
+  ReadVectorContract v{};v.detail=describeMov(ins,decoder,state,flow,parent,imageSize,codeBegin,codeEnd);
+  auto &m=v.detail;const auto &x=ins.detail->x86;v.isVmovups=ins.id==X86_INS_VMOVUPS;v.tagsKnown=tagsKnown;
+  unsigned at=0;
+  while (at<ins.size && (ins.bytes[at]==0x64 || ins.bytes[at]==0x65 || ins.bytes[at]==0x67)) ++at;
+  unsigned opcode=0;
+  if (at+2<ins.size && ins.bytes[at]==0xc5) {
+    v.encoding="VEX2";v.encodingKnown=(ins.bytes[at+1]&3)==0 && ((ins.bytes[at+1]>>3)&15)==15;
+    v.encodedBits=128u<<((ins.bytes[at+1]>>2)&1);opcode=ins.bytes[at+2];
+  } else if (at+3<ins.size && ins.bytes[at]==0xc4) {
+    v.encoding="VEX3";v.encodingKnown=(ins.bytes[at+1]&31)==1 && (ins.bytes[at+2]&3)==0 && ((ins.bytes[at+2]>>3)&15)==15;
+    v.encodedBits=128u<<((ins.bytes[at+2]>>2)&1);opcode=ins.bytes[at+3];
+  } else if (at+4<ins.size && ins.bytes[at]==0x62) {
+    v.encoding="EVEX";const auto p=ins.bytes[at+3];const unsigned length=(p>>5)&3;
+    v.encodingKnown=(ins.bytes[at+1]&7)==1 && (ins.bytes[at+2]&7)==4 && length<3;
+    v.encodedBits=length<3?128u<<length:0;opcode=ins.bytes[at+4];
+    v.mask=p&7;v.masked=v.mask!=0;v.zeroMask=(p&128)!=0;v.broadcast=(p&16)!=0;
+  }
+  v.encodingKnown &= opcode==0x10 || opcode==0x11;
+  v.rounding=x.avx_sae || x.avx_rm!=X86_AVX_RM_INVALID;
+  for (unsigned j=0;j<x.op_count && j<v.operands.size();++j) {
+    const auto &op=x.operands[j];auto &o=v.operands[j];o.decodedAccess=op.access;o.resolvedAccess=op.access;
+    o.broadcast=op.avx_bcast;o.zeroMask=op.avx_zero_opmask;v.broadcast |= op.avx_bcast!=X86_AVX_BCAST_INVALID;
+    if (j<2) o.detail=m.operands[j];
+    else {o.detail.width=op.size;o.detail.access=op.access;copyName(o.detail.kind,sizeof(o.detail.kind),op.type==X86_OP_MEM?"memory":op.type==X86_OP_REG?"other_register":"unsupported");}
+    if (op.type==X86_OP_REG) {
+      o.vectorParent=vectorParent(op.reg);copyName(o.detail.name,sizeof(o.detail.name),cs_reg_name(decoder,op.reg));
+      if (o.vectorParent>=0) {
+        o.vectorBits=op.size*8;v.vectorBits=std::max(v.vectorBits,o.vectorBits);
+        copyName(o.detail.kind,sizeof(o.detail.kind),o.vectorBits==128?"XMM":o.vectorBits==256?"YMM":"ZMM");
+        copyName(o.detail.parentName,sizeof(o.detail.parentName),o.detail.name);
+        if (tagsKnown && o.vectorParent<16) o.detail.registerTags=flow.x[o.vectorParent];
+        if (!j) v.destinationParent=o.vectorParent;
+      }
+    }
+    if (op.type==X86_OP_MEM) {
+      v.vectorBits=std::max(v.vectorBits,unsigned(op.size)*8);
+      copyName(o.detail.base,sizeof(o.detail.base),cs_reg_name(decoder,op.mem.base));copyName(o.detail.index,sizeof(o.detail.index),cs_reg_name(decoder,op.mem.index));
+      copyName(o.detail.segment,sizeof(o.detail.segment),cs_reg_name(decoder,op.mem.segment));o.detail.scale=op.mem.scale;o.detail.displacement=op.mem.disp;
+      o.detail.baseParent=cmpParent(op.mem.base);o.detail.indexParent=cmpParent(op.mem.index);
+      for (unsigned k=0;k<2;++k) {
+        const int g=k?o.detail.indexParent:o.detail.baseParent;
+        if (g<0) continue;
+        const auto a=state.s.g[g];
+        if (k) {o.detail.indexKind=a.kind;o.detail.indexRoot=a.root;o.detail.indexOffset=a.off;o.detail.indexTags=tagsKnown?flow.g[g]:0;}
+        else {o.detail.baseKind=a.kind;o.detail.baseRoot=a.root;o.detail.baseOffset=a.off;o.detail.baseTags=tagsKnown?flow.g[g]:0;}
+      }
+      m.addressTags |= o.detail.baseTags|o.detail.indexTags;
+      const auto address=aliasAddress(state.s,ins,op,0);
+      m.addressExact=x.addr_size==8 && address.kind==pointer && op.mem.segment==X86_REG_INVALID &&
+          op.mem.index==X86_REG_INVALID && (parent || op.mem.base==X86_REG_RIP);
+      if (m.addressExact) {
+        m.addressRoot=address.root;m.addressOffset=address.off;
+        if (address.root==1) {m.aliasMayMask=movHero;m.addressClass="Hero_Transform_conditional";
+          if (overlaps(address.off,op.size,0x10c,0x110)) m.aliasMayMask |= movField10c;
+        } else if (address.root==2 || address.root==4) {
+          const auto off=address.off+(address.root==2?0x28:0);const auto sp=state.s.g[4];
+          if (off>=-4096 && off+op.size<=4096 && sp.kind==pointer && sp.root==4) {
+            m.aliasMayMask=off<sp.off?movPrivateStack|movUnknown:movCallerHome;
+            m.addressClass=off<sp.off?"below_entry_SP_unowned_candidate":"caller_or_home_stack_conditional";
+            if (overlaps(off,op.size,0x28,0x68)) m.aliasMayMask |= movSource;
+          } else {m.addressExact=false;m.addressClass="stack_extent_unproven";}
+        } else if (address.root==globalRoot && address.off>=0 && std::uint64_t(address.off)<imageSize && op.size<=imageSize-std::uint64_t(address.off)) {
+          m.aliasMayMask=movImage;m.imageRangeKnown=true;m.addressClass="image_address_mutability_unproven";
+          m.codeRangeKnown=address.off>=codeBegin && std::uint64_t(address.off)+op.size<=codeEnd;
+        } else {m.addressExact=false;m.addressClass="raw_entry_token_or_range_unproven";}
+      } else m.addressClass=op.mem.index!=X86_REG_INVALID?"indexed_address_unproven":op.mem.segment!=X86_REG_INVALID?"segment_address_unproven":!parent?"entry_tokens_not_typed_addresses":"loaded_raw_bits_or_unknown_address";
+    }
+  }
+  // Capstone5 can label VMOVUPS opcode11 stores as memory READ. Resolve only
+  // exact decoded operand layout against its authenticated encoding; retain both.
+  v.encodingKnown &= v.vectorBits==v.encodedBits;
+  v.directionKnown=v.isVmovups && v.encodingKnown && m.memoryOperands==1 &&
+      ((opcode==0x10 && v.destinationParent>=0 && x.operands[x.op_count-1].type==X86_OP_MEM) ||
+       (opcode==0x11 && x.operands[0].type==X86_OP_MEM && x.operands[x.op_count-1].type==X86_OP_REG && vectorParent(x.operands[x.op_count-1].reg)>=0));
+  if (v.directionKnown) {
+    for (unsigned j=0;j<x.op_count;++j) {
+      v.operands[j].resolvedAccess=j?CS_AC_READ:((v.masked && !v.zeroMask && opcode==0x10)?CS_AC_READ|CS_AC_WRITE:CS_AC_WRITE);
+      v.accessConflict |= v.operands[j].decodedAccess!=v.operands[j].resolvedAccess;
+    }
+    m.memoryRead=opcode==0x10;m.memoryWrite=opcode==0x11;m.memoryAccessKnown=true;
+  } else if (v.isVmovups && v.encodingKnown && m.memoryOperands && opcode==0x11) m.memoryWrite=true;
+  cs_regs reads{},writes{};std::uint8_t nr{},nw{};
+  if (cs_regs_access(decoder,&ins,reads,&nr,writes,&nw)==CS_ERR_OK) {
+    m.otherRegisterWrites=0;
+    for (unsigned j=0;j<nw;++j) {
+      const int bank=vectorParent(writes[j]);
+      if (bank>=0) v.vectorWrites |= 1u<<bank;
+      else if (writes[j]!=X86_REG_EFLAGS && cmpParent(writes[j])<0) ++m.otherRegisterWrites;
+    }
+  }
+  v.destinationRepresented=v.destinationParent>=0 && v.destinationParent<16 && v.vectorBits==128;
+  v.upperZero=v.encodingKnown && v.destinationParent>=0;
+  v.upperEffect=v.upperZero?"zero_above_encoded_VL":"unknown_or_no_vector_destination";
+  // Slice has four32bit lanes/XMM and ReadFlow has one XMM tag bank. No YMM/ZMM
+  // upper-state representation exists: no new load semantics can be granted here.
+  m.pureLoad=v.directionKnown && x.op_count==2 && !v.masked && !v.zeroMask && !v.broadcast && !v.rounding && m.memoryRead && !m.memoryWrite && !m.memoryRmw && m.flagsPreserved &&
+      !m.fullGprWrites && !m.partialGprWrites && !m.stackPointerWrite && !m.otherRegisterWrites;
+  m.loadedMayTags=m.memoryRead?readMayTagTop:0;
+  m.reason=!v.isVmovups?"target_vector_site_not_VMOVUPS"
+      :m.memoryWrite||m.memoryRmw?"target_VMOVUPS_memory_write_or_RMW_refused"
+      :!v.encodingKnown?"target_VMOVUPS_encoding_unproven"
+      :v.masked||v.zeroMask||v.broadcast||v.rounding?"target_VMOVUPS_EVEX_mask_merge_or_modifier_refused"
+      :!std::strcmp(v.encoding,"EVEX")?"target_VMOVUPS_EVEX_not_modeled"
+      :m.pureLoad?"target_VMOVUPS_upper_vector_state_not_represented"
+      :"target_VMOVUPS_form_or_access_unproven";
+  return v;
+}
 struct LeafCfgResult {
   bool complete{}, effectsDiffer{};
   unsigned size{}, instructions{}, visits{}, paths{};
@@ -1483,6 +1598,7 @@ struct LeafCfgResult {
   ReadCmpContract cmp{};
   ReadLeafBranch branch{};
   ReadMovContract mov{};
+  ReadVectorContract vector{};
   ReadLeafBoundary boundary{};
   std::array<ReadLeafOutcome,readLeafPathCap> outcomes{};
 };
@@ -1637,6 +1753,10 @@ LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
           p.pc+=ins.size;continue;
         }
       }
+      if (at==readIdentityVector && ins.id==X86_INS_VMOVUPS) {
+        out.vector=describeVector(ins,d.h,p.slice,p.flow,!symbolic,!symbolic||p.actualTags,imageSize,codeBegin,codeEnd);
+        return fail(&ins,at,out.vector.detail.reason);
+      }
       for (unsigned j=0;j<x.op_count;++j) if (x.operands[j].type==X86_OP_MEM)
         return fail(&ins,at,"target_cfg_memory_operand_refused");
       if (ins.id==X86_INS_NOP || ins.id==X86_INS_ENDBR64) { p.pc+=ins.size;continue; }
@@ -1720,6 +1840,37 @@ void sampleMovBoundary(ReadTargetIdentity &t,const Slice &caller,const ReadFlow 
   }
   if (!m.addressSame) {m.addressExact=false;m.aliasMayMask |= movUnknown;m.addressClass="conflicting_analyzed_addresses";}
 }
+void sampleVectorBoundary(ReadTargetIdentity &t,const Slice &caller,const ReadFlow &flow,std::size_t imageSize) {
+  auto &v=t.vector;
+  if (!t.enabled || !t.tableValid || !t.stable || !t.unknownLoad.admitted || !t.branch.expanded ||
+      !v.detail.decoded || v.detail.site!=readIdentityVector || t.barrier!=readIdentityVector ||
+      !t.scanBytes) return;
+  if (v.replayVisits>4096-readLeafVisitCap) {
+    ++v.replayRefused;v.detail.addressExact=v.detail.addressSame=false;v.detail.aliasMayMask=movAnyAlias;
+    v.detail.addressClass="vector_parent_replay_budget_exhausted";return;
+  }
+  auto child=caller;child.s.g[4]=plus(caller.s.g[4],-8);auto tags=flow;
+  auto load=t.load;auto unknown=t.unknownLoad;
+  const auto cfg=walkPinnedLeaf(t.snapshot.data(),t.scanBytes,t.codeBegin,t.codeEnd,t.nextRuntime,
+      nullptr,false,child,tags,imageSize,&load,nullptr,nullptr,nullptr,&unknown);
+  const unsigned visits=v.replayVisits+cfg.visits;
+  if (!cfg.vector.detail.decoded || cfg.barrier!=readIdentityVector) {
+    v.replayVisits=visits;++v.replayRefused;v.detail.addressExact=v.detail.addressSame=false;
+    v.detail.aliasMayMask=movAnyAlias;v.detail.addressClass="current_parent_vector_replay_refused";return;
+  }
+  auto fresh=cfg.vector;fresh.replayVisits=visits;fresh.replayRefused=v.replayRefused;fresh.detail.samples=v.detail.samples+1;
+  if (v.detail.samples || v.replayRefused) {
+    fresh.detail.addressSame=v.detail.addressSame && fresh.detail.addressExact==v.detail.addressExact &&
+        fresh.detail.addressRoot==v.detail.addressRoot && fresh.detail.addressOffset==v.detail.addressOffset;
+    fresh.detail.addressTags |= v.detail.addressTags;fresh.detail.aliasMayMask |= v.detail.aliasMayMask;
+    for (unsigned j=0;j<fresh.operands.size();++j) {
+      fresh.operands[j].detail.registerTags |= v.operands[j].detail.registerTags;
+      fresh.operands[j].detail.baseTags |= v.operands[j].detail.baseTags;fresh.operands[j].detail.indexTags |= v.operands[j].detail.indexTags;
+    }
+    if (!fresh.detail.addressSame) {fresh.detail.addressExact=false;fresh.detail.aliasMayMask |= movUnknown;fresh.detail.addressClass="conflicting_analyzed_vector_addresses";}
+  }
+  v=fresh;
+}
 bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
                   ReadFlow &flow) {
   auto &c = a.readDependency.call;
@@ -1734,6 +1885,7 @@ bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
     return fail(call.address, call.mnemonic, "read_call_indirect_or_invalid_target_no_chase");
   sampleCmpBoundary(c.targetIdentity,flow);
   sampleMovBoundary(c.targetIdentity,caller,flow,a.imageSize);
+  sampleVectorBoundary(c.targetIdentity,caller,flow,a.imageSize);
   if (c.targetIdentity.enabled && !c.targetIdentity.admitted)
     return fail(c.targetIdentity.barrier?c.targetIdentity.barrier:call.address,
                 c.targetIdentity.mnemonic,c.targetIdentity.reason);
@@ -3452,7 +3604,7 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
           for (unsigned k=0;k<16;++k) { tags.g[k]=1u<<k;tags.x[k]=1u<<(16+k); }
           const auto cfg=walkPinnedLeaf(out.snapshot.data(),limit,out.codeBegin,out.codeEnd,out.nextRuntime,
               out.entryTagsKnown?entryTags:nullptr,true,merged,tags,imageSize,&out.load,read,pageQuery,ctx,&out.unknownLoad);
-          out.cmp=cfg.cmp;out.branch=cfg.branch;out.mov=cfg.mov;out.instructions=cfg.instructions;
+          out.cmp=cfg.cmp;out.branch=cfg.branch;out.mov=cfg.mov;out.vector=cfg.vector;out.instructions=cfg.instructions;
           out.paths=cfg.paths;out.visits=cfg.visits;out.cfgComplete=cfg.complete;
           out.pathEffectsDiffer=cfg.effectsDiffer;out.boundary=cfg.boundary;
           if (out.unknownLoad.attempted) {
