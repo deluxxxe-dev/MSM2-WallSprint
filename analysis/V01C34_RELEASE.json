@@ -1,0 +1,246 @@
+{
+  "version": "v0.1c34",
+  "package_version": "0.1.52",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "base_commit": "c32c1fc8547f9ab93610b70051ee079a11bc2747",
+  "implementation_commit": "15def15c22b96272df0b205fbc3c7184f18d950f",
+  "source_snapshot_commit": "743dd9a9f94b59dcf7f059d46383213a2a140e33",
+  "outputs": [
+    {
+      "path": "MSM2-WS-v0.1c34.zip",
+      "bytes": 3995576,
+      "sha256": "7592caf47ee508d52525e1994b5fbab0c400bd400683e89e4a09171433c0da25"
+    },
+    {
+      "path": "MSM2-WS-v0.1c34-source.zip",
+      "bytes": 1018336,
+      "sha256": "e13d0ab56b423c842a2bf6ea6e70ec1e8b8f61c4a2b18d57436711903d41dd9a"
+    }
+  ],
+  "script": {
+    "path": "MSM2-WS-v0.1c34.script.disabled",
+    "sha256": "30476d2870ebbef877ca4f08fa20c8172e916767a2f016fcaac487e8f2b16d43",
+    "dll_sha256": "f4c9460c9229d70f2b3a6dbd290c14f749c183084985d0e2ab87ad724a9e07b7"
+  },
+  "public_test_pass_records": {
+    "portable": 13,
+    "smoke": 7,
+    "hooks": 227
+  },
+  "total_public_pass_records": 247,
+  "private_input_skips": 5,
+  "identity_groups": 87,
+  "new_identity_groups": 11,
+  "retained_read_call_groups": 21,
+  "standalone_source": {
+    "build": "PASS_exit0",
+    "phases": [
+      {
+        "phase": "writer_entry",
+        "exit": 0,
+        "PASS": 11,
+        "SKIP": 0
+      },
+      {
+        "phase": "rdx_contract",
+        "exit": 0,
+        "PASS": 4,
+        "SKIP": 0
+      },
+      {
+        "phase": "writer_branch",
+        "exit": 0,
+        "PASS": 6,
+        "SKIP": 0
+      },
+      {
+        "phase": "writer_call",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0
+      },
+      {
+        "phase": "callee_alias",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0
+      },
+      {
+        "phase": "callee_branch_alias",
+        "exit": 0,
+        "PASS": 6,
+        "SKIP": 0
+      },
+      {
+        "phase": "transform_write",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0
+      },
+      {
+        "phase": "edi_value",
+        "exit": 0,
+        "PASS": 6,
+        "SKIP": 0
+      },
+      {
+        "phase": "read_dependency",
+        "exit": 0,
+        "PASS": 21,
+        "SKIP": 0
+      },
+      {
+        "phase": "read_target_identity",
+        "exit": 0,
+        "PASS": 87,
+        "SKIP": 0
+      },
+      {
+        "phase": "smoke",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0
+      },
+      {
+        "phase": "workspace",
+        "exit": 0,
+        "PASS": 13,
+        "SKIP": 0
+      },
+      {
+        "phase": "package",
+        "exit": 0,
+        "PASS": 1,
+        "SKIP": 0
+      }
+    ],
+    "separate_PASS_excluding_package": 182,
+    "final_package_verifier": "PASS_exit0",
+    "native_tool_input_files": 228,
+    "all_final_native_tool_inputs_identical_to_tested_source": true,
+    "current_reporting_docs_refreshed": true
+  },
+  "implementation_iteration": {
+    "pre_refinement_full_exit": 3,
+    "assertion": "memory_shift_destination_and_result_tags_unknown_top7",
+    "cause": "test_refinement_ran_with_preceding_object_build",
+    "final_rebuild_focused_full_chain": "PASS_exit0",
+    "assertions_deadlines_guards_relaxed": false
+  },
+  "additional_owned_host_probe": "register32_shift0_zeroextends_parent_register64_shift0_preserves_parent_not_game_evidence_not_counted_in247",
+  "accepted_c33": {
+    "evidence": "analysis/V01C33_RUNTIME_RESULT.md",
+    "MOVSXD": "R8_from_R8D_full64_source_result_tags0_no_values",
+    "next_barrier": "SHL_0x2cf7ff7",
+    "path": 0,
+    "pre_state": "RAX7_R8zero_vector_halves7_above_zero_flags0",
+    "actual_SHL_operands_width_count_memory": "UNKNOWN"
+  },
+  "shl_contract": {
+    "site": "0x2cf7ff7",
+    "register_form": "canonical_group2_slash4_reg32_64_constant_count",
+    "count": "implicit1_or_verified_imm8",
+    "mask64": 63,
+    "mask8_16_32": 31,
+    "CL_partial_memory_SP": "refuse",
+    "count0": "operand_and_flags_unchanged_reg32_parent_zeroextended",
+    "result_tags": "destination_input_upper_bound_constant_count0_no_unrelated_union",
+    "flags1": "CF_OF_SF_ZF_PF_defined_AF_undefined",
+    "flags_multiple": "CF_SF_ZF_PF_defined_OF_AF_undefined",
+    "undefined_aggregate_tags": 7,
+    "flags_consumers": "original_rules_only_unknown_flag_reads_refuse_returns_merge",
+    "numeric_value_observation": false,
+    "source_value_reads": 0,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "actual_form_next_barrier": "UNKNOWN",
+    "Position_source_input_movement_writes": 0
+  },
+  "movsxd_contract": {
+    "site": "0x2cf7ff4",
+    "register_form": "exact3byte_REX_W_opcode63_GPR64_from_GPR32",
+    "access": "sole_full_destination_write_source_read_no_flags_SP_vector_memory_effect",
+    "tag_rule": "source_parent_upper_bound_full_destination_replace_no_stale_union",
+    "origin": "opaque_unknown_not_pointer",
+    "memory_forms": "diagnose_address_access_aliases_and_refuse_no_new_load_rule",
+    "other_sites_widths_stack_partial": "refuse",
+    "numeric_value_observation": false,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "actual_form_next_barrier": "accepted_r8_from_r8d_next_SHL_0x2cf7ff7",
+    "Position_source_input_movement_writes": 0
+  },
+  "vector256_contract": {
+    "site": "0x2cf7ff0",
+    "encoding": "exact4byte_VEX2_VL256",
+    "form": "YMM0_m256_RDX",
+    "source": "current_same_Hero_root1_offset0_address_tags0",
+    "parents": 16,
+    "halves": "low128_high128",
+    "loaded_low_top": 7,
+    "loaded_high_top": 7,
+    "above256": "destination_known_zero_all_future_ZMM_EVEX_refused",
+    "legacy_XMM": "low_alias_high_preserved",
+    "other_vector_forms": "refused",
+    "return_merge": "category_union_zero_knowledge_intersection",
+    "source_value_reads": 0,
+    "observed_taint": false,
+    "generic_AVX": false,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "actual_next_barrier": "MOVSXD_0x2cf7ff4",
+    "Position_source_input_movement_writes": 0
+  },
+  "read_target_identity": {
+    "single_target": "0x2cf7fe0",
+    "code_region": "unique_readonly_executable_PE_code",
+    "PE_runtime_table_entry_cap": 600000,
+    "PE_runtime_table_byte_cap": 8388608,
+    "lookup_table_consistency": true,
+    "no_unwind_only_if_no_containing_entry": true,
+    "no_crossing_static_or_dynamic_runtime_region": true,
+    "byte_cap": 128,
+    "instruction_cap": 32,
+    "leaf_shape": "single_entry_all_normal_RET_pinned_JA_qword_YMM0_and_c34_reg_signextend_constant_SHL_flags_top",
+    "branches_memory_stack_nested_CALL": "one_pinned_JA_qword_YMM0_reg_signextend_constant_SHL_flags_top_all_other_memory_stack_calls_refuse",
+    "snapshot": "guarded_double_read_equality_SHA256_admitted_prefix",
+    "current_metadata_recheck": true,
+    "actual_result": "c33_exact_MOVSXD_r8_r8d_accepted_next_SHL_0x2cf7ff7",
+    "effect_certificate": false,
+    "existing_c19_c20_refusal_preserved": true,
+    "Position_source_input_movement_writes": 0
+  },
+  "runtime_table_validation": {
+    "observed_c24_entries": 527161,
+    "aligned_bytes_from_c24_count": 6325932,
+    "actual_directory_bytes": 6325932,
+    "entry_bytes": 12,
+    "entry_cap": 600000,
+    "metadata_byte_cap": 8388608,
+    "chunk_entries": 64,
+    "max_chunk_bytes": 768,
+    "max_chunk_reads": 9375,
+    "directory_pair_range_divisibility_checked_before_budget": true,
+    "all_entries_required_before_lookup": true,
+    "lookup_queried_reported": true,
+    "cap_structure_and_read_failure_separate": true,
+    "no_unwind_128byte_32instruction_rule_unchanged": true,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "Position_source_input_movement_writes": 0
+  },
+  "actual_c34": "pending_minimum_SHL_FLAGS_OPERAND_ADDRESS_next_barrier_A_E",
+  "ownership_and_gameplay": {
+    "writable_source_proven": false,
+    "caller_owned": false,
+    "ownership_exclusive": false,
+    "source_lifetime_exclusive": false,
+    "downstream_conflicts_proven_absent": false,
+    "Position_source_input_movement_writes": 0,
+    "producer_traversal": false
+  },
+  "Wisdoms_commit": "6091289113eafe4ebd1b522d759b819c5bec3880",
+  "CODEX_NEXT_unchanged": true,
+  "shared_launch_updater_environment_unchanged": true,
+  "no_private_logs_or_game_body_payload": true
+}
