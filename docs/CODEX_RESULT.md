@@ -1,3 +1,123 @@
+# Codex result — c29 exact image qword current-proof rule, actual mapping pending
+
+Branch **codex/v01c20-edi-value-provenance**; accepted task base **822993e**.
+Implementation **4bba3623ab325ca7d9971f9648d6b1321a210ea1**. Version **v0.1c29 / package0.1.47**.
+Outputs **MSM2-WS-v0.1c29.zip**, **MSM2-WS-v0.1c29-source.zip**,
+**MSM2-WS-v0.1c29.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C29_RELEASE.json** (final hashes/sizes/source-snapshot commit).
+
+## Accepted input / result
+
+Read AGENTS/manual/rules/workspace/state/NEXT and referenced compact runtime,
+source/contracts and Wisdoms instructions/manual/engine/method/WS references.
+Fetched/fast-forwarded only intended WS branch; no main merge/reset/force push.
+Accepted c28 actual MOV0x2CF7FE9:7byte full64 RAX <- [RCX+0x100], flags preserved,
+no other GPR/XMM/SP/memory write. Current parent RCX image-root16+204285056/tag0,
+source8bytes+204285312, outside target code section. Incoming RAX tag1; loaded
+value UNKNOWN/may7. C25 full527161 table/queried no-entry, c26 CMP tag0 and
+c27 exact short JA both forward edges remain accepted.
+
+**Bounded implementation complete; actual section/page/value proof pending.**
+C29 does not claim actual-game immutable source or next target barrier. This
+compact evidence has no source PE section/current VirtualQuery/stability record;
+only the shortest A/E capture with the new keys can resolve those live facts.
+No fresh raw target body or qword is requested. If actual source is writable,
+the intended result is refusal at MOV before any value read, not a broader rule.
+
+## Implementation / changed files
+
+- read_target_identity.hpp: exact source pin, current-origin entry evidence,
+  compact PE/page/value-window proof. Private metadata max4168bytes and private
+  qword buffer are never logged or numerically interpreted.
+- rdx_source_contract.hpp/.cpp: currentReadEntryEvidence requires sampled same
+  affine RCX root16/exact offset/tags0. Pin only full64 RAX,[RCX+0x100], width8,
+  exact site/shape. Before values, guarded authenticated PE64 section/range/flags
+  must prove all8bytes in one readable non-writable section. Check direct import,
+  TLS, loadconfig, bound-import, IAT, delay-import directory pairs/ranges/overlap.
+  No descriptor traversal or universal loader-subrange exclusion claim.
+- Current page must cover whole8bytes inside admitted image, same allocation,
+  MEM_IMAGE/MEM_COMMIT, exactly READONLY or EXECUTE_READ. Reject writable/COW/
+  guard/noaccess/unsupported, wrong allocation/type/state/range/boundary/overflow.
+  AllocationProtect is compared metadata; current Protect gates non-writability.
+- Two guarded8byte attempts maximum across bounded walk; require exact private
+  byte equality, exact before/after PE metadata and page metadata/protection.
+  Recheck target code also on a later-barrier stop. Failed source/code/reproof/
+  runtime coverage invalidates proof; instability stops at exact MOV, may7.
+- Only after all checks, full64 RAX tags replace prior tag1 with0. Opaque
+  memoryWide(image-root16,source) is never pointer provenance. Preserve all other
+  registers/flags/SP/memory. Actual per-caller RCX/tags must still agree; union
+  returned tags and origins across both JA paths, never prefer a safe leg.
+- writer_entry_snapshot.cpp: existing two parent passes/reset seeds/identical
+  code rule retained. Add VirtualQuery metadata and compact IMAGE_SOURCE/PAGE/
+  VALUE records. Report only structural flags/equality/attempt counts/reasons,
+  no raw qword, numeric interpretation, second dereference or new hook/game call.
+- read_target_identity_smoke.cpp:8 new owned groups, identity44 total; existing
+  read/call21 retained. Version/info/README/README_TEST/BUILD, accepted c28 mirror,
+  c29 analysis/gate/engine index, AGENTS/PROJECT_STATE/package manifest updated.
+  **docs/CODEX_NEXT.md preserved byte-for-byte**.
+
+Unchanged target0x2CF7FE0, one JA/two paths/128bytes/32unique instructions/64visits,
+all-RET requirement and final code/runtime coverage before target span/hash/effects.
+No generic memory semantics, another branch, stack/nested CALL/indirect/loop/
+partial-write relaxation. Next unsupported effect remains exact barrier.
+
+## Validation
+
+- Windows x64 full warnings-as-errors build PASS.
+- **13 portable +7 DLL/logger +184 hooks/native/contracts/workspace =204 public
+  PASS records /5 optional private-input SKIP**, all final commands exit0.
+  Full run passed on first attempt; no native test deadlines/assertions relaxed.
+- Identity44 includes nonwritable/readable PE/RX, writable PE/page and COW/guard/
+  noaccess/unsupported refusal, wrong allocation/type/state/mapping/PE boundaries,
+  overflow/outside pin, six direct loader overlaps/malformed ranges, first/final
+  read failure/change, metadata/page/code change, two-read budget, caller origin/
+  tags/width mismatch, full64 RAX kill and other register/flag preservation,
+  differing both-path returned effects/unsafe leg and exact next barrier.
+  Existing c19-c28/no-unwind/full527161 metadata regressions retained.
+- Actual provisional source ZIP extracted into a fresh directory, independent
+  build PASS; **119 focused entry/c14-c29 +7 DLL/logger +13 workspace =139 separate
+  PASS records**, no private skips; standalone package verifier PASS separately.
+  Do not add duplicate139 to204. Final report-only refresh retains identical
+  native/tool inputs and rechecks standalone package.
+- Static byte checks preserve NEXT, c25 complete table/lookup/snapshot block,
+  native lifecycle/orientation/raw ABI/override tests, workspace/updater/shared
+  recovery launchers. No environment or SF/ordinary MOD implementation changed.
+  Final archive checks cover CRC/hash/version/DLL markers, all current source/
+  docs/analysis/helpers/licenses, one virtual active install script, no active
+  source script, compiled/private-body exclusions and retained5 legacy artifacts.
+- Known Wine winedevice.exe startup diagnostics occur in this cloud toolchain;
+  every executed final command nevertheless exited0. No actual-game claim.
+
+Shared Wisdoms **bf48f3a3e303bd89689bf14275fdbd8929cd3dc7** pushed: accepted c28
+exact image load/source vs UNKNOWN value, c29 bounded policy/method and explicit
+loader coverage/equality/lifetime limits. Existing SF knowledge retained.
+
+## Safety and minimum human evidence
+
+writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/
+downstream_conflicts_proven_absent remain0. Position/source-position/input/
+movement writes0. Producer0x351EB00 deferred. No new PAGE_GUARD/data protection,
+game ABI or gameplay/adhesion/camera/animation/physics behavior. Existing admitted
+orientation source writes remain governed by unchanged original gates; they are
+separate from the denied new translation/source-position writes.
+
+Two equal reads plus current readonly mappings prove only this bounded analysis
+window, not atomicity, no intervening mutation, future stability, image-global
+lifetime or exclusive ownership. Even a successful local load is not a complete
+target certificate; even an all-path target is not whole-writer XYZ/W causality,
+feedback, storage/lifetime/exclusivity or writable movement-source permission.
+
+After verified push: close game/shared Overstrike, double-click installed
+**MSM2-WS\Update-WS.cmd**. In shared UI **Install mods -> Run modded game**.
+A/cardinal ~3sec -> fully end WallRun -> move/fast-travel -> E/diagonal ~3sec,
+each below unchanged5sec limit. Return newest private
+**MSM2-WS\logs\MSM2-WS-v0.1c29-YYYYMMDD-HHMMSS.log**. Minimum new evidence:
+MOVEMENT_CALLEE_READ_IMAGE_SOURCE / IMAGE_PAGE / IMAGE_VALUE and existing exact
+next barrier/current MOV/JA/identity/safety/cleanup records. Do not publish raw
+qword/code/full runtime log. Desktop launchers launch only, not update/build.
+
+---
+
 # Codex result — c28 exact MOV operands/address provenance, diagnostic-only Outcome C
 
 Branch **codex/v01c20-edi-value-provenance**; accepted task base **e420e61**.
