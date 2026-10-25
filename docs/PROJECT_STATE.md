@@ -6,15 +6,15 @@ Convert vanilla WallRun into surface-relative locomotion. Do not advance movemen
 ## Repository / branch policy
 - Canonical remote: `https://github.com/deluxxxe-dev/MSM2-WallSprint.git`
 - Current implementation line: `codex/v01c20-edi-value-provenance`
-- Owner-confirmed organized baseline: `5192f05f32313919fdf4049bd734b971655d163f` (historical baseline, not a pin)
-- Continue from later commits on this branch.
-- `main` is heavily diverged and must **not** be routinely merged into this branch.
+- Historical organized baseline: `5192f05f32313919fdf4049bd734b971655d163f` (not a pin)
+- Continue from the latest intended branch history.
+- Do **not** routinely merge `main`; it is heavily diverged.
 
 ## Exact target / safety
-- Spider-Man2.exe 2.810.0.0
+- Spider-Man2.exe `2.810.0.0`
 - SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`
 - WallRun Init `0x14233C0`, Entry `0x14235C0`, Update `0x1424530`, Deinit `0x1416660`
-- Preserve exact-build fail-closed behavior, `AGENTS.md` / `docs/DEV_RULES.md`, independent implementation, and no raw user logs/full private game bodies in public artifacts.
+- Preserve exact-build fail-closed behavior, `AGENTS.md` / `docs/DEV_RULES.md`, independent implementation, and no raw private game logs/full proprietary bodies in public artifacts.
 
 ## Verified movement chain
 
@@ -29,15 +29,15 @@ observed second return=0x351A020
 
 Runtime source relation remains `RDX=entry RSP+0x28`; sampled `[RDX] XYZ` equals exact executed Position XYZ bits. This remains correlation until writer/effect/ownership proof completes.
 
-## c19–c21 accepted facts
+## c19–c23 accepted facts
 
 ```text
 0x2B2358E: mov dword ptr [RCX+0x10C], EDI
-RCX provenance = writer-entry Hero Transform
+RCX = writer-entry Hero Transform
 destination = Hero Transform+0x10C
 ```
 
-EDI local reaching definition:
+EDI reaching definition:
 
 ```text
 producer=0x2B2356F
@@ -58,34 +58,28 @@ first control dependence=0x2B23583
 memory_escape=0
 ```
 
-Semantic meaning/type remains unknown.
-
-## c22 accepted result — TEST/JE disjoint
+c22 exact TEST/JE is disjoint from the tracked selected read:
 
 ```text
-0x2B235BE: test r8b,r8b
-parent R8 selected/same-field tags=0x0
-flags_may_depend_tags=0x0
-0x2B235C1: je
-consumer_may_depend_tags=0x0
-returned_flags_tags=0x0
+0x2B235BE test r8b,r8b
+R8 tags=0
+flags tags=0
+0x2B235C1 je consumer tags=0
 ```
 
-This exact TEST/JE pair is not a carrier of the selected same-field read for the analyzed state.
-
-## c23 accepted result — exact nested direct CALL
+c23 exact nested call:
 
 ```text
-0x2B235D4: direct call
-target_rva=0x2CF7FE0
+0x2B235D4 -> 0x2CF7FE0
 exact_target=1
+selected read reaches boundary in raw GPR0 tag1
 ```
 
-Selected `Transform+0x10C` dependence reaches this boundary in raw GPR carrier index 0 (`gpr_tags=0x1`, mem32 Hero Transform+0x10C). This is not a typed ABI declaration.
+Raw analyzer GPR indices/origins are not typed ABI declarations.
 
 ## c24/c25 accepted runtime-table result
 
-C24 observed 527161 derived PE runtime-function entries against an old 262144-entry diagnostic cap. C25 resolved that ambiguity by validating the complete authenticated table under finite budgets:
+C24 hit an old 262144-entry cap. C25 fully validated the actual authenticated table under finite budgets:
 
 ```text
 directory_rva=0xC566000
@@ -113,124 +107,123 @@ missing_runtime_entry=1
 PE_runtime_table_valid=1
 ```
 
-Therefore the strict pinned no-unwind fallback legitimately starts.
+Therefore the strict pinned no-unwind fallback is the active method.
 
-## c26 accepted actual runtime result — exact CMP
-
-Evidence: `analysis/V01C26_RUNTIME_RESULT.md`.
+## c26 accepted runtime result — exact CMP
 
 ```text
-0x2CF7FE0: cmp r8d, 0x3FFF
-operand_count=2
+0x2CF7FE0: cmp r8d,0x3FFF
 has_memory_operand=0
 flags_only=1
-form_supported=1
 GPR_XMM_memory_writes=0
 flags_written=CF_PF_AF_ZF_SF_OF
-R8 parent_may_depend_tags=0x0
-CMP flags_may_depend_tags=0x0
+R8 tags=0
+CMP flags tags=0
 ```
 
-Thus the narrow read-only CMP model is accepted for the analyzed state.
+This exact CMP is admitted as a read-only flags effect for the analyzed state.
 
-The next instruction is:
+## c27 accepted runtime result — exact JA fan-out
 
 ```text
 0x2CF7FE7: ja
-condition=CF0_and_ZF0
-flags_read=CF_ZF
-flags_producer_rva=0x2CF7FE0
-consumer_may_depend_tags=0x0
-numerical_outcome=unknown
-```
-
-## c27 accepted actual runtime result — JA fan-out crossed, MOV memory barrier
-
-Evidence: `analysis/V01C27_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c27-20261025-113718.log`.
-
-The exact pinned JA is now classified and safely expanded without choosing a numerical outcome:
-
-```text
-site_rva=0x2CF7FE7
 encoding=short_JA_rel8
-instruction_bytes=2
 displacement=42
-edges_exact=1
-taken_rva=0x2CF8013
-fallthrough_rva=0x2CF7FE9
-taken_in_code=1
-fallthrough_in_code=1
-taken_in_allowance=1
-fallthrough_in_allowance=1
-taken_forward=1
-fallthrough_forward=1
-taken_runtime_cross=0
-fallthrough_runtime_cross=0
-snapshot_stable=1
+taken=0x2CF8013
+fallthrough=0x2CF7FE9
+both forward/in code/in allowance
+no runtime-region crossing
 control_expanded=1
 numerical_outcome=unknown
-outcome_narrowing=0
-rule=pinned_JA_both_forward_paths
 ```
 
-The all-path proof remains incomplete because the fallthrough leg immediately reaches a memory operand that the current strict leaf model refuses:
+Both outcomes are explored; no numerical branch direction is chosen.
+
+## c28 accepted runtime result — exact MOV classified
+
+Evidence: `analysis/V01C28_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c28-20261025-122112.log`.
+
+Exact fallthrough instruction:
 
 ```text
+0x2CF7FE9: mov rax,qword ptr [rcx+0x100]
+instruction_bytes=7
+operand_count=2
+memory_read=1
+memory_write=0
+memory_RMW=0
+pure_load_form=1
+flags_preserved=1
+full_GPR_write=RAX
+partial_GPR_writes=0
+XMM_writes=0
+SP_write=0
+snapshot_stable=1
+```
+
+Parent-state source address is exact and disjoint from tracked mutable classes:
+
+```text
+base=RCX
+base_tags=0
+base_origin_root=16
+base_origin_offset=204285056
+displacement=256
+address_expression_exact=1
+same_address_all_samples=1
+address_root=16
+address_offset=204285312
+address_component_tags=0
+address_class=image_address_mutability_unproven
+alias_may_mask=0x20  # image only
+image_range_known=1
+current_code_range_known=0
+```
+
+This proves the address class, not the loaded qword's value provenance.
+
+Current loaded-value boundary:
+
+```text
+readonly_value_proof=not_implemented
+loaded_value_tags_known=0
+loaded_may_tags_upper_bound=0x7
+loaded_value_observed=0
+unknown_not_untainted=1
+semantics_admitted=0
+reason=target_MOV_loaded_value_provenance_unproven
+```
+
+Incoming RAX still carries selected tag1 before the MOV. Because this is a full-width write, an admitted load would replace that abstract value, but c28 does not authorize killing tag1 until the exact source qword receives a sound loaded-value tag classification.
+
+Target remains fail-closed:
+
+```text
+TARGET_IDENTITY admitted=0
 barrier_rva=0x2CF7FE9
 barrier_instruction=mov
-reason=target_cfg_memory_operand_refused
-```
-
-Bounded target CFG state:
-
-```text
-complete=0
+LEAF_CFG complete=0
 return_paths=0
 unique_instructions=3
 visits=3
-branch_cap=1
-path_cap=2
-byte_cap=128
-instruction_cap=32
-visit_cap=64
-all_paths_required=1
 final_code_rechecked=0
 effect_certificate=0
 ```
 
-Parent selected-read flow therefore advances to:
-
-```text
-first_unresolved_rva=0x2CF7FE9
-first_unresolved_instruction=mov
-returned_gpr_may_depend_mask=0x1
-memory_escape=0
-downstream_XYZ_W_relevance=unknown
-cross_invocation_feedback=unknown
-writable_source_proven=0
-reason=target_cfg_memory_operand_refused
-```
-
-Important interpretation:
-
-- c27 proves exact JA geometry and the bounded both-leg fan-out mechanism.
-- It does **not** authenticate one leg independently; `return_paths=0` and all-path completion is still required.
-- The log does not establish the MOV's exact operands, width, memory read/write direction, address expression, memory region, alias class, or loaded-value provenance.
-- Do not infer those facts from `mov` or `target_cfg_memory_operand_refused`.
-- The next task is exact MOV classification first; no generic memory model is authorized.
+Parent CALL likewise remains unmodeled with selected GPR0 tag1 preserved conservatively.
 
 ## Current safety gate
 
 ```text
 writable_source_proven=0
-Position/source/input/movement writes=0
 caller_owned=0
 ownership_exclusive=0
 source_lifetime_exclusive=0
 downstream_conflicts_proven_absent=0
+Position/source/input/movement writes=0
 ```
 
-C27 runtime safety remained closed across two WallRun sessions: verified native Deinit, retention pass, hard kills 0, MOD Position writes 0, source-position writes 0, adhesion corrections 0.
+C28 runtime safety remained closed across two WallRun sessions: verified native Deinit, retention pass, hard kills 0, MOD Position writes 0, source-position writes 0, adhesion corrections 0.
 
 Producer `0x351EB00` remains deferred. No movement, adhesion, camera, animation or physics advancement is authorized.
 
@@ -249,7 +242,7 @@ Canonical workspace:
 
 Shared ordinary mods + SF + WS, shared Overstrike, modded launch and versioned WS/SF runtime logs are accepted.
 
-A 2026-10-25 local failure was traced to game-root `Check for updates.exe` (Overstrike Updater, Tkachov) loading the game-root proxy `WINMM.dll`, preventing Overstrike from deleting/replacing it during `.script support` installation. The WS helper now includes path-validated updater shutdown / launch-time prevention logic. `winmm.dll` absence is treated as a recoverable `.script support` repair state rather than an unconditional preflight failure. Do not stop unrelated same-named processes.
+The prior Overstrike failure was traced to game-root `Check for updates.exe` loading game-root `WINMM.dll`. WS helpers now path-validate and stop that updater during launch/repair, and missing game-root `winmm.dll` is treated as recoverable `.script support` repair state. Do not stop unrelated same-named processes.
 
 ## Current stages
 
@@ -261,52 +254,30 @@ A 2026-10-25 local failure was traced to game-root `Check for updates.exe` (Over
 6. exact writer callsite ✅
 7. true writer-entry capture ✅
 8. RDX stack-local XYZ correlation ✅
-9. c14 JNE blocker identified ✅
-10. c15 writer branch crossing ✅
-11. c16 exact call target/boundary/hash ✅
-12. c17 call argument provenance ✅
-13. c18 actual callee CFG / first real writes ✅
-14. c19 exact Transform+0x10C destination ✅
-15. local/shared workspace acceptance ✅
-16. c20 EDI local value provenance ✅ actual game
-17. c21 exact `Transform+0x10C` pre-write read ✅ actual game
-18. c22 TEST/JE classification ✅ actual game
-19. c23 direct target `0x2CF7FE0` + carrier classification ✅ actual game
-20. c24 target identity failure narrowed to PE runtime-table cap ✅ actual game
-21. c25 full 527161-entry table validation + genuine missing runtime entry ✅ actual game
-22. c26 exact `cmp r8d,0x3FFF` flags-only model ✅ actual game
-23. c27 exact `JA` taken/fallthrough classification + bounded both-leg fan-out ✅ actual game
-24. classify exact `0x2CF7FE9 MOV` memory operand/effect ▶ CURRENT
-25. resume full writer XYZ/W causal proof ⏸ after local effect classification
-26. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-27. safe writable upstream movement source ⬜ NOT AUTHORIZED
-28. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-29. adhesion/contact refinement ⏸ deferred
-30. animation/camera/later traversal ⬜
+9. c14–c19 writer/callee chain ✅
+10. c20 EDI provenance ✅ actual game
+11. c21 same-field read ✅ actual game
+12. c22 TEST/JE disjointness ✅ actual game
+13. c23 direct nested target/carrier ✅ actual game
+14. c24 old PE-table cap diagnosed ✅ actual game
+15. c25 full table validation + genuine no-entry ✅ actual game
+16. c26 exact CMP effect ✅ actual game
+17. c27 exact JA edges + bounded two-path fan-out ✅ actual game
+18. c28 exact MOV form/address provenance ✅ actual game
+19. prove/refuse exact image-backed qword loaded-value provenance ▶ CURRENT
+20. resume full writer XYZ/W causal proof ⏸ after local effect classification
+21. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+22. safe writable upstream movement source ⬜ NOT AUTHORIZED
+23. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+24. adhesion/contact refinement ⏸ deferred
+25. animation/camera/later traversal ⬜
 
 ## Current action
 
 Follow `docs/CODEX_NEXT.md`.
 
-Classify the exact operands/effects of `0x2CF7FE9: mov` before adding any memory semantics. Memory write/RMW remains immediate refusal. A pure read-only load may be modeled only if the source range and loaded-value provenance can be conservatively established from owned symbolic/authenticated state without arbitrary live memory-value observation or guessed aliasing. Address provenance and loaded-value provenance must remain separate.
+The exact next question is whether the one proven image-backed 8-byte source for `mov rax,[rcx+0x100]` can be treated as tag0 under a narrowly authenticated **non-writable image section/page + bounded stable-value** rule. An image address alone is insufficient.
 
-If and only if that exact MOV is admitted, resume the existing c27 two-path proof. Both JA outcomes remain required and every reachable path must safely end in modeled normal RET before target identity/hash/effects can be admitted.
+If the exact source cannot prove current non-writability and stable value without raw-value publication or pointer chasing, keep loaded tags unknown and stop at `0x2CF7FE9`. If it can, model only this exact full64 load, replace RAX tags accordingly, preserve flags/other state, and resume the unchanged c27 two-path all-RET proof to the next exact barrier.
 
 Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
-
-Deferred user-facing features remain tracked in `docs/FEATURE_ROADMAP.md`.
-
-## C28 prepared diagnostic successor
-
-v0.1c28/package0.1.46 classifies exact pinned MOV0x2CF7FE9 from stable c27 reachable
-snapshot: operand/access/width/aliases, expression/address components, flags and
-decoded writes. Parent Slice/ReadFlow state refines conditional affine address/
-alias and register/address tag unions with natural CALL delta. Raw entry tokens
-are not typed arguments; address tags never prove loaded-value tags. Values stay
-UNKNOWN/may-tag upper bound7; no memory value read, no load/partial/XMM semantics
-or immutable-image admission. Memory writes/RMW and all unproven loads refuse;
-all c27 paths/caps/metadata/snapshot/runtime guards and safety0 gates retained.
-Actual MOV form/provenance PENDING minimal runtime records. Eight owned groups
-added (36 identity total),21 call/read retained; results in CODEX_RESULT.md.
-CODEX_NEXT remains unchanged task authority. Producer0x351EB00 deferred; no SF/
-ordinary-mod/gameplay or updater/WINMM recovery-helper changes.
