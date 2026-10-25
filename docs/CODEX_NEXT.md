@@ -1,212 +1,163 @@
-# Next task — add minimal sound 256-bit vector dependency state for exact VMOVUPS after accepted c31
+# Next task — classify exact MOVSXD at 0x2CF7FF4 after accepted c32
 
 ## Status
 
-The v0.1c31 actual-game capture is accepted for the current bounded diagnostic question.
+The v0.1c32 actual-game capture is accepted for the current bounded diagnostic question.
 
 Source log supplied by the owner:
 
 ```text
-MSM2-WS-v0.1c31-20261025-141246.log
+MSM2-WS-v0.1c32-20261025-145028.log
 ```
 
 Do not merge `main`. Continue from the latest `codex/v01c20-edi-value-provenance` history.
 
-See `analysis/V01C31_RUNTIME_RESULT.md`.
+See `analysis/V01C32_RUNTIME_RESULT.md`.
 
-## Accepted c31 facts
+## Accepted c32 facts
 
 The prerequisite chain remains accepted:
 
 - c25: full authenticated 527161-entry runtime table validation; exact target `0x2CF7FE0` has no containing runtime-function entry.
 - c26: exact `cmp r8d,0x3FFF`, flags-only, relevant tags zero.
-- c27: exact short `JA` at `0x2CF7FE7`; both exact forward outcomes are mandatory.
+- c27: exact short `JA` at `0x2CF7FE7`; both forward outcomes remain mandatory.
 - c28-c30: exact `mov rax,[rcx+0x100]` is modeled only as an opaque unknown loaded qword with `RAX tags=0x7`, no qword read/log/numeric interpretation.
+- c31: exact `0x2CF7FF0` is `VEX2.256 VMOVUPS YMM0 <- m256 [RDX]`, pure load, exact Hero-root address, no store/RMW.
 
-C31 exactly classified the next instruction:
-
-```text
-site_rva=0x2CF7FF0
-instruction=VMOVUPS
-bytes=4
-encoding=VEX2
-vector_bits=256
-encoded_bits=256
-operands=2
-memory_read=1
-memory_write=0
-memory_RMW=0
-pure_load_form=1
-flags_preserved=1
-GPR_writes=0
-SP_write=0
-```
-
-Exact operand form:
+C32 adds only the vector dependency representation required for this pinned load:
 
 ```text
-YMM0 <- 32 bytes [RDX]
-```
-
-Memory source for the analyzed parent state:
-
-```text
-base=RDX
-index=none
-scale=1
-displacement=0
-segment=none
-base_tags=0
-base_origin_root=1
-base_origin_offset=0
-address_exact=1
-same_address_all_samples=1
-class=Hero_Transform_conditional
-alias_may_mask=0x1
-loaded_may_top=0x7
-loaded_tags_known=0
+represented_bits=256
+represented_banks=16
+YMM0.low128 tags  <- 0x7
+YMM0.high128 tags <- 0x7
+above256_known_zero=1
+pinned_YMM0_rule_added=1
+generic_YMM_ZMM_rules=0
 source_value_reads=0
+raw_values=0
+observed_taint=0
 ```
 
-Architectural destination metadata:
+The VMOVUPS is now semantically modeled:
 
 ```text
-destination=YMM0
-width=256 bits
-represented_bits=128
-upper_state_represented=0
-upper_effect=zero_above_encoded_VL
-upper_zero=1
-upper_preserved=0
-mask=0
-broadcast=0
-rounding=0
+semantic_load_modeled=1
+reason=target_VMOVUPS_exact_YMM0_unknown_halves_modeled
 ```
 
-Therefore c31 correctly refuses:
+C30 state remains:
 
 ```text
-semantic_load_modeled=0
-reason=target_VMOVUPS_upper_vector_state_not_represented
+RAX tags=0x7
+origin=unknown_loaded_qword_not_pointer
 ```
 
-Pre-barrier state remains:
+The bounded walk advances to:
 
 ```text
-RAX/GPR0 tags=0x7
+barrier_rva=0x2CF7FF4
+barrier_instruction=movsxd
+reason=target_cfg_instruction_effect_refused
+path=0
+edge_from_rva=0x2CF7FE7
+edge_target_rva=0x2CF7FE9
+```
+
+Pre-barrier abstract state:
+
+```text
+GPR0/RAX tags=0x7
 other logged GPR tags=0
-logged XMM tags=0
+XMM0/low128 tags=0x7
+YMM0/high128 tags=0x7
+above256_known_zero=1
 flags_may_depend_tags=0
 ```
 
+Current target state:
+
+```text
+admitted=0
+instructions=5
+LEAF_CFG complete=0
+return_paths=0
+unique_instructions=5
+visits=5
+final_code_rechecked=0
+effect_certificate=0
+```
+
+The current log establishes only the mnemonic/refusal for `MOVSXD`. Do not infer its operands or memory use from the mnemonic.
+
 ## Current bounded Codex task
 
-Implement the smallest representation extension needed to model **only this exact authenticated 256-bit YMM load** soundly, then resume the existing bounded two-path walk to the next exact unsupported effect.
+Implement the smallest fail-closed extension needed to classify the exact `MOVSXD` at `0x2CF7FF4` and, only if its exact effect is representable under the existing dependency model, continue to the next unsupported boundary.
 
-This task is not generic AVX/AVX2/AVX-512 emulation.
+### 1. Classify the exact MOVSXD before adding semantics
 
-### 1. Extend vector dependency state only to the required 256-bit width
+Emit compact metadata sufficient to establish:
 
-The current analyzer has 16 XMM dependency banks representing 128 bits each. Add a bounded representation sufficient to distinguish, for vector parents 0-15:
+- exact instruction length / encoding;
+- operand count;
+- exact source and destination operand classes;
+- exact source width;
+- exact destination GPR and architectural write width;
+- decoded read/write access for all operands;
+- whether a memory operand exists;
+- if memory exists: base/index/scale/signed displacement/segment/address width;
+- exact effective-address provenance from the owned symbolic parent state when available;
+- alias classes against Hero Transform, `Transform+0x10C`, writer source, caller/home stack, callee-private stack, image and unknown ranges;
+- incoming selected/postwrite/other-prewrite tags on source/address components;
+- exact sign-extension effect into the destination GPR;
+- whether the destination write is a full 64-bit architectural replacement or any partial-state rule is required;
+- flags/GPR/vector/SP/memory effects;
+- current instruction-byte stability.
 
-```text
-low128 may-depend tags
-upper128 may-depend tags
-```
+Do not log raw source memory values and do not assign semantic ABI/type names.
 
-Preserve correct aliasing:
+### 2. Memory behavior must remain explicit
 
-- XMMn refers to the low128 portion of YMMn;
-- YMMn refers to low128 + upper128;
-- an XMM operation must not silently overwrite/preserve the YMM upper half unless the decoded architectural rule says so;
-- a YMM full-width write replaces both represented halves.
+If the source is memory, classify it as a read only before considering admission.
 
-Do not add generic lane/value simulation. Dependency tags are enough.
+Any store/RMW, unresolved address, second dereference/pointer chase, stack mutation, or unsupported alias/address state remains immediate refusal.
 
-### 2. Handle state above 256 bits explicitly
+Do not assign tag0 merely from address provenance. If loaded-value provenance is unknown, use only a sound may-depend upper bound where the exact load can be represented safely.
 
-The c31 decoder reports for this exact VEX.256 form:
+### 3. Model only the exact pinned form if sound
 
-```text
-upper_effect=zero_above_encoded_VL
-upper_zero=1
-upper_preserved=0
-```
+If the exact MOVSXD is representable, add only the narrow semantics required for this site.
 
-Represent this architecturally without pretending to track arbitrary ZMM data.
+For a register source:
 
-A minimal acceptable design is either:
+- destination tags must be derived conservatively from the exact source parent tags;
+- preserve correct width/sign-extension semantics;
+- do not retain unrelated prior destination tags after a full architectural replacement.
 
-- an explicit `above_256_known_zero`/equivalent state for the destination parent; or
-- a rule that future >256-bit reads/writes are refused unless their required upper state is independently representable/provable.
+For a memory source:
 
-Do not silently discard possible tracked dependence above the represented width. Any later EVEX/ZMM-width use must remain fail-closed unless soundly modeled.
+- destination loaded tags may use the tracked top `0x7` only if the exact read/address form is pinned and no more precise provenance is safely established;
+- no raw value read/log/numeric interpretation is required or permitted for narrowing;
+- origin should remain an opaque exact-source load unless independently proven otherwise.
 
-### 3. Model only the exact pinned c31 VMOVUPS load
+Do not generalize MOVSXD handling to arbitrary sites/forms in this task.
 
-Eligibility remains pinned to all accepted runtime facts:
+### 4. Preserve current c30/c32 state
 
-```text
-site=0x2CF7FF0
-encoding=VEX2
-VL=256
-form=YMM0 <- m256 [RDX]
-memory_read=1
-memory_write=0
-memory_RMW=0
-address_exact=1
-base=RDX
-index=none
-displacement=0
-address_component_tags=0
-current alias class=Hero only
-mask/broadcast/rounding absent
-```
-
-Wrong site, width, vector parent, encoding, direction, address form, mask/modifier or current-parent disagreement must refuse.
-
-### 4. Use conservative unknown-top for both loaded halves
-
-Do not read/log or numerically interpret the 32 source bytes.
-
-For this exact unproven loaded value, assign:
+Before the instruction, retain:
 
 ```text
-YMM0.low128 tags   <- 0x7
-YMM0.upper128 tags <- 0x7
+RAX tags=0x7
+YMM0.low128 tags=0x7
+YMM0.high128 tags=0x7
+above256_known_zero=1
+other logged GPR/vector tags=0
+flags tags=0
 ```
 
-`0x7` remains a may-depend upper bound over selected/postwrite/other-prewrite, not observed taint.
+The MOVSXD implementation must not accidentally narrow or clear unrelated c30/c32 state.
 
-Architectural effect for this exact instruction:
-
-```text
-YMM0.low128  <- top7
-YMM0.high128 <- top7
-state above bit255 <- architecturally zero / fail-closed marker as designed
-all other vector parents unchanged
-all GPR tags unchanged (including RAX=0x7)
-flags unchanged
-SP unchanged
-memory unchanged
-```
-
-Do not infer semantic type, matrix/quaternion/vector meaning or pointer identity from `[RDX]`.
-
-### 5. Preserve XMM/YMM write semantics in fixtures
-
-At minimum verify:
-
-- full YMM write replaces low128 and high128 dependency state;
-- XMM alias reads see only low128;
-- VEX.128 destination semantics are not accidentally treated as legacy SSE preservation if existing code later uses them;
-- legacy XMM and VEX XMM upper-half behavior remain distinguishable or unsupported forms refuse;
-- no tag leakage between vector parent indices;
-- merge/partial writes remain refused unless explicitly modeled.
-
-Do not widen production semantics beyond forms actually needed for sound state maintenance.
-
-### 6. Resume the existing c27 all-path walk after exact admission
+### 5. Resume the existing c27 all-path walk only after exact admission
 
 Unchanged caps/contracts:
 
@@ -221,7 +172,7 @@ both JA outcomes required
 all reachable paths required
 ```
 
-After this exact VMOVUPS is modeled, continue only to the next unsupported instruction.
+After an admitted MOVSXD, continue only to the next unsupported instruction.
 
 Report:
 
@@ -229,48 +180,38 @@ Report:
 - path/edge;
 - refusal reason;
 - pre-instruction GPR tags;
-- vector low128/high128 tags for any relevant parents;
+- vector low128/high128 tags for relevant parents;
 - flags tags.
 
-Do not opportunistically implement the next new instruction in the same task unless it is already covered by an existing proven rule.
+Do not opportunistically add support for the next new instruction in the same task unless it is already covered by an existing proven rule.
 
-### 7. Immediate refusals remain
+### 6. Existing refusals remain
 
 Still refuse on:
 
-- vector memory store/RMW;
-- unsupported masked/merge/broadcast/fault-suppression behavior;
-- partial vector effects not represented soundly;
-- any >256-bit vector read/write whose required state is not represented/proven;
-- any other unproven memory operation;
+- memory store/RMW;
+- unresolved or dynamic memory address not covered by the pinned rule;
 - stack construction/change;
 - nested CALL;
 - indirect transfer;
 - another branch beyond the authorized JA;
 - loop/backedge;
+- unsupported partial GPR/vector effect;
+- unsupported >256-bit vector use;
 - runtime-region crossing;
 - snapshot/code mismatch;
 - cap exhaustion or unresolved exit.
 
-### 8. Preserve c30 state and all safety gates
-
-Do not narrow c30:
-
-```text
-RAX tags=0x7
-origin=unknown_loaded_qword_not_pointer
-observed_taint=0
-selected_dependence_killed=0
-```
+### 7. Preserve all safety gates
 
 Still forbidden:
 
 - Position/source-position writes;
 - input/movement/adhesion/camera/animation/physics changes;
 - producer `0x351EB00` traversal;
-- raw vector/memory-value logging;
-- numerical value interpretation;
-- generic vector-memory semantics;
+- raw memory/vector-value logging;
+- numerical source interpretation;
+- generic memory/vector semantics;
 - guessed ABI/type names;
 - weakening ownership/lifetime/exclusivity requirements.
 
@@ -285,24 +226,25 @@ downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
 
-### 9. Owned tests / handoff
+### 8. Owned tests / handoff
 
 Add fixtures covering at minimum:
 
-- exact pinned c31 YMM0 m256 load admission after 256-bit state exists;
-- low128=top7 and high128=top7 without source-value reads;
-- full YMM overwrite replaces both prior halves;
-- XMM alias reads low128 correctly;
-- other vector parents preserved;
-- state-above-256 zero/fail-closed behavior;
-- wrong site/destination/width/direction/address refuses;
-- store/RMW/mask/merge/broadcast/refused forms;
-- >256 use refuses unless represented/proven;
-- c31 classification regression;
+- exact MOVSXD operand/access/width classification;
+- register-source sign-extension propagation if that is the actual form;
+- memory-source read/address/alias classification if that is the actual form;
+- exact full64 destination replacement semantics;
+- no stale destination-tag retention after full replacement;
+- unknown exact memory load may-top only if needed and safely pinned;
+- wrong site/source width/destination/form/address refuses;
+- store/RMW/stack/partial/unsupported forms refuse;
+- c32 YMM0 low/high state remains unchanged when MOVSXD does not affect it;
+- c32 vector256 regression;
+- c31 VMOVUPS classification regression;
 - c30 qword-top regression;
 - c29 writable `.data` tag0 refusal;
-- c28 MOV, c27 JA, c26 CMP, c25 runtime table, c24 no-unwind, c23-c19 regressions.
+- c28 MOV, c27 JA, c26 CMP, c25 runtime table, c24 no-unwind and c23-c19 regressions.
 
 Run the relevant full build/regression chain. Update `analysis/`, `docs/PROJECT_STATE.md`, `docs/CODEX_RESULT.md`, and reusable Wisdoms facts when appropriate.
 
-If the exact c31 metadata plus current authenticated snapshot is enough to continue statically, do not request runtime by habit. If the next barrier requires live parent-state evidence, emit only the minimum vector-state/next-barrier/CFG/tag/safety records and request one shortest A/E-style capture. Commit and push all authorized changes to the current development line.
+If the exact MOVSXD metadata can be derived from the authenticated current-code snapshot, do not request runtime by habit. If parent-state address/tag information or the next barrier genuinely requires live evidence, emit only the minimum MOVSXD/next-barrier/CFG/tag/safety records and request one shortest A/E-style capture. Commit and push all authorized changes to the current development line.
