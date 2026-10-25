@@ -1,3 +1,133 @@
+# Codex result — c31 exact VMOVUPS classification, diagnostic-only Outcome C
+
+Branch **codex/v01c20-edi-value-provenance**; accepted task base **b78cd42**.
+Implementation **6f78587134986bacde4683908b7cc57135bda7e7**. Version **v0.1c31 / package0.1.49**.
+Outputs **MSM2-WS-v0.1c31.zip**, **MSM2-WS-v0.1c31-source.zip**,
+**MSM2-WS-v0.1c31.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C31_RELEASE.json** (final hashes/sizes/source-snapshot commit).
+
+## Accepted input / decision
+
+Read AGENTS/manual/rules/workspace/state/NEXT, referenced compact runtime and
+relevant code/contracts, refreshed Wisdoms instructions/common manual/WS/engine/
+method references. Fast-forwarded intended WS branch only, no WS main merge/
+reset/force push. Existing5 untracked legacy artifacts retained.
+
+VERIFIED-RUNTIME c30: exact qword0x2CF7FE9/source0xC2D2580 abstract top7 effect
+works with zero qword reads; RAX origin unknown/non-pointer, selected dependence
+still possible. New barrier0x2CF7FF0 VMOVUPS/path0 from JA0x2CF7FE7 ->0x2CF7FE9,
+RAX7/other GPR/XMM/flags0. Target4instructions/4visits/0returns/identity/effects.
+C29 writable-source tag0 refusal and c25-c28 prerequisite chain remain accepted.
+
+**Outcome C: classify this exact instruction; no new vector semantics.** Actual
+VMOVUPS operand/width/direction/address/upper effects are absent from compact
+runtime evidence and the repository contains no current private target snapshot.
+Do not guess a form from a mnemonic or fixture. Current Slice is four32bit lanes
+per XMM, ReadFlow16 XMM tag banks; complete YMM/ZMM/upper state is unrepresented.
+VEX128 also clears upper state, VEX256/EVEX can exceed128 or add mask/merge/fault
+behavior. Without complete representation, no full architectural vector-load
+rule can be admitted. Actual metadata requires only one shortest new A/E capture.
+
+## Implementation / changed files
+
+- read_target_identity.hpp: pinned vector0x2CF7FF0 descriptor, up to8 operands,
+  VEX2/3/EVEX/width/parent/access/modifier/upper metadata; lower represented state
+  explicitly separate from unrepresented upper tags. No new vector state/model.
+- rdx_source_contract.cpp: classify only reachable exact VMOVUPS before existing
+  memory refusal. Decode exact XMM/YMM/ZMM aliases/parents/access, memory width/
+  direction, base/index/scale/signed displacement/segment/address width, current
+  conditional Hero/field10C/source/home/below-SP/image/unknown aliases/tags.
+  Refuse store/RMW immediately and unsupported architecture/forms distinctly.
+- Important owned-fixture finding: Capstone5.0.6 reports some VMOVUPS opcode11
+  memory destinations as READ, with no register writes. Preserve decoded access
+  but resolve direction only against exact VMOVUPS encoding/map/pp/VL/opcode and
+  operand layout; opcode11 stores refuse. Masked vector merge(read+write) is not
+  memory RMW. No decoder-wide patch or inferred permission for unrelated forms.
+- For owned current-parent address/tag refinement, replay existing bounded saved
+  code with natural CALL SP delta(-8), no live stack/data/vector read. Current
+  actual branch/c30 source proof must still pass; vector always stops. Replay
+  cumulative cap4096, per-walk original64visits/128bytes/32unique/1JA/2paths. Lose
+  exactness/union aliases/tags for conflicts, refused replay or budget exhaustion.
+  Below-SP is an unowned candidate, not private allocation. Unknown RAX never
+  supplies pointer provenance or a second dereference.
+- writer_entry_snapshot.cpp: compact VECTOR / VECTOR_OPERAND / VECTOR_ADDRESS /
+  VECTOR_ARCH records include current-byte stability, decoder vs encoding access,
+  direction, register/flags/SP/memory effects, parent aliases/tags, upper zero/
+  preservation/mask/merge, representation refusal and no-value-observation flags.
+  Existing UNKNOWN_LOAD/barrier/path/CFG/native safety records retained.
+- read_target_identity_smoke.cpp:8 new groups, identity60 total; read/call21 and
+  all c19-c30/native regressions retained. Updated version/info/README/TEST/BUILD,
+  package metadata, accepted c30 mirror, c31 design/gate/index and AGENTS/state.
+  **docs/CODEX_NEXT.md preserved byte-for-byte**.
+
+The descriptor supplies no vector-load semantics, value/numeric observation,
+tag0, state updates or next-op lookahead. Unknown vector loaded tags remain
+may-top7 metadata only; preexisting vector tags are untouched. All actual forms
+remain to be measured. No full-XMM load-admission test applies because no actual
+complete represented architectural form is available; owned cases assert refusal.
+
+C30 qword top7/source/domain conversion/no value reads are unchanged. Original
+both-path/all-RET/final code/runtime/cap gates remain required for target span/
+hash/effects; one safe taken leg cannot authenticate a refused fallthrough.
+No local/vector/target diagnostic proves writer XYZ/W/feedback or ownership.
+
+## Validation
+
+- Windows x64 full warnings-as-errors build PASS.
+- **13 portable +7 DLL/logger +200 hooks/native/contracts/workspace =220 public
+  PASS records /5 optional private-input SKIP**, all final commands exit0 on first
+  full attempt; no assertion/deadline/native cleanup rule relaxed.
+- New cases cover exact VEX2/VEX3/EVEX operands/width/vector parents/access;
+  encoded store refusal despite decoder READ; indexed/segmented/address32/loaded
+  unknown RAX provenance; Hero/field10C/source/home/below-SP/image/conflicting
+  aliases; XMM low128 vs upper-zero/YMM256/ZMM/EVEX mask/merge/zero refusal;
+  wrong site/snapshot/one-safe-other-leg refusal; exact barrier/pre-state and
+  unchanged vector/GPR/flags/SP, c30 top7/no data reads and full527161 table.
+- Final test-only supplement adds invalid EVEX broadcast, LOCK, map and adjacent
+  VMOVUPD negatives; focused identity60 rerun PASS. Production code unchanged.
+  Source ZIP refreshed before compiling fixtures; production build inputs stayed
+  byte-identical across this test supplement.
+- Provisional source ZIP extracted fresh; independent full build PASS; **135
+  focused entry/c14-c31 +7 DLL/logger +13 workspace =155 separate PASS records**,
+  no private skips; standalone package verifier PASS separately. Do not add155
+  duplicates to220. Final report-only refresh retains identical native/tool
+  inputs and rechecks standalone package.
+- Static byte checks preserve original scalar/CMP/JA/MOV-descriptor helpers,
+  c29 readonly/value and c30 source metadata policy, complete c25 table/lookup/
+  snapshot block, native orientation/lifecycle/raw ABI/assertions, workspace/
+  updater/shared launchers and NEXT. No SF/ordinary mod/environment code changed.
+- Final archives checked for CRC/hash/version/new DLL markers, current source/
+  docs/evidence/helpers/licenses, one virtual active install script, no active
+  source script, compiled/private game-body payload or raw runtime/vector data.
+- Known cloud Wine winedevice.exe startup diagnostics occur; final commands
+  nevertheless exit0. Owned fixtures/cloud checks are not actual-game PASS.
+
+Wisdoms **dd5f55ceffeb885109396bf344849b3c18117b7f** pushed: accepted c30 exact
+VMOVUPS barrier, missing actual form, decoder store-access caveat, vector upper-
+representation/refusal and bounded parent diagnostics. Concurrent SF additions
+were fetched and preserved; append conflict resolved by retaining both sections.
+No raw private log/body/vector/qword published.
+
+## Safety / minimum human evidence
+
+writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/
+downstream_conflicts_proven_absent0; Position/source-position/input/movement
+writes0; producer0x351EB00 deferred. No new hook/game call, PAGE_GUARD/data-page
+mutation, guessed ABI, gameplay/adhesion/camera/animation/physics change. Existing
+orientation source writes remain under unchanged native gates, separate from
+denied new translation/source-position writes.
+
+After verified push, close game/shared Overstrike, run installed
+**MSM2-WS\Update-WS.cmd**. Shared UI **Install mods -> Run modded game**.
+A/cardinal~3sec -> fully end WallRun -> move/fast-travel -> E/diagonal~3sec,
+below unchanged5sec limit. Return newest private
+**MSM2-WS\logs\MSM2-WS-v0.1c31-YYYYMMDD-HHMMSS.log**. Minimum new evidence:
+MOVEMENT_CALLEE_READ_VECTOR / VECTOR_OPERAND / VECTOR_ADDRESS / VECTOR_ARCH
+plus existing UNKNOWN_LOAD/barrier/path/tag/CFG/safety/cleanup. No raw vector/
+qword, full body or public runtime log requested. Desktop launchers launch only.
+
+---
+
 # Codex result — c30 pinned writable-image load with unknown may-top7
 
 Branch **codex/v01c20-edi-value-provenance**; accepted task base **bd120c5**.
