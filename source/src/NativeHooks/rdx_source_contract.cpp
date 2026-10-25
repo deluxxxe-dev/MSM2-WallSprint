@@ -1367,6 +1367,113 @@ const char *leafEdgeRefusal(const ReadLeafBranch &b) {
   if (!b.takenInWindow || !b.fallthroughInWindow) return "target_JA_edge_outside_byte_allowance";
   return nullptr;
 }
+ReadMovContract describeMov(const cs_insn &ins,csh decoder,const Slice &state,
+    const ReadFlow &flow,bool parent,std::size_t imageSize,std::uint32_t codeBegin,std::uint32_t codeEnd) {
+  ReadMovContract m{};m.decoded=true;m.isMov=ins.id==X86_INS_MOV;m.site=std::uint32_t(ins.address);
+  copyName(m.mnemonic,sizeof(m.mnemonic),ins.mnemonic);
+  const auto &x=ins.detail->x86;m.operandCount=x.op_count;m.instructionBytes=ins.size;
+  m.addressWidth=x.addr_size;m.decodedEflags=x.eflags;m.parentState=parent;
+  m.memoryAccessKnown=true;
+  const auto registerName=[&](ReadMovContract::Operand &o,unsigned id) {
+    o.parentGpr=cmpParent(id);o.parentXmm=xmm(id);
+    copyName(o.name,sizeof(o.name),cs_reg_name(decoder,id));
+    copyName(o.kind,sizeof(o.kind),o.parentGpr>=0?"GPR":o.parentXmm>=0?"XMM":"other_register");
+    if (o.parentGpr>=0) {
+      o.conservativeParent=reg(id)<0;
+      // Full parent alias is metadata; partial semantics remain unsupported.
+      static constexpr unsigned names[]={X86_REG_RAX,X86_REG_RCX,X86_REG_RDX,X86_REG_RBX,
+        X86_REG_RSP,X86_REG_RBP,X86_REG_RSI,X86_REG_RDI,X86_REG_R8,X86_REG_R9,
+        X86_REG_R10,X86_REG_R11,X86_REG_R12,X86_REG_R13,X86_REG_R14,X86_REG_R15};
+      copyName(o.parentName,sizeof(o.parentName),cs_reg_name(decoder,names[o.parentGpr]));
+      const auto v=state.s.g[o.parentGpr];o.originKind=v.kind;o.originRoot=v.root;o.originOffset=v.off;
+      if (parent) o.registerTags=flow.g[o.parentGpr];
+    } else if (o.parentXmm>=0) {
+      copyName(o.parentName,sizeof(o.parentName),o.name);
+      if (parent) o.registerTags=flow.x[o.parentXmm];
+    }
+  };
+  for (unsigned j=0;j<x.op_count;++j) {
+    const auto &op=x.operands[j];
+    if (op.type==X86_OP_MEM) {
+      ++m.memoryOperands;m.memoryRead |= (op.access&CS_AC_READ)!=0;m.memoryWrite |= (op.access&CS_AC_WRITE)!=0;
+      m.memoryRmw |= (op.access&(CS_AC_READ|CS_AC_WRITE))==(CS_AC_READ|CS_AC_WRITE);
+      m.memoryAccessKnown &= op.access!=0;
+    }
+    if (j>=m.operands.size()) continue;
+    auto &o=m.operands[j];o.width=op.size;o.access=op.access;
+    if (op.type==X86_OP_REG) registerName(o,op.reg);
+    else if (op.type==X86_OP_IMM) {copyName(o.kind,sizeof(o.kind),"immediate");o.immediate=op.imm;}
+    else if (op.type==X86_OP_MEM) {
+      copyName(o.kind,sizeof(o.kind),"memory");
+      copyName(o.base,sizeof(o.base),cs_reg_name(decoder,op.mem.base));
+      copyName(o.index,sizeof(o.index),cs_reg_name(decoder,op.mem.index));
+      copyName(o.segment,sizeof(o.segment),cs_reg_name(decoder,op.mem.segment));
+      o.baseParent=cmpParent(op.mem.base);o.indexParent=cmpParent(op.mem.index);
+      o.scale=op.mem.scale;o.displacement=op.mem.disp;
+      if (o.baseParent>=0) {
+        const auto v=state.s.g[o.baseParent];o.baseKind=v.kind;o.baseRoot=v.root;o.baseOffset=v.off;
+        if (parent) o.baseTags=flow.g[o.baseParent];
+      }
+      if (o.indexParent>=0) {
+        const auto v=state.s.g[o.indexParent];o.indexKind=v.kind;o.indexRoot=v.root;o.indexOffset=v.off;
+        if (parent) o.indexTags=flow.g[o.indexParent];
+      }
+      m.addressTags |= o.baseTags|o.indexTags;
+      const auto address=aliasAddress(state.s,ins,op,0);
+      // Symbolic callee-entry root numbers alone are not typed caller provenance.
+      m.addressExact=x.addr_size==8 && address.kind==pointer &&
+          op.mem.segment==X86_REG_INVALID && op.mem.index==X86_REG_INVALID &&
+          (parent || op.mem.base==X86_REG_RIP);
+      if (m.addressExact) {
+        m.addressRoot=address.root;m.addressOffset=address.off;
+        if (address.root==1) {
+          m.aliasMayMask=movHero;m.addressClass="Hero_Transform_conditional";
+          if (overlaps(address.off,op.size,0x10c,0x110)) m.aliasMayMask |= movField10c;
+        } else if (address.root==2 || address.root==4) {
+          const auto off=address.off+(address.root==2?0x28:0);
+          const auto sp=state.s.g[4];
+          if (off>=-4096 && off+op.size<=4096 && sp.kind==pointer && sp.root==4) {
+            m.aliasMayMask=off<sp.off?movPrivateStack|movUnknown:movCallerHome;
+            m.addressClass=off<sp.off?"below_entry_SP_unowned_candidate":"caller_or_home_stack_conditional";
+            if (overlaps(off,op.size,0x28,0x68)) m.aliasMayMask |= movSource;
+          } else {m.addressExact=false;m.addressClass="stack_extent_unproven";}
+        } else if (address.root==globalRoot && address.off>=0 && std::uint64_t(address.off)<imageSize &&
+            op.size<=imageSize-std::uint64_t(address.off)) {
+          m.aliasMayMask=movImage;m.imageRangeKnown=true;m.addressClass="image_address_mutability_unproven";
+          m.codeRangeKnown=address.off>=codeBegin && std::uint64_t(address.off)+op.size<=codeEnd;
+        } else { m.addressExact=false;m.addressClass="raw_entry_token_or_range_unproven"; }
+      } else m.addressClass=op.mem.index!=X86_REG_INVALID?"indexed_address_unproven"
+          : op.mem.segment!=X86_REG_INVALID?"segment_address_unproven"
+          : !parent?"entry_tokens_not_typed_addresses":"loaded_raw_bits_or_unknown_address";
+    } else copyName(o.kind,sizeof(o.kind),"unsupported");
+  }
+  if (!m.memoryOperands) m.aliasMayMask=0;
+  cs_regs reads{},writes{};std::uint8_t nr{},nw{};
+  m.effectsKnown=cs_regs_access(decoder,&ins,reads,&nr,writes,&nw)==CS_ERR_OK;
+  bool flagsRead=false,flagsWrite=false;
+  for (unsigned j=0;j<nr;++j) flagsRead |= reads[j]==X86_REG_EFLAGS;
+  for (unsigned j=0;j<nw;++j) {
+    if (writes[j]==X86_REG_EFLAGS) {flagsWrite=true;continue;}
+    const int g=cmpParent(writes[j]),v=xmm(writes[j]);
+    if (g>=0) {
+      if (reg(writes[j])>=0) m.fullGprWrites |= 1u<<g;else m.partialGprWrites |= 1u<<g;
+      m.stackPointerWrite |= g==4;
+    } else if (v>=0) m.xmmWrites |= 1u<<v;
+    else ++m.otherRegisterWrites;
+  }
+  m.flagsPreserved=m.effectsKnown && !flagsRead && !flagsWrite && !x.eflags;
+  m.pureLoad=m.isMov && m.effectsKnown && m.flagsPreserved && !m.stackPointerWrite &&
+      !m.otherRegisterWrites && x.op_count==2 && x.operands[0].type==X86_OP_REG &&
+      x.operands[0].access==CS_AC_WRITE && x.operands[1].type==X86_OP_MEM &&
+      x.operands[1].access==CS_AC_READ && m.memoryOperands==1 && !m.memoryWrite;
+  // All memory contents/loaded-value tags remain unknown; no semantic state update.
+  m.loadedMayTags=m.memoryRead?7u:0u;
+  m.reason=m.memoryWrite||m.memoryRmw?"target_MOV_memory_write_or_RMW_refused"
+      : m.memoryOperands && m.pureLoad?"target_MOV_loaded_value_provenance_unproven"
+      : m.memoryOperands?"target_MOV_memory_form_or_access_unproven"
+      : "target_MOV_no_memory_existing_register_rules_only";
+  return m;
+}
 struct LeafCfgResult {
   bool complete{}, effectsDiffer{};
   unsigned size{}, instructions{}, visits{}, paths{};
@@ -1375,6 +1482,7 @@ struct LeafCfgResult {
   char mnemonic[32]="none";
   ReadCmpContract cmp{};
   ReadLeafBranch branch{};
+  ReadMovContract mov{};
   std::array<ReadLeafOutcome,readLeafPathCap> outcomes{};
 };
 // Exactly one pinned JA, both forward legs, no generic CFG/recursive expansion.
@@ -1382,7 +1490,7 @@ struct LeafCfgResult {
 // current parent-call tags. Caller mode repeats the disjointness check per state.
 LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
     std::uint32_t codeBegin,std::uint32_t codeEnd,std::uint32_t nextRuntime,
-    const ReadEntryTags *entry,bool symbolic,Slice &merged,ReadFlow &mergedTags) {
+    const ReadEntryTags *entry,bool symbolic,Slice &merged,ReadFlow &mergedTags,std::size_t imageSize) {
   static_assert(readLeafBranchCap==1 && readLeafPathCap==2 && readLeafVisitCap==64,"Review bounded fan-out before changing budgets");
   LeafCfgResult out{};
   auto fail=[&](const cs_insn *ins,std::uint32_t at,const char *why) {
@@ -1477,6 +1585,10 @@ LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
         p.flagsKnown=true;p.producer=at;out.cmp.modelApplied=true;
         p.pc+=ins.size;continue;
       }
+      if (at==readIdentityMov) {
+        out.mov=describeMov(ins,d.h,p.slice,p.flow,!symbolic,imageSize,codeBegin,codeEnd);
+        if (out.mov.memoryOperands) return fail(&ins,at,out.mov.reason);
+      }
       for (unsigned j=0;j<x.op_count;++j) if (x.operands[j].type==X86_OP_MEM)
         return fail(&ins,at,"target_cfg_memory_operand_refused");
       if (ins.id==X86_INS_NOP || ins.id==X86_INS_ENDBR64) { p.pc+=ins.size;continue; }
@@ -1527,6 +1639,31 @@ void sampleCmpBoundary(ReadTargetIdentity &t, const ReadFlow &flow) {
     ++t.branch.samples;t.branch.flagsTags |= carrierTags(t.branch.entryCarrierMask,flow);
   }
 }
+void sampleMovBoundary(ReadTargetIdentity &t,const Slice &caller,const ReadFlow &flow,std::size_t imageSize) {
+  if (!t.enabled || t.target!=readIdentityTarget || !t.tableValid || !t.stable ||
+      !t.branch.expanded || !t.mov.decoded || t.mov.site!=readIdentityMov ||
+      t.scanBytes<=readIdentityMov-readIdentityTarget) return;
+  Decode d;
+  if (cs_open(CS_ARCH_X86,CS_MODE_64,&d.h)!=CS_ERR_OK) return;
+  cs_option(d.h,CS_OPT_DETAIL,CS_OPT_ON);cs_option(d.h,CS_OPT_SKIPDATA,CS_OPT_OFF);
+  d.p=cs_malloc(d.h);d.n=1;if (!d.p) return;
+  const std::uint8_t *cursor=t.snapshot.data()+readIdentityMov-readIdentityTarget;
+  std::size_t left=t.scanBytes-(readIdentityMov-readIdentityTarget);std::uint64_t address=readIdentityMov;
+  if (!cs_disasm_iter(d.h,&cursor,&left,&address,d.p) || d.p->size!=t.mov.instructionBytes) return;
+  auto child=caller;child.s.g[4]=plus(caller.s.g[4],-8); // existing natural CALL delta, no live stack read.
+  const auto fresh=describeMov(*d.p,d.h,child,flow,true,imageSize,t.codeBegin,t.codeEnd);
+  auto &m=t.mov;
+  if (!m.samples) {m=fresh;m.samples=1;return;}
+  ++m.samples;
+  m.addressSame &= fresh.addressExact==m.addressExact && fresh.addressRoot==m.addressRoot &&
+      fresh.addressOffset==m.addressOffset && !std::strcmp(fresh.addressClass,m.addressClass);
+  m.aliasMayMask |= fresh.aliasMayMask;m.addressTags |= fresh.addressTags;
+  for (unsigned j=0;j<2;++j) {
+    m.operands[j].registerTags |= fresh.operands[j].registerTags;
+    m.operands[j].baseTags |= fresh.operands[j].baseTags;m.operands[j].indexTags |= fresh.operands[j].indexTags;
+  }
+  if (!m.addressSame) {m.addressExact=false;m.aliasMayMask |= movUnknown;m.addressClass="conflicting_analyzed_addresses";}
+}
 bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
                   ReadFlow &flow) {
   auto &c = a.readDependency.call;
@@ -1540,6 +1677,7 @@ bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
   if (!c.direct || !c.identity.instructionVerified)
     return fail(call.address, call.mnemonic, "read_call_indirect_or_invalid_target_no_chase");
   sampleCmpBoundary(c.targetIdentity,flow);
+  sampleMovBoundary(c.targetIdentity,caller,flow,a.imageSize);
   if (c.targetIdentity.enabled && !c.targetIdentity.admitted)
     return fail(c.targetIdentity.barrier?c.targetIdentity.barrier:call.address,
                 c.targetIdentity.mnemonic,c.targetIdentity.reason);
@@ -1578,7 +1716,7 @@ bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
         std::memcmp(c.code,proof.snapshot.data(),c.size))
       return fail(begin,"snapshot","read_call_CFG_identity_pin_or_snapshot_mismatch");
     const auto cfg=walkPinnedLeaf(c.code,c.size,c.targetIdentity.codeBegin,c.targetIdentity.codeEnd,
-        c.targetIdentity.nextRuntime,nullptr,false,state,tags);
+        c.targetIdentity.nextRuntime,nullptr,false,state,tags,a.imageSize);
     c.visits+=cfg.visits;
     if (!cfg.complete || c.visits>4096)
       return fail(cfg.barrier?cfg.barrier:begin,cfg.mnemonic,c.visits>4096?"read_call_cumulative_visit_cap":cfg.reason);
@@ -3116,8 +3254,8 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
           Slice merged;ReadFlow tags;
           for (unsigned k=0;k<16;++k) { tags.g[k]=1u<<k;tags.x[k]=1u<<(16+k); }
           const auto cfg=walkPinnedLeaf(out.snapshot.data(),limit,out.codeBegin,out.codeEnd,out.nextRuntime,
-              out.entryTagsKnown?entryTags:nullptr,true,merged,tags);
-          out.cmp=cfg.cmp;out.branch=cfg.branch;out.instructions=cfg.instructions;
+              out.entryTagsKnown?entryTags:nullptr,true,merged,tags,imageSize);
+          out.cmp=cfg.cmp;out.branch=cfg.branch;out.mov=cfg.mov;out.instructions=cfg.instructions;
           out.paths=cfg.paths;out.visits=cfg.visits;out.cfgComplete=cfg.complete;
           out.pathEffectsDiffer=cfg.effectsDiffer;
           if (!cfg.complete) return fail(cfg.reason,cfg.barrier,cfg.mnemonic);

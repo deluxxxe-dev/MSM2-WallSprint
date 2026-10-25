@@ -1,3 +1,14 @@
+## C27 accepted / c28 diagnostic-only checkpoint
+
+VERIFIED-RUNTIME c27 JA0x2CF7FE7 shortrel8/disp42, fall0x2CF7FE9/taken0x2CF8013;
+both edges expanded without choosing outcome. First fallthrough MOV memory
+barrier,0 returns/identity/hash/effects. Actual MOV operands/access unknown.
+C28 records exact operand/address/decoded writes and caller-state alias/tags,
+separating address provenance from UNKNOWN loaded values. No load semantics or
+immutable-image shortcut; write/RMW and unproven loads refuse. All c27/c25 guards
+and ownership/game-write restrictions remain. Sources V01C27_RUNTIME_RESULT.md /
+V01C28_MOV_CLASSIFICATION.md. Prior checkpoints follow.
+
 ## C26 accepted / c27 prepared checkpoint
 
 VERIFIED-RUNTIME c26 CMP r8d,0x3FFF0x2CF7FE0 flags-only/tag0; next JA0x2CF7FE7

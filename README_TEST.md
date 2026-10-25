@@ -1,21 +1,21 @@
-# WallSprint v0.1c27 — exact JA両経路の有限検証
+# WallSprint v0.1c28 — exact MOV形式・アドレス由来の診断
 
-Package **0.1.45**。c26で `cmp r8d,0x3FFF` と次のJA（0x2CF7FE7）を確認済みです。今回はshort/near encodingからtaken/fallthroughの両RVA・範囲・向き・runtime領域との交差を記録します。現在の解析状態で関連tagsすべてに非依存と確認できる場合だけ、1分岐・2経路・128bytes・32命令・64訪問の上限で両経路を検証します。全経路が安全なRETで終わるまでidentity/hash/effectsは許可しません。メモリ・stack変更・CALL・間接転送・部分効果・ループ・次の分岐は拒否します。実機の正確な分岐先と経路の停止点は未確認です。Position/source-position/入力/移動の書込みや所有権許可は追加しません。
+Package **0.1.46**。c27でJAのtaken=0x2CF8013、fallthrough=0x2CF7FE9を確認済みで、継続先MOVが次の停止点です。今回はそのMOVのoperand class・width・access・register alias、memory base/index/scale/displacement/segment/address width、decoded writes/flags、現在の親CALL状態に基づく保守的なaliasを記録します。アドレスの由来とロードされる値の由来は別です。write/RMWおよび値の由来が証明できないloadは拒否し、メモリload規則や実測値取得は追加しません。実際のMOV形式はまだ不明です。Position/source-position/入力/移動や所有権の許可も追加しません。
 
 ## 今回の更新・テスト（移行済み環境）
 
 1. ゲームと共有Overstrikeを閉じ、`MSM2-WS\Update-WS.cmd` を実行します。Git更新・既存フル試験・検証・配置を行います。
 2. 起動した共有Overstrikeで通常MOD＋SF＋WSを確認し、`Install mods` → `Run modded game`。
 3. A/cardinalの平らな壁で約3秒 → WallRunを完全終了 → 移動/ファストトラベル → E/diagonalで約3秒。各回は既存の5秒上限に達する前に終了します。
-4. `MSM2-WS\logs` の最新の完全な `MSM2-WS-v0.1c27-YYYYMMDD-HHMMSS.log` を非公開で共有してください。動画は見た目の異常時だけです。
+4. `MSM2-WS\logs` の最新の完全な `MSM2-WS-v0.1c28-YYYYMMDD-HHMMSS.log` を非公開で共有してください。動画は見た目の異常時だけです。
 
-新しい `MOVEMENT_CALLEE_READ_LEAF_BRANCH` のencoding/両edge/range/runtime交差、`READ_TARGET_PASSES`、`READ_LEAF_CFG` の両経路の完了と上限、完了時のみ `READ_LEAF_RETURN` の経路別tag効果を確認します。現在の親CALL状態からtagを集めて再検証するのは最大2passで、snapshotが変われば拒否します。数値的な分岐方向は決めません。片方だけ成功しても全体は不許可です。生コードやCMPの実測メモリ値は追加記録しません。従来のtable/identity/CALL/read/TESTおよびDeinit/retention/Position0/cleanupを維持します。
+新しい `MOVEMENT_CALLEE_READ_MOV` / `READ_MOV_OPERAND` / `READ_MOV_ADDRESS` を確認します。memory read/write/RMW、flags preservation、全・部分GPR/XMM writes、アドレス成分tags、条件付きHero/field10C/source/stack/image/unknown aliasを区別します。親状態のsamples=0は未解析で、tag0の証明ではありません。loaded_value_tags_known=0、loaded_may_tags_upper_bound=7は不明値の保守的上限であり、ロードを実行・許可した結果ではありません。従来のJA全経路・snapshot/runtime/cap・Deinit/retention/Position0/cleanupは維持します。
 
 下の移行手順は未移行環境向けの参照です。デスクトップの `MSM2 - Overstrike` は普段の起動用で、WSの更新・ビルドは実行しません。
 
 ## 最初の移行
 
-配布 **MSM2-WS-v0.1c27.zip** を **Mods Library の外**へ展開してください。展開したフォルダ内の `Migrate-WS.cmd` と `tools` を一緒に使います。ソース ZIP は別の再現用資料で、正本 `_source` はヘルパーが GitHub から独立 clone します。コードはすべて取得し、配布アーカイブだけを Git の sparse checkout 設定で作業フォルダから除外します。ZIP本体と履歴はGitに残ります。
+配布 **MSM2-WS-v0.1c28.zip** を **Mods Library の外**へ展開してください。展開したフォルダ内の `Migrate-WS.cmd` と `tools` を一緒に使います。ソース ZIP は別の再現用資料で、正本 `_source` はヘルパーが GitHub から独立 clone します。コードはすべて取得し、配布アーカイブだけを Git の sparse checkout 設定で作業フォルダから除外します。ZIP本体と履歴はGitに残ります。
 
 Windows 側に Python 3.11+、Git for Windows、PowerShell、設定済み WSL2 が必要です。WSL 側には既存の MinGW/Clang/Wine/解析 Python のフルビルド環境が必要です。**前提が足りない場合、ビルドや試験を省略して導入することはありません。** 手順は [source/BUILD.md](source/BUILD.md) を参照してください。
 
@@ -40,7 +40,7 @@ Migrate-WS.cmd --game-root "<実際のゲームルート>" --branch codex/v01c20
 
 ```text
 <game>\Mods Library\Mods-Developing\MSM2-WS\
-├─ MSM2-WS-v0.1c27.script
+├─ MSM2-WS-v0.1c28.script
 ├─ Update-WS.cmd
 ├─ Migrate-WS.cmd        （移行用）
 ├─ logs\
@@ -76,7 +76,7 @@ Migrate-WS.cmd --game-root "<実際のゲームルート>" --branch codex/v01c20
 
 ```text
 <game>\Mods Library\Mods-Developing\MSM2-WS\logs\
-MSM2-WS-v0.1c27-YYYYMMDD-HHMMSS.log
+MSM2-WS-v0.1c28-YYYYMMDD-HHMMSS.log
 ```
 
 時刻は PC のローカル時刻です。同秒の衝突は `-01` などを付け、既存ファイルを上書きしません。同じ起動内の A→E は1本に記録します。旧 `log_wallsprint` や共有 `logs` への代替保存はありません。
@@ -89,4 +89,4 @@ MSM2-WS-v0.1c27-YYYYMMDD-HHMMSS.log
 
 通常の入力で試してください。A/E の対応、ちらつき・停止・クラッシュなどがあれば添えてください。動画は見た目の異常時だけです。生ログや private game body を GitHub へ追加しないでください。
 
-確認項目は、v0.1c27/package0.1.45、exact-build admission、JAの正確な両edgeと現在状態でのtag非依存、両経路の完了または正確な停止点、経路別戻り効果、Deinit/retention/Up・stale回復・Position0・entry/map・watch解除です。A/E各約3秒、既存5秒上限未満で終了します。局所CFGの通過だけでXYZ/Wや所有権を証明したとは扱わず、`writable_source_proven=0` を維持します。
+確認項目は、v0.1c28/package0.1.46、exact-build admission、MOVの正確な形式とaccess、アドレス成分と条件付きalias、loaded-value不明の明示、正確な停止理由、Deinit/retention/Up・stale回復・Position0・entry/map・watch解除です。A/E各約3秒、既存5秒上限未満で終了します。メモリ値や生コードは不要です。局所診断からXYZ/Wや所有権を証明したとは扱わず、`writable_source_proven=0` を維持します。

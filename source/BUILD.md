@@ -107,3 +107,12 @@ instructions/64 visits; all RET outcomes required. Final code/runtime checks,
 per-state tag recheck and conservative effects preserve fail-closed boundaries.
 See analysis/V01C27_JA_FANOUT.md. Actual edges/paths need minimal live metadata,
 never a private game body fixture. Existing Overstrike recovery helpers retained.
+
+## Current c28 diagnostic-only MOV classification
+
+v0.1c28/package0.1.46 adds8 groups to test_read_target_identity.sh (36 total),
+retaining21 call/read and full pipeline. No memory-load semantics: exact pinned
+MOV operand/access/address/alias/tag metadata only, write/RMW/unproven-value
+refusals and unchanged c27 all-path/cap/metadata/current-code rules. Address
+provenance and loaded-value provenance remain separate; unknown never means0.
+See analysis/V01C28_MOV_CLASSIFICATION.md; no private body/data fixture required.

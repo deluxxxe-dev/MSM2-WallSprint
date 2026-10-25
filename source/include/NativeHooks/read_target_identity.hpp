@@ -56,6 +56,35 @@ struct ReadLeafBranch {
   char mnemonic[32] = "none";
   const char *condition = "unknown", *flagsRead = "unknown";
 };
+inline constexpr std::uint32_t readIdentityMov = 0x2cf7fe9;
+enum MovAlias : unsigned { movHero=1, movField10c=2, movSource=4,
+    movCallerHome=8, movPrivateStack=16, movImage=32, movUnknown=64,
+    movAnyAlias=127 };
+// Diagnostic only: no loaded value or load semantics are supplied by this record.
+struct ReadMovContract {
+  struct Operand {
+    char kind[20]="none",name[16]="none",parentName[16]="none",
+        base[16]="none",index[16]="none",segment[16]="none";
+    unsigned width{},access{},scale{},registerTags{},baseTags{},indexTags{};
+    int parentGpr=-1,parentXmm=-1,baseParent=-1,indexParent=-1;
+    int originKind{},originRoot=-1,baseKind{},baseRoot=-1,indexKind{},indexRoot=-1;
+    std::int64_t displacement{},immediate{},originOffset{},baseOffset{},indexOffset{};
+    bool conservativeParent{};
+  };
+  std::uint32_t site{};
+  unsigned instructionBytes{},operandCount{},addressWidth{},memoryOperands{},samples{},
+      fullGprWrites{},partialGprWrites{},xmmWrites{},otherRegisterWrites{},aliasMayMask=movAnyAlias,
+      addressTags{},loadedMayTags{};
+  int addressRoot=-1;
+  std::int64_t addressOffset{};
+  std::uint64_t decodedEflags{};
+  bool decoded{},isMov{},effectsKnown{},flagsPreserved{},memoryAccessKnown{},
+      memoryRead{},memoryWrite{},memoryRmw{},pureLoad{},stackPointerWrite{},
+      parentState{},addressExact{},addressSame=true,imageRangeKnown{},codeRangeKnown{};
+  std::array<Operand,2> operands{};
+  char mnemonic[32]="none";
+  const char *addressClass="not_classified",*reason="pinned_MOV_not_decoded";
+};
 struct ReadTargetIdentity {
   bool enabled{}, admitted{}, missingRuntime{}, stable{}, tableValid{};
   bool directoryPairValid{}, directoryRangeInImage{}, directorySizeDivisible{},
@@ -67,6 +96,7 @@ struct ReadTargetIdentity {
   RuntimeRegion lookup{};
   ReadCmpContract cmp{};
   ReadLeafBranch branch{};
+  ReadMovContract mov{};
   bool entryTagsKnown{}, cfgComplete{}, finalCodeRechecked{}, pathEffectsDiffer{};
   unsigned entryTagSamples{}, paths{}, visits{};
   const char *method = "none", *reason = "target_identity_not_enabled";

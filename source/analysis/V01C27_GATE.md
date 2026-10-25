@@ -1,3 +1,5 @@
+> Accepted c27 actual: short JA0x2CF7FE7 disp42 -> taken0x2CF8013/fall0x2CF7FE9, both forward edges admitted for fan-out; first fallthrough MOV memory effect refuses,0 returns/identity. See V01C27_RUNTIME_RESULT.md and successor V01C28_MOV_CLASSIFICATION.md. Earlier pending-edge statements below are preparation history.
+
 # C27 bounded JA gate
 
 Accepted c26: CMP r8d,0x3FFF0x2CF7FE0 flags-only/tag0; next JA0x2CF7FE7,

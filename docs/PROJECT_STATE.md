@@ -295,3 +295,18 @@ If and only if that exact MOV is admitted, resume the existing c27 two-path proo
 Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
 
 Deferred user-facing features remain tracked in `docs/FEATURE_ROADMAP.md`.
+
+## C28 prepared diagnostic successor
+
+v0.1c28/package0.1.46 classifies exact pinned MOV0x2CF7FE9 from stable c27 reachable
+snapshot: operand/access/width/aliases, expression/address components, flags and
+decoded writes. Parent Slice/ReadFlow state refines conditional affine address/
+alias and register/address tag unions with natural CALL delta. Raw entry tokens
+are not typed arguments; address tags never prove loaded-value tags. Values stay
+UNKNOWN/may-tag upper bound7; no memory value read, no load/partial/XMM semantics
+or immutable-image admission. Memory writes/RMW and all unproven loads refuse;
+all c27 paths/caps/metadata/snapshot/runtime guards and safety0 gates retained.
+Actual MOV form/provenance PENDING minimal runtime records. Eight owned groups
+added (36 identity total),21 call/read retained; results in CODEX_RESULT.md.
+CODEX_NEXT remains unchanged task authority. Producer0x351EB00 deferred; no SF/
+ordinary-mod/gameplay or updater/WINMM recovery-helper changes.

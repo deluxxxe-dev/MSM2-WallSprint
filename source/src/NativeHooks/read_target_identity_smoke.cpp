@@ -104,7 +104,7 @@ struct LargeImage : Image {
   }
 };
 ws::rdx::CalleeAlias flowThroughIdentity(Image &image,bool expectAdmission,bool expectLiveValue,const ws::rdx::ReadEntryTags *entry=nullptr,
-    bool disjointR8=false,bool expectLeafFlow=true,bool mismatchedCode=false) {
+    bool disjointR8=false,bool expectLeafFlow=true,bool mismatchedCode=false,bool otherR9=false,bool conflictingAddresses=false) {
   std::array<unsigned char,183> writer{};std::array<unsigned char,137> parent{};
   writer.fill(0x90);parent.fill(0x90);
   auto put=[](auto &b,unsigned at,std::initializer_list<unsigned char> v) {
@@ -117,7 +117,9 @@ ws::rdx::CalleeAlias flowThroughIdentity(Image &image,bool expectAdmission,bool 
   put(writer,0x42,{0x89,0x57,0x38});put(writer,0x45,{0xc7,0x47,0x3c,0,0,0x80,0x3f});
   put(writer,0x4c,{0x48,0x83,0xc4,0x28,0xc3});
   put(parent,0,{0x48,0x89,0x7c,0x24,8,0x8b,0x81,0x0c,1,0,0});
-  if (!disjointR8) put(parent,0xb,{0x44,0x8b,0x81,0x0c,1,0,0}); // other-prewrite tag4 in R8.
+  if (otherR9) put(parent,0xb,{0x44,0x8b,0x89,0x0c,1,0,0});
+  else if (!disjointR8) put(parent,0xb,{0x44,0x8b,0x81,0x0c,1,0,0}); // other-prewrite tag4 in R8.
+  if (conflictingAddresses) put(parent,0xb,{0x49,0x89,0xc9,0x75,3,0x49,0x89,0xf1});
   put(parent,0x20,{0xbf,1,0,0,0});put(parent,0x2e,{0x89,0xb9,0x0c,1,0,0});
   put(parent,0x34,{0x8b,0x91,0x0c,1,0,0}); // postwrite tag2 in EDX.
   put(parent,0x3c,{0xe8,0,0,0,0,0x48,0x8b,0x7c,0x24,8,0xc3});
@@ -533,5 +535,131 @@ int main() {
     assert(r.admitted && r.cfgComplete && r.paths==2 && r.validatedEntries==527161 && r.metadataBytesRead==6325932);
   }
   std::puts("PASS: c27 final snapshot/current producer/runtime coverage and complete527161-entry metadata gates remain mandatory; no private target bytes or gameplay-write certificates are needed");
+
+  auto memoryAtFallthrough=[&](Image &f,std::initializer_list<unsigned char> bytes) {
+    fanout(f);f.code[8]=31;std::fill(f.code.begin()+9,f.code.end(),0xcc);
+    std::copy(bytes.begin(),bytes.end(),f.code.begin()+9);f.code[9+bytes.size()]=0xc3;f.code[40]=0xc3;
+  };
+  {
+    Image load;memoryAtFallthrough(load,{0x8b,0x41,0x10});r=load.run(true,target,imageSize,&clean);
+    const auto &m=r.mov;
+    assert(!r.admitted && r.branch.expanded && !r.paths && m.decoded && m.isMov && m.site==target+9 &&
+        m.operandCount==2 && m.operands[0].width==4 && m.operands[0].access==2 &&
+        !std::strcmp(m.operands[0].kind,"GPR") && !std::strcmp(m.operands[0].name,"eax") &&
+        m.operands[1].access==1 && m.operands[1].width==4 && m.memoryRead && !m.memoryWrite && !m.memoryRmw &&
+        m.pureLoad && m.flagsPreserved && m.effectsKnown && m.fullGprWrites==1 && !m.xmmWrites);
+    assert(!m.parentState && !m.addressExact && m.aliasMayMask==ws::rdx::movAnyAlias && !m.samples && m.loadedMayTags==7);
+    assert(!std::strcmp(m.reason,"target_MOV_loaded_value_provenance_unproven"));
+  }
+  std::puts("PASS: c28 pinned MOV exact operand/access/width/register and flags-only preservation metadata never turns a pure read form or symbolic entry token into load or target admission");
+
+  {
+    for (auto operand : {0x01u,0x02u,0x03u}) {
+      Image f;memoryAtFallthrough(f,{0x8b,(unsigned char)operand});auto a=flowThroughIdentity(f,false,false,&clean,true);
+      const auto &m=a.readDependency.call.targetIdentity.mov;
+      assert(m.parentState && m.samples && m.memoryRead && m.loadedMayTags==7 && m.operands[0].registerTags==1);
+      if (operand==1) assert(m.addressExact && m.addressRoot==1 && (m.aliasMayMask&ws::rdx::movHero));
+      else assert(!m.addressExact && (m.aliasMayMask&ws::rdx::movUnknown));
+      if (operand==2) assert(m.operands[1].baseKind==2 && m.operands[1].baseTags==2);
+    }
+    Image selected;memoryAtFallthrough(selected,{0x8b,0x00});auto a=flowThroughIdentity(selected,false,false,&clean,true);
+    assert(a.readDependency.call.targetIdentity.mov.addressTags==1 && a.readDependency.call.targetIdentity.mov.loadedMayTags==7);
+    Image otherParent;memoryAtFallthrough(otherParent,{0x41,0x8b,0x01});
+    a=flowThroughIdentity(otherParent,false,false,&clean,true,true,false,true);
+    assert(a.readDependency.call.targetIdentity.mov.addressTags==4 && a.readDependency.call.targetIdentity.mov.loadedMayTags==7);
+    Image conflict;memoryAtFallthrough(conflict,{0x41,0x8b,0x01});
+    a=flowThroughIdentity(conflict,false,false,&clean,true,true,false,false,true);
+    const auto &both=a.readDependency.call.targetIdentity.mov;
+    assert(both.samples==2 && !both.addressSame && !both.addressExact &&
+        (both.aliasMayMask&ws::rdx::movHero) && (both.aliasMayMask&ws::rdx::movSource) && (both.aliasMayMask&ws::rdx::movUnknown));
+    Image other;memoryAtFallthrough(other,{0x41,0x8b,0x00});auto tagged=clean;tagged.gpr[8]=4;
+    // R8 as address can be described at the pinned site with disjoint branch state
+    // only if its tag wasn't used in the condition; current c27 correctly refuses earlier.
+    r=other.run(true,target,imageSize,&tagged);assert(!r.mov.decoded && !r.branch.expanded);
+  }
+  std::puts("PASS: c28 parent-state affine address provenance and incoming selected/postwrite tags stay separate from unknown loaded-value tags; raw loaded bits and other entry tokens remain unknown addresses");
+
+  {
+    Image indexed;memoryAtFallthrough(indexed,{0x8b,0x44,0x81,0xf0});auto a=flowThroughIdentity(indexed,false,false,&clean,true);
+    const auto &m=a.readDependency.call.targetIdentity.mov;const auto &op=m.operands[1];
+    assert(!m.addressExact && m.addressTags==1 && op.scale==4 && op.displacement==-16 &&
+        !std::strcmp(op.base,"rcx") && !std::strcmp(op.index,"rax") && op.indexTags==1 && op.baseTags==0 && m.addressWidth==8);
+    Image segment;memoryAtFallthrough(segment,{0x64,0x8b,0x01});a=flowThroughIdentity(segment,false,false,&clean,true);
+    assert(!a.readDependency.call.targetIdentity.mov.addressExact && !std::strcmp(a.readDependency.call.targetIdentity.mov.operands[1].segment,"fs"));
+    Image narrow;memoryAtFallthrough(narrow,{0x67,0x8b,0x01});a=flowThroughIdentity(narrow,false,false,&clean,true);
+    assert(a.readDependency.call.targetIdentity.mov.addressWidth==4 && !a.readDependency.call.targetIdentity.mov.addressExact);
+  }
+  std::puts("PASS: c28 exact base/index/scale/signed displacement/segment/address width is reported without guessing indexed, segmented or32-bit effective pointer provenance");
+
+  {
+    Image field;memoryAtFallthrough(field,{0x8b,0x81,0x0c,1,0,0});auto a=flowThroughIdentity(field,false,false,&clean,true);
+    assert(a.readDependency.call.targetIdentity.mov.aliasMayMask==(ws::rdx::movHero|ws::rdx::movField10c));
+    Image source;memoryAtFallthrough(source,{0x8b,0x06});a=flowThroughIdentity(source,false,false,&clean,true);
+    assert(a.readDependency.call.targetIdentity.mov.aliasMayMask&ws::rdx::movSource);
+    Image home;memoryAtFallthrough(home,{0x8b,0x44,0x24,8});a=flowThroughIdentity(home,false,false,&clean,true);
+    const auto &h=a.readDependency.call.targetIdentity.mov;assert(h.addressExact && h.addressRoot==4 &&
+        (h.aliasMayMask&ws::rdx::movCallerHome) && h.addressOffset==-0x30);
+    Image below;memoryAtFallthrough(below,{0x8b,0x44,0x24,0xf8});a=flowThroughIdentity(below,false,false,&clean,true);
+    assert((a.readDependency.call.targetIdentity.mov.aliasMayMask&(ws::rdx::movPrivateStack|ws::rdx::movUnknown))==
+        (ws::rdx::movPrivateStack|ws::rdx::movUnknown));
+    assert(!a.readDependency.call.modeledStates);
+  }
+  std::puts("PASS: c28 Hero/field10C/source/caller-home/below-SP candidate aliases are refused; nested CALL delta is reflected without inventing private-stack allocation or reading stack contents");
+
+  {
+    for (bool rmw : {false,true}) {
+      Image store;memoryAtFallthrough(store,rmw?std::initializer_list<unsigned char>{0x87,0x01}:
+          std::initializer_list<unsigned char>{0x89,0x01});
+      auto a=flowThroughIdentity(store,false,false,&clean,true);const auto &m=a.readDependency.call.targetIdentity.mov;
+      assert(m.memoryWrite && m.memoryRmw==rmw && !m.pureLoad && !a.readDependency.call.modeledStates &&
+          !std::strcmp(m.reason,"target_MOV_memory_write_or_RMW_refused"));
+      assert(m.operands[1].registerTags==1);
+    }
+    Image immediate;memoryAtFallthrough(immediate,{0xc7,0x01,1,0,0,0});r=immediate.run(true,target,imageSize,&clean);
+    assert(r.mov.memoryWrite && !std::strcmp(r.mov.operands[1].kind,"immediate") && r.mov.operands[1].immediate==1);
+  }
+  std::puts("PASS: c28 memory store and RMW decoded directions are distinct and always refuse, including instruction-immediate stores; no GPR/Transform/Position disjointness can grant a memory write");
+
+  {
+    for (unsigned width : {1u,2u,4u,8u}) {
+      Image f;
+      if (width==1) memoryAtFallthrough(f,{0x8a,1});
+      if (width==2) memoryAtFallthrough(f,{0x66,0x8b,1});
+      if (width==4) memoryAtFallthrough(f,{0x8b,1});
+      if (width==8) memoryAtFallthrough(f,{0x48,0x8b,1});
+      auto a=flowThroughIdentity(f,false,false,&clean,true);const auto &m=a.readDependency.call.targetIdentity.mov;
+      assert(m.operands[0].width==width && m.operands[1].width==width && m.flagsPreserved &&
+          (width<4?m.partialGprWrites==1:m.fullGprWrites==1) && !a.readDependency.call.modeledStates);
+    }
+    Image vector;memoryAtFallthrough(vector,{0x0f,0x10,0x01});auto a=flowThroughIdentity(vector,false,false,&clean,true);
+    const auto &m=a.readDependency.call.targetIdentity.mov;assert(m.operands[0].parentXmm==0 &&
+        !std::strcmp(m.operands[0].kind,"XMM") && m.xmmWrites==1 && m.flagsPreserved && !m.pureLoad);
+  }
+  std::puts("PASS: c28 partial/full GPR and XMM destination effects and preserved flags are decoded without adding zero-extension, upper-lane, partial-write or memory-load semantics");
+
+  {
+    Image rip;memoryAtFallthrough(rip,{0x8b,0x05,0,0,0,0});
+    Image::put32(rip.code,11,target+48-(target+9+6));auto a=flowThroughIdentity(rip,false,false,&clean,true);
+    const auto &m=a.readDependency.call.targetIdentity.mov;
+    assert(m.addressExact && m.addressRoot==16 && m.addressOffset==target+48 && m.imageRangeKnown &&
+        m.codeRangeKnown && m.aliasMayMask==ws::rdx::movImage && m.loadedMayTags==7 && !a.readDependency.call.modeledStates);
+    Image dynamicImage;memoryAtFallthrough(dynamicImage,{0x8b,0x05,0,0,0,0});
+    Image::put32(dynamicImage.code,11,0x2000-(target+9+6));a=flowThroughIdentity(dynamicImage,false,false,&clean,true);
+    assert(a.readDependency.call.targetIdentity.mov.imageRangeKnown && !a.readDependency.call.targetIdentity.mov.codeRangeKnown);
+  }
+  std::puts("PASS: c28 RIP-relative image/code addresses do not prove immutable loaded-value provenance; even an in-snapshot code address remains a refused read without any extra value observation");
+
+  {
+    Image unstableMov;memoryAtFallthrough(unstableMov,{0x8b,1});unstableMov.unstable=true;r=unstableMov.run(true,target,imageSize,&clean);
+    assert(!r.mov.decoded && !r.stable);
+    Image untagged;memoryAtFallthrough(untagged,{0x8b,1});r=untagged.run();
+    assert(!r.mov.decoded && !r.branch.expanded);
+    Image pinned;fanout(pinned);pinned.code[16]=0x8b;pinned.code[17]=1;r=pinned.run(true,target,imageSize,&clean);
+    assert(!r.admitted && r.mov.site==target+9 && !r.mov.memoryOperands && r.paths==1 && r.barrier==target+16);
+    Image f;memoryAtFallthrough(f,{0x8b,1});r=f.run(true,target,imageSize,&clean);
+    assert(!r.admitted && !r.cfgComplete && !r.size && !r.paths && r.branch.expanded &&
+        r.barrier==target+9 && !r.finalCodeRechecked);
+  }
+  std::puts("PASS: c28 diagnostics require exact pinned reachable stable bytes; missing current tags, instability, another-site memory or one unsafe leg never grant target identity/hash/RET/effects");
 
 }

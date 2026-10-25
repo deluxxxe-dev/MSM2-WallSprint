@@ -1282,6 +1282,46 @@ void configure(const Spec &s, Gate validate) noexcept {
                unsigned(op.valueTagsKnown && cmp.samples!=0),op.parentTags,unsigned(op.conservativeParent),
                (long long)op.immediate,op.base,op.index,op.segment,op.scale,(long long)op.displacement);
     }
+    const auto &mov=identity.mov;
+    writeLog("MOVEMENT_CALLEE_READ_MOV site_rva=0x%x decoded=%u instruction=%s exact_MOV=%u "
+             "instruction_bytes=%u operand_count=%u address_width=%u memory_operands=%u "
+             "effects_known=%u flags_preserved=%u decoded_eflags=0x%llx "
+             "memory_read=%u memory_write=%u memory_RMW=%u memory_access_known=%u pure_load_form=%u "
+             "full_GPR_writes=0x%x partial_GPR_writes=0x%x XMM_writes=0x%x other_register_writes=%u SP_write=%u "
+             "snapshot_stable=%u semantic_load_modeled=0 decoded_writes_not_executed=1 "
+             "reason=%s effect_certificate=0 full_bytes_logged=0 memory_value_observed=0",
+             mov.site,unsigned(mov.decoded),mov.mnemonic,unsigned(mov.isMov),mov.instructionBytes,mov.operandCount,
+             mov.addressWidth,mov.memoryOperands,unsigned(mov.effectsKnown),unsigned(mov.flagsPreserved),(unsigned long long)mov.decodedEflags,
+             unsigned(mov.memoryRead),unsigned(mov.memoryWrite),unsigned(mov.memoryRmw),unsigned(mov.memoryAccessKnown),unsigned(mov.pureLoad),
+             mov.fullGprWrites,mov.partialGprWrites,mov.xmmWrites,mov.otherRegisterWrites,unsigned(mov.stackPointerWrite),
+             unsigned(identity.stable),mov.reason);
+    for (unsigned j=0;j<std::min(mov.operandCount,2u);++j) {
+      const auto &op=mov.operands[j];
+      writeLog("MOVEMENT_CALLEE_READ_MOV_OPERAND site_rva=0x%x index=%u kind=%s register=%s "
+               "parent_register=%s parent_GPR=%d parent_XMM=%d width=%u decoded_access=%u "
+               "incoming_parent_tags=0x%x conservative_partial_parent=%u "
+               "base=%s base_parent_GPR=%d base_tags=0x%x memory_index=%s index_parent_GPR=%d index_tags=0x%x "
+               "scale=%u displacement=%lld segment=%s instruction_immediate=%lld "
+               "register_origin_kind=%d register_origin_root=%d register_origin_offset=%lld "
+               "base_origin_kind=%d base_origin_root=%d base_origin_offset=%lld "
+               "index_origin_kind=%d index_origin_root=%d index_origin_offset=%lld "
+               "samples=%u origin_scope=first_parent_state_origins_tags_union raw_carriers_not_typed_ABI=1 full_bytes_logged=0",
+               mov.site,j,op.kind,op.name,op.parentName,op.parentGpr,op.parentXmm,op.width,op.access,op.registerTags,unsigned(op.conservativeParent),
+               op.base,op.baseParent,op.baseTags,op.index,op.indexParent,op.indexTags,op.scale,(long long)op.displacement,op.segment,(long long)op.immediate,
+               op.originKind,op.originRoot,(long long)op.originOffset,op.baseKind,op.baseRoot,(long long)op.baseOffset,
+               op.indexKind,op.indexRoot,(long long)op.indexOffset,mov.samples);
+    }
+    writeLog("MOVEMENT_CALLEE_READ_MOV_ADDRESS site_rva=0x%x parent_state_sampled=%u samples=%u "
+             "address_expression_exact=%u same_address_all_samples=%u address_class=%s "
+             "address_root=%d address_offset=%lld address_component_tags=0x%x alias_may_mask=0x%x "
+             "alias_bits_Hero1_field10C2_source4_callerHome8_privateStack16_image32_unknown64=1 "
+             "image_range_known=%u current_code_range_known=%u readonly_value_proof=not_implemented "
+             "loaded_value_tags_known=0 loaded_may_tags_upper_bound=0x%x loaded_value_observed=0 "
+             "unknown_not_untainted=1 no_second_dereference=1 semantics_admitted=0 "
+             "provenance_scope=conditional_abstract_address_not_permission effect_certificate=0 full_bytes_logged=0",
+             mov.site,unsigned(mov.parentState && mov.samples!=0),mov.samples,unsigned(mov.addressExact),unsigned(mov.addressSame),
+             mov.addressClass,mov.addressRoot,(long long)mov.addressOffset,mov.addressTags,mov.aliasMayMask,
+             unsigned(mov.imageRangeKnown),unsigned(mov.codeRangeKnown),mov.loadedMayTags);
     const auto &branch=identity.branch;
     writeLog("MOVEMENT_CALLEE_READ_LEAF_BRANCH site_rva=0x%x decoded=%u instruction=%s "
              "conditional=%u condition=%s flags_read=%s flags_producer_rva=0x%x "
