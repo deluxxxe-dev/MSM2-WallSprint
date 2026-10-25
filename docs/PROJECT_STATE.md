@@ -331,3 +331,14 @@ C32 must not add generic AVX emulation. Extend the bounded dependency state only
 Any store/RMW, mask/merge, unsupported partial vector effect, >256-bit read/write without represented state, or other unsupported form remains refusal.
 
 Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
+
+## c32 prepared — exact256 dependency load
+
+v0.1c32/package0.1.50 adds only16 low/high128 tag banks and above256 zero
+knowledge, modeling exact VEX2.256 YMM0,[RDX] at0x2CF7FF0 with current Hero
+root1+0/tag0. Both halves top7, no source-value reads. XMM aliases/legacy writes
+retain correct high state; unsupported VEX128/other YMM/ZMM/EVEX refuse. Both
+paths retain separate return halves; merge tags by union/zero knowledge by AND.
+All previous code/runtime/RET/cap/source/ownership/write gates remain; actual
+next barrier pending minimal VECTOR256/STATE/RETURN A/E capture. NEXT preserved.
+See analysis/V01C32_VECTOR256_STATE.md and final result/release for checks.

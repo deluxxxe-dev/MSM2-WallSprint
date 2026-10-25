@@ -12,7 +12,7 @@ struct Image {
   std::array<unsigned char,24> table{};
   std::array<unsigned char,128> code{};
   unsigned snapshots{},codeEndRead{},sourceReads{},queries{};
-  bool unknownMode{},sourceFirstFail{},sourceFinalFail{},sourceChange{},queryFail{},pageChange{},metadataChange{};
+  bool vectorMode{},unknownMode{},sourceFirstFail{},sourceFinalFail{},sourceChange{},queryFail{},pageChange{},metadataChange{};
   std::array<unsigned char,8> sourceData{{11,22,33,44,55,66,77,88}};
   ws::rdx::ReadImagePage page{true,true,ws::rdx::readImageSource&~4095u,0x1000,0x1000000,0x02,0x02,4096};
   static constexpr std::uint32_t sourceImageSize=0xd000000;
@@ -88,7 +88,7 @@ struct Image {
   }
   ws::rdx::ReadTargetIdentity run(bool admitted=true,std::uint32_t t=target,std::uint32_t size=imageSize,const ws::rdx::ReadEntryTags *tags=nullptr) {
     snapshots=codeEndRead=sourceReads=queries=0;
-    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this,tags,query,unknownMode);
+    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this,tags,query,unknownMode,vectorMode);
   }
 };
 constexpr std::uint32_t largeFunctionBase=0x1100000;
@@ -129,7 +129,7 @@ struct LargeImage : Image {
 };
 ws::rdx::CalleeAlias flowThroughIdentity(Image &image,bool expectAdmission,bool expectLiveValue,const ws::rdx::ReadEntryTags *entry=nullptr,
     bool disjointR8=false,bool expectLeafFlow=true,bool mismatchedCode=false,bool otherR9=false,bool conflictingAddresses=false,
-    bool imageBaseArgument=false,std::uint32_t moduleSize=imageSize,bool heroR9=false) {
+    bool imageBaseArgument=false,std::uint32_t moduleSize=imageSize,bool heroR9=false,bool vectorHeroArgument=false) {
   std::array<unsigned char,183> writer{};std::array<unsigned char,137> parent{};
   writer.fill(0x90);parent.fill(0x90);
   auto put=[](auto &b,unsigned at,std::initializer_list<unsigned char> v) {
@@ -147,6 +147,7 @@ ws::rdx::CalleeAlias flowThroughIdentity(Image &image,bool expectAdmission,bool 
   if (conflictingAddresses) put(parent,0xb,{0x49,0x89,0xc9,0x75,3,0x49,0x89,0xf1});
   put(parent,0x20,{0xbf,1,0,0,0});put(parent,0x2e,{0x89,0xb9,0x0c,1,0,0});
   put(parent,0x34,{0x8b,0x91,0x0c,1,0,0}); // postwrite tag2 in EDX.
+  if (vectorHeroArgument) {std::fill(parent.begin()+0x34,parent.begin()+0x3a,0x90);put(parent,0x34,{0x48,0x89,0xca});}
   if (heroR9) put(parent,0xb,{0x49,0x89,0xc9});
   if (imageBaseArgument) {
     put(parent,0x3c,{0x48,0x8d,0x0d,0,0,0,0});
@@ -1074,5 +1075,83 @@ int main() {
     assert(!r.admitted && r.vector.detail.decoded && r.validatedEntries==527161 && r.unknownLoad.admitted && !large.sourceReads);
   }
   std::puts("PASS: c31 metadata never updates vector/GPR/flags/SP state or turns tag0 image addresses into tag0 loads; c30 top7/current-source and complete527161 metadata gates remain mandatory with zero source/vector reads");
+
+  auto vector256=[&](Image &f) {vectorAt(f,{0xc5,0xfc,0x10,2});f.vectorMode=true;};
+  auto ve=evidence;ve.vectorSourceVerified=true;ve.gpr[2]=0;
+  {
+    ws::rdx::ReadVectorTags state;state.x.fill(2);state.high.fill(4);
+    state.pinnedYmm0Unknown();assert(state.x[0]==7 && state.high[0]==7 && state.ymmRead(0)==7 && state.above256Zero[0]);
+    for (unsigned k=1;k<16;++k) assert(state.x[k]==2 && state.high[k]==4 && !state.above256Zero[k]);
+    assert(state.legacyXmmWrite(0,1) && state.xmmRead(0)==1 && state.ymmRead(0)==7 && state.high[0]==7 && state.above256Zero[0]);
+    assert(!state.legacyXmmWrite(16,1) && !state.legacyXmmWrite(0,8));
+  }
+  std::puts("PASS: c32 sixteen bounded low/high128 banks alias XMM/YMM correctly; pinned YMM0 replaces both prior halves and legacy XMM writes preserve all upper state without leaking to other parents");
+  {
+    Image f;vector256(f);auto pre=flowThroughIdentity(f,false,false,nullptr,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    auto actual=ws::rdx::currentReadEntryEvidence(pre.readDependency.call);assert(actual.vectorSourceVerified);
+    auto a=flowThroughIdentity(f,true,true,&actual,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    const auto &call=a.readDependency.call;assert(call.targetIdentity.vector.modeled && call.returnPaths==2 && call.modeledStates && !f.sourceReads);
+    for (unsigned bit=0;bit<3;++bit) assert((call.outcomes[0].returnedXmm[bit]&1) && (call.outcomes[0].returnedXmmHigh[bit]&1) && (call.returnedXmmHigh[bit]&1));
+    assert(call.outcomes[0].above256Zero[0] && !call.outcomes[1].above256Zero[0] && call.pathEffectsDiffer);
+  }
+  std::puts("PASS: c32 exact current-derived Hero RDX and authenticated VEX256 YMM0 m256 load model both halves as intrinsic top7 with zero vector/qword reads, preserving explicit both-path return effects");
+  {
+    Image f;vector256(f);f.code[20]=0x8b;f.code[21]=1;auto tags=ve;tags.xmm[0]=1;tags.xmmHigh[0]=2;tags.xmm[3]=4;tags.xmmHigh[3]=2;tags.above256Zero[3]=true;
+    r=f.run(true,target,Image::sourceImageSize,&tags);const auto &b=r.boundary;
+    assert(!r.admitted && r.vector.modeled && r.barrier==target+20 && b.xmm[0]==7 && b.xmmHigh[0]==7 && b.above256Zero[0] &&
+        b.xmm[3]==4 && b.xmmHigh[3]==2 && b.above256Zero[3] && b.gpr[0]==7 && !b.flagsTags && !b.gpr[4] && !f.sourceReads);
+  }
+  std::puts("PASS: c32 full256 write replaces both input halves regardless of old tags while preserving other vector parents, RAX top7, flags/SP/memory and zero-above256 marker at the exact next barrier");
+  {
+    Image f;vector256(f);const unsigned char tail[]={0x0f,0x57,0xc0,0x0f,0x28,0xc8,0x8b,1};std::copy(std::begin(tail),std::end(tail),f.code.begin()+20);
+    auto tags=ve;tags.xmmHigh[1]=4;r=f.run(true,target,Image::sourceImageSize,&tags);
+    assert(r.barrier==target+26 && !r.boundary.xmm[0] && r.boundary.xmmHigh[0]==7 && r.boundary.above256Zero[0] &&
+        !r.boundary.xmm[1] && r.boundary.xmmHigh[1]==4 && !r.boundary.above256Zero[1]);
+    Image vex128;vector256(vex128);const unsigned char next[]={0xc5,0xf8,0x10,2};std::copy(std::begin(next),std::end(next),vex128.code.begin()+20);
+    r=vex128.run(true,target,Image::sourceImageSize,&ve);assert(!r.admitted && r.barrier==target+20 && r.boundary.xmmHigh[0]==7);
+  }
+  std::puts("PASS: c32 admitted legacy XMM zero/copy touches only low128 and never silently kills YMM high tags; unmodeled VEX128 forms refuse rather than borrowing legacy preservation semantics");
+  {
+    for (const auto &bytes:std::vector<std::vector<unsigned char>>{{0xc5,0xf8,0x10,2},{0xc5,0xfc,0x10,0xa},{0xc5,0xfc,0x10,1},{0xc5,0xfc,0x10,0x42,0x20},{0x64,0xc5,0xfc,0x10,2},{0xc4,0xe1,0x7c,0x10,2},{0xc5,0xfc,0x11,2},{0x62,0xf1,0x7c,0x49,0x10,2}}) {
+      Image f;vector256(f);std::copy(bytes.begin(),bytes.end(),f.code.begin()+16);r=f.run(true,target,Image::sourceImageSize,&ve);
+      assert(!r.admitted && !r.vector.modeled && r.barrier==target+16 && !f.sourceReads);
+    }
+    Image old;vector256(old);old.vectorMode=false;r=old.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && !r.vector.modeled && !std::strcmp(r.reason,"target_VMOVUPS_upper_vector_state_not_represented"));
+  }
+  std::puts("PASS: c32 rule stays pinned to exact site/bytes/YMM0/VEX2/m256 RDX source; other width/parent/encoding/address/direction/masks refuse and c31 diagnostic-only mode remains a valid negative regression");
+  {
+    for (unsigned defect=0;defect<5;++defect) {
+      Image f;vector256(f);auto bad=ve;if (!defect) bad.vectorSourceVerified=false;else if (defect<4) bad.gpr[2]=1u<<(defect-1);else bad.samples=0;
+      r=f.run(true,target,Image::sourceImageSize,&bad);assert(!r.admitted && !r.vector.modeled && !f.sourceReads);
+    }
+    Image f;vector256(f);auto a=flowThroughIdentity(f,true,false,&ve,true,false,false,false,false,true,Image::sourceImageSize);
+    assert(!a.readDependency.call.modeledStates && !a.readDependency.flowComplete);
+    auto pre=flowThroughIdentity(f,false,false,nullptr,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    auto disagree=pre.readDependency.call;disagree.gpr[2].same=false;assert(!ws::rdx::currentReadEntryEvidence(disagree).vectorSourceVerified);
+    disagree=pre.readDependency.call;disagree.gpr[2].offset=8;assert(!ws::rdx::currentReadEntryEvidence(disagree).vectorSourceVerified);
+  }
+  std::puts("PASS: c32 current same Hero root/offset/tag0 RDX evidence is mandatory and actual caller disagreement, conflicting sources or missing samples cannot reuse the vector identity proof");
+  {
+    Image wide;vector256(wide);const unsigned char zmm[]={0x62,0xf1,0x7c,0x48,0x10,2};std::copy(std::begin(zmm),std::end(zmm),wide.code.begin()+20);
+    r=wide.run(true,target,Image::sourceImageSize,&ve);assert(!r.admitted && r.barrier==target+20 && r.boundary.above256Zero[0] && r.boundary.xmmHigh[0]==7);
+    Image change;vector256(change);change.changeFinal=true;r=change.run(true,target,Image::sourceImageSize,&ve);assert(!r.admitted && !r.stable && !r.unknownLoad.admitted);
+    Image unsafe;vector256(unsafe);unsafe.code[40]=0x50;r=unsafe.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && r.vector.modeled && r.paths==1 && r.barrier==target+40 && r.boundary.path==1 && !r.boundary.above256Zero[0]);
+    LargeImage large(527161);vector256(large);r=ws::rdx::authenticateReadTarget(true,target,Image::sourceImageSize,LargeImage::readLarge,LargeImage::lookupLarge,&large,&ve,Image::query,true,true);
+    assert(r.admitted && r.vector.modeled && r.validatedEntries==527161 && !large.sourceReads);
+  }
+  std::puts("PASS: c32 above256 zero marker never grants ZMM/EVEX access; next effects/unstable code/one unsafe JA leg refuse whole target, with complete527161 table and unchanged all-path caps");
+  {
+    Image f;vector256(f);auto tags=ve;tags.xmmHigh[0]=2;tags.xmm.fill(0);r=f.run(true,target,Image::sourceImageSize,&tags);
+    assert(r.admitted && r.pathEffectsDiffer && r.paths==2);
+    for (unsigned bit=0;bit<3;++bit) assert(r.outcomes[0].returnedXmmHigh[bit]&1);
+    assert(!(r.outcomes[1].returnedXmmHigh[0]&1) && (r.outcomes[1].returnedXmmHigh[1]&1) && !(r.outcomes[1].returnedXmmHigh[2]&1));
+    assert(r.outcomes[0].above256Zero[0] && !r.outcomes[1].above256Zero[0]);
+    Image low;vector256(low);const unsigned char tail[]={0x0f,0x57,0xc0,0xc3};std::copy(std::begin(tail),std::end(tail),low.code.begin()+20);
+    auto a=flowThroughIdentity(low,true,true,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    assert(!(a.readDependency.call.outcomes[0].returnedXmm[0]&1) && (a.readDependency.call.outcomes[0].returnedXmmHigh[0]&1));
+  }
+  std::puts("PASS: c32 low/high return dependencies and above256 knowledge stay path-dependent; conservative union preserves selected high-half dependence even when modeled legacy XMM zero removes only low-half tags");
 
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include "NativeHooks/vector_dependency.hpp"
 #include <array>
 #include <cstdint>
 namespace ws::rdx {
@@ -70,22 +71,27 @@ struct ReadLeafBoundary {
   unsigned path{};
   std::uint32_t edgeFrom{},edgeTarget{};
   unsigned flagsTags{};
-  std::array<unsigned,16> gpr{},xmm{};
+  std::array<unsigned,16> gpr{},xmm{},xmmHigh{};
+  std::array<bool,16> above256Zero{};
+  bool vectorTracked{};
 };
 bool beginPinnedUnknownLoad(ReadUnknownLoad &,ReadImageLoad &,std::uint32_t,
     IdentityRead,IdentityPageQuery,void *) noexcept;
 bool finishPinnedUnknownLoad(ReadUnknownLoad &,ReadImageLoad &,std::uint32_t,
     IdentityRead,IdentityPageQuery,void *) noexcept;
 struct ReadEntryTags {
-  bool imageLoadAddressVerified{};
+  bool imageLoadAddressVerified{},vectorSourceVerified{};
   std::uint32_t imageLoadSource{};
   unsigned samples{};
   std::array<unsigned,16> gpr{}, xmm{};
+  std::array<unsigned,16> xmmHigh=ReadVectorTags{}.high;
+  std::array<bool,16> above256Zero{};
 };
 struct ReadLeafOutcome {
   std::uint32_t ret{};
   unsigned flagsTags{}, clobberGpr{}, clobberXmm{};
-  std::array<unsigned,3> returnedGpr{}, returnedXmm{};
+  std::array<unsigned,3> returnedGpr{}, returnedXmm{},returnedXmmHigh{};
+  std::array<bool,16> above256Zero{};
 };
 struct ReadLeafBranch {
   std::uint32_t site{}, flagsProducer{}, entryCarrierMask{};
@@ -141,13 +147,13 @@ struct ReadVectorContract {
   std::array<Operand,8> operands{};
   unsigned vectorBits{},encodedBits{},vectorWrites{},mask{},replayVisits{},replayRefused{};
   int destinationParent=-1;
-  bool isVmovups{},encodingKnown{},tagsKnown{},directionKnown{},accessConflict{},
+  bool modeled{},sourceVerified{},isVmovups{},encodingKnown{},tagsKnown{},directionKnown{},accessConflict{},
       masked{},zeroMask{},broadcast{},rounding{},upperZero{},upperPreserved{},
       destinationRepresented{},upperStateRepresented{};
   const char *encoding="unsupported",*upperEffect="unknown";
 };
 struct ReadTargetIdentity {
-  bool enabled{}, admitted{}, missingRuntime{}, stable{}, tableValid{};
+  bool vector256Enabled{},enabled{}, admitted{}, missingRuntime{}, stable{}, tableValid{};
   bool directoryPairValid{}, directoryRangeInImage{}, directorySizeDivisible{},
       tableBudgetAdmitted{}, entryCapExceeded{}, byteCapExceeded{},
       validationSkippedByCap{}, tableReadFailed{}, tableReadComplete{}, lookupQueried{};
@@ -162,6 +168,7 @@ struct ReadTargetIdentity {
   ReadImageLoad load{};
   ReadUnknownLoad unknownLoad{};
   ReadLeafBoundary boundary{};
+  std::array<ReadLeafOutcome,readLeafPathCap> outcomes{};
   bool entryTagsKnown{}, cfgComplete{}, finalCodeRechecked{}, pathEffectsDiffer{};
   unsigned entryTagSamples{}, paths{}, visits{};
   const char *method = "none", *reason = "target_identity_not_enabled";
@@ -171,5 +178,5 @@ struct ReadTargetIdentity {
 ReadTargetIdentity authenticateReadTarget(bool buildAndCallVerified,
     std::uint32_t target, std::uint32_t imageSize, IdentityRead,
     IdentityLookup, void *context, const ReadEntryTags *entryTags = nullptr,
-    IdentityPageQuery pageQuery = nullptr, bool pinnedUnknownLoad = false) noexcept;
+    IdentityPageQuery pageQuery = nullptr, bool pinnedUnknownLoad = false, bool pinnedVector256 = false) noexcept;
 }

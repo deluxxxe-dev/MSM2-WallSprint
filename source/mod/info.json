@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.49",
-  "description": "WallSprint v0.1c31 classifies only pinned VMOVUPS0x2CF7FF0 encoding/vector width/operands/access/upper lanes/current-parent aliases. Stores refuse; unsupported whole-vector state remains refused. C30 qword top7/no value reads and all safety gates unchanged.",
+  "version": "0.1.50",
+  "description": "WallSprint v0.1c32 adds bounded low/high128 vector dependency state for only exact VEX256 YMM0 m256 RDX load. Both halves unknown-top7, above256 zero marker; all future ZMM/EVEX and other vector loads refuse. No source-value reads or gameplay writes.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

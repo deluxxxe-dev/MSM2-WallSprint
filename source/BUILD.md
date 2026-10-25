@@ -147,3 +147,11 @@ masked/merge/zero and XMM/YMM/ZMM upper-state refusal, snapshot/site/all-path
 gates and retained c30 top7/no value reads. No vector load semantics admitted
 because actual form and complete upper-state representation are unavailable.
 Details analysis/V01C31_VMOVUPS_CLASSIFICATION.md.
+
+## c32 exact YMM0 dependency state
+
+v0.1c32/package0.1.50 adds8 identity groups (68 total), retaining21 read/call
+and all prior regressions. Covers low/high128 aliasing/full write, intrinsic7
+without data reads, current Hero source pins, legacy low-only writes, VEX128/
+other YMM/ZMM/EVEX refusal, next-barrier halves, all-path return unions and
+above256 zero intersection, code/runtime/caps. See V01C32_VECTOR256_STATE.md.

@@ -959,7 +959,7 @@ void configure(const Spec &s, Gate validate) noexcept {
         page.protect=mbi.Protect;page.allocationProtect=mbi.AllocationProtect;return true;
       };
       auto proof=ws::rdx::authenticateReadTarget(nc.instructionVerified && s.imageSize<=UINT32_MAX,
-          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner,entryTags,queryImage,true);
+          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner,entryTags,queryImage,true,true);
       if (expected && (!proof.stable || proof.scanBytes!=expected->scanBytes ||
           std::memcmp(proof.snapshot.data(),expected->snapshot.data(),proof.scanBytes))) {
         proof.admitted=false;proof.load.admitted=false;proof.unknownLoad.admitted=false;proof.mov.loadedMayTags=7;proof.size=0;proof.reason="target_code_changed_between_tag_prepass_and_reproof";
@@ -1364,11 +1364,11 @@ void configure(const Spec &s, Gate validate) noexcept {
              "vector_bits=%u encoded_bits=%u operands=%u address_bits=%u memory_read=%u memory_write=%u memory_RMW=%u "
              "direction_encoding_verified=%u decoder_access_conflict=%u pure_load_form=%u flags_preserved=%u "
              "GPR_writes=0x%x partial_GPR_writes=0x%x vector_writes=0x%x other_writes=%u SP_write=%u "
-             "snapshot_stable=%u current_code_rechecked=%u semantic_load_modeled=0 raw_values=0 effect_certificate=0 reason=%s",
+             "snapshot_stable=%u current_code_rechecked=%u semantic_load_modeled=%u raw_values=0 effect_certificate=0 reason=%s",
              vm.site,unsigned(vm.decoded),vm.mnemonic,vm.instructionBytes,vector.encoding,unsigned(vector.encodingKnown),vector.vectorBits,vector.encodedBits,
              vm.operandCount,vm.addressWidth,unsigned(vm.memoryRead),unsigned(vm.memoryWrite),unsigned(vm.memoryRmw),unsigned(vector.directionKnown),
              unsigned(vector.accessConflict),unsigned(vm.pureLoad),unsigned(vm.flagsPreserved),vm.fullGprWrites,vm.partialGprWrites,vector.vectorWrites,
-             vm.otherRegisterWrites,unsigned(vm.stackPointerWrite),unsigned(identity.stable),unsigned(identity.unknownLoad.targetCodeRechecked),vm.reason);
+             vm.otherRegisterWrites,unsigned(vm.stackPointerWrite),unsigned(identity.stable),unsigned(identity.unknownLoad.targetCodeRechecked),unsigned(vector.modeled && identity.unknownLoad.admitted && identity.stable),vm.reason);
     for (unsigned j=0;j<std::min(vm.operandCount,8u);++j) {
       const auto &o=vector.operands[j];const auto &op=o.detail;
       writeLog("MOVEMENT_CALLEE_READ_VECTOR_OPERAND site_rva=0x%x index=%u kind=%s register=%s width=%u vector_parent=%d vector_bits=%u "
@@ -1385,12 +1385,29 @@ void configure(const Spec &s, Gate validate) noexcept {
              "source_value_reads=0 pointer_chase=0 effect_certificate=0",
              vm.site,unsigned(vm.parentState),vm.samples,vector.replayVisits,vector.replayRefused,unsigned(vm.addressExact),unsigned(vm.addressSame),
              vm.addressClass,vm.addressRoot,(long long)vm.addressOffset,vm.addressTags,vm.aliasMayMask,vm.loadedMayTags);
-    writeLog("MOVEMENT_CALLEE_READ_VECTOR_ARCH site_rva=0x%x destination_parent=%d decoded_vector_bits=%u represented_bits=128 represented_banks=16 "
+    writeLog("MOVEMENT_CALLEE_READ_VECTOR_ARCH site_rva=0x%x destination_parent=%d decoded_vector_bits=%u represented_bits=%u represented_banks=16 "
              "destination_low_state_represented=%u upper_state_represented=%u upper_effect=%s upper_zero=%u upper_preserved=%u "
              "mask=%u masked=%u zero_mask=%u broadcast=%u rounding=%u partial_vector_semantics=0 "
-             "YMM_ZMM_upper_lane_rule_added=0 fault_suppression_supported=0 no_value_observation=1 semantic_load_modeled=0 effect_certificate=0",
-             vm.site,vector.destinationParent,vector.vectorBits,unsigned(vector.destinationRepresented),unsigned(vector.upperStateRepresented),vector.upperEffect,
-             unsigned(vector.upperZero),unsigned(vector.upperPreserved),vector.mask,unsigned(vector.masked),unsigned(vector.zeroMask),unsigned(vector.broadcast),unsigned(vector.rounding));
+             "pinned_YMM0_rule_added=%u generic_YMM_ZMM_rules=0 fault_suppression_supported=0 no_value_observation=1 semantic_load_modeled=%u effect_certificate=0",
+             vm.site,vector.destinationParent,vector.vectorBits,identity.vector256Enabled?256u:128u,unsigned(vector.destinationRepresented),unsigned(vector.upperStateRepresented),vector.upperEffect,
+             unsigned(vector.upperZero),unsigned(vector.upperPreserved),vector.mask,unsigned(vector.masked),unsigned(vector.zeroMask),unsigned(vector.broadcast),unsigned(vector.rounding),unsigned(identity.vector256Enabled),unsigned(vector.modeled && identity.unknownLoad.admitted && identity.stable));
+    writeLog("MOVEMENT_CALLEE_READ_VECTOR256 site_rva=0x%x enabled=%u source_proven=%u semantic_load_modeled=%u "
+             "represented_bits=256 halves=low128_high128 parents=16 loaded_low_may_top=7 loaded_high_may_top=7 "
+             "above256_rule=destination_zero_all_future_ZMM_EVEX_refused "
+             "value_reads=0 raw_values=0 observed_taint=0 RAX_unknown_top7_preserved=1 effect_certificate=0",
+             ws::rdx::readIdentityVector,unsigned(identity.vector256Enabled),unsigned(vector.sourceVerified),
+             unsigned(vector.modeled && identity.stable && identity.unknownLoad.admitted && identity.unknownLoad.targetCodeRechecked));
+    if (identity.boundary.tagsKnown && identity.vector256Enabled) for (unsigned k=0;k<16;++k)
+      if (!k || identity.boundary.xmm[k] || identity.boundary.xmmHigh[k]!=7 || identity.boundary.above256Zero[k]) writeLog("MOVEMENT_CALLEE_READ_VECTOR_STATE barrier_rva=0x%x path=%u parent=%u low128_may_tags=0x%x high128_may_tags=0x%x "
+               "above256_known_zero=%u scope=before_unsupported_instruction upper_bound_not_observed=1 raw_values=0",
+               identity.barrier,identity.boundary.path,k,identity.boundary.xmm[k],identity.boundary.xmmHigh[k],unsigned(identity.boundary.above256Zero[k]));
+    if (identity.vector256Enabled && rcall.returnPaths) for (unsigned path=0;path<rcall.returnPaths;++path) for (unsigned bit=0;bit<3;++bit) {
+      const auto &returned=rcall.outcomes[path];unsigned zero=0;
+      for (unsigned k=0;k<16;++k) if (returned.above256Zero[k]) zero |= 1u<<k;
+      writeLog("MOVEMENT_CALLEE_READ_VECTOR_RETURN path=%u ret_rva=0x%x category=0x%x low128_parent_mask=0x%x high128_parent_mask=0x%x "
+               "above256_zero_parent_mask=0x%x path_dependent=%u upper_bound_not_observed=1 effect_certificate=0",
+               path,returned.ret,1u<<bit,returned.returnedXmm[bit],returned.returnedXmmHigh[bit],zero,unsigned(rcall.pathEffectsDiffer));
+    }
     const auto &unknown=identity.unknownLoad;
     writeLog("MOVEMENT_CALLEE_READ_UNKNOWN_LOAD site_rva=0x%x enabled=%u attempted=%u source_rva=0x%x width=8 "
              "metadata_passed=%u metadata_rechecked=%u PE_metadata_equal=%u page_metadata_equal=%u target_code_rechecked=%u "

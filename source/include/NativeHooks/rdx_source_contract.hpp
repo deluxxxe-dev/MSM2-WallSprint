@@ -133,8 +133,9 @@ struct ReadCallContract {
   unsigned size{}, samples{}, modeledStates{}, visits{}, flagsTags{}, callerStackTags{},
       clobberGpr{}, clobberXmm{}, returnedFlagsTags{};
   std::array<Carrier, 16> gpr{};
-  std::array<unsigned, 16> xmmTags{};
-  std::array<unsigned, 3> returnedGpr{}, returnedXmm{};
+  std::array<unsigned, 16> xmmTags{},xmmHighTags{};
+  std::array<bool,16> above256Zero{};
+  std::array<unsigned, 3> returnedGpr{}, returnedXmm{},returnedXmmHigh{};
   unsigned returnPaths{}, branchExpansions{};
   bool pathEffectsDiffer{};
   std::array<ReadLeafOutcome,readLeafPathCap> outcomes{};
@@ -148,7 +149,7 @@ ReadEntryTags currentReadEntryEvidence(const ReadCallContract &) noexcept;
 struct ReadDependencyContract {
   std::uintptr_t site{}, barrier{}, firstUse{}, firstControl{}, firstEscape{};
   unsigned calls{}, visits{}, paths{}, orderVisits{}, orderPaths{}, samples{}, width{}, scale{}, operandIndex{}, orderMask{},
-      fieldOrderMask{}, returnedGpr{}, returnedXmm{}, newValueGpr{};
+      fieldOrderMask{}, returnedGpr{}, returnedXmm{},returnedXmmHigh{}, newValueGpr{};
   int root = -1, overlap = -1;
   std::int64_t offset{}, displacement{};
   bool decoded{}, sameAddress = true, addressExact{}, orderComplete{}, flowComplete{},

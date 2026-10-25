@@ -1,3 +1,14 @@
+## C31 accepted / c32 exact YMM0 dependency state prepared
+
+VERIFIED-RUNTIME: VMOVUPS0x2CF7FF0 VEX2.256 YMM0 <-m256[RDX], current Hero
+root1+0/tag0, no side effects; c31 upper-state refusal correct. C32 adds only
+low/high128 tags and above256-zero knowledge for16 parents, exact load halves7
+without data reads. XMM alias stays low; legacy writes preserve high, other
+VEX/YMM/ZMM/EVEX forms refuse. Both-path tags union and zero knowledge intersects.
+C30 RAX7 and all caps/runtime/ownership/write gates remain. Actual next barrier
+UNKNOWN. Sources V01C31_RUNTIME_RESULT.md / V01C32_VECTOR256_STATE.md. Earlier
+pending c31 form notes below are historical, superseded by accepted evidence.
+
 ## C30 accepted / c31 exact VMOVUPS classification prepared
 
 VERIFIED-RUNTIME c30 exact qword unknown-top7/no value reads works; new barrier
