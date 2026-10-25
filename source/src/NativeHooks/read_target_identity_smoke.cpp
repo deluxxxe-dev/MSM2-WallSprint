@@ -11,7 +11,22 @@ struct Image {
   std::array<unsigned char,4096> headers{};
   std::array<unsigned char,24> table{};
   std::array<unsigned char,128> code{};
-  unsigned snapshots{},codeEndRead{};
+  unsigned snapshots{},codeEndRead{},sourceReads{},queries{};
+  bool sourceFirstFail{},sourceFinalFail{},sourceChange{},queryFail{},pageChange{},metadataChange{};
+  std::array<unsigned char,8> sourceData{{11,22,33,44,55,66,77,88}};
+  ws::rdx::ReadImagePage page{true,true,ws::rdx::readImageSource&~4095u,0x1000,0x1000000,0x02,0x02,4096};
+  static constexpr std::uint32_t sourceImageSize=0xd000000;
+  void enableSource() {
+    put16(headers,0x86,3);put32(headers,0x98+56,sourceImageSize);
+    constexpr unsigned sec=0x188+80;
+    std::memcpy(headers.data()+sec,".rdata",6);put32(headers,sec+8,4096);
+    put32(headers,sec+12,ws::rdx::readImageSource&~4095u);put32(headers,sec+36,0x40000040);
+  }
+  static bool query(void *ctx,std::uint32_t rva,ws::rdx::ReadImagePage &out) {
+    auto &f=*static_cast<Image*>(ctx);++f.queries;
+    if (f.queryFail || rva!=ws::rdx::readImageSource) return false;
+    out=f.page;if (f.pageChange && f.queries>1) out.protect=0x20;return true;
+  }
   bool changeFinal{},unstable{},unreadable{},badTableRead{},missingLookup{},coverageChanges{};
   ws::rdx::RuntimeRegion dynamic{};
   template<class B> static void put32(B &b,unsigned off,std::uint32_t v) { std::memcpy(b.data()+off,&v,4); }
@@ -33,8 +48,17 @@ struct Image {
   }
   static bool read(void *ctx,std::uint32_t rva,void *dst,unsigned n) {
     auto &f=*static_cast<Image*>(ctx);
+    if (rva==ws::rdx::readImageSource && n==8) {
+      ++f.sourceReads;
+      if ((f.sourceFirstFail && f.sourceReads==1) || (f.sourceFinalFail && f.sourceReads==2)) return false;
+      std::memcpy(dst,f.sourceData.data(),8);
+      if (f.sourceChange && f.sourceReads==2) static_cast<unsigned char*>(dst)[0]^=1;
+      return true;
+    }
     if (rva<=f.headers.size() && n<=f.headers.size()-rva) {
-      std::memcpy(dst,f.headers.data()+rva,n);return true;
+      std::memcpy(dst,f.headers.data()+rva,n);
+      if (f.metadataChange && f.sourceReads && rva==0) static_cast<unsigned char*>(dst)[2]^=1;
+      return true;
     }
     if (rva>=0x2000 && rva-0x2000<=f.table.size() && n<=f.table.size()-(rva-0x2000)) {
       if (f.badTableRead) return false;
@@ -63,8 +87,8 @@ struct Image {
     return {};
   }
   ws::rdx::ReadTargetIdentity run(bool admitted=true,std::uint32_t t=target,std::uint32_t size=imageSize,const ws::rdx::ReadEntryTags *tags=nullptr) {
-    snapshots=codeEndRead=0;
-    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this,tags);
+    snapshots=codeEndRead=sourceReads=queries=0;
+    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this,tags,query);
   }
 };
 constexpr std::uint32_t largeFunctionBase=0x1100000;
@@ -104,7 +128,8 @@ struct LargeImage : Image {
   }
 };
 ws::rdx::CalleeAlias flowThroughIdentity(Image &image,bool expectAdmission,bool expectLiveValue,const ws::rdx::ReadEntryTags *entry=nullptr,
-    bool disjointR8=false,bool expectLeafFlow=true,bool mismatchedCode=false,bool otherR9=false,bool conflictingAddresses=false) {
+    bool disjointR8=false,bool expectLeafFlow=true,bool mismatchedCode=false,bool otherR9=false,bool conflictingAddresses=false,
+    bool imageBaseArgument=false,std::uint32_t moduleSize=imageSize) {
   std::array<unsigned char,183> writer{};std::array<unsigned char,137> parent{};
   writer.fill(0x90);parent.fill(0x90);
   auto put=[](auto &b,unsigned at,std::initializer_list<unsigned char> v) {
@@ -122,14 +147,18 @@ ws::rdx::CalleeAlias flowThroughIdentity(Image &image,bool expectAdmission,bool 
   if (conflictingAddresses) put(parent,0xb,{0x49,0x89,0xc9,0x75,3,0x49,0x89,0xf1});
   put(parent,0x20,{0xbf,1,0,0,0});put(parent,0x2e,{0x89,0xb9,0x0c,1,0,0});
   put(parent,0x34,{0x8b,0x91,0x0c,1,0,0}); // postwrite tag2 in EDX.
-  put(parent,0x3c,{0xe8,0,0,0,0,0x48,0x8b,0x7c,0x24,8,0xc3});
-  Image::put32(parent,0x3d,target-(0x2000+0x41));
-  auto main=ws::rdx::exactCall(writer.data(),writer.size(),0x1000,imageSize,0x27,0x2c);
+  if (imageBaseArgument) {
+    put(parent,0x3c,{0x48,0x8d,0x0d,0,0,0,0});
+    Image::put32(parent,0x3f,ws::rdx::readImageBaseOrigin-(0x2000+0x43));
+  }
+  put(parent,0x44,{0xe8,0,0,0,0,0x48,0x8b,0x7c,0x24,8,0xc3});
+  Image::put32(parent,0x45,target-(0x2000+0x49));
+  auto main=ws::rdx::exactCall(writer.data(),writer.size(),0x1000,moduleSize,0x27,0x2c);
   ws::rdx::classifyCallee(main,parent.data(),parent.size(),0x2000,0x2089);
   ws::rdx::CalleeAlias alias{};alias.code=parent.data();alias.size=parent.size();
-  alias.imageSize=imageSize;alias.authenticated=true;alias.exactWrite.site=0x202e;
+  alias.imageSize=moduleSize;alias.authenticated=true;alias.exactWrite.site=0x202e;
   alias.edi.enabled=true;alias.readDependency.site=0x2005;
-  auto &call=alias.readDependency.call;call.site=0x203c;call.targetIdentity=image.run(true,target,imageSize,entry);
+  auto &call=alias.readDependency.call;call.site=0x2044;call.targetIdentity=image.run(true,target,moduleSize,entry);
   assert(call.targetIdentity.admitted==expectAdmission);
   call.identity.target=target;
   if (expectAdmission) {
@@ -661,5 +690,121 @@ int main() {
         r.barrier==target+9 && !r.finalCodeRechecked);
   }
   std::puts("PASS: c28 diagnostics require exact pinned reachable stable bytes; missing current tags, instability, another-site memory or one unsafe leg never grant target identity/hash/RET/effects");
+
+  auto beginSource=[](Image &f) {return ws::rdx::beginReadImageLoad(true,ws::rdx::readImageSource,Image::sourceImageSize,Image::read,Image::query,&f);};
+  auto finishSource=[](Image &f,ws::rdx::ReadImageLoad &proof) {return ws::rdx::finishReadImageLoad(proof,Image::sourceImageSize,Image::read,Image::query,&f);};
+  auto exactLoad=[&](Image &f,bool bothKill=false) {
+    f.enableSource();memoryAtFallthrough(f,{0x48,0x8b,0x81,0,1,0,0});
+    // The other JA outcome remains mandatory and has an independently owned RET.
+    if (bothKill) {f.code[40]=0x31;f.code[41]=0xc0;f.code[42]=0xc3;}
+  };
+  ws::rdx::ReadEntryTags evidence=clean;evidence.imageLoadAddressVerified=true;evidence.imageLoadSource=ws::rdx::readImageSource;
+  {
+    Image f;f.enableSource();auto proof=beginSource(f);
+    assert(proof.policyPassed && proof.firstRead && !proof.admitted && proof.sectionUnique &&
+        proof.sectionReadable && !proof.sectionWritable && proof.pageQueried && f.sourceReads==1);
+    assert(finishSource(f,proof) && proof.admitted && proof.stable && proof.metadataSame && proof.pageSame &&
+        proof.valueReadAttempts==2 && f.sourceReads==2 && f.queries==2);
+    assert(!finishSource(f,proof) && !proof.admitted && f.sourceReads==2);
+  }
+  std::puts("PASS: c29 exact qword source needs non-writable PE and committed same-image readonly page plus two equal guarded8byte reads; no early certificate or unbounded recheck");
+
+  {
+    for (unsigned flags : {0xc0000040u,0x80000040u,0x20000020u}) {
+      Image f;f.enableSource();Image::put32(f.headers,0x188+80+36,flags);auto proof=beginSource(f);
+      assert(!proof.policyPassed && !proof.firstRead && !proof.admitted && !f.sourceReads);
+    }
+    for (unsigned protection : {0x04u,0x08u,0x40u,0x80u,0x01u,0x102u,0x220u,0x10u}) {
+      Image f;f.enableSource();f.page.protect=protection;auto proof=beginSource(f);
+      assert(!proof.policyPassed && !proof.firstRead && !f.sourceReads);
+    }
+    Image rx;rx.enableSource();rx.page.protect=0x20;Image::put32(rx.headers,0x188+80+36,0x60000020);
+    auto proof=beginSource(rx);assert(proof.firstRead && finishSource(rx,proof));
+  }
+  std::puts("PASS: c29 writable/unreadable PE and current writable/COW/guard/noaccess/unsupported pages refuse before value reads; readonly executable source is separately admitted");
+
+  {
+    for (unsigned defect=0;defect<6;++defect) {
+      Image f;f.enableSource();
+      if (defect==0) f.page.sameAllocation=false;
+      if (defect==1) f.page.type=0x20000;
+      if (defect==2) f.page.state=0x2000;
+      if (defect==3) f.page.bytes=ws::rdx::readImageSource-f.page.begin+4;
+      if (defect==4) f.page.bytes=UINT64_MAX;
+      if (defect==5) f.queryFail=true;
+      auto proof=beginSource(f);assert(!proof.policyPassed && !f.sourceReads);
+    }
+    Image cross;cross.enableSource();Image::put32(cross.headers,0x188+80+8,ws::rdx::readImageSource-cross.page.begin+4);
+    auto proof=beginSource(cross);assert(!proof.sectionUnique && !proof.firstRead && !cross.sourceReads);
+    Image outside;outside.enableSource();proof=ws::rdx::beginReadImageLoad(true,ws::rdx::readImageSource,ws::rdx::readImageSource+4,Image::read,Image::query,&outside);
+    assert(!proof.firstRead && !outside.sourceReads);
+    proof=ws::rdx::beginReadImageLoad(true,UINT32_MAX-3,Image::sourceImageSize,Image::read,Image::query,&outside);
+    assert(!proof.firstRead && !outside.sourceReads);
+  }
+  std::puts("PASS: c29 wrong allocation/type/state, cross mapped/PE ranges, query failure and overflow/out-of-image pins refuse without source reads");
+
+  {
+    for (unsigned directory : {1u,9u,10u,11u,12u,13u}) {
+      Image f;f.enableSource();Image::put32(f.headers,0x98+112+directory*8,ws::rdx::readImageSource-4);
+      Image::put32(f.headers,0x98+116+directory*8,16);auto proof=beginSource(f);
+      assert(proof.loaderRangesChecked && proof.loaderOverlap && proof.loaderDirectory==directory && !f.sourceReads);
+    }
+    Image malformed;malformed.enableSource();Image::put32(malformed.headers,0x98+112+12*8,UINT32_MAX-3);
+    Image::put32(malformed.headers,0x98+116+12*8,16);assert(!beginSource(malformed).firstRead && !malformed.sourceReads);
+  }
+  std::puts("PASS: c29 direct authenticated import/TLS/loadconfig/bound/IAT/delay directory overlap and malformed ranges refuse without descriptor chasing or memory-value disclosure");
+
+  {
+    for (unsigned defect=0;defect<5;++defect) {
+      Image f;f.enableSource();f.sourceFirstFail=defect==0;f.sourceFinalFail=defect==1;f.sourceChange=defect==2;
+      f.pageChange=defect==3;f.metadataChange=defect==4;auto proof=beginSource(f);
+      assert(!finishSource(f,proof) && !proof.admitted && !proof.stable && f.sourceReads<=2);
+    }
+  }
+  std::puts("PASS: c29 initial/final guarded read failure, qword mismatch, PE metadata change and readonly-protection change never produce tag0 or a stale value certificate");
+
+  {
+    Image f;exactLoad(f);auto pre=flowThroughIdentity(f,false,false,nullptr,true,true,false,false,false,true,Image::sourceImageSize);
+    const auto actual=ws::rdx::currentReadEntryEvidence(pre.readDependency.call);
+    assert(actual.samples && actual.imageLoadAddressVerified && actual.imageLoadSource==ws::rdx::readImageSource);
+    auto a=flowThroughIdentity(f,true,true,&actual,true,true,false,false,false,true,Image::sourceImageSize);
+    const auto &call=a.readDependency.call;
+    assert(call.targetIdentity.load.admitted && call.targetIdentity.load.stable && call.returnPaths==2 &&
+        call.pathEffectsDiffer && !(call.outcomes[0].returnedGpr[0]&1) && (call.outcomes[1].returnedGpr[0]&1));
+    assert(call.targetIdentity.mov.loadedMayTags==0 && call.targetIdentity.mov.flagsPreserved && f.sourceReads==2);
+    Image killed;exactLoad(killed,true);a=flowThroughIdentity(killed,true,false,&actual,true,true,false,false,false,true,Image::sourceImageSize);
+    assert(!(a.readDependency.call.returnedGpr[0]&1) && a.readDependency.call.targetIdentity.load.admitted);
+    for (unsigned tag : {1u,2u,4u}) {
+      auto bad=actual;bad.gpr[1]=tag;r=f.run(true,target,Image::sourceImageSize,&bad);
+      assert(!r.admitted && !r.load.attempted && !f.sourceReads);
+    }
+  }
+  std::puts("PASS: c29 current same-origin image address and tag0 source proof alone permit exact full64 RAX replacement; both JA outcomes and path-dependent preserved/killed selected tags remain explicit");
+
+  {
+    Image f;exactLoad(f);auto a=flowThroughIdentity(f,true,true,&evidence,true,true,false,false,false,true,Image::sourceImageSize);
+    assert((a.readDependency.call.returnedGpr[1]&(1u<<2)) && !a.readDependency.call.returnedFlagsTags);
+    // An address/evidence claim cannot be reused for a current caller with Hero RCX.
+    a=flowThroughIdentity(f,true,false,&evidence,true,false,false,false,false,false,Image::sourceImageSize);
+    assert(!a.readDependency.call.modeledStates && !a.readDependency.flowComplete);
+    Image width;exactLoad(width);width.code[9]=0x40;r=width.run(true,target,Image::sourceImageSize,&evidence);
+    assert(!r.admitted && !r.load.attempted && !width.sourceReads);
+    Image noEvidence;exactLoad(noEvidence);r=noEvidence.run(true,target,Image::sourceImageSize,&clean);
+    assert(!r.admitted && !r.load.attempted && !noEvidence.sourceReads);
+  }
+  std::puts("PASS: c29 flags/other GPR tags remain unchanged and full64 load permission cannot generalize to another width, unknown image address, or mismatched actual caller provenance");
+
+  {
+    Image next;exactLoad(next);next.code[16]=0x8b;next.code[17]=1;next.code[18]=0xc3;
+    r=next.run(true,target,Image::sourceImageSize,&evidence);
+    assert(!r.admitted && r.load.admitted && r.mov.loadedMayTags==0 && r.barrier==target+16 && !r.size);
+    Image unsafe;exactLoad(unsafe);unsafe.code[40]=0x50;unsafe.code[41]=0xc3;r=unsafe.run(true,target,Image::sourceImageSize,&evidence);
+    assert(!r.admitted && r.load.admitted && r.paths==1 && !r.cfgComplete && r.barrier==target+40);
+    Image codeChanging;exactLoad(codeChanging);codeChanging.changeFinal=true;r=codeChanging.run(true,target,Image::sourceImageSize,&evidence);
+    assert(!r.admitted && !r.load.admitted && r.barrier==target+9 && r.mov.loadedMayTags==7 && !r.size);
+    Image changing;exactLoad(changing);changing.sourceChange=true;r=changing.run(true,target,Image::sourceImageSize,&evidence);
+    assert(!r.admitted && !r.load.admitted && r.barrier==target+9 && r.mov.loadedMayTags==7 && !r.size);
+  }
+  std::puts("PASS: c29 admitted exact load advances only to the next precise barrier; one unsafe leg or final source instability refuses all target identity/effects without widening c27 limits");
 
 }

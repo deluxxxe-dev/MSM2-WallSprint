@@ -931,7 +931,7 @@ void configure(const Spec &s, Gate validate) noexcept {
     const auto authenticateNested=[&](const ws::rdx::ReadEntryTags *entryTags,
                                       const ws::rdx::ReadTargetIdentity *expected) {
       auto &nc=nestedReadCall.identity;
-      struct ImageReader { std::uintptr_t base; } owner{s.base};
+      struct ImageReader { std::uintptr_t base; std::size_t size; } owner{s.base,s.imageSize};
       const auto readImage=[](void *ctx,std::uint32_t rva,void *dst,unsigned n) {
         return guardedRead(static_cast<ImageReader*>(ctx)->base+rva,dst,n);
       };
@@ -947,11 +947,22 @@ void configure(const Spec &s, Gate validate) noexcept {
         }
         return region;
       };
+      const auto queryImage=[](void *ctx,std::uint32_t rva,ws::rdx::ReadImagePage &page) {
+        const auto &image=*static_cast<ImageReader*>(ctx);
+        MEMORY_BASIC_INFORMATION mbi{};
+        if (rva>=image.size || VirtualQuery(reinterpret_cast<void*>(image.base+rva),&mbi,sizeof(mbi))!=sizeof(mbi)) return false;
+        const auto begin=reinterpret_cast<std::uintptr_t>(mbi.BaseAddress);
+        page.sameAllocation=reinterpret_cast<std::uintptr_t>(mbi.AllocationBase)==image.base;
+        page.rangeInImage=begin>=image.base && begin-image.base<=image.size && mbi.RegionSize<=image.size-(begin-image.base);
+        page.begin=page.rangeInImage?std::uint32_t(begin-image.base):rva;
+        page.bytes=mbi.RegionSize;page.state=mbi.State;page.type=mbi.Type;
+        page.protect=mbi.Protect;page.allocationProtect=mbi.AllocationProtect;return true;
+      };
       auto proof=ws::rdx::authenticateReadTarget(nc.instructionVerified && s.imageSize<=UINT32_MAX,
-          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner,entryTags);
+          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner,entryTags,queryImage);
       if (expected && (!proof.stable || proof.scanBytes!=expected->scanBytes ||
           std::memcmp(proof.snapshot.data(),expected->snapshot.data(),proof.scanBytes))) {
-        proof.admitted=false;proof.size=0;proof.reason="target_code_changed_between_tag_prepass_and_reproof";
+        proof.admitted=false;proof.load.admitted=false;proof.mov.loadedMayTags=7;proof.size=0;proof.reason="target_code_changed_between_tag_prepass_and_reproof";
         proof.barrier=proof.target;
       }
       nestedReadCall.targetIdentity=proof;
@@ -984,8 +995,7 @@ void configure(const Spec &s, Gate validate) noexcept {
     if (calleeCurrent && nestedReadCall.samples &&
         !std::strcmp(nestedReadCall.targetIdentity.reason,"target_JA_current_call_tags_required")) {
       const auto previous=nestedReadCall.targetIdentity;
-      ws::rdx::ReadEntryTags entry{};entry.samples=prepassSamples=nestedReadCall.samples;
-      for (unsigned k=0;k<16;++k) { entry.gpr[k]=nestedReadCall.gpr[k].tags;entry.xmm[k]=nestedReadCall.xmmTags[k]; }
+      auto entry=ws::rdx::currentReadEntryEvidence(nestedReadCall);prepassSamples=entry.samples;
       writerCall=callSeed;writerAlias=aliasSeed;
       authenticateNested(&entry,&previous);targetProofPasses=2;
       contractWriter=ws::rdx::branchWriter(code,functionSize,sites,&writerCall,&writerAlias);
@@ -1288,13 +1298,13 @@ void configure(const Spec &s, Gate validate) noexcept {
              "effects_known=%u flags_preserved=%u decoded_eflags=0x%llx "
              "memory_read=%u memory_write=%u memory_RMW=%u memory_access_known=%u pure_load_form=%u "
              "full_GPR_writes=0x%x partial_GPR_writes=0x%x XMM_writes=0x%x other_register_writes=%u SP_write=%u "
-             "snapshot_stable=%u semantic_load_modeled=0 decoded_writes_not_executed=1 "
-             "reason=%s effect_certificate=0 full_bytes_logged=0 memory_value_observed=0",
+             "snapshot_stable=%u semantic_load_modeled=%u decoded_writes_not_executed=1 "
+             "reason=%s effect_certificate=0 full_bytes_logged=0 raw_memory_value_logged=0",
              mov.site,unsigned(mov.decoded),mov.mnemonic,unsigned(mov.isMov),mov.instructionBytes,mov.operandCount,
              mov.addressWidth,mov.memoryOperands,unsigned(mov.effectsKnown),unsigned(mov.flagsPreserved),(unsigned long long)mov.decodedEflags,
              unsigned(mov.memoryRead),unsigned(mov.memoryWrite),unsigned(mov.memoryRmw),unsigned(mov.memoryAccessKnown),unsigned(mov.pureLoad),
              mov.fullGprWrites,mov.partialGprWrites,mov.xmmWrites,mov.otherRegisterWrites,unsigned(mov.stackPointerWrite),
-             unsigned(identity.stable),mov.reason);
+             unsigned(identity.stable),unsigned(identity.load.admitted && mov.samples && mov.loadedMayTags==0 && mov.addressSame),mov.reason);
     for (unsigned j=0;j<std::min(mov.operandCount,2u);++j) {
       const auto &op=mov.operands[j];
       writeLog("MOVEMENT_CALLEE_READ_MOV_OPERAND site_rva=0x%x index=%u kind=%s register=%s "
@@ -1315,13 +1325,40 @@ void configure(const Spec &s, Gate validate) noexcept {
              "address_expression_exact=%u same_address_all_samples=%u address_class=%s "
              "address_root=%d address_offset=%lld address_component_tags=0x%x alias_may_mask=0x%x "
              "alias_bits_Hero1_field10C2_source4_callerHome8_privateStack16_image32_unknown64=1 "
-             "image_range_known=%u current_code_range_known=%u readonly_value_proof=not_implemented "
-             "loaded_value_tags_known=0 loaded_may_tags_upper_bound=0x%x loaded_value_observed=0 "
-             "unknown_not_untainted=1 no_second_dereference=1 semantics_admitted=0 "
+             "image_range_known=%u current_code_range_known=%u readonly_value_proof=%s "
+             "loaded_value_tags_known=%u loaded_may_tags_upper_bound=0x%x raw_value_logged=0 "
+             "unknown_not_untainted=1 no_second_dereference=1 semantics_admitted=%u "
              "provenance_scope=conditional_abstract_address_not_permission effect_certificate=0 full_bytes_logged=0",
              mov.site,unsigned(mov.parentState && mov.samples!=0),mov.samples,unsigned(mov.addressExact),unsigned(mov.addressSame),
              mov.addressClass,mov.addressRoot,(long long)mov.addressOffset,mov.addressTags,mov.aliasMayMask,
-             unsigned(mov.imageRangeKnown),unsigned(mov.codeRangeKnown),mov.loadedMayTags);
+             unsigned(mov.imageRangeKnown),unsigned(mov.codeRangeKnown),identity.load.attempted?"bounded_PE_page_value_window":"not_attempted",
+             unsigned(identity.load.admitted && mov.samples && mov.loadedMayTags==0 && mov.addressSame),mov.loadedMayTags,
+             unsigned(identity.load.admitted && mov.samples && mov.loadedMayTags==0 && mov.addressSame));
+    const auto &load=identity.load;
+    writeLog("MOVEMENT_CALLEE_READ_IMAGE_SOURCE expected_source_rva=0x%x attempted=%u source_rva=0x%x width=%u "
+             "metadata_valid=%u section_unique=%u section_overlaps=%u section=%s section_begin_rva=0x%x section_end_rva=0x%x "
+             "section_characteristics=0x%x readable=%u writable=%u executable=%u "
+             "loader_ranges_checked=%u loader_overlap=%u loader_directory=%u "
+             "loader_scope=direct_PE_import_TLS_loadconfig_bound_IAT_delay_directories_only "
+             "policy_passed=%u reason=%s no_pointer_chase=1 raw_value_logged=0 effect_certificate=0",
+             ws::rdx::readImageSource,unsigned(load.attempted),load.source,load.width,unsigned(load.metadataValid),unsigned(load.sectionUnique),
+             load.sectionOverlaps,load.sectionName,load.sectionBegin,load.sectionEnd,load.sectionFlags,
+             unsigned(load.sectionReadable),unsigned(load.sectionWritable),unsigned(load.sectionExecutable),
+             unsigned(load.loaderRangesChecked),unsigned(load.loaderOverlap),load.loaderDirectory,unsigned(load.policyPassed),load.reason);
+    writeLog("MOVEMENT_CALLEE_READ_IMAGE_PAGE source_rva=0x%x queried=%u allocation_base_matches_image=%u range_in_image=%u "
+             "region_begin_rva=0x%x region_bytes=%llu state=0x%x type=0x%x protection=0x%x allocation_protection=0x%x "
+             "requeried=%u final_protection=0x%x same_page_metadata=%u allowed_current_protection=READONLY_or_EXECUTE_READ "
+             "COW_guard_noaccess_writable_unsupported_refused=1 raw_value_logged=0",
+             load.source,unsigned(load.pageQueried),unsigned(load.page.sameAllocation),unsigned(load.page.rangeInImage),
+             load.page.begin,(unsigned long long)load.page.bytes,load.page.state,load.page.type,load.page.protect,load.page.allocationProtect,
+             unsigned(load.pageRechecked),load.finalPage.protect,unsigned(load.pageSame));
+    writeLog("MOVEMENT_CALLEE_READ_IMAGE_VALUE source_rva=0x%x width=8 read_attempts=%u max_reads=2 "
+             "first_read=%u final_read=%u PE_metadata_equal=%u page_metadata_equal=%u bytes_equal=%u target_code_rechecked=%u admitted=%u "
+             "loaded_tags_known=%u loaded_tags_if_admitted=0 RAX_full64_replace_only_if_admitted=1 "
+             "numerical_value_interpreted=0 raw_value_logged=0 pointer_chase=0 "
+             "scope=bounded_current_target_proof_not_global_lifetime reason=%s effect_certificate=0",
+             load.source,load.valueReadAttempts,unsigned(load.firstRead),unsigned(load.finalRead),unsigned(load.metadataSame),unsigned(load.pageSame),
+             unsigned(load.stable),unsigned(load.targetCodeRechecked),unsigned(load.admitted),unsigned(load.admitted),load.reason);
     const auto &branch=identity.branch;
     writeLog("MOVEMENT_CALLEE_READ_LEAF_BRANCH site_rva=0x%x decoded=%u instruction=%s "
              "conditional=%u condition=%s flags_read=%s flags_producer_rva=0x%x "

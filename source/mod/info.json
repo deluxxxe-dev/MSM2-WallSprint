@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.46",
-  "description": "WallSprint v0.1c28 exact pinned MOV operands/access/address-provenance diagnostics after accepted c27 JA fan-out. No memory-load semantics added; writes/RMW and unproven loaded values remain refused. Existing all-path/ownership/Position/source/input/movement gates stay closed.",
+  "version": "0.1.47",
+  "description": "WallSprint v0.1c29 exact qword image-load proof: authenticated non-writable PE section/current page and two equal guarded8byte reads. Only pinned full64 RAX load may receive tag0 within the current proof. Existing all-path/ownership/Position/source/input/movement gates remain.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

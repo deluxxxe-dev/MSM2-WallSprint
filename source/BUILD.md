@@ -116,3 +116,13 @@ MOV operand/access/address/alias/tag metadata only, write/RMW/unproven-value
 refusals and unchanged c27 all-path/cap/metadata/current-code rules. Address
 provenance and loaded-value provenance remain separate; unknown never means0.
 See analysis/V01C28_MOV_CLASSIFICATION.md; no private body/data fixture required.
+
+## c29 exact image-load proof
+
+v0.1c29/package0.1.47 adds8 owned groups to test_read_target_identity.sh
+(44 total), retaining21 read/call groups and all c19-c28/native regressions.
+Covers PE section/range/flags, direct loader-directory overlap, current page
+allocation/type/state/protection, source and metadata/code equality, guarded
+first/second read failures, current caller address/tag proof, exact full64 RAX
+replacement, preserved flags/other registers, and next-barrier/unsafe-leg refusal.
+No private game bytes/value fixture needed; details analysis/V01C29_IMAGE_LOAD_PROOF.md.

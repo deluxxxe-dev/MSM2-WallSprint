@@ -1,21 +1,21 @@
-# WallSprint v0.1c28 — exact MOV形式・アドレス由来の診断
+# WallSprint v0.1c29 — exact image qwordの限定検証
 
-Package **0.1.46**。c27でJAのtaken=0x2CF8013、fallthrough=0x2CF7FE9を確認済みで、継続先MOVが次の停止点です。今回はそのMOVのoperand class・width・access・register alias、memory base/index/scale/displacement/segment/address width、decoded writes/flags、現在の親CALL状態に基づく保守的なaliasを記録します。アドレスの由来とロードされる値の由来は別です。write/RMWおよび値の由来が証明できないloadは拒否し、メモリload規則や実測値取得は追加しません。実際のMOV形式はまだ不明です。Position/source-position/入力/移動や所有権の許可も追加しません。
+Package **0.1.47**。c28実機で `mov rax,qword ptr [rcx+0x100]` と親状態のimage-root16+204285312を確認済みです。今回はこの8バイトだけを、PEセクションと現在のページがともに書込み不可か検証します。条件を満たす場合だけ、前後2回の8バイト読取りが一致し、メタデータ・ページ・コードも変化しないことを確認し、現在の解析内でRAXのtagsを0に置き換えます。値は公開・数値解釈・再参照しません。実機のセクション/ページ/安定性と次の停止点は未確認です。Position/source-position/入力/移動や所有権の許可は追加しません。
 
 ## 今回の更新・テスト（移行済み環境）
 
 1. ゲームと共有Overstrikeを閉じ、`MSM2-WS\Update-WS.cmd` を実行します。Git更新・既存フル試験・検証・配置を行います。
 2. 起動した共有Overstrikeで通常MOD＋SF＋WSを確認し、`Install mods` → `Run modded game`。
 3. A/cardinalの平らな壁で約3秒 → WallRunを完全終了 → 移動/ファストトラベル → E/diagonalで約3秒。各回は既存の5秒上限に達する前に終了します。
-4. `MSM2-WS\logs` の最新の完全な `MSM2-WS-v0.1c28-YYYYMMDD-HHMMSS.log` を非公開で共有してください。動画は見た目の異常時だけです。
+4. `MSM2-WS\logs` の最新の完全な `MSM2-WS-v0.1c29-YYYYMMDD-HHMMSS.log` を非公開で共有してください。動画は見た目の異常時だけです。
 
-新しい `MOVEMENT_CALLEE_READ_MOV` / `READ_MOV_OPERAND` / `READ_MOV_ADDRESS` を確認します。memory read/write/RMW、flags preservation、全・部分GPR/XMM writes、アドレス成分tags、条件付きHero/field10C/source/stack/image/unknown aliasを区別します。親状態のsamples=0は未解析で、tag0の証明ではありません。loaded_value_tags_known=0、loaded_may_tags_upper_bound=7は不明値の保守的上限であり、ロードを実行・許可した結果ではありません。従来のJA全経路・snapshot/runtime/cap・Deinit/retention/Position0/cleanupは維持します。
+新しい `MOVEMENT_CALLEE_READ_IMAGE_SOURCE` / `READ_IMAGE_PAGE` / `READ_IMAGE_VALUE` と既存のMOV/JA/次の停止理由を確認します。sourceのセクション・範囲・characteristics、現在のallocation/state/type/protection、検証前後のmetadata/page/8byte equalityと読取り回数を記録します。書込み可・COW・guard・境界不一致等なら値を読まずMOVで停止します。証明失敗時はloaded tagsの上限7を維持します。成功しても現在の局所解析だけの証明で、永続的な不変性・全経路完了・所有権の証明ではありません。生のqwordや生コードはログに出しません。
 
 下の移行手順は未移行環境向けの参照です。デスクトップの `MSM2 - Overstrike` は普段の起動用で、WSの更新・ビルドは実行しません。
 
 ## 最初の移行
 
-配布 **MSM2-WS-v0.1c28.zip** を **Mods Library の外**へ展開してください。展開したフォルダ内の `Migrate-WS.cmd` と `tools` を一緒に使います。ソース ZIP は別の再現用資料で、正本 `_source` はヘルパーが GitHub から独立 clone します。コードはすべて取得し、配布アーカイブだけを Git の sparse checkout 設定で作業フォルダから除外します。ZIP本体と履歴はGitに残ります。
+配布 **MSM2-WS-v0.1c29.zip** を **Mods Library の外**へ展開してください。展開したフォルダ内の `Migrate-WS.cmd` と `tools` を一緒に使います。ソース ZIP は別の再現用資料で、正本 `_source` はヘルパーが GitHub から独立 clone します。コードはすべて取得し、配布アーカイブだけを Git の sparse checkout 設定で作業フォルダから除外します。ZIP本体と履歴はGitに残ります。
 
 Windows 側に Python 3.11+、Git for Windows、PowerShell、設定済み WSL2 が必要です。WSL 側には既存の MinGW/Clang/Wine/解析 Python のフルビルド環境が必要です。**前提が足りない場合、ビルドや試験を省略して導入することはありません。** 手順は [source/BUILD.md](source/BUILD.md) を参照してください。
 
@@ -40,7 +40,7 @@ Migrate-WS.cmd --game-root "<実際のゲームルート>" --branch codex/v01c20
 
 ```text
 <game>\Mods Library\Mods-Developing\MSM2-WS\
-├─ MSM2-WS-v0.1c28.script
+├─ MSM2-WS-v0.1c29.script
 ├─ Update-WS.cmd
 ├─ Migrate-WS.cmd        （移行用）
 ├─ logs\
@@ -68,7 +68,7 @@ Migrate-WS.cmd --game-root "<実際のゲームルート>" --branch codex/v01c20
 
 起動するのは **`<game>\Overstrike\Overstrike.exe`** だけで、WorkingDirectory は必ずゲームルートです。共有 UI で通常 MOD＋SF＋WS を必要に応じて選び、**Install mods → Run modded game** を実行してください。
 
-既存環境の実機移行・共有UI・起動・新ログは受け入れ済みです（analysis/LOCAL_WORKSPACE_RUNTIME_ACCEPTANCE_20261024.md）。今回のEDI診断版の実機A/Eは別途未確認です。新規の環境で移行する場合はその環境の確認が必要で、旧環境を自動削除する処理はありません。
+既存環境の実機移行・共有UI・起動・新ログは受け入れ済みです（analysis/LOCAL_WORKSPACE_RUNTIME_ACCEPTANCE_20261024.md）。今回のimage-load検証版の実機A/Eは別途未確認です。新規の環境で移行する場合はその環境の確認が必要で、旧環境を自動削除する処理はありません。
 
 ## 実機ログと回帰試験
 
@@ -76,17 +76,17 @@ Migrate-WS.cmd --game-root "<実際のゲームルート>" --branch codex/v01c20
 
 ```text
 <game>\Mods Library\Mods-Developing\MSM2-WS\logs\
-MSM2-WS-v0.1c28-YYYYMMDD-HHMMSS.log
+MSM2-WS-v0.1c29-YYYYMMDD-HHMMSS.log
 ```
 
 時刻は PC のローカル時刻です。同秒の衝突は `-01` などを付け、既存ファイルを上書きしません。同じ起動内の A→E は1本に記録します。旧 `log_wallsprint` や共有 `logs` への代替保存はありません。
 
-1. A/cardinal の平らな壁で約4秒 WallRun。
+1. A/cardinal の平らな壁で約3秒 WallRun。
 2. WallRun を完全に終了。
 3. 移動またはファストトラベル。
-4. E/diagonal で約4秒 WallRun。
+4. E/diagonal で約3秒 WallRun。
 5. 新しい WS `logs` の最新の完全な実行ログを、非公開で ChatGPT に送ってください。
 
 通常の入力で試してください。A/E の対応、ちらつき・停止・クラッシュなどがあれば添えてください。動画は見た目の異常時だけです。生ログや private game body を GitHub へ追加しないでください。
 
-確認項目は、v0.1c28/package0.1.46、exact-build admission、MOVの正確な形式とaccess、アドレス成分と条件付きalias、loaded-value不明の明示、正確な停止理由、Deinit/retention/Up・stale回復・Position0・entry/map・watch解除です。A/E各約3秒、既存5秒上限未満で終了します。メモリ値や生コードは不要です。局所診断からXYZ/Wや所有権を証明したとは扱わず、`writable_source_proven=0` を維持します。
+確認項目は、v0.1c29/package0.1.47、exact-build admission、正確なsource section/page/read-only判定、最大2回の8byte equality、tag0条件と次の正確な停止理由、JA両経路・Deinit/retention/Position0・entry/map・watch解除です。A/E各約3秒、既存5秒上限未満で終了します。メモリ値や生コードは不要です。局所証明からXYZ/Wや所有権を証明したとは扱わず、`writable_source_proven=0` を維持します。

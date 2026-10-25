@@ -1490,7 +1490,8 @@ struct LeafCfgResult {
 // current parent-call tags. Caller mode repeats the disjointness check per state.
 LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
     std::uint32_t codeBegin,std::uint32_t codeEnd,std::uint32_t nextRuntime,
-    const ReadEntryTags *entry,bool symbolic,Slice &merged,ReadFlow &mergedTags,std::size_t imageSize) {
+    const ReadEntryTags *entry,bool symbolic,Slice &merged,ReadFlow &mergedTags,std::size_t imageSize,
+    ReadImageLoad *load=nullptr,IdentityRead sourceRead=nullptr,IdentityPageQuery pageQuery=nullptr,void *sourceContext=nullptr) {
   static_assert(readLeafBranchCap==1 && readLeafPathCap==2 && readLeafVisitCap==64,"Review bounded fan-out before changing budgets");
   LeafCfgResult out{};
   auto fail=[&](const cs_insn *ins,std::uint32_t at,const char *why) {
@@ -1587,7 +1588,25 @@ LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
       }
       if (at==readIdentityMov) {
         out.mov=describeMov(ins,d.h,p.slice,p.flow,!symbolic,imageSize,codeBegin,codeEnd);
-        if (out.mov.memoryOperands) return fail(&ins,at,out.mov.reason);
+        if (out.mov.memoryOperands) {
+          const bool exact=ins.id==X86_INS_MOV && ins.size==7 && x.op_count==2 && x.addr_size==8 &&
+              !x.prefix[0] && !x.prefix[1] && !x.prefix[2] && !x.prefix[3] &&
+              x.operands[0].type==X86_OP_REG && x.operands[0].reg==X86_REG_RAX && x.operands[0].size==8 &&
+              x.operands[1].type==X86_OP_MEM && x.operands[1].size==8 && x.operands[1].mem.base==X86_REG_RCX &&
+              x.operands[1].mem.index==X86_REG_INVALID && x.operands[1].mem.segment==X86_REG_INVALID &&
+              x.operands[1].mem.disp==0x100 && out.mov.pureLoad;
+          const auto base=p.slice.s.g[1];
+          const bool addressProven=symbolic?entry && entry->imageLoadAddressVerified &&
+              entry->imageLoadSource==readImageSource && !entry->gpr[1]
+              : base.kind==pointer && base.root==globalRoot && base.off==readImageBaseOrigin && !p.flow.g[1];
+          if (!exact || !addressProven || !load) return fail(&ins,at,out.mov.reason);
+          if (symbolic) *load=beginReadImageLoad(true,readImageSource,std::uint32_t(imageSize),sourceRead,pageQuery,sourceContext);
+          if (symbolic?!load->firstRead:!load->admitted || !load->stable || !load->targetCodeRechecked || !load->firstRead || !load->finalRead || load->source!=readImageSource)
+            return fail(&ins,at,load->reason);
+          p.slice.s.g[0]={memoryWide,globalRoot,readImageSource};p.flow.g[0]=0;p.clobberGpr |= 1;
+          out.mov.loadedMayTags=0;out.mov.reason="target_MOV_exact_image_load_conditionally_modeled";
+          p.pc+=ins.size;continue;
+        }
       }
       for (unsigned j=0;j<x.op_count;++j) if (x.operands[j].type==X86_OP_MEM)
         return fail(&ins,at,"target_cfg_memory_operand_refused");
@@ -1651,13 +1670,17 @@ void sampleMovBoundary(ReadTargetIdentity &t,const Slice &caller,const ReadFlow 
   std::size_t left=t.scanBytes-(readIdentityMov-readIdentityTarget);std::uint64_t address=readIdentityMov;
   if (!cs_disasm_iter(d.h,&cursor,&left,&address,d.p) || d.p->size!=t.mov.instructionBytes) return;
   auto child=caller;child.s.g[4]=plus(caller.s.g[4],-8); // existing natural CALL delta, no live stack read.
-  const auto fresh=describeMov(*d.p,d.h,child,flow,true,imageSize,t.codeBegin,t.codeEnd);
+  auto fresh=describeMov(*d.p,d.h,child,flow,true,imageSize,t.codeBegin,t.codeEnd);
+  if (t.load.admitted && fresh.pureLoad && fresh.addressExact && fresh.addressRoot==globalRoot &&
+      fresh.addressOffset==readImageSource && !fresh.addressTags) {
+    fresh.loadedMayTags=0;fresh.reason="target_MOV_exact_current_stable_image_load_modeled";
+  }
   auto &m=t.mov;
   if (!m.samples) {m=fresh;m.samples=1;return;}
   ++m.samples;
   m.addressSame &= fresh.addressExact==m.addressExact && fresh.addressRoot==m.addressRoot &&
       fresh.addressOffset==m.addressOffset && !std::strcmp(fresh.addressClass,m.addressClass);
-  m.aliasMayMask |= fresh.aliasMayMask;m.addressTags |= fresh.addressTags;
+  m.aliasMayMask |= fresh.aliasMayMask;m.addressTags |= fresh.addressTags;m.loadedMayTags |= fresh.loadedMayTags;
   for (unsigned j=0;j<2;++j) {
     m.operands[j].registerTags |= fresh.operands[j].registerTags;
     m.operands[j].baseTags |= fresh.operands[j].baseTags;m.operands[j].indexTags |= fresh.operands[j].indexTags;
@@ -1716,7 +1739,7 @@ bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
         std::memcmp(c.code,proof.snapshot.data(),c.size))
       return fail(begin,"snapshot","read_call_CFG_identity_pin_or_snapshot_mismatch");
     const auto cfg=walkPinnedLeaf(c.code,c.size,c.targetIdentity.codeBegin,c.targetIdentity.codeEnd,
-        c.targetIdentity.nextRuntime,nullptr,false,state,tags,a.imageSize);
+        c.targetIdentity.nextRuntime,nullptr,false,state,tags,a.imageSize,&c.targetIdentity.load);
     c.visits+=cfg.visits;
     if (!cfg.complete || c.visits>4096)
       return fail(cfg.barrier?cfg.barrier:begin,cfg.mnemonic,c.visits>4096?"read_call_cumulative_visit_cap":cfg.reason);
@@ -3094,8 +3117,113 @@ Relation relation(const unsigned char *b, std::size_t size,
   }
   return r;
 }
+namespace {
+ReadImageLoad classifyImageLoad(bool verified,std::uint32_t source,std::uint32_t imageSize,
+    IdentityRead read,IdentityPageQuery query,void *ctx) {
+  ReadImageLoad p{};p.attempted=true;p.source=source;
+  auto fail=[&](const char *why) {p.reason=why;return p;};
+  auto grab=[&](std::uint32_t at,void *dst,unsigned n) {
+    return read && at<=imageSize && n<=imageSize-at && read(ctx,at,dst,n);
+  };
+  auto u16=[](const unsigned char *b) {std::uint16_t v{};std::memcpy(&v,b,2);return v;};
+  auto u32=[](const unsigned char *b) {std::uint32_t v{};std::memcpy(&v,b,4);return v;};
+  if (!verified || source!=readImageSource) return fail("image_load_exact_build_address_pin_required");
+  if (source>=imageSize || 8u>imageSize-source) return fail("image_load_source_range_outside_image");
+  if ((source&4095u)+8u>4096u) return fail("image_load_cross_page_refused");
+  unsigned char dos[64]{},nt[264]{};
+  if (!grab(0,dos,64) || u16(dos)!=0x5a4d) return fail("image_load_PE_DOS_invalid");
+  const auto pe=u32(dos+60);
+  if (pe<64 || pe>0x100000 || !grab(pe,nt,264) || u32(nt)!=0x4550 ||
+      u16(nt+4)!=0x8664 || u16(nt+20)!=240 || u16(nt+24)!=0x20b ||
+      u32(nt+24+56)!=imageSize || u32(nt+24+108)!=16 || !u16(nt+6) || u16(nt+6)>96)
+    return fail("image_load_PE64_image_identity_or_shape_invalid");
+  std::memcpy(p.metadataPrivate.data(),dos,64);std::memcpy(p.metadataPrivate.data()+64,nt,264);p.metadataBytes=328;
+  const std::uint64_t sections=std::uint64_t(pe)+264;
+  if (sections>imageSize || std::uint64_t(u16(nt+6))*40>imageSize-sections) return fail("image_load_PE_section_table_outside_image");
+  unsigned whole=0;
+  for (unsigned i=0;i<u16(nt+6);++i) {
+    unsigned char sec[40]{};
+    if (!grab(std::uint32_t(sections)+i*40,sec,40)) return fail("image_load_PE_section_table_unreadable");
+    std::memcpy(p.metadataPrivate.data()+p.metadataBytes,sec,40);p.metadataBytes+=40;
+    const auto begin=u32(sec+12),size=u32(sec+8),flags=u32(sec+36);
+    if (begin>imageSize || size>imageSize-begin) return fail("image_load_PE_section_range_invalid");
+    if (size && source<std::uint64_t(begin)+size && begin<std::uint64_t(source)+8) {
+      ++p.sectionOverlaps;
+      if (begin<=source && std::uint64_t(source)+8<=std::uint64_t(begin)+size) {
+        ++whole;p.sectionBegin=begin;p.sectionEnd=begin+size;p.sectionFlags=flags;
+        std::memcpy(p.sectionName,sec,8);p.sectionName[8]=0;
+        p.sectionReadable=(flags&0x40000000u)!=0;p.sectionWritable=(flags&0x80000000u)!=0;
+        p.sectionExecutable=(flags&0x20000000u)!=0;
+      }
+    }
+  }
+  p.sectionUnique=whole==1 && p.sectionOverlaps==1;
+  // Direct authenticated directory ranges only; never chase descriptor pointers.
+  for (unsigned index : {1u,9u,10u,11u,12u,13u}) {
+    const auto begin=u32(nt+24+112+index*8),size=u32(nt+24+116+index*8);
+    if ((begin==0)!=(size==0) || begin>imageSize || size>imageSize-begin)
+      return fail("image_load_loader_directory_shape_invalid");
+    if (size && source<std::uint64_t(begin)+size && begin<std::uint64_t(source)+8) {
+      p.loaderOverlap=true;p.loaderDirectory=index;
+    }
+  }
+  p.loaderRangesChecked=p.metadataValid=true;
+  p.pageQueried=query && query(ctx,source,p.page);
+  if (!p.sectionUnique) return fail("image_load_cross_section_or_ambiguous_source");
+  if (!p.sectionReadable || p.sectionWritable) return fail("image_load_section_not_readonly");
+  if (p.loaderOverlap) return fail("image_load_known_loader_directory_refused");
+  if (!p.pageQueried) return fail("image_load_page_query_unavailable");
+  const auto &page=p.page;
+  if (!page.sameAllocation || !page.rangeInImage || page.type!=0x1000000 || page.state!=0x1000)
+    return fail("image_load_mapping_not_committed_same_image");
+  if (page.begin>source || !page.bytes || page.begin>imageSize || page.bytes>std::uint64_t(imageSize)-page.begin ||
+      std::uint64_t(source)+8>std::uint64_t(page.begin)+page.bytes)
+    return fail("image_load_page_range_or_cross_boundary_refused");
+  if (page.protect!=0x02 && page.protect!=0x20)
+    return fail("image_load_page_writable_COW_guard_noaccess_or_unsupported");
+  p.policyPassed=true;p.reason="image_load_PE_page_readonly_before_value";return p;
+}
+bool sameImagePage(const ReadImagePage &a,const ReadImagePage &b) {
+  return a.sameAllocation==b.sameAllocation && a.rangeInImage==b.rangeInImage &&
+      a.begin==b.begin && a.bytes==b.bytes && a.state==b.state && a.type==b.type &&
+      a.protect==b.protect && a.allocationProtect==b.allocationProtect;
+}
+}
+ReadImageLoad beginReadImageLoad(bool verified,std::uint32_t source,std::uint32_t imageSize,
+    IdentityRead read,IdentityPageQuery query,void *ctx) noexcept {
+  auto p=classifyImageLoad(verified,source,imageSize,read,query,ctx);
+  if (!p.policyPassed) return p;
+  ++p.valueReadAttempts;p.firstRead=read(ctx,source,p.valuePrivate.data(),8);
+  p.reason=p.firstRead?"image_load_first_qword_read_pending_final_check":"image_load_first_qword_read_failed";
+  return p;
+}
+bool finishReadImageLoad(ReadImageLoad &p,std::uint32_t imageSize,
+    IdentityRead read,IdentityPageQuery query,void *ctx) noexcept {
+  p.admitted=p.stable=false;
+  if (!p.policyPassed || !p.firstRead || p.source!=readImageSource || p.width!=8) return false;
+  if (p.valueReadAttempts!=1) {p.reason="image_load_recheck_budget_or_state_invalid";return false;}
+  const auto now=classifyImageLoad(true,p.source,imageSize,read,query,ctx);
+  p.pageRechecked=now.pageQueried;p.finalPage=now.page;
+  p.metadataSame=p.metadataBytes==now.metadataBytes && !std::memcmp(p.metadataPrivate.data(),now.metadataPrivate.data(),p.metadataBytes);
+  p.pageSame=p.pageRechecked && sameImagePage(p.page,now.page);
+  if (!now.policyPassed) {p.reason=now.reason;return false;}
+  if (!p.metadataSame || !p.pageSame) {p.reason="image_load_PE_metadata_or_page_protection_changed";return false;}
+  unsigned char again[8]{};++p.valueReadAttempts;p.finalRead=read && read(ctx,p.source,again,8);
+  if (!p.finalRead) {p.reason="image_load_final_qword_read_failed";return false;}
+  if (std::memcmp(p.valuePrivate.data(),again,8)) {p.reason="image_load_qword_changed_across_proof";return false;}
+  p.stable=p.admitted=true;p.reason="exact_qword_readonly_image_current_window_stable";return true;
+}
+ReadEntryTags currentReadEntryEvidence(const ReadCallContract &c) noexcept {
+  ReadEntryTags e{};e.samples=c.samples;
+  for (unsigned k=0;k<16;++k) {e.gpr[k]=c.gpr[k].tags;e.xmm[k]=c.xmmTags[k];}
+  const auto &base=c.gpr[1];
+  e.imageLoadAddressVerified=c.samples && base.same && base.kind==pointer && base.root==globalRoot &&
+      base.offset==readImageBaseOrigin && !base.tags;
+  if (e.imageLoadAddressVerified) e.imageLoadSource=readImageSource;
+  return e;
+}
 ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
-    std::uint32_t imageSize, IdentityRead read, IdentityLookup lookup, void *ctx, const ReadEntryTags *entryTags) noexcept {
+    std::uint32_t imageSize, IdentityRead read, IdentityLookup lookup, void *ctx, const ReadEntryTags *entryTags,IdentityPageQuery pageQuery) noexcept {
   static_assert(readCallByteCap==128 && readCallInstructionCap<=32,
                 "No-unwind admission may not silently widen c23 leaf caps");
   ReadTargetIdentity out{}; out.enabled=true; out.target=target;
@@ -3254,13 +3382,25 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
           Slice merged;ReadFlow tags;
           for (unsigned k=0;k<16;++k) { tags.g[k]=1u<<k;tags.x[k]=1u<<(16+k); }
           const auto cfg=walkPinnedLeaf(out.snapshot.data(),limit,out.codeBegin,out.codeEnd,out.nextRuntime,
-              out.entryTagsKnown?entryTags:nullptr,true,merged,tags,imageSize);
+              out.entryTagsKnown?entryTags:nullptr,true,merged,tags,imageSize,&out.load,read,pageQuery,ctx);
           out.cmp=cfg.cmp;out.branch=cfg.branch;out.mov=cfg.mov;out.instructions=cfg.instructions;
           out.paths=cfg.paths;out.visits=cfg.visits;out.cfgComplete=cfg.complete;
           out.pathEffectsDiffer=cfg.effectsDiffer;
+          if (out.load.firstRead && !finishReadImageLoad(out.load,imageSize,read,pageQuery,ctx)) {
+            out.mov.loadedMayTags=7;out.mov.reason=out.load.reason;
+            return fail(out.load.reason,readIdentityMov,"mov");
+          }
+          if (out.load.firstRead) {
+            if (!grab(target,again,limit) || std::memcmp(again,out.snapshot.data(),limit)) {
+              out.load.admitted=false;out.load.reason="image_load_target_snapshot_changed";
+              out.mov.loadedMayTags=7;out.mov.reason=out.load.reason;
+              return fail(out.load.reason,readIdentityMov,"mov");
+            }
+            out.load.targetCodeRechecked=true;
+          }
           if (!cfg.complete) return fail(cfg.reason,cfg.barrier,cfg.mnemonic);
           // All paths must pass before any span/hash can exist; pin current bytes again.
-          if (!grab(target,again,limit) || std::memcmp(again,out.snapshot.data(),limit)) {
+          if (!out.load.targetCodeRechecked && (!grab(target,again,limit) || std::memcmp(again,out.snapshot.data(),limit))) {
             out.stable=false;return fail("target_cfg_final_snapshot_changed",target,"snapshot");
           }
           out.finalCodeRechecked=true;out.size=cfg.size;
@@ -3320,8 +3460,10 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
   for (unsigned k=0;k<(rf.found?1u:out.size);++k) {
     const auto now=lookup(ctx,target+k);
     if (!now.readable || now.found!=rf.found || (now.found &&
-        (!now.sameImage || now.begin!=rf.begin || now.end!=rf.end || now.unwind!=rf.unwind)))
+        (!now.sameImage || now.begin!=rf.begin || now.end!=rf.end || now.unwind!=rf.unwind))) {
+      out.load.admitted=false;if (out.load.attempted) out.mov.loadedMayTags=7;
       return fail("target_runtime_coverage_changed_before_admission",target+k);
+    }
   }
   out.admitted=true;out.reason=rf.found?"runtime_boundary_current_snapshot_admitted"
       : out.cfgComplete?"pinned_JA_all_forward_RET_paths_admitted":"strict_linear_single_entry_RET_exit_set_admitted";

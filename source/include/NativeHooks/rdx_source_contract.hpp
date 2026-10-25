@@ -143,6 +143,7 @@ struct ReadCallContract {
   char hash[65] = "unavailable", mnemonic[32] = "none", operand[32] = "none",
        unresolvedMnemonic[32] = "none";
 };
+ReadEntryTags currentReadEntryEvidence(const ReadCallContract &) noexcept;
 // Diagnostic sidecar only: cannot grant any alias/effect/write certificate.
 struct ReadDependencyContract {
   std::uintptr_t site{}, barrier{}, firstUse{}, firstControl{}, firstEscape{};

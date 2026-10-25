@@ -281,3 +281,19 @@ The exact next question is whether the one proven image-backed 8-byte source for
 If the exact source cannot prove current non-writability and stable value without raw-value publication or pointer chasing, keep loaded tags unknown and stop at `0x2CF7FE9`. If it can, model only this exact full64 load, replace RAX tags accordingly, preserve flags/other state, and resume the unchanged c27 two-path all-RET proof to the next exact barrier.
 
 Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
+
+## c29 prepared — exact image-backed qword proof
+
+The accepted c28 MOV/source provenance is now input to a narrow current-proof
+rule (analysis/V01C29_IMAGE_LOAD_PROOF.md). Version v0.1c29/package0.1.47.
+Before source8byte reads, require exact parent RCX source/tags, one readable
+non-writable PE section, current committed same-image readonly page and no
+checked direct loader-directory overlap. Two equal guarded8byte reads plus
+unchanged PE/page/target code permit only full64 RAX loaded tags0 within the
+current proof. No raw values, numerical interpretation, second dereference,
+generic load or lifetime claim. If any gate fails stop at MOV; otherwise report
+next exact unsupported effect and retain all c27 caps/all-RET/current coverage.
+Actual game source section/protection/stability and next barrier remain UNKNOWN.
+Shortest A~3s/end/move/E~3s capture needed for new IMAGE_SOURCE/PAGE/VALUE keys.
+All ownership/lifetime/exclusive/writable-source/game-write gates remain0;
+producer0x351EB00 deferred. NEXT preserved; result/release record final validation.

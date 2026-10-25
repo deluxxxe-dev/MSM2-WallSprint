@@ -34,7 +34,33 @@ struct ReadCmpContract {
 };
 inline constexpr std::uint32_t readIdentityBranch = 0x2cf7fe7;
 inline constexpr unsigned readLeafBranchCap=1, readLeafPathCap=2, readLeafVisitCap=64;
+inline constexpr std::uint32_t readImageSource=204285312, readImageBaseOrigin=readImageSource-0x100;
+struct ReadImagePage {
+  bool sameAllocation{},rangeInImage{};
+  std::uint32_t begin{},state{},type{},protect{},allocationProtect{};
+  std::uint64_t bytes{};
+};
+using IdentityPageQuery=bool (*)(void *,std::uint32_t,ReadImagePage &);
+struct ReadImageLoad {
+  bool attempted{},metadataValid{},sectionUnique{},sectionReadable{},sectionWritable{},sectionExecutable{},
+      loaderRangesChecked{},loaderOverlap{},pageQueried{},policyPassed{},firstRead{},finalRead{},
+      pageRechecked{},metadataSame{},pageSame{},stable{},targetCodeRechecked{},admitted{};
+  std::uint32_t source{},width=8,sectionBegin{},sectionEnd{},sectionFlags{},loaderDirectory{};
+  unsigned sectionOverlaps{},valueReadAttempts{},metadataBytes{};
+  char sectionName[9]="none";
+  ReadImagePage page{},finalPage{};
+  const char *reason="image_load_not_attempted";
+  // Private bounded comparison buffers: never logged, interpreted or dereferenced.
+  std::array<unsigned char,4168> metadataPrivate{};
+  std::array<unsigned char,8> valuePrivate{};
+};
+ReadImageLoad beginReadImageLoad(bool buildAndAddressVerified,std::uint32_t source,
+    std::uint32_t imageSize,IdentityRead,IdentityPageQuery,void *) noexcept;
+bool finishReadImageLoad(ReadImageLoad &,std::uint32_t imageSize,
+    IdentityRead,IdentityPageQuery,void *) noexcept;
 struct ReadEntryTags {
+  bool imageLoadAddressVerified{};
+  std::uint32_t imageLoadSource{};
   unsigned samples{};
   std::array<unsigned,16> gpr{}, xmm{};
 };
@@ -97,6 +123,7 @@ struct ReadTargetIdentity {
   ReadCmpContract cmp{};
   ReadLeafBranch branch{};
   ReadMovContract mov{};
+  ReadImageLoad load{};
   bool entryTagsKnown{}, cfgComplete{}, finalCodeRechecked{}, pathEffectsDiffer{};
   unsigned entryTagSamples{}, paths{}, visits{};
   const char *method = "none", *reason = "target_identity_not_enabled";
@@ -105,5 +132,6 @@ struct ReadTargetIdentity {
 };
 ReadTargetIdentity authenticateReadTarget(bool buildAndCallVerified,
     std::uint32_t target, std::uint32_t imageSize, IdentityRead,
-    IdentityLookup, void *context, const ReadEntryTags *entryTags = nullptr) noexcept;
+    IdentityLookup, void *context, const ReadEntryTags *entryTags = nullptr,
+    IdentityPageQuery pageQuery = nullptr) noexcept;
 }

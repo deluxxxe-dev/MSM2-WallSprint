@@ -1,3 +1,17 @@
+## C28 accepted / c29 exact image-load proof prepared
+
+VERIFIED-RUNTIME: MOV0x2CF7FE9 is full64 RAX <- [RCX+0x100], flags preserved;
+current RCX image-root16+204285056/tags0, source+204285312 outside code section.
+Address provenance is separate from UNKNOWN loaded-value tags. C29 permits
+only that source after readable non-writable PE section + current same-image
+committed readonly page + no explicitly checked direct loader overlap + equal
+guarded8byte reads and unchanged metadata/page/target code. Opaque loaded origin,
+no raw bits/numeric interpretation/pointer chase; bounded proof, not global
+immutability. Only full64 RAX tag overwrite; all c27 all-path/caps/runtime and
+ownership/game-write gates retained. Actual source mapping/stability/next barrier
+UNKNOWN. Sources V01C28_RUNTIME_RESULT.md / V01C29_IMAGE_LOAD_PROOF.md.
+Prior chronological checkpoints below describe their historical state.
+
 ## C27 accepted / c28 diagnostic-only checkpoint
 
 VERIFIED-RUNTIME c27 JA0x2CF7FE7 shortrel8/disp42, fall0x2CF7FE9/taken0x2CF8013;
