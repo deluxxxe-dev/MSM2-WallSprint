@@ -135,5 +135,6 @@
   },
   "standalone_probe": "analysis/native-probes/c43/continuation-witness.exe",
   "standalone_sha256": "f74cdd5ce90218d3dbeb72e257acaee4e4c9010a0cc952ff7109121bab327c79",
-  "code_tool_input_count": 243
+  "code_tool_input_count": 243,
+  "implementation_commit": "ad732963655de07911b7b3383100991a037307b9"
 }

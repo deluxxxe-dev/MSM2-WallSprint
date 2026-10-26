@@ -1,6 +1,7 @@
 # Codex result — c43 native final-restoration divergence diagnostic
 
 Branch **codex/v01c20-edi-value-provenance**, task base **87cd2f0**.
+Implementation **ad732963655de07911b7b3383100991a037307b9**.
 **PARTIAL SUCCESS overall: diagnostic implementation/owned validation succeeded;
 native cause identification awaits the refreshed standalone run.** Runtime stays
 v0.1c38/package0.1.56. No game release or production integration.
