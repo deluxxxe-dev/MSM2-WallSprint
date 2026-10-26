@@ -1,3 +1,130 @@
+# Codex result — c43 native final-restoration divergence diagnostic
+
+Branch **codex/v01c20-edi-value-provenance**, task base **87cd2f0**.
+**PARTIAL SUCCESS overall: diagnostic implementation/owned validation succeeded;
+native cause identification awaits the refreshed standalone run.** Runtime stays
+v0.1c38/package0.1.56. No game release or production integration.
+
+## Accepted native evidence and implementation
+
+Read AGENTS/manual/rules/workspace/state/reporting/NEXT, c39-c42 evidence and
+relevant source/tests/Wisdoms references. Fast-forwarded only the intended
+branch to87cd2f0; no main merge/reset/history rewrite. The five historic
+untracked files are untouched.
+
+The owner native c42 run at70c55e3 admitted actual flags[0,0,256], executed the
+witness path and returned FAIL at the final combined lease/DR assertion. Outer
+acknowledgment/pending0/canRetire/false poll completed first. Keep that exact
+native result; do not reclassify it as REFUSED/PASS or infer which side failed.
+Lease/individual DR/both/root cause remain UNKNOWN, including any hypothesized
+Windows canonicalization. Original c41/c42 binaries/manifests are retained.
+
+Changes are limited to owned diagnostic code, tests, provenance and handoff:
+
+- `source/include/NativeHooks/continuation_diagnostics.hpp`: pure exact six-DR
+  comparison/serializer, four lease/DR outcomes, missing-observation nulls and
+  bounded per-register saved/before/after/equality/XOR plus three readbacks.
+- `continuation_witness_smoke.cpp`: sample existing owned worker before/after
+  the original final poll, retain lease/pending/canRetire/poll and exact identity;
+  common schema3/taskc43 reports on success/FAIL/REFUSED, including partial data.
+  Original same(CONTEXT,CONTEXT), all acceptance assertions and three stability
+  comparisons remain exact; no normalization, policy setting or fake API data.
+- `continuation_diagnostics_tests.cpp`, `test_continuation_diagnostics.sh`:
+  clearly synthetic comparator/serializer negatives and strict JSON round-trip.
+- `check_continuation_diagnostics.py`, existing witness/hooks scripts: validate
+  real owned Wine output separately; retain all12 original process cases.
+- C43 analysis/gate/status and source mirrors, PROJECT_STATE, this report and
+  package evidence/metadata include the accepted c42 native failure. New standalone
+  artifact/README/manifest/licenses under `analysis/native-probes/c43` are refreshed
+  only after all required tests pass. Original owner evidence/task remain unchanged.
+
+The new snapshot uses only the existing suspended-thread readback helper while
+owned worker/code/data remain alive. No formatting/allocation/register mutation
+is inserted around poll. Samples are sequential and perturb scheduling; a later
+result is not an atomic reconstruction of c42 or proof of its original cause.
+The production engine, c39/c40 counterexample, c41 ASM/handler/ledger/state/cap/
+foreign-DR/lifetime checks and c42 policy classifier remain unchanged.
+
+## Required validation — actually executed from repository root
+
+| Exact command | Expected result | Actual result |
+| --- | --- | --- |
+| `bash source/tools/test_continuation_mitigations.sh` | Preserve all policy decisions, reserved/unknown refusal and JSON checks | exit0;10 PASS,0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/test_continuation_witness.sh` | Preserve12 original witness/cap cases and validate real diagnostic JSON | exit0;13 PASS (12 cases plus1 JSON validator),0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/test_watch_retirement.sh` | Retain original delayed-context counterexamples, normal closure/recovery | exit0;14 PASS observation/recovery records,0 SKIP,2 VCH UNAVAILABLE; not a production fix |
+| `bash source/tools/build_windows.sh` | Existing Windows Werror cross-build succeeds | exit0; build succeeded, no PASS case count |
+| `bash source/tools/test.sh` | Portable/sanitizer regressions pass | exit0;13 PASS,0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/smoke_windows.sh` | DLL/logger smoke checks pass | exit0;7 PASS,0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/test_hooks_windows.sh` | Full native/scanner/workspace/diagnostic regressions pass | exit0;314 PASS,5 SKIP,2 UNAVAILABLE |
+| `python3 source/tools/package.py` | Package construction/integrity succeeds; source inputs match tested code | exit0;1 separate package PASS;243 code/tool inputs match |
+| `bash source/tools/test_continuation_diagnostics.sh` | Four outcomes, every DR/high-bit mismatch, missing observations, before/after independence, readbacks, exact hex/XOR and strict synthetic JSON | exit0;7 PASS,0 SKIP,0 UNAVAILABLE |
+
+Full chain **334 PASS** =13+7+314; **5 SKIP** and **2 UNAVAILABLE** separately.
+Focused records overlap314 and are not added twice; package1 PASS is separate.
+Initial focused runs also passed. The full required pipeline passed without
+weakening deadlines/caps/assertions or changing implementation afterward.
+Logs `/tmp/ws-c43-<script-stem>.log`; exits/counts/timings are summarized in
+`/tmp/ws-c43-results.json`. These are owned tests, not private game logs.
+The real JSON checker runs as `python3 tools/check_continuation_diagnostics.py
+logs/windows_continuation_witness_tests.log` from source/ after all12 invocations.
+
+After those tests, the exact tested EXE was copied to the c43 artifact folder and
+run once through configured Wine with --position --multiple --json. Expected one
+real auditable schema3 JSON line; actual exit0, one OWNED_WITNESS_PASS with
+ALL_RESTORED diagnostic, actual flags[0,0,0], native_candidate_probe_passed=false.
+This shipped-binary check is not native evidence or an extra full-chain case.
+The runner was `/workspace/toolchains/wine/usr/lib/wine/wine64` with WINEPREFIX
+`/workspace/toolchains/wine-prefix`, WINEDLLPATH
+`/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine`, WINEDEBUG=-all and
+WINEDLLOVERRIDES='mscoree,mshtml='. Command arguments are the artifact path followed
+by `--position --multiple --json`; stdout is `/tmp/ws-c43-shipped.json`.
+PE imports remain bcrypt.dll/KERNEL32.dll/msvcrt.dll. Source/package/hash checks
+and unchanged-source/task/historic-artifact checks also passed. Detailed exact
+artifact/source hashes are retained in PROBE_MANIFEST and V01C43_STATUS.
+
+Generated validation package:
+`source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled`.
+No root install/source ZIP or published game script is replaced by c43.
+No further full regression run is needed for documentation/provenance completion;
+all code/tool inputs remain those tested by the successful pipeline.
+
+## Unperformed tests and reasons
+
+- Native Windows c43 execution/root-cause diagnosis: only Wine is available here.
+  One owner standalone run is needed after publication. Prior c42 native FAIL
+  remains the supplied observation; Wine/synthetic results never certify native.
+- Five optional private positive replays: original bytes, native AVX/CFG bodies,
+  game-body installer,584byte writer normalization and accepted Path-B capture
+  inputs are absent/not redistributed. Independent owned/synthetic negatives ran.
+- Two VCH return-hold cases: registered callbacks did not run on the current owned
+  Wine hardware path; UNAVAILABLE, not successful coverage.
+- Actual mitigation-setting matrices, live attached-debugger/full-XSTATE matrix,
+  game/slot observation, producer traversal and production integration: outside
+  the bounded task or prohibited. No Windows protection is modified.
+
+## Handoff and owner action
+
+Wisdoms WALLSPRINT_INTERNALS and REVERSE_ENGINEERING_GUIDE now preserve the
+accepted native c42 failure and reusable distinction between eligibility,
+acknowledgment and restoration, plus observation/normalization limitations.
+No raw private game logs, credentials or personal paths are published.
+Production restoration/slot mode and all prior proof/gameplay-write gates remain
+closed. This is successful diagnostic implementation, not a native restoration
+fix. All intended source/tests/analysis/probe files must be committed/pushed on
+the named branch; final remote SHA is verified before reporting publication.
+
+After verified publication, from `analysis/native-probes/c43` in native Windows
+PowerShell, the sole owner test is:
+
+```powershell
+.\continuation-witness.exe --position --multiple --json
+```
+
+Return only compact JSON/output. No Update-WS, game, Overstrike, A/E, WallRun,
+offline slot scan, settings change or game runtime log is requested.
+
+---
+
 # Codex revalidation — c42 requested regression rerun (2026-10-26)
 
 Fetched `origin/codex/v01c20-edi-value-provenance`; both local and remote were

@@ -1,0 +1,139 @@
+{
+  "task": "c43_native_final_restoration_diagnostic",
+  "base_commit": "87cd2f0",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "classification": "DIAGNOSTIC_SUCCESS_NATIVE_CAUSE_PENDING",
+  "accepted_native_input": "V01C42_NATIVE_WINDOWS_RESULT.md",
+  "accepted_native_result": "FAIL_final_combined_restoration_assertion",
+  "accepted_native_flags": [
+    0,
+    0,
+    256
+  ],
+  "native_cause": "UNKNOWN_lease_DR_or_both",
+  "restoration_comparison": "exact_Dr0_Dr1_Dr2_Dr3_Dr6_Dr7_unmasked",
+  "JSON_schema": 3,
+  "diagnostic_revision": "c43-v1",
+  "classifier_revision_unchanged": "c42-v1",
+  "native_c43_result": "NOT_RUN_pending_owner_standalone",
+  "production_restoration_changed": false,
+  "production_integrated": false,
+  "slot_watch_enabled": false,
+  "mitigation_setting_changed": false,
+  "native_output_forged": false,
+  "new_gameplay_writes": 0,
+  "new_live_slot_reads": 0,
+  "producer_traversed": false,
+  "runtime_version": "v0.1c38",
+  "package_version": "0.1.56",
+  "new_game_release": false,
+  "standalone_refreshed_after_required_tests": true,
+  "validation": {
+    "commands": [
+      {
+        "command": "bash source/tools/test_continuation_mitigations.sh",
+        "exit": 0,
+        "PASS": 10,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.47,
+        "log": "/tmp/ws-c43-test_continuation_mitigations.log"
+      },
+      {
+        "command": "bash source/tools/test_continuation_diagnostics.sh",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.63,
+        "log": "/tmp/ws-c43-test_continuation_diagnostics.log"
+      },
+      {
+        "command": "bash source/tools/test_continuation_witness.sh",
+        "exit": 0,
+        "PASS": 13,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 7.48,
+        "log": "/tmp/ws-c43-test_continuation_witness.log"
+      },
+      {
+        "command": "bash source/tools/test_watch_retirement.sh",
+        "exit": 0,
+        "PASS": 14,
+        "SKIP": 0,
+        "UNAVAILABLE": 2,
+        "seconds": 5.92,
+        "log": "/tmp/ws-c43-test_watch_retirement.log"
+      },
+      {
+        "command": "bash source/tools/build_windows.sh",
+        "exit": 0,
+        "PASS": 0,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 40.31,
+        "log": "/tmp/ws-c43-build_windows.log"
+      },
+      {
+        "command": "bash source/tools/test.sh",
+        "exit": 0,
+        "PASS": 13,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 8.79,
+        "log": "/tmp/ws-c43-test.log"
+      },
+      {
+        "command": "bash source/tools/smoke_windows.sh",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 12.27,
+        "log": "/tmp/ws-c43-smoke_windows.log"
+      },
+      {
+        "command": "bash source/tools/test_hooks_windows.sh",
+        "exit": 0,
+        "PASS": 314,
+        "SKIP": 5,
+        "UNAVAILABLE": 2,
+        "seconds": 154.85,
+        "log": "/tmp/ws-c43-test_hooks_windows.log"
+      },
+      {
+        "command": "python3 source/tools/package.py",
+        "exit": 0,
+        "PASS": 1,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.85,
+        "log": "/tmp/ws-c43-package.log"
+      }
+    ],
+    "full_chain_PASS": 334,
+    "full_chain_SKIP": 5,
+    "full_chain_UNAVAILABLE": 2,
+    "focused_counts_overlap_hooks": true,
+    "package_PASS_separate": 1,
+    "packaged_inputs_match_tested_source": true,
+    "native_c43_executed": false,
+    "shipped_probe_JSON_mode": {
+      "exit": 0,
+      "JSON_lines": 1,
+      "environment": "Wine",
+      "actual_flags": [
+        0,
+        0,
+        0
+      ],
+      "result": "OWNED_WITNESS_PASS",
+      "diagnostic_classification": "ALL_RESTORED",
+      "native_candidate_probe_passed": false
+    }
+  },
+  "standalone_probe": "analysis/native-probes/c43/continuation-witness.exe",
+  "standalone_sha256": "f74cdd5ce90218d3dbeb72e257acaee4e4c9010a0cc952ff7109121bab327c79",
+  "code_tool_input_count": 243
+}

@@ -16,8 +16,9 @@ static PVOID WINAPI c41_install(ULONG first,PVECTORED_EXCEPTION_HANDLER fn){asse
 #include <string>
 #include <climits>
 #include "NativeHooks/continuation_mitigations.hpp"
+#include "NativeHooks/continuation_diagnostics.hpp"
 
-namespace c41 {const char* failureText();const char* classifierReport();[[noreturn]] void failed(const char* expression,unsigned line){std::fprintf(stderr,"c41 owned assertion at line %u: %s\n",line,expression);std::printf("{\"schema\":2,\"task\":\"c42\",\"witness_task\":\"c41\",\"result\":\"FAIL\",\"reason\":\"owned_assertion_failed\",\"rejection\":\"%s\",\"line\":%u,\"mitigation_classifier\":%s,\"game_used\":false}\n",failureText(),line,classifierReport());std::fflush(stdout);ExitProcess(3);}}
+namespace c41 {const char* failureText();std::string reportFields();[[noreturn]] void failed(const char* expression,unsigned line){std::fprintf(stderr,"c41 owned assertion at line %u: %s\n",line,expression);std::printf("{\"schema\":3,\"task\":\"c43\",\"witness_task\":\"c41\",\"result\":\"FAIL\",\"reason\":\"owned_assertion_failed\",\"rejection\":\"%s\",\"line\":%u,%s,\"game_used\":false}\n",failureText(),line,reportFields().c_str());std::fflush(stdout);ExitProcess(3);}}
 #undef assert
 #define assert(condition) do {if(!(condition))c41::failed(#condition,__LINE__);} while(false)
 
@@ -30,6 +31,8 @@ extern unsigned char ws_c41_after_store[];
 }
 namespace c41 {
 namespace mitigation=ws::continuation_mitigations;
+namespace diagnostics=ws::continuation_diagnostics;
+diagnostics::Report restoration;
 std::string classifierJson=mitigation::json(mitigation::Inputs{});
 const char* classifierReport(){return classifierJson.c_str();}
 constexpr unsigned capacity=4;constexpr DWORD nestedCode=0xe0410041;
@@ -44,6 +47,16 @@ std::atomic<bool> poisoned{false},armed{false};std::atomic<const char*> failure{
 DWORD workerId{};HANDLE worker{},ready{},go{};msm2::Snapshot hero{};
 bool position{},timeout{},killClose{},capCase{},wine{},jsonOnly{};bool policyKnown[3]{};DWORD policyFlags[3]{};const char* environmentFailure="none";
 std::string output;
+const char* scenarioName(){return capCase?"cap_refusal":nestedCount==2?"multiple":nestedCount?"nested":timeout?"timeout":killClose?"kill":"close";}
+std::string reportFields(){
+ std::string out="\"environment\":\"";out+=wine?"Wine":"native_Windows";
+ out+="\",\"mode\":\"";out+=position?"Position":"reset";
+ out+="\",\"scenario\":\"";out+=scenarioName();
+ out+="\",\"thread\":"+std::to_string(workerId)+",\"lease\":"+std::to_string(lease)+",\"generation\":"+std::to_string(generation)+",\"contexts\":"+std::to_string(published.load());
+ out+=",\"mitigation_query_known\":[";for(unsigned i=0;i<3;++i){if(i)out+=',';out+=policyKnown[i]?"true":"false";}
+ out+="],\"mitigation_flags\":[";for(unsigned i=0;i<3;++i){if(i)out+=',';out+=std::to_string(policyFlags[i]);}
+ return out+"],\"mitigation_classifier\":"+classifierReport()+",\"final_restoration\":"+diagnostics::json(restoration);
+}
 LONG load(volatile LONG* p){return InterlockedCompareExchange(p,0,0);}
 const char* failureText(){const auto value=failure.load();return value?value:"none";}
 void reject(const char* why){const char* empty=nullptr;failure.compare_exchange_strong(empty,why);poisoned=true;}
@@ -93,6 +106,7 @@ bool canRetire(){if(poisoned.load()||pending())return false;for(unsigned i=0;i<p
 bool freeStorage(){if(WaitForSingleObject(worker,0)!=WAIT_OBJECT_0)return false;for(auto& t:tickets)if(t.storage){assert(VirtualFree(t.storage,0,MEM_RELEASE));t.storage=nullptr;t.marker=nullptr;}return true;}
 CONTEXT debug(){assert(SuspendThread(worker)!=DWORD(-1));CONTEXT c{};c.ContextFlags=CONTEXT_DEBUG_REGISTERS;assert(GetThreadContext(worker,&c));assert(ResumeThread(worker)!=DWORD(-1));return c;}
 bool same(const CONTEXT& a,const CONTEXT& b){return a.Dr0==b.Dr0&&a.Dr1==b.Dr1&&a.Dr2==b.Dr2&&a.Dr3==b.Dr3&&a.Dr6==b.Dr6&&a.Dr7==b.Dr7;}
+diagnostics::Registers registers(const CONTEXT& c){return {c.Dr0,c.Dr1,c.Dr2,c.Dr3,c.Dr6,c.Dr7};}
 DWORD WINAPI run(void*){SetEvent(ready);assert(WaitForSingleObject(go,2000)==WAIT_OBJECT_0);ws_c41_machine(reinterpret_cast<void*>(hero.transform+(position?0x30:0x10)));return 0;}
 bool environment(){
  wine=GetProcAddress(GetModuleHandleW(L"ntdll.dll"),"wine_get_version")!=nullptr;
@@ -138,7 +152,7 @@ int main(int argc,char** argv){
  SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOGPFAULTERRORBOX|SEM_NOOPENFILEERRORBOX);
  for(int i=1;i<argc;++i){if(!std::strcmp(argv[i],"--position"))position=true;else if(!std::strcmp(argv[i],"--timeout"))timeout=true;else if(!std::strcmp(argv[i],"--kill"))killClose=true;else if(!std::strcmp(argv[i],"--nested"))nestedCount=1;else if(!std::strcmp(argv[i],"--multiple"))nestedCount=2;else if(!std::strcmp(argv[i],"--json"))jsonOnly=true;else if(!std::strcmp(argv[i],"--cap")){capCase=true;bound=1;nestedCount=1;}else assert(false&&"unknown probe argument");}
  assert(!(timeout&&killClose));
- if(!environment()){std::printf("{\"schema\":2,\"task\":\"c42\",\"witness_task\":\"c41\",\"result\":\"REFUSED\",\"reason\":\"%s\",\"mitigation_query_known\":[%s,%s,%s],\"mitigation_flags\":[%lu,%lu,%lu],\"mitigation_classifier\":%s,\"game_used\":false}\n",environmentFailure,policyKnown[0]?"true":"false",policyKnown[1]?"true":"false",policyKnown[2]?"true":"false",policyFlags[0],policyFlags[1],policyFlags[2],classifierReport());return 77;}
+ if(!environment()){std::printf("{\"schema\":3,\"task\":\"c43\",\"witness_task\":\"c41\",\"result\":\"REFUSED\",\"reason\":\"%s\",%s,\"game_used\":false}\n",environmentFailure,reportFields().c_str());return 77;}
  std::int32_t delta{};std::array<unsigned char,15> synthetic{};
  assert(relative(0x100000000,0x17fffffff,delta)&&delta==INT32_MAX);assert(relative(0x100000000,0x80000000,delta)&&delta==INT32_MIN);assert(!relative(0x100000000,0x180000000,delta));
  assert(!encode(UINTPTR_MAX-10,4096,8192,1,synthetic)&&!encode(4096,4101,8192,1,synthetic)&&!encode(4096,8192,UINTPTR_MAX,1,synthetic));
@@ -147,7 +161,7 @@ int main(int argc,char** argv){
  for(auto& t:tickets){t.ready=CreateEventW(nullptr,FALSE,FALSE,nullptr);t.prepared=CreateEventW(nullptr,FALSE,FALSE,nullptr);t.held=CreateEventW(nullptr,FALSE,FALSE,nullptr);t.release=CreateEventW(nullptr,FALSE,FALSE,nullptr);assert(t.ready&&t.prepared&&t.held&&t.release);}
  ready=CreateEventW(nullptr,FALSE,FALSE,nullptr);go=CreateEventW(nullptr,FALSE,FALSE,nullptr);worker=CreateThread(nullptr,0,run,nullptr,0,&workerId);assert(worker&&WaitForSingleObject(ready,2000)==WAIT_OBJECT_0);
  auto saved=debug();assert(!(saved.Dr7&0xff)&&!(saved.Dr7&(1ull<<13)));auto foreign=saved;foreign.Dr2=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));foreign.Dr7|=0x10;
- assert(SuspendThread(worker)!=DWORD(-1));assert(SetThreadContext(worker,&foreign));assert(ResumeThread(worker)!=DWORD(-1));saved=debug();
+ assert(SuspendThread(worker)!=DWORD(-1));assert(SetThreadContext(worker,&foreign));assert(ResumeThread(worker)!=DWORD(-1));saved=debug();restoration.saved=registers(saved);
  auto base=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));auto* dos=reinterpret_cast<IMAGE_DOS_HEADER*>(base);auto* nt=reinterpret_cast<IMAGE_NT_HEADERS64*>(base+dos->e_lfanew);
  assert(msm2::trace::configureReset(true,base,nt->OptionalHeader.SizeOfImage,true,true));msm2::reset_trace::Request r{};r.prearmed=r.verifyDual=r.multithread=true;r.session=lease;r.generation=generation;r.initMs=GetTickCount64()-(position?1600:600);r.hero=hero.hero;r.transform=hero.transform;r.owner=hero.hero;r.thread=workerId;r.position=position;r.normal={0,0,1};r.basis={{-1,0,0},{0,0,1},{0,1,0},true};msm2::Snapshot s{};assert(msm2::sample(s));assert(position?msm2::trace::beginPosition(r,s):msm2::trace::beginReset(r,s));
  armed=true;SetEvent(go);auto& outer=tickets[0];assert(WaitForSingleObject(outer.ready,2000)==WAIT_OBJECT_0);assert(prepare(outer));assert(identity(outer,workerId,1,generation)&&!identity(outer,workerId+1,1,generation)&&!identity(outer,workerId,2,generation)&&!identity(outer,workerId,1,generation+1)&&!identity(outer,workerId,1,generation,lease+1));assert(!canRetire()&&pending()==1);
@@ -163,13 +177,27 @@ int main(int argc,char** argv){
  // any ticket is outstanding. Neither deadline nor kill discharges a ticket.
  SetEvent(outer.release);auto deadline=GetTickCount64()+2000;while(!acknowledged(outer)&&GetTickCount64()<deadline)SwitchToThread();assert(acknowledged(outer)&&pending()==0);
  if(capCase){assert(poisoned.load()&&!std::strcmp(failureText(),"context_cap")&&!canRetire());}
- else {assert(canRetire());assert(!msm2::trace::pollReset(false,"owned_c41_post_return_witness"));assert(!activeLeases()&&same(debug(),saved));for(unsigned i=0;i<3;++i)assert(same(debug(),saved));}
+ else {
+  // Read-only snapshots of the existing owned, live worker. No formatting,
+  // allocation, second watched hit or register write is added around final poll.
+  restoration.attempted=true;restoration.before=registers(debug());
+  restoration.activeBefore=activeLeases();restoration.pendingBefore=pending();
+  restoration.canRetireBefore=canRetire();assert(*restoration.canRetireBefore);
+  restoration.pollReturned=msm2::trace::pollReset(false,"owned_c41_post_return_witness");
+  restoration.activeAfter=activeLeases();restoration.pendingAfter=pending();
+  const auto after=debug();restoration.after=registers(after);
+  // Record both sides even if poll unexpectedly returns true. Preserve every
+  // acceptance predicate and the three exact stability readbacks, unmasked.
+  assert(!*restoration.pollReturned);
+  assert(!*restoration.activeAfter&&same(after,saved));
+  for(unsigned i=0;i<3;++i){const auto check=debug();restoration.rechecks[i]=registers(check);assert(same(check,saved));}
+ }
  deadline=GetTickCount64()+2000;while(!load(&ws_c41_captured)&&GetTickCount64()<deadline)SwitchToThread();assert(load(&ws_c41_captured));
  assert(!std::memcmp(ws_c41_before,ws_c41_after,128));assert(!std::memcmp(ws_c41_before+128,ws_c41_after+128,8));assert(!std::memcmp(ws_c41_before+160,ws_c41_after+160,512));assert(!std::memcmp(ws_c41_before+672,ws_c41_after+672,512));assert(!std::memcmp(ws_c41_before+1184,ws_c41_after+1184,64));
  assert(windows[0].hits==1&&!freeStorage());InterlockedExchange(&ws_c41_finish,1);assert(WaitForSingleObject(worker,2000)==WAIT_OBJECT_0);msm2::trace::stop();assert(!activeLeases());assert(freeStorage());
- const auto scenario=capCase?"cap_refusal":nestedCount==2?"multiple":nestedCount?"nested":timeout?"timeout":killClose?"kill":"close";
+ const auto scenario=scenarioName();
  if(!jsonOnly)std::printf("PASS: c41 %s %s: exact GPR/RFLAGS/RSP/active-stack/YMM0-15/FXSAVE state; %s; no second watched hit; RX storage retained until thread exit\n",position?"Position":"reset",scenario,capCase?"unknown debt refuses final retirement, terminal-thread teardown only":"per-context post-return debt acknowledged then exact foreign DR2/owned DR restoration");
- std::printf("{\"schema\":2,\"task\":\"c42\",\"witness_task\":\"c41\",\"environment\":\"%s\",\"mode\":\"%s\",\"scenario\":\"%s\",\"result\":\"%s\",\"lease\":%u,\"generation\":%llu,\"contexts\":%u,\"retirement_accepted\":%s,\"game_used\":false,\"new_gameplay_writes\":0,\"production_integrated\":false,\"native_candidate_probe_passed\":%s,\"mitigation_query_known\":[%s,%s,%s],\"mitigation_flags\":[%lu,%lu,%lu],\"mitigation_classifier\":%s}\n",wine?"Wine":"native_Windows",position?"Position":"reset",scenario,capCase?"FAIL_CLOSED_EXPECTED":"OWNED_WITNESS_PASS",lease,(unsigned long long)generation,published.load(),capCase?"false":"true",!wine&&!capCase?"true":"false",policyKnown[0]?"true":"false",policyKnown[1]?"true":"false",policyKnown[2]?"true":"false",policyFlags[0],policyFlags[1],policyFlags[2],classifierReport());
+ std::printf("{\"schema\":3,\"task\":\"c43\",\"witness_task\":\"c41\",\"result\":\"%s\",%s,\"retirement_accepted\":%s,\"game_used\":false,\"new_gameplay_writes\":0,\"production_integrated\":false,\"native_candidate_probe_passed\":%s}\n",capCase?"FAIL_CLOSED_EXPECTED":"OWNED_WITNESS_PASS",reportFields().c_str(),capCase?"false":"true",!wine&&!capCase?"true":"false");
  for(auto& t:tickets)for(auto h:{t.ready,t.prepared,t.held,t.release})CloseHandle(h);
  for(auto h:{worker,ready,go})CloseHandle(h);
  assert(VirtualFree(memory,0,MEM_RELEASE));

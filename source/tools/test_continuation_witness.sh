@@ -11,3 +11,4 @@ for scenario in close --timeout --kill --nested --multiple --cap; do
   WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/build/windows/continuation_witness_smoke.exe" "${args[@]}" | tee -a logs/windows_continuation_witness_tests.log
  done
 done
+python3 tools/check_continuation_diagnostics.py logs/windows_continuation_witness_tests.log
