@@ -63,138 +63,97 @@ PE_runtime_table_valid=1
 
 The strict pinned no-unwind fallback is legitimate for this exact image.
 
-### c26-c27 control prefix
+### c26-c34 accepted target prefix
 
 ```text
 0x2CF7FE0: cmp r8d,0x3FFF
-flags-only; R8/flag tags=0
-
-0x2CF7FE7: ja
-taken=0x2CF8013
-fallthrough=0x2CF7FE9
-both exact, forward, in allowance, no runtime crossing
-numerical_outcome=unknown
-```
-
-Both outcomes remain mandatory.
-
-### c28-c30 qword load
-
-```text
+0x2CF7FE7: ja 0x2CF8013 / fallthrough 0x2CF7FE9
 0x2CF7FE9: mov rax,qword ptr [rcx+0x100]
-```
-
-Source is writable `.data` / `PAGE_READWRITE`; immutable/tag0 inference is refused. Exact load is modeled only as opaque may-top:
-
-```text
-RAX tags <- 0x7
-precise_value_tags_known=0
-observed_taint=0
-selected_dependence_killed=0
-source_value_reads=0
-origin=unknown_loaded_qword_not_pointer
-```
-
-### c31-c32 first VMOVUPS
-
-```text
-0x2CF7FF0: vmovups ymm0, ymmword ptr [rdx]
-VEX2.256
-memory pure load
-```
-
-Pinned 256-bit dependency state:
-
-```text
-YMM0.low128 tags  <- 0x7
-YMM0.high128 tags <- 0x7
-above256_known_zero=1
-generic_YMM_ZMM_rules=0
-source_value_reads=0
-```
-
-### c33 MOVSXD
-
-```text
+0x2CF7FF0: vmovups ymm0,ymmword ptr [rdx]
 0x2CF7FF4: movsxd r8,r8d
-32->64 sign extension
-full64 replacement
-memory/flags/SP/vector effects=0
-incoming R8 tags=0
-outgoing R8 tags=0
+0x2CF7FF7: shl r8,6
 ```
 
-### c34 accepted runtime result — SHL modeled
+Both JA outcomes remain mandatory.
 
-Evidence: `analysis/V01C34_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c34-20261026-090013.log`.
-
-Test environment: remote environment with keyboard/mouse controls. Treat movement-shape observations as a separate input condition from prior controller/local captures. Instruction-level classification and safety gates below are not inferred from controller semantics.
-
-Exact instruction:
+Accepted abstract state before `0x2CF7FFB`:
 
 ```text
-0x2CF7FF7: shl r8, 6
-bytes=4
-encoding=group2_C0_C1_slash4_imm8
-destination_bits=64
-count_source=immediate
-encoded_count=6
-count_mask=0x3F
-effective_count=6
-```
-
-Dependency/data effect:
-
-```text
-incoming R8 tags=0x0
-count tags=0x0
-result R8 tags=0x0
-memory_read/write/RMW=0
-vector_writes=0
-SP_write=0
-semantic_modeled=1
-no_value_reads=1
-```
-
-Flag effect for count 6:
-
-```text
-CF defined from last shifted-out bit
-SF/ZF/PF defined from result
-AF undefined
-OF undefined for count>1
-defined_flag_may_tags=0x0
-pre_flags_tags=0x0
-post_flags_tags=0x7
-aggregate_undefined_top7=1
-```
-
-`post_flags_tags=0x7` is conservative undefined-state top, not observed taint.
-
-The bounded walk advances to a **new** site:
-
-```text
-barrier_rva=0x2CF7FFB
-barrier_instruction=vmovups
-reason=target_cfg_memory_operand_refused
-path=0
-unique_instructions=7
-visits=7
-return_paths=0
-```
-
-Pre-barrier abstract state:
-
-```text
-RAX/GPR0 tags=0x7
+RAX tags=0x7
 R8 tags=0x0
 YMM0.low128 tags=0x7
 YMM0.high128 tags=0x7
 above256_known_zero=1
-flags_may_depend_tags=0x7
+flags tags=0x7
 ```
 
-Do **not** reuse the earlier `0x2CF7FF0` VMOVUPS rule by mnemonic alone. `0x2CF7FFB` requires independent exact encoding/operand/direction/memory classification.
+Important interpretation:
+
+- c30 `RAX=0x7` is a may-depend upper bound from an opaque writable `.data` qword load, not observed taint.
+- c32 YMM0 low/high `0x7` is conservative unknown loaded-vector dependence, not observed taint.
+- c34 flags `0x7` comes from undefined AF/OF after `shl r8,6`, not observed selected dependence.
+
+## c35 accepted runtime result — second VMOVUPS is a store
+
+Evidence: `analysis/V01C35_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c35-20261026-142344.log`.
+
+Input method was not supplied for this capture. Do not infer device equivalence from motion observations; instruction-level facts below do not depend on input device.
+
+Exact instruction:
+
+```text
+0x2CF7FFB: vmovups
+bytes=6
+encoding=VEX3
+opcode=0x11
+vector_bits=256
+memory_width=32
+memory_read=0
+memory_write=1
+memory_RMW=0
+flags_preserved=1
+GPR_writes=0
+vector_writes=0
+SP_write=0
+```
+
+Exact decoded operands for the current abstract state:
+
+```text
+m256 [R8 + RAX] <- YMM0
+base R8 tags=0x0
+index RAX tags=0x7
+scale=1
+displacement=0
+YMM0.low128 tags=0x7
+YMM0.high128 tags=0x7
+above256_known_zero=1
+```
+
+Current destination proof:
+
+```text
+address_exact=0
+class=indexed_address_unproven
+address_component_tags=0x7
+alias_may_mask=0x7F
+```
+
+The alias upper bound includes Hero Transform, `Transform+0x10C`, writer source, caller/home stack, callee-private stack, image and unknown ranges. This is uncertainty, not proof that every alias occurs.
+
+C35 correctly refuses the store:
+
+```text
+reason=target_second_VMOVUPS_store_or_RMW_refused
+semantic_modeled=0
+barrier_rva=0x2CF7FFB
+unique_instructions=7
+visits=7
+return_paths=0
+TARGET_IDENTITY admitted=0
+```
+
+Do not continue the CFG by treating an unresolved store as side-effect-free. The current parent summary still reports `memory_escape=0` only because the store has not been admitted/modelled; that is not proof of no escape.
 
 ## Safety gate
 
@@ -207,9 +166,11 @@ downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
 
-Completed c34 sessions in the remote/keyboard-mouse capture retained verified native Deinit, retention pass, hard kills 0, MOD Position writes 0, source-position writes 0, and adhesion corrections 0.
+Completed c35 sessions retained verified native Deinit, retention pass, hard kills 0, MOD Position writes 0, source-position writes 0 and adhesion corrections 0.
 
-Producer `0x351EB00` remains deferred. No movement-source write is authorized.
+The discovered VMOVUPS store is an existing game instruction, not a new MOD write and not permission to write movement/Position data.
+
+Producer `0x351EB00` remains deferred.
 
 ## Current stages
 
@@ -228,35 +189,26 @@ Producer `0x351EB00` remains deferred. No movement-source write is authorized.
 13. c28-c30 qword load + unknown-top continuation ✅
 14. c31-c32 first VMOVUPS + 256-bit state ✅
 15. c33 MOVSXD ✅
-16. c34 SHL data/flags + continuation ✅ actual game
-17. classify exact `0x2CF7FFB VMOVUPS` ▶ CURRENT
-18. resume full writer XYZ/W causal proof ⏸ after local effect classification
-19. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-20. safe writable upstream movement source ⬜ NOT AUTHORIZED
-21. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-22. adhesion/contact refinement ⏸ deferred
-23. animation/camera/later traversal ⬜
+16. c34 SHL data/flags + continuation ✅
+17. c35 second VMOVUPS exact store classification ✅ actual game
+18. prove/contain `0x2CF7FFB` store destination/effect ▶ CURRENT
+19. resume full writer XYZ/W causal proof ⏸ after store effect is safely bounded
+20. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+21. safe writable upstream movement source ⬜ NOT AUTHORIZED
+22. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+23. adhesion/contact refinement ⏸ deferred
+24. animation/camera/later traversal ⬜
 
 ## Current action
 
 Follow `docs/CODEX_NEXT.md`.
 
-C35 must classify `0x2CF7FFB: vmovups` independently: exact encoding/vector width, source/destination operands, load/store direction, memory width/access, address/provenance/aliases, vector parent/write width, mask/broadcast/rounding/upper-lane semantics, incoming tags and current-code stability.
+C36 must treat `0x2CF7FFB` as an exact game-side `m256 [R8+RAX] <- YMM0` store and answer whether that side effect can be safely contained in the proof.
 
-Only if the exact form is soundly representable by the existing c32 low/high128/above256 model may a pinned rule be added and the walk continue. Store/RMW, unsupported partial/masked/wider effects, unresolved memory, stack/call/extra branch/runtime crossing/snapshot mismatch remain fail-closed.
+Do not add generic store semantics. First determine whether the destination can be proven disjoint from current code/control stack and proof-critical movement/Transform storage using existing symbolic/current-parent evidence without guessing raw values.
 
-Preserve RAX `0x7`, R8 `0`, YMM0 low/high `0x7`, above256 zero knowledge, flags `0x7`, both c27 JA paths and all ownership/write gates.
+If containment is not proven, explicitly model/report an unresolved memory escape/barrier and stop. If a narrow store summary is sound, preserve register/vector/flag state, propagate the memory-effect state through branch/return merges, and continue only until the next instruction whose correctness could depend on aliasing with that store.
 
-Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
+Any later memory access must prove disjointness from the stored range before using stale memory assumptions.
 
-## c35 prepared — second VMOVUPS direction/address/upper-state contract
-
-v0.1c35/package0.1.53 classifies only VMOVUPS0x2CF7FFB independently. Conditional
-canonical VEX2 full XMM/YMM load from current STILL-proven Hero RDX+0 can reuse
-c32 dependency state: low7, high0 for128 or7 for256, above256zero. Prior MOVSXD/
-SHL replacing source origin invalidates stale entry-Hero permission even at tags0.
-Stores/RMW/dynamic/EVEX/masked/wider/other forms refuse. Flags7/RAX7/R8zero and
-unrelated parents remain. No values/new hooks/producer/gameplay writes or safety
-relaxation. Both JA outcomes/current-code/runtime/caps/RET retained; actual form/
-next barrier UNKNOWN pending minimum VECTOR2 metadata A/E capture, input method
-noted. NEXT unchanged. See V01C35_SECOND_VMOVUPS.md / CODEX_RESULT.md.
+Preserve both c27 JA paths, current-code/runtime/cap contracts and all ownership/write gates. Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
