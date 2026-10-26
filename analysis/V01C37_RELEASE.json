@@ -1,0 +1,341 @@
+{
+  "version": "v0.1c37",
+  "package_version": "0.1.55",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "base_commit": "87b378f2e26d6dba4bbbeecda5c1c9cd5ff10074",
+  "implementation_commit": "ae617264b134301a30504e37b3acbc907dd8a484",
+  "source_snapshot_commit": "1a6459169f27ab0782160bed672c819dadf7e6d5",
+  "outputs": [
+    {
+      "path": "MSM2-WS-v0.1c37.zip",
+      "bytes": 4102953,
+      "sha256": "4291f87e1092f1146690d96925bcff8fda4c9e3ce8016b5ac0a1f76796053f44"
+    },
+    {
+      "path": "MSM2-WS-v0.1c37-source.zip",
+      "bytes": 1066000,
+      "sha256": "4a60b886a1ce087b1aee03091668e4744a15c0a5617a872fe7e66be5164b14d4"
+    }
+  ],
+  "script": {
+    "path": "MSM2-WS-v0.1c37.script.disabled",
+    "sha256": "7c1bc591642ba9cebb2c5497de34abb6bbb489b1ed2bff630de97d0fbdd5f56b",
+    "dll_sha256": "b81c00a3892ea34a8646ee00a43e64fd86de4ffd533c2ea4fb8958409f15758a"
+  },
+  "public_test_pass_records": {
+    "portable": 13,
+    "smoke": 7,
+    "hooks": 258
+  },
+  "total_public_pass_records": 278,
+  "private_input_skips": 5,
+  "identity_groups": 110,
+  "new_identity_groups": 6,
+  "retained_read_call_groups": 21,
+  "standalone_source": {
+    "build": "PASS_exit0",
+    "phases": [
+      {
+        "phase": "writer_entry",
+        "exit": 0,
+        "PASS": 11,
+        "SKIP": 0
+      },
+      {
+        "phase": "rdx_contract",
+        "exit": 0,
+        "PASS": 4,
+        "SKIP": 0
+      },
+      {
+        "phase": "writer_branch",
+        "exit": 0,
+        "PASS": 6,
+        "SKIP": 0
+      },
+      {
+        "phase": "writer_call",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0
+      },
+      {
+        "phase": "callee_alias",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0
+      },
+      {
+        "phase": "callee_branch_alias",
+        "exit": 0,
+        "PASS": 6,
+        "SKIP": 0
+      },
+      {
+        "phase": "transform_write",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0
+      },
+      {
+        "phase": "edi_value",
+        "exit": 0,
+        "PASS": 6,
+        "SKIP": 0
+      },
+      {
+        "phase": "read_dependency",
+        "exit": 0,
+        "PASS": 21,
+        "SKIP": 0
+      },
+      {
+        "phase": "read_target_identity",
+        "exit": 0,
+        "PASS": 110,
+        "SKIP": 0
+      },
+      {
+        "phase": "smoke",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0
+      },
+      {
+        "phase": "workspace",
+        "exit": 0,
+        "PASS": 13,
+        "SKIP": 0
+      },
+      {
+        "phase": "slot",
+        "exit": 0,
+        "PASS": 8,
+        "SKIP": 0
+      },
+      {
+        "phase": "package",
+        "exit": 0,
+        "PASS": 1,
+        "SKIP": 0
+      }
+    ],
+    "separate_PASS_excluding_package": 213,
+    "final_package_verifier": "PASS_exit0",
+    "native_tool_input_files": 231,
+    "all_final_native_tool_inputs_identical_to_tested_source": true,
+    "current_reporting_docs_refreshed": true
+  },
+  "validation_iterations": {
+    "initial_full_hooks_exit": 3,
+    "assertion": "src/NativeHooks/immediate_reset_smoke.cpp:218 armed",
+    "observed_arm_delay_us": 65654.5,
+    "unchanged_window_ms": 30,
+    "cause": "not_established",
+    "normal_isolated_reset_suite": "PASS12_privateSKIP1_not_added_to278",
+    "final_full_hooks": "PASS_exit0",
+    "old_assertions_deadlines_guards_relaxed": false
+  },
+  "accepted_c36": {
+    "evidence": "analysis/V01C36_RUNTIME_RESULT.md",
+    "store_escape": "exact_store_potential_escape_parent_propagation_control_alias_hard_block",
+    "barrier": "0x2cf7ffb",
+    "path": 0,
+    "tags": "RAX7_R8zero_vector_halves7_flags7"
+  },
+  "address_components_contract": {
+    "offset": "JA_fallthrough_unsigned_CMP_immediate_then_pinned_MOVSXD_SHL6_checked_extent",
+    "offset_min": 0,
+    "offset_max_inclusive": 1048512,
+    "stride": 64,
+    "store_width": 32,
+    "end_exclusive": 1048544,
+    "scope": "relative_offset_not_base_addition_or_absolute_alignment",
+    "tags_unchanged": true,
+    "base_proven": false,
+    "writer_enumeration_complete": false,
+    "actual_slot_scan_performed_in_cloud": false,
+    "offline_tool": "tools/slot_publication.py",
+    "candidate_scan_never_all_writes": true,
+    "deferred_producer_excluded": true,
+    "live_value_reads": 0,
+    "same_A_E_requested": false,
+    "destination_contained": false,
+    "CFG_continuation": false,
+    "Position_source_input_movement_writes": 0
+  },
+  "publication_status": {
+    "slot_rva": "0xC2D2580",
+    "actual_image_available_in_cloud": false,
+    "reference_scan_performed": false,
+    "actual_reference_count": null,
+    "actual_writer_count": null,
+    "writer_enumeration_complete": false,
+    "publication_source_kind": "unproven_opaque_qword",
+    "allocation_proven": false,
+    "range_proven": false,
+    "lifetime_proven": false,
+    "base_proven": false,
+    "destination_contained": false,
+    "reason": "authenticated_full_executable_not_available_no_writer_or_lifetime_evidence",
+    "offline_tool": "source/tools/slot_publication.py",
+    "same_movement_recapture_requested": false
+  },
+  "offset_proof": "VERIFIED_STATIC_from_accepted_authenticated_sequence_no_live_value_or_tag_narrowing",
+  "base_publication": "UNPROVEN_actual_image_scan_NOT_PERFORMED_indirect_and_excluded_writers_source_allocation_extent_lifetime_missing",
+  "new_slot_python_groups": 8,
+  "store_effect_contract": {
+    "site": "0x2cf7ffb",
+    "identity": "exact6byte_VEX3_256_m32_R8_plus_RAX_from_YMM0",
+    "memory_write_width": 32,
+    "memory_address_tags": 7,
+    "value_low_high_may_tags": [
+      7,
+      7
+    ],
+    "alias_may_mask": 127,
+    "critical_alias_may_mask": 1023,
+    "memory_escape": true,
+    "pending_unknown_write": true,
+    "destination_contained": false,
+    "CFG_continuation": false,
+    "later_memory_facts_usable": false,
+    "memory_bytes_available": false,
+    "parent_propagation": "escape_firstEscape_before_identity_refusal",
+    "merge": "union_write_escape_tags_aliases_empty_state_cannot_erase",
+    "MOD_writes": 0,
+    "numeric_value_observation": false,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "next_evidence": "new_nonvalue_source_range_lifetime_control_critical_disjointness_proof_not_repeated_tags",
+    "Position_source_input_movement_writes": 0
+  },
+  "containment_decision": "offset_alone_cannot_contain_opaque_base_c36_control_alias_barrier_retained",
+  "next_action": "no_identical_movement_capture_local_authenticated_offline_slot_candidate_JSON_then_bounded_publication_chain_proof",
+  "same_A_E_requested": false,
+  "second_vector_contract": {
+    "site": "0x2cf7ffb",
+    "independent_of_first_site": true,
+    "conditional_form": "canonical4byte_VEX2_full_XMM_YMM_load_RDX0",
+    "source": "current_pointer_Hero0_tags0_after_prior_GPR_writes_not_stale_entry",
+    "destination_parents": 16,
+    "load128": "low_top7_high_zero_above256_zero",
+    "load256": "low_top7_high_top7_above256_zero",
+    "flags": "preserve_SHL_aggregate_top7",
+    "other_forms": "store_RMW_dynamic_EVEX_mask_partial_wider_other_source_refuse",
+    "source_vector_tags": "separate_low_high_unknown_if_unrepresented",
+    "numeric_value_observation": false,
+    "source_value_reads": 0,
+    "generic_AVX": false,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "actual_form_next_barrier": "accepted_VEX3_256_store_R8_RAX_YMM0_containment_unproven",
+    "Position_source_input_movement_writes": 0
+  },
+  "shl_contract": {
+    "site": "0x2cf7ff7",
+    "register_form": "canonical_group2_slash4_reg32_64_constant_count",
+    "count": "implicit1_or_verified_imm8",
+    "mask64": 63,
+    "mask8_16_32": 31,
+    "CL_partial_memory_SP": "refuse",
+    "count0": "operand_and_flags_unchanged_reg32_parent_zeroextended",
+    "result_tags": "destination_input_upper_bound_constant_count0_no_unrelated_union",
+    "flags1": "CF_OF_SF_ZF_PF_defined_AF_undefined",
+    "flags_multiple": "CF_SF_ZF_PF_defined_OF_AF_undefined",
+    "undefined_aggregate_tags": 7,
+    "flags_consumers": "original_rules_only_unknown_flag_reads_refuse_returns_merge",
+    "numeric_value_observation": false,
+    "source_value_reads": 0,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "actual_form_next_barrier": "accepted_SHL_r8_6_next_VMOVUPS_0x2cf7ffb",
+    "Position_source_input_movement_writes": 0
+  },
+  "movsxd_contract": {
+    "site": "0x2cf7ff4",
+    "register_form": "exact3byte_REX_W_opcode63_GPR64_from_GPR32",
+    "access": "sole_full_destination_write_source_read_no_flags_SP_vector_memory_effect",
+    "tag_rule": "source_parent_upper_bound_full_destination_replace_no_stale_union",
+    "origin": "opaque_unknown_not_pointer",
+    "memory_forms": "diagnose_address_access_aliases_and_refuse_no_new_load_rule",
+    "other_sites_widths_stack_partial": "refuse",
+    "numeric_value_observation": false,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "actual_form_next_barrier": "accepted_r8_from_r8d_next_SHL_0x2cf7ff7",
+    "Position_source_input_movement_writes": 0
+  },
+  "vector256_contract": {
+    "site": "0x2cf7ff0",
+    "encoding": "exact4byte_VEX2_VL256",
+    "form": "YMM0_m256_RDX",
+    "source": "current_same_Hero_root1_offset0_address_tags0",
+    "parents": 16,
+    "halves": "low128_high128",
+    "loaded_low_top": 7,
+    "loaded_high_top": 7,
+    "above256": "destination_known_zero_all_future_ZMM_EVEX_refused",
+    "legacy_XMM": "low_alias_high_preserved",
+    "other_vector_forms": "refused",
+    "return_merge": "category_union_zero_knowledge_intersection",
+    "source_value_reads": 0,
+    "observed_taint": false,
+    "generic_AVX": false,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "actual_next_barrier": "MOVSXD_0x2cf7ff4",
+    "Position_source_input_movement_writes": 0
+  },
+  "read_target_identity": {
+    "single_target": "0x2cf7fe0",
+    "code_region": "unique_readonly_executable_PE_code",
+    "PE_runtime_table_entry_cap": 600000,
+    "PE_runtime_table_byte_cap": 8388608,
+    "lookup_table_consistency": true,
+    "no_unwind_only_if_no_containing_entry": true,
+    "no_crossing_static_or_dynamic_runtime_region": true,
+    "byte_cap": 128,
+    "instruction_cap": 32,
+    "leaf_shape": "single_entry_all_normal_RET_pinned_JA_qword_YMM0_and_c35_reg_signextend_SHL_and_pinned_second_vector",
+    "branches_memory_stack_nested_CALL": "one_pinned_JA_qword_YMM0_reg_signextend_SHL_pinned_second_vector_all_other_memory_stack_calls_refuse",
+    "snapshot": "guarded_double_read_equality_SHA256_admitted_prefix",
+    "current_metadata_recheck": true,
+    "actual_result": "c35_exact_VEX3_store_R8_RAX_YMM0_uncontained_0x2cf7ffb",
+    "effect_certificate": false,
+    "existing_c19_c20_refusal_preserved": true,
+    "Position_source_input_movement_writes": 0
+  },
+  "runtime_table_validation": {
+    "observed_c24_entries": 527161,
+    "aligned_bytes_from_c24_count": 6325932,
+    "actual_directory_bytes": 6325932,
+    "entry_bytes": 12,
+    "entry_cap": 600000,
+    "metadata_byte_cap": 8388608,
+    "chunk_entries": 64,
+    "max_chunk_bytes": 768,
+    "max_chunk_reads": 9375,
+    "directory_pair_range_divisibility_checked_before_budget": true,
+    "all_entries_required_before_lookup": true,
+    "lookup_queried_reported": true,
+    "cap_structure_and_read_failure_separate": true,
+    "no_unwind_128byte_32instruction_rule_unchanged": true,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "Position_source_input_movement_writes": 0
+  },
+  "ownership_and_gameplay": {
+    "writable_source_proven": false,
+    "caller_owned": false,
+    "ownership_exclusive": false,
+    "source_lifetime_exclusive": false,
+    "downstream_conflicts_proven_absent": false,
+    "Position_source_input_movement_writes": 0,
+    "producer_traversal": false
+  },
+  "Wisdoms_commit": "5b92437dc280d9f38b39716ab928b9ec3c6e3333",
+  "CODEX_NEXT_unchanged": true,
+  "shared_launch_updater_environment_unchanged": true,
+  "no_private_logs_or_game_body_payload": true
+}
