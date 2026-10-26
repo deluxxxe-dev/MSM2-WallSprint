@@ -126,7 +126,7 @@ struct ReadCallContract {
     std::int64_t offset{};
     bool same = true;
   };
-  std::uintptr_t site{}, barrier{};
+  std::uintptr_t site{}, barrier{}, firstEscape{};
   CallEffect identity{};
   ReadTargetIdentity targetIdentity{};
   const unsigned char *code{};

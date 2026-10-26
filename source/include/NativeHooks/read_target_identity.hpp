@@ -183,8 +183,35 @@ struct ReadNextVectorContract {
   std::array<bool,8> represented{},above256Zero{};
   bool compatibleLoad{},faultSuppressionPossible{},legacy{},stateApplied{};
 };
+// Potential GAME instruction effect, never an executed MOD write or a memory map.
+// Critical aliases: code1/runtime-control2/control-stack4/caller-home8/private16/
+// Hero32/field10C64/writer-source128/Position256/other-later-memory512.
+inline constexpr unsigned readStoreCriticalAliases=1023;
+struct ReadStoreEffect {
+  bool exact{},tagsKnown{},currentProof{},memoryWriteSeen{},memoryEscape{},
+      pendingUnknownWrite{},destinationContained{},controlAliasUnexcluded{},
+      cfgBlocked{},continuationAllowed{},laterMemoryFactsUsable{},registerStatePreserved{};
+  std::uint32_t site{},firstEscape{},edgeFrom{},edgeTarget{};
+  unsigned width{},addressTags{},valueLowTags{},valueHighTags{},aliasMayMask{},
+      criticalMayMask{},pathMask{},samples{};
+  const char *reason="pinned_store_not_summarized";
+};
+// Used by current-parent aggregation: an empty/clean state cannot erase a
+// possible write from another state/path. This cannot grant containment.
+inline void mergeReadStoreEffect(ReadStoreEffect &a,const ReadStoreEffect &b) {
+  if (!b.memoryWriteSeen) return;
+  if (!a.memoryWriteSeen) {a=b;return;}
+  a.memoryWriteSeen |= b.memoryWriteSeen;a.memoryEscape |= b.memoryEscape;
+  a.pendingUnknownWrite |= b.pendingUnknownWrite;a.controlAliasUnexcluded |= b.controlAliasUnexcluded;a.cfgBlocked |= b.cfgBlocked;
+  a.destinationContained &= b.destinationContained;a.continuationAllowed &= b.continuationAllowed;
+  a.laterMemoryFactsUsable &= b.laterMemoryFactsUsable;a.currentProof &= b.currentProof;a.tagsKnown &= b.tagsKnown;
+  a.exact &= b.exact;a.registerStatePreserved &= b.registerStatePreserved;
+  a.addressTags |= b.addressTags;a.valueLowTags |= b.valueLowTags;a.valueHighTags |= b.valueHighTags;
+  a.aliasMayMask |= b.aliasMayMask;a.criticalMayMask |= b.criticalMayMask;a.pathMask |= b.pathMask;a.samples+=b.samples;
+  if (!a.firstEscape) a.firstEscape=b.firstEscape;
+}
 struct ReadTargetIdentity {
-  bool nextVectorEnabled{},shiftEnabled{},signExtendEnabled{},vector256Enabled{},enabled{}, admitted{}, missingRuntime{}, stable{}, tableValid{};
+  bool storeSummaryEnabled{},nextVectorEnabled{},shiftEnabled{},signExtendEnabled{},vector256Enabled{},enabled{}, admitted{}, missingRuntime{}, stable{}, tableValid{};
   bool directoryPairValid{}, directoryRangeInImage{}, directorySizeDivisible{},
       tableBudgetAdmitted{}, entryCapExceeded{}, byteCapExceeded{},
       validationSkippedByCap{}, tableReadFailed{}, tableReadComplete{}, lookupQueried{};
@@ -199,6 +226,7 @@ struct ReadTargetIdentity {
   ReadSignExtendContract signExtend{};
   ReadShiftContract shift{};
   ReadNextVectorContract nextVector{};
+  ReadStoreEffect store{};
   ReadImageLoad load{};
   ReadUnknownLoad unknownLoad{};
   ReadLeafBoundary boundary{};
@@ -212,5 +240,5 @@ struct ReadTargetIdentity {
 ReadTargetIdentity authenticateReadTarget(bool buildAndCallVerified,
     std::uint32_t target, std::uint32_t imageSize, IdentityRead,
     IdentityLookup, void *context, const ReadEntryTags *entryTags = nullptr,
-    IdentityPageQuery pageQuery = nullptr, bool pinnedUnknownLoad = false, bool pinnedVector256 = false, bool pinnedSignExtend = false, bool pinnedShift = false, bool pinnedNextVector = false) noexcept;
+    IdentityPageQuery pageQuery = nullptr, bool pinnedUnknownLoad = false, bool pinnedVector256 = false, bool pinnedSignExtend = false, bool pinnedShift = false, bool pinnedNextVector = false, bool pinnedStoreSummary = false) noexcept;
 }

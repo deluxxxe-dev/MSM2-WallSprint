@@ -1747,6 +1747,34 @@ ReadNextVectorContract describeNextVector(const cs_insn &ins,csh decoder,const S
       :"target_second_VMOVUPS_full_XMM_YMM_Hero_form_supported";
   return n;
 }
+ReadStoreEffect describePinnedStore(const cs_insn &ins,csh decoder,const ReadNextVectorContract &n,
+    const ReadFlow &flow,bool tagsKnown,unsigned path,std::uint32_t edgeFrom,std::uint32_t edgeTarget) {
+  ReadStoreEffect s{};const auto &v=n.vector;const auto &m=v.detail;const auto &x=ins.detail->x86;
+  cs_regs reads{},writes{};std::uint8_t nr{},nw{};
+  const bool regs=cs_regs_access(decoder,&ins,reads,&nr,writes,&nw)==CS_ERR_OK && !nw;
+  s.exact=ins.address==readIdentityNextVector && ins.id==X86_INS_VMOVUPS && ins.size==6 &&
+      ins.bytes[0]==0xc4 && !std::strcmp(v.encoding,"VEX3") && v.encodingKnown && n.opcode==0x11 &&
+      v.vectorBits==256 && v.encodedBits==256 && x.op_count==2 && x.addr_size==8 &&
+      !x.prefix[0] && !x.prefix[1] && !x.prefix[2] && !x.prefix[3] &&
+      x.operands[0].type==X86_OP_MEM && x.operands[0].size==32 &&
+      x.operands[0].mem.base==X86_REG_R8 && x.operands[0].mem.index==X86_REG_RAX &&
+      x.operands[0].mem.scale==1 && !x.operands[0].mem.disp && x.operands[0].mem.segment==X86_REG_INVALID &&
+      x.operands[1].type==X86_OP_REG && x.operands[1].reg==X86_REG_YMM0 && x.operands[1].size==32 &&
+      x.operands[1].access==CS_AC_READ && v.operands[0].resolvedAccess==CS_AC_WRITE &&
+      v.directionKnown && m.memoryOperands==1 && m.memoryWrite && !m.memoryRead && !m.memoryRmw &&
+      m.flagsPreserved && !m.fullGprWrites && !m.partialGprWrites && !v.vectorWrites && !m.stackPointerWrite &&
+      !m.otherRegisterWrites && !v.masked && !v.zeroMask && !v.broadcast && !v.rounding && regs;
+  if (!s.exact) return s;
+  s.tagsKnown=tagsKnown;s.site=s.firstEscape=readIdentityNextVector;s.edgeFrom=edgeFrom;s.edgeTarget=edgeTarget;
+  s.pathMask=1u<<path;s.width=32;s.addressTags=tagsKnown?(flow.g[8]|flow.g[0]):readMayTagTop;
+  s.valueLowTags=tagsKnown?flow.x[0]:readMayTagTop;s.valueHighTags=tagsKnown?flow.high[0]:readMayTagTop;
+  s.aliasMayMask=m.aliasMayMask;s.criticalMayMask=readStoreCriticalAliases;
+  // A qword with unknown non-pointer origin plus an unknown integer offset
+  // cannot exclude code, return/control stack or any proof-critical storage.
+  // No address value observation, arbitrary-memory model or CFG continuation.
+  s.memoryWriteSeen=s.memoryEscape=s.pendingUnknownWrite=s.controlAliasUnexcluded=s.cfgBlocked=s.registerStatePreserved=true;
+  s.reason="target_store_destination_code_or_control_stack_alias_unexcluded";return s;
+}
 struct LeafCfgResult {
   bool complete{}, effectsDiffer{};
   unsigned size{}, instructions{}, visits{}, paths{};
@@ -1760,6 +1788,7 @@ struct LeafCfgResult {
   ReadSignExtendContract signExtend{};
   ReadShiftContract shift{};
   ReadNextVectorContract nextVector{};
+  ReadStoreEffect store{};
   ReadLeafBoundary boundary{};
   std::array<ReadLeafOutcome,readLeafPathCap> outcomes{};
 };
@@ -1769,7 +1798,7 @@ struct LeafCfgResult {
 LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
     std::uint32_t codeBegin,std::uint32_t codeEnd,std::uint32_t nextRuntime,
     const ReadEntryTags *entry,bool symbolic,Slice &merged,ReadFlow &mergedTags,std::size_t imageSize,
-    ReadImageLoad *load=nullptr,IdentityRead sourceRead=nullptr,IdentityPageQuery pageQuery=nullptr,void *sourceContext=nullptr,ReadUnknownLoad *unknownLoad=nullptr,bool vector256=false,bool signExtend=false,bool shift=false,bool nextVector=false) {
+    ReadImageLoad *load=nullptr,IdentityRead sourceRead=nullptr,IdentityPageQuery pageQuery=nullptr,void *sourceContext=nullptr,ReadUnknownLoad *unknownLoad=nullptr,bool vector256=false,bool signExtend=false,bool shift=false,bool nextVector=false,bool storeSummary=false) {
   static_assert(readLeafBranchCap==1 && readLeafPathCap==2 && readLeafVisitCap==64,"Review bounded fan-out before changing budgets");
   LeafCfgResult out{};
   struct Path { Slice slice{};ReadFlow flow{};unsigned pc{},clobberGpr{},clobberXmm{};
@@ -1977,6 +2006,12 @@ LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
       if (at==readIdentityNextVector && (ins.id==X86_INS_VMOVUPS || ins.id==X86_INS_MOVUPS)) {
         auto &n=out.nextVector;n=describeNextVector(ins,d.h,p.slice,p.flow,!symbolic,!symbolic||p.actualTags,imageSize,codeBegin,codeEnd);
         auto &v=n.vector;auto &m=v.detail;
+        if (storeSummary && nextVector && v.isVmovups && m.memoryWrite) {
+          // Actualize a copy only: the summary changes no architectural state.
+          auto current=p;const bool known=actualize(current);
+          out.store=describePinnedStore(ins,d.h,n,current.flow,known,path,p.edgeFrom,p.edgeTarget);
+          if (out.store.exact) return fail(&ins,at,out.store.reason);
+        }
         if (!nextVector || !n.compatibleLoad) {
           if (!nextVector && n.compatibleLoad) m.reason="target_second_VMOVUPS_diagnostic_only_semantics_disabled";
           return fail(&ins,at,m.reason);
@@ -2102,7 +2137,11 @@ void sampleVectorBoundary(ReadTargetIdentity &t,const Slice &caller,const ReadFl
   auto child=caller;child.s.g[4]=plus(caller.s.g[4],-8);auto tags=flow;
   auto load=t.load;auto unknown=t.unknownLoad;
   const auto cfg=walkPinnedLeaf(t.snapshot.data(),t.scanBytes,t.codeBegin,t.codeEnd,t.nextRuntime,
-      nullptr,false,child,tags,imageSize,&load,nullptr,nullptr,nullptr,&unknown,t.vector256Enabled,t.signExtendEnabled,t.shiftEnabled,t.nextVectorEnabled);
+      nullptr,false,child,tags,imageSize,&load,nullptr,nullptr,nullptr,&unknown,t.vector256Enabled,t.signExtendEnabled,t.shiftEnabled,t.nextVectorEnabled,t.storeSummaryEnabled);
+  if (cfg.store.memoryWriteSeen) {
+    auto fresh=cfg.store;fresh.currentProof=t.store.currentProof && t.stable;fresh.samples=1;
+    mergeReadStoreEffect(t.store,fresh);
+  }
   if (cfg.signExtend.detail.decoded) {
     auto fresh=cfg.signExtend;auto &old=t.signExtend;fresh.detail.samples=old.detail.samples+1;
     if (old.detail.samples) {
@@ -2183,6 +2222,10 @@ bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
   sampleCmpBoundary(c.targetIdentity,flow);
   sampleMovBoundary(c.targetIdentity,caller,flow,a.imageSize);
   sampleVectorBoundary(c.targetIdentity,caller,flow,a.imageSize);
+  const auto &store=c.targetIdentity.store;
+  if (store.memoryEscape && store.exact && store.currentProof && c.targetIdentity.stable) {
+    c.memoryEscape=true;if (!c.firstEscape) c.firstEscape=store.firstEscape;
+  }
   if (c.targetIdentity.enabled && !c.targetIdentity.admitted)
     return fail(c.targetIdentity.barrier?c.targetIdentity.barrier:call.address,
                 c.targetIdentity.mnemonic,c.targetIdentity.reason);
@@ -2221,7 +2264,7 @@ bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
         std::memcmp(c.code,proof.snapshot.data(),c.size))
       return fail(begin,"snapshot","read_call_CFG_identity_pin_or_snapshot_mismatch");
     const auto cfg=walkPinnedLeaf(c.code,c.size,c.targetIdentity.codeBegin,c.targetIdentity.codeEnd,
-        c.targetIdentity.nextRuntime,nullptr,false,state,tags,a.imageSize,&c.targetIdentity.load,nullptr,nullptr,nullptr,&c.targetIdentity.unknownLoad,c.targetIdentity.vector256Enabled,c.targetIdentity.signExtendEnabled,c.targetIdentity.shiftEnabled,c.targetIdentity.nextVectorEnabled);
+        c.targetIdentity.nextRuntime,nullptr,false,state,tags,a.imageSize,&c.targetIdentity.load,nullptr,nullptr,nullptr,&c.targetIdentity.unknownLoad,c.targetIdentity.vector256Enabled,c.targetIdentity.signExtendEnabled,c.targetIdentity.shiftEnabled,c.targetIdentity.nextVectorEnabled,c.targetIdentity.storeSummaryEnabled);
     c.visits+=cfg.visits;
     if (!cfg.complete || c.visits>4096)
       return fail(cfg.barrier?cfg.barrier:begin,cfg.mnemonic,c.visits>4096?"read_call_cumulative_visit_cap":cfg.reason);
@@ -2483,7 +2526,7 @@ void inspectReadDependency(CalleeAlias &a, Decode &d, const Nodes &nodes,
         if (!readCallLeaf(a,ins,w.slice,w.flow)) {
           if (nested.memoryEscape) {
             r.memoryEscape=true;
-            if (!r.firstEscape) r.firstEscape=nested.barrier;
+            if (!r.firstEscape) r.firstEscape=nested.firstEscape?nested.firstEscape:nested.barrier;
           }
           r.flowComplete=false;
           if (!r.barrier) {
@@ -3746,10 +3789,10 @@ ReadEntryTags currentReadEntryEvidence(const ReadCallContract &c) noexcept {
   return e;
 }
 ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
-    std::uint32_t imageSize, IdentityRead read, IdentityLookup lookup, void *ctx, const ReadEntryTags *entryTags,IdentityPageQuery pageQuery,bool pinnedUnknownLoad,bool pinnedVector256,bool pinnedSignExtend,bool pinnedShift,bool pinnedNextVector) noexcept {
+    std::uint32_t imageSize, IdentityRead read, IdentityLookup lookup, void *ctx, const ReadEntryTags *entryTags,IdentityPageQuery pageQuery,bool pinnedUnknownLoad,bool pinnedVector256,bool pinnedSignExtend,bool pinnedShift,bool pinnedNextVector,bool pinnedStoreSummary) noexcept {
   static_assert(readCallByteCap==128 && readCallInstructionCap<=32,
                 "No-unwind admission may not silently widen c23 leaf caps");
-  ReadTargetIdentity out{}; out.enabled=true; out.target=target;out.unknownLoad.enabled=pinnedUnknownLoad;out.vector256Enabled=pinnedVector256;out.signExtendEnabled=pinnedSignExtend;out.shiftEnabled=pinnedShift;out.nextVectorEnabled=pinnedNextVector;
+  ReadTargetIdentity out{}; out.enabled=true; out.target=target;out.unknownLoad.enabled=pinnedUnknownLoad;out.vector256Enabled=pinnedVector256;out.signExtendEnabled=pinnedSignExtend;out.shiftEnabled=pinnedShift;out.nextVectorEnabled=pinnedNextVector;out.storeSummaryEnabled=pinnedStoreSummary;
   if (entryTags && entryTags->samples) {
     out.entryTagsKnown=true;out.entryTagSamples=entryTags->samples;
     for (unsigned k=0;k<16;++k) if ((entryTags->gpr[k]|entryTags->xmm[k])&~7u) out.entryTagsKnown=false;
@@ -3905,8 +3948,8 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
           Slice merged;ReadFlow tags;
           for (unsigned k=0;k<16;++k) { tags.g[k]=1u<<k;tags.x[k]=1u<<(16+k); }
           const auto cfg=walkPinnedLeaf(out.snapshot.data(),limit,out.codeBegin,out.codeEnd,out.nextRuntime,
-              out.entryTagsKnown?entryTags:nullptr,true,merged,tags,imageSize,&out.load,read,pageQuery,ctx,&out.unknownLoad,out.vector256Enabled,out.signExtendEnabled,out.shiftEnabled,out.nextVectorEnabled);
-          out.cmp=cfg.cmp;out.branch=cfg.branch;out.mov=cfg.mov;out.vector=cfg.vector;out.signExtend=cfg.signExtend;out.shift=cfg.shift;out.nextVector=cfg.nextVector;out.instructions=cfg.instructions;
+              out.entryTagsKnown?entryTags:nullptr,true,merged,tags,imageSize,&out.load,read,pageQuery,ctx,&out.unknownLoad,out.vector256Enabled,out.signExtendEnabled,out.shiftEnabled,out.nextVectorEnabled,out.storeSummaryEnabled);
+          out.cmp=cfg.cmp;out.branch=cfg.branch;out.mov=cfg.mov;out.vector=cfg.vector;out.signExtend=cfg.signExtend;out.shift=cfg.shift;out.nextVector=cfg.nextVector;out.store=cfg.store;out.instructions=cfg.instructions;
           out.paths=cfg.paths;out.visits=cfg.visits;out.cfgComplete=cfg.complete;
           out.pathEffectsDiffer=cfg.effectsDiffer;out.boundary=cfg.boundary;out.outcomes=cfg.outcomes;
           if (out.unknownLoad.attempted) {
@@ -3931,6 +3974,12 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
               return fail(out.load.reason,readIdentityMov,"mov");
             }
             out.load.targetCodeRechecked=true;
+          }
+          if (out.store.exact) {
+            if (!out.unknownLoad.targetCodeRechecked && (!grab(target,again,limit) || std::memcmp(again,out.snapshot.data(),limit))) {
+              out.stable=false;out.store.currentProof=false;return fail("target_store_summary_current_code_changed",out.store.site,"vmovups");
+            }
+            out.store.currentProof=out.stable && out.store.tagsKnown;
           }
           if (!cfg.complete) return fail(cfg.reason,cfg.barrier,cfg.mnemonic);
           // All paths must pass before any span/hash can exist; pin current bytes again.

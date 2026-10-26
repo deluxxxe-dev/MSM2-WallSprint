@@ -1,3 +1,16 @@
+## Current c35 store accepted / c36 containment fails closed
+
+VERIFIED-RUNTIME V01C35_RUNTIME_RESULT.md: second VMOVUPS0x2CF7FFB is VEX3.256
+m256[R8+RAX]<-YMM0,32byte pure store, address tags7/source halves7, aliases127.
+Input method unspecified. VERIFIED-STATIC current provenance cannot exclude
+code/control-stack/critical-storage alias. C36 records potential store escape1/
+first_escape/pending and propagates to parent despite identity failure; no MOD
+write/memory bytes/continuation. Architecture unchanged, clean-state union cannot
+erase escape. Further proof needs new non-value source/range/lifetime/disjointness
+evidence, not repeated tags or numeric pointer guesses. All c19-c35/code/runtime/
+caps/ownership/write gates remain. Sources V01C36_STORE_CONTAINMENT.md and accepted
+runtime. Older pending-second-form notes below are historical/superseded.
+
 ## Current c34 accepted / c35 independent second VMOVUPS
 
 VERIFIED-RUNTIME V01C34_RUNTIME_RESULT.md: SHL r8,6 modeled/tag0/undefined flag

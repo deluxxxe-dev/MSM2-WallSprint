@@ -212,3 +212,17 @@ If containment is not proven, explicitly model/report an unresolved memory escap
 Any later memory access must prove disjointness from the stored range before using stale memory assumptions.
 
 Preserve both c27 JA paths, current-code/runtime/cap contracts and all ownership/write gates. Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
+
+
+## c36 prepared — unresolved exact store/escape is a hard CFG blocker
+
+v0.1c36/package0.1.54 verifies the exact VEX3.256 R8+RAX/YMM0 store and records
+32byte/address/value-half may tags, alias/critical masks, escape1/first_escape/
+pending under current code proof. Parent READ/CALL no longer hides this as
+escape0 solely because identity is refused. Code/control-stack alias cannot be
+excluded from opaque RAX/R8 provenance; no continuation or memory map is added.
+Registers/vector/flags preserved, clean-path union cannot erase escape, all
+current-code/runtime/caps/ownership/write gates remain. New non-value provenance/
+region/range/lifetime/disjointness proof is required; identical A/E recapture
+only validates summary/safety, not containment. NEXT unchanged. See
+V01C36_STORE_CONTAINMENT.md / CODEX_RESULT.md.

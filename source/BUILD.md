@@ -183,3 +183,12 @@ width/aliases, VEX128 upper zero vs256 unknown halves across16 parents, source
 recheck after prior GPR replacement, store/RMW/dynamic/EVEX/masked/wider refusal,
 preserved SHL flags7/RAX/vector state, next barrier/unsafe leg/code/full table/
 parent replay and returned unions. See V01C35_SECOND_VMOVUPS.md. Actual form unknown.
+
+## c36 exact store escape summary / hard stop
+
+v0.1c36/package0.1.54 adds8 owned identity groups (104 total), retaining21
+read/call and c19-c35 regressions. Exact VEX3.256 R8+RAX/YMM0 store/width/direction,
+independent address/payload halves, valid current proof/parent escape propagation,
+no architectural state change, clean/store union, hard stop before later memory/
+RET even with familiar source forms, wrong-form/code/tag refusal/full table.
+No new store execution or memory map; see V01C36_STORE_CONTAINMENT.md.

@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.53",
-  "description": "WallSprint v0.1c35 independently classifies second VMOVUPS0x2CF7FFB direction/width/address/alias/upper-lane state; only canonical VEX2 full XMM/YMM load from current proven Hero RDX+0 may reuse bounded unknown-load state. Stores/dynamic addresses/EVEX/other forms refuse. C30-C34 and all safety gates preserved.",
+  "version": "0.1.54",
+  "description": "WallSprint v0.1c36 summarizes only exact game-side VEX3.256 m256[R8+RAX]<-YMM0 as an unresolved 32byte memory escape. Code/control-stack aliases remain unexcluded; stop CFG and propagate escape to parent without MOD writes, values, generic store/memory semantics or ownership relaxation.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

@@ -12,7 +12,7 @@ struct Image {
   std::array<unsigned char,24> table{};
   std::array<unsigned char,128> code{};
   unsigned snapshots{},codeEndRead{},sourceReads{},queries{};
-  bool nextVectorMode{},shiftMode{},signMode{},vectorMode{},unknownMode{},sourceFirstFail{},sourceFinalFail{},sourceChange{},queryFail{},pageChange{},metadataChange{};
+  bool storeMode{},nextVectorMode{},shiftMode{},signMode{},vectorMode{},unknownMode{},sourceFirstFail{},sourceFinalFail{},sourceChange{},queryFail{},pageChange{},metadataChange{};
   std::array<unsigned char,8> sourceData{{11,22,33,44,55,66,77,88}};
   ws::rdx::ReadImagePage page{true,true,ws::rdx::readImageSource&~4095u,0x1000,0x1000000,0x02,0x02,4096};
   static constexpr std::uint32_t sourceImageSize=0xd000000;
@@ -88,7 +88,7 @@ struct Image {
   }
   ws::rdx::ReadTargetIdentity run(bool admitted=true,std::uint32_t t=target,std::uint32_t size=imageSize,const ws::rdx::ReadEntryTags *tags=nullptr) {
     snapshots=codeEndRead=sourceReads=queries=0;
-    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this,tags,query,unknownMode,vectorMode,signMode,shiftMode,nextVectorMode);
+    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this,tags,query,unknownMode,vectorMode,signMode,shiftMode,nextVectorMode,storeMode);
   }
 };
 constexpr std::uint32_t largeFunctionBase=0x1100000;
@@ -1477,5 +1477,85 @@ int main() {
     assert(r.admitted && r.nextVector.stateApplied && r.shift.modeled && r.signExtend.modeled && r.vector.modeled && r.validatedEntries==527161 && !large.sourceReads);
   }
   std::puts("PASS: c35 actual-parent replay/return unions and complete527161 table retain c19-c34 proofs, vector half unions/zero knowledge intersection and SHL flag top without any ownership/Position/source/input/movement permission");
+
+  // Owned encoding of the accepted architectural form, not a captured body.
+  auto storeAt=[&](Image &f) {vector2At(f,{0xc4,0xc1,0x7c,0x11,0x04,0x00});f.storeMode=true;};
+  {
+    Image f;storeAt(f);r=f.run(true,target,Image::sourceImageSize,&ve);const auto &s=r.store;
+    assert(!r.admitted && s.exact && s.currentProof && s.memoryWriteSeen && s.width==32 && s.memoryEscape && s.pendingUnknownWrite &&
+        s.site==target+27 && s.firstEscape==target+27 && s.addressTags==7 && s.valueLowTags==7 && s.valueHighTags==7 &&
+        s.aliasMayMask==127 && s.criticalMayMask==ws::rdx::readStoreCriticalAliases && !f.sourceReads);
+    assert(r.nextVector.vector.directionKnown && r.nextVector.opcode==0x11 && r.nextVector.encodingBytes==3 &&
+        r.nextVector.vector.detail.memoryWrite && !r.nextVector.vector.detail.memoryRead && !r.nextVector.vector.detail.memoryRmw);
+  }
+  std::puts("PASS: c36 exact pinned VEX3.256 m256[R8+RAX]<-YMM0 store identity/direction/width/current proof yields explicit unknown-address/value-half may-top escape summary without executing a MOD write");
+  {
+    Image f;storeAt(f);auto a=flowThroughIdentity(f,false,false,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    const auto &c=a.readDependency.call;const auto &s=c.targetIdentity.store;const auto &op=c.targetIdentity.nextVector.vector.operands[0].detail;
+    assert(c.memoryEscape && c.firstEscape==target+27 && a.readDependency.memoryEscape && a.readDependency.firstEscape==target+27 &&
+        !a.readDependency.flowComplete && !c.modeledStates && s.currentProof && s.samples &&
+        op.baseParent==8 && !op.baseTags && op.baseKind==0 && op.indexParent==0 && op.indexTags==7 && op.indexKind==0 &&
+        !c.targetIdentity.nextVector.vector.detail.addressExact && s.aliasMayMask==127 && !f.sourceReads);
+  }
+  std::puts("PASS: c36 current opaque R8/RAX origins and separate address tags/low-high value tags propagate memory_escape1/first_escape to nested-call and parent even when identity/flow refuses before admission");
+  {
+    Image f;storeAt(f);r=f.run(true,target,Image::sourceImageSize,&ve);
+    assert(r.store.registerStatePreserved && r.store.controlAliasUnexcluded && r.store.cfgBlocked && !r.store.destinationContained &&
+        !r.store.continuationAllowed && !r.store.laterMemoryFactsUsable && r.boundary.gpr[0]==7 && !r.boundary.gpr[8] &&
+        r.boundary.xmm[0]==7 && r.boundary.xmmHigh[0]==7 && r.boundary.above256Zero[0] && r.boundary.flagsTags==7 &&
+        !r.cfgComplete && !r.paths && r.instructions==7 && r.visits==7 && r.boundary.path==0 &&
+        r.boundary.edgeFrom==target+7 && r.boundary.edgeTarget==target+9 && r.branch.expanded);
+  }
+  std::puts("PASS: c36 unknown code/runtime/control-stack/caller/private/Hero/field/source/Position/other-memory aliases are hard CFG blockers; pre-store architectural GPR/vector/flags state and both-JA obligation stay unchanged");
+  {
+    Image f;storeAt(f);r=f.run(true,target,Image::sourceImageSize,&ve);const auto escaped=r.store;
+    ws::rdx::ReadStoreEffect clean{},a=escaped,b=clean;
+    ws::rdx::mergeReadStoreEffect(a,clean);ws::rdx::mergeReadStoreEffect(b,escaped);
+    assert(a.memoryEscape && b.memoryEscape && a.pendingUnknownWrite && b.pendingUnknownWrite && a.firstEscape==target+27 && b.firstEscape==target+27);
+    auto second=escaped;second.pathMask=2;second.addressTags=2;second.valueLowTags=4;second.valueHighTags=1;second.samples=1;
+    ws::rdx::mergeReadStoreEffect(b,second);
+    assert(b.pathMask==3 && b.addressTags==7 && b.valueLowTags==7 && b.valueHighTags==7 && !b.destinationContained && !b.continuationAllowed);
+    ws::rdx::mergeReadStoreEffect(b,clean);assert(b.memoryEscape && b.cfgBlocked && b.criticalMayMask==1023);
+  }
+  std::puts("PASS: c36 store-effect union used by parent replay preserves escape/pending/critical aliases and half tags in both clean/store orderings; clean paths cannot erase a stored path or grant containment");
+  {
+    for (const auto &tail:std::vector<std::vector<unsigned char>>{{0x48,0x8b,0x00},{0x48,0x89,0x00},{0xc5,0xfc,0x10,0x02},{0xc5,0xfc,0x11,0x02},{0xc3}}) {
+      Image f;storeAt(f);std::copy(tail.begin(),tail.end(),f.code.begin()+33);r=f.run(true,target,Image::sourceImageSize,&ve);
+      assert(!r.admitted && r.barrier==target+27 && r.store.cfgBlocked && !r.store.laterMemoryFactsUsable && r.instructions==7 && r.visits==7 && !r.paths);
+    }
+    // A later known Hero-source form or clean RET cannot prove disjointness
+    // against an all-alias store, nor rescue control soundness retroactively.
+  }
+  std::puts("PASS: c36 later potentially aliasing load/store, familiar Hero read or even clean RET is never visited across unresolved control alias; no stale memory bytes or guessed disjoint positive fixture is invented");
+  {
+    for (const auto &bytes:std::vector<std::vector<unsigned char>>{{0xc4,0xc1,0x7c,0x10,0x04,0x00},{0xc4,0xc1,0x78,0x11,0x04,0x00},{0xc4,0xc1,0x7c,0x11,0x0c,0x00},{0xc4,0xc1,0x7c,0x11,0x04,0x08},{0xc4,0xc1,0x7c,0x11,0x04,0x40}}) {
+      Image f;storeAt(f);std::copy(bytes.begin(),bytes.end(),f.code.begin()+27);r=f.run(true,target,Image::sourceImageSize,&ve);
+      assert(!r.admitted && !r.store.exact && !r.store.memoryWriteSeen && !f.sourceReads);
+    }
+    Image disabled;storeAt(disabled);disabled.storeMode=false;r=disabled.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && !r.store.memoryEscape && !std::strcmp(r.reason,"target_second_VMOVUPS_store_or_RMW_refused"));
+    Image other;storeAt(other);other.code[27]=0x90;const unsigned char bytes[]={0xc4,0xc1,0x7c,0x11,0x04,0x00};std::copy(std::begin(bytes),std::end(bytes),other.code.begin()+28);
+    r=other.run(true,target,Image::sourceImageSize,&ve);assert(!r.admitted && !r.store.exact && !r.store.memoryWriteSeen);
+  }
+  std::puts("PASS: c36 wrong site/direction/width/source/destination/index/scale and disabled forms retain refusal without borrowing exact-store summary or any generic store semantics");
+  {
+    Image changing;storeAt(changing);changing.changeFinal=true;r=changing.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && !r.stable && !r.store.currentProof && !r.unknownLoad.admitted);
+    Image f;storeAt(f);auto noTags=ve;noTags.samples=0;r=f.run(true,target,Image::sourceImageSize,&noTags);
+    assert(!r.admitted && !r.store.currentProof && !r.store.memoryWriteSeen);
+    LargeImage large(527161);storeAt(large);r=ws::rdx::authenticateReadTarget(true,target,Image::sourceImageSize,LargeImage::readLarge,LargeImage::lookupLarge,&large,&ve,Image::query,true,true,true,true,true,true);
+    assert(!r.admitted && r.store.currentProof && r.store.memoryEscape && r.validatedEntries==527161 && !large.sourceReads);
+  }
+  std::puts("PASS: c36 changed code or absent current tags invalidates store-proof propagation while full527161 table/current-code/cap/RET/source guards and c19-c35 regressions remain mandatory");
+  {
+    Image f;storeAt(f);auto tags=ve;tags.xmm[0]=1;tags.xmmHigh[0]=4;
+    // Keep address prefix and exact store, but leave vector0 as the known
+    // entry low/high abstraction to verify independent store-value halves.
+    std::fill(f.code.begin()+16,f.code.begin()+20,0x90);
+    r=f.run(true,target,Image::sourceImageSize,&tags);
+    assert(!r.admitted && r.store.currentProof && r.store.valueLowTags==1 && r.store.valueHighTags==4 && r.store.addressTags==7 &&
+        r.boundary.xmm[0]==1 && r.boundary.xmmHigh[0]==4 && !r.store.destinationContained);
+  }
+  std::puts("PASS: c36 32byte store payload preserves separate low/high may dependencies rather than collapsing to XMM-only tags; zero component tags never prove pointer/ownership/containment, no numeric values or MOD writes");
 
 }

@@ -959,7 +959,7 @@ void configure(const Spec &s, Gate validate) noexcept {
         page.protect=mbi.Protect;page.allocationProtect=mbi.AllocationProtect;return true;
       };
       auto proof=ws::rdx::authenticateReadTarget(nc.instructionVerified && s.imageSize<=UINT32_MAX,
-          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner,entryTags,queryImage,true,true,true,true,true);
+          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner,entryTags,queryImage,true,true,true,true,true,true);
       if (expected && (!proof.stable || proof.scanBytes!=expected->scanBytes ||
           std::memcmp(proof.snapshot.data(),expected->snapshot.data(),proof.scanBytes))) {
         proof.admitted=false;proof.load.admitted=false;proof.unknownLoad.admitted=false;proof.mov.loadedMayTags=7;proof.size=0;proof.reason="target_code_changed_between_tag_prepass_and_reproof";
@@ -1501,6 +1501,20 @@ void configure(const Spec &s, Gate validate) noexcept {
              unsigned(vf.upperPreserved),vf.mask,unsigned(vf.masked),unsigned(vf.zeroMask),unsigned(vf.broadcast),unsigned(vf.rounding),unsigned(nv.faultSuppressionPossible),
              nv.destinationLowBefore,nv.destinationHighBefore,nv.destinationLowAfter,nv.destinationHighAfter,nv.flagsBefore,nv.flagsAfter,
              unsigned(nv.stateApplied && identity.stable && identity.unknownLoad.admitted));
+    const auto &se=identity.store;
+    writeLog("MOVEMENT_CALLEE_READ_STORE_EFFECT site_rva=0x%x enabled=%u exact_store_identity=%u current_proof=%u tags_known=%u "
+             "memory_write_seen=%u memory_write_width=%u memory_address_tags=0x%x memory_value_low128_tags=0x%x memory_value_high128_tags=0x%x "
+             "memory_alias_may_mask=0x%x critical_alias_may_mask=0x%x "
+             "critical_code1_runtime2_controlStack4_home8_private16_Hero32_field64_source128_Position256_other512=1 "
+             "memory_escape=%u first_escape_rva=0x%x pending_unknown_write=%u store_destination_contained=%u "
+             "control_alias_unexcluded=%u CFG_blocked=%u continuation_allowed=%u later_memory_facts_usable=%u architectural_registers_preserved=%u "
+             "path_mask=0x%x edge_from_rva=0x%x edge_target_rva=0x%x samples=%u "
+             "scope=potential_game_instruction_not_MOD_write upper_bound_not_observed_taint=1 memory_bytes_available=0 value_reads=0 raw_values=0 effect_certificate=0 reason=%s",
+             se.site,unsigned(identity.storeSummaryEnabled),unsigned(se.exact),unsigned(se.currentProof && identity.stable),unsigned(se.tagsKnown),
+             unsigned(se.memoryWriteSeen && se.currentProof && identity.stable),se.width,se.addressTags,se.valueLowTags,se.valueHighTags,se.aliasMayMask,se.criticalMayMask,
+             unsigned(se.memoryEscape && se.currentProof && identity.stable),se.firstEscape,unsigned(se.pendingUnknownWrite),unsigned(se.destinationContained),
+             unsigned(se.controlAliasUnexcluded),unsigned(se.cfgBlocked),unsigned(se.continuationAllowed),unsigned(se.laterMemoryFactsUsable),unsigned(se.registerStatePreserved),
+             se.pathMask,se.edgeFrom,se.edgeTarget,se.samples,se.reason);
     const auto &unknown=identity.unknownLoad;
     writeLog("MOVEMENT_CALLEE_READ_UNKNOWN_LOAD site_rva=0x%x enabled=%u attempted=%u source_rva=0x%x width=8 "
              "metadata_passed=%u metadata_rechecked=%u PE_metadata_equal=%u page_metadata_equal=%u target_code_rechecked=%u "
@@ -1568,7 +1582,7 @@ void configure(const Spec &s, Gate validate) noexcept {
              "target_begin_rva=0x%llx target_end_rva=0x%llx boundary_verified=%u "
              "snapshot_authenticated=%u snapshot_sha256=%s bytes=%u "
              "samples=%u modeled_states=%u nested_visits=%u "
-             "entry_flags_tags=0x%x caller_stack_tags=0x%x memory_escape=%u "
+             "entry_flags_tags=0x%x caller_stack_tags=0x%x memory_escape=%u first_escape_rva=0x%llx pending_unknown_write=%u "
              "barrier_rva=0x%llx barrier_instruction=%s reason=%s "
              "expansion_depth_cap=1 leaf_byte_cap=128 leaf_instruction_cap=32 "
              "identity_scope=startup_current_code_snapshot full_bytes_logged=0 effect_certificate=0",
@@ -1578,7 +1592,8 @@ void configure(const Spec &s, Gate validate) noexcept {
              (unsigned long long)rcall.identity.end,unsigned(rcall.identity.boundaryVerified),
              unsigned(rcall.authenticated),rcall.authenticated?rcall.hash:"unavailable",rcall.size,
              rcall.samples,rcall.modeledStates,rcall.visits,rcall.flagsTags,rcall.callerStackTags,
-             unsigned(rcall.memoryEscape),(unsigned long long)rcall.barrier,rcall.unresolvedMnemonic,rcall.reason);
+             unsigned(rcall.memoryEscape),(unsigned long long)rcall.firstEscape,unsigned(identity.store.pendingUnknownWrite),
+             (unsigned long long)rcall.barrier,rcall.unresolvedMnemonic,rcall.reason);
     for (unsigned k=0;k<16;++k) {
       const auto &arg=rcall.gpr[k];
       const char *aliasClass=arg.kind!=1 ? "unknown_raw_bits_or_load"
