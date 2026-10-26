@@ -1,0 +1,93 @@
+{
+  "task": "c40_bounded_saved_exception_CONTEXT_retirement",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "base_commit": "2b8124b",
+  "outcome": "stopped_fail_closed_section5",
+  "implementation_acceptance_met": false,
+  "new_retirement_mechanism_implemented": false,
+  "production_runtime_source_changed": false,
+  "runtime_version": "v0.1c38",
+  "package_version": "0.1.56",
+  "new_runtime_artifacts": [],
+  "evidence_scope": "owned_native_threads_and_memory_under_Wine_not_game_or_real_Windows",
+  "normal_post_return_owned_ack_restoration": true,
+  "held_return_resurrection": {
+    "explicit_close": true,
+    "unchanged_deadline": true,
+    "kill": true,
+    "three_additional_exact_readbacks_do_not_prevent": true,
+    "modes": [
+      "reset",
+      "Position"
+    ],
+    "later_tombstone_recovery_without_new_capture": true,
+    "later_recovery_is_bounded_retirement": false
+  },
+  "VCH_probe": {
+    "registration_succeeded": true,
+    "hardware_event_observed_per_probe": 1,
+    "callback_invocations_per_probe": 0,
+    "probe_modes": [
+      "reset",
+      "Position"
+    ],
+    "return_hold_coverage": "UNAVAILABLE_not_executed",
+    "Windows_ordering_guarantee": "UNKNOWN_not_claimed"
+  },
+  "validation": {
+    "focused_command": "bash source/tools/test_watch_retirement.sh",
+    "focused_exit": 0,
+    "focused_PASS_records": 14,
+    "focused_UNAVAILABLE_records": 2,
+    "positive_retirement_fix_acceptance": "NOT_MET",
+    "build_command": "bash source/tools/build_windows.sh",
+    "build_exit": 0,
+    "portable_command": "bash source/tools/test.sh",
+    "portable_exit": 0,
+    "portable_PASS_records": 13,
+    "smoke_command": "bash source/tools/smoke_windows.sh",
+    "smoke_exit": 0,
+    "smoke_PASS_records": 7,
+    "hooks_command": "bash source/tools/test_hooks_windows.sh",
+    "hooks_exit": 0,
+    "hooks_PASS_records": 284,
+    "private_input_SKIPs": 5,
+    "VCH_UNAVAILABLE_records_in_hooks": 2,
+    "total_full_chain_public_PASS_records": 304,
+    "focused_PASS_records_already_in_hooks": true,
+    "original_deadlines_caps_assertions_changed": false
+  },
+  "unperformed": [
+    {
+      "test": "VCH_return_hold_reset_and_Position",
+      "reason": "registered_continue_handler_not_dispatched_before_owned_post_return_ack"
+    },
+    {
+      "test": "successful_new_retirement_mechanism_acceptance",
+      "reason": "no_safe_bounded_mechanism_established_or_shipped"
+    },
+    {
+      "test": "optional_private_game_positive_replays",
+      "reason": "five_private_inputs_not_available_or_redistributable"
+    },
+    {
+      "test": "real_Windows_or_game",
+      "reason": "no_real_Windows_or_game_environment_and_no_owner_test_requested"
+    },
+    {
+      "test": "c39_exact_slot_watch",
+      "reason": "explicitly_unauthorized_deferred"
+    }
+  ],
+  "public_OS_documentation_access": "Learn_proxy403_then_canonical_MicrosoftDocs_raw_GitHub_sources_read_successfully_no_missing_post_return_guarantee_established",
+  "unverified_continuation_or_APC_mechanism_shipped": false,
+  "slot_watch_enabled": false,
+  "slot_qword_reads": 0,
+  "pointer_chase": 0,
+  "new_gameplay_writes": 0,
+  "CFG_continuation": false,
+  "base_allocation_lifetime_ownership_proven": false,
+  "producer_0x351EB00_traversed": false,
+  "next_owner_action": "none_no_update_game_scan_or_log",
+  "next_evidence": "supported_owned_tested_post_OS_return_witness_per_thread_lease_covering_all_pending_saved_contexts"
+}

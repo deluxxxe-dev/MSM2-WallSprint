@@ -39,6 +39,21 @@ acceptance test and must not be removed or weakened.
 
 Standing Codex completion-report requirements are in `docs/CODEX_REPORTING.md`.
 
+C40 owned review result (2026-10-26): **retirement implementation acceptance NOT
+MET; section5 fail-closed fallback taken**. Production watch code is unchanged.
+The original held-return test now also covers the unchanged timeout and kill
+paths and repeated exact DR readbacks; all still permit later resurrection.
+Normal close after the owned writer's post-return acknowledgment restores
+correctly, but no equivalent verified all-thread production witness exists.
+The2 VCH probes register successfully but receive no callback on this owned
+Wine hardware path; VCH return-hold coverage is unavailable, not PASS. No API
+ordering guarantee or continuation trampoline is assumed/shipped. See
+`analysis/V01C40_RETIREMENT_REVIEW.md`, `V01C40_GATE.md` and
+`V01C40_RETIREMENT_STATUS.json`. C40 remains blocked on the precise post-return
+witness, not completed by green counterexample tests. Runtime remains
+v0.1c38/package0.1.56; c39 exact-slot mode stays unauthorized. No owner update,
+game test, offline scan or runtime log requested for this test-only review.
+
 ## Goal
 Convert vanilla WallRun into surface-relative locomotion. Do not advance movement rewrite, adhesion, camera, animation or physics until runtime ownership gates authorize them.
 

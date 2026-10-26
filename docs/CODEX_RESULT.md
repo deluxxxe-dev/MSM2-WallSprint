@@ -1,3 +1,116 @@
+# Codex result — c40 retirement review: positive implementation acceptance NOT MET
+
+Branch **codex/v01c20-edi-value-provenance**, task base **2b8124b**.
+Runtime remains **v0.1c38/package0.1.56**, no c40 game ZIP/script/log.
+**CODEX_NEXT section5 fail-closed fallback taken. No retirement fix is claimed.**
+Production hardware-watch code is unchanged and retains the c39 known limitation;
+the postponed exact-slot watch remains unauthorized/unimplemented.
+
+## Changes and interpretation
+
+Read current AGENTS/manual/rules/workspace/state/reporting/NEXT, c39 evidence,
+actual watch/helper/tests and relevant Wisdoms references. Fast-forwarded intended
+branch only; no main merge/reset/force push. NEXT/AGENTS, existing c38 artifacts
+and the five historical untracked outputs are preserved.
+
+Extended `source/src/NativeHooks/watch_retirement_smoke.cpp` and
+`source/tools/test_watch_retirement.sh`: retain the actual delayed-return test,
+add normal post-return acknowledgment, unchanged timeout, actual kill, three
+additional suspended-thread readbacks, and VCH capability probes, separately for
+reset/Position. No original assertion/deadline/cap is weakened; no production
+CONTEXT/lease/inflight/exception state is forged. All wrappers remain test-only.
+
+Normal acknowledged return restores exactly. Held returns still resurrect old
+DR settings after explicit close, deadline and kill despite repeated exact
+instantaneous restoration. Tombstone recovery on a second hit preserves each
+mode's DR6 policy but does not meet repair-free bounded retirement. VCH registers
+but receives no callback for the owned VEH-handled hardware event on this Wine
+path: its return-hold coverage is unavailable, not a passing test. Real Windows/
+game behavior remains UNKNOWN, not extrapolated from Wine.
+
+The VCH exploration initially failed its new2000ms callback wait. The final
+capability probe explicitly waits for callback entry versus owned writer-done,
+verifies callback0/real-hit1/inflight0 before UNAVAILABLE, and restores normally.
+It does not manufacture an acknowledgment, change the wait or replace the
+original delayed-VEH counterexample. If VCH is reached on another environment,
+its held-return branch still runs; that branch was not executed here.
+
+Canonical MicrosoftDocs API sources were read after Learn URLs returned proxy403.
+Current-context snapshots/registration do not provide the missing return witness;
+ordinary APC delivery requires alertable waits, special APC delivery can interrupt
+and nest without target synchronization. No supported all-thread post-return
+ordering certificate was established. No guessed APC/continuation/RIP/stack/
+unwind/XSTATE scheme is shipped. Detailed candidates, contracts, references and
+precise next evidence are in `analysis/V01C40_RETIREMENT_REVIEW.md`.
+
+Other changed files: `analysis/V01C40_GATE.md`,
+`analysis/V01C40_RETIREMENT_STATUS.json`, matching source/analysis mirrors,
+PROJECT_STATE (c39 stopped, c40 still blocked), this result, and package.py
+(include c40 refusal evidence/CODEX_REPORTING plus explicit unmet gate in future
+packages). New positive retirement acceptance remains unimplemented, not solved
+by passing the counterexample/normal-regression suite.
+
+## Executed validation (repository root, Bash)
+
+| Exact command | Expected check | Actual result |
+| --- | --- | --- |
+| `bash source/tools/test_watch_retirement.sh` | Preserve held-return case; measure normal/deadline/kill/readback and VCH capability without inventing retirement | exit0:14 PASS observation/recovery records,2 VCH UNAVAILABLE. C40 positive fix acceptance **NOT MET** |
+| `bash source/tools/build_windows.sh` | x64 build under existing Werror/toolchain/exact-build rules | exit0 |
+| `bash source/tools/test.sh` | Existing portable/sanitizer assertions pass | exit0,13 PASS records |
+| `bash source/tools/smoke_windows.sh` | DLL/logger fixtures pass | exit0,7 PASS records |
+| `bash source/tools/test_hooks_windows.sh` | Full owned native/watch/ownership/workspace/scanner regressions retained | exit0,284 PASS records,5 private-input SKIPs,2 VCH UNAVAILABLE |
+
+Total full-chain public PASS records **304** (13+7+284). The separately run14
+focused PASS records are already included in284; they are not added again.
+Identity110/read-call21/offline scanner20 retained. First full mandatory run
+passed; no deadline relaxation or native failure rerun. Focused/chain stdout is
+under `/tmp/ws-c40-{focused-final,build,portable,smoke,hooks}.log` in this execution
+workspace. No private/user game logs are committed.
+
+The requested positive result is stronger than these regression checks: while
+an old CONTEXT can reapply, cleanup must stay pending/refuse, then reach proven
+retirement without another watched hit. **Actual: that condition remains unmet.**
+The authorized section5 fallback keeps new retirement/slot admission closed.
+Do not report this task as a successful production retirement implementation.
+
+## Unperformed tests and exact reasons
+
+- New safe mechanism's normal/held/deadline/kill/serialization/re-arm acceptance:
+  no safe general bounded mechanism was established/shipped; no fabricated PASS.
+- VCH held-return reset and Position branches: registration succeeds but the
+  callback is not dispatched before the owned writer acknowledges actual return.
+  Availability probes ran; the2 return-hold branches did not.
+- Five optional private positive replays: original-byte replay, native AVX/CFG
+  bodies, game-body installer,584byte writer normalization, accepted Path-B
+  capture are absent/not redistributed. Independent owned rejection/decoder/
+  native proof tests ran instead; they are not the missing positive replays.
+- Actual Windows/game or live attached-debugger experiment: this environment
+  has Wine and no target game/real Windows/debug session. Existing production
+  debugger refusal is unchanged by source comparison; no dynamic attached-
+  debugger test is claimed. Existing foreign-DR ownership tests did run in full.
+- C39 exact-slot watch matrix/gameplay/new offline scan: explicitly unauthorized/
+  deferred by c40. No qword/current game code/value is fetched for this review.
+
+Independent Git/package/publication verification is recorded before final
+handoff. Existing published c38 release ZIP/script bytes are not rewritten.
+
+## Safety, outputs and owner action
+
+No production watch/ABI/gameplay behavior is changed. No slot-value read, pointer
+chase, new game-data capture or Position/source/input/movement/adhesion/camera/
+animation/physics write. C37 offset proof, c36 escape/pending/control/CFG barrier,
+publication/allocation/base/lifetime/ownership exclusions and deferred producer
+0x351EB00 remain. No SF/ordinary-mod/shared-tool/updater changes.
+
+Outputs are committed c40 review/gate/status, extended owned tests and package
+evidence inputs. No c40 runtime artifact or log is generated; v0.1c38/package0.1.56
+continues. **No owner Update-WS, game launch, A/E/WallRun capture, slot scan or log
+is requested.** Next evidence must establish a per-thread/lease post-OS-return
+witness covering pending contexts and preservation/foreign-state rules; another
+identical game capture cannot establish that mechanism.
+
+---
+
 # Codex result — c39 exact-slot admission audit: stopped fail-closed
 
 Branch **codex/v01c20-edi-value-provenance**, task base **750367f**.
