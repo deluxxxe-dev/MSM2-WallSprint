@@ -1,3 +1,74 @@
+# Codex revalidation — c42 requested regression rerun (2026-10-26)
+
+Fetched `origin/codex/v01c20-edi-value-provenance`; both local and remote were
+`f4ccf9c52cdcc86ca2190038532ed63dba5a102d`. `CODEX_NEXT.md` still specifies c42;
+there is no new task revision or supplied refreshed native-Windows result.
+The existing implementation at `a1302c4bf182e0f03f871e1c5ebe8b304720c5a8`
+is retained. This handoff changes only this report, not source, task, state,
+published probes/manifests, production behavior or runtime version.
+
+**Result: PARTIAL SUCCESS overall — implementation/owned regression succeeded,
+native witness verification still pending.** All eight commands below were
+actually rerun from the repository root with the configured Linux/Wine toolchain.
+No prior result was substituted for an execution in this rerun.
+
+| Exact command | Expected result | Actual result |
+| --- | --- | --- |
+| `bash source/tools/test_continuation_mitigations.sh` | Preserve evidence-backed per-bit classification, unknown-query refusal and synthetic JSON checks | exit0;10 PASS,0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/test_continuation_witness.sh` | Preserve close/deadline/kill/nested/multiple/cap and owned state/DR/lifetime checks | exit0;12 PASS,0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/test_watch_retirement.sh` | Preserve the original production counterexample, normal closure and recovery observations | exit0;14 PASS,0 SKIP,2 VCH UNAVAILABLE; not a production fix |
+| `bash source/tools/build_windows.sh` | Existing Werror cross-build succeeds | exit0; build succeeded, no case-count output |
+| `bash source/tools/test.sh` | Portable regressions pass | exit0;13 PASS,0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/smoke_windows.sh` | DLL/logger smoke checks pass | exit0;7 PASS,0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/test_hooks_windows.sh` | Full owned native/scanner/workspace regressions retain semantics | exit0;306 PASS,5 SKIP,2 UNAVAILABLE |
+| `python3 source/tools/package.py` | Existing package construction/integrity checks succeed | exit0;1 separate package PASS; `source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled` |
+
+Full regression total remains **326 PASS /5 SKIP /2 UNAVAILABLE** (13+7+306).
+Focused classifier/witness/retirement counts overlap the full hooks count and
+are not added twice. Package PASS is separate. Logs for this rerun are
+`/tmp/ws-c42-recheck-<script-stem>.log`; command exits/counts/timings are in
+`/tmp/ws-c42-recheck-results.json`. No private game log is committed.
+
+Additional checks: all239 code/tool input hashes and the published c42 probe
+SHA256 still match its retained manifest; accepted root/source evidence mirrors
+match. The12 actual c42 JSON records from each witness/full-hooks invocation
+parse successfully, contain real known Wine flags[0,0,0] with matching classifier
+fields, and explicitly keep `native_candidate_probe_passed=false`. These checks
+are not native Windows evidence or additional full-chain PASS cases. The tracked
+tree was clean before recording this result; the five historic untracked files
+remain untouched. Wisdoms references at `8e9612b` were checked; no new reusable
+fact was established, so no shared-knowledge change is needed.
+
+Unperformed/unavailable coverage remains explicit:
+
+- Refreshed native Windows witness: this environment supplies Wine only; no new
+  owner result has been supplied. The original native c41 REFUSED evidence is
+  preserved and is neither witness PASS nor FAIL.
+- Five optional private positive replays: original bytes, native AVX/CFG bodies,
+  game-body installer,584byte writer normalization and accepted Path-B capture
+  inputs are unavailable/not redistributed. Independent owned negatives and
+  synthetic tests ran; these missing private cases are SKIP.
+- Two VCH return-hold branches: Wine did not invoke the registered callbacks on
+  the actual owned hardware path; UNAVAILABLE, not PASS.
+- Policy enable/disable matrices, game/slot observation, producer traversal,
+  live-debugger/full-XSTATE experiments and production integration remain
+  outside the bounded task. No Windows mitigation was changed.
+
+The implementation and refreshed standalone probe were already published at
+the tested checkout. After publishing this report, the only outstanding owner
+check remains the single native Windows PowerShell command from
+`analysis/native-probes/c42`:
+
+```powershell
+.\continuation-witness.exe --position --multiple --json
+```
+
+Return its compact JSON; do not infer native witness success from these Wine
+or synthetic results. No game launch, Overstrike, Update-WS, game log or scan
+is requested. Runtime remains v0.1c38/package0.1.56; no game release is created.
+
+---
+
 # Codex result — c42 per-bit native mitigation boundary
 
 Branch **codex/v01c20-edi-value-provenance**, task base **7ad4e55**.
