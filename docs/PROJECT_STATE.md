@@ -2,8 +2,8 @@
 
 ## c39 admission audit (2026-10-26; follows accepted c38 scan)
 
-The current NEXT's explicit stop-if-unsafe path applies. **No c39 exact-slot watch
-is enabled.** Runtime remains v0.1c38/package0.1.56; no c39 game ZIP/script/log.
+The c39 task's explicit stop-if-unsafe path applied. **No c39 exact-slot watch
+was enabled.** Runtime remains v0.1c38/package0.1.56; no c39 game ZIP/script/log.
 See `analysis/V01C39_WATCH_RETIREMENT.md`, `V01C39_GATE.md` and
 `V01C39_WATCH_STATUS.json` for the reproducible prerequisite failure.
 
@@ -24,6 +24,20 @@ matrix remains unimplemented; this is the explicitly permitted fail-closed audit
 outcome. No new owner offline/game test is needed for the test-only changes.
 C38 accepted scan/c28 reader, c37 range, c36 escape/CFG barrier, all publication/
 ownership/write gates and deferred producer0x351EB00 remain unchanged below.
+
+## c40 current task — bounded saved-exception CONTEXT retirement
+
+`docs/CODEX_NEXT.md` now defines c40 as the current task. C40 is limited to the
+retirement prerequisite exposed by c39: keep cleanup/serialization pending until
+an old saved exception CONTEXT can no longer reapply a retired owned DR
+configuration, or fail closed if that condition cannot be established.
+
+C40 does **not** authorize the postponed exact-slot RW8/WRITE8 watch, slot-value
+reads, pointer chasing, publication-chain interpretation, producer traversal or
+any gameplay write. The existing delayed-return owned regression is the primary
+acceptance test and must not be removed or weakened.
+
+Standing Codex completion-report requirements are in `docs/CODEX_REPORTING.md`.
 
 ## Goal
 Convert vanilla WallRun into surface-relative locomotion. Do not advance movement rewrite, adhesion, camera, animation or physics until runtime ownership gates authorize them.
@@ -243,19 +257,25 @@ local_scanner_coverage=0
 
 Therefore zero local writer candidates still does not prove no writer.
 
-## Next evidence direction — exact-slot non-value runtime access-site capture
+## Current evidence direction — retire saved exception CONTEXT before any exact-slot watch
 
-The branch already contains a guarded hardware debug-register watch engine used by reset/Position diagnostics, including thread snapshots, per-thread DR lease ownership, foreign-DR refusal, VEH handling and restore/cleanup. C39 should investigate reusing that existing mechanism rather than broadening offline analysis into generic cross-control-flow or pointer dataflow.
+C39 showed that the existing hardware-watch cleanup bookkeeping is not strong
+enough to certify phase re-arm/serialization: a delayed saved exception CONTEXT
+can restore a retired DR configuration after the coordinator has observed current
+thread DR restoration and inactive lease bookkeeping.
 
-The new diagnostic target is the static exact 8-byte slot:
+C40 must resolve only that retirement prerequisite. The existing delayed-return
+owned regression is authoritative for this task's reproduced counterexample.
+The exact game/static slot remains:
 
 ```text
 module_base + 0xC2D2580
 ```
 
-The watch must record instruction identity/access metadata only. It must not read/log the watched qword contents or pointer-chase. A bounded read/write phase may use the accepted c28 reader `0x2CF7FE9` as a positive control; after that, write-only observation is preferred if the existing hardware engine can safely re-arm while preserving ownership/cleanup rules.
-
-A writer hit would be a runtime writer-site candidate, not all-writer/publication/allocation/lifetime/ownership proof. No hit is not proof of no writer.
+but **no watch for that slot is authorized in c40**. After c40 is proven and
+committed, a later task may return to the separate value-free c39-style access
+capture. A future writer hit would still be only a runtime writer-site candidate;
+no hit would still not prove no writer.
 
 ## Safety gate
 
@@ -292,20 +312,27 @@ The VMOVUPS store is existing game code, not a MOD write and not permission to w
 18. c37 fallthrough R8 offset range ✅ static + actual diagnostic confirmation
 19. c37 direct exact-slot scan ✅ authenticated, incomplete by design
 20. c38 register-affine exact-slot scan ✅ actual image, 1360 affine operands resolved, no local slot writer
-21. c39 exact-slot non-value runtime access-site capture ▶ CURRENT
-22. bounded publication/source chain ⏸ pending writer-site evidence
-23. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
-24. resume full writer XYZ/W causal proof ⏸ after store containment
-25. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-26. safe writable upstream movement source ⬜ NOT AUTHORIZED
-27. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-28. adhesion/contact refinement ⏸ deferred
-29. animation/camera/later traversal ⬜
+21. c39 exact-slot watch admission audit ✅ STOPPED FAIL-CLOSED; retirement prerequisite reproduced
+22. c40 saved-exception CONTEXT retirement ▶ CURRENT
+23. exact-slot non-value runtime access-site capture ⏸ after c40 retirement proof
+24. bounded publication/source chain ⏸ pending writer-site evidence
+25. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
+26. resume full writer XYZ/W causal proof ⏸ after store containment
+27. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+28. safe writable upstream movement source ⬜ NOT AUTHORIZED
+29. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+30. adhesion/contact refinement ⏸ deferred
+31. animation/camera/later traversal ⬜
 
 ## Current action
 
-Follow `docs/CODEX_NEXT.md`.
+Follow `docs/CODEX_NEXT.md` for c40.
 
-C39 must first inspect and preserve the existing hardware-watch ownership/cleanup contract. Reuse it only if the exact static slot can be watched without reading the slot value and without interfering unsafely with existing reset/Position windows.
+Prove a bounded saved-exception CONTEXT retirement mechanism without weakening
+existing debugger/foreign-DR/lease/restoration/cap/deadline semantics. Preserve
+the delayed-return regression. If bounded retirement cannot be established,
+stop fail-closed and document the exact unresolved condition.
 
-Do not add PAGE_GUARD or broad memory interception merely to force progress. Do not infer writer completeness from a bounded runtime window. Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
+Do not add the exact-slot watch, PAGE_GUARD or broad memory interception merely
+to force progress. Do not merge `main`, do not traverse producer `0x351EB00`, and
+do not enable gameplay writes.
