@@ -1,3 +1,72 @@
+# Codex revalidation — c43 requested regression rerun (2026-10-26)
+
+Tested checkout **8dd33c557037e0442adaef8a2207d81bdd22a59d**, branch
+**codex/v01c20-edi-value-provenance**. Fetch confirmed local/remote equality and
+unchanged c43 task. Existing implementation **ad732963655de07911b7b3383100991a037307b9**
+is retained. No new native c43 result was supplied. This handoff changes only
+this report; all source, state/task, historical evidence and published artifacts
+remain unchanged. The five historic untracked files are preserved.
+
+**PARTIAL SUCCESS overall:** owned implementation/regression remains successful;
+native cause identification is still pending. Every command below was actually
+rerun from repository root; prior execution records were not substituted.
+
+| Exact command | Expected result | Actual result |
+| --- | --- | --- |
+| `bash source/tools/test_continuation_mitigations.sh` | Preserve exact per-bit/refusal/JSON rules | exit0;10 PASS,0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/test_continuation_diagnostics.sh` | Validate four outcomes, exact register comparisons, missing observations and synthetic JSON | exit0;7 PASS,0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/test_continuation_witness.sh` | Preserve12 scenarios and validate genuine diagnostic output | exit0;13 PASS (12 process cases plus1 JSON check),0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/test_watch_retirement.sh` | Retain original counterexamples, normal closure and recovery | exit0;14 PASS observation/recovery records,0 SKIP,2 VCH UNAVAILABLE; not a production fix |
+| `bash source/tools/build_windows.sh` | Existing Werror cross-build succeeds | exit0; successful build, no PASS case count |
+| `bash source/tools/test.sh` | Portable regressions pass | exit0;13 PASS,0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/smoke_windows.sh` | DLL/logger smoke checks pass | exit0;7 PASS,0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/test_hooks_windows.sh` | Full owned native/scanner/workspace regressions pass | exit0;314 PASS,5 SKIP,2 UNAVAILABLE |
+| `python3 source/tools/package.py` | Package integrity and matching source inputs | exit0;1 separate package PASS;243 inputs match |
+
+Full regression total **334 PASS /5 SKIP /2 UNAVAILABLE** (13+7+314). Focused
+counts overlap314; package1 PASS is separate. All required tests were run.
+Logs: `/tmp/ws-c43-recheck-<script-stem>.log`; exits/counts/timings:
+`/tmp/ws-c43-recheck-results.json`. No private raw game log is committed.
+
+Additional checks passed: all243 code/tool hashes match the retained manifest
+and newly packaged source; published c43 EXE SHA is unchanged; root/source
+evidence mirrors match. Each focused/full witness invocation produced12 genuine
+schema3 Wine records:10 ALL_RESTORED and2 cap NOT_OBSERVED, actual flags[0,0,0],
+no synthetic inputs or native PASS claim. The existing real-output validator
+checked identities, before/after fields, exact equality/XOR and three readbacks.
+Generated validation package remains
+`source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled`; no game release
+or standalone replacement is needed. Only report text changes after these tests,
+so a further full test run for this documentation commit is unnecessary.
+
+Unperformed/limited coverage:
+
+- Native Windows c43 run: Wine is the only execution environment here, and no
+  new owner output is available. The accepted c42 native FAIL/cause UNKNOWN is
+  preserved; no native success is inferred from Wine or synthetic fixtures.
+- Five optional private positives: original-byte replay, native AVX/CFG bodies,
+  game-body installer,584byte writer normalization and accepted Path-B capture
+  inputs are absent/not redistributed; independent owned/synthetic tests ran.
+- Two VCH return-hold branches: callbacks were not dispatched on the owned Wine
+  hardware path; UNAVAILABLE, not passing coverage.
+- Mitigation changes, live-debugger/full-XSTATE matrices, game/slot observation,
+  producer traversal and production integration remain outside the bounded task.
+
+No new reusable fact was established; current Wisdoms4be609a was checked and
+needs no additional change. Runtime remains v0.1c38/package0.1.56. All exact
+restoration/lease/ownership/write gates and prior counterexamples are retained.
+After publishing this report, the sole remaining owner check is still from
+`analysis/native-probes/c43` in native Windows PowerShell:
+
+```powershell
+.\continuation-witness.exe --position --multiple --json
+```
+
+Return compact JSON/output only. No Update-WS, game, Overstrike, A/E, WallRun,
+offline scan, mitigation-setting change or game runtime log is requested.
+
+---
+
 # Codex result — c43 native final-restoration divergence diagnostic
 
 Branch **codex/v01c20-edi-value-provenance**, task base **87cd2f0**.
