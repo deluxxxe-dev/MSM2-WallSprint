@@ -1,0 +1,261 @@
+{
+  "task": "c46_watch_enabled_pre_access_DR6_boundary",
+  "date_JST": "2026-10-27",
+  "base_commit": "5356dd21dbe45e2abfa674f4eb0a5e6b810e3052",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "classification": "PARTIAL_SUCCESS_PRE_ACCESS_DIAGNOSTIC_VALIDATED_NATIVE_BOUNDARY_UNPROVEN_FAIL_CLOSED",
+  "accepted_native_c45_result": "GenuineIntel_single_first_observed_DB_entry_transition_stable_RAW_and_c44_FAIL",
+  "accepted_input_sha256": "324d68a47e1095ee3fc0c6b42b20afed8d38b769d62e63f5d08e858bf2df4ecf",
+  "source_compact_summary_sha256": "b46fd5ee04e1b9dbda67b3175e8b2be68450a29e2cf588ced2ce964ffb88146b",
+  "new_JSON_schema": 6,
+  "new_revision": "c46-v1",
+  "new_phase": "post_watch_resume_pre_access",
+  "expanded_phase_count": 12,
+  "c45_11phase_view_and_helpers_retained": true,
+  "raw_c44_comparators_unchanged": true,
+  "RETIREMENT_CONFIGURATION_SAFE_added": false,
+  "RETIREMENT_STATUS_SAFE_added": false,
+  "necessary_only_audit_is_not_acceptance": true,
+  "extra_SetThreadContext_calls": 0,
+  "additional_GetThreadContext_calls_over_c45": 1,
+  "new_context_repairs": false,
+  "gate_events_and_atomics_disjoint_from_watched_allocation": true,
+  "gate_before_only_machine_call": true,
+  "zero_DB_machine_ticket_pending_counts_required": true,
+  "same_thread_lease_generation_required": true,
+  "pre_access_suspend_previous_count": 0,
+  "pre_access_resume_previous_count": 1,
+  "context_write_attempts_watch_and_gate_must_equal": 1,
+  "native_c46_result": "NOT_RUN",
+  "native_pre_access_status": "UNKNOWN",
+  "current_Intel_reference": "owner_official_SDM_Vol3B_253669-090US_February2026_20.2.3",
+  "formal_document_provenance": [
+    {
+      "name": "getthreadcontext",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/processthreadsapi/nf-processthreadsapi-getthreadcontext.md",
+      "status": 200,
+      "sha256": "82be7f41ca82e777e3a731bb9cb5169816bf86d4e6a4fd2bc70b48e3842b9597",
+      "bytes": 4479
+    },
+    {
+      "name": "setthreadcontext",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/processthreadsapi/nf-processthreadsapi-setthreadcontext.md",
+      "status": 200,
+      "sha256": "af689d9e657208757e6d1c8b74e7b757c711122c321fe6a3a5a6191619fd1618",
+      "bytes": 4383
+    },
+    {
+      "name": "intel_sdm",
+      "url": "https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html",
+      "result": "UNAVAILABLE",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+    }
+  ],
+  "independent_Intel_PDF_hash": "UNAVAILABLE_proxy403_NOT_INVENTED",
+  "production_restore_changed": false,
+  "production_ownership_changed": false,
+  "production_integrated": false,
+  "slot_watch_enabled": false,
+  "new_gameplay_writes": 0,
+  "producer_traversed": false,
+  "runtime_version": "v0.1c38",
+  "package_version": "0.1.56",
+  "new_game_release": false,
+  "standalone_refreshed_after_required_tests": true,
+  "validation": {
+    "required_commands": [
+      {
+        "command": "bash source/tools/test_continuation_mitigations.sh",
+        "exit": 0,
+        "PASS": 10,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.46,
+        "log": "/tmp/ws-c46-test_continuation_mitigations.log"
+      },
+      {
+        "command": "bash source/tools/test_continuation_diagnostics.sh",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.63,
+        "log": "/tmp/ws-c46-test_continuation_diagnostics.log"
+      },
+      {
+        "command": "bash source/tools/test_debug_register_comparison.sh",
+        "exit": 0,
+        "PASS": 9,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.58,
+        "log": "/tmp/ws-c46-test_debug_register_comparison.log"
+      },
+      {
+        "command": "bash source/tools/test_dr6_lifecycle.sh",
+        "exit": 0,
+        "PASS": 11,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.72,
+        "log": "/tmp/ws-c46-test_dr6_lifecycle.log"
+      },
+      {
+        "command": "bash source/tools/test_pre_access_lifecycle.sh",
+        "exit": 0,
+        "PASS": 12,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.81,
+        "log": "/tmp/ws-c46-test_pre_access_lifecycle.log"
+      },
+      {
+        "command": "bash source/tools/test_continuation_witness.sh",
+        "exit": 0,
+        "PASS": 13,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 9.42,
+        "log": "/tmp/ws-c46-test_continuation_witness.log"
+      },
+      {
+        "command": "bash source/tools/test_watch_retirement.sh",
+        "exit": 0,
+        "PASS": 14,
+        "SKIP": 0,
+        "UNAVAILABLE": 2,
+        "seconds": 5.5,
+        "log": "/tmp/ws-c46-test_watch_retirement.log"
+      },
+      {
+        "command": "bash source/tools/build_windows.sh",
+        "exit": 0,
+        "PASS": 0,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 40.09,
+        "log": "/tmp/ws-c46-build_windows.log"
+      },
+      {
+        "command": "bash source/tools/test.sh",
+        "exit": 0,
+        "PASS": 13,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 7.57,
+        "log": "/tmp/ws-c46-test.log"
+      },
+      {
+        "command": "bash source/tools/smoke_windows.sh",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 13.35,
+        "log": "/tmp/ws-c46-smoke_windows.log"
+      },
+      {
+        "command": "bash source/tools/test_hooks_windows.sh",
+        "exit": 0,
+        "PASS": 346,
+        "SKIP": 5,
+        "UNAVAILABLE": 2,
+        "seconds": 172.52,
+        "log": "/tmp/ws-c46-test_hooks_windows.log"
+      },
+      {
+        "command": "python3 source/tools/package.py",
+        "exit": 0,
+        "PASS": 1,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.81,
+        "log": "/tmp/ws-c46-package.log"
+      }
+    ],
+    "full_chain_counts_excluding_duplicate_focused_runs": {
+      "PASS": 366,
+      "SKIP": 5,
+      "UNAVAILABLE": 2
+    },
+    "package_PASS_separate": 1,
+    "focused_counts_overlap_hooks": true,
+    "initial_new_test_compile": "Werror_rejected_misleading_indentation_in_new_test_only_corrected_formatting_before_all_final_runs_same_flags_and_assertions",
+    "initial_witness": "exit0_13PASS_all12_actual_gate_scenarios_and_strict_schema6_validator",
+    "required_command_failure_or_interruption": false,
+    "SKIP_reasons": "five_optional_private_game_capture_or_native_positive_replay_inputs_absent",
+    "UNAVAILABLE_reasons": "two_existing_Wine_VCH_return_hold_dispatch_cases_no_retirement_certificate",
+    "shipped_PE_smoke": "one_actual_Wine_schema6_Position_multiple_JSON_12phases_zeroDB_no_configuration_or_native_certificate",
+    "additional_document_delivery_UNAVAILABLE": {
+      "count": 1,
+      "name": "independent_current_Intel_official_PDF_hash",
+      "reason": "proxy403_owner_current_primary_extraction_retained"
+    }
+  },
+  "implementation_commit": "PENDING_COMMIT",
+  "standalone_artifact": {
+    "path": "continuation-witness.exe",
+    "bytes": 6602573,
+    "sha256": "81c2114c3197355a3933a8235a338b1640b74e707caebe2221ce6606f93326df",
+    "exact_copy_of_tested_binary": true
+  },
+  "code_tool_input_count": 252,
+  "code_tool_input_digest_sha256": "1e84d933d305a56ee044fc0fdc168075c631e706fccae82e95b29a58f1edc601",
+  "Wine_observations": {
+    "gate_scenarios": 12,
+    "complete_12phase_scenarios": 10,
+    "partial_8phase_cap_scenarios": 2,
+    "zero_DB_at_arrival_before_suspend_capture_after_read": true,
+    "zero_machine_tickets_pending_at_capture": true,
+    "context_write_attempts_watch_and_gate": 1,
+    "pre_access_bit11": 0,
+    "pre_access_bit16": 0,
+    "Dr6_by_complete_phase": [
+      "0",
+      "0",
+      "0",
+      "0",
+      "0",
+      "0xffff0ff1",
+      "0xffff0ff0",
+      "0xffff0ff0",
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "first_transition_boundary": "DEBUG_EXCEPTION_DELIVERY_BOUNDARY",
+    "first_observed_stage": "outer_db_handler_entry",
+    "changes_each": 2,
+    "overall_classification": "UNRESOLVED_OR_MULTIPLE",
+    "RAW_EXACT": true,
+    "c44_ARCHITECTURAL_CANONICAL": false,
+    "not_native_or_physical_cause_proof": true
+  },
+  "unperformed": [
+    {
+      "test": "native_Windows_c46_pre_access_probe",
+      "reason": "cloud_has_Wine_only_native_gate_status_requires_one_owner_standalone_run"
+    },
+    {
+      "test": "independent_current_Intel_PDF_bytes_hash",
+      "reason": "official_proxy403_no_PDF_hash_invented_owner_253669-090US_primary_extraction_retained"
+    },
+    {
+      "test": "AMD_unknown_vendor_physical_hardware_or_attached_debugger",
+      "reason": "outside_Intel_owned_profile_scope_pure_refusal_regressions_executed"
+    },
+    {
+      "test": "two_existing_VCH_return_hold_dispatch_paths",
+      "reason": "callbacks_not_dispatched_by_owned_Wine_environment_reported_UNAVAILABLE"
+    },
+    {
+      "test": "game_Update_WS_Overstrike_A_E_WallRun_slot_scan_producer",
+      "reason": "not_authorized_or_required_test_only_OS_question"
+    },
+    {
+      "test": "RETIREMENT_CONFIGURATION_SAFE_positive_acceptance",
+      "reason": "no_such_comparator_added_without_native_phase_proof_synthetic_model_not_acceptance"
+    }
+  ]
+}

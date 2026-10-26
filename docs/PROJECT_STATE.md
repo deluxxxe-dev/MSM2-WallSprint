@@ -1,42 +1,53 @@
 # WallSprint project state
 
-## c45 current stage — DR6 lifecycle observation, no status-safe acceptance
+## c46 current stage — watch-enabled pre-access observation
 
-Accepted c44 native evidence: analysis/V01C44_NATIVE_WINDOWS_RESULT.md.
-GenuineIntel, policies[0,0,256] admitted,3 contexts/pending0/canRetire, inactive
-leases after false final poll, Dr0-Dr3 exact, Dr6 saved0/current0xFFFF0FF0 and
-Dr7 saved0x10/current0x410. Three final readbacks were complete/raw-stable.
-RAW_EXACT and c44 ARCHITECTURAL_CANONICAL remained FAIL; protected remainder
-Dr6[11,16] still differed. This historical failure is preserved unchanged.
+Accepted c45 native evidence: analysis/V01C45_NATIVE_WINDOWS_RESULT.md (distinct
+source compact summary preserved). GenuineIntel, actual policies[0,0,256] ADMIT,
+one watch write/one owned hardware DB, three acknowledged contexts, pending0,
+canRetire true, false poll/inactive leases, exact Dr0-Dr3 and stable final
+Dr6=0xFFFF0FF0/Dr7=0x410. RAW_EXACT and c44 ARCHITECTURAL_CANONICAL remained FAIL.
+Eleven ordered stages first observed11/16=1 at DB entry and retained1 thereafter;
+c45's HARDWARE_DB_ENTRY label was a context-view boundary, not CPU causality.
 
-Current Intel primary lead is now the owner-retrieved SDM Vol3B253669-090US,
-February2026,20.2.3: BLD/RTM are status with active-low event semantics. This
-supersedes c44's older mirror lead. Cloud independent PDF/hash remains unavailable
-(proxy403); accepted extraction provenance is recorded, not replaced with an
-invented PDF hash or downgraded to old evidence.
+C46 adds a disjoint test-owned gate after initial watch Resume and before the
+sole machine call/target-address evaluation. Actual arrival/capture/read counters
+must prove DB0/machine0/tickets0/pending0, same thread/lease/generation, live owned
+slots, one original context write and no intervening write/repair. Suspend0,
+debug-context capture and Resume1 precede coordinator release to the only access.
+Old c45 eleven-phase view/helpers remain intact; schema6 additionally exposes
+pre_access_lifecycle/c46-v1 with twelve phases and post_watch_resume_pre_access.
 
-C45 observes11 bounded phases: baseline, foreign Set/read before Resume, original
-post-Resume saved snapshot, existing watch Set/readback before Resume, outer DB
-context before/after engine, post-return, final poll and3 stability readbacks.
-Only one foreign-stage Get is added on the ordinary path; no extra Set/repair.
-Per-bit first observed stage, all transitions, order/thread/origin and failure
-state are explicit. Unknown/non-Intel profiles refuse; Dr7.RTM must remain0.
+Owned Wine reaches all twelve gates with zero DB/access/ticket/debt counts. Both
+bits are still0 at pre-access and first1 at DB entry: first_transition_boundary
+DEBUG_EXCEPTION_DELIVERY_BOUNDARY. They later return0 after final poll, so the
+whole history remains UNRESOLVED_OR_MULTIPLE, not native configuration proof.
+No RETIREMENT_CONFIGURATION_SAFE or RETIREMENT_STATUS_SAFE acceptance is added.
+Original raw/c44 predicates and all controls/addresses/foreign causes/continuation
+and lifetime gates remain. Native missing/ambiguous evidence refuses.
 
-Owned Wine first sees11/16=1 at outer DB entry (prior API reads0); they remain1
-through handler/post-return, then return0 after final poll/readbacks. Two changes
-classify UNRESOLVED_OR_MULTIPLE, not a native Windows lifecycle proof. c45 adds
-NO RETIREMENT_STATUS_SAFE acceptance: necessary-only synthetic condition checks
-cannot authorize it. Raw/c44 comparators and all old address/Dr7/foreign-Dr2/
-lease/debt/continuation/machine/lifetime requirements remain. Native unresolved
-phases fail closed in addition to the unchanged c44 contract.
+Current Intel primary lead is owner-retrieved SDM Vol3B253669-090US/February2026/
+20.2.3. Current Microsoft context API sources are retrieved and SHA-pinned; Intel
+independent cloud PDF/hash is still403/unavailable. API snapshots do not directly
+sample hardware or prove the cause of a change; the post-snapshot Resume remains
+an observation limit. Detailed reasoning/provenance is in V01C46_PRE_ACCESS_BOUNDARY,
+V01C46_GATE and V01C46_STATUS. Required owned validation passed; analysis/native-probes/c46 contains the exact
+tested source-pinned standalone. One game-free native JSON command remains.
 
-See analysis/V01C45_DR6_LIFECYCLE.md, V01C45_GATE.md and V01C45_STATUS.json.
-Owned validation passed; analysis/native-probes/c45 now contains the exact tested
-binary, provenance and licenses, preserving c41-c44 binaries and input evidence. One native game-free
-standalone command is needed after publication for actual Windows first-change
-phases. No Update-WS, game/Overstrike/A-E/WallRun/scan/log/settings change.
-Runtime remains v0.1c38/package0.1.56; production restore/ownership/slot/gameplay
-and producer-deferral gates remain unchanged.
+Runtime remains v0.1c38/package0.1.56. No production restore/ownership integration,
+exact-slot watch, producer traversal or gameplay write is enabled. No Update-WS,
+game/Overstrike/A-E/WallRun/scan/log or mitigation-setting change is needed.
+
+## c45 historical stage — native first-observed DB-entry transition, FAIL
+
+The owner ran the published d48b27a probe. All eleven phases were ordered and
+complete. Setup through watch-before-Resume had Dr6=0/11=0/16=0. Actual owned DB
+entry had0xFFFF0FF1; the existing handler cleared B0 to0xFFFF0FF0 while11/16
+stayed1 through post-return, poll and all three readbacks. Both bits had one
+observed HARDWARE_DB_ENTRY transition. Old native endpoints are now phase-localized,
+but the watch-enabled Resume-before-first-access interval was unobserved.
+Canonical failure at stability.canonicalAll is preserved. C46 closes that bounded
+observation gap without changing the old comparator or production restore.
 
 ## c44 historical stage — Intel/stable status-only FAIL
 
@@ -69,7 +80,7 @@ flags before executing the witness. Neither run proves native witness acceptance
 
 ## c41 historical stage — partial success and native refusal
 
-C41 task base4b39a82; current task is c45. C40 completed its review
+C41 task base4b39a82; current task is c46. C40 completed its review
 with the fail-closed outcome; production retirement remains unproven. C41 adds
 only an owned test prototype, not production integration or a slot watch.
 Current c41 handoff classification: **PARTIAL SUCCESS** — owned Wine feasibility
@@ -87,7 +98,7 @@ process-wide accounting, a full-XSTATE runtime proof or a native-Windows/CET fix
 Details: `analysis/V01C41_CONTINUATION_WITNESS.md`, `V01C41_GATE.md`,
 `V01C41_WITNESS_STATUS.json`. The historical c41 standalone command used
 `analysis/native-probes/c41/continuation-witness.exe --position --multiple --json`.
-Current native follow-up uses c45 above, not this historical artifact. No game
+Current native follow-up uses c46 above, not this historical artifact. No game
 launch/update/slot scan/log is needed. This historical c41 artifact refused
 all nonzero native flags; c42 refines only the standalone test boundary. Native evidence and a later
 explicit integration task are required before c39-style slot work can resume.
@@ -427,24 +438,25 @@ The VMOVUPS store is existing game code, not a MOD write and not permission to w
 24. c42 native mitigation boundary refinement ✅ classifier admitted; actual native final-restoration FAIL
 25. c43 final-restoration diagnostic ✅ native lease cleanup/Dr0-Dr3 exact, RAW Dr6/Dr7 FAIL
 26. c44 vendor-specific DR comparison ✅ native Intel/stable RAW+canonical FAIL, Dr6[11,16] remainder
-27. c45 DR6 lifecycle ▶ CURRENT; native phase proof pending, no status-safe acceptance
-28. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
-29. bounded publication/source chain ⏸ pending writer-site evidence
-30. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
-31. resume full writer XYZ/W causal proof ⏸ after store containment
-32. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-33. safe writable upstream movement source ⬜ NOT AUTHORIZED
-34. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-35. adhesion/contact refinement ⏸ deferred
-36. animation/camera/later traversal ⬜
+27. c45 DR6 lifecycle ✅ native single DB-entry observed transition; raw/canonical FAIL
+28. c46 pre-access boundary ▶ CURRENT; native pre-access state pending, no configuration acceptance
+29. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
+30. bounded publication/source chain ⏸ pending writer-site evidence
+31. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
+32. resume full writer XYZ/W causal proof ⏸ after store containment
+33. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+34. safe writable upstream movement source ⬜ NOT AUTHORIZED
+35. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+36. adhesion/contact refinement ⏸ deferred
+37. animation/camera/later traversal ⬜
 
 ## Current action
 
-Follow `docs/CODEX_NEXT.md` for c45. Preserve native c44 FAIL and the original
-comparators/production restoration. Validate/publish the bounded phase collector
-and explicit unresolved/multiple refusal. No new status-safe acceptance is
-justified from the Wine history or old native endpoints. After publication request
-only the native standalone JSON command for the remaining exact phase question.
+Follow `docs/CODEX_NEXT.md` for c46. Preserve native c45 FAIL and original
+comparators/production restoration. Validate/publish the test-owned zero-DB
+pre-access gate and explicit first-context-boundary/multiple refusal. No new
+configuration acceptance is justified without the missing native pre-access
+observation. After publication request only the native standalone JSON command.
 
 Do not add the exact-slot watch, PAGE_GUARD or broad memory interception merely
 to force progress. Do not merge `main`, do not traverse producer `0x351EB00`, and

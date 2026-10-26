@@ -25,8 +25,9 @@ static PVOID WINAPI c41_install(ULONG first,PVECTORED_EXCEPTION_HANDLER fn){asse
 #include "NativeHooks/continuation_diagnostics.hpp"
 #include "NativeHooks/debug_register_comparison.hpp"
 #include "NativeHooks/dr6_lifecycle.hpp"
+#include "NativeHooks/pre_access_lifecycle.hpp"
 
-namespace c41 {const char* failureText();std::string reportFields();[[noreturn]] void failed(const char* expression,unsigned line){std::fprintf(stderr,"c41 owned assertion at line %u: %s\n",line,expression);std::printf("{\"schema\":5,\"task\":\"c45\",\"witness_task\":\"c41\",\"result\":\"FAIL\",\"reason\":\"owned_assertion_failed\",\"rejection\":\"%s\",\"line\":%u,%s,\"game_used\":false}\n",failureText(),line,reportFields().c_str());std::fflush(stdout);ExitProcess(3);}}
+namespace c41 {const char* failureText();std::string reportFields();[[noreturn]] void failed(const char* expression,unsigned line){std::fprintf(stderr,"c41 owned assertion at line %u: %s\n",line,expression);std::printf("{\"schema\":6,\"task\":\"c46\",\"witness_task\":\"c41\",\"result\":\"FAIL\",\"reason\":\"owned_assertion_failed\",\"rejection\":\"%s\",\"line\":%u,%s,\"game_used\":false}\n",failureText(),line,reportFields().c_str());std::fflush(stdout);ExitProcess(3);}}
 #undef assert
 #define assert(condition) do {if(!(condition))c41::failed(#condition,__LINE__);} while(false)
 
@@ -42,6 +43,7 @@ namespace mitigation=ws::continuation_mitigations;
 namespace diagnostics=ws::continuation_diagnostics;
 namespace drCompare=ws::debug_register_comparison;
 namespace lifecycle=ws::dr6_lifecycle;
+namespace preAccess=ws::pre_access_lifecycle;
 using Phase=lifecycle::Phase;
 diagnostics::Report restoration;
 drCompare::Vendor cpuVendor=drCompare::Vendor::Unknown;
@@ -63,21 +65,35 @@ bool position{},timeout{},killClose{},capCase{},wine{},jsonOnly{};bool policyKno
 std::string output;
 struct ObservationCell {std::atomic<unsigned> state{0};lifecycle::Observation value{};};
 std::array<ObservationCell,lifecycle::count> observations;
+ObservationCell preAccessObservation;
+HANDLE preAccessReady{},preAccessRelease{};
+std::atomic<unsigned> gateArrivalThread{0},gateArrivalDb{0},machineEntries{0},workerContextWriteAttempts{0},writesAtWatchReadback{0},gatePublished{0};
+std::atomic<bool> gateReached{false},preAccessCaptured{false},gateReleaseIssued{false};
+preAccess::Gate gateRecord;
 std::atomic<unsigned> observationSequence{0},armWrites{0},outerDbEvents{0};
 std::atomic<bool> observingArm{false},armReadPending{false},observerError{false},ordinaryDataDb{false},engineClaimed{false};
 std::atomic<DWORD> observerWinError{0};
 static_assert(std::atomic<unsigned>::is_always_lock_free&&std::atomic<bool>::is_always_lock_free);
-void observe(Phase phase,const CONTEXT& c,DWORD tid,bool suspendedApi){
- const auto at=lifecycle::index(phase);if(at>=lifecycle::count){observerError=true;return;}
- auto& cell=observations[at];unsigned empty=0;
+void observeCell(ObservationCell& cell,const CONTEXT& c,DWORD tid,bool suspendedApi){
+ unsigned empty=0;
  if(!cell.state.compare_exchange_strong(empty,1)){observerError=true;return;}
  cell.value={{c.Dr0,c.Dr1,c.Dr2,c.Dr3,c.Dr6,c.Dr7},observationSequence.fetch_add(1)+1,tid,suspendedApi};
  cell.state.store(2,std::memory_order_release);
+}
+void observe(Phase phase,const CONTEXT& c,DWORD tid,bool suspendedApi){
+ const auto at=lifecycle::index(phase);if(at>=lifecycle::count){observerError=true;return;}
+ observeCell(observations[at],c,tid,suspendedApi);
 }
 lifecycle::Timeline timeline(){
  lifecycle::Timeline t;t.worker=workerId;t.observerError=observerError.load()||armReadPending.load()||outerDbEvents.load()>1;
  for(unsigned i=0;i<lifecycle::count;++i)if(observations[i].state.load(std::memory_order_acquire)==2)t.stages[i]=observations[i].value;
  return t;
+}
+preAccess::Evidence preAccessEvidence(){
+ preAccess::Evidence e;e.prior=timeline();e.expectedLease=lease;e.expectedGeneration=generation;
+ if(preAccessObservation.state.load(std::memory_order_acquire)==2)e.preAccess=preAccessObservation.value;
+ if(gatePublished.load(std::memory_order_acquire)==2)e.gate=gateRecord;
+ return e;
 }
 lifecycle::Facts lifecycleFacts(){
  lifecycle::Facts f;f.vendor=cpuVendor;
@@ -102,7 +118,7 @@ std::string reportFields(){
  out+=",\"acceptance_comparison\":\"";out+=wine?"RAW_EXACT":"ARCHITECTURAL_CANONICAL";
  out+="\",\"acceptance_scope\":\"";out+=wine?"owned_Wine_only_not_architectural_certificate":"owned_native_candidate_only_not_production";
  out+="\",\"watch_context_writes_observed\":"+std::to_string(armWrites.load())+",\"outer_hardware_DB_events\":"+std::to_string(outerDbEvents.load())+",\"observer_win32_error\":"+std::to_string(observerWinError.load());
- return out+",\"mitigation_classifier\":"+classifierReport()+",\"final_restoration\":"+diagnostics::json(restoration)+",\"debug_register_comparison\":"+drCompare::reportJson(cpuVendor,restoration)+",\"dr6_lifecycle\":"+lifecycle::json(timeline(),lifecycleFacts());
+ return out+",\"mitigation_classifier\":"+classifierReport()+",\"final_restoration\":"+diagnostics::json(restoration)+",\"debug_register_comparison\":"+drCompare::reportJson(cpuVendor,restoration)+",\"dr6_lifecycle\":"+lifecycle::json(timeline(),lifecycleFacts())+",\"pre_access_lifecycle\":"+preAccess::json(preAccessEvidence(),lifecycleFacts());
 }
 LONG load(volatile LONG* p){return InterlockedCompareExchange(p,0,0);}
 const char* failureText(){const auto value=failure.load();return value?value:"none";}
@@ -154,13 +170,39 @@ bool freeStorage(){if(WaitForSingleObject(worker,0)!=WAIT_OBJECT_0)return false;
 CONTEXT debug(Phase phase=Phase::Count){assert(SuspendThread(worker)!=DWORD(-1));CONTEXT c{};c.ContextFlags=CONTEXT_DEBUG_REGISTERS;assert(GetThreadContext(worker,&c));if(phase!=Phase::Count)observe(phase,c,workerId,true);assert(ResumeThread(worker)!=DWORD(-1));return c;}
 bool same(const CONTEXT& a,const CONTEXT& b){return a.Dr0==b.Dr0&&a.Dr1==b.Dr1&&a.Dr2==b.Dr2&&a.Dr3==b.Dr3&&a.Dr6==b.Dr6&&a.Dr7==b.Dr7;}
 diagnostics::Registers registers(const CONTEXT& c){return {c.Dr0,c.Dr1,c.Dr2,c.Dr3,c.Dr6,c.Dr7};}
-DWORD WINAPI run(void*){SetEvent(ready);assert(WaitForSingleObject(go,2000)==WAIT_OBJECT_0);ws_c41_machine(reinterpret_cast<void*>(hero.transform+(position?0x30:0x10)));return 0;}
+DWORD WINAPI run(void*){
+ SetEvent(ready);assert(WaitForSingleObject(go,2000)==WAIT_OBJECT_0);
+ // This gate precedes both target-address evaluation and the ONLY machine call.
+ // Its events/atomics are separate from the watched VirtualAlloc allocation.
+ gateArrivalThread=GetCurrentThreadId();gateArrivalDb=outerDbEvents.load();gateReached.store(true,std::memory_order_release);
+ assert(SetEvent(preAccessReady));assert(WaitForSingleObject(preAccessRelease,2000)==WAIT_OBJECT_0);
+ assert(preAccessCaptured.load()&&gateReleaseIssued.load());
+ ++machineEntries;ws_c41_machine(reinterpret_cast<void*>(hero.transform+(position?0x30:0x10)));return 0;
+}
+void capturePreAccess(){
+ assert(WaitForSingleObject(preAccessReady,2000)==WAIT_OBJECT_0);
+ preAccess::Gate g;g.reached=gateReached.load(std::memory_order_acquire);g.arrivalThread=gateArrivalThread.load();g.dbAtArrival=gateArrivalDb.load();g.dbBeforeSuspend=outerDbEvents.load();
+ assert(g.reached&&g.arrivalThread==workerId&&*g.dbAtArrival==0&&*g.dbBeforeSuspend==0);
+ assert(SuspendThread(worker)==0);g.capturedSuspended=true;
+ g.dbAtCapture=outerDbEvents.load();g.machineEntriesAtCapture=machineEntries.load();g.ticketsAtCapture=published.load();g.pendingAtCapture=pending();
+ g.lease=windows[0].id;g.generation=windows[0].reset.generation;g.activeLease=activeLeases();
+ g.writesAtWatch=writesAtWatchReadback.load();g.writesAtCapture=workerContextWriteAttempts.load();
+ g.releaseUnsignaled=WaitForSingleObject(preAccessRelease,0)==WAIT_TIMEOUT;
+ g.capturedBeforeRelease=!gateReleaseIssued.load()&&!preAccessCaptured.load()&&GetThreadId(worker)==workerId;
+ CONTEXT c{};c.ContextFlags=CONTEXT_DEBUG_REGISTERS;assert(GetThreadContext(worker,&c));
+ unsigned matching=0;for(unsigned i=0;i<usedLeases;++i)if(leases[i].tid.load()==workerId&&own(c,leases[i])==3)++matching;
+ g.ownedSlots=matching==1;observeCell(preAccessObservation,c,workerId,true);g.dbAfterRead=outerDbEvents.load();
+ assert(ResumeThread(worker)==1);g.resumedAfterCapture=true;
+ gateRecord=g;gatePublished.store(2,std::memory_order_release);
+ assert(preAccess::gateProven(preAccessEvidence()));
+ preAccessCaptured=true;gateReleaseIssued=true;assert(SetEvent(preAccessRelease));
+}
 bool environment(){
  wine=GetProcAddress(GetModuleHandleW(L"ntdll.dll"),"wine_get_version")!=nullptr;
  unsigned va{},vb{},vc{},vd{};cpuQueryKnown=__get_cpuid(0,&va,&vb,&vc,&vd);
  if(cpuQueryKnown){std::memcpy(cpuVendorBytes.data(),&vb,4);std::memcpy(cpuVendorBytes.data()+4,&vd,4);std::memcpy(cpuVendorBytes.data()+8,&vc,4);cpuVendor=drCompare::vendor(cpuVendorBytes.data());}
  if(cpuVendor==drCompare::Vendor::Unknown){environmentFailure="unknown_CPU_vendor_contract";return false;}
- if(cpuVendor!=drCompare::Vendor::Intel){environmentFailure="c45_requires_GenuineIntel_lifecycle_contract";return false;}
+ if(cpuVendor!=drCompare::Vendor::Intel){environmentFailure="c46_requires_GenuineIntel_pre_access_contract";return false;}
  unsigned leaf7A{};leaf7Known=__get_cpuid_count(7,0,&leaf7A,&leaf7B,&leaf7C,&leaf7D);
  if(!drCompare::supportedCpuProfile(cpuVendor,leaf7Known,leaf7B)){environmentFailure="CPU_feature_profile_outside_checked_vendor_contract";return false;}
  if(IsDebuggerPresent()){environmentFailure="debugger_present";return false;}
@@ -183,6 +225,7 @@ bool environment(){
 // successful watch-install readback before production ResumeThread. No repair.
 static BOOL WINAPI c45_set_thread_context(HANDLE h,const CONTEXT* c){
  const BOOL ok=SetThreadContext(h,c);const DWORD error=GetLastError();
+ if(GetThreadId(h)==c41::workerId)++c41::workerContextWriteAttempts;
  if(c41::observingArm.load()&&GetThreadId(h)==c41::workerId){
   if(ok){++c41::armWrites;if(c41::armReadPending.exchange(true))c41::observerError=true;}
   else {c41::observerError=true;c41::observerWinError=error;}
@@ -193,7 +236,7 @@ static BOOL WINAPI c45_get_thread_context(HANDLE h,CONTEXT* c){
  const BOOL ok=GetThreadContext(h,c);const DWORD error=GetLastError();
  if(c41::observingArm.load()&&c41::armReadPending.load()&&GetThreadId(h)==c41::workerId){
   c41::armReadPending=false;
-  if(ok)c41::observe(c41::Phase::WatchSet,*c,c41::workerId,true);
+  if(ok){c41::writesAtWatchReadback=c41::workerContextWriteAttempts.load();c41::observe(c41::Phase::WatchSet,*c,c41::workerId,true);}
   else {c41::observerError=true;c41::observerWinError=error;}
  }
  SetLastError(error);return ok;
@@ -238,14 +281,15 @@ int main(int argc,char** argv){
  SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOGPFAULTERRORBOX|SEM_NOOPENFILEERRORBOX);
  for(int i=1;i<argc;++i){if(!std::strcmp(argv[i],"--position"))position=true;else if(!std::strcmp(argv[i],"--timeout"))timeout=true;else if(!std::strcmp(argv[i],"--kill"))killClose=true;else if(!std::strcmp(argv[i],"--nested"))nestedCount=1;else if(!std::strcmp(argv[i],"--multiple"))nestedCount=2;else if(!std::strcmp(argv[i],"--json"))jsonOnly=true;else if(!std::strcmp(argv[i],"--cap")){capCase=true;bound=1;nestedCount=1;}else assert(false&&"unknown probe argument");}
  assert(!(timeout&&killClose));
- if(!environment()){std::printf("{\"schema\":5,\"task\":\"c45\",\"witness_task\":\"c41\",\"result\":\"REFUSED\",\"reason\":\"%s\",%s,\"game_used\":false}\n",environmentFailure,reportFields().c_str());return 77;}
+ if(!environment()){std::printf("{\"schema\":6,\"task\":\"c46\",\"witness_task\":\"c41\",\"result\":\"REFUSED\",\"reason\":\"%s\",%s,\"game_used\":false}\n",environmentFailure,reportFields().c_str());return 77;}
  std::int32_t delta{};std::array<unsigned char,15> synthetic{};
  assert(relative(0x100000000,0x17fffffff,delta)&&delta==INT32_MAX);assert(relative(0x100000000,0x80000000,delta)&&delta==INT32_MIN);assert(!relative(0x100000000,0x180000000,delta));
  assert(!encode(UINTPTR_MAX-10,4096,8192,1,synthetic)&&!encode(4096,4101,8192,1,synthetic)&&!encode(4096,8192,UINTPTR_MAX,1,synthetic));
  for(unsigned i=0;i<512;++i)ws_c41_pattern[i]=static_cast<unsigned char>(i*37+11);
  auto* memory=static_cast<float*>(VirtualAlloc(nullptr,4096,MEM_RESERVE|MEM_COMMIT,PAGE_READWRITE));assert(memory);memory[0]=memory[5]=memory[10]=memory[15]=1;hero.hero=reinterpret_cast<std::uintptr_t>(memory+32);hero.transform=reinterpret_cast<std::uintptr_t>(memory);
  for(auto& t:tickets){t.ready=CreateEventW(nullptr,FALSE,FALSE,nullptr);t.prepared=CreateEventW(nullptr,FALSE,FALSE,nullptr);t.held=CreateEventW(nullptr,FALSE,FALSE,nullptr);t.release=CreateEventW(nullptr,FALSE,FALSE,nullptr);assert(t.ready&&t.prepared&&t.held&&t.release);}
- ready=CreateEventW(nullptr,FALSE,FALSE,nullptr);go=CreateEventW(nullptr,FALSE,FALSE,nullptr);worker=CreateThread(nullptr,0,run,nullptr,0,&workerId);assert(worker&&WaitForSingleObject(ready,2000)==WAIT_OBJECT_0);
+ ready=CreateEventW(nullptr,FALSE,FALSE,nullptr);go=CreateEventW(nullptr,FALSE,FALSE,nullptr);
+ preAccessReady=CreateEventW(nullptr,FALSE,FALSE,nullptr);preAccessRelease=CreateEventW(nullptr,FALSE,FALSE,nullptr);assert(preAccessReady&&preAccessRelease);worker=CreateThread(nullptr,0,run,nullptr,0,&workerId);assert(worker&&WaitForSingleObject(ready,2000)==WAIT_OBJECT_0);
  auto saved=debug(Phase::Baseline);assert(!(saved.Dr7&0xff)&&!(saved.Dr7&(1ull<<13)));assert(!(saved.Dr7&0x800));auto foreign=saved;foreign.Dr2=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));foreign.Dr7|=0x10;
  assert(SuspendThread(worker)!=DWORD(-1));assert(SetThreadContext(worker,&foreign));
  CONTEXT foreignRead{};foreignRead.ContextFlags=CONTEXT_DEBUG_REGISTERS;assert(GetThreadContext(worker,&foreignRead));observe(Phase::ForeignSet,foreignRead,workerId,true);
@@ -254,7 +298,7 @@ int main(int argc,char** argv){
  assert(msm2::trace::configureReset(true,base,nt->OptionalHeader.SizeOfImage,true,true));msm2::reset_trace::Request r{};r.prearmed=r.verifyDual=r.multithread=true;r.session=lease;r.generation=generation;r.initMs=GetTickCount64()-(position?1600:600);r.hero=hero.hero;r.transform=hero.transform;r.owner=hero.hero;r.thread=workerId;r.position=position;r.normal={0,0,1};r.basis={{-1,0,0},{0,0,1},{0,1,0},true};msm2::Snapshot s{};assert(msm2::sample(s));
  observingArm=true;const bool began=position?msm2::trace::beginPosition(r,s):msm2::trace::beginReset(r,s);observingArm=false;
  assert(began);assert(armWrites.load()==1&&!armReadPending.load()&&!observerError.load());
- armed=true;SetEvent(go);auto& outer=tickets[0];assert(WaitForSingleObject(outer.ready,2000)==WAIT_OBJECT_0);assert(prepare(outer));assert(identity(outer,workerId,1,generation)&&!identity(outer,workerId+1,1,generation)&&!identity(outer,workerId,2,generation)&&!identity(outer,workerId,1,generation+1)&&!identity(outer,workerId,1,generation,lease+1));assert(!canRetire()&&pending()==1);
+ armed=true;SetEvent(go);capturePreAccess();auto& outer=tickets[0];assert(WaitForSingleObject(outer.ready,2000)==WAIT_OBJECT_0);assert(prepare(outer));assert(identity(outer,workerId,1,generation)&&!identity(outer,workerId+1,1,generation)&&!identity(outer,workerId,2,generation)&&!identity(outer,workerId,1,generation+1)&&!identity(outer,workerId,1,generation,lease+1));assert(!canRetire()&&pending()==1);
  auto wrong=outer;wrong.bytes[0]=0x90;assert(!decode(wrong)&&!c41::current(wrong));wrong=outer;++wrong.original;assert(!decode(wrong));assert(c41::current(outer));SetEvent(outer.prepared);
  for(unsigned i=1;i<=nestedCount&&!capCase;++i){auto& t=tickets[i];assert(WaitForSingleObject(t.ready,2000)==WAIT_OBJECT_0);assert(prepare(t));SetEvent(t.prepared);assert(WaitForSingleObject(t.held,2000)==WAIT_OBJECT_0);assert(load(t.marker)==0&&pending()>=2&&!canRetire());msm2::trace::cancelReset();assert(activeLeases()&&!canRetire());SetEvent(t.release);
   const auto deadline=GetTickCount64()+2000;while(!acknowledged(t)&&GetTickCount64()<deadline)SwitchToThread();assert(acknowledged(t)&&!acknowledged(outer)&&!canRetire());
@@ -281,6 +325,7 @@ int main(int argc,char** argv){
   // No post-poll repair, masking, retry or additional watched access.
   for(unsigned i=0;i<3;++i)restoration.rechecks[i]=registers(debug(static_cast<Phase>(lifecycle::index(Phase::Verify1)+i)));
   assert(lifecycle::completeOrdered(timeline()));
+  assert(preAccess::completeOrdered(preAccessEvidence()));
   for(const auto& stage:timeline().stages)assert(!(stage->registers[5]&0x800));
   const auto stability=drCompare::stability(cpuVendor,restoration);
   assert(!*restoration.pollReturned);
@@ -293,16 +338,18 @@ int main(int argc,char** argv){
   }else {
    const auto phases=timeline();
    assert(lifecycle::classify(phases,11).unique&&lifecycle::classify(phases,16).unique);
-   assert(stability.canonicalAll); // c44 acceptance stays intact; no status-safe alternative.
+   const auto boundary=preAccessEvidence();
+   assert(preAccess::classify(boundary,11).unique&&preAccess::classify(boundary,16).unique);
+   assert(stability.canonicalAll); // c44 acceptance intact; no configuration-safe alternative.
   }
  }
  deadline=GetTickCount64()+2000;while(!load(&ws_c41_captured)&&GetTickCount64()<deadline)SwitchToThread();assert(load(&ws_c41_captured));
  assert(!std::memcmp(ws_c41_before,ws_c41_after,128));assert(!std::memcmp(ws_c41_before+128,ws_c41_after+128,8));assert(!std::memcmp(ws_c41_before+160,ws_c41_after+160,512));assert(!std::memcmp(ws_c41_before+672,ws_c41_after+672,512));assert(!std::memcmp(ws_c41_before+1184,ws_c41_after+1184,64));
- assert(windows[0].hits==1&&!freeStorage());InterlockedExchange(&ws_c41_finish,1);assert(WaitForSingleObject(worker,2000)==WAIT_OBJECT_0);msm2::trace::stop();assert(!activeLeases());assert(freeStorage());
+ assert(windows[0].hits==1&&machineEntries.load()==1&&preAccess::gateProven(preAccessEvidence())&&!freeStorage());InterlockedExchange(&ws_c41_finish,1);assert(WaitForSingleObject(worker,2000)==WAIT_OBJECT_0);msm2::trace::stop();assert(!activeLeases());assert(freeStorage());
  const auto scenario=scenarioName();
  if(!jsonOnly)std::printf("PASS: c41 %s %s: exact GPR/RFLAGS/RSP/active-stack/YMM0-15/FXSAVE state; %s; no second watched hit; RX storage retained until thread exit\n",position?"Position":"reset",scenario,capCase?"unknown debt refuses final retirement, terminal-thread teardown only":"per-context post-return debt acknowledged then exact foreign DR2/owned DR restoration");
- std::printf("{\"schema\":5,\"task\":\"c45\",\"witness_task\":\"c41\",\"result\":\"%s\",%s,\"retirement_accepted\":%s,\"game_used\":false,\"new_gameplay_writes\":0,\"production_integrated\":false,\"native_candidate_probe_passed\":%s}\n",capCase?"FAIL_CLOSED_EXPECTED":"OWNED_WITNESS_PASS",reportFields().c_str(),capCase?"false":"true",!wine&&!capCase?"true":"false");
+ std::printf("{\"schema\":6,\"task\":\"c46\",\"witness_task\":\"c41\",\"result\":\"%s\",%s,\"retirement_accepted\":%s,\"game_used\":false,\"new_gameplay_writes\":0,\"production_integrated\":false,\"native_candidate_probe_passed\":%s}\n",capCase?"FAIL_CLOSED_EXPECTED":"OWNED_WITNESS_PASS",reportFields().c_str(),capCase?"false":"true",!wine&&!capCase?"true":"false");
  for(auto& t:tickets)for(auto h:{t.ready,t.prepared,t.held,t.release})CloseHandle(h);
- for(auto h:{worker,ready,go})CloseHandle(h);
+ for(auto h:{worker,ready,go,preAccessReady,preAccessRelease})CloseHandle(h);
  assert(VirtualFree(memory,0,MEM_RELEASE));
 }

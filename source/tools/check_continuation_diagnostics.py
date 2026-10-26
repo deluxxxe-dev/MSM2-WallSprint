@@ -8,7 +8,7 @@ records = [json.loads(line) for line in Path(sys.argv[1]).read_text().splitlines
 assert len(records) == 12
 seen = set()
 for record in records:
-    assert record['schema'] == 5 and record['task'] == 'c45'
+    assert record['schema'] == 6 and record['task'] == 'c46'
     assert record['witness_task'] == 'c41' and record['environment'] == 'Wine'
     assert record['thread'] > 0 and record['lease'] == 1 and record['generation'] == 101
     assert record['game_used'] is False and record['production_integrated'] is False
@@ -52,7 +52,7 @@ for record in records:
         assert stage['captured'] is (i < captured)
         if not stage['captured']:
             continue
-        assert stage['sequence'] == i+1 and stage['thread'] == record['thread']
+        assert stage['sequence'] == i+1+(i>=4) and stage['thread'] == record['thread']
         assert stage['origin'] == ('saved_exception_context' if i in [4,5] else 'suspended_GetThreadContext')
         value = int(stage['registers']['Dr6'],16)
         assert stage['Dr6_bit11'] == (value>>11)&1 and stage['Dr6_bit16'] == (value>>16)&1
@@ -73,6 +73,49 @@ for record in records:
                       'outer_db_handler_entry':'HARDWARE_DB_ENTRY','outer_db_handler_after_engine':'HANDLER_EDIT',
                       'post_return_pre_final_poll':'OS_RETURN_POST_CONTEXT'}.get(changes[0]['to'],'UNRESOLVED_OR_MULTIPLE')
             assert result['classification']==expected and result['unique'] is (expected!='UNRESOLVED_OR_MULTIPLE')
+    pre = record['pre_access_lifecycle']
+    assert pre['revision']=='c46-v1' and pre['gate_proven'] is True and pre['gate_reason']=='none'
+    assert pre['RETIREMENT_CONFIGURATION_SAFE_added'] is False and pre['necessary_conditions_only'] is False
+    gate = pre['gate']
+    for name in ['reached','captured_suspended','captured_before_release','release_unsignaled_at_capture','resumed_after_capture','active_lease','owned_slots']:
+        assert gate[name] is True
+    assert gate['arrival_thread']==record['thread'] and gate['lease']==record['lease'] and gate['generation']==record['generation']
+    for name in ['DB_events_at_arrival','DB_events_before_suspend','DB_events_at_capture','DB_events_after_read','machine_entries_at_capture','tickets_at_capture','pending_at_capture']:
+        assert gate[name]==0
+    assert gate['context_writes_at_watch']==gate['context_writes_at_capture']==1
+    new_phases = phases[:4]+['post_watch_resume_pre_access']+phases[4:]
+    expanded = pre['stages']
+    assert [s['phase'] for s in expanded]==new_phases
+    assert expanded[:4]+expanded[5:]==stages
+    assert pre['complete_ordered'] is (captured==11)
+    observed = captured+1
+    assert [s['sequence'] for s in expanded[:observed]]==list(range(1,observed+1))
+    sample = expanded[4]
+    assert sample['captured'] and sample['thread']==record['thread'] and sample['origin']=='suspended_GetThreadContext'
+    assert all(sample['registers'][reg]==stages[3]['registers'][reg] for reg in ['Dr0','Dr1','Dr2','Dr3'])
+    controls = comparison['masks']['Dr7']
+    exact = int(controls['MEANINGFUL_EXACT'],16)|int(controls['OS_CONTROLLED_EXACT_OR_REFUSE'],16)
+    assert (int(sample['registers']['Dr7'],16)^int(stages[3]['registers']['Dr7'],16))&exact==0
+    assert int(sample['registers']['Dr6'],16)&0xe00f==0
+    for bit in [11,16]:
+        for stage in expanded[:observed]:
+            assert stage[f'Dr6_bit{bit}']==(int(stage['registers']['Dr6'],16)>>bit)&1
+        changes=[{'from':new_phases[i-1],'to':new_phases[i],'before':expanded[i-1][f'Dr6_bit{bit}'],'after':expanded[i][f'Dr6_bit{bit}']}
+                 for i in range(1,observed) if expanded[i-1][f'Dr6_bit{bit}']!=expanded[i][f'Dr6_bit{bit}']]
+        result=pre[f'bit{bit}']
+        assert result['transitions']==changes and result['changes_observed']==len(changes)
+        assert result['first_observed_stage']==(changes[0]['to'] if changes else None)
+        expected={'post_foreign_set_readback':'SETTHREADCONTEXT_ROUNDTRIP','post_watch_set_readback_pre_resume':'SETTHREADCONTEXT_ROUNDTRIP',
+                  'post_watch_resume_pre_access':'WATCH_ENABLED_RESUME_PRE_ACCESS','outer_db_handler_entry':'DEBUG_EXCEPTION_DELIVERY_BOUNDARY',
+                  'outer_db_handler_after_engine':'HANDLER_EDIT','post_return_pre_final_poll':'OS_RETURN_POST_CONTEXT'}
+        first=expected.get(changes[0]['to'],'UNRESOLVED_OR_MULTIPLE') if changes else 'UNRESOLVED_OR_MULTIPLE'
+        assert result['first_transition_boundary']==(first if captured==11 else 'UNRESOLVED_OR_MULTIPLE')
+        if captured<11 or len(changes)>1:
+            assert result['classification']=='UNRESOLVED_OR_MULTIPLE' and result['unique'] is False
+        elif not changes:
+            assert result['classification']=='UNCHANGED' and result['unique'] is True
+        else:
+            assert result['classification']==first and result['unique'] is (first!='UNRESOLVED_OR_MULTIPLE')
     report = record['final_restoration']
     assert report['revision'] == 'c43-v1' and report['comparison'] == 'EXACT_UNMASKED'
     assert report['synthetic_inputs'] is False
@@ -120,4 +163,4 @@ for record in records:
         boundary = int(current_dr6,16) & 0x10800 == 0x10800
         assert phase['status_boundary_valid'] == boundary
         assert phase['current_fixed_bits_valid'] == valid and phase['ARCHITECTURAL_CANONICAL'] == (valid and boundary)
-print('PASS: c45 actual Wine JSON validates10 complete11-stage lifecycles,2 partial cap refusals, exact phase/bit transitions and unchanged raw/c44 results without status-safe certificates')
+print('PASS: c46 actual Wine JSON validates12 zero-DB pre-access gates,10 complete12-stage lifecycles,2 partial cap refusals and unchanged c43/c44/c45 evidence without configuration certificates')
