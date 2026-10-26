@@ -101,11 +101,7 @@ architectural_registers_preserved=1
 reason=target_store_destination_code_or_control_stack_alias_unexcluded
 ```
 
-The critical may-mask conservatively includes current code/runtime data, control/return stack, caller-home and callee-private stack, Hero/Transform, `Transform+0x10C`, writer source, Position storage and other later memory. This is uncertainty, not proof of actual overlap.
-
-The unresolved effect propagates correctly into parent summaries before target-identity refusal. The prior c35 parent `memory_escape=0` was an admission artifact, not proof of no escape.
-
-Target remains incomplete and no next opcode may be inferred while code/control-stack alias remains possible.
+The critical may-mask conservatively includes current code/runtime data, control/return stack, caller-home and callee-private stack, Hero/Transform, `Transform+0x10C`, writer source, Position storage and other later memory. This is uncertainty, not proof of actual overlap. The unresolved effect propagates into parent summaries before target-identity refusal; the prior c35 parent `memory_escape=0` was only an admission artifact.
 
 ## c37 accepted result — fallthrough offset proven; base publication still unresolved
 
@@ -130,32 +126,58 @@ offset_proven = 1
 
 This is range metadata separate from unchanged may-tags.
 
-The RAX source qword remains the writable image slot at `RVA 0xC2D2580`. Runtime confirms that the publication track is still unresolved:
+The RAX source qword remains the writable image slot at `RVA 0xC2D2580`. Runtime confirmed publication/base remained unresolved before the local offline scan.
+
+### c37 gameplay-capture condition
+
+The owner reported an initial failed wall attachment that briefly entered upward/vertical WallRun. Sessions 1-4 are short `Mixed`/`WallRunUp` attempts and are not treated as intended stable samples. Sessions 5 and 6 are usable `WallRunSide` sessions (~3.77 s and ~4.32 s) with verified native Deinit, retention pass, no hard kill, MOD `Position_writes=0`, `source_position_writes=0`, and zero adhesion corrections.
+
+This does not invalidate the c37 address proof because the new OFFSET_RANGE/SLOT_PUBLICATION records are startup/current-code diagnostics and are independent of those motion samples.
+
+## c37 owner offline slot scan — direct-only coverage exhausted, register-based accesses remain unresolved
+
+Evidence: `analysis/V01C37_SLOT_PUBLICATION_SCAN_RESULT.md`, derived from owner-supplied `MSM2-WS-v0.1c37-slot-publication.json`.
+
+The shipped offline scanner authenticated the exact image and slot but found no candidates in its intentionally narrow direct RIP-relative/absolute class:
 
 ```text
-reference_scan_performed=0
+slot_rva=0xC2D2580
+image_authenticated=1
+reference_candidates=[]
+direct_writer_candidates=0
+candidate_sweep_complete=0
 writer_enumeration_complete=0
-publication_source=opaque_loaded_qword_not_pointer
-source_known=0
+publication_source_kind=unproven
 allocation_proven=0
 range_proven=0
 lifetime_proven=0
-critical_disjointness_proven=0
 base_proven=0
-offset_proven=1
 destination_contained=0
 CFG_continuation=0
+live_qword_reads=0
+pointer_chase=0
+reason=xref_coverage_incomplete_indirect_writers_unexcluded
 ```
 
-Therefore c36's escape/control barrier remains closed.
+Coverage diagnostics:
 
-### c37 test-condition note
+```text
+bytes_scanned=17859460
+decode_gaps=737
+indirect_or_unresolved_operands=1279672
+```
 
-The owner reported an initial failed wall attachment that briefly entered upward/vertical WallRun. The log agrees: sessions 1-4 are short `Mixed`/`WallRunUp` attempts. They are not treated as intended stable samples.
+Zero direct candidates is not a no-writer/no-reference proof. Accepted c28 already provides a concrete exact register-based consumer that the direct-only scanner class cannot discover by itself:
 
-Sessions 5 and 6 are the usable `WallRunSide` sessions (~3.77 s and ~4.32 s) and both retain verified native Deinit, retention pass, no hard kill, MOD `Position_writes=0`, `source_position_writes=0`, and zero adhesion corrections.
+```text
+0x2CF7FE9: mov rax,qword ptr [rcx+0x100]
+RCX base_origin_root=16
+base_origin_offset=0xC2D2480
+effective source RVA=0xC2D2580
+address_expression_exact=1
+```
 
-This does not invalidate the c37 address proof because the new OFFSET_RANGE/SLOT_PUBLICATION records are startup/current-code diagnostics and are independent of those motion samples.
+Therefore the next bounded work is to add only enough non-value static address provenance to classify exact register-affine image-address memory candidates. Do not turn the large unresolved-operand count into generic x86 dataflow or a writer-completeness claim.
 
 ## Safety gate
 
@@ -168,9 +190,7 @@ downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
 
-The VMOVUPS store is existing game code, not a MOD write and not permission to write movement/Position data.
-
-Producer `0x351EB00` remains deferred.
+The VMOVUPS store is existing game code, not a MOD write and not permission to write movement/Position data. Producer `0x351EB00` remains deferred.
 
 ## Current stages
 
@@ -192,21 +212,23 @@ Producer `0x351EB00` remains deferred.
 16. c35 second VMOVUPS exact store ✅
 17. c36 unresolved store escape / hard control-alias barrier ✅ actual game
 18. c37 fallthrough R8 offset range ✅ static + actual diagnostic confirmation
-19. exact qword-slot publication candidate scan / base provenance ▶ CURRENT
-20. contain `0x2CF7FFB` store destination ⏸ pending base proof
-21. resume full writer XYZ/W causal proof ⏸ after store containment
-22. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-23. safe writable upstream movement source ⬜ NOT AUTHORIZED
-24. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-25. adhesion/contact refinement ⏸ deferred
-26. animation/camera/later traversal ⬜
+19. c37 exact-slot direct candidate scan ✅ authenticated, inconclusive by design
+20. c38 bounded register-affine exact-slot candidate discovery ▶ CURRENT
+21. exact qword-slot publication/base provenance ⏸ pending useful writer/publication candidates
+22. contain `0x2CF7FFB` store destination ⏸ pending base proof
+23. resume full writer XYZ/W causal proof ⏸ after store containment
+24. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+25. safe writable upstream movement source ⬜ NOT AUTHORIZED
+26. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+27. adhesion/contact refinement ⏸ deferred
+28. animation/camera/later traversal ⬜
 
 ## Current action
 
 Follow `docs/CODEX_NEXT.md`.
 
-Do not repeat the c37 gameplay capture. The next required evidence is an owner-run offline exact-slot candidate scan of the exact on-disk executable using `source/tools/slot_publication.py`, producing `logs/MSM2-WS-v0.1c37-slot-publication.json`.
+C38 must start from the owner offline result, not repeat c37 gameplay capture or the same direct-only scan. Add only bounded exact register-affine image-address candidate discovery without reading live/static pointer values from memory and without pointer chasing.
 
-That scan is candidate metadata only. It must not be interpreted as complete writer enumeration, allocation/lifetime proof, or store containment by itself.
+Use the accepted c28 exact consumer as an anchor for the address representation, but do not hard-code it into a false coverage/completeness result. If the offline representation cannot reproduce its interprocedural parent provenance, record that exact boundary and keep it as an authenticated external anchor.
 
-Do not observe/log the live qword value, do not pointer-chase it, do not assume pool/array/allocation semantics, do not traverse producer `0x351EB00`, do not merge `main`, and do not enable gameplay writes.
+Do not infer writer completeness from zero/one/multiple candidates. Do not assume the slot or its value is a pointer, pool, array, allocation or owner. Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
