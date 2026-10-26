@@ -12,7 +12,7 @@ struct Image {
   std::array<unsigned char,24> table{};
   std::array<unsigned char,128> code{};
   unsigned snapshots{},codeEndRead{},sourceReads{},queries{};
-  bool storeMode{},nextVectorMode{},shiftMode{},signMode{},vectorMode{},unknownMode{},sourceFirstFail{},sourceFinalFail{},sourceChange{},queryFail{},pageChange{},metadataChange{};
+  bool addressMode{},storeMode{},nextVectorMode{},shiftMode{},signMode{},vectorMode{},unknownMode{},sourceFirstFail{},sourceFinalFail{},sourceChange{},queryFail{},pageChange{},metadataChange{};
   std::array<unsigned char,8> sourceData{{11,22,33,44,55,66,77,88}};
   ws::rdx::ReadImagePage page{true,true,ws::rdx::readImageSource&~4095u,0x1000,0x1000000,0x02,0x02,4096};
   static constexpr std::uint32_t sourceImageSize=0xd000000;
@@ -88,7 +88,7 @@ struct Image {
   }
   ws::rdx::ReadTargetIdentity run(bool admitted=true,std::uint32_t t=target,std::uint32_t size=imageSize,const ws::rdx::ReadEntryTags *tags=nullptr) {
     snapshots=codeEndRead=sourceReads=queries=0;
-    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this,tags,query,unknownMode,vectorMode,signMode,shiftMode,nextVectorMode,storeMode);
+    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this,tags,query,unknownMode,vectorMode,signMode,shiftMode,nextVectorMode,storeMode,addressMode);
   }
 };
 constexpr std::uint32_t largeFunctionBase=0x1100000;
@@ -1557,5 +1557,62 @@ int main() {
         r.boundary.xmm[0]==1 && r.boundary.xmmHigh[0]==4 && !r.store.destinationContained);
   }
   std::puts("PASS: c36 32byte store payload preserves separate low/high may dependencies rather than collapsing to XMM-only tags; zero component tags never prove pointer/ownership/containment, no numeric values or MOD writes");
+
+  auto rangedStore=[&](Image &f) {storeAt(f);f.addressMode=true;};
+  {
+    Image f;rangedStore(f);r=f.run(true,target,Image::sourceImageSize,&ve);const auto &q=r.offset;
+    assert(!r.admitted && r.store.currentProof && r.store.memoryEscape && q.proven() && q.currentProof && q.fallthrough &&
+        q.compareBound==0x3fff && q.preMin==0 && q.preMax==0x3fff && q.signMin==0 && q.signMax==0x3fff &&
+        q.shiftCount==6 && q.offsetMin==0 && q.offsetMax==0xfffc0 && q.stride==64 && q.width==32 && q.endExclusive==0xfffe0 && q.noWrap);
+    assert(r.boundary.gpr[0]==7 && !r.boundary.gpr[8] && r.boundary.flagsTags==7 && r.boundary.xmmHigh[0]==7 &&
+        !r.store.destinationContained && !r.publication.baseProven && !r.publication.writerEnumerationComplete && !f.sourceReads);
+  }
+  std::puts("PASS: c37 authenticated fallthrough CMP/JA then exact MOVSXD/SHL derives R8D and offset/stride/32byte extent without live values or tag narrowing, while opaque RAX still blocks containment");
+  {
+    for (unsigned value:{0u,0x3ffeu,0x3fffu,0x4000u,0x4001u,0x7fffffffu,0x80000000u,0xffffffffu}) {
+      const auto fall=ws::rdx::beginReadOffsetRange(0x3fff,false),taken=ws::rdx::beginReadOffsetRange(0x3fff,true);
+      const bool ja=value>0x3fff;assert((value>=fall.preMin && value<=fall.preMax)==!ja);
+      assert((value>=taken.preMin && value<=taken.preMax)==ja);
+    }
+    auto q=ws::rdx::beginReadOffsetRange(0xfff,false);ws::rdx::signReadOffsetRange(q);ws::rdx::shiftReadOffsetRange(q,6);ws::rdx::extentReadOffsetRange(q,32);
+    assert(q.proven() && q.offsetMax==std::uint64_t(0xfff)*64 && q.endExclusive==std::uint64_t(0xfff)*64+32);
+    auto taken=ws::rdx::beginReadOffsetRange(0x3fff,true);ws::rdx::signReadOffsetRange(taken);assert(!taken.signProven && !taken.proven());
+  }
+  std::puts("PASS: c37 unsigned JA boundary values around3FFF/4000 and sign boundary partition both legs exactly; derived alternative bounds and taken-leg refusal prevent hardcoded-result or path-frequency assumptions");
+  {
+    auto crossing=ws::rdx::beginReadOffsetRange(0xffffffff,false);ws::rdx::signReadOffsetRange(crossing);assert(!crossing.signProven);
+    auto over=ws::rdx::beginReadOffsetRange(0x3fff,false);ws::rdx::signReadOffsetRange(over);ws::rdx::shiftReadOffsetRange(over,63);assert(!over.shiftProven && !over.noWrap);
+    auto q=ws::rdx::beginReadOffsetRange(0x3fff,false);ws::rdx::signReadOffsetRange(q);ws::rdx::shiftReadOffsetRange(q,6);ws::rdx::extentReadOffsetRange(q,32);
+    assert(q.endExclusive-1==q.offsetMax+31 && q.offsetMax%q.stride==0);
+    q.offsetMax=UINT64_MAX-16;ws::rdx::extentReadOffsetRange(q,32);assert(!q.proven() && !q.extentKnown);
+  }
+  std::puts("PASS: c37 sign-crossing/shift-overflow/end-extent guards distinguish inclusive offset from exclusive32byte extent and relative alignment, not unknown-base allocation/alignment");
+  {
+    Image f;rangedStore(f);f.code[20]=0x4d;f.code[21]=0x63;f.code[22]=0xc1;
+    r=f.run(true,target,Image::sourceImageSize,&ve);assert(!r.offset.proven() && r.store.memoryEscape && !r.store.destinationContained);
+    Image shifted;rangedStore(shifted);shifted.code[26]=5;r=shifted.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.offset.proven() && !r.store.continuationAllowed);
+    Image generic;rangedStore(generic);generic.code[20]=0x45;generic.code[21]=0x31;generic.code[22]=0xc0;
+    r=generic.run(true,target,Image::sourceImageSize,&ve);assert(!r.offset.proven() && r.store.memoryEscape);
+  }
+  std::puts("PASS: c37 other R8 sources/width/count or generic clobbers invalidate the pinned path range instead of carrying stale numeric predicates across accepted tag-only rules");
+  {
+    auto q=ws::rdx::beginReadOffsetRange(0x3fff,false);ws::rdx::signReadOffsetRange(q);ws::rdx::shiftReadOffsetRange(q,6);ws::rdx::extentReadOffsetRange(q,32);q.currentProof=true;
+    ws::rdx::ReadSlotPublication unknown{};assert(!ws::rdx::readAddressContained(q,unknown));
+    auto base=unknown;base.baseProven=base.writerEnumerationComplete=base.publicationSourceKnown=base.allocationProven=base.rangeProven=base.lifetimeProven=base.criticalDisjointnessProven=true;
+    ws::rdx::ReadOffsetRange absent{};assert(!ws::rdx::readAddressContained(absent,base));
+    base.lifetimeProven=false;assert(!ws::rdx::readAddressContained(q,base));
+    base.lifetimeProven=true;base.criticalDisjointnessProven=false;assert(!ws::rdx::readAddressContained(q,base));
+  }
+  std::puts("PASS: c37 proven offset alone, claimed base alone, missing writer/source/allocation/lifetime or critical disjointness cannot combine into destination containment or continuation");
+  {
+    Image f;rangedStore(f);auto a=flowThroughIdentity(f,false,false,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    assert(a.readDependency.call.targetIdentity.offset.proven() && a.readDependency.call.targetIdentity.offset.currentProof &&
+        a.readDependency.memoryEscape && a.readDependency.firstEscape==target+27 && !a.readDependency.flowComplete && !f.sourceReads);
+    Image changed;rangedStore(changed);changed.changeFinal=true;r=changed.run(true,target,Image::sourceImageSize,&ve);assert(!r.offset.currentProof && !r.admitted);
+    LargeImage large(527161);rangedStore(large);r=ws::rdx::authenticateReadTarget(true,target,Image::sourceImageSize,LargeImage::readLarge,LargeImage::lookupLarge,&large,&ve,Image::query,true,true,true,true,true,true,true);
+    assert(!r.admitted && r.offset.proven() && r.offset.currentProof && r.store.memoryEscape && r.validatedEntries==527161 && !r.publication.baseProven);
+  }
+  std::puts("PASS: c37 actual-parent numeric proof is separate from unchanged may-tags/c36 escape/current-code/full-table/JA obligations; slot writer/base proof remains unperformed/unproven and no new opcode or movement permission appears");
 
 }

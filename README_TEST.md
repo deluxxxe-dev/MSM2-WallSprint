@@ -1,21 +1,21 @@
-# WallSprint v0.1c36 — 未解決ストアの逃避・停止理由を記録
+# WallSprint v0.1c37 — 分岐由来のオフセット範囲とスロット由来の分離
 
-Package **0.1.54**。c35実機で `0x2CF7FFB` はゲーム側の `m256 [R8+RAX] <- YMM0` ストアと確認済みです。書込み先とコード／戻り先スタック等の重なりを現在の証拠では除外できません。今回は32byte書込みの未解決効果を明示し、親のmemory_escape/first_escapeへ伝播させ、同じ場所で解析を停止します。MODの書込み許可や先の命令への進行は追加しません。
+Package **0.1.55**。JA非分岐のunsigned条件からR8D範囲を導き、MOVSXDとSHL6後の相対オフセット0..0xFFFC0、刻み64、32byteストアの排他的終端0xFFFE0を非オーバーフローで証明します。依存tagsは変えません。RAXを供給する正確なスロットの由来・領域・寿命は未証明なので、ストアでの停止とescape1を保持します。
 
 ## 今回の更新・テスト（移行済み環境）
 
 1. ゲームと共有Overstrikeを閉じ、`MSM2-WS\Update-WS.cmd` を実行します。Git更新・既存フル試験・検証・配置を行います。
 2. 起動した共有Overstrikeで通常MOD＋SF＋WSを確認し、`Install mods` → `Run modded game`。
 3. A/cardinalの平らな壁で約3秒 → WallRunを完全終了 → 移動/ファストトラベル → E/diagonalで約3秒。各回は既存の5秒上限に達する前に終了します。
-4. `MSM2-WS\logs` の最新の完全な `MSM2-WS-v0.1c36-YYYYMMDD-HHMMSS.log` を非公開で共有してください。動画は見た目の異常時だけです。
+4. `MSM2-WS\logs` の最新の完全な `MSM2-WS-v0.1c37-YYYYMMDD-HHMMSS.log` を非公開で共有してください。動画は見た目の異常時だけです。
 
-新しい `MOVEMENT_CALLEE_READ_STORE_EFFECT` と親のREAD/CALLを確認します。exact_store_identity/current_proof、write_seen=1、width=32、address/value上下tags、memory_escape=1、first_escape=0x2CF7FFB、pending_unknown_write=1、contained=0、CFG_blocked=1、continuation=0が対象です。既存のVECTOR2/SHL/STATE/CFG/safetyも保持します。入力方法は前回未指定なので同等性を推定しません。今回のログ確認は新しい要約の実機検証であり、同じA/Eの繰返しだけで書込み先の証明が進むとは扱いません。
+新しい `MOVEMENT_CALLEE_READ_OFFSET_RANGE` / `READ_SLOT_PUBLICATION` は数値範囲の証明と依存tags、未実施の参照列挙と完全性を区別します。今回は同じA/Eログを再取得する必要はありません。実EXEがクラウドにないため、実画像のwriter参照調査は未実施です。`source/BUILD.md` のPowerShell手順で実EXEに限定した `slot_publication.py` をローカル実行できます。出力は参照候補メタデータのみで、全writer・割当・寿命や包含の証明ではありません。
 
 下の移行手順は未移行環境向けの参照です。デスクトップの `MSM2 - Overstrike` は普段の起動用で、WSの更新・ビルドは実行しません。
 
 ## 最初の移行
 
-配布 **MSM2-WS-v0.1c36.zip** を **Mods Library の外**へ展開してください。展開したフォルダ内の `Migrate-WS.cmd` と `tools` を一緒に使います。ソース ZIP は別の再現用資料で、正本 `_source` はヘルパーが GitHub から独立 clone します。コードはすべて取得し、配布アーカイブだけを Git の sparse checkout 設定で作業フォルダから除外します。ZIP本体と履歴はGitに残ります。
+配布 **MSM2-WS-v0.1c37.zip** を **Mods Library の外**へ展開してください。展開したフォルダ内の `Migrate-WS.cmd` と `tools` を一緒に使います。ソース ZIP は別の再現用資料で、正本 `_source` はヘルパーが GitHub から独立 clone します。コードはすべて取得し、配布アーカイブだけを Git の sparse checkout 設定で作業フォルダから除外します。ZIP本体と履歴はGitに残ります。
 
 Windows 側に Python 3.11+、Git for Windows、PowerShell、設定済み WSL2 が必要です。WSL 側には既存の MinGW/Clang/Wine/解析 Python のフルビルド環境が必要です。**前提が足りない場合、ビルドや試験を省略して導入することはありません。** 手順は [source/BUILD.md](source/BUILD.md) を参照してください。
 
@@ -40,7 +40,7 @@ Migrate-WS.cmd --game-root "<実際のゲームルート>" --branch codex/v01c20
 
 ```text
 <game>\Mods Library\Mods-Developing\MSM2-WS\
-├─ MSM2-WS-v0.1c36.script
+├─ MSM2-WS-v0.1c37.script
 ├─ Update-WS.cmd
 ├─ Migrate-WS.cmd        （移行用）
 ├─ logs\
@@ -76,7 +76,7 @@ Migrate-WS.cmd --game-root "<実際のゲームルート>" --branch codex/v01c20
 
 ```text
 <game>\Mods Library\Mods-Developing\MSM2-WS\logs\
-MSM2-WS-v0.1c36-YYYYMMDD-HHMMSS.log
+MSM2-WS-v0.1c37-YYYYMMDD-HHMMSS.log
 ```
 
 時刻は PC のローカル時刻です。同秒の衝突は `-01` などを付け、既存ファイルを上書きしません。同じ起動内の A→E は1本に記録します。旧 `log_wallsprint` や共有 `logs` への代替保存はありません。
@@ -89,4 +89,4 @@ MSM2-WS-v0.1c36-YYYYMMDD-HHMMSS.log
 
 通常の入力で試してください。A/E の対応、ちらつき・停止・クラッシュなどがあれば添えてください。動画は見た目の異常時だけです。生ログや private game body を GitHub へ追加しないでください。
 
-確認項目はv0.1c36/package0.1.54、exact-build admission、STORE_EFFECTと親のescape1/first_escape、同じストア停止点、レジスタ／flags不変、Deinit/retention/Position0・watch解除です。A/E各約3秒、既存5秒上限未満。最新ログで要約を検証してください。値や生コードは不要です。次の包含証明にはRAX由来の領域／範囲／寿命と制御・追跡領域との非重複を証明する別の非数値的証拠が必要です。
+今回の確認は自動試験と、必要なら実EXEによるオフラインのスロット参照候補解析です。既存c36のA/E繰返しは不要です。OFFSET_RANGEの証明とベース由来の未証明は独立で、store escape1/contained0/CFG停止を保持します。実画像のJSON結果が得られても、間接writer・除外したproducer・コード境界の完全性が未証明なら停止を続けます。

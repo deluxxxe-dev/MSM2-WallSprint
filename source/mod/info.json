@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.54",
-  "description": "WallSprint v0.1c36 summarizes only exact game-side VEX3.256 m256[R8+RAX]<-YMM0 as an unresolved 32byte memory escape. Code/control-stack aliases remain unexcluded; stop CFG and propagate escape to parent without MOD writes, values, generic store/memory semantics or ownership relaxation.",
+  "version": "0.1.55",
+  "description": "WallSprint v0.1c37 derives the pinned JA-fallthrough R8D/MOVSXD/SHL numeric offset and store extent separately from may-tags. Exact-slot offline reference candidates do not prove all writers/publication/allocation/lifetime. RAX base remains opaque; c36 escape/control-alias barrier remains, no values or gameplay writes.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

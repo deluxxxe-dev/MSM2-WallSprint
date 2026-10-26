@@ -1,3 +1,15 @@
+## Current c36 accepted / c37 address components
+
+VERIFIED-RUNTIME c36 confirms potential-store escape1 before identity refusal.
+VERIFIED-STATIC accepted CMP/JA-fallthrough/MOVSXD/SHL6 derives R8 offsets
+0..0xFFFC0 stride64/store endExclusive0xFFFE0 without values/tag narrowing.
+Base/publication track remains unproven: no authenticated EXE in cloud, actual
+reference/writer counts unknown. New bounded offline exact-slot candidate tool
+excludes deferred producer and never certifies all writers/allocation/lifetime.
+C36 escape/control hard-stop unchanged; no repeated movement capture requested.
+Sources V01C37_ADDRESS_COMPONENTS.md / V01C37_PUBLICATION_STATUS.json; older
+pending c36 notes below superseded by accepted runtime and this separate proof.
+
 ## Current c35 store accepted / c36 containment fails closed
 
 VERIFIED-RUNTIME V01C35_RUNTIME_RESULT.md: second VMOVUPS0x2CF7FFB is VEX3.256

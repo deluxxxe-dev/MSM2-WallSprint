@@ -959,7 +959,7 @@ void configure(const Spec &s, Gate validate) noexcept {
         page.protect=mbi.Protect;page.allocationProtect=mbi.AllocationProtect;return true;
       };
       auto proof=ws::rdx::authenticateReadTarget(nc.instructionVerified && s.imageSize<=UINT32_MAX,
-          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner,entryTags,queryImage,true,true,true,true,true,true);
+          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner,entryTags,queryImage,true,true,true,true,true,true,true);
       if (expected && (!proof.stable || proof.scanBytes!=expected->scanBytes ||
           std::memcmp(proof.snapshot.data(),expected->snapshot.data(),proof.scanBytes))) {
         proof.admitted=false;proof.load.admitted=false;proof.unknownLoad.admitted=false;proof.mov.loadedMayTags=7;proof.size=0;proof.reason="target_code_changed_between_tag_prepass_and_reproof";
@@ -1515,6 +1515,25 @@ void configure(const Spec &s, Gate validate) noexcept {
              unsigned(se.memoryEscape && se.currentProof && identity.stable),se.firstEscape,unsigned(se.pendingUnknownWrite),unsigned(se.destinationContained),
              unsigned(se.controlAliasUnexcluded),unsigned(se.cfgBlocked),unsigned(se.continuationAllowed),unsigned(se.laterMemoryFactsUsable),unsigned(se.registerStatePreserved),
              se.pathMask,se.edgeFrom,se.edgeTarget,se.samples,se.reason);
+    const auto &range=identity.offset;const auto &pub=identity.publication;
+    writeLog("MOVEMENT_CALLEE_READ_OFFSET_RANGE enabled=%u predicate_known=%u leg=%s predicate=unsigned_R8D_not_above_CMP_immediate "
+             "compare_bound=%llu R8D_min=%llu R8D_max=%llu source_unchanged=%u MOVSXD_proven=%u sign_min=%llu sign_max=%llu "
+             "SHL_proven=%u shift_count=%u offset_min=%llu offset_max_inclusive=%llu offset_stride=%llu store_width=%u "
+             "end_extent_exclusive=%llu overflow_wrap_excluded=%u offset_proven=%u current_proof=%u "
+             "alignment_scope=relative_offset_only_not_unknown_base arithmetic_scope=offset_only_base_addition_unproved "
+             "separate_from_may_tags=1 live_values_read=0 reason=%s",
+             unsigned(identity.addressProofEnabled),unsigned(range.predicateKnown),range.fallthrough?"fallthrough":"taken_or_unproved",
+             (unsigned long long)range.compareBound,(unsigned long long)range.preMin,(unsigned long long)range.preMax,unsigned(range.sourceUnchanged),
+             unsigned(range.signProven),(unsigned long long)range.signMin,(unsigned long long)range.signMax,unsigned(range.shiftProven),range.shiftCount,
+             (unsigned long long)range.offsetMin,(unsigned long long)range.offsetMax,(unsigned long long)range.stride,range.width,
+             (unsigned long long)range.endExclusive,unsigned(range.noWrap),unsigned(range.proven()),unsigned(range.currentProof && identity.stable),range.reason);
+    writeLog("MOVEMENT_CALLEE_READ_SLOT_PUBLICATION slot_rva=0x%x slot_metadata_known=%u slot_writable=%u reference_scan_performed=%u "
+             "writer_enumeration_complete=%u publication_source=%s source_known=%u allocation_proven=%u range_proven=%u lifetime_proven=%u "
+             "critical_disjointness_proven=%u base_proven=%u offset_proven=%u destination_contained=%u CFG_continuation=0 "
+             "live_qword_reads=0 pointer_chase=0 effect_certificate=0 reason=%s",
+             pub.slot,unsigned(pub.slotMetadataKnown),unsigned(pub.slotWritable),unsigned(pub.xrefScanPerformed),unsigned(pub.writerEnumerationComplete),pub.sourceKind,
+             unsigned(pub.publicationSourceKnown),unsigned(pub.allocationProven),unsigned(pub.rangeProven),unsigned(pub.lifetimeProven),unsigned(pub.criticalDisjointnessProven),
+             unsigned(pub.baseProven),unsigned(range.proven() && range.currentProof),unsigned(ws::rdx::readAddressContained(range,pub)),pub.reason);
     const auto &unknown=identity.unknownLoad;
     writeLog("MOVEMENT_CALLEE_READ_UNKNOWN_LOAD site_rva=0x%x enabled=%u attempted=%u source_rva=0x%x width=8 "
              "metadata_passed=%u metadata_rechecked=%u PE_metadata_equal=%u page_metadata_equal=%u target_code_rechecked=%u "

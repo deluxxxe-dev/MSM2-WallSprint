@@ -1,5 +1,6 @@
 #pragma once
 #include "NativeHooks/vector_dependency.hpp"
+#include "NativeHooks/store_address_proof.hpp"
 #include <array>
 #include <cstdint>
 namespace ws::rdx {
@@ -211,7 +212,7 @@ inline void mergeReadStoreEffect(ReadStoreEffect &a,const ReadStoreEffect &b) {
   if (!a.firstEscape) a.firstEscape=b.firstEscape;
 }
 struct ReadTargetIdentity {
-  bool storeSummaryEnabled{},nextVectorEnabled{},shiftEnabled{},signExtendEnabled{},vector256Enabled{},enabled{}, admitted{}, missingRuntime{}, stable{}, tableValid{};
+  bool addressProofEnabled{},storeSummaryEnabled{},nextVectorEnabled{},shiftEnabled{},signExtendEnabled{},vector256Enabled{},enabled{}, admitted{}, missingRuntime{}, stable{}, tableValid{};
   bool directoryPairValid{}, directoryRangeInImage{}, directorySizeDivisible{},
       tableBudgetAdmitted{}, entryCapExceeded{}, byteCapExceeded{},
       validationSkippedByCap{}, tableReadFailed{}, tableReadComplete{}, lookupQueried{};
@@ -227,6 +228,8 @@ struct ReadTargetIdentity {
   ReadShiftContract shift{};
   ReadNextVectorContract nextVector{};
   ReadStoreEffect store{};
+  ReadOffsetRange offset{};
+  ReadSlotPublication publication{};
   ReadImageLoad load{};
   ReadUnknownLoad unknownLoad{};
   ReadLeafBoundary boundary{};
@@ -240,5 +243,5 @@ struct ReadTargetIdentity {
 ReadTargetIdentity authenticateReadTarget(bool buildAndCallVerified,
     std::uint32_t target, std::uint32_t imageSize, IdentityRead,
     IdentityLookup, void *context, const ReadEntryTags *entryTags = nullptr,
-    IdentityPageQuery pageQuery = nullptr, bool pinnedUnknownLoad = false, bool pinnedVector256 = false, bool pinnedSignExtend = false, bool pinnedShift = false, bool pinnedNextVector = false, bool pinnedStoreSummary = false) noexcept;
+    IdentityPageQuery pageQuery = nullptr, bool pinnedUnknownLoad = false, bool pinnedVector256 = false, bool pinnedSignExtend = false, bool pinnedShift = false, bool pinnedNextVector = false, bool pinnedStoreSummary = false, bool pinnedAddressProof = false) noexcept;
 }

@@ -202,3 +202,15 @@ C37 must not repeat c36 A/E metadata as if that could solve containment. It shou
 Do not observe/log a live numeric pointer merely to narrow aliases. Do not assume the slot is a pointer, pool, array, allocation or owner until its writer/publication chain proves that. Exact-slot xref/write discovery is allowed; generic arbitrary memory emulation is not.
 
 Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
+
+## c37 prepared — offset range proven independently of opaque base
+
+v0.1c37/package0.1.55 derives fallthrough unsigned R8D interval through exact
+MOVSXD/SHL6: offsets0..0xFFFC0/stride64/endExclusive0xFFFE0 for32bytes, checked
+nonwrap, separate from unchanged tags. Other R8 writes invalidate it. Publication
+slot0xC2D2580 writers/source/allocation/extent/lifetime remain unproven; no actual
+authenticated EXE in cloud, counts unknown/not scanned. Bounded hash-guarded
+offline exact-slot candidate tool included; no all-writer/ownership claim and
+deferred producer excluded. Base+offset/control containment false; c36 escape1/
+pending/hard CFG stop and all safety gates preserved. No repeated A/E capture.
+NEXT unchanged; see V01C37_ADDRESS_COMPONENTS.md / PUBLICATION_STATUS / CODEX_RESULT.

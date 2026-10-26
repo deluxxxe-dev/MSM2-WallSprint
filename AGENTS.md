@@ -174,3 +174,11 @@ and regression checks. `docs/mod-tools/MANUAL.md` combines all four for browsing
 Update the individual specification and combined manual together when behavior
 changes. Keep runtime evidence distinct from authored specifications; a manual
 does not authorize gameplay/SF changes or claim an unperformed real-PC test.
+
+C37 implementation note: pinned path-specific unsigned CMP/JA fallthrough,
+MOVSXD/SHL6 and32byte extent derive an offset range independently of may-tags.
+R8 clobbers invalidate it. Exact-slot base/publication/writer completeness and
+allocation/lifetime remain unproven. Offline slot_publication.py requires exact
+file SHA/pinned decoder, excludes the deferred producer, exports candidates only
+and never treats a byte sweep as all-writer proof. No current EXE in cloud; do
+not request another identical A/E capture or open c36 containment/CFG gates.

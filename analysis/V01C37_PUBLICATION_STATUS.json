@@ -1,0 +1,17 @@
+{
+  "slot_rva": "0xC2D2580",
+  "actual_image_available_in_cloud": false,
+  "reference_scan_performed": false,
+  "actual_reference_count": null,
+  "actual_writer_count": null,
+  "writer_enumeration_complete": false,
+  "publication_source_kind": "unproven_opaque_qword",
+  "allocation_proven": false,
+  "range_proven": false,
+  "lifetime_proven": false,
+  "base_proven": false,
+  "destination_contained": false,
+  "reason": "authenticated_full_executable_not_available_no_writer_or_lifetime_evidence",
+  "offline_tool": "source/tools/slot_publication.py",
+  "same_movement_recapture_requested": false
+}

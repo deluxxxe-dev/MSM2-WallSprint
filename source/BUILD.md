@@ -192,3 +192,36 @@ independent address/payload halves, valid current proof/parent escape propagatio
 no architectural state change, clean/store union, hard stop before later memory/
 RET even with familiar source forms, wrong-form/code/tag refusal/full table.
 No new store execution or memory map; see V01C36_STORE_CONTAINMENT.md.
+
+## c37 address proof and offline exact-slot candidates
+
+v0.1c37/package0.1.55 adds6 identity groups (110 total) and8 Python slot groups.
+The range comes from decoded CMP immediate + JA fallthrough, exact MOVSXD and
+SHL count, checked64bit arithmetic and32byte extent; it never changes may-tags.
+No identical A/E capture is requested. Publication base/lifetime remains unproven.
+
+To obtain NEW offline exact-slot candidate metadata locally after Update-WS,
+use Windows PowerShell with the existing configured WSL2/pinned analysis Python:
+
+```powershell
+$gameRoot = "C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2"
+$wsRoot = Join-Path $gameRoot "Mods Library\Mods-Developing\MSM2-WS"
+$toolWin = Join-Path $wsRoot "_source\source\tools\slot_publication.py"
+$outWin = Join-Path $wsRoot "logs\MSM2-WS-v0.1c37-slot-publication.json"
+$toolWsl = wsl -d Ubuntu-24.04 -- wslpath -a -u $toolWin
+$exeWsl = wsl -d Ubuntu-24.04 -- wslpath -a -u (Join-Path $gameRoot "Spider-Man2.exe")
+$outWsl = wsl -d Ubuntu-24.04 -- wslpath -a -u $outWin
+wsl -d Ubuntu-24.04 --exec /workspace/toolchains/analysis-python/bin/python $toolWsl $exeWsl --output $outWsl
+```
+
+Only exact executable SHA256 and Capstone5.0.6 are accepted. It reads the on-disk
+file for authentication/code metadata, never the live slot/vector/register value;
+no instruction bytes, immediates, private file paths or full bodies are exported.
+Caps: file512MiB/code64MiB/5million instructions/256references/runtime600000entries.
+Deferred0x351EB00 containing runtime span is excluded; if its boundary is missing,
+the containing executable section is excluded. No calls are followed. RIP-relative
+or absolute direct candidates are not an all-writer proof. Decode gaps, caps,
+unproven x86 entry boundaries, excluded producer and indirect/base-register writes
+prevent completeness. Even one writer cannot establish allocation/range/lifetime.
+The JSON can guide a future bounded publication investigation; it never opens
+containment/CFG or ownership. Keep it private for review; do not upload the EXE.

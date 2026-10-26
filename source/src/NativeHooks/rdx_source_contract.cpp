@@ -1789,6 +1789,7 @@ struct LeafCfgResult {
   ReadShiftContract shift{};
   ReadNextVectorContract nextVector{};
   ReadStoreEffect store{};
+  ReadOffsetRange offset{};
   ReadLeafBoundary boundary{};
   std::array<ReadLeafOutcome,readLeafPathCap> outcomes{};
 };
@@ -1798,11 +1799,11 @@ struct LeafCfgResult {
 LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
     std::uint32_t codeBegin,std::uint32_t codeEnd,std::uint32_t nextRuntime,
     const ReadEntryTags *entry,bool symbolic,Slice &merged,ReadFlow &mergedTags,std::size_t imageSize,
-    ReadImageLoad *load=nullptr,IdentityRead sourceRead=nullptr,IdentityPageQuery pageQuery=nullptr,void *sourceContext=nullptr,ReadUnknownLoad *unknownLoad=nullptr,bool vector256=false,bool signExtend=false,bool shift=false,bool nextVector=false,bool storeSummary=false) {
+    ReadImageLoad *load=nullptr,IdentityRead sourceRead=nullptr,IdentityPageQuery pageQuery=nullptr,void *sourceContext=nullptr,ReadUnknownLoad *unknownLoad=nullptr,bool vector256=false,bool signExtend=false,bool shift=false,bool nextVector=false,bool storeSummary=false,bool addressProof=false) {
   static_assert(readLeafBranchCap==1 && readLeafPathCap==2 && readLeafVisitCap==64,"Review bounded fan-out before changing budgets");
   LeafCfgResult out{};
   struct Path { Slice slice{};ReadFlow flow{};unsigned pc{},clobberGpr{},clobberXmm{};
-    bool flagsKnown{},actualTags{};std::uint32_t producer{},edgeFrom{},edgeTarget{}; };
+    bool flagsKnown{},actualTags{};std::uint32_t producer{},edgeFrom{},edgeTarget{};ReadOffsetRange offset{}; };
   Path *current=nullptr;unsigned currentPath=0;
   // A carrier mask is NOT a may-tag set. Convert exactly once before injecting
   // intrinsic top7; subsequent admitted operations use the actual three-bit lattice.
@@ -1816,6 +1817,7 @@ LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
   auto fail=[&](const cs_insn *ins,std::uint32_t at,const char *why) {
     out.barrier=at;out.reason=why;
     if (current) {
+      out.offset=current->offset;
       auto tags=*current;
       out.boundary.path=currentPath;out.boundary.edgeFrom=tags.edgeFrom;out.boundary.edgeTarget=tags.edgeTarget;
       if (actualize(tags)) {out.boundary.tagsKnown=true;out.boundary.gpr=tags.flow.g;out.boundary.xmm=tags.flow.x;out.boundary.xmmHigh=tags.flow.high;out.boundary.above256Zero=tags.flow.above256Zero;out.boundary.vectorTracked=tags.flow.vectorTracked;out.boundary.flagsTags=tags.flow.flags;}
@@ -1898,6 +1900,11 @@ LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
         if (tags&7u) return fail(&ins,at,"target_JA_tracked_condition_dependence_refused");
         if (scheduled>=readLeafPathCap) return fail(&ins,at,"target_cfg_path_cap");
         paths[scheduled]=p;paths[scheduled].edgeFrom=at;paths[scheduled].edgeTarget=out.branch.taken;
+        if (addressProof) {
+          const auto immediate=std::uint32_t(out.cmp.operands[1].immediate);
+          paths[scheduled].offset=beginReadOffsetRange(immediate,true);
+          p.offset=beginReadOffsetRange(immediate,false);
+        }
         paths[scheduled++].pc=out.branch.taken-readIdentityTarget;
         p.edgeFrom=at;p.edgeTarget=out.branch.fallthrough;
         p.pc=out.branch.fallthrough-readIdentityTarget;out.branch.expanded=true;
@@ -1977,6 +1984,10 @@ LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
           return fail(&ins,at,s.detail.reason);
         }
         if (!actualize(p)) return fail(&ins,at,"target_MOVSXD_current_tags_required");
+        if (addressProof) {
+          if (s.sourceParent==8 && s.destinationParent==8 && s.sourceBits==32 && s.destinationBits==64) signReadOffsetRange(p.offset);
+          else if (s.destinationParent==8) invalidateReadOffsetRange(p.offset);
+        }
         const auto sourceTags=p.flow.g[s.sourceParent];
         s.detail.operands[0].registerTags=p.flow.g[s.destinationParent];s.detail.operands[1].registerTags=sourceTags;
         p.slice.s.g[s.destinationParent]={unknown,-1,0};p.flow.g[s.destinationParent]=sourceTags;
@@ -1991,6 +2002,10 @@ LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
         }
         if (!actualize(p)) return fail(&ins,at,"target_SHL_current_tags_required");
         s=describeShift(ins,d.h,p.slice,p.flow,!symbolic,true,imageSize,codeBegin,codeEnd);
+        if (addressProof && s.destinationParent==8) {
+          if (s.destinationBits==64 && s.countKnown && s.effectiveCount==6) shiftReadOffsetRange(p.offset,s.effectiveCount);
+          else invalidateReadOffsetRange(p.offset);
+        }
         // At count0 retain the operand and flags. A 32-bit destination still
         // zero-extends its parent; drop pointer provenance even for count0.
         if (s.effectiveCount || s.zeroExtend32) {
@@ -2010,7 +2025,10 @@ LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
           // Actualize a copy only: the summary changes no architectural state.
           auto current=p;const bool known=actualize(current);
           out.store=describePinnedStore(ins,d.h,n,current.flow,known,path,p.edgeFrom,p.edgeTarget);
-          if (out.store.exact) return fail(&ins,at,out.store.reason);
+          if (out.store.exact) {
+            if (addressProof) extentReadOffsetRange(p.offset,out.store.width);
+            return fail(&ins,at,out.store.reason);
+          }
         }
         if (!nextVector || !n.compatibleLoad) {
           if (!nextVector && n.compatibleLoad) m.reason="target_second_VMOVUPS_diagnostic_only_semantics_disabled";
@@ -2056,6 +2074,7 @@ LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
       const bool flags=scalar && (ins.id==X86_INS_CMP || ins.id==X86_INS_TEST);
       if (x.prefix[0] || (!move && !zero && !flags) || !p.slice.step(ins,false)) return fail(&ins,at,"target_cfg_instruction_effect_refused");
       if (zero || (flags && ins.id==X86_INS_CMP && x.operands[0].reg==x.operands[1].reg)) incoming=0;
+      if (addressProof) for (unsigned j=0;j<nw;++j) if (cmpParent(writes[j])==8) invalidateReadOffsetRange(p.offset);
       for (unsigned j=0;j<nw;++j) {
         if (!p.flow.put(writes[j],incoming)) return fail(&ins,at,"target_cfg_register_effects_unknown");
         if (reg(writes[j])>=0) p.clobberGpr |= 1u<<reg(writes[j]);
@@ -2137,7 +2156,14 @@ void sampleVectorBoundary(ReadTargetIdentity &t,const Slice &caller,const ReadFl
   auto child=caller;child.s.g[4]=plus(caller.s.g[4],-8);auto tags=flow;
   auto load=t.load;auto unknown=t.unknownLoad;
   const auto cfg=walkPinnedLeaf(t.snapshot.data(),t.scanBytes,t.codeBegin,t.codeEnd,t.nextRuntime,
-      nullptr,false,child,tags,imageSize,&load,nullptr,nullptr,nullptr,&unknown,t.vector256Enabled,t.signExtendEnabled,t.shiftEnabled,t.nextVectorEnabled,t.storeSummaryEnabled);
+      nullptr,false,child,tags,imageSize,&load,nullptr,nullptr,nullptr,&unknown,t.vector256Enabled,t.signExtendEnabled,t.shiftEnabled,t.nextVectorEnabled,t.storeSummaryEnabled,t.addressProofEnabled);
+  if (t.addressProofEnabled && cfg.offset.enabled) {
+    auto fresh=cfg.offset;fresh.currentProof=t.offset.currentProof && t.stable && fresh.proven();
+    if (t.offset.proven() && (!fresh.proven() || fresh.offsetMin!=t.offset.offsetMin || fresh.offsetMax!=t.offset.offsetMax || fresh.endExclusive!=t.offset.endExclusive)) {
+      invalidateReadOffsetRange(fresh);fresh.reason="conflicting_parent_offset_range_proofs";
+    }
+    t.offset=fresh;
+  }
   if (cfg.store.memoryWriteSeen) {
     auto fresh=cfg.store;fresh.currentProof=t.store.currentProof && t.stable;fresh.samples=1;
     mergeReadStoreEffect(t.store,fresh);
@@ -2264,7 +2290,7 @@ bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
         std::memcmp(c.code,proof.snapshot.data(),c.size))
       return fail(begin,"snapshot","read_call_CFG_identity_pin_or_snapshot_mismatch");
     const auto cfg=walkPinnedLeaf(c.code,c.size,c.targetIdentity.codeBegin,c.targetIdentity.codeEnd,
-        c.targetIdentity.nextRuntime,nullptr,false,state,tags,a.imageSize,&c.targetIdentity.load,nullptr,nullptr,nullptr,&c.targetIdentity.unknownLoad,c.targetIdentity.vector256Enabled,c.targetIdentity.signExtendEnabled,c.targetIdentity.shiftEnabled,c.targetIdentity.nextVectorEnabled,c.targetIdentity.storeSummaryEnabled);
+        c.targetIdentity.nextRuntime,nullptr,false,state,tags,a.imageSize,&c.targetIdentity.load,nullptr,nullptr,nullptr,&c.targetIdentity.unknownLoad,c.targetIdentity.vector256Enabled,c.targetIdentity.signExtendEnabled,c.targetIdentity.shiftEnabled,c.targetIdentity.nextVectorEnabled,c.targetIdentity.storeSummaryEnabled,c.targetIdentity.addressProofEnabled);
     c.visits+=cfg.visits;
     if (!cfg.complete || c.visits>4096)
       return fail(cfg.barrier?cfg.barrier:begin,cfg.mnemonic,c.visits>4096?"read_call_cumulative_visit_cap":cfg.reason);
@@ -3789,10 +3815,10 @@ ReadEntryTags currentReadEntryEvidence(const ReadCallContract &c) noexcept {
   return e;
 }
 ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
-    std::uint32_t imageSize, IdentityRead read, IdentityLookup lookup, void *ctx, const ReadEntryTags *entryTags,IdentityPageQuery pageQuery,bool pinnedUnknownLoad,bool pinnedVector256,bool pinnedSignExtend,bool pinnedShift,bool pinnedNextVector,bool pinnedStoreSummary) noexcept {
+    std::uint32_t imageSize, IdentityRead read, IdentityLookup lookup, void *ctx, const ReadEntryTags *entryTags,IdentityPageQuery pageQuery,bool pinnedUnknownLoad,bool pinnedVector256,bool pinnedSignExtend,bool pinnedShift,bool pinnedNextVector,bool pinnedStoreSummary,bool pinnedAddressProof) noexcept {
   static_assert(readCallByteCap==128 && readCallInstructionCap<=32,
                 "No-unwind admission may not silently widen c23 leaf caps");
-  ReadTargetIdentity out{}; out.enabled=true; out.target=target;out.unknownLoad.enabled=pinnedUnknownLoad;out.vector256Enabled=pinnedVector256;out.signExtendEnabled=pinnedSignExtend;out.shiftEnabled=pinnedShift;out.nextVectorEnabled=pinnedNextVector;out.storeSummaryEnabled=pinnedStoreSummary;
+  ReadTargetIdentity out{}; out.enabled=true; out.target=target;out.unknownLoad.enabled=pinnedUnknownLoad;out.vector256Enabled=pinnedVector256;out.signExtendEnabled=pinnedSignExtend;out.shiftEnabled=pinnedShift;out.nextVectorEnabled=pinnedNextVector;out.storeSummaryEnabled=pinnedStoreSummary;out.addressProofEnabled=pinnedAddressProof;out.offset.enabled=pinnedAddressProof;out.publication.slot=readImageSource;
   if (entryTags && entryTags->samples) {
     out.entryTagsKnown=true;out.entryTagSamples=entryTags->samples;
     for (unsigned k=0;k<16;++k) if ((entryTags->gpr[k]|entryTags->xmm[k])&~7u) out.entryTagsKnown=false;
@@ -3948,8 +3974,8 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
           Slice merged;ReadFlow tags;
           for (unsigned k=0;k<16;++k) { tags.g[k]=1u<<k;tags.x[k]=1u<<(16+k); }
           const auto cfg=walkPinnedLeaf(out.snapshot.data(),limit,out.codeBegin,out.codeEnd,out.nextRuntime,
-              out.entryTagsKnown?entryTags:nullptr,true,merged,tags,imageSize,&out.load,read,pageQuery,ctx,&out.unknownLoad,out.vector256Enabled,out.signExtendEnabled,out.shiftEnabled,out.nextVectorEnabled,out.storeSummaryEnabled);
-          out.cmp=cfg.cmp;out.branch=cfg.branch;out.mov=cfg.mov;out.vector=cfg.vector;out.signExtend=cfg.signExtend;out.shift=cfg.shift;out.nextVector=cfg.nextVector;out.store=cfg.store;out.instructions=cfg.instructions;
+              out.entryTagsKnown?entryTags:nullptr,true,merged,tags,imageSize,&out.load,read,pageQuery,ctx,&out.unknownLoad,out.vector256Enabled,out.signExtendEnabled,out.shiftEnabled,out.nextVectorEnabled,out.storeSummaryEnabled,out.addressProofEnabled);
+          out.cmp=cfg.cmp;out.branch=cfg.branch;out.mov=cfg.mov;out.vector=cfg.vector;out.signExtend=cfg.signExtend;out.shift=cfg.shift;out.nextVector=cfg.nextVector;out.store=cfg.store;out.offset=cfg.offset;out.instructions=cfg.instructions;
           out.paths=cfg.paths;out.visits=cfg.visits;out.cfgComplete=cfg.complete;
           out.pathEffectsDiffer=cfg.effectsDiffer;out.boundary=cfg.boundary;out.outcomes=cfg.outcomes;
           if (out.unknownLoad.attempted) {
@@ -3980,6 +4006,9 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
               out.stable=false;out.store.currentProof=false;return fail("target_store_summary_current_code_changed",out.store.site,"vmovups");
             }
             out.store.currentProof=out.stable && out.store.tagsKnown;
+            out.offset.currentProof=out.store.currentProof && out.offset.proven();
+            out.publication.slotMetadataKnown=out.load.metadataValid;
+            out.publication.slotWritable=out.load.sectionWritable;
           }
           if (!cfg.complete) return fail(cfg.reason,cfg.barrier,cfg.mnemonic);
           // All paths must pass before any span/hash can exist; pin current bytes again.
