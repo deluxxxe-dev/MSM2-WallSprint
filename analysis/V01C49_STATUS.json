@@ -292,5 +292,16 @@
     "sha256": "d8e8333fa65c01eb617dd360019bbb1aa5f88b0fab4990e149f29230ac3af989",
     "exact_copy_of_tested_binary": true
   },
-  "no_new_native_Windows_rule_established_Wisdoms_update_not_required_by_c49": true
+  "no_new_native_Windows_rule_established_Wisdoms_update_not_required_by_c49": true,
+  "source_implementation_commit": "118e7bb2a7669a11c3c86133c127171d1f979018",
+  "implementation_publication_verified": {
+    "PASS": 1,
+    "branch": "codex/v01c20-edi-value-provenance",
+    "commit": "118e7bb2a7669a11c3c86133c127171d1f979018",
+    "fresh_GitHub_snapshot_equal": true,
+    "changed_files_compared": 23,
+    "primary_result": "VCH_SEARCH_CONTINUATION_BRIDGE_UNAVAILABLE",
+    "source_input_count": 262,
+    "no_c48_native_probe": true
+  }
 }

@@ -2,7 +2,7 @@
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
 Task base **53ad63810fc04255ebcaaff7880481b063764684**.
-Implementation commit: recorded in the final publication metadata below.
+Implementation/source commit: **118e7bb2a7669a11c3c86133c127171d1f979018**.
 Primary: **VCH_SEARCH_CONTINUATION_BRIDGE_UNAVAILABLE**.
 
 Repository test-only work is complete; native callback/order and stage3 bridge
@@ -165,8 +165,20 @@ No probe/production code changed after validation; the final focused/hooks rerun
 checks the adjusted control-suite wiring. Later changes are handoff/publication metadata.
 Therefore the full code suite need not be repeated after documentation-only
 finalization. Package/copy/integrity checks are repeated after final metadata.
-Implementation commit and remote/fresh-clone publication check follow below.
-The task file is preserved.
+## Publication / source provenance
+
+Implementation/source commit **118e7bb2a7669a11c3c86133c127171d1f979018** was pushed to the intended
+branch. Remote HEAD matched. `python3 /tmp/ws-c49-check-publication.py` returned
+1 PASS: a fresh filtered GitHub clone has the same commit and all23 changed files
+byte-identical, including the tested PE; primary UNAVAILABLE, native-not-executed
+and no-c48-probe boundaries remain intact. Source implementation SHA is recorded
+in both mirrored status files and the native manifest. This final metadata commit
+follows that implementation and changes no code/tool input or tested binary.
+Final metadata push/remote equality and fresh snapshot are checked again before
+the completion response, which reports the final published branch/HEAD SHA.
+Package and2 integrity checks were repeated after metadata; full code regression
+rerun is unnecessary because all262 code/tool inputs remain unchanged.
+The task file and five original untracked artifacts are preserved.
 
 ---
 
