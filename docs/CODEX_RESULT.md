@@ -1,6 +1,7 @@
 # Codex result — c42 per-bit native mitigation boundary
 
 Branch **codex/v01c20-edi-value-provenance**, task base **7ad4e55**.
+Implementation **a1302c4bf182e0f03f871e1c5ebe8b304720c5a8**.
 **Classifier implementation/owned validation succeeded; native witness recheck
 pending.** Runtime remains v0.1c38/package0.1.56. No production integration,
 mitigation setting change, slot watch or new game release.

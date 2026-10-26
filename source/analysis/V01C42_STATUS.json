@@ -102,5 +102,6 @@
   "owner_action_after_verified_publication": "one_game_free_standalone_native_Windows_run",
   "owner_native_command": ".\\continuation-witness.exe --position --multiple --json",
   "standalone_refreshed_after_required_tests": true,
-  "standalone_sha256": "ae9831d3acda845637ca7bee07992e6f6dfe41de124e496277597b1c8697bbf8"
+  "standalone_sha256": "ae9831d3acda845637ca7bee07992e6f6dfe41de124e496277597b1c8697bbf8",
+  "implementation_commit": "a1302c4bf182e0f03f871e1c5ebe8b304720c5a8"
 }

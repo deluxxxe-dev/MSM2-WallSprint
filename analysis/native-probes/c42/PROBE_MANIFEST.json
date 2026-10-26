@@ -1007,5 +1007,6 @@
   "production_integrated": false,
   "validated_environment": "Wine",
   "original_c41_artifact_retained": true,
-  "PE_link_timestamp_may_change_rebuild_hash": true
+  "PE_link_timestamp_may_change_rebuild_hash": true,
+  "source_commit": "a1302c4bf182e0f03f871e1c5ebe8b304720c5a8"
 }
