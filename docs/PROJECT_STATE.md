@@ -30,40 +30,19 @@ Runtime source relation remains `RDX=entry RSP+0x28`; sampled `[RDX] XYZ` equals
 
 ## Accepted reverse-engineering chain
 
-### c19-c23
+### c19-c25 foundation
 
 ```text
 0x2B2358E: mov dword ptr [RCX+0x10C], EDI
-RCX = writer-entry Hero Transform
-producer of EDI = 0x2B2356F memory load
-same-field read = 0x2B23578: mov EAX,[RCX+0x10C]
+EDI producer=0x2B2356F memory load
+same-field read=0x2B23578: mov EAX,[RCX+0x10C]
 0x2B235BE test r8b,r8b -> 0x2B235C1 je tag-disjoint
 0x2B235D4 -> 0x2CF7FE0 carries selected read in raw GPR0 tag1
 ```
 
-Raw analyzer GPR indices/origins are not typed ABI declarations.
+C25 authenticated all 527161 runtime-function entries and proved target `0x2CF7FE0` has no containing runtime entry; strict pinned no-unwind analysis is legitimate for this exact image.
 
-### c24-c25 runtime-function basis
-
-```text
-directory_rva=0xC566000
-directory_bytes=6325932
-entry_bytes=12
-derived_entries=527161
-entries_validated=527161
-all_entries_read_and_validated=1
-table_structurally_valid=1
-runtime_lookup_queried=1
-target_rva=0x2CF7FE0
-runtime_lookup_found=0
-next_runtime_rva=0x2CF8020
-missing_runtime_entry=1
-PE_runtime_table_valid=1
-```
-
-The strict pinned no-unwind fallback is legitimate for this exact image.
-
-### c26-c34 accepted target prefix
+### c26-c35 accepted target prefix
 
 ```text
 0x2CF7FE0: cmp r8d,0x3FFF
@@ -72,11 +51,12 @@ The strict pinned no-unwind fallback is legitimate for this exact image.
 0x2CF7FF0: vmovups ymm0,ymmword ptr [rdx]
 0x2CF7FF4: movsxd r8,r8d
 0x2CF7FF7: shl r8,6
+0x2CF7FFB: vmovups ymmword ptr [r8+rax],ymm0
 ```
 
 Both JA outcomes remain mandatory.
 
-Accepted abstract state before `0x2CF7FFB`:
+Fallthrough pre-store abstract state:
 
 ```text
 RAX tags=0x7
@@ -87,73 +67,86 @@ above256_known_zero=1
 flags tags=0x7
 ```
 
-Important interpretation:
+Interpretation:
+- `RAX=0x7` is may-top from the opaque writable `.data` qword load, not observed taint.
+- YMM0 low/high `0x7` are conservative loaded-vector dependence, not observed taint.
+- flags `0x7` comes from undefined AF/OF after `shl r8,6`.
 
-- c30 `RAX=0x7` is a may-depend upper bound from an opaque writable `.data` qword load, not observed taint.
-- c32 YMM0 low/high `0x7` is conservative unknown loaded-vector dependence, not observed taint.
-- c34 flags `0x7` comes from undefined AF/OF after `shl r8,6`, not observed selected dependence.
+## c36 accepted runtime result — unresolved store escape is a hard CFG barrier
 
-## c35 accepted runtime result — second VMOVUPS is a store
+Evidence: `analysis/V01C36_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c36-20261026-150111.log`.
 
-Evidence: `analysis/V01C35_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c35-20261026-142344.log`.
-
-Input method was not supplied for this capture. Do not infer device equivalence from motion observations; instruction-level facts below do not depend on input device.
-
-Exact instruction:
+C36 confirms the exact existing game-side store and its unresolved effect summary:
 
 ```text
-0x2CF7FFB: vmovups
-bytes=6
-encoding=VEX3
-opcode=0x11
-vector_bits=256
-memory_width=32
-memory_read=0
-memory_write=1
-memory_RMW=0
-flags_preserved=1
-GPR_writes=0
-vector_writes=0
-SP_write=0
+site_rva=0x2CF7FFB
+exact_store_identity=1
+current_proof=1
+memory_write_seen=1
+memory_write_width=32
+memory_address_tags=0x7
+memory_value_low128_tags=0x7
+memory_value_high128_tags=0x7
+memory_alias_may_mask=0x7F
+critical_alias_may_mask=0x3FF
+memory_escape=1
+first_escape_rva=0x2CF7FFB
+pending_unknown_write=1
+store_destination_contained=0
+control_alias_unexcluded=1
+CFG_blocked=1
+continuation_allowed=0
+later_memory_facts_usable=0
+architectural_registers_preserved=1
+reason=target_store_destination_code_or_control_stack_alias_unexcluded
 ```
 
-Exact decoded operands for the current abstract state:
+The critical may-mask conservatively includes current code/runtime data, control/return stack, caller-home and callee-private stack, Hero/Transform, `Transform+0x10C`, writer source, Position storage and other later memory. This is uncertainty, not proof of actual overlap.
+
+The unresolved effect now propagates correctly into the parent summaries before target-identity refusal:
 
 ```text
-m256 [R8 + RAX] <- YMM0
-base R8 tags=0x0
-index RAX tags=0x7
-scale=1
-displacement=0
-YMM0.low128 tags=0x7
-YMM0.high128 tags=0x7
-above256_known_zero=1
+READ_CALL memory_escape=1
+READ_CALL first_escape_rva=0x2CF7FFB
+READ_CALL pending_unknown_write=1
+
+READ_FLOW memory_escape=1
+READ_FLOW first_escape_rva=0x2CF7FFB
+READ_FLOW first_unresolved_rva=0x2CF7FFB
 ```
 
-Current destination proof:
+The prior c35 parent `memory_escape=0` was an admission artifact, not proof of no escape.
+
+Target remains incomplete:
 
 ```text
-address_exact=0
-class=indexed_address_unproven
-address_component_tags=0x7
-alias_may_mask=0x7F
-```
-
-The alias upper bound includes Hero Transform, `Transform+0x10C`, writer source, caller/home stack, callee-private stack, image and unknown ranges. This is uncertainty, not proof that every alias occurs.
-
-C35 correctly refuses the store:
-
-```text
-reason=target_second_VMOVUPS_store_or_RMW_refused
-semantic_modeled=0
+TARGET_IDENTITY admitted=0
 barrier_rva=0x2CF7FFB
+barrier_instruction=vmovups
+reason=target_store_destination_code_or_control_stack_alias_unexcluded
+LEAF_CFG complete=0
+return_paths=0
 unique_instructions=7
 visits=7
-return_paths=0
-TARGET_IDENTITY admitted=0
+effect_certificate=0
 ```
 
-Do not continue the CFG by treating an unresolved store as side-effect-free. The current parent summary still reports `memory_escape=0` only because the store has not been admitted/modelled; that is not proof of no escape.
+No next opcode is inferred. A clean JA path cannot erase an unresolved store on the fallthrough path.
+
+## Current address-containment decomposition
+
+The hard blocker is now specifically the destination:
+
+```text
+[R8 + RAX]
+```
+
+The next useful evidence must separate two facts rather than repeat the same runtime capture:
+
+1. **Fallthrough R8 offset range.** The branch is the non-JA outcome of unsigned `cmp r8d,0x3FFF`; c37 should prove path-sensitively whether this implies `r8d <= 0x3FFF`, then carry that exact range through `movsxd` and `shl 6` without live numeric observation.
+2. **RAX base publication/provenance.** RAX is loaded from the exact writable-image qword at source RVA `0xC2D2580`. c37 should find authenticated non-value evidence for writers/publication/allocation/range/lifetime of that slot. Zero tags, stable sessions, or a numeric pointer value alone are insufficient.
+
+If the first proof succeeds, the expected mathematical maximum must be derived by the implementation, not assumed. If both proofs eventually establish an allocation base plus a bounded offset and 32-byte store extent, only then may critical non-overlap/containment be considered.
 
 ## Safety gate
 
@@ -166,9 +159,9 @@ downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
 
-Completed c35 sessions retained verified native Deinit, retention pass, hard kills 0, MOD Position writes 0, source-position writes 0 and adhesion corrections 0.
+Observed c36 sessions retained verified native Deinit, retention pass, hard kills 0, MOD Position writes 0, source-position writes 0 and adhesion corrections 0.
 
-The discovered VMOVUPS store is an existing game instruction, not a new MOD write and not permission to write movement/Position data.
+The VMOVUPS store is existing game code, not a MOD write and not permission to write movement/Position data.
 
 Producer `0x351EB00` remains deferred.
 
@@ -179,50 +172,33 @@ Producer `0x351EB00` remains deferred.
 3. planar A/E orientation ✅
 4. Position writer attribution ✅
 5. SurfaceFrame translation decomposition ✅
-6. exact writer callsite ✅
-7. true writer-entry capture ✅
-8. RDX stack-local XYZ correlation ✅
-9. c14-c23 writer/callee/provenance chain ✅
-10. c24-c25 runtime table/no-unwind basis ✅
-11. c26 CMP ✅
-12. c27 JA two-path fan-out ✅
-13. c28-c30 qword load + unknown-top continuation ✅
-14. c31-c32 first VMOVUPS + 256-bit state ✅
-15. c33 MOVSXD ✅
-16. c34 SHL data/flags + continuation ✅
-17. c35 second VMOVUPS exact store classification ✅ actual game
-18. prove/contain `0x2CF7FFB` store destination/effect ▶ CURRENT
-19. resume full writer XYZ/W causal proof ⏸ after store effect is safely bounded
-20. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-21. safe writable upstream movement source ⬜ NOT AUTHORIZED
-22. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-23. adhesion/contact refinement ⏸ deferred
-24. animation/camera/later traversal ⬜
+6. exact writer callsite / writer-entry source ✅
+7. RDX stack-local XYZ correlation ✅
+8. c14-c23 writer/callee/provenance chain ✅
+9. c24-c25 runtime table/no-unwind basis ✅
+10. c26 CMP ✅
+11. c27 JA two-path fan-out ✅
+12. c28-c30 qword load + unknown-top continuation ✅
+13. c31-c32 first VMOVUPS + 256-bit state ✅
+14. c33 MOVSXD ✅
+15. c34 SHL data/flags ✅
+16. c35 second VMOVUPS exact store ✅
+17. c36 unresolved store escape / hard control-alias barrier ✅ actual game
+18. prove fallthrough offset range + exact qword-slot base publication ▶ CURRENT
+19. contain `0x2CF7FFB` store destination ⏸ pending both address components
+20. resume full writer XYZ/W causal proof ⏸ after store containment
+21. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+22. safe writable upstream movement source ⬜ NOT AUTHORIZED
+23. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+24. adhesion/contact refinement ⏸ deferred
+25. animation/camera/later traversal ⬜
 
 ## Current action
 
 Follow `docs/CODEX_NEXT.md`.
 
-C36 must treat `0x2CF7FFB` as an exact game-side `m256 [R8+RAX] <- YMM0` store and answer whether that side effect can be safely contained in the proof.
+C37 must not repeat c36 A/E metadata as if that could solve containment. It should add only new authenticated non-value proof for the two address components: path-sensitive R8 range from the accepted CMP/JA/MOVSXD/SHL sequence, and exact source/publication analysis for the qword slot at RVA `0xC2D2580` that supplies RAX.
 
-Do not add generic store semantics. First determine whether the destination can be proven disjoint from current code/control stack and proof-critical movement/Transform storage using existing symbolic/current-parent evidence without guessing raw values.
+Do not observe/log a live numeric pointer merely to narrow aliases. Do not assume the slot is a pointer, pool, array, allocation or owner until its writer/publication chain proves that. Exact-slot xref/write discovery is allowed; generic arbitrary memory emulation is not.
 
-If containment is not proven, explicitly model/report an unresolved memory escape/barrier and stop. If a narrow store summary is sound, preserve register/vector/flag state, propagate the memory-effect state through branch/return merges, and continue only until the next instruction whose correctness could depend on aliasing with that store.
-
-Any later memory access must prove disjointness from the stored range before using stale memory assumptions.
-
-Preserve both c27 JA paths, current-code/runtime/cap contracts and all ownership/write gates. Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
-
-
-## c36 prepared — unresolved exact store/escape is a hard CFG blocker
-
-v0.1c36/package0.1.54 verifies the exact VEX3.256 R8+RAX/YMM0 store and records
-32byte/address/value-half may tags, alias/critical masks, escape1/first_escape/
-pending under current code proof. Parent READ/CALL no longer hides this as
-escape0 solely because identity is refused. Code/control-stack alias cannot be
-excluded from opaque RAX/R8 provenance; no continuation or memory map is added.
-Registers/vector/flags preserved, clean-path union cannot erase escape, all
-current-code/runtime/caps/ownership/write gates remain. New non-value provenance/
-region/range/lifetime/disjointness proof is required; identical A/E recapture
-only validates summary/safety, not containment. NEXT unchanged. See
-V01C36_STORE_CONTAINMENT.md / CODEX_RESULT.md.
+Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
