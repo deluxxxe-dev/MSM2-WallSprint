@@ -1,131 +1,35 @@
-# Next task — contain exact VMOVUPS store at 0x2CF7FFB after accepted c35
+# Next task — prove store-address components after accepted c36 hard barrier
 
 ## Status
 
-The v0.1c35 actual-game capture is accepted for the current bounded diagnostic question.
+The v0.1c36 actual-game capture is accepted for the current bounded diagnostic question.
 
 Source log supplied by the owner:
 
 ```text
-MSM2-WS-v0.1c35-20261026-142344.log
+MSM2-WS-v0.1c36-20261026-150111.log
 ```
 
-Input method was not supplied. Do not infer keyboard/mouse/controller equivalence from motion observations; the instruction-level result below is independent of input device.
+Input device is intentionally not part of this instruction-level conclusion unless explicitly needed for later motion/input analysis.
 
 Do not merge `main`. Continue from the latest `codex/v01c20-edi-value-provenance` history.
 
-See `analysis/V01C35_RUNTIME_RESULT.md`.
+See `analysis/V01C36_RUNTIME_RESULT.md`.
 
-## Accepted c35 facts
+## Accepted c36 facts
 
 Prerequisite chain remains accepted:
 
 - c25: exact target `0x2CF7FE0` has no containing runtime-function entry after full 527161-entry validation.
-- c26: `cmp r8d,0x3FFF`, relevant tags zero.
-- c27: exact short JA; both exact forward outcomes remain mandatory.
-- c28-c30: exact qword load is modeled only as opaque `RAX tags=0x7`, no raw value observation.
-- c31-c32: exact first VMOVUPS `YMM0 <- m256 [RDX]`, with low/high128 top7 and above256 known zero.
+- c26: exact `cmp r8d,0x3FFF`.
+- c27: exact short `JA`; both forward outcomes remain mandatory.
+- c28-c30: exact qword load at `0x2CF7FE9` is modeled only as opaque `RAX tags=0x7`; its source is the writable-image qword at RVA `0xC2D2580`; no raw value observation.
+- c31-c32: exact `YMM0 <- m256 [RDX]`, represented as low/high128 top7 and above256 known zero.
 - c33: `movsxd r8,r8d`, full64 result tags zero.
-- c34: `shl r8,6`, result R8 tags zero; undefined AF/OF produce conservative aggregate flags top7.
+- c34: `shl r8,6`, result tags zero; aggregate flags top7 due undefined AF/OF.
+- c35: exact existing game-side store `m256 [R8+RAX] <- YMM0` at `0x2CF7FFB`.
 
-C35 exactly classified the second VMOVUPS at `0x2CF7FFB` as a store:
-
-```text
-site_rva=0x2CF7FFB
-instruction=vmovups
-bytes=6
-encoding=VEX3
-opcode=0x11
-vector_bits=256
-memory_width=32
-memory_read=0
-memory_write=1
-memory_RMW=0
-direction_verified=1
-flags_preserved=1
-GPR_writes=0
-vector_writes=0
-SP_write=0
-```
-
-Current decoded operands/state:
-
-```text
-m256 [R8 + RAX] <- YMM0
-R8 tags=0x0
-RAX tags=0x7
-scale=1
-displacement=0
-YMM0.low128 tags=0x7
-YMM0.high128 tags=0x7
-above256_known_zero=1
-flags tags=0x7
-```
-
-Current address proof:
-
-```text
-address_exact=0
-class=indexed_address_unproven
-address_component_tags=0x7
-alias_may_mask=0x7F
-```
-
-The alias upper bound includes Hero Transform, `Transform+0x10C`, writer source, caller/home stack, callee-private stack, image and unknown ranges. This is conservative uncertainty, not evidence that every alias occurs.
-
-C35 therefore correctly stops:
-
-```text
-reason=target_second_VMOVUPS_store_or_RMW_refused
-semantic_modeled=0
-barrier_rva=0x2CF7FFB
-unique_instructions=7
-visits=7
-return_paths=0
-```
-
-The existing parent summary still says `memory_escape=0` only because this store has not been admitted into the effect model. Do not interpret that as proof that no escape exists.
-
-## Current bounded Codex task
-
-Implement the smallest fail-closed extension needed to answer whether the exact existing game-side store at `0x2CF7FFB` can be safely represented/contained in the dependency proof.
-
-This is **not** permission for MOD memory writes and is **not** a request for generic AVX store emulation.
-
-### 1. Preserve the exact store identity
-
-Re-verify from authenticated current code:
-
-```text
-VEX3.256 VMOVUPS
-m256 [R8 + RAX] <- YMM0
-32-byte memory write only
-no memory read/RMW
-no GPR/vector/SP/flag write
-```
-
-Retain the existing decoder-direction conflict diagnostics and encoding-resolved direction. Any different form remains refusal.
-
-### 2. Determine whether destination containment is provable without guessing values
-
-Using only existing symbolic/current-parent evidence and bounded metadata, determine whether the 32-byte destination can be proven disjoint from every proof-critical category that would make blind continuation unsound, including at minimum:
-
-- current target/code bytes and runtime-control data;
-- caller/home stack and return/control stack storage;
-- callee-private stack;
-- Hero Transform / `Transform+0x10C`;
-- writer source / Position-related tracked storage;
-- any other memory region whose later load/store in the bounded target could alias the write.
-
-Do not infer disjointness merely from zero tags. Do not convert the opaque c30 RAX loaded qword into a pointer/type by assumption.
-
-Do not read/log raw memory/vector/register values merely to force a destination address. No pointer chase or ABI/type naming.
-
-If existing non-value provenance cannot exclude critical aliases, say so explicitly.
-
-### 3. Add only a sound pinned memory-effect summary
-
-If the exact destination remains unresolved, the safe result is an explicit unresolved store/escape summary such as:
+C36 now establishes the unresolved store as a real abstract memory escape:
 
 ```text
 memory_write_seen=1
@@ -133,70 +37,164 @@ memory_write_width=32
 memory_address_tags=0x7
 memory_value_low128_tags=0x7
 memory_value_high128_tags=0x7
-memory_alias_may_mask=<current conservative mask>
+memory_alias_may_mask=0x7F
+critical_alias_may_mask=0x3FF
 memory_escape=1
 first_escape_rva=0x2CF7FFB
+pending_unknown_write=1
 store_destination_contained=0
+control_alias_unexcluded=1
+CFG_blocked=1
+continuation_allowed=0
+later_memory_facts_usable=0
+architectural_registers_preserved=1
+reason=target_store_destination_code_or_control_stack_alias_unexcluded
 ```
 
-Names may match existing project conventions, but semantics must be equivalent.
+The parent READ/CALL summaries now also carry `memory_escape=1`, `first_escape_rva=0x2CF7FFB` and `pending_unknown_write=1` before target-identity refusal.
 
-`0x7` remains a may-depend upper bound, not observed taint.
-
-A store summary must not pretend that destination bytes are available for later exact reads unless a real tracked memory-state model proves them.
-
-### 4. Continue only when control/memory soundness permits
-
-If a narrow store-effect summary is sound enough to continue register/control analysis, preserve unchanged architectural register state:
+The target remains incomplete:
 
 ```text
-RAX=0x7
-R8=0x0
-YMM0.low128=0x7
-YMM0.high128=0x7
-above256_known_zero=1
-flags=0x7
+barrier_rva=0x2CF7FFB
+barrier_instruction=vmovups
+LEAF_CFG complete=0
+return_paths=0
+unique_instructions=7
+visits=7
+effect_certificate=0
 ```
 
-But after the store, set an explicit pending/unknown-memory-write state.
+No current log can reveal a safe next instruction because unresolved control-stack/code alias makes continuation unsound.
 
-Any later memory read/write whose address may alias this 32-byte store must refuse unless disjointness is proven exactly. Do not use stale pre-store memory assumptions across a possible alias.
+## Current bounded Codex task
 
-If the unresolved destination may include current code/control stack such that even static fallthrough/RET cannot be trusted, do **not** continue the CFG. Report that as the current hard blocker.
+Do **not** repeat the c36 store summary or request another identical A/E capture. The next question is whether genuinely new non-value evidence can decompose the destination address:
 
-If continuation is sound, stop at the next unsupported instruction and report its exact RVA/mnemonic/path/reason plus the pending store effect.
+```text
+[R8 + RAX]
+```
 
-### 5. Both JA paths and merges remain mandatory
+into a bounded offset plus a proven base/publication contract.
 
-The store is on the c27 fallthrough path. Preserve both exact JA outcomes.
+This task has two independent proof tracks. Either may succeed while the other remains a blocker.
 
-When merging paths/returns, memory escape/write uncertainty must union conservatively. A clean taken path must not erase a store/escape seen on the fallthrough path.
+### 1. Prove the fallthrough-path R8 numeric range without observing a live value
 
-Do not issue an effect certificate while unresolved memory escape/control alias remains.
+Use the already-authenticated instruction/control sequence only:
 
-### 6. Existing refusals and safety remain
+```text
+0x2CF7FE0: cmp r8d,0x3FFF
+0x2CF7FE7: ja  taken=0x2CF8013, fallthrough=0x2CF7FE9
+...
+0x2CF7FF4: movsxd r8,r8d
+0x2CF7FF7: shl r8,6
+0x2CF7FFB: store [R8+RAX]
+```
 
-Still refuse on:
+Prove the exact x86 unsigned predicate for the **fallthrough path** of `JA` from the accepted CMP flags. Do not infer a path from runtime frequency; derive the predicate architecturally.
 
-- any other unproven memory store/RMW;
-- unresolved code/control-stack alias that invalidates CFG continuation;
-- stack mutation not fully represented;
-- nested CALL/indirect transfer;
-- another branch beyond authorized JA;
-- loop/backedge;
-- unsupported vector/partial/masked/wider semantics;
-- runtime-region crossing;
-- code/snapshot mismatch;
-- cap exhaustion.
+If sound, carry an interval/range fact separately from dependency tags:
+
+- exact pre-MOVSXD range of `R8D` on this path;
+- effect of sign extension on that proven range;
+- exact non-overflowing 64-bit effect of `SHL 6` on that range;
+- resulting byte-offset interval and stride/alignment if provable;
+- exact inclusive/exclusive extent needed for a 32-byte store.
+
+The implementation must derive all bounds itself. Do not hard-code the expected maximum from this document as an assumption.
+
+Keep dependency tags unchanged; this is a numeric **path predicate/range proof**, not tag narrowing.
+
+If the current path abstraction cannot soundly retain a numeric predicate through these instructions, add only the minimum pinned path-range representation required for this sequence. Do not add a generic symbolic arithmetic engine.
+
+### 2. Prove or refuse RAX base provenance from the exact qword publication slot
+
+RAX is fully replaced by:
+
+```text
+0x2CF7FE9: mov rax,qword ptr [rcx+0x100]
+exact source RVA=0xC2D2580
+section=.data
+current page=PAGE_READWRITE
+```
+
+C29 already disproved immutable/tag0 treatment. C30 intentionally treats the loaded value as opaque may-top.
+
+Now investigate the **slot's publication/writer provenance**, not its live numeric value.
+
+Allowed bounded work:
+
+- exact authenticated xref/reference discovery for RVA `0xC2D2580`;
+- exact direct writers/readers to this slot from authenticated code;
+- loader/relocation/import/TLS/load-config metadata only when it directly concerns this exact slot;
+- a bounded writer/publication chain only as far as needed to identify how the slot receives its value and whether that source has a provable allocation/base/range/lifetime contract;
+- static/current-code metadata that proves all writes to the exact slot if such completeness can itself be justified.
+
+Do **not**:
+
+- log/read the live qword merely to obtain a numeric pointer;
+- pointer-chase from a live value;
+- assume the slot contains a pointer, pool base, array base or allocation merely because `[R8+RAX]` later forms an address;
+- infer ownership from a writable page or stable repeated value;
+- traverse the separately deferred movement producer `0x351EB00`;
+- add a generic cross-image dataflow engine just to force progress.
+
+If exact-slot writers cannot be enumerated completely, or their source/lifetime cannot be established, report the precise missing proof and stop this track fail-closed.
+
+### 3. Keep base and offset proofs separate
+
+A proven R8 offset range is useful even if RAX remains opaque.
+
+A proven RAX publication/base contract is useful even if R8 range remains unresolved.
+
+Do not combine them into `store_destination_contained=1` unless both facts are independently established and the resulting full 32-byte destination interval is proven disjoint from all critical categories:
+
+- current code / runtime-control data;
+- control/return stack;
+- caller-home and callee-private stack;
+- Hero Transform / `Transform+0x10C`;
+- writer source / Position-related tracked storage;
+- any later-memory region required by the bounded proof.
+
+If a base allocation/region is eventually proven, its valid extent must cover the entire derived offset range **plus the 32-byte write width**. Prove arithmetic without overflow/wrap.
+
+### 4. Do not resume CFG unless containment becomes exact
+
+If either component remains unresolved, preserve c36:
+
+```text
+memory_escape=1
+pending_unknown_write=1
+store_destination_contained=0
+control_alias_unexcluded=1
+CFG_blocked=1
+continuation_allowed=0
+```
+
+Do not manufacture the next opcode.
+
+If, and only if, full destination containment becomes proven, record the exact proof basis and then allow the existing bounded walk to continue to the next unsupported instruction. Do not opportunistically implement that next instruction in the same task unless an existing accepted rule already covers it.
+
+### 5. Both JA paths remain mandatory
+
+The path-range proof applies specifically to the `JA` fallthrough leg. Keep the taken leg intact and merge all effect state conservatively.
+
+A clean taken path cannot erase the store/escape from the fallthrough path.
+
+No effect certificate may be issued while unresolved memory escape/control alias remains.
+
+### 6. Existing safety gates remain closed
 
 Still forbidden:
 
 - MOD Position/source-position/input/movement writes;
 - gameplay/adhesion/camera/animation/physics changes;
+- raw live pointer/value logging for ownership narrowing;
 - producer `0x351EB00` traversal;
-- raw value logging/numerical narrowing intended to guess ownership;
-- generic memory/store semantics;
-- weakening caller-owned/lifetime/exclusivity gates.
+- generic arbitrary memory/store emulation;
+- guessed ABI/type names;
+- weakening caller-owned/lifetime/exclusivity requirements.
 
 Safety state remains:
 
@@ -209,22 +207,36 @@ downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
 
-### 7. Owned tests / handoff
+### 7. Required diagnostics / tests
 
-Add fixtures covering at minimum:
+Add compact diagnostics that distinguish:
 
-- exact VEX3.256 store identity/direction/width;
-- `[R8+RAX]` component tags/origins/aliases;
-- 32-byte store-value low/high dependency summary;
-- unresolved destination produces conservative memory-escape state;
-- clean register/vector/flags state remains architecturally unchanged by store;
-- path merge does not erase escape from one branch;
-- subsequent potentially aliasing memory read/write refuses;
-- provably disjoint later memory access may proceed only if existing model truly proves disjointness;
-- possible code/control-stack alias prevents unsafe CFG continuation;
-- wrong site/direction/width/form refuses;
-- c34 SHL, c33 MOVSXD, c32 vector256, c31 first VMOVUPS, c30 qword-top and earlier regressions.
+- branch-derived numeric range vs dependency tags;
+- R8D fallthrough predicate and propagated MOVSXD/SHL offset range;
+- arithmetic overflow/wrap proof status;
+- exact qword-slot reference/writer enumeration status;
+- completeness of exact-slot writer discovery;
+- publication source kind without guessed semantic names;
+- allocation/region/lifetime proof status if found;
+- base-range proof vs mere numeric-address observation;
+- final destination containment status and exact reason when false.
 
-Run the relevant full build/regression chain. Update `analysis/`, `docs/PROJECT_STATE.md`, `docs/CODEX_RESULT.md`, and reusable Wisdoms facts when appropriate.
+Owned fixtures must cover at minimum:
 
-If the current accepted c35 evidence already proves that containment is impossible without a new observation class, do not manufacture progress. Encode the fail-closed result and identify the minimal next evidence needed. Commit and push all authorized changes to the current development line.
+- JA taken/fallthrough unsigned predicate correctness;
+- boundary values around `0x3FFF/0x4000` in owned synthetic states;
+- MOVSXD and SHL interval propagation with no overflow;
+- 32-byte end-extent calculation;
+- clean separation of range metadata from may-tags;
+- exact-slot direct writer/reference discovery fixtures;
+- multiple writer ambiguity refuses;
+- indirect/unproven writer refuses;
+- incomplete xref coverage refuses;
+- allocation/range/lifetime missing proof refuses;
+- base proven but offset unknown refuses;
+- offset proven but base unknown refuses;
+- c36 store-escape regression and c19-c35 prior regressions.
+
+Run the relevant full build/regression chain. Update `analysis/`, `docs/PROJECT_STATE.md`, `docs/CODEX_RESULT.md` and reusable Wisdoms facts when appropriate.
+
+If this task can be resolved entirely from authenticated current executable/static metadata, do not request runtime by habit. If a genuinely new runtime observation class becomes necessary, first define exactly what non-value fact it would establish and why existing static/current evidence cannot establish it. Do not request another identical movement capture.
