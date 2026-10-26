@@ -1,160 +1,145 @@
-# Next task — c40 bounded saved-exception CONTEXT retirement
+# Next task — c41 owned post-return continuation witness feasibility
 
 ## Status
 
-C39 stopped fail-closed before adding the exact-slot watch. The owned Wine DR/VEH regression reproduced a retirement gap: reset and Position cleanup can report no active lease / no pending cleanup / inflight0 while a delayed exception return still reapplies the retired DR configuration from its saved exception CONTEXT.
+C40 completed its review and took the required fail-closed fallback. No bounded production retirement mechanism was established. Production hardware-watch code remains unchanged and the postponed exact-slot watch remains disabled.
 
-Accepted evidence:
+Accepted c40 evidence:
 
-- `analysis/V01C39_WATCH_RETIREMENT.md`
-- `analysis/V01C39_GATE.md`
-- `analysis/V01C39_WATCH_STATUS.json`
+- `analysis/V01C40_RETIREMENT_REVIEW.md`
+- `analysis/V01C40_GATE.md`
+- `analysis/V01C40_RETIREMENT_STATUS.json`
 - `docs/CODEX_RESULT.md`
+
+C40 established in the owned Wine fixture that current-thread DR restoration, repeated `GetThreadContext` readbacks, timeout, kill, `inflight=0`, inactive lease bookkeeping and later tombstone recovery do **not** prove that a saved exception CONTEXT has retired. Normal cooperative code running after the actual exception return is a valid witness in the fixture, but no equivalent production witness is available. VCH registration succeeded but its callback was not reached in the tested Wine hardware-breakpoint path, so VCH cannot be promoted to a retirement certificate from current evidence.
 
 Continue only on `codex/v01c20-edi-value-provenance`. Do not merge `main`.
 
-Before implementation read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, `docs/CODEX_REPORTING.md`, this file, the c39 retirement evidence above, the existing hardware-watch/reset/Position implementation, and relevant references in `deluxxxe-dev/MSM2-Wisdoms` when accessible.
-
-## Evidence boundary
-
-The following is VERIFIED in the owned Wine fixture, not in the actual game or real Windows:
-
-1. A real hardware breakpoint enters the existing production VEH handler.
-2. The production handler finishes and its existing inflight bookkeeping can reach zero.
-3. Before OS exception return is allowed to complete, the coordinator can restore current thread DR state, close the lease, and report cleanup complete.
-4. Releasing the delayed exception return can then reapply the old DR configuration stored in the saved exception CONTEXT.
-5. A later hit can recover through the existing tombstone path, but that later hit is not a bounded retirement guarantee during silence.
-
-Do not promote this fixture result to a claim that the game or real Windows has exhibited the race. It is sufficient to reject the existing cleanup bookkeeping as a certificate for c39 phase transition / serialization.
+Before work, read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, `docs/CODEX_REPORTING.md`, this file, all c39/c40 retirement evidence, the existing watch implementation/tests, and relevant `deluxxxe-dev/MSM2-Wisdoms` references.
 
 ## Current blocker
 
-The existing engine does not currently prove that every saved exception CONTEXT capable of reapplying an owned debug-register configuration has retired before the configuration is considered fully closed.
+The missing fact is a **post-OS-exception-return witness** tied to the exact thread/lease and to every saved exception CONTEXT that could later reapply an owned DR configuration.
 
-Therefore these conditions are NOT sufficient retirement proof by themselves:
+C41 must not repeat c40's rejected evidence classes. In particular, do not treat any of these as sufficient by themselves:
 
 ```text
-cleanup_pending=0
-activeLeases=false
-current=-1
-positionInflight=0
+positionInflight == 0
+cleanup_pending == 0
+activeLeases == false
+current == -1
+finite repeated GetThreadContext readbacks
+timeout
+kill/shutdown
+successful VCH registration
+handler/VCH exit counters
+later tombstone recovery
 ```
-
-A check performed only inside or immediately before returning from VEH is also not sufficient, because the OS exception-return step occurs afterward.
 
 ## Current bounded Codex task
 
-Design and implement the minimum bounded mechanism needed to retire owned saved exception CONTEXT state safely.
+Investigate and, only if supported by evidence, implement a **test-only owned continuation witness** that runs only after the OS has resumed execution from the saved exception CONTEXT.
 
-The mechanism must keep cleanup / serialization logically pending until an old saved exception CONTEXT can no longer reapply a retired owned DR configuration, or must fail closed if that condition cannot be established.
+The primary candidate to evaluate is a minimal context-redirection trampoline in the owned fixture. This is a feasibility/proof task, **not production integration**.
 
-Do not assume a particular Windows/Wine API guarantee unless it is supported by the existing implementation, documentation available to the environment, or a focused owned test. Record any OS-behavior assumptions explicitly.
+### 1. Test-only scope first
 
-### 1. Preserve ownership and restoration semantics
+Do not modify the production WallSprint watch engine merely to obtain a green result.
 
-Do not weaken or bypass:
+Any continuation/trampoline mechanism must first live in owned test code and operate only on owned threads/functions/memory. It must not touch the game, the static slot, gameplay state, or proprietary function bodies.
 
-- debugger-present refusal;
-- foreign DR ownership/refusal;
-- exact saved debug-register restoration policy for Position;
-- existing legacy reset DR6 policy;
-- thread suspend/resume error handling;
-- lease identity checks;
-- tombstone safety behavior;
-- event/window/thread/deadline caps;
-- timeout/kill/failure cleanup.
+If the mechanism cannot be proven safe in the owned fixture, stop fail-closed and document the exact failed guarantee.
 
-Do not forge thread CONTEXT, lease state, inflight state, or exception state in production code merely to make the regression pass.
+### 2. Required continuation property
 
-### 2. Keep scope limited to retirement
+A successful candidate must establish all of the following:
 
-This task does NOT authorize the postponed c39 exact-slot watch.
+- the continuation marker is impossible to observe before the OS has actually resumed from the relevant saved exception CONTEXT;
+- the marker is bound to the exact thread and watch lease/generation;
+- delayed/nested saved contexts cannot be silently collapsed into a single false completion;
+- cleanup remains pending until every relevant outstanding context for that lease has an acknowledged post-return witness;
+- the witness does not require a second watched-memory access;
+- timeout/kill while acknowledgments remain outstanding fails closed rather than declaring final retirement.
 
-Do not add or enable:
+A marker written inside VEH/VCH before returning is not sufficient.
 
-- the `module_base + 0xC2D2580` RW8/WRITE8 watch mode;
-- slot qword reads/logging;
-- pointer chasing;
-- new value/GPR/XMM/stack capture aimed at the slot;
-- PAGE_GUARD or broad memory interception;
-- arbitrary detours/debugger framework expansion;
-- publication-chain interpretation;
+### 3. Minimal trampoline candidate
+
+Evaluate a continuation that redirects the saved `RIP` to a minimal owned stub, records a bounded per-context/per-lease completion token, and then transfers control to the original post-exception `RIP`.
+
+Do **not** assume this is safe merely because it works once. Prove or reject the required architectural properties.
+
+Prefer an instruction sequence whose static semantics do not alter GPRs, RFLAGS, stack contents/pointer, vector state or application data except the dedicated owned witness storage. If the implementation requires scratch registers, stack use, code patching, executable allocation, ABI assumptions, unwind assumptions or undocumented behavior, those dependencies must be explicitly proved or the candidate must be rejected.
+
+Account for at least:
+
+- original continuation RIP preservation;
+- GPR preservation;
+- RFLAGS preservation;
+- RSP / stack preservation;
+- XMM/YMM/XSTATE non-interference or a justified exact boundary if untouched by construction;
+- debug-register restoration semantics;
+- thread/lease generation identity;
+- multiple pending contexts for one thread/lease;
+- nested/re-entrant exception cases within the supported bounded model;
+- trampoline/witness storage lifetime until all acknowledgments are retired;
+- executable-code identity/lifetime if executable stubs are used;
+- CFG/CET/mitigation implications if relevant to the generated or compiled control transfer;
+- safe failure when any required guarantee cannot be established.
+
+Do not claim support for architectural state that was not actually preserved/proved.
+
+### 4. Preserve the c39/c40 counterexamples
+
+Keep the existing held-return regression intact. The c41 test must still be able to hold the original exception return past close/timeout/kill.
+
+The key acceptance sequence is:
+
+1. real owned hardware breakpoint occurs;
+2. saved exception return is deliberately held;
+3. close/timeout/kill is requested;
+4. retirement remains pending/refused;
+5. release the original saved exception return;
+6. the continuation witness runs after that return;
+7. only then may that exact pending-context debt be discharged;
+8. final restoration remains stable without requiring a later watched hit.
+
+Run this for both reset and Position mode semantics.
+
+### 5. Distinguish feasibility from production authorization
+
+Even if the owned continuation witness succeeds, **do not integrate it into production c39/c40 watch code in this task**.
+
+A c41 success means only that a specific bounded post-return witness mechanism is feasible under the tested owned environment and has a documented preservation contract. A separate next task must review production integration, per-thread lease accounting, actual Windows support and failure policy before c39 slot-watch work can resume.
+
+### 6. Fail-closed outcomes are acceptable
+
+Stop and record the blocker if any of these remain unproven:
+
+- marker ordering relative to actual OS exception return;
+- exact thread/lease/context identity;
+- full required machine-state preservation;
+- nested/multiple-context accounting;
+- safe lifetime of trampoline/witness data;
+- mitigation/control-transfer compatibility;
+- bounded cleanup on timeout/kill/failure.
+
+Do not substitute VCH registration, APC delivery assumptions, repeated snapshots, sleeps or arbitrary delays for a proof.
+
+## Forbidden scope
+
+C41 does not authorize:
+
+- `module_base + 0xC2D2580` RW8/WRITE8 watch;
+- slot qword reads/logging or pointer chasing;
+- publication/source-chain interpretation;
 - producer `0x351EB00` traversal;
-- Position/source/input/movement/gameplay/adhesion/camera/animation/physics writes.
+- PAGE_GUARD or broad memory interception;
+- arbitrary debugger framework expansion;
+- Position/source/input/movement/gameplay/adhesion/camera/animation/physics writes;
+- weakening debugger/foreign-DR refusal, lease identity, caps, deadlines, restoration or tombstone behavior.
 
-The c39 non-value slot-watch acceptance matrix remains deferred until this retirement prerequisite is proven.
-
-### 3. Use the existing delayed-return regression as the primary acceptance test
-
-Preserve and extend `source/src/NativeHooks/watch_retirement_smoke.cpp` and its test path rather than deleting, bypassing, weakening, or timing-out the counterexample.
-
-Required acceptance behavior for both existing reset and Position modes:
-
-- the first real owned hardware-breakpoint event still occurs;
-- the test can still hold OS exception return after the production handler has returned;
-- while a saved exception CONTEXT can still reapply an old owned DR configuration, production cleanup/serialization must not claim final retirement;
-- after the new bounded retirement condition is satisfied, releasing/finishing the held return must not resurrect a retired active watch configuration;
-- saved foreign/owned DR state must be restored according to the existing mode-specific policy;
-- no new capture is required to repair an already-declared-retired configuration;
-- failure to establish retirement within the bounded contract must close/refuse safely rather than silently declaring success.
-
-Do not replace the delayed-return test with a weaker immediate-return test.
-
-### 4. Add focused failure-path coverage
-
-Add the minimum owned tests needed to cover the new retirement mechanism, including where applicable:
-
-- normal close after a completed exception return;
-- close while an exception return is deliberately held;
-- timeout/failure while retirement is pending;
-- kill/forced close path if the existing engine exposes one in owned tests;
-- reset mode restoration policy;
-- Position exact saved-DR restoration policy;
-- foreign DR/debugger refusal unchanged;
-- no overlap/regression in existing watch ownership tests;
-- repeated arm/close cycles if necessary to prove stale state does not survive into a later lease.
-
-Do not weaken existing assertions, deadlines, caps, or cleanup checks to obtain PASS.
-
-### 5. Fail closed if bounded retirement cannot be proven
-
-If a safe bounded mechanism cannot be established without relying on an unverified OS guarantee or weakening the current ownership model:
-
-- do not approximate;
-- do not add the c39 slot mode;
-- document the exact unresolved retirement condition;
-- keep runtime at v0.1c38/package0.1.56 unless an independently justified test-only version/documentation change requires otherwise;
-- update the handoff with the precise next evidence needed.
-
-## Unchanged proof gates
-
-The accepted c38/c37/c36 state remains unchanged:
-
-```text
-slot_rva=0xC2D2580
-writer_candidates=0
-writer_enumeration_complete=0
-publication_source_kind=unproven
-allocation_proven=0
-range_proven=0
-lifetime_proven=0
-base_proven=0
-destination_contained=0
-CFG_continuation=0
-```
-
-Zero local writers is not no-writer proof. The c28 external reader remains a reader only.
-
-Safety remains:
-
-```text
-writable_source_proven=0
-caller_owned=0
-ownership_exclusive=0
-source_lifetime_exclusive=0
-downstream_conflicts_proven_absent=0
-Position/source/input/movement writes=0
-```
+Runtime remains `v0.1c38 / package0.1.56` unless the task produces an independently justified test-only metadata change. Do not create a game release for c41.
 
 ## Required validation
 
@@ -162,46 +147,53 @@ At minimum run:
 
 ```bash
 bash source/tools/test_watch_retirement.sh
+bash source/tools/build_windows.sh
+bash source/tools/test_hooks_windows.sh
 ```
 
-Also run the normal mandatory Windows/native regression path required by the repository for any production hardware-watch change. If the implementation changes only test/documentation code, still run the focused retirement test and the smallest repository-mandated regression set that covers the touched watch code.
+If new focused test tooling is added, run its exact command separately and include it in the report.
 
-Expected result:
+For a **successful feasibility result**, expected evidence includes:
 
-- delayed-return regression no longer permits final cleanup/retirement while an old saved exception CONTEXT can resurrect the retired owned watch;
-- after bounded retirement completes, the old configuration does not reappear;
-- reset and Position restoration semantics remain unchanged;
-- existing watch ownership/refusal regressions pass;
-- no c39 slot-watch functionality is enabled.
+- held-return close/timeout/kill remains pending before post-return witness;
+- a real post-return continuation witness is observed after release;
+- exact per-context/per-lease debt is discharged only after that witness;
+- retired DR configuration does not resurrect afterward;
+- no later watched hit is needed for repair;
+- reset and Position restoration policies remain unchanged;
+- required machine state is preserved by static proof plus owned runtime checks appropriate to the implemented mechanism;
+- existing watch ownership/refusal regressions remain PASS.
 
-If any required test is not run, state the exact reason. Do not report an unexecuted test as PASS.
+For a **fail-closed result**, the report must name the exact missing guarantee and must not claim a retirement fix.
+
+Do not report an unexecuted native-Windows/game test as PASS. If Wine cannot establish a required Windows property, identify a minimal standalone real-Windows owned probe as the next evidence instead of requesting a game test.
 
 ## Required outputs / handoff
 
 Update as appropriate:
 
-- the minimum production/test implementation needed for bounded retirement;
-- `analysis/` with the retirement mechanism, evidence class, assumptions and limitations;
-- `docs/PROJECT_STATE.md` so c39 is recorded as stopped fail-closed and c40 retirement is the current stage;
+- owned test implementation only for the continuation witness feasibility work;
+- `analysis/` with mechanism, instruction/control-flow contract, evidence class, assumptions, limitations and rejection reasons;
+- `docs/PROJECT_STATE.md` to record c40 fail-closed and c41 as the current feasibility stage;
 - `docs/CODEX_RESULT.md`;
-- relevant `deluxxxe-dev/MSM2-Wisdoms` reusable facts if a general watch/retirement rule is established.
+- relevant Wisdoms facts if a reusable exception-return/continuation rule is established.
 
 Commit and push the intended branch before claiming completion.
 
-The final Codex report must follow `docs/CODEX_REPORTING.md` and include, concisely:
+The final report must follow `docs/CODEX_REPORTING.md` and include:
 
 - what changed;
 - files changed;
 - exact tests/checks performed;
 - exact commands used;
-- expected result for each relevant test;
-- actual result for each relevant test;
-- any unperformed test and the reason;
+- expected result;
+- actual result;
+- unperformed tests and reasons;
 - branch and commit SHA;
-- whether any owner action is required.
+- whether owner action is required.
 
-## Owner action for this task
+## Owner action
 
-No Update-WS, game launch, A/E comparison, WallRun capture, offline slot scan, or runtime log is requested merely to develop/test this owned retirement prerequisite.
+No Update-WS, game launch, A/E comparison, WallRun capture, offline slot scan or game runtime log is required for the c41 feasibility work itself.
 
-Only request owner-side testing later if the implementation produces a specific real-Windows/game question that cannot be answered by the owned regression and repository tests.
+If the owned environment cannot establish a property that specifically requires native Windows, the only acceptable owner request is a **minimal standalone owned Windows probe** with one exact command and a compact machine-readable result. Do not require launching Spider-Man 2 merely to answer an OS exception-return ordering question.
