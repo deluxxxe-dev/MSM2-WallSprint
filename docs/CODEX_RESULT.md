@@ -1,3 +1,178 @@
+# Codex result — c44 conservative vendor-specific DR comparison
+
+Branch **codex/v01c20-edi-value-provenance**, task base **7336ef4**.
+**PARTIAL SUCCESS:** comparison/diagnostic implementation and owned regression
+succeeded; native architectural acceptance remains unproven. The observed c43
+pair is still refused by both conservative profiles. Runtime remains
+v0.1c38/package0.1.56; no game release or production restoration change.
+
+## Accepted evidence and result boundary
+
+Read AGENTS/manual/rules/workspace/state/reporting/NEXT, c39-c43 evidence and
+relevant source/tests/Wisdoms references. Fast-forwarded only the intended branch;
+no main merge/reset/force push. Preserved the five historic untracked artifacts.
+Owner V01C43_NATIVE_WINDOWS_RESULT remains byte-identical: actual policies
+[0,0,256] admitted,3 contexts/pending0/canRetire, false poll, inactive leases,
+Dr0-Dr3 exact, Dr6 XOR0xFFFF0FF0 and Dr7 XOR0x400. The raw result remains FAIL,
+not a native PASS or environment refusal. Vendor and3-readback stability were
+not supplied. No CPU vendor is inferred from Windows CONTEXT_AMD64 naming.
+
+Formal vendor manuals were inspected, but direct CURRENT official Intel/AMD
+publication delivery was unavailable (proxy403). Actual primary PDFs were read
+through pinned tpn/pdfs a0eca7a2: Intel325462-075US/June2021 and AMD24593 Rev3.30/
+September2018. Exact filenames/sections/hashes, an AMD table/prose discrepancy,
+current Microsoft API text/SDK and supplemental Linux evidence are recorded in
+V01C44_DR_CANONICALIZATION.md. These are explicit edition/provenance limits,
+not a claim that the latest vendor revisions were retrieved. Supplemental Linux
+is not substituted for vendor proof authorizing a relaxed bit.
+
+The traditional DR6 pattern includes potentially meaningful BLD11/RTM16. C44
+requires their current values1 as an additional conservative candidate boundary
+and still requires exact saved/current equality; it never normalizes those fields; Intel keeps them meaningful-exact and AMD uses a
+conservative exact-or-refuse OS-returned-field rule without inventing AMD RTM
+semantics. Unsupported AMD feature profiles refuse before arming. Therefore the
+supplied c43 pair, treated as clearly synthetic comparator input, remains
+architecturally false. A documented fixed-only difference can separately produce
+RAW_EXACT=false and ARCHITECTURAL_CANONICAL=true. No broad all-one mask is shipped.
+
+## Files and behavior changed
+
+- `source/include/NativeHooks/debug_register_comparison.hpp`: pure test-only
+  vendor classification/full64bit masks, separate raw/canonical comparisons,
+  fixed-current validation, unknown/vendor refusal and bounded stability output.
+  Dr0-Dr3, meaningful status/control, GD/type/length and global enables stay exact.
+- `debug_register_comparison_tests.cpp`, `test_debug_register_comparison.sh`:
+  sanitized synthetic mask/comparison/negative/stability tests and strict JSON.
+- `continuation_witness_smoke.cpp`: actual CPUID vendor/signature/leaf7, schema4
+  taskc44, original raw c43 JSON plus new comparison JSON;3 existing post-poll
+  readbacks occur before final assertions, with no intervening repair or retry.
+  Native acceptance requires after+all3 canonical comparisons, stable current
+  state and unchanged lease/pending/canRetire/poll/witness/machine/lifetime gates.
+- `check_continuation_diagnostics.py`/mandatory hooks script: independently check
+  real Wine output and separate comparisons. Original c43 pure diagnostic and
+  c42 mitigation helpers/tests, production engine, ASM/context ledger/handler,
+  c39/c40 counterexamples and exact same(CONTEXT,CONTEXT) remain unchanged.
+- Analysis/gate/status with source mirrors, PROJECT_STATE, this report and future
+  package evidence/metadata. New standalone artifact/README/manifest/licenses at
+  `analysis/native-probes/c44`; historical c41-c43 artifacts and supplied evidence
+  stay unchanged. Shared Wisdoms records the native localization and conservative
+  architecture/Windows lesson without raw private game logs or personal paths.
+
+Wine still returns exact-restored API Dr6=0/Dr7=0x10, not hardware fixed values.
+Its original owned RAW_EXACT regression is preserved and explicitly labeled
+owned_Wine_only_not_architectural_certificate; the architectural result remains
+false. This is not a native acceptance bypass. Unknown fields/vendor and all old
+state/ownership checks still gate the raw test path. Native mode always requires
+ARCHITECTURAL_CANONICAL, even if RAW_EXACT alone would pass.
+
+## Executed required validation — repository root
+
+| Exact command | Expected result | Actual result |
+| --- | --- | --- |
+| `bash source/tools/test_continuation_mitigations.sh` | Preserve per-bit mitigation/unknown-query refusal and JSON checks | exit0;10 PASS,0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/test_continuation_diagnostics.sh` | Preserve c43 exact serializer/comparison negatives and null handling | exit0;7 PASS,0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/test_continuation_witness.sh` | Preserve12 original scenarios plus real-output validation, collect3 readbacks and distinct comparisons | exit0;13 PASS,0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/test_watch_retirement.sh` | Preserve original delayed-context counterexamples/normal closure/recovery | exit0;14 PASS observation/recovery records,0 SKIP,2 VCH UNAVAILABLE; not a production fix |
+| `bash source/tools/build_windows.sh` | Existing Werror Windows cross-build succeeds | exit0; successful build, no PASS case count |
+| `bash source/tools/test.sh` | Portable/sanitizer regressions pass | exit0;13 PASS,0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/smoke_windows.sh` | DLL/logger smoke checks pass | exit0;7 PASS,0 SKIP,0 UNAVAILABLE |
+| `bash source/tools/test_hooks_windows.sh` | Full owned native/scanner/workspace/comparator regression succeeds | exit0;323 PASS,5 SKIP,2 UNAVAILABLE |
+| `python3 source/tools/package.py` | Package construction/integrity and matching tested inputs | exit0;1 separate package PASS;246 code/tool inputs match |
+| `bash source/tools/test_debug_register_comparison.sh` | Vendor/profile gates,128-bit partitions, all fixed violations, exact meaningful/global/address fields, unknown bits/vendor, observed pair refusal, fixed-only equivalence and3-readback stability/missing data | exit0;9 PASS,0 SKIP,0 UNAVAILABLE |
+
+Full chain **343 PASS** =13+7+323; **5 SKIP /2 UNAVAILABLE** separately.
+Focused counts overlap323 and are not added twice. Package1 PASS is separate.
+Initial focused runs and the full required pipeline passed. Review then added
+independent golden-position negatives and the stricter current-status boundary.
+The affected focused comparator, standalone witness, full hooks and package
+commands were rerun after those refinements. Production build, portable and DLL
+smoke linked inputs were unchanged, so repeating those checks was unnecessary. Logs `/tmp/ws-c44-<script-stem>.log`; exact exits/counts/timings in
+`/tmp/ws-c44-results.json`; post-review rerun exits/counts are in
+`/tmp/ws-c44-reviewed-results.json`, with logs `/tmp/ws-c44-reviewed-<script-stem>.log`.
+No private raw game logs are committed.
+The actual output validator executes `python3 tools/check_continuation_diagnostics.py
+logs/windows_continuation_witness_tests.log` from source/ after all12 processes.
+
+After all10 command exits were0, copied the tested EXE to the c44 folder and ran
+its --position --multiple --json mode once through configured Wine. Actual exit0,
+one schema4 JSON line, actual CPUID GenuineIntel, actual mitigations[0,0,0],3
+readbacks complete/stable, RAW_EXACT=true and ARCHITECTURAL_CANONICAL=false on
+all4 comparisons, native_candidate_probe_passed=false. This is a shipped-artifact
+check, not native evidence or an extra full-chain case. Environment/argv invoked
+through Python subprocess:
+
+```bash
+WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 /workspace/WallSprint/analysis/native-probes/c44/continuation-witness.exe --position --multiple --json
+```
+
+Output is `/tmp/ws-c44-shipped.json`, stderr separate. `objdump -p` on the shipped
+absolute EXE path confirms only bcrypt.dll/KERNEL32.dll/msvcrt.dll imports.
+All246 source/tool files match both manifest hashes and packaged tested source.
+Original acceptance comparator, handler, production files, ASM, task, owner native
+result and historical artifacts were checked unchanged. No further code change
+follows validation; documentation/provenance completion does not require another
+full regression run. Generated validation package remains
+`source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled`; no root game ZIP/
+script or production release is replaced.
+
+## Documentation checks and limitations — separate from runtime PASS counts
+
+Exact additional retrieval/inspection procedures included:
+
+```bash
+git clone --depth 1 --filter=blob:none --no-checkout https://github.com/tpn/pdfs.git /tmp/ws-c44-vendor-pdfs
+pdftotext -layout /tmp/ws-c44-intel-manual.pdf /tmp/ws-c44-intel-manual.txt
+pdftotext -layout /tmp/ws-c44-amd-manual.pdf /tmp/ws-c44-amd-manual.txt
+sha256sum /tmp/ws-c44-intel-manual.pdf /tmp/ws-c44-amd-manual.pdf /tmp/ws-c44-getcontext.txt /tmp/ws-c44-setcontext.txt /tmp/ws-c42-sdk-winnt.h
+lscpu | head -18
+```
+
+Pinned mirror Git blobs were read with `git show HEAD:<exact filename>` from
+that clone. Python urllib retrieval attempted official Intel/AMD current URLs
+and canonical MicrosoftDocs raw files; URL/edition/section/hash evidence is in
+analysis. Vendor current-delivery checks: **2 UNAVAILABLE** (Intel, AMD proxy403),
+separate research checks, NOT added to suite counts or called successful current
+edition validation. Pinned primary texts and Microsoft current API/SDK content
+were obtained and read. The cloud CPU is Intel; this says nothing about owner CPU.
+
+## Unperformed tests / non-passing coverage
+
+- Native Windows c44 and hardware/vendor cross-matrix: only owned Intel/Wine is
+  available here. One owner standalone run is needed for actual vendor, all3
+  readbacks and both results. Old c43 native RAW FAIL remains the supplied fact.
+- Latest official Intel/AMD edition validation: delivery unavailable as above;
+  pinned editions and explicit conservative limitations are not silently promoted.
+- Five optional private positives: original bytes, native AVX/CFG bodies, game-body
+  installer,584byte writer normalization and accepted Path-B capture are absent/
+  not redistributed. Independent owned/synthetic proof/rejection tests ran.
+- Two VCH return-hold branches: callbacks were not dispatched on the actual owned
+  Wine hardware path; UNAVAILABLE, not PASS.
+- Mitigation-setting matrices, production restoration/integration, live-debugger/
+  full-XSTATE matrix, game/slot observation, producer traversal and gameplay writes
+  are prohibited/outside the bounded task; no unexecuted test is claimed PASS.
+
+## Handoff and owner action
+
+Overall result is successful conservative test implementation with native
+architectural acceptance unproven; the supplied c43 pair takes the fail-closed
+comparison outcome. No Windows/engine root cause or harmless fixed-only delta is
+invented. Source/input/artifact hashes and implementation revision are retained
+in PROBE_MANIFEST/status. Commit/push and remote SHA are verified before completion
+is reported; all intended files remain on the same development branch.
+
+After verified publication, the sole owner operation from
+`analysis/native-probes/c44` in native Windows PowerShell is:
+
+```powershell
+.\continuation-witness.exe --position --multiple --json
+```
+
+Return compact JSON/output only. A continued FAIL/REFUSED is legitimate; do not
+change protection settings or raw registers to force a PASS. No Update-WS, game,
+Overstrike, A/E, WallRun, offline scan or game runtime log is requested.
+
+---
+
 # Codex revalidation — c43 requested regression rerun (2026-10-26)
 
 Tested checkout **8dd33c557037e0442adaef8a2207d81bdd22a59d**, branch

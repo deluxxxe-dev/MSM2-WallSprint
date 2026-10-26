@@ -17,8 +17,9 @@ static PVOID WINAPI c41_install(ULONG first,PVECTORED_EXCEPTION_HANDLER fn){asse
 #include <climits>
 #include "NativeHooks/continuation_mitigations.hpp"
 #include "NativeHooks/continuation_diagnostics.hpp"
+#include "NativeHooks/debug_register_comparison.hpp"
 
-namespace c41 {const char* failureText();std::string reportFields();[[noreturn]] void failed(const char* expression,unsigned line){std::fprintf(stderr,"c41 owned assertion at line %u: %s\n",line,expression);std::printf("{\"schema\":3,\"task\":\"c43\",\"witness_task\":\"c41\",\"result\":\"FAIL\",\"reason\":\"owned_assertion_failed\",\"rejection\":\"%s\",\"line\":%u,%s,\"game_used\":false}\n",failureText(),line,reportFields().c_str());std::fflush(stdout);ExitProcess(3);}}
+namespace c41 {const char* failureText();std::string reportFields();[[noreturn]] void failed(const char* expression,unsigned line){std::fprintf(stderr,"c41 owned assertion at line %u: %s\n",line,expression);std::printf("{\"schema\":4,\"task\":\"c44\",\"witness_task\":\"c41\",\"result\":\"FAIL\",\"reason\":\"owned_assertion_failed\",\"rejection\":\"%s\",\"line\":%u,%s,\"game_used\":false}\n",failureText(),line,reportFields().c_str());std::fflush(stdout);ExitProcess(3);}}
 #undef assert
 #define assert(condition) do {if(!(condition))c41::failed(#condition,__LINE__);} while(false)
 
@@ -32,7 +33,11 @@ extern unsigned char ws_c41_after_store[];
 namespace c41 {
 namespace mitigation=ws::continuation_mitigations;
 namespace diagnostics=ws::continuation_diagnostics;
+namespace drCompare=ws::debug_register_comparison;
 diagnostics::Report restoration;
+drCompare::Vendor cpuVendor=drCompare::Vendor::Unknown;
+std::array<char,12> cpuVendorBytes{};bool cpuQueryKnown{},leaf7Known{};
+unsigned cpuSignature{},leaf7B{},leaf7C{},leaf7D{};
 std::string classifierJson=mitigation::json(mitigation::Inputs{});
 const char* classifierReport(){return classifierJson.c_str();}
 constexpr unsigned capacity=4;constexpr DWORD nestedCode=0xe0410041;
@@ -55,7 +60,14 @@ std::string reportFields(){
  out+="\",\"thread\":"+std::to_string(workerId)+",\"lease\":"+std::to_string(lease)+",\"generation\":"+std::to_string(generation)+",\"contexts\":"+std::to_string(published.load());
  out+=",\"mitigation_query_known\":[";for(unsigned i=0;i<3;++i){if(i)out+=',';out+=policyKnown[i]?"true":"false";}
  out+="],\"mitigation_flags\":[";for(unsigned i=0;i<3;++i){if(i)out+=',';out+=std::to_string(policyFlags[i]);}
- return out+"],\"mitigation_classifier\":"+classifierReport()+",\"final_restoration\":"+diagnostics::json(restoration);
+ out+="],\"cpu_vendor\":\"";out+=drCompare::name(cpuVendor);
+ out+="\",\"cpuid_vendor_bytes_hex\":\"";
+ for(auto byte:cpuVendorBytes){const auto b=static_cast<unsigned char>(byte);out+="0123456789abcdef"[b>>4];out+="0123456789abcdef"[b&15];}
+ out+="\",\"cpuid_known\":"+diagnostics::boolean(cpuQueryKnown)+",\"cpuid_signature\":"+std::to_string(cpuSignature);
+ out+=",\"cpuid_leaf7_known\":"+diagnostics::boolean(leaf7Known)+",\"cpuid_leaf7_EBX\":"+std::to_string(leaf7B)+",\"cpuid_leaf7_ECX\":"+std::to_string(leaf7C)+",\"cpuid_leaf7_EDX\":"+std::to_string(leaf7D);
+ out+=",\"acceptance_comparison\":\"";out+=wine?"RAW_EXACT":"ARCHITECTURAL_CANONICAL";
+ out+="\",\"acceptance_scope\":\"";out+=wine?"owned_Wine_only_not_architectural_certificate":"owned_native_candidate_only_not_production";
+ return out+"\",\"mitigation_classifier\":"+classifierReport()+",\"final_restoration\":"+diagnostics::json(restoration)+",\"debug_register_comparison\":"+drCompare::reportJson(cpuVendor,restoration);
 }
 LONG load(volatile LONG* p){return InterlockedCompareExchange(p,0,0);}
 const char* failureText(){const auto value=failure.load();return value?value:"none";}
@@ -110,8 +122,14 @@ diagnostics::Registers registers(const CONTEXT& c){return {c.Dr0,c.Dr1,c.Dr2,c.D
 DWORD WINAPI run(void*){SetEvent(ready);assert(WaitForSingleObject(go,2000)==WAIT_OBJECT_0);ws_c41_machine(reinterpret_cast<void*>(hero.transform+(position?0x30:0x10)));return 0;}
 bool environment(){
  wine=GetProcAddress(GetModuleHandleW(L"ntdll.dll"),"wine_get_version")!=nullptr;
+ unsigned va{},vb{},vc{},vd{};cpuQueryKnown=__get_cpuid(0,&va,&vb,&vc,&vd);
+ if(cpuQueryKnown){std::memcpy(cpuVendorBytes.data(),&vb,4);std::memcpy(cpuVendorBytes.data()+4,&vd,4);std::memcpy(cpuVendorBytes.data()+8,&vc,4);cpuVendor=drCompare::vendor(cpuVendorBytes.data());}
+ if(cpuVendor==drCompare::Vendor::Unknown){environmentFailure="unknown_CPU_vendor_contract";return false;}
+ unsigned leaf7A{};leaf7Known=__get_cpuid_count(7,0,&leaf7A,&leaf7B,&leaf7C,&leaf7D);
+ if(!drCompare::supportedCpuProfile(cpuVendor,leaf7Known,leaf7B)){environmentFailure="CPU_feature_profile_outside_checked_vendor_contract";return false;}
  if(IsDebuggerPresent()){environmentFailure="debugger_present";return false;}
  unsigned a{},b{},c{},d{};if(!__get_cpuid(1,&a,&b,&c,&d)||(c&bit_AVX)==0||(c&bit_OSXSAVE)==0){environmentFailure="AVX_or_OSXSAVE_missing";return false;}
+ cpuSignature=a;
  unsigned lo{},hi{};__asm__ volatile("xgetbv":"=a"(lo),"=d"(hi):"c"(0));if((lo&6)!=6){environmentFailure="XCR0_YMM_state_missing";return false;}
  using Query=BOOL(WINAPI*)(HANDLE,PROCESS_MITIGATION_POLICY,PVOID,SIZE_T);Query query{};
  auto raw=GetProcAddress(GetModuleHandleW(L"kernel32.dll"),"GetProcessMitigationPolicy");static_assert(sizeof(query)==sizeof(raw));std::memcpy(&query,&raw,sizeof(query));
@@ -152,7 +170,7 @@ int main(int argc,char** argv){
  SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOGPFAULTERRORBOX|SEM_NOOPENFILEERRORBOX);
  for(int i=1;i<argc;++i){if(!std::strcmp(argv[i],"--position"))position=true;else if(!std::strcmp(argv[i],"--timeout"))timeout=true;else if(!std::strcmp(argv[i],"--kill"))killClose=true;else if(!std::strcmp(argv[i],"--nested"))nestedCount=1;else if(!std::strcmp(argv[i],"--multiple"))nestedCount=2;else if(!std::strcmp(argv[i],"--json"))jsonOnly=true;else if(!std::strcmp(argv[i],"--cap")){capCase=true;bound=1;nestedCount=1;}else assert(false&&"unknown probe argument");}
  assert(!(timeout&&killClose));
- if(!environment()){std::printf("{\"schema\":3,\"task\":\"c43\",\"witness_task\":\"c41\",\"result\":\"REFUSED\",\"reason\":\"%s\",%s,\"game_used\":false}\n",environmentFailure,reportFields().c_str());return 77;}
+ if(!environment()){std::printf("{\"schema\":4,\"task\":\"c44\",\"witness_task\":\"c41\",\"result\":\"REFUSED\",\"reason\":\"%s\",%s,\"game_used\":false}\n",environmentFailure,reportFields().c_str());return 77;}
  std::int32_t delta{};std::array<unsigned char,15> synthetic{};
  assert(relative(0x100000000,0x17fffffff,delta)&&delta==INT32_MAX);assert(relative(0x100000000,0x80000000,delta)&&delta==INT32_MIN);assert(!relative(0x100000000,0x180000000,delta));
  assert(!encode(UINTPTR_MAX-10,4096,8192,1,synthetic)&&!encode(4096,4101,8192,1,synthetic)&&!encode(4096,8192,UINTPTR_MAX,1,synthetic));
@@ -186,18 +204,25 @@ int main(int argc,char** argv){
   restoration.pollReturned=msm2::trace::pollReset(false,"owned_c41_post_return_witness");
   restoration.activeAfter=activeLeases();restoration.pendingAfter=pending();
   const auto after=debug();restoration.after=registers(after);
-  // Record both sides even if poll unexpectedly returns true. Preserve every
-  // acceptance predicate and the three exact stability readbacks, unmasked.
+  // Obtain all three original readbacks BEFORE deciding final acceptance.
+  // No post-poll repair, masking, retry or additional watched access.
+  for(unsigned i=0;i<3;++i)restoration.rechecks[i]=registers(debug());
+  const auto stability=drCompare::stability(cpuVendor,restoration);
   assert(!*restoration.pollReturned);
-  assert(!*restoration.activeAfter&&same(after,saved));
-  for(unsigned i=0;i<3;++i){const auto check=debug();restoration.rechecks[i]=registers(check);assert(same(check,saved));}
+  assert(!*restoration.activeAfter&&*restoration.pendingAfter==0&&stability.complete&&stability.rawStable&&stability.canonicalResultsStable);
+  if(wine){
+   // Keep prior owned Wine RAW_EXACT semantics. This is explicitly NOT a
+   // canonical/native certificate when Wine returns non-hardware fixed values.
+   assert(same(after,saved)&&stability.rawAll);
+   for(const auto& r:restoration.rechecks){const auto x=drCompare::compare(cpuVendor,registers(saved),*r);assert(x.addressesExact&&x.meaningfulExact&&x.osExact&&x.unknownClear);}
+  }else assert(stability.canonicalAll);
  }
  deadline=GetTickCount64()+2000;while(!load(&ws_c41_captured)&&GetTickCount64()<deadline)SwitchToThread();assert(load(&ws_c41_captured));
  assert(!std::memcmp(ws_c41_before,ws_c41_after,128));assert(!std::memcmp(ws_c41_before+128,ws_c41_after+128,8));assert(!std::memcmp(ws_c41_before+160,ws_c41_after+160,512));assert(!std::memcmp(ws_c41_before+672,ws_c41_after+672,512));assert(!std::memcmp(ws_c41_before+1184,ws_c41_after+1184,64));
  assert(windows[0].hits==1&&!freeStorage());InterlockedExchange(&ws_c41_finish,1);assert(WaitForSingleObject(worker,2000)==WAIT_OBJECT_0);msm2::trace::stop();assert(!activeLeases());assert(freeStorage());
  const auto scenario=scenarioName();
  if(!jsonOnly)std::printf("PASS: c41 %s %s: exact GPR/RFLAGS/RSP/active-stack/YMM0-15/FXSAVE state; %s; no second watched hit; RX storage retained until thread exit\n",position?"Position":"reset",scenario,capCase?"unknown debt refuses final retirement, terminal-thread teardown only":"per-context post-return debt acknowledged then exact foreign DR2/owned DR restoration");
- std::printf("{\"schema\":3,\"task\":\"c43\",\"witness_task\":\"c41\",\"result\":\"%s\",%s,\"retirement_accepted\":%s,\"game_used\":false,\"new_gameplay_writes\":0,\"production_integrated\":false,\"native_candidate_probe_passed\":%s}\n",capCase?"FAIL_CLOSED_EXPECTED":"OWNED_WITNESS_PASS",reportFields().c_str(),capCase?"false":"true",!wine&&!capCase?"true":"false");
+ std::printf("{\"schema\":4,\"task\":\"c44\",\"witness_task\":\"c41\",\"result\":\"%s\",%s,\"retirement_accepted\":%s,\"game_used\":false,\"new_gameplay_writes\":0,\"production_integrated\":false,\"native_candidate_probe_passed\":%s}\n",capCase?"FAIL_CLOSED_EXPECTED":"OWNED_WITNESS_PASS",reportFields().c_str(),capCase?"false":"true",!wine&&!capCase?"true":"false");
  for(auto& t:tickets)for(auto h:{t.ready,t.prepared,t.held,t.release})CloseHandle(h);
  for(auto h:{worker,ready,go})CloseHandle(h);
  assert(VirtualFree(memory,0,MEM_RELEASE));

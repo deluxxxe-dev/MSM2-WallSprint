@@ -1,28 +1,44 @@
 # WallSprint project state
 
-## c43 current stage — native final-restoration divergence diagnostic
+## c44 current stage — conservative vendor-specific DR comparison
 
-Accepted owner native evidence: analysis/V01C42_NATIVE_WINDOWS_RESULT.md.
-The c42 probe at70c55e3 admitted actual known policies[0,0,0x100] and executed
-its witness path, then returned FAIL at the combined final lease/DR assertion.
-Outer acknowledgment, pending0, canRetire and false final poll completed first.
-Whether leases, any individual DR register or both differed remains UNKNOWN.
-Do not call that run an environment refusal, native success or production fix.
+Accepted native c43 evidence: analysis/V01C43_NATIVE_WINDOWS_RESULT.md.
+Lease cleanup succeeded, pending0, canRetire true, poll false, Dr0-Dr3 exact.
+RAW exact failure was limited to Dr6 XOR0xFFFF0FF0 and Dr7 XOR0x400. The c43
+assertion stopped before all3 stability readbacks; CPU vendor was not reported.
+That run remains RAW exact FAIL/DR_ONLY_FAILURE, never relabeled as PASS.
 
-C43 adds only test-owned before/after final-poll lease/pending/canRetire/poll
-observations, exact Dr0/1/2/3/6/7 snapshots/equality/XOR, identity and three
-stability readbacks. Missing observations remain null. Final acceptance and all
-c39-c42 counterexamples, state/ownership/lifetime/cap/mitigation semantics remain.
-The extra pre-poll suspend/read/resume changes scheduling; samples are sequential,
-not an atomic history or proof of the original failure's cause. No normalization,
-policy change or production restoration change is authorized.
+C44 reports actual CPUID vendor/signature/leaf7 and separate RAW_EXACT and
+ARCHITECTURAL_CANONICAL comparisons. Dr0-Dr3 and meaningful/global/potential
+BLD/RTM bits stay exact; current11/16=0 states additionally refuse the narrow
+candidate boundary even when raw-equal. Only documented fixed groups may differ, with current
+fixed values verified; unknown vendor/nonzero unknown bits refuse. AMD feature
+profiles not covered by the checked edition refuse before arming. All3 existing
+post-poll readbacks now run before final classification, without repair writes.
 
-See analysis/V01C43_RESTORATION_DIAGNOSTIC.md, V01C43_GATE.md and V01C43_STATUS.json.
-After required validation, the c43 standalone artifact/manifest/licenses go under
-analysis/native-probes/c43; c41/c42 artifacts/native evidence remain unchanged.
-Only after publication, request one native Windows standalone JSON run. No
-Update-WS, game, Overstrike, WallRun, scan or game log is needed. Runtime remains
-v0.1c38/package0.1.56; production integration and exact-slot mode stay unauthorized.
+The observed c43 pair still fails both conservative profiles: its Dr6 delta
+includes protected11/16 status. No blanket DR6 mask or native certificate is
+established. Vendor primary manual editions/provenance and latest-delivery403
+limitations are explicit in analysis/V01C44_DR_CANONICALIZATION.md. This is a
+bounded conservative contract, not claimed support for every future extension.
+Wine's existing RAW_EXACT regression is preserved and explicitly not called
+architectural equivalence when fixed hardware values are absent in API results.
+
+See V01C44_GATE.md and V01C44_STATUS.json. After validation publish only the c44
+standalone/manifest/licenses under analysis/native-probes/c44; historical c41-c43
+artifacts/evidence remain unchanged. One native game-free JSON run may follow
+publication to obtain vendor/stability/both comparisons. No Update-WS, game,
+Overstrike, A/E, WallRun, scan, settings change or game log. Runtime remains
+v0.1c38/package0.1.56; production restoration/integration/slot mode stay unchanged.
+
+## c43 historical stage — native divergence localized, RAW exact FAIL
+
+The c43 owned diagnostic tests passed and the owner supplied a native3-context
+run with policies[0,0,256] admitted. It established active leases false after
+poll and exact Dr0-Dr3, including foreign Dr2. Dr6 and Dr7 representation/status
+differences caused the unchanged exact comparator to fail. Three later readbacks
+and actual CPU vendor remained unknown. Detailed supplied output is retained
+unchanged; c44 now investigates a narrower architecture/Windows contract.
 
 ## c42 historical stage — classifier admitted, native final restoration failed
 
@@ -37,7 +53,7 @@ flags before executing the witness. Neither run proves native witness acceptance
 
 ## c41 historical stage — partial success and native refusal
 
-C41 task base4b39a82; current task is c43. C40 completed its review
+C41 task base4b39a82; current task is c44. C40 completed its review
 with the fail-closed outcome; production retirement remains unproven. C41 adds
 only an owned test prototype, not production integration or a slot watch.
 Current c41 handoff classification: **PARTIAL SUCCESS** — owned Wine feasibility
@@ -55,7 +71,7 @@ process-wide accounting, a full-XSTATE runtime proof or a native-Windows/CET fix
 Details: `analysis/V01C41_CONTINUATION_WITNESS.md`, `V01C41_GATE.md`,
 `V01C41_WITNESS_STATUS.json`. The historical c41 standalone command used
 `analysis/native-probes/c41/continuation-witness.exe --position --multiple --json`.
-Current native follow-up uses c43 above, not this historical artifact. No game
+Current native follow-up uses c44 above, not this historical artifact. No game
 launch/update/slot scan/log is needed. This historical c41 artifact refused
 all nonzero native flags; c42 refines only the standalone test boundary. Native evidence and a later
 explicit integration task are required before c39-style slot work can resume.
@@ -393,24 +409,25 @@ The VMOVUPS store is existing game code, not a MOD write and not permission to w
 22. c40 saved-exception CONTEXT retirement review ✅ STOPPED FAIL-CLOSED; no production fix
 23. c41 owned post-return feasibility ✅ PARTIAL; owned Wine passed, native coarse-boundary REFUSED before witness
 24. c42 native mitigation boundary refinement ✅ classifier admitted; actual native final-restoration FAIL
-25. c43 final-restoration diagnostic ▶ CURRENT; native cause unresolved
-26. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
-27. bounded publication/source chain ⏸ pending writer-site evidence
-28. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
-29. resume full writer XYZ/W causal proof ⏸ after store containment
-30. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-31. safe writable upstream movement source ⬜ NOT AUTHORIZED
-32. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-33. adhesion/contact refinement ⏸ deferred
-34. animation/camera/later traversal ⬜
+25. c43 final-restoration diagnostic ✅ native lease cleanup/Dr0-Dr3 exact, RAW Dr6/Dr7 FAIL
+26. c44 vendor-specific DR comparison ▶ CURRENT; conservative status preservation/native stability pending
+27. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
+28. bounded publication/source chain ⏸ pending writer-site evidence
+29. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
+30. resume full writer XYZ/W causal proof ⏸ after store containment
+31. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+32. safe writable upstream movement source ⬜ NOT AUTHORIZED
+33. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+34. adhesion/contact refinement ⏸ deferred
+35. animation/camera/later traversal ⬜
 
 ## Current action
 
-Follow `docs/CODEX_NEXT.md` for c43. Preserve the accepted native c42 FAIL and
-exact restoration semantics; finish test-only diagnostic validation and publish
-the c43 standalone probe before requesting one native JSON run. No original
-cause, Windows canonicalization or production retirement certificate is inferred.
-A later separately authorized task must review production integration.
+Follow `docs/CODEX_NEXT.md` for c44. Preserve native c43 RAW FAIL and all
+production semantics; validate/publish the conservative test-only vendor
+comparator with separate raw/architectural results and three readbacks. No
+protected status/global bit is masked and no current native equivalence is
+inferred. After publication only the game-free standalone JSON run is requested.
 
 Do not add the exact-slot watch, PAGE_GUARD or broad memory interception merely
 to force progress. Do not merge `main`, do not traverse producer `0x351EB00`, and

@@ -50,6 +50,8 @@ bash tools/test_continuation_mitigations.sh
 
 bash tools/test_continuation_diagnostics.sh
 
+bash tools/test_debug_register_comparison.sh
+
 bash tools/test_continuation_witness.sh
 
 bash tools/test_movement_lineage.sh

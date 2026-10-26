@@ -1,0 +1,296 @@
+{
+  "task": "c44_native_debug_register_canonicalization",
+  "base_commit": "7336ef4",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "classification": "CONSERVATIVE_COMPARATOR_SUCCESS_NATIVE_ACCEPTANCE_UNPROVEN",
+  "accepted_native_input": "V01C43_NATIVE_WINDOWS_RESULT.md",
+  "accepted_native_result": "RAW_EXACT_FAIL_DR_ONLY_FAILURE",
+  "native_vendor_supplied": false,
+  "native_three_readback_stability_supplied": false,
+  "accepted_raw_xor": {
+    "Dr6": "0x00000000ffff0ff0",
+    "Dr7": "0x0000000000000400"
+  },
+  "observed_pair_canonical_in_synthetic_test": false,
+  "BLD_RTM_11_16_normalized": false,
+  "JSON_schema": 4,
+  "comparator_revision": "c44-v1",
+  "classifier_revision_unchanged": "c42-v1",
+  "raw_diagnostic_revision_unchanged": "c43-v1",
+  "vendor_from": "actual_CPUID_leaf0",
+  "current_vendor_manual_delivery": "UNAVAILABLE_proxy403",
+  "pinned_primary_manual_editions": [
+    "Intel325462-075US_June2021",
+    "AMD24593_Rev3.30_September2018"
+  ],
+  "AMD_table_prose_discrepancy_recorded": true,
+  "native_c44_result": "NOT_RUN",
+  "production_restoration_changed": false,
+  "production_integrated": false,
+  "slot_watch_enabled": false,
+  "policy_setting_changed": false,
+  "runtime_values_forged": false,
+  "new_gameplay_writes": 0,
+  "new_slot_value_reads": 0,
+  "producer_traversed": false,
+  "runtime_version": "v0.1c38",
+  "package_version": "0.1.56",
+  "new_game_release": false,
+  "standalone_refreshed_after_required_tests": true,
+  "validation": {
+    "commands": [
+      {
+        "command": "bash source/tools/test_continuation_mitigations.sh",
+        "exit": 0,
+        "PASS": 10,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.46,
+        "log": "/tmp/ws-c44-test_continuation_mitigations.log"
+      },
+      {
+        "command": "bash source/tools/test_continuation_diagnostics.sh",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.66,
+        "log": "/tmp/ws-c44-test_continuation_diagnostics.log"
+      },
+      {
+        "command": "bash source/tools/test_debug_register_comparison.sh",
+        "exit": 0,
+        "PASS": 9,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.59,
+        "log": "/tmp/ws-c44-reviewed-test_debug_register_comparison.log"
+      },
+      {
+        "command": "bash source/tools/test_continuation_witness.sh",
+        "exit": 0,
+        "PASS": 13,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 8.04,
+        "log": "/tmp/ws-c44-reviewed-test_continuation_witness.log"
+      },
+      {
+        "command": "bash source/tools/test_watch_retirement.sh",
+        "exit": 0,
+        "PASS": 14,
+        "SKIP": 0,
+        "UNAVAILABLE": 2,
+        "seconds": 5.52,
+        "log": "/tmp/ws-c44-test_watch_retirement.log"
+      },
+      {
+        "command": "bash source/tools/build_windows.sh",
+        "exit": 0,
+        "PASS": 0,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 39.2,
+        "log": "/tmp/ws-c44-build_windows.log"
+      },
+      {
+        "command": "bash source/tools/test.sh",
+        "exit": 0,
+        "PASS": 13,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 7.48,
+        "log": "/tmp/ws-c44-test.log"
+      },
+      {
+        "command": "bash source/tools/smoke_windows.sh",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 14.05,
+        "log": "/tmp/ws-c44-smoke_windows.log"
+      },
+      {
+        "command": "bash source/tools/test_hooks_windows.sh",
+        "exit": 0,
+        "PASS": 323,
+        "SKIP": 5,
+        "UNAVAILABLE": 2,
+        "seconds": 156.34,
+        "log": "/tmp/ws-c44-reviewed-test_hooks_windows.log"
+      },
+      {
+        "command": "python3 source/tools/package.py",
+        "exit": 0,
+        "PASS": 1,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.77,
+        "log": "/tmp/ws-c44-reviewed-package.log"
+      }
+    ],
+    "full_chain_PASS": 343,
+    "full_chain_SKIP": 5,
+    "full_chain_UNAVAILABLE": 2,
+    "focused_counts_overlap_hooks": true,
+    "package_PASS_separate": 1,
+    "packaged_inputs_match_tested_source": true,
+    "latest_vendor_publication_delivery_UNAVAILABLE": 2,
+    "latest_vendor_delivery_not_counted_as_runtime_test": true,
+    "native_c44_executed": false,
+    "shipped_probe": {
+      "exit": 0,
+      "JSON_lines": 1,
+      "environment": "Wine",
+      "cpu_vendor": "GenuineIntel",
+      "actual_mitigation_flags": [
+        0,
+        0,
+        0
+      ],
+      "RAW_EXACT": true,
+      "ARCHITECTURAL_CANONICAL": false,
+      "three_readbacks_captured": true,
+      "raw_readbacks_stable": true,
+      "native_candidate_probe_passed": false,
+      "current_status_boundary_valid": false
+    },
+    "initial_required_commands": [
+      {
+        "command": "bash source/tools/test_continuation_mitigations.sh",
+        "exit": 0,
+        "PASS": 10,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.46,
+        "log": "/tmp/ws-c44-test_continuation_mitigations.log"
+      },
+      {
+        "command": "bash source/tools/test_continuation_diagnostics.sh",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.66,
+        "log": "/tmp/ws-c44-test_continuation_diagnostics.log"
+      },
+      {
+        "command": "bash source/tools/test_debug_register_comparison.sh",
+        "exit": 0,
+        "PASS": 9,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.6,
+        "log": "/tmp/ws-c44-test_debug_register_comparison.log"
+      },
+      {
+        "command": "bash source/tools/test_continuation_witness.sh",
+        "exit": 0,
+        "PASS": 13,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 7.96,
+        "log": "/tmp/ws-c44-test_continuation_witness.log"
+      },
+      {
+        "command": "bash source/tools/test_watch_retirement.sh",
+        "exit": 0,
+        "PASS": 14,
+        "SKIP": 0,
+        "UNAVAILABLE": 2,
+        "seconds": 5.52,
+        "log": "/tmp/ws-c44-test_watch_retirement.log"
+      },
+      {
+        "command": "bash source/tools/build_windows.sh",
+        "exit": 0,
+        "PASS": 0,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 39.2,
+        "log": "/tmp/ws-c44-build_windows.log"
+      },
+      {
+        "command": "bash source/tools/test.sh",
+        "exit": 0,
+        "PASS": 13,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 7.48,
+        "log": "/tmp/ws-c44-test.log"
+      },
+      {
+        "command": "bash source/tools/smoke_windows.sh",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 14.05,
+        "log": "/tmp/ws-c44-smoke_windows.log"
+      },
+      {
+        "command": "bash source/tools/test_hooks_windows.sh",
+        "exit": 0,
+        "PASS": 323,
+        "SKIP": 5,
+        "UNAVAILABLE": 2,
+        "seconds": 152.33,
+        "log": "/tmp/ws-c44-test_hooks_windows.log"
+      },
+      {
+        "command": "python3 source/tools/package.py",
+        "exit": 0,
+        "PASS": 1,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.78,
+        "log": "/tmp/ws-c44-package.log"
+      }
+    ],
+    "post_review_affected_commands": [
+      {
+        "command": "bash source/tools/test_debug_register_comparison.sh",
+        "exit": 0,
+        "PASS": 9,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.59,
+        "log": "/tmp/ws-c44-reviewed-test_debug_register_comparison.log"
+      },
+      {
+        "command": "bash source/tools/test_continuation_witness.sh",
+        "exit": 0,
+        "PASS": 13,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 8.04,
+        "log": "/tmp/ws-c44-reviewed-test_continuation_witness.log"
+      },
+      {
+        "command": "bash source/tools/test_hooks_windows.sh",
+        "exit": 0,
+        "PASS": 323,
+        "SKIP": 5,
+        "UNAVAILABLE": 2,
+        "seconds": 156.34,
+        "log": "/tmp/ws-c44-reviewed-test_hooks_windows.log"
+      },
+      {
+        "command": "python3 source/tools/package.py",
+        "exit": 0,
+        "PASS": 1,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.77,
+        "log": "/tmp/ws-c44-reviewed-package.log"
+      }
+    ],
+    "golden_bit_positions_and_active_low_status_boundaries_verified": true
+  },
+  "standalone_probe": "analysis/native-probes/c44/continuation-witness.exe",
+  "standalone_sha256": "87c1a78bd544e6c75417e2c20dc176996ae7b8e7f4f990926ec24066980415ef",
+  "code_tool_input_count": 246,
+  "current_Dr6_status_11_16_must_one_additional_boundary": true,
+  "status_11_16_saved_current_still_exact": true
+}

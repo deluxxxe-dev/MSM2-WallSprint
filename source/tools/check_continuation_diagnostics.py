@@ -8,11 +8,23 @@ records = [json.loads(line) for line in Path(sys.argv[1]).read_text().splitlines
 assert len(records) == 12
 seen = set()
 for record in records:
-    assert record['schema'] == 3 and record['task'] == 'c43'
+    assert record['schema'] == 4 and record['task'] == 'c44'
     assert record['witness_task'] == 'c41' and record['environment'] == 'Wine'
     assert record['thread'] > 0 and record['lease'] == 1 and record['generation'] == 101
     assert record['game_used'] is False and record['production_integrated'] is False
     assert record['native_candidate_probe_passed'] is False
+    assert record['cpu_vendor'] in ['GenuineIntel', 'AuthenticAMD'] and record['cpuid_known'] is True
+    assert record['acceptance_comparison'] == 'RAW_EXACT'
+    assert record['acceptance_scope'] == 'owned_Wine_only_not_architectural_certificate'
+    comparison = record['debug_register_comparison']
+    assert comparison['revision'] == 'c44-v1' and comparison['cpu_vendor'] == record['cpu_vendor']
+    for masks in comparison['masks'].values():
+        total = 0
+        for value in masks.values():
+            mask = int(value,16)
+            assert total & mask == 0
+            total |= mask
+        assert total == (1<<64)-1
     assert record['mitigation_classifier']['revision'] == 'c42-v1'
     assert record['mitigation_classifier']['admitted'] is True
     assert [p['flags'] for p in record['mitigation_classifier']['policies']] == record['mitigation_flags']
@@ -31,6 +43,7 @@ for record in records:
         assert report['attempted'] is False and report['capture_complete'] is False
         assert report['classification'] == 'NOT_OBSERVED' and report['final_predicate'] is None
         assert report['active_leases_after_final_poll'] is None and report['final_poll_returned'] is None
+        assert comparison['readbacks_complete'] is False and comparison['after'] is None
         continue
     assert record['result'] == 'OWNED_WITNESS_PASS' and record['retirement_accepted'] is True
     assert report['attempted'] is True and report['capture_complete'] is True
@@ -48,4 +61,19 @@ for record in records:
     for check in report['verification_readbacks']:
         assert check['captured'] is True and check['same_saved'] is True
         assert all(value == report['registers'][name]['saved'] for name, value in check['registers'].items())
-print('PASS: c43 actual Wine diagnostic JSON validates10 exact restorations,2 unobserved cap refusals, before/after boundaries and immutable identity')
+    assert comparison['readbacks_complete'] is True and comparison['raw_all_exact'] is True
+    assert comparison['raw_readbacks_stable'] is True and comparison['architectural_results_stable'] is True
+    for phase, snapshot in zip([comparison['after']]+comparison['verification_readbacks'],[report['registers']]+[r['registers'] for r in report['verification_readbacks']]):
+        assert phase['RAW_EXACT'] is True and phase['Dr0_Dr3_exact'] is True
+        assert phase['meaningful_exact'] is True and phase['OS_controlled_exact'] is True and phase['unknown_bits_clear'] is True
+        valid = True
+        for reg in ['Dr6','Dr7']:
+            value = snapshot[reg]['after'] if isinstance(snapshot[reg],dict) else snapshot[reg]
+            current = int(value,16);m = comparison['masks'][reg]
+            one, zero = int(m['FIXED_ONE'],16), int(m['FIXED_ZERO'],16)
+            valid &= current & one == one and current & zero == 0
+        current_dr6 = snapshot['Dr6']['after'] if isinstance(snapshot['Dr6'],dict) else snapshot['Dr6']
+        boundary = int(current_dr6,16) & 0x10800 == 0x10800
+        assert phase['status_boundary_valid'] == boundary
+        assert phase['current_fixed_bits_valid'] == valid and phase['ARCHITECTURAL_CANONICAL'] == (valid and boundary)
+print('PASS: c44 actual Wine JSON validates10 RAW_EXACT restorations,2 cap refusals, CPUID vendor,128-bit masks and three separate architectural comparisons without native claims')
