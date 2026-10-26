@@ -1,3 +1,142 @@
+# Codex result — c37 independent numeric offset / slot publication proof tracks
+
+Branch **codex/v01c20-edi-value-provenance**; task base **87b378f**.
+Implementation **ae617264b134301a30504e37b3acbc907dd8a484**. Version **v0.1c37 / package0.1.55**.
+Outputs **MSM2-WS-v0.1c37.zip**, **MSM2-WS-v0.1c37-source.zip**,
+**MSM2-WS-v0.1c37.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C37_RELEASE.json** and **V01C37_PUBLICATION_STATUS.json**.
+
+## Accepted input / separate results
+
+Read AGENTS/state/NEXT/c36 evidence/relevant code, retained unchanged previously
+read manual/rules/workspace/logging and refreshed Wisdoms instructions/manual/
+engine/method/WS references. Intended branch only, no WS main merge/reset/force
+push. Five historic untracked artifacts preserved; NEXT byte-identical. No SF/
+ContextualIdle/ordinary mods/shared environment/updater changes. Interrupted
+initial fetch was checked and resumed without losing or duplicating changes.
+
+VERIFIED-RUNTIME V01C36_RUNTIME_RESULT.md accepts current exact potential store,
+escape1/first_escape/pending and parent propagation, uncontained control barrier.
+The existing authenticated CMP/JA/MOVSXD/SHL sequence supports a new numeric
+path proof independently of the qword-slot publication track.
+
+**Offset track: VERIFIED-STATIC.** JA after32bit unsigned CMP is strict above;
+fallthrough is <=decoded immediate, including equality. For the accepted immediate
+R8D=[0,16383]; taken=[16384,UINT32_MAX], not the fallthrough's sign-safe interval.
+MOVSXD R8,R8D on that nonnegative range is exact64bit. SHL effective6 derives
+relative byte offsets **0..0xFFFC0 inclusive**, **stride64** after overflow checks.
+The32byte store needs maximum **endExclusive0xFFFE0** (last byte0xFFFDF). All bounds
+come from decoded immediate/count/width, not hardcoded expected maximum. This is
+offset-only alignment/nonwrap; unknown base alignment/addition/extent is not proved.
+No live numeric register/memory/vector observation or dependency-tag narrowing.
+
+**Base/publication track: UNPROVEN.** Exact slot0xC2D2580 is writable .data, loaded
+qword remains opaque NON-pointer top7. No authenticated full game executable or
+static code image is available in cloud; only owned helper stubs were found,
+none matches game SHA. Existing analysis/Wisdoms provide no complete writer/
+publication chain. Actual reference/writer counts are unknown/not scanned, not
+zero. Source/allocation/range/lifetime/critical-disjointness/base proof all false.
+No allocation/pool/array/owner is inferred from addressing or stable tags.
+
+## Implementation / files
+
+- New store_address_proof.hpp: minimal per-path R8 numeric facts, exact unsigned
+  predicate, nonnegative MOVSXD, checked SHL/width extent; reset stage proof bits
+  before validation. Separate ReadSlotPublication status/combination requirements,
+  including full base extent and nonwrapping addition. No producer of a valid
+  base contract exists. Either component alone cannot contain the store.
+- read_target_identity.hpp / rdx_source_contract.cpp: explicit address-proof enable,
+  clone fall/taken facts at accepted JA, apply only exact existing R8 MOVSXD/SHL6,
+  invalidate any other accepted R8 write. Existing source/code checks guard current
+  completed proof; actual-parent replay conflicts invalidate it. No generic numeric
+  engine or new memory semantics. Both JA paths remain mandatory.
+- writer_entry_snapshot.cpp: OFFSET_RANGE separates predicate/range/arithmetic/
+  extent/relative alignment/current proof from may-tags. SLOT_PUBLICATION reports
+  known writable slot vs unperformed reference scan/incomplete writers/opaque source/
+  absent allocation/range/lifetime/base proof. No raw numbers from live state.
+- New tools/slot_publication.py: bounded OFFLINE exact-slot direct reference
+  candidate scanner. CLI accepts only exact game SHA/pinned Capstone5.0.6; no
+  fixture/hash bypass. PE64 sections/full capped runtime metadata; excludes deferred
+  0x351EB00 containing runtime span or entire executable section if missing boundary,
+  never decodes its body/follows calls. Caps512MiB file/64MiB code/5M instructions/
+  256references/600000entries. Exact RIP-relative/absolute slot-overlap candidates,
+  decoded access plus conservative possible writer for operand0 (store caveat),
+  source-kind only. No bytes/immediates/full bodies/private paths/live qword or
+  pointer chasing exported. The file is hashed/decoded, not treated as live data.
+- Candidate byte coverage is NOT writer completeness: gaps/caps/excluded producer/
+  unproven x86 entries/indirect/base-register aliases remain. Zero/multiple/one
+  candidates never establish no writers/unique owner/allocation/lifetime. Tool
+  always keeps base/containment/CFG false. It cannot fabricate a publication chain
+  or certify unrelated loader metadata. No actual file scan was possible here.
+- New test_slot_publication.py:8 owned groups; test_hooks_windows.sh includes them.
+  read_target_identity_smoke.cpp adds6 groups (identity110/read-call21). Versions/
+  info/README_TEST/BUILD/package, c36 mirror, c37 analysis/gate/status/index,
+  AGENTS/state updated. NEXT unchanged. Source native/tool inputs231.
+
+**C36 remains closed:** escape1/pending1/contained0/control-alias1/CFG0, no next
+opcode, memory map, new MOD writes or effect certificate. RAX7/R8zero/YMM halves7/
+above256zero/flags7 unchanged. New interval cannot exclude aliases of unknown base.
+Original c31-c36 classifiers/vector model, native assertions/ABI/lifecycle/cleanup,
+128byte/32unique/64visit/1JA/2path/4096 cumulative/current-code/runtime gates remain.
+
+## Validation / initial inherited timing failure
+
+- Final warnings-as-errors full Windows x64 build PASS. Final **13 portable +7
+  DLL/logger +258 hooks/native/contracts/workspace/slot =278 public PASS records**,
+  **5 optional private-input SKIP**, all final commands exit0. Identity110/read21.
+- Initial full hooks exited3 at unchanged immediate_reset_smoke.cpp:218 `armed`:
+  observed arm_delay_us=65654.5 exceeded the unchanged30ms window, installed0.
+  Source fixture and production trace code unchanged. Root cause NOT established;
+  do not assert it is definitely unrelated to the new binary. Initial log kept
+  locally. Normal isolated reset suite passed12 records/1private skip, then normal
+  unmodified full hooks passed all258. Do not add duplicate isolated12 to278.
+  No assertion/deadline/freshness/guard/cleanup relaxation or global Wine reset.
+- New native groups: unsigned boundaries3FFF/4000/sign crossing and alternative
+  bounds, MOVSXD/SHL/extent nonwrap and proof reset, clobber/source/count refusal,
+  base-only/offset-only/missing lifetime/disjointness refusal, actual-parent/c36
+  escape/current code/full527161 table. Python groups: direct reader/writer
+  candidates, ambiguity/indirect/incomplete/capped coverage, single writer missing
+  source/allocation/lifetime, exact SHA guard, slot overlap/deferred region exclusion.
+- Fresh actual source ZIP extracted independently: full build PASS; **185 focused
+  entry/c14-c37 +7 DLL/logger +13 workspace +8 slot =213 separate PASS records**,
+  all exits0/no private skips. Standalone package verifier separately PASS. Do not
+  add duplicate213 to278. All231 tested native/tool inputs stay byte-identical
+  after final reporting refresh; current standalone packager rechecked.
+- Final source/install CRC/hash/version/DLL/current docs/evidence/helpers/licenses
+  and1 virtual active install script checked. No active source script/compiled/
+  private game log/full native-body payload. Wine startup diagnostics remain;
+  final commands exit0, not a measured c37 actual-game or real publication proof.
+
+Wisdoms **5b92437dc280d9f38b39716ab928b9ec3c6e3333** pushed: accepted c36, path-
+predicate/range vs may-tags/base provenance, derived offset/extent, writer/xref
+completeness limits, actual scan NOT PERFORMED, candidate tool/deferred exclusion,
+no repeated movement capture. Unrelated SF/ContextualIdle knowledge preserved.
+
+## Handoff / exact next evidence
+
+No identical A/E capture or full EXE upload is requested. Offset proof uses the
+already accepted authenticated sequence. Base track needs actual exact-slot
+reference candidates, authenticated writer entry/source chain, complete indirect/
+excluded-writer coverage and source allocation/extent/lifetime/critical exclusion.
+A complete byte sweep, one candidate or numeric pointer does not supply that.
+No new runtime observation class is proposed or implicitly authorized.
+
+After verified push run installed MSM2-WS/Update-WS.cmd. The current task does
+not require another Install mods/Run modded game/A/E cycle. Local static tooling
+is under _source/source/tools/slot_publication.py; source/BUILD.md includes a
+ready PowerShell/WSL command using the existing pinned analysis Python and local
+Spider-Man2.exe. Owner-run output is logs/MSM2-WS-v0.1c37-slot-publication.json.
+It contains metadata for review, not a containment certificate. Keep EXE/private
+bodies local; no automatic report import or upload. Actual cloud file scan is
+unperformed, precise missing proof documented in V01C37_PUBLICATION_STATUS.json.
+
+All writable-source/caller-owned/ownership-exclusive/source-lifetime-exclusive/
+conflict gates0; Position/source/input/movement writes0. Producer0x351EB00 remains
+deferred. No new hook/game call/data-page mutation/ABI guess/gameplay change.
+No routine download/repository/test links; desktop launchers do not update.
+
+---
+
 # Codex result — c36 exact unresolved store escape / hard control-alias barrier
 
 Branch **codex/v01c20-edi-value-provenance**; accepted task base **cad6bd8**.
