@@ -1,21 +1,21 @@
-# WallSprint v0.1c34 — 指定SHLの回数・フラグ解析
+# WallSprint v0.1c35 — 別のVMOVUPSの方向・アドレス・ベクトル状態解析
 
-Package **0.1.52**。c33実機で `MOVSXD r8,r8d` が確認され、次は `0x2CF7FF7: SHL` です。今回は正確なoperand/access/幅/シフト回数の指定方法・マスク・フラグ効果を記録します。現在コードで32/64bitレジスタと定数回数を検証できる場合だけ解析を続けます。未定義フラグは不明のまま保守的に扱い、CL可変回数・部分レジスタ・メモリRMWは拒否します。実際のSHL形式・次の停止点は未確認です。値の数値読取り・ゲーム挙動変更は追加しません。
+Package **0.1.53**。c34実機で `SHL r8,6` と未定義フラグのtop7が確認され、次は別の場所の `0x2CF7FFB: VMOVUPS` です。今回は正確な読込み／書込み方向・幅・アドレス由来・ベクトル上下の状態を独立して記録します。同じ名前の先行命令の許可は流用しません。現在も証明できるHeroのRDX+0からの定型VEX2読込みだけ条件付き解析し、ストア・RMW・不明アドレス・EVEX等は拒否します。実際の新命令形式と次の停止点は未確認です。値の数値読取りやゲーム挙動変更は追加しません。
 
 ## 今回の更新・テスト（移行済み環境）
 
 1. ゲームと共有Overstrikeを閉じ、`MSM2-WS\Update-WS.cmd` を実行します。Git更新・既存フル試験・検証・配置を行います。
 2. 起動した共有Overstrikeで通常MOD＋SF＋WSを確認し、`Install mods` → `Run modded game`。
 3. A/cardinalの平らな壁で約3秒 → WallRunを完全終了 → 移動/ファストトラベル → E/diagonalで約3秒。各回は既存の5秒上限に達する前に終了します。
-4. `MSM2-WS\logs` の最新の完全な `MSM2-WS-v0.1c34-YYYYMMDD-HHMMSS.log` を非公開で共有してください。動画は見た目の異常時だけです。
+4. `MSM2-WS\logs` の最新の完全な `MSM2-WS-v0.1c35-YYYYMMDD-HHMMSS.log` を非公開で共有してください。動画は見た目の異常時だけです。
 
-新しい `MOVEMENT_CALLEE_READ_SHL` / `READ_SHL_FLAGS` / `READ_SHL_OPERAND` / `READ_SHL_ADDRESS` と既存のMOVSXD/VECTOR256/STATE/停止点/CFG/safetyを確認します。回数0/1/複数、幅由来のマスク、32bit親のゼロ拡張、未定義AF/OFのtop7を区別します。RAX/YMMの依存状態と両経路・コード再検証は保持されます。
+新しい `MOVEMENT_CALLEE_READ_VECTOR2` / `READ_VECTOR2_OPERAND` / `READ_VECTOR2_ADDRESS` / `READ_VECTOR2_ARCH` と既存のSHL/VECTOR_STATE/停止点/CFG/safetyを確認します。XMMロードは宛先のhigh128をゼロ化し、YMMロードは上下とも不明top7とする違いを区別します。未定義フラグによるtop7は保持します。前回c34はリモート環境のキーボード／マウス記録です。今回も使った入力方法を添え、コントローラーとの同等性は推定しません。
 
 下の移行手順は未移行環境向けの参照です。デスクトップの `MSM2 - Overstrike` は普段の起動用で、WSの更新・ビルドは実行しません。
 
 ## 最初の移行
 
-配布 **MSM2-WS-v0.1c34.zip** を **Mods Library の外**へ展開してください。展開したフォルダ内の `Migrate-WS.cmd` と `tools` を一緒に使います。ソース ZIP は別の再現用資料で、正本 `_source` はヘルパーが GitHub から独立 clone します。コードはすべて取得し、配布アーカイブだけを Git の sparse checkout 設定で作業フォルダから除外します。ZIP本体と履歴はGitに残ります。
+配布 **MSM2-WS-v0.1c35.zip** を **Mods Library の外**へ展開してください。展開したフォルダ内の `Migrate-WS.cmd` と `tools` を一緒に使います。ソース ZIP は別の再現用資料で、正本 `_source` はヘルパーが GitHub から独立 clone します。コードはすべて取得し、配布アーカイブだけを Git の sparse checkout 設定で作業フォルダから除外します。ZIP本体と履歴はGitに残ります。
 
 Windows 側に Python 3.11+、Git for Windows、PowerShell、設定済み WSL2 が必要です。WSL 側には既存の MinGW/Clang/Wine/解析 Python のフルビルド環境が必要です。**前提が足りない場合、ビルドや試験を省略して導入することはありません。** 手順は [source/BUILD.md](source/BUILD.md) を参照してください。
 
@@ -40,7 +40,7 @@ Migrate-WS.cmd --game-root "<実際のゲームルート>" --branch codex/v01c20
 
 ```text
 <game>\Mods Library\Mods-Developing\MSM2-WS\
-├─ MSM2-WS-v0.1c34.script
+├─ MSM2-WS-v0.1c35.script
 ├─ Update-WS.cmd
 ├─ Migrate-WS.cmd        （移行用）
 ├─ logs\
@@ -68,7 +68,7 @@ Migrate-WS.cmd --game-root "<実際のゲームルート>" --branch codex/v01c20
 
 起動するのは **`<game>\Overstrike\Overstrike.exe`** だけで、WorkingDirectory は必ずゲームルートです。共有 UI で通常 MOD＋SF＋WS を必要に応じて選び、**Install mods → Run modded game** を実行してください。
 
-既存環境の実機移行・共有UI・起動・新ログは受け入れ済みです（analysis/LOCAL_WORKSPACE_RUNTIME_ACCEPTANCE_20261024.md）。今回のSHL解析版の実機A/Eは別途未確認です。新規の環境で移行する場合はその環境の確認が必要で、旧環境を自動削除する処理はありません。
+既存環境の実機移行・共有UI・起動・新ログは受け入れ済みです（analysis/LOCAL_WORKSPACE_RUNTIME_ACCEPTANCE_20261024.md）。今回のVMOVUPS解析版の実機A/Eは別途未確認です。新規の環境で移行する場合はその環境の確認が必要で、旧環境を自動削除する処理はありません。
 
 ## 実機ログと回帰試験
 
@@ -76,7 +76,7 @@ Migrate-WS.cmd --game-root "<実際のゲームルート>" --branch codex/v01c20
 
 ```text
 <game>\Mods Library\Mods-Developing\MSM2-WS\logs\
-MSM2-WS-v0.1c34-YYYYMMDD-HHMMSS.log
+MSM2-WS-v0.1c35-YYYYMMDD-HHMMSS.log
 ```
 
 時刻は PC のローカル時刻です。同秒の衝突は `-01` などを付け、既存ファイルを上書きしません。同じ起動内の A→E は1本に記録します。旧 `log_wallsprint` や共有 `logs` への代替保存はありません。
@@ -89,4 +89,4 @@ MSM2-WS-v0.1c34-YYYYMMDD-HHMMSS.log
 
 通常の入力で試してください。A/E の対応、ちらつき・停止・クラッシュなどがあれば添えてください。動画は見た目の異常時だけです。生ログや private game body を GitHub へ追加しないでください。
 
-確認項目はv0.1c34/package0.1.52、exact-build admission、SHLの形式・幅・回数指定/マスク・defined/undefinedフラグ・tags・拒否理由または次の停止点、c30-c33状態と値読取り0、両経路・Deinit/retention/Position0・watch解除です。A/E各約3秒、既存5秒上限未満で終了します。生コード・メモリ/ベクトル値は不要です。`writable_source_proven=0` を維持します。
+確認項目はv0.1c35/package0.1.53、exact-build admission、VECTOR2の方向・幅・access・アドレス／alias・上下状態・拒否理由または次の停止点、SHL flags7とc30-c33状態・値読取り0、両経路・Deinit/retention/Position0・watch解除です。A/E各約3秒、既存5秒上限未満で終了します。生コード・メモリ／ベクトル値は不要です。`writable_source_proven=0` を維持します。

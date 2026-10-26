@@ -174,3 +174,12 @@ masked zero/one/multiple counts, defined CF/OF/SF/ZF/PF and undefined AF/OF
 aggregate top7, downstream consumers/return merging, CL/stack/memory refusal,
 c30-c33 preservation and both-path/code/table/next barrier/replay.
 See V01C34_SHL_FLAGS.md. Actual SHL form/next barrier still pending.
+
+## c35 independent second VMOVUPS
+
+v0.1c35/package0.1.53 adds9 owned identity groups (96 total), retaining21
+read/call and all prior regressions. Exact second-site encoding/direction/access/
+width/aliases, VEX128 upper zero vs256 unknown halves across16 parents, source
+recheck after prior GPR replacement, store/RMW/dynamic/EVEX/masked/wider refusal,
+preserved SHL flags7/RAX/vector state, next barrier/unsafe leg/code/full table/
+parent replay and returned unions. See V01C35_SECOND_VMOVUPS.md. Actual form unknown.

@@ -12,7 +12,7 @@ struct Image {
   std::array<unsigned char,24> table{};
   std::array<unsigned char,128> code{};
   unsigned snapshots{},codeEndRead{},sourceReads{},queries{};
-  bool shiftMode{},signMode{},vectorMode{},unknownMode{},sourceFirstFail{},sourceFinalFail{},sourceChange{},queryFail{},pageChange{},metadataChange{};
+  bool nextVectorMode{},shiftMode{},signMode{},vectorMode{},unknownMode{},sourceFirstFail{},sourceFinalFail{},sourceChange{},queryFail{},pageChange{},metadataChange{};
   std::array<unsigned char,8> sourceData{{11,22,33,44,55,66,77,88}};
   ws::rdx::ReadImagePage page{true,true,ws::rdx::readImageSource&~4095u,0x1000,0x1000000,0x02,0x02,4096};
   static constexpr std::uint32_t sourceImageSize=0xd000000;
@@ -88,7 +88,7 @@ struct Image {
   }
   ws::rdx::ReadTargetIdentity run(bool admitted=true,std::uint32_t t=target,std::uint32_t size=imageSize,const ws::rdx::ReadEntryTags *tags=nullptr) {
     snapshots=codeEndRead=sourceReads=queries=0;
-    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this,tags,query,unknownMode,vectorMode,signMode,shiftMode);
+    return ws::rdx::authenticateReadTarget(admitted,t,size,read,lookup,this,tags,query,unknownMode,vectorMode,signMode,shiftMode,nextVectorMode);
   }
 };
 constexpr std::uint32_t largeFunctionBase=0x1100000;
@@ -1362,5 +1362,120 @@ int main() {
     assert(r.admitted && r.shift.modeled && r.signExtend.modeled && r.validatedEntries==527161 && !large.sourceReads);
   }
   std::puts("PASS: c34 actual-parent replay and both-return flag/category unions retain c19-c33 regressions/full527161 table with no source/Position/input/movement/ownership permission");
+
+  // New-site fixtures are independently authored; actual second VMOVUPS unknown.
+  auto vector2At=[&](Image &f,std::initializer_list<unsigned char> bytes) {
+    shiftAt(f,{0x49,0xc1,0xe0,6});f.nextVectorMode=true;
+    std::copy(bytes.begin(),bytes.end(),f.code.begin()+27);f.code[27+bytes.size()]=0xc3;
+  };
+  {
+    for (unsigned bits:{128u,256u}) {
+      Image f;vector2At(f,{0xc5,(unsigned char)(bits==128?0xf8:0xfc),0x10,0x0a});r=f.run(true,target,Image::sourceImageSize,&ve);
+      const auto &n=r.nextVector;const auto &v=n.vector;
+      assert(r.admitted && n.stateApplied && v.modeled && n.compatibleLoad && v.sourceVerified &&
+          n.encodingBytes==2 && n.opcode==0x10 && n.memoryWidth==bits/8 && v.vectorBits==bits && v.encodedBits==bits &&
+          v.destinationParent==1 && v.directionKnown && v.operands[0].decodedAccess==2 && v.operands[1].decodedAccess==1 &&
+          v.detail.memoryRead && !v.detail.memoryWrite && !v.detail.memoryRmw && v.detail.flagsPreserved && !f.sourceReads);
+    }
+  }
+  std::puts("PASS: c35 second VMOVUPS is independently pinned/decoded for VEX2 width/length/destination/direction/access/memory width before compatible XMM/YMM Hero-load admission, not matched by mnemonic alone");
+  {
+    for (unsigned bank=0;bank<16;++bank) for (unsigned bits:{128u,256u}) {
+      Image f;vector2At(f,{0xc5,(unsigned char)((bits==128?0xf8:0xfc)-(bank>=8?0x80:0)),0x10,(unsigned char)(2+8*(bank&7))});
+      f.code[31]=0xe8;Image::put32(f.code,32,0);auto tags=ve;tags.xmm[bank]=2;tags.xmmHigh[bank]=4;
+      r=f.run(true,target,Image::sourceImageSize,&tags);assert(!r.admitted && r.nextVector.stateApplied && r.barrier==target+31);
+      assert(r.boundary.xmm[bank]==7 && r.boundary.xmmHigh[bank]==(bits==128?0u:7u) && r.boundary.above256Zero[bank] &&
+          r.boundary.gpr[0]==7 && r.boundary.gpr[8]==0 && r.boundary.flagsTags==7 && !f.sourceReads);
+      for (unsigned k=0;k<16;++k) if (k!=bank) {
+        assert(r.boundary.xmm[k]==(k==0?7u:tags.xmm[k]));
+        assert(r.boundary.xmmHigh[k]==(k==0?7u:tags.xmmHigh[k]));
+        assert(r.boundary.above256Zero[k]==(k==0 || tags.above256Zero[k]));
+      }
+    }
+  }
+  std::puts("PASS: c35 full VEX128 loads zero destination high128/above256 while VEX256 sets both halves top7; all16 banks preserve unrelated parents, RAX7/R8zero/SHL flags7, no stale destination union or numeric vector reads");
+  {
+    Image f;vector2At(f,{0xc5,0xfc,0x11,0x04,0x08});auto a=flowThroughIdentity(f,false,false,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    const auto &n=a.readDependency.call.targetIdentity.nextVector;const auto &v=n.vector;
+    assert(v.detail.samples && v.detail.parentState && v.directionKnown && v.detail.memoryWrite && !v.detail.memoryRead &&
+        !n.stateApplied && !v.detail.addressExact && v.detail.aliasMayMask==ws::rdx::movAnyAlias && v.detail.addressTags==7 &&
+        v.operands[0].detail.baseParent==0 && v.operands[0].detail.indexParent==1 && v.operands[0].detail.baseTags==7 &&
+        n.low[1]==7 && n.high[1]==7 && n.represented[1] && v.operands[1].detail.registerTags==7 && !f.sourceReads);
+    assert(a.readDependency.call.targetIdentity.boundary.flagsTags==7);
+  }
+  std::puts("PASS: c35 encoding-resolved vector store refuses even with Capstone READ access caveat; indexed opaque-RAX address/source YMM0 low-high tags and unknown aliases are diagnostic only, no store/RMW semantics");
+  {
+    Image f;vector2At(f,{0xc5,0xf8,0x10,0x4c,0x81,0xf0});auto a=flowThroughIdentity(f,false,false,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    const auto &n=a.readDependency.call.targetIdentity.nextVector;const auto &op=n.vector.operands[1].detail;
+    assert(!n.stateApplied && n.vector.detail.memoryRead && op.scale==4 && op.displacement==-16 && op.indexTags==7 &&
+        op.baseRoot==16 && !n.vector.detail.addressExact && !f.sourceReads);
+    Image hero;vector2At(hero,{0xc5,0xf8,0x10,0x8a,0x0c,1,0,0});a=flowThroughIdentity(hero,false,false,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    assert(a.readDependency.call.targetIdentity.nextVector.vector.detail.aliasMayMask==(ws::rdx::movHero|ws::rdx::movField10c));
+    Image home;vector2At(home,{0xc5,0xfc,0x10,0x4c,0x24,8});a=flowThroughIdentity(home,false,false,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    assert(a.readDependency.call.targetIdentity.nextVector.vector.detail.aliasMayMask&ws::rdx::movCallerHome);
+    Image below;vector2At(below,{0xc5,0xfc,0x10,0x4c,0x24,0xf0});a=flowThroughIdentity(below,false,false,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    assert(a.readDependency.call.targetIdentity.nextVector.vector.detail.aliasMayMask&ws::rdx::movPrivateStack);
+  }
+  std::puts("PASS: c35 memory components/access/scale/signed displacement/current-parent image/Hero10C/home/below-SP aliases are independently diagnosed; unknown indexed/stack/other image sources never gain Hero-load or allocation permission");
+  {
+    for (const auto &bytes:std::vector<std::vector<unsigned char>>{{0xc5,0xfc,0x10,0x0a},{0xc5,0xf8,0x10,0x0a}}) {
+      Image f;vector2At(f,{0xc5,0xfc,0x10,0x0a});
+      // Replace current RDX with opaque MOVSXD output before the new load;
+      // the unchanged entry Hero fact and tags0 cannot revive pointer identity.
+      f.code[20]=0x49;f.code[21]=0x63;f.code[22]=0xd0;std::copy(bytes.begin(),bytes.end(),f.code.begin()+27);
+      r=f.run(true,target,Image::sourceImageSize,&ve);
+      assert(!r.admitted && r.nextVector.compatibleLoad && !r.nextVector.vector.sourceVerified && !r.nextVector.stateApplied && !r.boundary.gpr[2]);
+    }
+    Image noParent;vector2At(noParent,{0xc5,0xfc,0x10,0x0a});auto a=flowThroughIdentity(noParent,true,false,&ve,true,false,false,false,false,true,Image::sourceImageSize,false,false);
+    assert(!a.readDependency.call.targetIdentity.nextVector.stateApplied && !noParent.sourceReads);
+  }
+  std::puts("PASS: c35 current origin/source proof is repeated after MOVSXD/SHL, so stale entry-Hero/tag0 or opaque computed RDX cannot authorize a second vector load or pointer chase");
+  {
+    for (const auto &bytes:std::vector<std::vector<unsigned char>>{{0xc5,0xfc,0x10,0x09},{0xc5,0xfc,0x10,0x4a,0x10},{0xc5,0xfc,0x10,0x0c,2},{0x64,0xc5,0xfc,0x10,0x0a},{0x67,0xc5,0xfc,0x10,0x0a},{0xc4,0xe1,0x7c,0x10,0x0a},{0xc5,0xfc,0x10,0xc8},{0x0f,0x10,0x0a}}) {
+      Image f;vector2At(f,{0xc5,0xfc,0x10,0x0a});std::copy(bytes.begin(),bytes.end(),f.code.begin()+27);
+      r=f.run(true,target,Image::sourceImageSize,&ve);assert(!r.admitted && !r.nextVector.stateApplied && !f.sourceReads);
+    }
+    Image legacy;vector2At(legacy,{0x0f,0x10,0x0a});r=legacy.run(true,target,Image::sourceImageSize,&ve);
+    assert(r.nextVector.legacy && r.nextVector.vector.upperPreserved && !r.nextVector.vector.isVmovups);
+    Image wrong;vector2At(wrong,{0xc5,0xfc,0x10,0x0a});wrong.code[27]=0x90;const unsigned char v[]={0xc5,0xfc,0x10,0x0a};std::copy(std::begin(v),std::end(v),wrong.code.begin()+28);
+    r=wrong.run(true,target,Image::sourceImageSize,&ve);assert(!r.admitted && !r.nextVector.stateApplied);
+    Image disabled;vector2At(disabled,{0xc5,0xfc,0x10,0x0a});disabled.nextVectorMode=false;r=disabled.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && r.nextVector.compatibleLoad && !r.nextVector.stateApplied);
+  }
+  std::puts("PASS: c35 wrong address/displacement/index/segment/address width/encoding/site/direction/legacy/register-only/disabled forms refuse independently of the first vector site, with no generic AVX rule");
+  {
+    for (unsigned p2:{0x09u,0x89u,0x49u,0x29u,0x18u}) {
+      Image f;vector2At(f,{0x62,0xf1,0x7c,(unsigned char)p2,0x10,0x0a});r=f.run(true,target,Image::sourceImageSize,&ve);
+      assert(!r.admitted && !r.nextVector.stateApplied);
+      if (!r.nextVector.vector.detail.decoded) {assert(r.barrier==target+27);continue;}
+      assert(!std::strcmp(r.nextVector.vector.encoding,"EVEX"));
+      if (p2&7) assert(r.nextVector.vector.masked && r.nextVector.faultSuppressionPossible);
+    }
+    Image rmw;vector2At(rmw,{0x48,0x87,2});r=rmw.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && !r.nextVector.stateApplied && r.barrier==target+27 && !std::strcmp(r.reason,"target_cfg_memory_operand_refused"));
+  }
+  std::puts("PASS: c35 EVEX merge/zero mask/fault-suppression/wider state and memory RMW remain refusals even where low256 is represented; no ZMM or hidden upper-lane semantics");
+  {
+    Image f;vector2At(f,{0xc5,0xfc,0x10,0x0a});f.code[31]=0xe8;Image::put32(f.code,32,0);r=f.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && r.nextVector.stateApplied && r.barrier==target+31 && r.boundary.path==0 &&
+        r.boundary.edgeFrom==target+7 && r.boundary.edgeTarget==target+9 && r.boundary.flagsTags==7 &&
+        r.boundary.xmm[1]==7 && r.boundary.xmmHigh[1]==7 && r.boundary.above256Zero[1]);
+    Image unsafe;vector2At(unsafe,{0xc5,0xfc,0x10,0x0a});unsafe.code[40]=0x50;r=unsafe.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && r.paths==1 && r.nextVector.stateApplied && r.boundary.path==1);
+    Image changed;vector2At(changed,{0xc5,0xfc,0x10,0x0a});changed.changeFinal=true;r=changed.run(true,target,Image::sourceImageSize,&ve);
+    assert(!r.admitted && !r.stable && !r.unknownLoad.admitted);
+  }
+  std::puts("PASS: c35 next exact CALL/path/edge/vector/flags barrier, unsafe other JA path and changed snapshot deny full target under original128/32/64/1/2 and all current-code/runtime/RET contracts");
+  {
+    Image f;vector2At(f,{0xc5,0xf8,0x10,0x0a});auto a=flowThroughIdentity(f,true,true,&ve,true,true,false,false,false,true,Image::sourceImageSize,false,true);
+    const auto &c=a.readDependency.call;assert(c.targetIdentity.nextVector.stateApplied && c.targetIdentity.nextVector.vector.detail.samples &&
+        c.returnPaths==2 && c.returnedFlagsTags==7 && !f.sourceReads);
+    for (unsigned bit=0;bit<3;++bit) assert(c.returnedXmm[bit]&2);
+    // Only path0 writes XMM1, so its zero high half cannot clear path1 unknown high.
+    for (unsigned bit=0;bit<3;++bit) assert(c.returnedXmmHigh[bit]&2);
+    LargeImage large(527161);vector2At(large,{0xc5,0xfc,0x10,0x0a});r=ws::rdx::authenticateReadTarget(true,target,Image::sourceImageSize,LargeImage::readLarge,LargeImage::lookupLarge,&large,&ve,Image::query,true,true,true,true,true);
+    assert(r.admitted && r.nextVector.stateApplied && r.shift.modeled && r.signExtend.modeled && r.vector.modeled && r.validatedEntries==527161 && !large.sourceReads);
+  }
+  std::puts("PASS: c35 actual-parent replay/return unions and complete527161 table retain c19-c34 proofs, vector half unions/zero knowledge intersection and SHL flag top without any ownership/Position/source/input/movement permission");
 
 }

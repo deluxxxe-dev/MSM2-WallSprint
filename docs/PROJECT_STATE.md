@@ -248,3 +248,15 @@ Only if the exact form is soundly representable by the existing c32 low/high128/
 Preserve RAX `0x7`, R8 `0`, YMM0 low/high `0x7`, above256 zero knowledge, flags `0x7`, both c27 JA paths and all ownership/write gates.
 
 Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
+
+## c35 prepared — second VMOVUPS direction/address/upper-state contract
+
+v0.1c35/package0.1.53 classifies only VMOVUPS0x2CF7FFB independently. Conditional
+canonical VEX2 full XMM/YMM load from current STILL-proven Hero RDX+0 can reuse
+c32 dependency state: low7, high0 for128 or7 for256, above256zero. Prior MOVSXD/
+SHL replacing source origin invalidates stale entry-Hero permission even at tags0.
+Stores/RMW/dynamic/EVEX/masked/wider/other forms refuse. Flags7/RAX7/R8zero and
+unrelated parents remain. No values/new hooks/producer/gameplay writes or safety
+relaxation. Both JA outcomes/current-code/runtime/caps/RET retained; actual form/
+next barrier UNKNOWN pending minimum VECTOR2 metadata A/E capture, input method
+noted. NEXT unchanged. See V01C35_SECOND_VMOVUPS.md / CODEX_RESULT.md.

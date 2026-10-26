@@ -959,7 +959,7 @@ void configure(const Spec &s, Gate validate) noexcept {
         page.protect=mbi.Protect;page.allocationProtect=mbi.AllocationProtect;return true;
       };
       auto proof=ws::rdx::authenticateReadTarget(nc.instructionVerified && s.imageSize<=UINT32_MAX,
-          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner,entryTags,queryImage,true,true,true,true);
+          std::uint32_t(nc.target),std::uint32_t(s.imageSize),readImage,lookupImage,&owner,entryTags,queryImage,true,true,true,true,true);
       if (expected && (!proof.stable || proof.scanBytes!=expected->scanBytes ||
           std::memcmp(proof.snapshot.data(),expected->snapshot.data(),proof.scanBytes))) {
         proof.admitted=false;proof.load.admitted=false;proof.unknownLoad.admitted=false;proof.mov.loadedMayTags=7;proof.size=0;proof.reason="target_code_changed_between_tag_prepass_and_reproof";
@@ -1466,6 +1466,41 @@ void configure(const Spec &s, Gate validate) noexcept {
              "class=%s root=%d offset=%lld address_component_tags=0x%x alias_may_mask=0x%x memory_semantics_added=0 raw_values=0",
              hm.site,unsigned(hm.parentState),hm.samples,unsigned(hm.addressExact),unsigned(hm.addressSame),hm.addressClass,hm.addressRoot,
              (long long)hm.addressOffset,hm.addressTags,hm.aliasMayMask);
+    const auto &nv=identity.nextVector;const auto &vf=nv.vector;const auto &nm=vf.detail;
+    writeLog("MOVEMENT_CALLEE_READ_VECTOR2 site_rva=0x%x decoded=%u instruction=%s bytes=%u encoding=%s encoding_bytes=%u opcode=0x%x "
+             "encoding_known=%u vector_bits=%u encoded_bits=%u operands=%u memory_width=%u address_bits=%u memory_read=%u memory_write=%u memory_RMW=%u "
+             "direction_verified=%u decoder_access_conflict=%u pure_load_form=%u compatible_pinned_form=%u current_source_verified=%u "
+             "flags_preserved=%u GPR_writes=0x%x partial_GPR_writes=0x%x vector_writes=0x%x other_writes=%u SP_write=%u "
+             "snapshot_stable=%u current_code_rechecked=%u semantic_modeled=%u value_reads=0 raw_values=0 effect_certificate=0 reason=%s",
+             nm.site,unsigned(nm.decoded),nm.mnemonic,nm.instructionBytes,vf.encoding,nv.encodingBytes,nv.opcode,unsigned(vf.encodingKnown),
+             vf.vectorBits,vf.encodedBits,nm.operandCount,nv.memoryWidth,nm.addressWidth,unsigned(nm.memoryRead),unsigned(nm.memoryWrite),unsigned(nm.memoryRmw),
+             unsigned(vf.directionKnown),unsigned(vf.accessConflict),unsigned(nm.pureLoad),unsigned(nv.compatibleLoad),unsigned(vf.sourceVerified),unsigned(nm.flagsPreserved),
+             nm.fullGprWrites,nm.partialGprWrites,vf.vectorWrites,nm.otherRegisterWrites,unsigned(nm.stackPointerWrite),unsigned(identity.stable),
+             unsigned(identity.unknownLoad.targetCodeRechecked),unsigned(nv.stateApplied && identity.stable && identity.unknownLoad.admitted),nm.reason);
+    for (unsigned j=0;j<std::min(nm.operandCount,8u);++j) {
+      const auto &o=vf.operands[j];const auto &d=o.detail;
+      writeLog("MOVEMENT_CALLEE_READ_VECTOR2_OPERAND site_rva=0x%x index=%u kind=%s register=%s width=%u vector_parent=%d vector_bits=%u "
+               "decoded_access=%u resolved_access=%u register_may_tags=0x%x low128_may_tags=0x%x high128_may_tags=0x%x source_state_represented=%u above256_zero=%u "
+               "base=%s base_parent=%d base_tags=0x%x base_kind=%d base_root=%d base_offset=%lld memory_index=%s index_parent=%d index_tags=0x%x "
+               "index_kind=%d index_root=%d index_offset=%lld scale=%u displacement=%lld segment=%s broadcast=%u zero_mask=%u raw_values=0",
+               nm.site,j,d.kind,d.name,d.width,o.vectorParent,o.vectorBits,o.decodedAccess,o.resolvedAccess,d.registerTags,nv.low[j],nv.high[j],
+               unsigned(nv.represented[j]),unsigned(nv.above256Zero[j]),d.base,d.baseParent,d.baseTags,d.baseKind,d.baseRoot,(long long)d.baseOffset,
+               d.index,d.indexParent,d.indexTags,d.indexKind,d.indexRoot,(long long)d.indexOffset,d.scale,(long long)d.displacement,d.segment,o.broadcast,unsigned(o.zeroMask));
+    }
+    writeLog("MOVEMENT_CALLEE_READ_VECTOR2_ADDRESS site_rva=0x%x parent_state=%u samples=%u replay_visits=%u replay_refused=%u replay_cap=4096 "
+             "address_exact=%u same_address_all_samples=%u class=%s root=%d offset=%lld address_component_tags=0x%x alias_may_mask=0x%x "
+             "alias_Hero1_field10C2_source4_home8_privateStack16_image32_unknown64=1 loaded_may_top=0x%x no_pointer_chase=1 raw_values=0",
+             nm.site,unsigned(nm.parentState),nm.samples,vf.replayVisits,vf.replayRefused,unsigned(nm.addressExact),unsigned(nm.addressSame),nm.addressClass,
+             nm.addressRoot,(long long)nm.addressOffset,nm.addressTags,nm.aliasMayMask,nm.loadedMayTags);
+    writeLog("MOVEMENT_CALLEE_READ_VECTOR2_ARCH site_rva=0x%x destination_parent=%d write_bits=%u represented_bits=256 represented_parents=16 "
+             "destination_represented=%u upper_state_represented=%u upper_effect=%s upper_zero=%u upper_preserved=%u "
+             "mask=%u masked=%u zero_mask=%u broadcast=%u rounding=%u fault_suppression_possible=%u fault_suppression_supported=0 "
+             "pre_low128_tags=0x%x pre_high128_tags=0x%x post_low128_tags=0x%x post_high128_tags=0x%x pre_flags_tags=0x%x post_flags_tags=0x%x "
+             "state_applied=%u generic_AVX_rules=0 raw_values=0 effect_certificate=0",
+             nm.site,vf.destinationParent,vf.vectorBits,unsigned(vf.destinationRepresented),unsigned(vf.upperStateRepresented),vf.upperEffect,unsigned(vf.upperZero),
+             unsigned(vf.upperPreserved),vf.mask,unsigned(vf.masked),unsigned(vf.zeroMask),unsigned(vf.broadcast),unsigned(vf.rounding),unsigned(nv.faultSuppressionPossible),
+             nv.destinationLowBefore,nv.destinationHighBefore,nv.destinationLowAfter,nv.destinationHighAfter,nv.flagsBefore,nv.flagsAfter,
+             unsigned(nv.stateApplied && identity.stable && identity.unknownLoad.admitted));
     const auto &unknown=identity.unknownLoad;
     writeLog("MOVEMENT_CALLEE_READ_UNKNOWN_LOAD site_rva=0x%x enabled=%u attempted=%u source_rva=0x%x width=8 "
              "metadata_passed=%u metadata_rechecked=%u PE_metadata_equal=%u page_metadata_equal=%u target_code_rechecked=%u "

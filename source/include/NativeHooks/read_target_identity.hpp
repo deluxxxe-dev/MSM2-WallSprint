@@ -173,8 +173,18 @@ struct ReadShiftContract {
       flagsDefined{},flagsUndefined{},flagsPreserved{};
   const char *encoding="unsupported",*countSource="unknown",*countClass="unknown";
 };
+inline constexpr std::uint32_t readIdentityNextVector=0x2cf7ffb;
+// Separate site/contract: the first VMOVUPS never licenses this instruction.
+struct ReadNextVectorContract {
+  ReadVectorContract vector{};
+  unsigned encodingBytes{},opcode{},memoryWidth{},flagsBefore{},flagsAfter{},
+      destinationLowBefore{},destinationHighBefore{},destinationLowAfter{},destinationHighAfter{};
+  std::array<unsigned,8> low{},high{};
+  std::array<bool,8> represented{},above256Zero{};
+  bool compatibleLoad{},faultSuppressionPossible{},legacy{},stateApplied{};
+};
 struct ReadTargetIdentity {
-  bool shiftEnabled{},signExtendEnabled{},vector256Enabled{},enabled{}, admitted{}, missingRuntime{}, stable{}, tableValid{};
+  bool nextVectorEnabled{},shiftEnabled{},signExtendEnabled{},vector256Enabled{},enabled{}, admitted{}, missingRuntime{}, stable{}, tableValid{};
   bool directoryPairValid{}, directoryRangeInImage{}, directorySizeDivisible{},
       tableBudgetAdmitted{}, entryCapExceeded{}, byteCapExceeded{},
       validationSkippedByCap{}, tableReadFailed{}, tableReadComplete{}, lookupQueried{};
@@ -188,6 +198,7 @@ struct ReadTargetIdentity {
   ReadVectorContract vector{};
   ReadSignExtendContract signExtend{};
   ReadShiftContract shift{};
+  ReadNextVectorContract nextVector{};
   ReadImageLoad load{};
   ReadUnknownLoad unknownLoad{};
   ReadLeafBoundary boundary{};
@@ -201,5 +212,5 @@ struct ReadTargetIdentity {
 ReadTargetIdentity authenticateReadTarget(bool buildAndCallVerified,
     std::uint32_t target, std::uint32_t imageSize, IdentityRead,
     IdentityLookup, void *context, const ReadEntryTags *entryTags = nullptr,
-    IdentityPageQuery pageQuery = nullptr, bool pinnedUnknownLoad = false, bool pinnedVector256 = false, bool pinnedSignExtend = false, bool pinnedShift = false) noexcept;
+    IdentityPageQuery pageQuery = nullptr, bool pinnedUnknownLoad = false, bool pinnedVector256 = false, bool pinnedSignExtend = false, bool pinnedShift = false, bool pinnedNextVector = false) noexcept;
 }

@@ -1,3 +1,15 @@
+## Current c34 accepted / c35 independent second VMOVUPS
+
+VERIFIED-RUNTIME V01C34_RUNTIME_RESULT.md: SHL r8,6 modeled/tag0/undefined flag
+aggregate7, next VMOVUPS0x2CF7FFB/path0, operands/width/direction/address UNKNOWN.
+Remote keyboard/mouse capture is not controller equivalence. C35 classifies
+independently and conditionally permits only canonical full VEX2 XMM/YMM load
+from current proven Hero RDX+0, with repeated origin proof after prior writes.
+VEX128 high zero vs256 high top7, no values. Stores/RMW/dynamic/EVEX/other forms
+refuse. C30-c34/both paths/RET/current code/runtime/caps/ownership/write gates
+unchanged. Source V01C35_SECOND_VMOVUPS.md; older pending c34 notes below are
+historical and superseded by accepted actual evidence above.
+
 ## Current c33 accepted / c34 conditional SHL count and flags
 
 VERIFIED-RUNTIME V01C33_RUNTIME_RESULT.md: MOVSXD r8,r8d at0x2CF7FF4 modeled,

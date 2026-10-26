@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.52",
-  "description": "WallSprint v0.1c34 classifies pinned SHL0x2CF7FF7 including width/count masking/flags, conditionally modeling only constant-count register32/64 forms with conservative undefined-flag top. CL/partial/memory forms refuse. C30-C33 and all safety gates preserved.",
+  "version": "0.1.53",
+  "description": "WallSprint v0.1c35 independently classifies second VMOVUPS0x2CF7FFB direction/width/address/alias/upper-lane state; only canonical VEX2 full XMM/YMM load from current proven Hero RDX+0 may reuse bounded unknown-load state. Stores/dynamic addresses/EVEX/other forms refuse. C30-C34 and all safety gates preserved.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

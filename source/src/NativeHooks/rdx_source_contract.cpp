@@ -1697,6 +1697,56 @@ ReadShiftContract describeShift(const cs_insn &ins,csh decoder,const Slice &stat
       :!s.registerForm?"target_SHL_encoding_count_width_or_effect_unproven":"target_SHL_constant_GPR_form_supported";
   return s;
 }
+ReadNextVectorContract describeNextVector(const cs_insn &ins,csh decoder,const Slice &state,
+    const ReadFlow &flow,bool parent,bool tagsKnown,std::size_t imageSize,std::uint32_t codeBegin,std::uint32_t codeEnd) {
+  ReadNextVectorContract n{};n.vector=describeVector(ins,decoder,state,flow,parent,tagsKnown,imageSize,codeBegin,codeEnd);
+  auto &v=n.vector;auto &m=v.detail;const auto &x=ins.detail->x86;
+  unsigned at=0;while (at<ins.size && (ins.bytes[at]==0x64 || ins.bytes[at]==0x65 || ins.bytes[at]==0x67)) ++at;
+  if (at<ins.size) n.encodingBytes=ins.bytes[at]==0xc5?2:ins.bytes[at]==0xc4?3:ins.bytes[at]==0x62?4:0;
+  if (n.encodingBytes && at+n.encodingBytes<ins.size) n.opcode=ins.bytes[at+n.encodingBytes];
+  n.legacy=ins.id==X86_INS_MOVUPS;
+  if (n.legacy) {v.encoding="legacy_SSE_MOVUPS_not_VMOVUPS";v.upperEffect="preserve_above128";v.upperZero=false;v.upperPreserved=true;}
+  for (unsigned j=0;j<x.op_count && j<n.low.size();++j) {
+    const auto &o=x.operands[j];const auto bank=v.operands[j].vectorParent;
+    if (o.type==X86_OP_MEM) n.memoryWidth=o.size;
+    if (o.type==X86_OP_REG && bank>=0) {
+      n.represented[j]=bank<16 && (o.size==16 || o.size==32) && tagsKnown;
+      n.low[j]=n.represented[j]?flow.x[bank]:readMayTagTop;
+      n.high[j]=n.represented[j]?flow.high[bank]:readMayTagTop;
+      n.above256Zero[j]=n.represented[j] && flow.above256Zero[bank];
+      v.operands[j].detail.registerTags=o.size==32?(n.low[j]|n.high[j]):n.low[j];
+    }
+  }
+  n.faultSuppressionPossible=m.memoryOperands && (v.masked || v.broadcast || v.rounding);
+  n.flagsBefore=n.flagsAfter=tagsKnown?flow.flags:0;
+  const auto bank=v.destinationParent;
+  if (bank>=0 && bank<16 && tagsKnown) {
+    n.destinationLowBefore=n.destinationLowAfter=flow.x[bank];n.destinationHighBefore=n.destinationHighAfter=flow.high[bank];
+  }
+  // Only the canonical VEX2 full XMM/YMM load from the previously accepted
+  // current Hero [RDX+0] range, independently pinned at this second site.
+  // This is a conditional owned rule, never an assertion of actual operands.
+  const bool xmmForm=v.vectorBits==128,ymmForm=v.vectorBits==256;
+  n.compatibleLoad=v.isVmovups && !std::strcmp(v.encoding,"VEX2") && v.encodingKnown && ins.size==4 &&
+      n.opcode==0x10 && (ins.bytes[3]&0xc7)==2 && !x.prefix[0] && !x.prefix[1] && !x.prefix[2] && !x.prefix[3] &&
+      x.op_count==2 && x.addr_size==8 && bank>=0 && bank<16 && (xmmForm||ymmForm) &&
+      x.operands[0].type==X86_OP_REG && x.operands[0].size==(xmmForm?16:32) && x.operands[0].access==CS_AC_WRITE &&
+      x.operands[1].type==X86_OP_MEM && x.operands[1].size==x.operands[0].size && x.operands[1].access==CS_AC_READ &&
+      x.operands[1].mem.base==X86_REG_RDX && x.operands[1].mem.index==X86_REG_INVALID &&
+      x.operands[1].mem.segment==X86_REG_INVALID && x.operands[1].mem.scale==1 && !x.operands[1].mem.disp &&
+      m.pureLoad && v.vectorWrites==(1u<<bank) && !v.accessConflict && !n.faultSuppressionPossible &&
+      !v.masked && !v.zeroMask && !v.broadcast && !v.rounding && !m.memoryWrite && !m.memoryRmw;
+  // Representability alone does not prove a load address or grant semantics.
+  v.destinationRepresented=bank>=0 && bank<16 && (xmmForm||ymmForm);
+  v.upperStateRepresented=n.compatibleLoad;
+  if (m.memoryWrite) {v.upperPreserved=true;v.upperEffect="all_vector_state_preserved_by_store";}
+  m.reason=!v.isVmovups?"target_second_vector_site_not_VMOVUPS"
+      :m.memoryWrite||m.memoryRmw?"target_second_VMOVUPS_store_or_RMW_refused"
+      :!std::strcmp(v.encoding,"EVEX")||v.masked||v.zeroMask||v.broadcast||v.rounding?"target_second_VMOVUPS_EVEX_modifier_or_wider_refused"
+      :!n.compatibleLoad?"target_second_VMOVUPS_encoding_width_form_or_source_unproven"
+      :"target_second_VMOVUPS_full_XMM_YMM_Hero_form_supported";
+  return n;
+}
 struct LeafCfgResult {
   bool complete{}, effectsDiffer{};
   unsigned size{}, instructions{}, visits{}, paths{};
@@ -1709,6 +1759,7 @@ struct LeafCfgResult {
   ReadVectorContract vector{};
   ReadSignExtendContract signExtend{};
   ReadShiftContract shift{};
+  ReadNextVectorContract nextVector{};
   ReadLeafBoundary boundary{};
   std::array<ReadLeafOutcome,readLeafPathCap> outcomes{};
 };
@@ -1718,7 +1769,7 @@ struct LeafCfgResult {
 LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
     std::uint32_t codeBegin,std::uint32_t codeEnd,std::uint32_t nextRuntime,
     const ReadEntryTags *entry,bool symbolic,Slice &merged,ReadFlow &mergedTags,std::size_t imageSize,
-    ReadImageLoad *load=nullptr,IdentityRead sourceRead=nullptr,IdentityPageQuery pageQuery=nullptr,void *sourceContext=nullptr,ReadUnknownLoad *unknownLoad=nullptr,bool vector256=false,bool signExtend=false,bool shift=false) {
+    ReadImageLoad *load=nullptr,IdentityRead sourceRead=nullptr,IdentityPageQuery pageQuery=nullptr,void *sourceContext=nullptr,ReadUnknownLoad *unknownLoad=nullptr,bool vector256=false,bool signExtend=false,bool shift=false,bool nextVector=false) {
   static_assert(readLeafBranchCap==1 && readLeafPathCap==2 && readLeafVisitCap==64,"Review bounded fan-out before changing budgets");
   LeafCfgResult out{};
   struct Path { Slice slice{};ReadFlow flow{};unsigned pc{},clobberGpr{},clobberXmm{};
@@ -1923,6 +1974,32 @@ LeafCfgResult walkPinnedLeaf(const unsigned char *code,unsigned limit,
         }
         s.modeled=true;s.detail.reason="target_SHL_pinned_constant_GPR_flags_top_modeled";p.pc+=ins.size;continue;
       }
+      if (at==readIdentityNextVector && (ins.id==X86_INS_VMOVUPS || ins.id==X86_INS_MOVUPS)) {
+        auto &n=out.nextVector;n=describeNextVector(ins,d.h,p.slice,p.flow,!symbolic,!symbolic||p.actualTags,imageSize,codeBegin,codeEnd);
+        auto &v=n.vector;auto &m=v.detail;
+        if (!nextVector || !n.compatibleLoad) {
+          if (!nextVector && n.compatibleLoad) m.reason="target_second_VMOVUPS_diagnostic_only_semantics_disabled";
+          return fail(&ins,at,m.reason);
+        }
+        const auto source=p.slice.s.g[2];
+        // Recheck CURRENT origin, not merely the entry fact: a preceding MOVSXD
+        // or SHL can replace RDX with unknown non-pointer bits even with tags0.
+        v.sourceVerified=source.kind==pointer && source.off==0 && !p.flow.g[2] &&
+            (symbolic?(source.root==2 && entry && entry->samples && entry->vectorSourceVerified && !entry->gpr[2]):source.root==1);
+        if (!v.sourceVerified || !unknownLoad || !unknownLoad->enabled || !vector256 || !actualize(p)) {
+          m.reason="target_second_VMOVUPS_current_Hero_source_or_state_unproven";return fail(&ins,at,m.reason);
+        }
+        const unsigned bank=unsigned(v.destinationParent);
+        n.flagsBefore=n.flagsAfter=p.flow.flags;n.destinationLowBefore=p.flow.x[bank];n.destinationHighBefore=p.flow.high[bank];
+        p.flow.x[bank]=readMayTagTop;p.flow.high[bank]=v.vectorBits==256?readMayTagTop:0;
+        p.flow.above256Zero[bank]=true;p.flow.vectorTracked=true;
+        for (unsigned j=0;j<4;++j) p.slice.s.x[bank*4+j]={};
+        p.clobberXmm |= 1u<<bank;n.destinationLowAfter=p.flow.x[bank];n.destinationHighAfter=p.flow.high[bank];
+        n.stateApplied=v.modeled=v.tagsKnown=v.destinationRepresented=v.upperStateRepresented=true;
+        m.addressExact=m.addressSame=true;m.addressRoot=1;m.addressOffset=0;m.aliasMayMask=movHero;
+        m.addressClass="Hero_Transform_conditional";m.loadedMayTags=readMayTagTop;
+        m.reason="target_second_VMOVUPS_pinned_VEX2_Hero_unknown_load_modeled";p.pc+=ins.size;continue;
+      }
       for (unsigned j=0;j<x.op_count;++j) if (x.operands[j].type==X86_OP_MEM)
         return fail(&ins,at,"target_cfg_memory_operand_refused");
       if (ins.id==X86_INS_NOP || ins.id==X86_INS_ENDBR64) { p.pc+=ins.size;continue; }
@@ -2011,14 +2088,21 @@ void sampleVectorBoundary(ReadTargetIdentity &t,const Slice &caller,const ReadFl
   if (!t.enabled || !t.tableValid || !t.stable || !t.unknownLoad.admitted || !t.branch.expanded ||
       !v.detail.decoded || v.detail.site!=readIdentityVector || (!t.vector256Enabled && t.barrier!=readIdentityVector) ||
       !t.scanBytes) return;
+  auto invalidateSecond=[&](const char *why) {
+    auto &n=t.nextVector;if (!n.vector.detail.decoded) return;
+    n.stateApplied=n.vector.modeled=n.vector.sourceVerified=false;++n.vector.replayRefused;
+    n.vector.detail.addressExact=n.vector.detail.addressSame=false;n.vector.detail.aliasMayMask=movAnyAlias;
+    n.vector.detail.addressClass=why;n.vector.detail.reason=why;
+  };
   if (v.replayVisits>4096-readLeafVisitCap) {
+    invalidateSecond("target_second_VMOVUPS_parent_replay_budget_exhausted");
     ++v.replayRefused;v.detail.addressExact=v.detail.addressSame=false;v.detail.aliasMayMask=movAnyAlias;
     v.detail.addressClass="vector_parent_replay_budget_exhausted";return;
   }
   auto child=caller;child.s.g[4]=plus(caller.s.g[4],-8);auto tags=flow;
   auto load=t.load;auto unknown=t.unknownLoad;
   const auto cfg=walkPinnedLeaf(t.snapshot.data(),t.scanBytes,t.codeBegin,t.codeEnd,t.nextRuntime,
-      nullptr,false,child,tags,imageSize,&load,nullptr,nullptr,nullptr,&unknown,t.vector256Enabled,t.signExtendEnabled,t.shiftEnabled);
+      nullptr,false,child,tags,imageSize,&load,nullptr,nullptr,nullptr,&unknown,t.vector256Enabled,t.signExtendEnabled,t.shiftEnabled,t.nextVectorEnabled);
   if (cfg.signExtend.detail.decoded) {
     auto fresh=cfg.signExtend;auto &old=t.signExtend;fresh.detail.samples=old.detail.samples+1;
     if (old.detail.samples) {
@@ -2046,6 +2130,26 @@ void sampleVectorBoundary(ReadTargetIdentity &t,const Slice &caller,const ReadFl
     }
     t.shift=fresh;
   }
+  if (cfg.nextVector.vector.detail.decoded) {
+    auto fresh=cfg.nextVector;const auto &old=t.nextVector;auto &m=fresh.vector.detail;
+    m.samples=old.vector.detail.samples+1;
+    if (old.vector.detail.samples) {
+      m.addressSame=old.vector.detail.addressSame && m.addressExact==old.vector.detail.addressExact &&
+          m.addressRoot==old.vector.detail.addressRoot && m.addressOffset==old.vector.detail.addressOffset;
+      m.addressTags |= old.vector.detail.addressTags;m.aliasMayMask |= old.vector.detail.aliasMayMask;
+      fresh.flagsBefore |= old.flagsBefore;fresh.flagsAfter |= old.flagsAfter;
+      fresh.vector.sourceVerified &= old.vector.sourceVerified;fresh.stateApplied &= old.stateApplied;fresh.vector.modeled &= old.vector.modeled;
+      fresh.destinationLowBefore |= old.destinationLowBefore;fresh.destinationHighBefore |= old.destinationHighBefore;
+      fresh.destinationLowAfter |= old.destinationLowAfter;fresh.destinationHighAfter |= old.destinationHighAfter;
+      for (unsigned j=0;j<fresh.low.size();++j) {
+        fresh.low[j] |= old.low[j];fresh.high[j] |= old.high[j];fresh.above256Zero[j] &= old.above256Zero[j];
+        fresh.represented[j] &= old.represented[j];auto &o=fresh.vector.operands[j].detail;const auto &prior=old.vector.operands[j].detail;
+        o.registerTags |= prior.registerTags;o.baseTags |= prior.baseTags;o.indexTags |= prior.indexTags;
+      }
+      if (!m.addressSame) {m.addressExact=false;m.aliasMayMask |= movUnknown;m.addressClass="conflicting_second_vector_addresses";}
+    }
+    fresh.vector.replayVisits=v.replayVisits+cfg.visits;fresh.vector.replayRefused=v.replayRefused;t.nextVector=fresh;
+  } else invalidateSecond("target_second_VMOVUPS_parent_replay_did_not_reach_site");
   const unsigned visits=v.replayVisits+cfg.visits;
   if (!cfg.vector.detail.decoded || (!t.vector256Enabled && cfg.barrier!=readIdentityVector)) {
     v.replayVisits=visits;++v.replayRefused;v.detail.addressExact=v.detail.addressSame=false;
@@ -2117,7 +2221,7 @@ bool readCallLeaf(CalleeAlias &a, const cs_insn &call, Slice &caller,
         std::memcmp(c.code,proof.snapshot.data(),c.size))
       return fail(begin,"snapshot","read_call_CFG_identity_pin_or_snapshot_mismatch");
     const auto cfg=walkPinnedLeaf(c.code,c.size,c.targetIdentity.codeBegin,c.targetIdentity.codeEnd,
-        c.targetIdentity.nextRuntime,nullptr,false,state,tags,a.imageSize,&c.targetIdentity.load,nullptr,nullptr,nullptr,&c.targetIdentity.unknownLoad,c.targetIdentity.vector256Enabled,c.targetIdentity.signExtendEnabled,c.targetIdentity.shiftEnabled);
+        c.targetIdentity.nextRuntime,nullptr,false,state,tags,a.imageSize,&c.targetIdentity.load,nullptr,nullptr,nullptr,&c.targetIdentity.unknownLoad,c.targetIdentity.vector256Enabled,c.targetIdentity.signExtendEnabled,c.targetIdentity.shiftEnabled,c.targetIdentity.nextVectorEnabled);
     c.visits+=cfg.visits;
     if (!cfg.complete || c.visits>4096)
       return fail(cfg.barrier?cfg.barrier:begin,cfg.mnemonic,c.visits>4096?"read_call_cumulative_visit_cap":cfg.reason);
@@ -3642,10 +3746,10 @@ ReadEntryTags currentReadEntryEvidence(const ReadCallContract &c) noexcept {
   return e;
 }
 ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
-    std::uint32_t imageSize, IdentityRead read, IdentityLookup lookup, void *ctx, const ReadEntryTags *entryTags,IdentityPageQuery pageQuery,bool pinnedUnknownLoad,bool pinnedVector256,bool pinnedSignExtend,bool pinnedShift) noexcept {
+    std::uint32_t imageSize, IdentityRead read, IdentityLookup lookup, void *ctx, const ReadEntryTags *entryTags,IdentityPageQuery pageQuery,bool pinnedUnknownLoad,bool pinnedVector256,bool pinnedSignExtend,bool pinnedShift,bool pinnedNextVector) noexcept {
   static_assert(readCallByteCap==128 && readCallInstructionCap<=32,
                 "No-unwind admission may not silently widen c23 leaf caps");
-  ReadTargetIdentity out{}; out.enabled=true; out.target=target;out.unknownLoad.enabled=pinnedUnknownLoad;out.vector256Enabled=pinnedVector256;out.signExtendEnabled=pinnedSignExtend;out.shiftEnabled=pinnedShift;
+  ReadTargetIdentity out{}; out.enabled=true; out.target=target;out.unknownLoad.enabled=pinnedUnknownLoad;out.vector256Enabled=pinnedVector256;out.signExtendEnabled=pinnedSignExtend;out.shiftEnabled=pinnedShift;out.nextVectorEnabled=pinnedNextVector;
   if (entryTags && entryTags->samples) {
     out.entryTagsKnown=true;out.entryTagSamples=entryTags->samples;
     for (unsigned k=0;k<16;++k) if ((entryTags->gpr[k]|entryTags->xmm[k])&~7u) out.entryTagsKnown=false;
@@ -3801,8 +3905,8 @@ ReadTargetIdentity authenticateReadTarget(bool verified, std::uint32_t target,
           Slice merged;ReadFlow tags;
           for (unsigned k=0;k<16;++k) { tags.g[k]=1u<<k;tags.x[k]=1u<<(16+k); }
           const auto cfg=walkPinnedLeaf(out.snapshot.data(),limit,out.codeBegin,out.codeEnd,out.nextRuntime,
-              out.entryTagsKnown?entryTags:nullptr,true,merged,tags,imageSize,&out.load,read,pageQuery,ctx,&out.unknownLoad,out.vector256Enabled,out.signExtendEnabled,out.shiftEnabled);
-          out.cmp=cfg.cmp;out.branch=cfg.branch;out.mov=cfg.mov;out.vector=cfg.vector;out.signExtend=cfg.signExtend;out.shift=cfg.shift;out.instructions=cfg.instructions;
+              out.entryTagsKnown?entryTags:nullptr,true,merged,tags,imageSize,&out.load,read,pageQuery,ctx,&out.unknownLoad,out.vector256Enabled,out.signExtendEnabled,out.shiftEnabled,out.nextVectorEnabled);
+          out.cmp=cfg.cmp;out.branch=cfg.branch;out.mov=cfg.mov;out.vector=cfg.vector;out.signExtend=cfg.signExtend;out.shift=cfg.shift;out.nextVector=cfg.nextVector;out.instructions=cfg.instructions;
           out.paths=cfg.paths;out.visits=cfg.visits;out.cfgComplete=cfg.complete;
           out.pathEffectsDiffer=cfg.effectsDiffer;out.boundary=cfg.boundary;out.outcomes=cfg.outcomes;
           if (out.unknownLoad.attempted) {
