@@ -1,42 +1,53 @@
-# Next task — c38 bounded register-affine exact-slot candidate discovery
+# Next task — c39 bounded exact-slot non-value runtime access-site capture
 
 ## Status
 
-The owner has completed the c37 offline scan requested after the accepted c37 runtime result.
-
-Owner-supplied compact artifact:
+The owner completed the c38 exact-image offline scan and returned:
 
 ```text
-MSM2-WS-v0.1c37-slot-publication.json
+MSM2-WS-v0.1c38-slot-publication.json
 ```
 
-Derived accepted evidence is recorded in:
+Accepted derived evidence is in:
 
 ```text
-analysis/V01C37_SLOT_PUBLICATION_SCAN_RESULT.md
+analysis/V01C38_SLOT_PUBLICATION_SCAN_RESULT.md
 ```
 
 Continue only on `codex/v01c20-edi-value-provenance`. Do not merge `main`.
 
-Before implementation read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, this file, c28/c37 analysis, current `source/tools/slot_publication.py`, and relevant Wisdoms references.
+Before implementation read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, this file, c28/c36/c37/c38 analysis, current offline scanner, and the existing hardware-watch/reset/Position diagnostic implementation under `source/src/msm2/orientation_trace.cpp` and `source/src/NativeHooks/immediate_reset_trace.cpp`. Read relevant Wisdoms references.
 
-## Accepted c37 scan result
+## Accepted c38 owner scan
 
-The current tool authenticated the exact supported image and exact writable slot:
+Exact-image/tool identity:
 
 ```text
 slot_rva=0xC2D2580
 image_authenticated=1
+tool_version=v0.1c38
+schema_version=2
 slot readable=1
 slot writable=1
-scan_scope=bounded_offline_direct_candidates_not_all_writes
+scan_scope=bounded_offline_direct_and_register_affine_candidates_not_all_writes
 ```
 
-Its intentionally narrow direct RIP-relative/absolute candidate class returned:
+Local exact-slot candidate result:
 
 ```text
 reference_candidates=[]
 direct_writer_candidates=0
+register_affine_writer_candidates=0
+writer_candidates=0
+register_affine_resolved_operands=1360
+```
+
+The 1360 resolved operands prove the c38 register-affine representation executed on the authenticated actual image. None overlapped the target slot.
+
+Coverage remains explicitly incomplete:
+
+```text
+selected_byte_sweep_complete=0
 candidate_sweep_complete=0
 writer_enumeration_complete=0
 publication_source_kind=unproven
@@ -54,134 +65,203 @@ reason=xref_coverage_incomplete_indirect_writers_unexcluded
 Coverage diagnostics:
 
 ```text
-cap_bytes=67108864
+instructions_decoded=5000000
 cap_instructions=5000000
-bytes_scanned=17859460
+bytes_scanned=17859464
 decode_gaps=737
-indirect_or_unresolved_operands=1279672
+indirect_or_unresolved_operands=1278483
+control_flow_boundary_loss=822382
+runtime_region_boundary_loss=208548
+unsupported_register_mutation=97883
+memory_loaded_base=85282
+indexed_address=36092
+provenance_window_exhausted=20336
+partial_register_mutation=4900
+segment_unsupported=1985
 ```
 
-The deferred runtime region containing producer `0x351EB00` remained excluded.
+Do **not** interpret zero local writers as no writer. The global instruction cap was reached, control-flow/interprocedural state is intentionally discarded, and memory-loaded bases remain unknown by policy.
 
-**Do not interpret zero direct candidates as zero readers/writers.** Candidate coverage and writer enumeration are explicitly incomplete.
+## Accepted external positive-control reader
 
-## Concrete known limitation / regression anchor
-
-Accepted c28 runtime evidence already proves one exact consumer of the same slot:
+C38 revalidated the already-accepted c28 reader anchor against current exact image code:
 
 ```text
-0x2CF7FE9: mov rax,qword ptr [rcx+0x100]
-base=RCX
-base_origin_root=16
-base_origin_offset=0xC2D2480
-displacement=0x100
-effective source RVA=0xC2D2580
-address_expression_exact=1
-address_class=image_address_mutability_unproven
+site_rva=0x2CF7FE9
+width=8
+decoded_access=READ
+may_write=0
+effective_rva=0xC2D2580
+address_proof_class=authenticated_external_anchor
+origin_rva=0xC2D2480
+local_scanner_coverage=0
 ```
 
-The c37 Python scanner deliberately classifies register-base/indexed memory operands as unresolved unless the address is directly RIP-relative/absolute. Therefore the owner result demonstrates exactly why a direct-only scan is insufficient.
+This is a reader and a coverage sanity check only. It is not publication/writer evidence.
 
-This known consumer is an **address-representation anchor**, not a writer/publication proof and not permission to hard-code a candidate result.
+## Why the next evidence changes class
+
+Do not respond to c38 by building a generic cross-function symbolic executor or by pointer-chasing the 85,282 `memory_loaded_base` cases. The current branch already has a guarded hardware debug-register watch engine used by reset/Position diagnostics. It includes bounded thread enumeration, per-thread DR lease ownership, foreign-DR refusal, VEH handling, cleanup/restore, and fail-closed admission.
+
+The next useful question is narrower:
+
+> During a bounded authenticated runtime window, which instruction sites actually access the exact static 8-byte slot at `module_base + 0xC2D2580`, without reading or logging the qword value?
+
+A captured write site is only a runtime writer candidate. Absence of a hit is not no-writer proof.
 
 ## Current bounded Codex task
 
-Extend only the offline/static exact-slot candidate discovery needed to resolve **register-affine exact image addresses** without observing or dereferencing memory values.
+### 1. Reuse existing hardware-watch infrastructure; do not create broad interception
 
-The objective is to narrow the 1,279,672 unresolved memory operands into:
+Inspect the existing DR/VEH engine first. Reuse its ownership, suspend/resume, thread filtering, foreign-debug-register refusal and cleanup semantics where sound.
 
-1. exact register-affine image-address candidates that can be proven from instruction/address provenance; and
-2. still-unresolved operands with an explicit reason.
+Do not add PAGE_GUARD, broad exception interception, detours on arbitrary game code, or a new generic debugger framework merely to make progress.
 
-This task is still candidate discovery. It must not claim all-writer completeness, allocation, lifetime, ownership, store containment, or CFG continuation merely because new candidates are found.
+If the existing engine cannot safely support the exact slot without weakening cleanup/ownership rules, stop fail-closed and document the exact missing mechanism instead of approximating.
 
-### 1. Add a minimal exact register-address provenance state
+### 2. Watch only the exact static slot
 
-Use only narrow full-width address-producing operations that can be proved from static instruction semantics and the authenticated image. Prefer the minimum set actually required by owned fixtures/current code, for example:
+Target:
 
-- RIP-relative `LEA` producing an exact image address;
-- full-width register-to-register propagation of an already exact address;
-- checked affine `LEA reg,[known_reg + signed_disp]` with no unresolved index;
-- checked full-width add/sub immediate only if required and if no wrap is proven;
-- exact absolute address materialization only when its image/relocation semantics are itself authenticated.
+```text
+address = authenticated module base + 0xC2D2580
+width = 8 bytes
+```
 
-Do **not** infer an address value from:
+This is the address of the slot itself, not the qword value stored in the slot.
 
-- a memory load (`mov reg,[mem]`) or any loaded qword;
-- a call return;
-- an indirect transfer;
-- a partial-register write;
-- unsupported arithmetic;
-- guessed ABI/type/pointer semantics.
+Strictly forbidden:
 
-A memory-loaded register must remain unknown unless a separately accepted non-value proof already supplies an exact address origin. No pointer chasing.
+- reading/logging the slot's qword contents;
+- logging a numeric pointer loaded from the slot;
+- pointer chasing;
+- interpreting the slot as pool/array/allocation/owner;
+- using the watch to mutate the slot.
 
-### 2. Bound state lifetime aggressively
+No MOD write to the watched slot is allowed.
 
-This is not a generic symbolic executor.
+### 3. Prefer a two-phase bounded diagnostic if the hardware engine supports it safely
 
-At minimum:
+**Phase A — positive-control access self-check**
 
-- invalidate exact register-address state on unsupported/partial writes to that register;
-- do not carry unproven state through indirect control transfer;
-- do not assume caller/callee preservation from ABI guesses;
-- reset or split conservatively at control-flow boundaries unless an existing authenticated direct-edge proof explicitly supplies the state;
-- preserve the existing deferred-region exclusion and all scan caps.
+Use an exact 8-byte read/write watch only long enough to prove the mechanism can observe the already-authenticated c28 reader when that path executes.
 
-If reproducing the c28 `0x2CF7FE9` consumer requires the existing authenticated parent-state proof rather than purely local offline propagation, report that distinction explicitly. It is acceptable to expose an `authenticated_external_anchor` record; it is not acceptable to fake local scanner coverage or hard-code writer completeness.
+Positive control:
 
-### 3. Resolve only exact slot overlap
+```text
+0x2CF7FE9: mov rax,qword ptr [rcx+0x100]
+expected effective slot RVA=0xC2D2580
+expected access=READ
+```
 
-For a memory operand with a proven exact register-affine image address, calculate its full byte interval and report a candidate only when it overlaps the exact 8-byte slot at `0xC2D2580`.
+The hardware exception occurs post-instruction. Do not equate `Context.Rip` with the triggering instruction address. Authenticate the triggering site from current code. For this accepted no-unwind target, the pinned c28 current instruction may be used as an exact positive-control mapping only when the post-instruction/current-code relation is revalidated.
 
-Record compact metadata only, such as:
+If the positive control cannot be observed/authenticated, report that and do not claim writer-watch coverage.
 
-- site RVA;
-- width;
-- decoded/encoding-conservative access;
-- exact effective RVA;
-- address proof class (`direct_rip`, `direct_absolute`, `register_affine_static`, or authenticated external anchor where applicable);
-- source kind only when directly decoded without semantic guessing;
-- whether it may write.
+**Phase B — write-only candidate capture**
 
-Do not export instruction bytes, whole function bodies, private file paths, live values, or raw pointer values.
+If safe re-arm is supported, switch the exact same 8-byte target to write-only observation so the known repeated reader cannot consume the event budget.
 
-### 4. Improve unresolved diagnostics without claiming completeness
+Capture a bounded set of unique writer-site candidates. Do not treat write-watch silence as proof of no writers.
 
-Break the current aggregate unresolved count into useful conservative categories when practical, for example:
+If safe re-arm from read/write to write-only is not supported by the existing ownership model, use the minimum alternative that preserves cleanup; do not weaken debug-register ownership checks.
 
-- register base with no exact static origin;
-- indexed address;
-- memory-loaded base provenance;
-- unsupported/partial register mutation;
-- control-flow boundary loss;
-- segment/other unsupported addressing;
-- decode gap/cap/excluded region.
+### 4. Log only compact non-value metadata
 
-These counts are diagnostics, not proof of no alias.
+For each accepted slot access event, log only what is needed to identify the instruction and observation coverage, such as:
 
-`candidate_sweep_complete` and especially `writer_enumeration_complete` must remain false unless the implementation independently proves the much stronger coverage requirement. A complete pass over selected bytes is still not complete writer enumeration.
+- session/window identifier;
+- thread id;
+- post-instruction RIP/RVA;
+- triggering instruction RVA if uniquely authenticated;
+- module identity;
+- decoded access class: read / write / RMW / unresolved;
+- decoded memory width;
+- exact-slot-overlap verified yes/no;
+- current-code verified yes/no;
+- watch phase (self-check or writer-only);
+- hit count / unique-site count;
+- thread coverage/install/foreign-DR/failure summary.
 
-### 5. Publication chain remains a separate later question
+Do **not** log:
 
-If the new scan finds candidate writers/readers, do not automatically follow arbitrary calls or create generic cross-image dataflow.
+- watched qword before/after;
+- loaded/stored qword value;
+- arbitrary GPR/XMM register dumps;
+- raw pointer values;
+- full native function bodies;
+- arbitrary stack contents.
 
-For each candidate, only record enough source/address metadata to decide whether a **future** bounded publication-chain task has a useful exact starting point.
+A thread id and instruction RVA are acceptable diagnostic identity metadata; they do not establish ownership/lifetime.
 
-Do not infer:
+### 5. Triggering-instruction identity must be fail-closed
 
-- allocation base;
-- valid extent;
-- lifetime;
-- uniqueness/ownership;
-- pool/array/table semantics;
-- critical non-overlap.
+The existing DR engine records a post-instruction RIP. For a writer candidate, prove the actual triggering instruction rather than guessing `rip_after - N`.
 
-Those remain false unless separately proven.
+Allowed bounded approaches include:
 
-### 6. Existing c37 offset and c36 hard barrier remain unchanged
+- current authenticated runtime-function boundary plus complete bounded decode to the unique instruction ending at post-RIP;
+- an existing exact pinned site mapping whose current bytes/form are revalidated;
+- a strictly bounded backward candidate decode only if it yields a unique exact-slot memory instruction ending at post-RIP.
 
-Accepted relative offset proof remains:
+If identity is ambiguous, log the post-RIP event as unresolved and do not promote it to a writer-site candidate.
+
+Do not follow arbitrary calls or reconstruct whole functions merely to resolve a hit.
+
+### 6. Thread/watch coverage remains bounded and explicit
+
+Reuse the existing process-thread snapshot/lease model when practical. Preserve its foreign-DR and debugger refusal behavior.
+
+Record coverage honestly:
+
+- threads seen;
+- threads installed;
+- failed/busy/foreign threads;
+- cap reached;
+- snapshot-only/rescan policy;
+- cleanup restored/pending.
+
+Do not claim complete process writer coverage unless independently proven. New threads or pre-watch writes may remain unobserved.
+
+A writer hit proves only that this instruction wrote the slot during the observed window. No hit proves only `not observed in this bounded window`.
+
+### 7. Keep existing diagnostic modes isolated
+
+Do not run the new slot watch concurrently with existing reset/Position DR windows unless the current ownership model explicitly proves the combination safe.
+
+Prefer serialization or admission refusal over sharing DR slots by assumption.
+
+Do not weaken:
+
+- debugger detection;
+- foreign DR refusal;
+- suspend/resume cleanup;
+- lease identity checks;
+- event/window/thread caps;
+- existing reset/Position tests.
+
+### 8. Minimum runtime window / owner burden
+
+The implementation should request the shortest real-game action that can exercise the accepted c28 reader and then allow a short write-only observation window.
+
+Do not require A/E directional comparison, multiple wall faces, or repeated identical WallRun captures.
+
+If one ordinary WallRun/WallSprint session is enough for the positive control, use that. The user does not need to land/stand before ending the test; verified WallRun Deinit is the lifecycle closure of interest. Do not require fast travel unless the implemented diagnostic explicitly needs a post-Deinit/loading stimulus and documents why.
+
+### 9. Interpretation after runtime
+
+Possible outcomes:
+
+- **reader self-check + one or more writer candidates:** next task may inspect only those exact writer sites and their bounded source/publication chain;
+- **reader self-check + no writer hit:** retain publication unknown; do not claim no writer; decide whether a different bounded stimulus/window or static evidence is justified;
+- **reader self-check fails:** fix/diagnose watch coverage before any writer inference;
+- **ambiguous triggering instruction:** keep event unresolved.
+
+No writer candidate by itself proves source allocation, extent, lifetime, uniqueness, ownership or critical non-overlap.
+
+## Existing c37/c36 gates remain unchanged
+
+Relative offset proof:
 
 ```text
 R8D fallthrough=0..0x3FFF
@@ -193,7 +273,7 @@ overflow_wrap_excluded=1
 offset_proven=1
 ```
 
-Until an allocation/base/extent/lifetime contract is independently established, preserve:
+Store barrier:
 
 ```text
 memory_escape=1
@@ -204,21 +284,7 @@ CFG_blocked=1
 continuation_allowed=0
 ```
 
-Do not manufacture the next opcode.
-
-### 7. Safety gates remain closed
-
-Still forbidden:
-
-- MOD Position/source-position/input/movement writes;
-- gameplay/adhesion/camera/animation/physics changes;
-- live qword/pointer logging or pointer chasing;
-- producer `0x351EB00` traversal;
-- generic arbitrary memory/dataflow emulation;
-- guessed ABI/type/pool/array semantics;
-- weakening ownership/lifetime/exclusivity/conflict gates.
-
-Safety state remains:
+Safety state:
 
 ```text
 writable_source_proven=0
@@ -229,46 +295,41 @@ downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
 
+Producer `0x351EB00` remains deferred. No gameplay/adhesion/camera/animation/physics changes.
+
 ## Required owned validation
 
-Add focused fixtures at minimum for:
+Add focused regression coverage for at least:
 
-- RIP-relative LEA -> register -> exact slot read candidate;
-- RIP-relative LEA -> register -> exact slot write candidate;
-- full-width register copy preserving exact address;
-- checked affine LEA displacement producing exact slot overlap;
-- non-overlap adjacent address refusal;
-- memory load into base register remaining unknown/no pointer chase;
-- partial-register write invalidating exact address state;
-- unsupported arithmetic invalidation;
-- branch/call/indirect boundary conservative invalidation or explicit authenticated-edge handling;
-- indexed/segment unresolved classification;
-- multiple candidate ambiguity remaining non-ownership;
-- decode-gap/cap/excluded-region coverage remaining incomplete;
-- deferred `0x351EB00` region still excluded;
-- exact SHA and pinned Capstone guards retained;
-- c37 direct candidate fixtures and prior c19-c37/native/workspace regressions retained.
+- exact slot address derivation from authenticated module base + RVA;
+- 8-byte DR encoding/configuration under the existing Windows watch model;
+- read/write self-check classification without reading watched data;
+- write-only classification without watched-data reads;
+- post-RIP to exact triggering-site authentication success;
+- ambiguous triggering-site refusal;
+- exact-slot overlap vs adjacent access;
+- read vs write vs RMW classification;
+- foreign DR occupied refusal;
+- debugger-present refusal;
+- thread snapshot/install failure and partial coverage reporting;
+- event/unique-site cap handling;
+- cleanup/restore on normal close, timeout, kill and failure;
+- no overlap with existing reset/Position watch ownership;
+- c28 positive-control current-code mismatch refusal;
+- all c19-c38/native/workspace/offline-scanner regressions retained.
 
-If an owned synthetic parent-state fixture represents the c28 exact consumer, ensure it resolves `base+0x100` to the exact slot without loading a pointer value. Do not package proprietary game instruction bodies as fixtures.
+Do not weaken existing deadlines, caps, guard checks or cleanup assertions.
 
 ## Required outputs / handoff
 
 Update:
 
-- implementation/tests for the bounded offline scanner;
-- `analysis/` with the c38 proof/limitations;
+- the minimum native diagnostic implementation/tests;
+- `analysis/` with the c39 watch contract and limitations;
 - `docs/PROJECT_STATE.md`;
 - `docs/CODEX_RESULT.md`;
 - reusable Wisdoms facts if appropriate.
 
-Do not overwrite this task with a later milestone until c38 is committed/pushed and its exact next evidence is clear.
+Do not advance to publication-chain interpretation until c39 is committed/pushed and owner runtime evidence is reviewed.
 
-After successful push, the expected owner action should be **Update-WS and rerun the offline scanner only**. Do not request another WallRun/A-E game capture unless c38 discovers a genuinely new runtime fact that static analysis cannot establish.
-
-Use a new versioned output name such as:
-
-```text
-logs/MSM2-WS-v0.1c38-slot-publication.json
-```
-
-The owner should return that compact JSON to ChatGPT. The private executable stays local.
+After verified push, expected owner action should be Update-WS, Install mods / Run modded game, perform the shortest documented single-session test, and return the versioned c39 runtime log. Do not request the offline scanner again unless c39 itself establishes a reason.
