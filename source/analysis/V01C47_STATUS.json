@@ -231,7 +231,7 @@
       "reason": "proxy403_owner_current_official_extraction_retained"
     }
   },
-  "implementation_commit": "PENDING_COMMIT",
+  "implementation_commit": "97249d99eb980dfc4ab7e05e0964dff3e816b2a2",
   "standalone_artifact": {
     "path": "continuation-witness.exe",
     "bytes": 6819210,
@@ -261,5 +261,11 @@
       "test": "production_integration_game_Update_WS_slot_watch_producer_gameplay",
       "reason": "not_authorized_no_general_production_retirement_proof"
     }
-  ]
+  ],
+  "publication": {
+    "implementation_remote_verified": "97249d99eb980dfc4ab7e05e0964dff3e816b2a2",
+    "wisdoms_main_remote_verified": "cf939a75ca9f9fd946fbb01f1557228248b711fc",
+    "final_metadata_commit": "same_branch_descendant_reported_in_final_handoff",
+    "final_check": "remote_local_SHA_equality_and_fresh_clone_23file_comparison"
+  }
 }

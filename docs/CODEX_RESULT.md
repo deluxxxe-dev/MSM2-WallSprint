@@ -2,7 +2,7 @@
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
 Task base **ec4fe902c8d52e96c01e838a72dcdd41d16caa70**.
-Implementation **PENDING_COMMIT** (resolved in metadata handoff).
+Implementation **97249d99eb980dfc4ab7e05e0964dff3e816b2a2**.
 **PARTIAL SUCCESS:** documentation/native-order-backed separate predicate,
 focused models, full owned regressions and source-pinned standalone succeeded;
 actual native c47 execution remains pending. No production integration/general
@@ -144,6 +144,24 @@ Manifest pins all255 source/tool inputs and implementation commit; PE timestamps
 can change rebuilt hashes. Existing-version ignored validation output only:
 source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled. No new root release
 ZIP/active script/version/private game payload is published.
+
+## Persistence / publication
+
+Implementation **97249d99eb980dfc4ab7e05e0964dff3e816b2a2** was pushed to the intended branch and verified by
+`git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance` matching local
+HEAD. Wisdoms **cf939a75ca9f9fd946fbb01f1557228248b711fc** was committed/pushed to its main; its
+`git ls-remote origin refs/heads/main` matched local HEAD. A metadata-only
+same-branch descendant pins these verified implementation/source references and
+is also pushed/remote-verified in the final handoff. No code/tool/binary bytes
+change after required validation; only evidence/provenance metadata is recopied
+by package verification. No runtime-test repeat is necessary for those updates.
+
+Independent publication commands:
+`git clone --depth 1 --single-branch --branch codex/v01c20-edi-value-provenance --filter=blob:none --no-checkout https://github.com/deluxxxe-dev/MSM2-WallSprint.git /tmp/ws-c47-published`,
+then `python3 /tmp/ws-c47-check-publication.py` restores/compares all23 changed
+files, final HEAD and manifest/PE hash. Expected remote/local equality and all
+published bytes identical; final handoff records actual result. Working tree
+retains only the five original untracked artifacts, none modified/committed.
 
 ## Not executed / owner action
 

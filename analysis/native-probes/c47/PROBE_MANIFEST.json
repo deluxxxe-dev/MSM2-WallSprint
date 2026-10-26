@@ -1131,5 +1131,6 @@
   "individual_ticket_proof": "three_bound_acknowledged_current_code_tickets_before_poll",
   "write_attempt_proof": "one_watch_one_original_final_poll_total2_no_extra_failed_unscoped",
   "additional_GetThreadContext_calls_over_c46": 0,
-  "historical_c41_through_c46_artifacts_retained": true
+  "historical_c41_through_c46_artifacts_retained": true,
+  "source_commit": "97249d99eb980dfc4ab7e05e0964dff3e816b2a2"
 }
