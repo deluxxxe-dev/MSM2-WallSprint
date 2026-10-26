@@ -13,7 +13,7 @@ Accepted evidence:
 
 Continue only on `codex/v01c20-edi-value-provenance`. Do not merge `main`.
 
-Before implementation read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, this file, the c39 retirement evidence above, the existing hardware-watch/reset/Position implementation, and relevant references in `deluxxxe-dev/MSM2-Wisdoms` when accessible.
+Before implementation read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, `docs/CODEX_REPORTING.md`, this file, the c39 retirement evidence above, the existing hardware-watch/reset/Position implementation, and relevant references in `deluxxxe-dev/MSM2-Wisdoms` when accessible.
 
 ## Evidence boundary
 
@@ -188,7 +188,7 @@ Update as appropriate:
 
 Commit and push the intended branch before claiming completion.
 
-The final Codex report must include, concisely:
+The final Codex report must follow `docs/CODEX_REPORTING.md` and include, concisely:
 
 - what changed;
 - files changed;
