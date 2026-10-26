@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c37",
-  "package_version": "0.1.55",
-  "artifact": "MSM2-WS-v0.1c37.script.disabled",
-  "sha256": "7c1bc591642ba9cebb2c5497de34abb6bbb489b1ed2bff630de97d0fbdd5f56b",
-  "dll_sha256": "b81c00a3892ea34a8646ee00a43e64fd86de4ffd533c2ea4fb8958409f15758a",
+  "version": "v0.1c38",
+  "package_version": "0.1.56",
+  "artifact": "MSM2-WS-v0.1c38.script.disabled",
+  "sha256": "7074bafc65ea08f874d3e44745b72e39d5b0d05f7f4f1127121051e4fff98aed",
+  "dll_sha256": "7017a43e69bfdf4be7d9dbed0a779a4c0d65ea341b1ed839b25a9608a179bb5c",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -656,7 +656,7 @@
   },
   "isolated_logging": {
     "directory": "game-root/Mods Library/Mods-Developing/MSM2-WS/logs",
-    "filename": "MSM2-WS-v0.1c37-YYYYMMDD-HHMMSS.log",
+    "filename": "MSM2-WS-v0.1c38-YYYYMMDD-HHMMSS.log",
     "filename_clock": "host_local_GetLocalTime",
     "line_clock": "UTC_unchanged",
     "collision_creation": "CREATE_NEW_atomic",
@@ -732,8 +732,8 @@
     "source": "_source_independent_clone",
     "archive": "_archive_disabled_only",
     "runtime_logs": "logs",
-    "active_script": "MSM2-WS-v0.1c37.script",
-    "artifact": "MSM2-WS-v0.1c37.script.disabled",
+    "active_script": "MSM2-WS-v0.1c38.script",
+    "artifact": "MSM2-WS-v0.1c38.script.disabled",
     "update_helper": "Update-WS.cmd",
     "migration_helper": "Migrate-WS.cmd",
     "overstrike": "game-root/Overstrike/Overstrike.exe",
@@ -1098,6 +1098,41 @@
     "destination_contained": false,
     "CFG_continuation": false,
     "Position_source_input_movement_writes": 0
+  },
+  "v01c38_gate": "BOUNDED_REGISTER_AFFINE_CANDIDATES_NOT_PUBLICATION_OWNERSHIP_PROOF",
+  "register_affine_scanner_contract": {
+    "forms": [
+      "RIP_LEA_full64",
+      "known_full64_register_copy",
+      "known_full64_affine_LEA_signed_displacement"
+    ],
+    "forbidden_origins": [
+      "memory_value",
+      "call_return",
+      "partial_write",
+      "unsupported_arithmetic",
+      "absolute_immediate_without_relocation_proof"
+    ],
+    "state_instruction_cap": 64,
+    "origin_hop_cap": 8,
+    "boundary_loss": [
+      "control",
+      "system",
+      "decode_gap",
+      "runtime_region"
+    ],
+    "anchor": "current7byte_c28_consumer_plus_accepted_parent_origin_separate_from_local_coverage",
+    "anchor_within_aggregate_caps": true,
+    "actual_c38_scan_performed_in_cloud": false,
+    "candidate_sweep_complete": false,
+    "writer_enumeration_complete": false,
+    "allocation_lifetime_ownership_proven": false,
+    "base_proven": false,
+    "CFG_continuation": false,
+    "native_c37_c36_unchanged": true,
+    "live_value_reads": 0,
+    "deferred_producer_excluded": true,
+    "owner_action": "Update_WS_and_rerun_offline_c38_JSON_only_no_A_E"
   },
   "runtime_table_validation": {
     "observed_c24_entries": 527161,
