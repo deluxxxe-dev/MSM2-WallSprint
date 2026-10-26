@@ -4,17 +4,17 @@
   "branch": "codex/v01c20-edi-value-provenance",
   "base_commit": "87b378f2e26d6dba4bbbeecda5c1c9cd5ff10074",
   "implementation_commit": "ae617264b134301a30504e37b3acbc907dd8a484",
-  "source_snapshot_commit": "1a6459169f27ab0782160bed672c819dadf7e6d5",
+  "source_snapshot_commit": "282bc5f2698746853345a0f264e99263399f8787",
   "outputs": [
     {
       "path": "MSM2-WS-v0.1c37.zip",
       "bytes": 4102953,
-      "sha256": "4291f87e1092f1146690d96925bcff8fda4c9e3ce8016b5ac0a1f76796053f44"
+      "sha256": "ccefc9f6acfa6fc034c456768499207df3bc337ea9f9c495f2b54011fb4cc94d"
     },
     {
       "path": "MSM2-WS-v0.1c37-source.zip",
       "bytes": 1066000,
-      "sha256": "4a60b886a1ce087b1aee03091668e4744a15c0a5617a872fe7e66be5164b14d4"
+      "sha256": "949adff1fb3398b5ae4a3eb79c18573db747f16f259681f87bb4ae965469c7d9"
     }
   ],
   "script": {
