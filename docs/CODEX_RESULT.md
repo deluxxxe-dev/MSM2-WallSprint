@@ -1,3 +1,136 @@
+# Codex result — c36 exact unresolved store escape / hard control-alias barrier
+
+Branch **codex/v01c20-edi-value-provenance**; accepted task base **cad6bd8**.
+Implementation **a9c7bbb5e2ff188a14645fb0e51e10dd0437379f**. Version **v0.1c36 / package0.1.54**.
+Outputs **MSM2-WS-v0.1c36.zip**, **MSM2-WS-v0.1c36-source.zip**,
+**MSM2-WS-v0.1c36.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C36_RELEASE.json** (hashes/sizes/tested source-snapshot commit).
+
+## Evidence and bounded result
+
+Read AGENTS/latest state/NEXT/c35 result and code, retained unchanged previously
+read manual/rules/workspace/logging, refreshed Wisdoms instructions/manual/engine/
+method/WS references. Fast-forwarded intended branch only, no WS main merge/
+reset/force push. Five original untracked historical artifacts preserved. NEXT
+unchanged byte-for-byte. No SF/ordinary-mod/shared environment/updater changes.
+
+VERIFIED-RUNTIME V01C35_RUNTIME_RESULT.md: second site0x2CF7FFB is6byte VEX3.256
+opcode11 store m256[R8+RAX] <-YMM0, scale1/disp0,32byte write/no read/RMW, no
+GPR/vector/SP/flags writes. Address unknown/tags7/alias127; source halves7,
+RAX7/R8zero/YMM0 above256zero/flags7. Input device unspecified, no equivalence
+inferred. This is existing game code, not a new MOD write or ownership grant.
+
+**Containment is not provable from the current evidence; CFG must stop at the
+store.** Opaque writable-slot RAX and computed non-pointer R8 origins cannot
+exclude code/runtime/control stack or tracked Hero/source/Position/other memory.
+Tags0 do not prove a pointer, allocation/range/lifetime or disjointness. A stable
+snapshot/clean session/clean other JA leg cannot establish future-store control
+soundness. No extra raw log/body/value is needed to derive this negative result.
+Do not manufacture a next instruction or generic memory model for progress.
+
+## Implementation / files
+
+- read_target_identity.hpp: ReadStoreEffect and explicit production enable,
+  potential write/width/address/payload-half tags/aliases/critical mask/escape/
+  first_escape/pending/control blocker/proof status. mergeReadStoreEffect unions
+  uncertainty while empty/clean state cannot erase another state/path's write.
+- rdx_source_contract.hpp: nested-call firstEscape, preserving exact site when
+  propagating into parent rather than relying on a later barrier placeholder.
+- rdx_source_contract.cpp: verify only exact6byte VEX3.256 opcode11 memory32
+  baseR8/indexRAX/scale1/disp0/segment-none/addr64 <-YMM0, encoding-resolved WRITE,
+  source READ, no read/RMW/mask/modifier/register/vector/SP/flag write. Preserve
+  Capstone's decoded-vs-encoding-resolved store-access conflict diagnostics.
+  Different sites/forms refuse under previous rules, no generic store semantics.
+- Copy/actualize current tags for summary without modifying architectural state.
+  Record write_seen1/width32/address7/value_low7/value_high7/alias127/escape1/
+  first_escape0x2CF7FFB/pending1/contained0/continuation0/later_memory_facts0.
+  Critical may-mask1023 includes code/runtime/control-stack/home/private/Hero/
+  field10C/writer-source/Position/other-later-memory. May aliases and tags are
+  conservative uncertainty, not evidence of actual overlaps/observed taint.
+- Require stable authenticated code/current tags before valid parent propagation.
+  Reuse existing c30 current target-code check; otherwise one bounded equality
+  recheck. Changed code/source proof cannot validate summary. Existing actual-
+  parent replay unions valid store effects under unchanged visit budgets.
+- Propagate memoryEscape/firstEscape BEFORE early identity refusal in readCallLeaf,
+  then into parent read dependency. C35's memory_escape0 was an admission artifact,
+  not proof of no escape. No modeled-state/identity/effect certificate is granted.
+- Hard stop before changing any GPR/vector/flags/SP/memory state. No Slice/ReadFlow
+  stored bytes, no subsequent loads/stores/RET or stale memory assumptions. Both
+  JA outcomes remain mandatory for any complete proof; already-unsafe fallthrough
+  cannot be rescued by a clean/unvisited taken path. Other aliases are not narrowed
+  merely because another familiar memory source or RET would occur later.
+- writer_entry_snapshot.cpp: compact STORE_EFFECT alongside VECTOR2/state/CFG,
+  current-proof vs potential-game-effect vs actual MOD write distinction, parent
+  READ/CALL escape1/first_escape/pending. No register/vector/memory numerical data.
+- read_target_identity_smoke.cpp:8 new groups, identity104/read-call21, retained
+  c19-c35 assertions. Versions/info/README_TEST/BUILD/package, accepted c35 mirror,
+  c36 analysis/gate/index and AGENTS/state updated. NEXT unchanged.
+
+RAX7/R8zero/YMM0 low-high7/above256zero/flags7 stay unchanged. Original first-
+vector/MOVSXD/SHL/second-vector descriptors and vector state model,128bytes/
+32unique/64visits/1JA/2paths/4096 cumulative/current-code/runtime/all-RET gates
+remain. No generic store/memory/AVX engine or opportunistic next-opcode support.
+
+## Validation
+
+- Final Windows x64 warnings-as-errors full build PASS. **13 portable +7 DLL/
+  logger +244 hooks/native/contracts/workspace =264 public PASS records**,
+  **5 optional private-input SKIP**, all final commands exit0. Identity104/read21.
+  Focused new suite and full final chain passed; no old assertion/deadline/cap/
+  freshness/cleanup/ABI/lifecycle/safety check was relaxed.
+- New groups cover exact identity/direction/width and half tags, current R8/RAX
+  origins, valid parent escape despite zero modeled states, hard control-alias
+  refusal with unchanged architecture, clean/store union both orderings, no
+  later reads/writes/known-looking Hero source/RET, wrong site/direction/width/
+  source/index/scale/mode, changed code/missing tags/full527161 table. No fabricated
+  positive disjointness case: all-alias destination excludes no nonempty range.
+- Fresh actual source ZIP extracted independently: full build PASS; **179 focused
+  entry/c14-c36 +7 DLL/logger +13 workspace =199 separate PASS records**, all exits0
+  and no private skips. Standalone package verifier separately PASS. Do not add
+  duplicate199 to264. Final reporting refresh keeps all228 independently tested
+  native/tool inputs identical and rechecks current standalone packager.
+- Static comparison: original c31-c35 classifiers/vector state, owned native
+  orientation assertions, updater/Windows helpers/NEXT unchanged. No shared
+  environment/SF/ordinary-mod code edits. No raw ABI or native guard changes.
+- Final source/install CRC/hash/current source/docs/evidence/helpers/licenses/
+  version/DLL markers and exactly1 virtual active install script checked. Source
+  has no active script/compiled/private raw game log/full native body payload.
+  Existing Wine winedevice startup diagnostics remain; final commands exit0,
+  not a real-game acceptance claim.
+
+Wisdoms **658a704e5178fc3e28fafa351a0187a6c35c8bd2** pushed: accepted c35 store,
+opaque-source/zero-tag limitations, hard code/control-stack alias blocker,
+escape summary before admission failure, clean-state union and minimum NEW proof
+rather than repeated tags/raw values. No private log/body or SF knowledge overwritten.
+
+## Safety / minimum next evidence and human action
+
+writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/
+downstream_conflicts_proven_absent0; Position/source-position/input/movement
+writes0; producer0x351EB00 deferred. No new hook/game call/data-page mutation,
+guessed ABI/type or gameplay/adhesion/camera/animation/physics work. Existing
+orientation guard behavior is separate from denied translation/source writes.
+
+Further containment requires NEW authenticated non-value source/publication/
+region/offset/lifetime proof for opaque RAX and derived R8 range, excluding current
+code/runtime/control stack and all tracked Hero/source/Position/other ranges.
+A numeric pointer, writable page, stable tag0/7 or successful session is not enough.
+Designing that evidence class requires a future bounded task, not arbitrary value
+observation/deferred-producer traversal in this one. Repeating the same c35/A/E
+metadata cannot solve containment. No current raw-log/body re-request is needed.
+
+After verified push: close game/shared Overstrike, run installed
+MSM2-WS/Update-WS.cmd, then manually Install mods -> Run modded game. One shortest
+A/cardinal~3s -> fully end WallRun -> move/fast-travel -> E/diagonal~3s, each below
+unchanged5s limit, can validate the NEW SUMMARY/SAFETY only. Return newest private
+MSM2-WS/logs/MSM2-WS-v0.1c36-YYYYMMDD-HHMMSS.log if validating; STORE_EFFECT current
+proof/write_seen/escape1/first_escape/pending/contained0/CFG_blocked1 and parent
+READ/CALL escape are expected, with unchanged state and cleanup. No new barrier
+beyond this store is expected. Note input method; no raw values/body/video needed.
+No routine download/repository/test links; desktop launchers do not update.
+
+---
+
 # Codex result — c35 independent second VMOVUPS direction/address/vector-state contract
 
 Branch **codex/v01c20-edi-value-provenance**; accepted task base **96cabbc**.
