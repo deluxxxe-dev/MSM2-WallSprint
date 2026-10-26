@@ -1,193 +1,221 @@
-# Next task — c43 native final-restoration divergence diagnostic
+# Next task — c44 native debug-register canonicalization proof
 
 ## Status
 
-C42 refined the standalone mitigation classifier and the owner ran the refreshed native-Windows probe from commit `70c55e3caec4ca10d0e995b8de4ba13b1b089aa2`.
+C43 successfully localized the native-Windows final-restoration divergence. The owner ran the c43 standalone probe and the result is preserved in:
 
-The observed native mitigation tuple `[0,0,0x100]` was admitted. The continuation-witness path therefore executed, but the run failed at the final combined restoration assertion:
-
-```text
-c41 owned assertion at line 166: !activeLeases()&&same(debug(),saved)
-```
-
-Exact native result and evidence boundary:
-
-- `analysis/V01C42_NATIVE_WINDOWS_RESULT.md`
-- `analysis/V01C42_MITIGATION_BOUNDARY.md`
-- `analysis/V01C42_STATUS.json`
-- `analysis/native-probes/c42/README.md`
-- `docs/CODEX_RESULT.md`
+- `analysis/V01C43_NATIVE_WINDOWS_RESULT.md`
+- `source/analysis/V01C43_NATIVE_WINDOWS_RESULT.md`
+- `analysis/V01C43_RESTORATION_DIAGNOSTIC.md`
+- `analysis/V01C43_STATUS.json`
+- `analysis/native-probes/c43/README.md`
+- `analysis/native-probes/c43/PROBE_MANIFEST.json`
 
 Continue only on `codex/v01c20-edi-value-provenance`. Do not merge `main`.
 
-Before work read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, `docs/CODEX_REPORTING.md`, this file, all c39-c42 retirement/witness evidence, the continuation witness source/tests, and relevant `deluxxxe-dev/MSM2-Wisdoms` references.
+Before work read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, `docs/CODEX_REPORTING.md`, this file, all c39-c43 retirement/witness evidence, the c43 probe source/tests, and relevant `deluxxxe-dev/MSM2-Wisdoms` references.
 
-## Accepted evidence
+## Accepted native evidence
 
-### VERIFIED-RUNTIME — native Windows
-
-The c42 standalone command was:
+The c43 owner command was:
 
 ```powershell
 .\continuation-witness.exe --position --multiple --json
 ```
 
-Observed classifier state:
+The actual native run reached final restoration with:
 
 ```text
-ProcessDynamicCodePolicy      = 0
-ProcessControlFlowGuardPolicy = 0
-ProcessUserShadowStackPolicy  = 0x100 CetDynamicApisOutOfProcOnly
-classifier decision           = ADMIT
+mitigation flags                = [0,0,0x100]
+mitigation classifier           = ADMIT
+contexts                        = 3
+pending before final poll       = 0
+pending after final poll        = 0
+canRetire before final poll     = true
+active leases before final poll = true
+active leases after final poll  = false
+final poll returned             = false
+classification                  = DR_ONLY_FAILURE
 ```
 
-The run reached the final assertion after the witness path had executed. It did not stop at mitigation admission.
-
-Because the failing assertion appears only after the preceding assertions in the same source sequence, the following completed before the failure:
-
-- the outer witness became acknowledged;
-- pending context debt reached zero;
-- `canRetire()` returned true;
-- `pollReset(false, "owned_c41_post_return_witness")` returned false as expected by the fixture.
-
-The final combined predicate was false:
+After final poll:
 
 ```text
-!activeLeases() && same(debug(), saved)
+Dr0 saved == after
+Dr1 saved == after
+Dr2 saved == after
+Dr3 saved == after
+Dr6 saved 0x0000000000000000
+Dr6 after 0x00000000ffff0ff0
+Dr7 saved 0x0000000000000010
+Dr7 after 0x0000000000000410
 ```
 
-### VERIFIED-STATIC — tested source
+Therefore:
 
-`same()` compares exactly:
+- lease cleanup succeeded;
+- pending continuation debt remained zero;
+- the synthetic foreign Dr2 state was preserved exactly;
+- Dr0-Dr3 restored exactly;
+- exact-unmasked failure is limited to Dr6 delta `0xFFFF0FF0` and Dr7 delta `0x400` in this run;
+- the c43 assertion fired before its three verification readbacks, so native stability of the post-poll representation is still unknown.
 
-```text
-Dr0 Dr1 Dr2 Dr3 Dr6 Dr7
-```
+Do not reinterpret c43 as PASS. Its comparator was intentionally `EXACT_UNMASKED` and returned FAIL.
 
-The current JSON does not identify whether the failed side is:
+## Documentation lead, not yet an acceptance rule
 
-- retained `activeLeases()` state;
-- one or more debug-register mismatches;
-- both.
+Canonical Intel x86-64 documentation describes fixed/reserved values in DR6 and DR7 that appear consistent with the observed native deltas, including the conventional DR6 fixed-one pattern and a fixed-one bit in DR7. Microsoft `SetThreadContext` documentation also states that values in `CONTEXT` which cannot be specified may be silently set to the correct value, including OS-controlled debug-register state.
 
-Do not infer the cause.
+This is only a lead. C44 must establish the exact applicable architectural/Windows contract before any comparison is relaxed.
+
+Do not assume the owner CPU vendor. The c43 JSON did not report it.
 
 ## Current blocker
 
-Characterize the native-Windows final-restoration divergence without changing production behavior or weakening any restoration requirement.
+Determine whether the c43 Dr6/Dr7 differences are exclusively documented fixed/canonicalized representation bits while every architecturally meaningful owned/foreign debug-register bit is restored exactly and stably.
 
-C43 is a diagnostic task only.
+C44 is still test-only. It does not authorize production integration.
 
 ## Current bounded Codex task
 
-### 1. Split the opaque final assertion into test-only diagnostics
+### 1. Establish the exact architecture contract
 
-Preserve the same test-owned flow and acceptance requirement, but make the standalone probe report the two sides separately.
+Use canonical current documentation and checked SDK definitions. At minimum inspect:
 
-At minimum record in compact JSON:
+- Intel 64 / IA-32 debug-register definitions for DR6 and DR7;
+- AMD64 debug-register definitions if the probe can run on an AMD CPU;
+- Microsoft `GetThreadContext` / `SetThreadContext` behavior and `CONTEXT_DEBUG_REGISTERS` contract;
+- any Windows rule that silently canonicalizes or OS-controls debug-register bits.
 
-- `active_leases_before_final_poll`;
-- `active_leases_after_final_poll`;
-- the final `pollReset` return value;
-- `pending_contexts_before_final_poll` and after poll;
-- whether `canRetire()` was true before final poll;
-- per-register equality between the saved snapshot and current debug state for:
-  - `Dr0`
-  - `Dr1`
-  - `Dr2`
-  - `Dr3`
-  - `Dr6`
-  - `Dr7`;
-- enough bounded register diagnostics to identify which register differs without dumping unrelated process/game data;
-- exact mode/scenario/thread/lease/generation/context-count identity already used by the fixture.
+Record exact source/section/version references in `analysis/`.
 
-Capture debug state immediately before final poll and immediately after final poll where safe in the existing owned fixture, so the first divergence boundary can be identified.
+The probe must report the CPU vendor from CPUID. Do not apply an Intel-only rule to an AMD/unknown vendor. For every supported vendor, derive the rule from that vendor's canonical architecture documentation. Unknown or undocumented vendor/bit behavior must fail closed.
 
-Do not silently normalize or mask a mismatch in c43.
+### 2. Classify every compared DR6/DR7 bit
 
-### 2. Preserve the current acceptance rule
+For the detected supported architecture, classify each relevant DR6/DR7 bit as one of:
 
-A diagnostic run must still be considered a failure unless both conditions hold:
+- `MEANINGFUL_EXACT`: status/control/ownership semantics must match the saved state exactly;
+- `FIXED_ONE`: architecture requires the current hardware representation to read as one;
+- `FIXED_ZERO`: architecture requires the current hardware representation to read as zero;
+- `OS_CONTROLLED_EXACT_OR_REFUSE`: Windows controls it; preserve/verify according to documented semantics or refuse if equivalence cannot be established;
+- `UNKNOWN_REFUSE`.
 
-```text
-activeLeases() == false
-same(debug(), saved) == true
-```
+Requirements:
 
-Do not turn the native c42 failure into PASS by splitting the assertion.
+- Dr0-Dr3 remain exact full-width comparisons.
+- Do not mask a meaningful breakpoint enable, address, type/length, GD, status, single-step/debug cause, RTM-related or other architecturally meaningful field merely because it differs in a synthetic test.
+- Do not treat all reserved bits as don't-care.
+- Only bits with a documented required fixed value may be canonicalized.
+- Current fixed bits must themselves have the documented fixed value; an unexpected fixed-bit value is a failure.
+- Unknown/reserved-without-defined-read-value bits remain fail-closed, not ignored.
 
-If exact restoration proves too strict because Windows documents canonicalization of a specific debug-register field, only record that as a hypothesis/evidence candidate in c43. Do not change `same()` semantics or production restoration policy in this task.
+### 3. Add a test-only architectural comparison beside raw exact comparison
 
-### 3. Preserve c39-c42 behavior
+Keep the raw c43 comparison and raw values in JSON.
 
-Keep all existing owned tests and counterexamples intact:
-
-- c39/c40 delayed saved-CONTEXT resurrection reproduction;
-- c41 post-return witness ordering and per-context debt;
-- close/deadline/kill behavior;
-- nested/multiple context accounting;
-- context-cap refusal;
-- GPR/RFLAGS/RSP/stack/YMM/FXSAVE checks;
-- foreign DR ownership/refusal semantics;
-- c42 mitigation classifier decisions and unknown/reserved fail-closed behavior.
-
-Do not weaken deadlines, caps, assertions, or ownership checks.
-
-### 4. Add focused diagnostic regression coverage
-
-Owned Wine tests should prove the new diagnostic output itself is correct on a known passing restoration path.
-
-Where practical, add test-only negative coverage for the diagnostic serializer/comparison logic without forging production watch state.
-
-The diagnostic must distinguish at least:
-
-- lease-only failure;
-- DR-only failure;
-- combined failure;
-- all-restored success.
-
-Synthetic comparison/unit inputs may be used for serializer/comparator tests, but must be clearly separated from real native/Wine watch execution.
-
-### 5. Produce a refreshed standalone c43 native probe
-
-After all required owned tests pass, publish a refreshed test-only artifact under:
+Add a separate, explicitly named test-only comparison, for example:
 
 ```text
-analysis/native-probes/c43
+RAW_EXACT
+ARCHITECTURAL_CANONICAL
 ```
 
-The owner command should remain one game-free command:
+The architectural comparison may report equivalent only if:
+
+- Dr0-Dr3 are exact;
+- every `MEANINGFUL_EXACT` Dr6/Dr7 bit is exact;
+- every `FIXED_ONE` / `FIXED_ZERO` current bit has its documented value;
+- any saved/current difference is confined to documented fixed-value representation bits;
+- no `UNKNOWN_REFUSE` bit participates;
+- lease cleanup, pending debt and `canRetire` conditions remain unchanged.
+
+Do not change production restoration code or production equality semantics in c44.
+
+### 4. Capture post-poll stability before final result
+
+The c43 process aborted before its three verification readbacks. Refactor only the test fixture so the native standalone result can capture the intended bounded post-poll readbacks before emitting the final PASS/FAIL classification.
+
+Requirements:
+
+- preserve the same owned worker, watch, continuation and final poll sequence;
+- do not repair or rewrite DR state after final poll merely to obtain agreement;
+- capture at least three sequential suspended-thread `GetThreadContext` debug-register readbacks after final poll;
+- report raw values for Dr0/1/2/3/6/7 for each readback;
+- report both raw-exact and architecture-aware equality for each readback;
+- verify the architecture-aware result is stable across the bounded readbacks;
+- if the diagnostic readback itself fails, emit partial evidence and fail closed.
+
+Do not claim these sequential readbacks are an atomic execution history.
+
+### 5. Add focused pure tests
+
+Add focused owned tests for the comparison/classification helper.
+
+At minimum cover:
+
+- exact all-register equality;
+- the exact observed c43 pair as a synthetic fixture, labeled synthetic;
+- a difference only in a documented fixed-one bit;
+- wrong value in a fixed-one/fixed-zero bit;
+- one meaningful Dr6 status-bit mismatch;
+- one meaningful Dr7 control/enable mismatch;
+- Dr0-Dr3 mismatch;
+- unknown vendor;
+- unknown/reserved bit requiring refusal;
+- raw exact false while architectural canonical true;
+- raw exact false and architectural canonical false.
+
+Synthetic tests are not native runtime evidence.
+
+### 6. Produce a refreshed c44 standalone probe only after owned tests pass
+
+Publish under:
+
+```text
+analysis/native-probes/c44
+```
+
+The owner command remains:
 
 ```powershell
 .\continuation-witness.exe --position --multiple --json
 ```
 
-The result JSON must expose the final-restoration diagnostic fields even when the run fails.
+The JSON must include at least:
 
-No Windows mitigation setting may be disabled or changed.
+- CPU vendor;
+- documentation/comparator revision identifier;
+- raw mitigation information;
+- lease/pending/canRetire/final-poll state;
+- raw saved/before/after Dr0/1/2/3/6/7;
+- raw exact result;
+- per-bit architectural classification/masks for Dr6/Dr7;
+- architecture-aware result;
+- three post-poll verification readbacks with both comparisons;
+- final result/reason.
 
-### 6. Fail closed
+If architecture-aware equivalence is proven and stable, the standalone **test-only** probe may report an owned witness success under the explicit architecture-aware comparator. It must also state that raw exact equality is false when that remains true. This is not a production retirement certificate.
 
-If the diagnostic itself cannot safely obtain the required before/after state without perturbing the mechanism, stop and document that exact limitation.
-
-Do not guess whether Windows, Wine or WallSprint caused the c42 mismatch.
+If the documentation or runtime evidence does not justify canonicalization, retain FAIL/REFUSED and state the precise missing guarantee.
 
 ## Forbidden scope
 
-C43 does not authorize:
+C44 does not authorize:
 
 - production integration of the continuation witness;
-- changes to production debug-register restoration semantics;
-- weakening `same()` or lease cleanup requirements;
+- changes to production debug-register restoration behavior;
+- broad masking of DR6/DR7;
+- treating reserved bits as universally irrelevant;
 - the deferred `module_base + 0xC2D2580` RW8/WRITE8 watch;
 - slot qword reads/logging or pointer chasing;
 - publication/source-chain interpretation;
 - producer `0x351EB00` traversal;
 - PAGE_GUARD or broad memory interception;
-- mitigation disabling/relaxation;
+- Windows mitigation disabling/relaxation;
 - gameplay/source/Position/input/movement/adhesion/camera/animation/physics writes.
 
-Runtime remains `v0.1c38 / package0.1.56`. Do not create a game release for c43.
+Runtime remains `v0.1c38 / package0.1.56`. Do not create a game release for c44.
 
 ## Required validation
 
@@ -195,6 +223,7 @@ Run from repository root:
 
 ```bash
 bash source/tools/test_continuation_mitigations.sh
+bash source/tools/test_continuation_diagnostics.sh
 bash source/tools/test_continuation_witness.sh
 bash source/tools/test_watch_retirement.sh
 bash source/tools/build_windows.sh
@@ -204,16 +233,17 @@ bash source/tools/test_hooks_windows.sh
 python3 source/tools/package.py
 ```
 
-If a new focused diagnostic test script is added, run its exact command separately and report it.
+Run any new c44 focused comparator/canonicalization test explicitly and report its exact command.
 
-Expected result for c43 repository work:
+Expected repository result:
 
-- the previous opaque final assertion is represented by explicit test-only diagnostic fields;
-- Wine passing behavior remains passing;
-- the exact native c42 result remains recorded as a failure, not reclassified;
-- all prior ownership/restoration/mitigation/counterexample semantics remain intact;
-- no production integration or slot-watch functionality is enabled;
-- a c43 standalone artifact is produced only after owned tests pass.
+- the c43 native evidence remains preserved as exact-unmasked FAIL;
+- applicable vendor-specific DR6/DR7 fixed/meaningful bit semantics are documented precisely;
+- unknown vendor/unknown bits fail closed;
+- raw and architecture-aware comparisons are separate and auditable;
+- all prior c39-c43 regression semantics remain intact;
+- no production watch integration or exact-slot mode is enabled;
+- a refreshed c44 standalone artifact is produced only after owned tests pass.
 
 If any required test is not run, state the exact reason. Do not report unexecuted native-Windows/game tests as PASS.
 
@@ -221,37 +251,35 @@ If any required test is not run, state the exact reason. Do not report unexecute
 
 Update as appropriate:
 
-- test-only witness/diagnostic implementation;
-- focused diagnostic tests;
-- `analysis/` with c42 native evidence, c43 diagnostic contract and limitations;
-- `analysis/native-probes/c43` artifact/README/manifest if owned validation passes;
-- `docs/PROJECT_STATE.md` so c42 native execution failure is recorded and c43 is current;
+- test-only comparator/diagnostic implementation;
+- focused comparison tests;
+- `analysis/` with architecture/Windows documentation proof and c43 accepted native result;
+- `analysis/native-probes/c44` artifact/README/manifest after validation;
+- `docs/PROJECT_STATE.md` so c43 native DR-only result is recorded and c44 is current;
 - `docs/CODEX_RESULT.md`;
-- relevant Wisdoms facts only if a reusable general rule is actually established.
+- relevant Wisdoms facts only if a reusable architecture/Windows rule is actually established.
 
 Commit and push the intended branch before claiming completion.
 
 The final report must follow `docs/CODEX_REPORTING.md` and include:
 
-- what changed;
-- files changed;
 - exact tests/checks performed;
-- exact commands used;
+- exact commands;
 - expected result;
 - actual result;
-- PASS/SKIP/UNAVAILABLE counts separately;
-- unperformed tests and reasons;
+- PASS/SKIP/UNAVAILABLE separately;
+- all unperformed tests and reasons;
 - branch and commit SHA;
 - whether owner action is required.
 
 ## Owner action
 
-No Update-WS, game launch, A/E comparison, WallRun capture, offline slot scan or game runtime log is required for c43 repository work.
+No Update-WS, game launch, A/E comparison, WallRun capture, offline slot scan or game log is required for c44 repository work.
 
-After a tested c43 standalone artifact is committed and pushed, request exactly one native-Windows standalone command if needed:
+After a tested c44 standalone artifact is committed and pushed, request exactly one native-Windows standalone run if needed:
 
 ```powershell
 .\continuation-witness.exe --position --multiple --json
 ```
 
-Return only its compact JSON/output. Do not require launching Spider-Man 2 for this OS-level diagnostic.
+Return its compact JSON/output. Do not require launching Spider-Man 2 for this OS-level question.
