@@ -1,0 +1,226 @@
+{
+  "task": "c45_native_DR6_status_lifecycle",
+  "date_JST": "2026-10-27",
+  "base_commit": "192ff50",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "classification": "PARTIAL_SUCCESS_PHASE_DIAGNOSTIC_VALIDATED_NATIVE_LIFECYCLE_UNPROVEN_FAIL_CLOSED",
+  "accepted_native_input": "V01C44_NATIVE_WINDOWS_RESULT.md",
+  "accepted_native_result": "GenuineIntel_stable_RAW_and_c44_canonical_FAIL",
+  "accepted_input_sha256": "52ef030b7b73050003c4ddb7d61b6f781efadbd35ae6574c8a3d67ccecbf441d",
+  "source_compact_summary_sha256": "10b7b40e6949c63c7de3775f4456700b9a9ff66384fcdf1cb22ebcb2c209e028",
+  "accepted_vendor": "GenuineIntel",
+  "current_Intel_primary_reference": "253669-090US_Vol3B_February2026_20.2.3",
+  "current_Intel_evidence_origin": "owner_independent_official_manual_retrieval_extracted_in_accepted_input",
+  "independent_cloud_manual_PDF_sha256": "UNAVAILABLE_proxy403_NOT_INVENTED",
+  "lifecycle_revision": "c45-v1",
+  "phase_count": 11,
+  "JSON_schema": 5,
+  "raw_comparator_unchanged": true,
+  "c44_architectural_comparator_unchanged": true,
+  "RETIREMENT_STATUS_SAFE_added": false,
+  "necessary_condition_audit_is_not_acceptance": true,
+  "extra_SetThreadContext_calls": 0,
+  "extra_ordinary_path_GetThreadContext_calls": 1,
+  "watch_phase_from_existing_production_readback_before_Resume": true,
+  "new_context_repairs": false,
+  "native_c45_result": "NOT_RUN",
+  "native_first_transition": "UNKNOWN_pending_new_phase_observation",
+  "production_restore_changed": false,
+  "production_ownership_changed": false,
+  "production_integrated": false,
+  "slot_watch_enabled": false,
+  "new_gameplay_writes": 0,
+  "new_slot_value_reads": 0,
+  "producer_traversed": false,
+  "runtime_version": "v0.1c38",
+  "package_version": "0.1.56",
+  "new_game_release": false,
+  "standalone_refreshed_after_required_tests": true,
+  "validation": {
+    "required_final_commands": [
+      {
+        "command": "bash source/tools/test_continuation_mitigations.sh",
+        "exit": 0,
+        "PASS": 10,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.48,
+        "log": "/tmp/ws-c45-test_continuation_mitigations.log"
+      },
+      {
+        "command": "bash source/tools/test_continuation_diagnostics.sh",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.67,
+        "log": "/tmp/ws-c45-test_continuation_diagnostics.log"
+      },
+      {
+        "command": "bash source/tools/test_debug_register_comparison.sh",
+        "exit": 0,
+        "PASS": 9,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.58,
+        "log": "/tmp/ws-c45-test_debug_register_comparison.log"
+      },
+      {
+        "command": "bash source/tools/test_dr6_lifecycle.sh",
+        "exit": 0,
+        "PASS": 11,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.74,
+        "log": "/tmp/ws-c45-test_dr6_lifecycle.log"
+      },
+      {
+        "command": "bash source/tools/test_continuation_witness.sh",
+        "exit": 0,
+        "PASS": 13,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 9.13,
+        "log": "/tmp/ws-c45-test_continuation_witness.log"
+      },
+      {
+        "command": "bash source/tools/test_watch_retirement.sh",
+        "exit": 0,
+        "PASS": 14,
+        "SKIP": 0,
+        "UNAVAILABLE": 2,
+        "seconds": 8.7,
+        "log": "/tmp/ws-c45-test_watch_retirement.log"
+      },
+      {
+        "command": "bash source/tools/build_windows.sh",
+        "exit": 0,
+        "PASS": 0,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 49.13,
+        "log": "/tmp/ws-c45-build_windows.log"
+      },
+      {
+        "command": "bash source/tools/test.sh",
+        "exit": 0,
+        "PASS": 13,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 7.67,
+        "log": "/tmp/ws-c45-test.log"
+      },
+      {
+        "command": "bash source/tools/smoke_windows.sh",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 12.35,
+        "log": "/tmp/ws-c45-smoke_windows.log"
+      },
+      {
+        "command": "bash source/tools/test_hooks_windows.sh",
+        "exit": 0,
+        "PASS": 334,
+        "SKIP": 5,
+        "UNAVAILABLE": 2,
+        "seconds": 158.83,
+        "log": "/tmp/ws-c45-hooks-retry.log"
+      },
+      {
+        "command": "python3 source/tools/package.py",
+        "exit": 0,
+        "PASS": 1,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.89,
+        "log": "/tmp/ws-c45-package.log"
+      }
+    ],
+    "full_chain_counts_excluding_duplicate_focused_runs": {
+      "PASS": 354,
+      "SKIP": 5,
+      "UNAVAILABLE": 2
+    },
+    "package_PASS_separate": 1,
+    "focused_tests_overlap_full_hooks": true,
+    "UNAVAILABLE_reason": "Wine_does_not_dispatch_VCH_for_two_return_hold_counterexample_cases_no_claim_of_retirement",
+    "SKIP_reasons": "five_optional_private_game_capture_or_replay_inputs_absent_no_raw_game_bytes_distributed",
+    "initial_protocol_trial": "12_Wine_probe_outcomes_completed_then_old_schema4_validator_failed_corrected_to_strict_schema5_and_full_test_rerun",
+    "initial_full_hooks_attempt": {
+      "command": "bash source/tools/test_hooks_windows.sh",
+      "exit": 143,
+      "PASS": 12,
+      "SKIP": 2,
+      "UNAVAILABLE": 0,
+      "seconds": 805.25,
+      "log": "/tmp/ws-c45-test_hooks_windows.log"
+    },
+    "hang_stage": "unchanged_orientation_trace_smoke.exe_silent_over_10_minutes",
+    "hang_root_cause": "UNKNOWN",
+    "recovery": "path_verified_SIGTERM_only_owned_hung_process_then_unchanged_binary_standalone_exit0_in1.27s_then_exact_full_hooks_rerun_exit0",
+    "ptrace_diagnostic": "strace_attach_unavailable_Operation_not_permitted_no_escalation_no_test_assertion_or_deadline_changes",
+    "probe_artifact_after_required_tests": true,
+    "published_PE_Wine_smoke": "one_actual_schema5_Position_multiple_JSON_line_11phases_two_transitions_RAWtrue_c44false",
+    "independent_official_manual_delivery": {
+      "UNAVAILABLE": 1,
+      "reason": "Intel_landing_and_CDN_paths_proxy403_current_owner_primary_extraction_preserved_no_PDF_hash_invented"
+    }
+  },
+  "implementation_commit": "PENDING_COMMIT",
+  "standalone_artifact": {
+    "path": "continuation-witness.exe",
+    "bytes": 6307578,
+    "sha256": "9894fde01c536bbef0d91ddd493cc8899db172e6ea410f504f1bcc81b2ad838d",
+    "exact_copy_of_tested_binary": true
+  },
+  "code_tool_input_count": 249,
+  "code_tool_input_digest_sha256": "248dfea8883095302c0e87989cbcd9d23578a2791df017a3a71263dc289f83b5",
+  "Wine_observed_lifecycle": {
+    "complete_noncap_scenarios": 10,
+    "partial_cap_scenarios": 2,
+    "Dr6_by_complete_phase": [
+      "0x0",
+      "0x0",
+      "0x0",
+      "0x0",
+      "0xffff0ff1",
+      "0xffff0ff0",
+      "0xffff0ff0",
+      "0x0",
+      "0x0",
+      "0x0",
+      "0x0"
+    ],
+    "bit11_and_bit16_first_observed_stage": "outer_db_handler_entry",
+    "changes_each": 2,
+    "classification": "UNRESOLVED_OR_MULTIPLE",
+    "not_native_or_physical_cause_proof": true,
+    "final_RAW_EXACT": true,
+    "final_c44_ARCHITECTURAL_CANONICAL": false,
+    "necessary_conditions_only": false
+  },
+  "unperformed": [
+    {
+      "test": "native_Windows_c45_phase_probe",
+      "reason": "cloud_has_Wine_only_owner_game_free_standalone_needed"
+    },
+    {
+      "test": "independent_current_official_Intel_PDF_bytes_hash",
+      "reason": "proxy403_owner_current_253669-090US_extraction_is_accepted_primary_reference"
+    },
+    {
+      "test": "AMD_unknown_vendor_physical_hardware_and_live_debugger",
+      "reason": "outside_supported_Intel_fixture_scope_pure_negative_regressions_only"
+    },
+    {
+      "test": "game_Update_WS_Overstrike_A_E_slot_producer",
+      "reason": "not_authorized_or_required_for_this_test_only_task"
+    },
+    {
+      "test": "VCH_return_hold_two_physical_dispatch_cases",
+      "reason": "not_dispatched_by_owned_Wine_fixture_retained_as_UNAVAILABLE"
+    }
+  ]
+}

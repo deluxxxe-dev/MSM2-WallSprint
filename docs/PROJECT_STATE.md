@@ -1,35 +1,51 @@
 # WallSprint project state
 
-## c44 current stage — conservative vendor-specific DR comparison
+## c45 current stage — DR6 lifecycle observation, no status-safe acceptance
 
-Accepted native c43 evidence: analysis/V01C43_NATIVE_WINDOWS_RESULT.md.
-Lease cleanup succeeded, pending0, canRetire true, poll false, Dr0-Dr3 exact.
-RAW exact failure was limited to Dr6 XOR0xFFFF0FF0 and Dr7 XOR0x400. The c43
-assertion stopped before all3 stability readbacks; CPU vendor was not reported.
-That run remains RAW exact FAIL/DR_ONLY_FAILURE, never relabeled as PASS.
+Accepted c44 native evidence: analysis/V01C44_NATIVE_WINDOWS_RESULT.md.
+GenuineIntel, policies[0,0,256] admitted,3 contexts/pending0/canRetire, inactive
+leases after false final poll, Dr0-Dr3 exact, Dr6 saved0/current0xFFFF0FF0 and
+Dr7 saved0x10/current0x410. Three final readbacks were complete/raw-stable.
+RAW_EXACT and c44 ARCHITECTURAL_CANONICAL remained FAIL; protected remainder
+Dr6[11,16] still differed. This historical failure is preserved unchanged.
 
-C44 reports actual CPUID vendor/signature/leaf7 and separate RAW_EXACT and
-ARCHITECTURAL_CANONICAL comparisons. Dr0-Dr3 and meaningful/global/potential
-BLD/RTM bits stay exact; current11/16=0 states additionally refuse the narrow
-candidate boundary even when raw-equal. Only documented fixed groups may differ, with current
-fixed values verified; unknown vendor/nonzero unknown bits refuse. AMD feature
-profiles not covered by the checked edition refuse before arming. All3 existing
-post-poll readbacks now run before final classification, without repair writes.
+Current Intel primary lead is now the owner-retrieved SDM Vol3B253669-090US,
+February2026,20.2.3: BLD/RTM are status with active-low event semantics. This
+supersedes c44's older mirror lead. Cloud independent PDF/hash remains unavailable
+(proxy403); accepted extraction provenance is recorded, not replaced with an
+invented PDF hash or downgraded to old evidence.
 
-The observed c43 pair still fails both conservative profiles: its Dr6 delta
-includes protected11/16 status. No blanket DR6 mask or native certificate is
-established. Vendor primary manual editions/provenance and latest-delivery403
-limitations are explicit in analysis/V01C44_DR_CANONICALIZATION.md. This is a
-bounded conservative contract, not claimed support for every future extension.
-Wine's existing RAW_EXACT regression is preserved and explicitly not called
-architectural equivalence when fixed hardware values are absent in API results.
+C45 observes11 bounded phases: baseline, foreign Set/read before Resume, original
+post-Resume saved snapshot, existing watch Set/readback before Resume, outer DB
+context before/after engine, post-return, final poll and3 stability readbacks.
+Only one foreign-stage Get is added on the ordinary path; no extra Set/repair.
+Per-bit first observed stage, all transitions, order/thread/origin and failure
+state are explicit. Unknown/non-Intel profiles refuse; Dr7.RTM must remain0.
 
-See V01C44_GATE.md and V01C44_STATUS.json. After validation publish only the c44
-standalone/manifest/licenses under analysis/native-probes/c44; historical c41-c43
-artifacts/evidence remain unchanged. One native game-free JSON run may follow
-publication to obtain vendor/stability/both comparisons. No Update-WS, game,
-Overstrike, A/E, WallRun, scan, settings change or game log. Runtime remains
-v0.1c38/package0.1.56; production restoration/integration/slot mode stay unchanged.
+Owned Wine first sees11/16=1 at outer DB entry (prior API reads0); they remain1
+through handler/post-return, then return0 after final poll/readbacks. Two changes
+classify UNRESOLVED_OR_MULTIPLE, not a native Windows lifecycle proof. c45 adds
+NO RETIREMENT_STATUS_SAFE acceptance: necessary-only synthetic condition checks
+cannot authorize it. Raw/c44 comparators and all old address/Dr7/foreign-Dr2/
+lease/debt/continuation/machine/lifetime requirements remain. Native unresolved
+phases fail closed in addition to the unchanged c44 contract.
+
+See analysis/V01C45_DR6_LIFECYCLE.md, V01C45_GATE.md and V01C45_STATUS.json.
+Owned validation passed; analysis/native-probes/c45 now contains the exact tested
+binary, provenance and licenses, preserving c41-c44 binaries and input evidence. One native game-free
+standalone command is needed after publication for actual Windows first-change
+phases. No Update-WS, game/Overstrike/A-E/WallRun/scan/log/settings change.
+Runtime remains v0.1c38/package0.1.56; production restore/ownership/slot/gameplay
+and producer-deferral gates remain unchanged.
+
+## c44 historical stage — Intel/stable status-only FAIL
+
+C44 comparison/owned repository validation passed. Owner native CPU is now
+confirmed GenuineIntel; all3 final readbacks were stable, lease cleanup succeeded
+and Dr0-Dr3 restored exactly. Dr7's fixed-one0x400 delta passed its per-register
+contract, but Dr6's protected0x10800 status remainder failed the whole canonical
+comparison. It is neither native witness PASS nor a production certificate.
+C45 now investigates the missing phase history instead of weakening that result.
 
 ## c43 historical stage — native divergence localized, RAW exact FAIL
 
@@ -53,7 +69,7 @@ flags before executing the witness. Neither run proves native witness acceptance
 
 ## c41 historical stage — partial success and native refusal
 
-C41 task base4b39a82; current task is c44. C40 completed its review
+C41 task base4b39a82; current task is c45. C40 completed its review
 with the fail-closed outcome; production retirement remains unproven. C41 adds
 only an owned test prototype, not production integration or a slot watch.
 Current c41 handoff classification: **PARTIAL SUCCESS** — owned Wine feasibility
@@ -71,7 +87,7 @@ process-wide accounting, a full-XSTATE runtime proof or a native-Windows/CET fix
 Details: `analysis/V01C41_CONTINUATION_WITNESS.md`, `V01C41_GATE.md`,
 `V01C41_WITNESS_STATUS.json`. The historical c41 standalone command used
 `analysis/native-probes/c41/continuation-witness.exe --position --multiple --json`.
-Current native follow-up uses c44 above, not this historical artifact. No game
+Current native follow-up uses c45 above, not this historical artifact. No game
 launch/update/slot scan/log is needed. This historical c41 artifact refused
 all nonzero native flags; c42 refines only the standalone test boundary. Native evidence and a later
 explicit integration task are required before c39-style slot work can resume.
@@ -410,24 +426,25 @@ The VMOVUPS store is existing game code, not a MOD write and not permission to w
 23. c41 owned post-return feasibility ✅ PARTIAL; owned Wine passed, native coarse-boundary REFUSED before witness
 24. c42 native mitigation boundary refinement ✅ classifier admitted; actual native final-restoration FAIL
 25. c43 final-restoration diagnostic ✅ native lease cleanup/Dr0-Dr3 exact, RAW Dr6/Dr7 FAIL
-26. c44 vendor-specific DR comparison ▶ CURRENT; conservative status preservation/native stability pending
-27. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
-28. bounded publication/source chain ⏸ pending writer-site evidence
-29. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
-30. resume full writer XYZ/W causal proof ⏸ after store containment
-31. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-32. safe writable upstream movement source ⬜ NOT AUTHORIZED
-33. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-34. adhesion/contact refinement ⏸ deferred
-35. animation/camera/later traversal ⬜
+26. c44 vendor-specific DR comparison ✅ native Intel/stable RAW+canonical FAIL, Dr6[11,16] remainder
+27. c45 DR6 lifecycle ▶ CURRENT; native phase proof pending, no status-safe acceptance
+28. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
+29. bounded publication/source chain ⏸ pending writer-site evidence
+30. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
+31. resume full writer XYZ/W causal proof ⏸ after store containment
+32. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+33. safe writable upstream movement source ⬜ NOT AUTHORIZED
+34. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+35. adhesion/contact refinement ⏸ deferred
+36. animation/camera/later traversal ⬜
 
 ## Current action
 
-Follow `docs/CODEX_NEXT.md` for c44. Preserve native c43 RAW FAIL and all
-production semantics; validate/publish the conservative test-only vendor
-comparator with separate raw/architectural results and three readbacks. No
-protected status/global bit is masked and no current native equivalence is
-inferred. After publication only the game-free standalone JSON run is requested.
+Follow `docs/CODEX_NEXT.md` for c45. Preserve native c44 FAIL and the original
+comparators/production restoration. Validate/publish the bounded phase collector
+and explicit unresolved/multiple refusal. No new status-safe acceptance is
+justified from the Wine history or old native endpoints. After publication request
+only the native standalone JSON command for the remaining exact phase question.
 
 Do not add the exact-slot watch, PAGE_GUARD or broad memory interception merely
 to force progress. Do not merge `main`, do not traverse producer `0x351EB00`, and

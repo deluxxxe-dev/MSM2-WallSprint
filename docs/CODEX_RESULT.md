@@ -1,3 +1,160 @@
+# Codex result — c45 DR6 lifecycle observation
+
+2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
+Task base **192ff50f69625956028b5c51b00718759fb9e129**.
+Implementation commit: **PENDING_COMMIT** (resolved in publication metadata).
+**PARTIAL SUCCESS / native acceptance remains FAIL-CLOSED:** phase diagnostics,
+focused tests, full owned regression and standalone publication inputs succeeded;
+actual c45 native-Windows phase evidence remains unmeasured. No new
+RETIREMENT_STATUS_SAFE acceptance is added. Runtime v0.1c38/package0.1.56,
+production restoration/slot/gameplay/producer behavior and old gates stay intact.
+
+## Evidence, changes and result
+
+Read AGENTS/manual/rules/workspace/state/reporting/NEXT, c39-c44 evidence and
+relevant source/Wisdoms. Continued the intended branch only, with no main merge,
+reset or force push. Preserved five original untracked historical artifacts.
+The two owner-authored c44 native-result files remain individually byte-identical
+(the source copy is a shorter summary, not an identical mirror); their distinct
+SHA256 values are recorded in V01C45_DR6_LIFECYCLE/STATUS. C44 native GenuineIntel,
+three stable readbacks, clean leases/debt and exact Dr0-Dr3 remain RAW_EXACT FAIL
+and ARCHITECTURAL_CANONICAL FAIL with protected Dr6 remainder0x10800.
+
+Current primary reference is owner-retrieved official Intel SDM Vol3B,
+253669-090US, February2026,20.2.3. This supersedes the older c44 Intel mirror lead.
+It distinguishes last-event DR6 status, active-low BLD11 and RTM16 from hardware
+breakpoint enables. The original production ownership uses addresses/Dr7 and
+B0/B1 claims. Both relevant control-state and handler paths were statically
+audited. Dr7.RTM0 throughout disables advanced RTM debugging regardless of the
+unmeasured IA32_DEBUGCTL.RTM conjunction. The owned plain aligned store has no
+LOCK/XBEGIN and actual exception metadata identifies the ordinary owned data DB.
+Cloud independent official-PDF delivery/hash is UNAVAILABLE (proxy403); the
+accepted extraction hash is NOT represented as a PDF hash. Full proof and limits
+are in V01C45_DR6_LIFECYCLE.md.
+
+Changed files and purpose:
+
+- New `dr6_lifecycle.hpp`, `dr6_lifecycle_tests.cpp`, `test_dr6_lifecycle.sh`:
+  bounded ordered observations, per-bit first/all transitions, missing/multiple/
+  unisolated-boundary refusal and necessary-only synthetic audits. All-conditions
+  synthetic positives do not issue an acceptance certificate.
+- Test-owned `continuation_witness_smoke.cpp`: schema5/taskc45, eleven phase slots,
+  existing production watch readback copied before Resume, outer DB context
+  copied before/after the original handler before redirects/nested exceptions.
+  One extra foreign-stage Get; no extra Set/repair. API result/LastError preserved,
+  fixed storage/lock-free atomics, explicit origin/thread/sequence/error/counts.
+- Strict actual-output validator and mandatory hooks invocation, future-package
+  metadata/evidence, three new analysis files and source mirrors, PROJECT_STATE,
+  this report and new `analysis/native-probes/c45` binary/manifest/README/licenses.
+  Existing c41-c44 artifacts, raw/c44/mitigation helpers, raw same() comparison,
+  production engines/restore/ownership, ASM and mod/version/root release artifacts
+  remain unchanged. Wisdoms records reusable status/configuration and evidence
+  provenance lessons without private game data.
+
+Ten complete Wine runs observed Dr6=0 at baseline/foreign/Resume/watch phases,
+0xFFFF0FF1 at outer DB entry,0xFFFF0FF0 after engine/post-return, then0 after final
+poll and all three readbacks. Both bits first differ at **outer_db_handler_entry**
+but change twice: **UNRESOLVED_OR_MULTIPLE**. Two cap negatives retain seven
+phases and never final-poll. These API/exception-context observations do not prove
+physical CPU causality or native Windows behavior; native c44 final1/1 differs
+from Wine final0/0. Native unresolved timelines now refuse in addition to the
+unchanged c44 contract. Wine retains scoped RAW_EXACT-only regression success,
+explicitly not a native/architectural certificate. No status-based bypass exists.
+
+## Executed required validation — repository root
+
+| Exact command | Expected result | Final actual result |
+| --- | --- | --- |
+| `bash source/tools/test_continuation_mitigations.sh` | Preserve policy/unknown-bit refusal and actual-versus-synthetic distinction | exit0;10 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_continuation_diagnostics.sh` | Preserve c43 raw serializer/comparison/missing-data tests | exit0;7 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_debug_register_comparison.sh` | Preserve c44 vendor/fixed/exact/unknown/status/stability contract | exit0;9 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_dr6_lifecycle.sh` | Sanitized classification/negative/status/control/address/debt/readback tests and clearly synthetic JSON | exit0;11 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_continuation_witness.sh` | Original12 scenarios plus strict actual phase/transition/output validation | exit0;13 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_watch_retirement.sh` | Preserve delayed-context counterexamples and recovery semantics | exit0;14 PASS /0 SKIP /2 VCH UNAVAILABLE |
+| `bash source/tools/build_windows.sh` | Unchanged production Windows cross-build with warnings as errors | exit0; build succeeded, no test-case PASS count |
+| `bash source/tools/test.sh` | Portable/sanitizer regressions pass | exit0;13 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/smoke_windows.sh` | DLL/export/logger smoke checks pass | exit0;7 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_hooks_windows.sh` | Full owned fixture/scanner/workspace/c39-c45 regression | final exit0;334 PASS /5 SKIP /2 UNAVAILABLE |
+| `python3 source/tools/package.py` | Existing version/package integrity and matching source/evidence inputs | exit0;1 separate package PASS;249 code/tool inputs match |
+
+Full non-duplicated chain **354 PASS** =13 portable+7 smoke+334 hooks;
+**5 SKIP /2 UNAVAILABLE** separately. Focused runs overlap hooks and are not added
+twice. Package1 PASS, shipped-artifact1 PASS and two static/integrity checks are
+separate. Five SKIPs are optional private native/game capture/replay inputs not
+distributed. Two UNAVAILABLE records are existing owned Wine VCH return-hold
+counterexample dispatch limits, never reported as closure proof. Independent
+current-official-manual delivery is an additional research UNAVAILABLE1 outside
+suite counts. Exact per-command exits/counts/timing are in V01C45_STATUS.json.
+
+Initial implementation trial: all12 Wine probe outcomes completed, but the old
+schema4 validator failed against new schema5 output. Updated the validator to
+strict phase/order/value/transition checks and reran the complete witness test
+successfully, then again through the full hooks chain. This initial trial is not
+reported as PASS.
+
+First full hooks attempt stopped after12 PASS/2 SKIP at unchanged
+orientation_trace_smoke.exe (silent for over10 minutes). Terminated only its
+path-verified owned process; shell returned143. `strace` attachment was denied
+(Operation not permitted), so the cause remains UNKNOWN. The exact unchanged
+binary then passed standalone in1.27s and the entire exact hooks command passed
+in158.83s. No assertions/deadlines/fixtures/production code were weakened and no
+prefix reset or unrelated Wine process termination was needed. Interruption is
+not hidden as SKIP. Individual required tests outside hooks already passed and
+were not rerun: their inputs did not change; the only later tool edit corrected
+package metadata, followed by package validation. Final evidence-only metadata
+updates are recopied by package verification without recompiling unchanged code.
+
+## Additional executed checks and artifact
+
+- `python3 /tmp/ws-c45-prepare-artifact.py`: enforce all required successful exits
+  BEFORE producing the standalone, copy exact tested PE/licenses, hash all249
+  code/tool inputs and compare package copies. PASS.
+- From `source/`, actual unchanged old orientation diagnostic command:
+  `WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/build/windows/orientation_trace_smoke.exe"`;
+  expected normal exit0; actual exit0/1 PASS (not added to final chain count).
+- Exact shipped binary, from repository root:
+  `WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/analysis/native-probes/c45/continuation-witness.exe" --position --multiple --json`;
+  expected one actual schema5 JSON/11 phases, original raw success and no native
+  promotion; actual exit0, RAWtrue/c44false, two transitions/first DB entry,
+  native_candidate_probe_passed=false/status-safe-added=false. Separate1 PASS.
+- `python3 /tmp/ws-c45-verify-handoff.py`: byte-unchanged forbidden paths and old
+  comparators/ASM/retirement fixtures, distinct owner evidence SHA, new mirrors,
+  tested/shipped PE identity, licenses/system imports, all249 input hashes and
+  package-source copies, `git diff --check`. Expected all invariants hold; PASS.
+- `objdump -p analysis/native-probes/c45/continuation-witness.exe`: expected
+  system imports only; actual bcrypt.dll/KERNEL32.dll/msvcrt.dll.
+- Native executable and every input digest are pinned in
+  `analysis/native-probes/c45/PROBE_MANIFEST.json`; source implementation commit
+  is resolved in metadata after the implementation commit. PE linker timestamp
+  can change rebuilt hashes. No game release ZIP/script is published. The ignored
+  `source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled` is package
+  validation output only; root release files are unchanged.
+
+## Unperformed verification and owner action
+
+Actual c45 native Windows is NOT RUN (cloud provides Wine only). Current Intel
+PDF bytes/hash are unavailable via proxy403; owner current-primary extraction
+remains the accepted best evidence. AMD/unknown-vendor physical hardware and live
+debugger tests were not run: outside the supported Intel fixture scope; pure
+negative/vendor regressions ran. VCH dispatch limits remain unavailable. Game,
+Update-WS, Overstrike, A/E, WallRun, slot/offline scan, producer traversal and game
+logs are neither needed nor authorized for this test-only task.
+
+After verified publication, owner action is only one game-free native command
+from the new `analysis/native-probes/c45` folder:
+
+```powershell
+.\continuation-witness.exe --position --multiple --json
+```
+
+If the folder is absent, first `git pull --ff-only` in the existing `_source`
+clone on this branch. Return compact output even if FAIL: c44 acceptance remains
+strict, and the purpose is the missing native lifecycle timeline. No game launch
+or Update-WS request. Shared Wisdoms synchronization and final remote/local SHA
+checks are recorded in the publication handoff.
+
+---
+
 # Codex result — c44 conservative vendor-specific DR comparison
 
 Branch **codex/v01c20-edi-value-provenance**, task base **7336ef4**.
