@@ -1,3 +1,130 @@
+# Codex result — c35 independent second VMOVUPS direction/address/vector-state contract
+
+Branch **codex/v01c20-edi-value-provenance**; accepted task base **96cabbc**.
+Implementation **8ed4dcfdbda851f69578b0c66a0489ce5a26afec**. Version **v0.1c35 / package0.1.53**.
+Outputs **MSM2-WS-v0.1c35.zip**, **MSM2-WS-v0.1c35-source.zip**,
+**MSM2-WS-v0.1c35.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C35_RELEASE.json** (hashes/sizes/tested source-snapshot commit).
+
+## Accepted input and decision
+
+Read AGENTS/current state/NEXT/c34 evidence and relevant implementation, retained
+unchanged previously read manual/rules/workspace/logging, refreshed Wisdoms
+instructions/manual/engine/method/WS references. Fast-forwarded intended branch;
+no WS main merge/reset/force push. Five historic untracked artifacts preserved;
+NEXT unchanged byte-for-byte. No SF/ordinary-mod/shared environment changes.
+
+VERIFIED-RUNTIME V01C34_RUNTIME_RESULT.md: SHL r8,6 at0x2CF7FF7,4bytes/64bit/
+effective6, R8 tags0, no memory/vector/SP effects, undefined AF/OF -> flags top7.
+This is uncertainty, not observed taint. Capture was remote keyboard/mouse;
+motion observations do not establish controller equivalence. New barrier
+VMOVUPS0x2CF7FFB/path0, edge0x2CF7FE7 ->0x2CF7FE9,7instructions/7visits/0returns/
+identity/effects. Incoming RAX7/R8zero/YMM0 halves7/above256zero/flags7 retained.
+**Actual second VMOVUPS encoding/width/operands/direction/address UNKNOWN**.
+No private current-code snapshot exists in cloud; runtime decodes its bounded
+current-authenticated snapshot. Owned fixtures are not actual new game bytes.
+
+Classify independently, conditionally model only a narrow complete supported
+load. A shared mnemonic cannot transfer first-site permission. Stores/RMW/
+unresolved/unsupported forms correctly remain barriers.
+
+## Implementation and changed files
+
+- read_target_identity.hpp: separate0x2CF7FFB pin, ReadNextVectorContract and
+  explicit production enable, separate from original vector/SHL/MOVSXD modes.
+- rdx_source_contract.cpp: reuse unchanged c31 descriptor, retain decoded vs
+  encoding-resolved access including Capstone5.0.6 store-as-READ caveat. New
+  metadata covers exact length/encoding/opcode/VL, direction/source/destination/
+  memory width/access, aliases/address components/current provenance, both vector
+  source halves/above256 knowledge, upper/mask/merge/zero/broadcast/rounding/fault
+  suppression, complete flags/GPR/SP/other effects, current-code/model status.
+- Only canonical4byte VEX2 opcode10 full XMM/YMM destination0..15 <- [RDX+0],
+  no displacement/index/segment/prefix, addr64/scale1, exact READ/WRITE, pure load,
+  sole full vector-parent write and no other/flags/GPR/SP effect may continue.
+  Reuse only accepted same current Hero source16/32byte range, not arbitrary
+  Hero offsets/image/stack/mutable globals or generic AVX. VEX3/legacy/register-
+  register/EVEX/masked/merge/broadcast/rounding/fault-suppression/partial/wider/
+  store/RMW/other addresses refuse. No vector/memory data reads or pointer chase.
+- Recheck CURRENT RDX origin after prior MOVSXD/SHL (and existing rules): source
+  remains appropriate entry token mapped by current Hero parent evidence in
+  symbolic proof and Hero root1/offset0 in actual-parent replay, with tags0.
+  Old entry permission or zero tags cannot resurrect opaque replaced bits.
+- VEX128 full replacement: destination low top7, high128 zero, above256 zero.
+  VEX256: destination low/high top7, above256 zero. Clear old origin/lanes only on
+  that destination. Other parents/GPR/RAX7/R8zero/SP/memory/SHL flags7 preserved;
+  above256 zero never authorizes ZMM/EVEX. Return tags union and zero knowledge
+  intersects over both branches; path0 high-zero cannot clear path1 unknown high.
+- Reuse existing bounded actual-parent replay (4096 cumulative/64 per walk), no
+  new traversal. Aggregate tags/aliases conservatively; source/applied proofs
+  intersect and address exactness is lost on conflicts. When replay cannot reach
+  the new site or exhausts budget, invalidate second-site sampled applied/source
+  metadata instead of leaving stale successful evidence presented as current.
+- writer_entry_snapshot.cpp: compact VECTOR2/OPERAND/ADDRESS/ARCH alongside
+  unchanged boundary/path/GPR/vector halves/flags/CFG/safety; representability,
+  current source and applied state are distinct. No raw numerical values.
+- read_target_identity_smoke.cpp:9 new groups, identity96/read-call21. Retained
+  c19-c34/native regression assertions. Version/info/README_TEST/BUILD/package,
+  accepted c34 mirror, c35 analysis/gate/index, AGENTS/state updated; NEXT untouched.
+
+Only this pinned conditional load is new semantics. Both JA outcomes/all normal
+RETs/current source/code/PE/runtime and128byte/32unique/64visit/1branch/2path caps
+remain. Stop at the next unsupported opcode without adding its semantics.
+
+## Validation and implementation iterations
+
+- Final Windows x64 warnings-as-errors full build PASS. **13 portable +7 DLL/
+  logger +236 hooks/native/contracts/workspace =256 public PASS records**,
+  **5 optional private-input SKIP**, all final commands exit0. Identity96/read21.
+- Early focused attempt exited3 in the unchanged instruction-cap fixture because
+  initial new diagnostic dispatch intercepted an unrelated NOP at the pinned
+  address. Restricted it to VMOVUPS/legacy MOVUPS; original cap assertion now
+  passes. No old fixture assertion/timeout or cap was changed.
+- A subsequent owned new replay fixture had incorrectly expected initial entry-
+  based identity refusal instead of later current-parent flow refusal. Corrected
+  that new setup to expect identity admission but zero modeled caller states,
+  and added explicit sampled-source/applied invalidation when the replay does
+  not reach the site. Current-origin replacement tests independently deny stale
+  entry-Hero/tag0 permission. Final focused96 and full chain pass with these fixes.
+- Fresh actual source ZIP extracted independently: full build PASS; **171 focused
+  entry/c14-c35 +7 DLL/logger +13 workspace =191 separate PASS records**, all exits0
+  and no private skips. Standalone package verifier separately PASS. Do not add
+  duplicate191 to256. Final reporting refresh retains all228 independently tested
+  native/tool inputs and rechecks current standalone packager.
+- Static comparison: original first-vector/MOVSXD/SHL descriptors, c32 dependency
+  model, owned native orientation assertions, updater/Windows helpers and NEXT
+  unchanged. No raw ABI/lifecycle/deadline/safety relaxation.
+- Final source/install ZIP CRC/hash/current source/docs/evidence/helpers/licenses/
+  version/DLL markers and exactly1 virtual active install script checked. Source
+  has no active script/compiled artifacts/private raw logs/native function dumps.
+  No normal archives placed inside a real Mods Library. Existing Wine startup
+  winedevice warnings remain; final commands exit0, not a real-game acceptance.
+
+Wisdoms **2cda2edaf1c94f1c2ed0c3004df08fac5c98d08c** pushed: accepted c34/input
+condition correction, independent second-site direction/access/source proof,
+current origin after GPR writes vs stale entry permission, low/high alias effects,
+store/dynamic/EVEX refusal and replay evidence invalidation. No private log/body
+or unrelated SF knowledge overwritten.
+
+## Safety and minimum human action
+
+writable_source_proven/caller_owned/ownership_exclusive/source_lifetime_exclusive/
+downstream_conflicts_proven_absent0; Position/source-position/input/movement
+writes0; producer0x351EB00 deferred. No new hook/game call/data-page mutation,
+guessed ABI/type, gameplay/adhesion/camera/animation/physics change. Existing
+orientation guards remain separate from denied new translation/source writes.
+
+After verified push: close game/shared Overstrike, run installed
+MSM2-WS/Update-WS.cmd (fetch/build/test/verify/deploy/open manager), then manually
+Install mods -> Run modded game. A/cardinal~3s -> fully end WallRun -> move/fast-
+travel -> E/diagonal~3s, each below unchanged5s diagnostic limit. Return newest
+MSM2-WS/logs/MSM2-WS-v0.1c35-YYYYMMDD-HHMMSS.log privately, noting input method.
+Minimum new evidence: VECTOR2/OPERAND/ADDRESS/ARCH plus existing next barrier/
+path/GPR/vector low-high/flags/CFG/current identity/safety/cleanup. Actual second
+form/direction/address and next boundary pending; no raw values/full body needed.
+No routine download/repository/test links; desktop launchers do not update.
+
+---
+
 # Codex result — c34 pinned SHL count/data/flag diagnostics and conditional constant GPR rule
 
 Branch **codex/v01c20-edi-value-provenance**; accepted task base **c32c1fc**.
