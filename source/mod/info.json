@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.55",
-  "description": "WallSprint v0.1c37 derives the pinned JA-fallthrough R8D/MOVSXD/SHL numeric offset and store extent separately from may-tags. Exact-slot offline reference candidates do not prove all writers/publication/allocation/lifetime. RAX base remains opaque; c36 escape/control-alias barrier remains, no values or gameplay writes.",
+  "version": "0.1.56",
+  "description": "WallSprint v0.1c38 extends only bounded offline exact-slot candidates with full64 static register-affine LEA/MOV provenance, aggressive invalidation and unresolved diagnostics. Accepted c28 parent anchor is separate from local coverage. No live values, writer completeness, publication/ownership or CFG permission; native c37 range/c36 barrier unchanged.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

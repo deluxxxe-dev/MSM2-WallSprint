@@ -182,3 +182,11 @@ allocation/lifetime remain unproven. Offline slot_publication.py requires exact
 file SHA/pinned decoder, excludes the deferred producer, exports candidates only
 and never treats a byte sweep as all-writer proof. No current EXE in cloud; do
 not request another identical A/E capture or open c36 containment/CFG gates.
+
+C38 tooling note: offline exact-slot discovery now supports bounded local full64
+RIP-LEA/copy/affine-LEA image origins, with partial/load/unsupported/control/gap/
+runtime/window/hop invalidation. Keep local candidates separate from c28 accepted
+external-parent anchor; anchor decoding consumes the original aggregate caps.
+No all-writer/dominance/publication/ownership certificate, deferred producer
+traversal, native continuation or live values. Owner reruns offline c38 JSON only;
+no repeated game capture. Native c37 range and c36 store barrier are unchanged.

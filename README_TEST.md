@@ -1,21 +1,21 @@
-# WallSprint v0.1c37 — 分岐由来のオフセット範囲とスロット由来の分離
+# WallSprint v0.1c38 — 正確なレジスタ由来アドレスの静的候補調査
 
-Package **0.1.55**。JA非分岐のunsigned条件からR8D範囲を導き、MOVSXDとSHL6後の相対オフセット0..0xFFFC0、刻み64、32byteストアの排他的終端0xFFFE0を非オーバーフローで証明します。依存tagsは変えません。RAXを供給する正確なスロットの由来・領域・寿命は未証明なので、ストアでの停止とescape1を保持します。
+Package **0.1.56**。c37の実EXE調査では直接参照0件・未解決1279672件でした。今回はLEAで作った正確な画像内アドレスと64bitコピー、符号付き変位だけを限定追跡します。ロードした値・部分書込み・未対応演算・制御境界を越えたアドレス推定はしません。新しい候補もwriter完全性・割当・寿命・所有権の証明ではなく、既存の解析停止を保持します。
 
 ## 今回の更新・テスト（移行済み環境）
 
 1. ゲームと共有Overstrikeを閉じ、`MSM2-WS\Update-WS.cmd` を実行します。Git更新・既存フル試験・検証・配置を行います。
 2. 起動した共有Overstrikeで通常MOD＋SF＋WSを確認し、`Install mods` → `Run modded game`。
 3. A/cardinalの平らな壁で約3秒 → WallRunを完全終了 → 移動/ファストトラベル → E/diagonalで約3秒。各回は既存の5秒上限に達する前に終了します。
-4. `MSM2-WS\logs` の最新の完全な `MSM2-WS-v0.1c37-YYYYMMDD-HHMMSS.log` を非公開で共有してください。動画は見た目の異常時だけです。
+4. `MSM2-WS\logs` の最新の完全な `MSM2-WS-v0.1c38-YYYYMMDD-HHMMSS.log` を非公開で共有してください。動画は見た目の異常時だけです。
 
-新しい `MOVEMENT_CALLEE_READ_OFFSET_RANGE` / `READ_SLOT_PUBLICATION` は数値範囲の証明と依存tags、未実施の参照列挙と完全性を区別します。今回は同じA/Eログを再取得する必要はありません。実EXEがクラウドにないため、実画像のwriter参照調査は未実施です。`source/BUILD.md` のPowerShell手順で実EXEに限定した `slot_publication.py` をローカル実行できます。出力は参照候補メタデータのみで、全writer・割当・寿命や包含の証明ではありません。
+今回は `Update-WS.cmd` で更新し、`source/BUILD.md` の **c38** 手順でオフライン解析だけを再実行してください。出力は `logs/MSM2-WS-v0.1c38-slot-publication.json`。このJSONを返してください。WallRun／A-Eの撮り直しは不要です。既知のc28参照は `external_anchors` に分離し、一般走査の候補・カバレッジへ混ぜません。
 
 下の移行手順は未移行環境向けの参照です。デスクトップの `MSM2 - Overstrike` は普段の起動用で、WSの更新・ビルドは実行しません。
 
 ## 最初の移行
 
-配布 **MSM2-WS-v0.1c37.zip** を **Mods Library の外**へ展開してください。展開したフォルダ内の `Migrate-WS.cmd` と `tools` を一緒に使います。ソース ZIP は別の再現用資料で、正本 `_source` はヘルパーが GitHub から独立 clone します。コードはすべて取得し、配布アーカイブだけを Git の sparse checkout 設定で作業フォルダから除外します。ZIP本体と履歴はGitに残ります。
+配布 **MSM2-WS-v0.1c38.zip** を **Mods Library の外**へ展開してください。展開したフォルダ内の `Migrate-WS.cmd` と `tools` を一緒に使います。ソース ZIP は別の再現用資料で、正本 `_source` はヘルパーが GitHub から独立 clone します。コードはすべて取得し、配布アーカイブだけを Git の sparse checkout 設定で作業フォルダから除外します。ZIP本体と履歴はGitに残ります。
 
 Windows 側に Python 3.11+、Git for Windows、PowerShell、設定済み WSL2 が必要です。WSL 側には既存の MinGW/Clang/Wine/解析 Python のフルビルド環境が必要です。**前提が足りない場合、ビルドや試験を省略して導入することはありません。** 手順は [source/BUILD.md](source/BUILD.md) を参照してください。
 
@@ -40,7 +40,7 @@ Migrate-WS.cmd --game-root "<実際のゲームルート>" --branch codex/v01c20
 
 ```text
 <game>\Mods Library\Mods-Developing\MSM2-WS\
-├─ MSM2-WS-v0.1c37.script
+├─ MSM2-WS-v0.1c38.script
 ├─ Update-WS.cmd
 ├─ Migrate-WS.cmd        （移行用）
 ├─ logs\
@@ -76,7 +76,7 @@ Migrate-WS.cmd --game-root "<実際のゲームルート>" --branch codex/v01c20
 
 ```text
 <game>\Mods Library\Mods-Developing\MSM2-WS\logs\
-MSM2-WS-v0.1c37-YYYYMMDD-HHMMSS.log
+MSM2-WS-v0.1c38-YYYYMMDD-HHMMSS.log
 ```
 
 時刻は PC のローカル時刻です。同秒の衝突は `-01` などを付け、既存ファイルを上書きしません。同じ起動内の A→E は1本に記録します。旧 `log_wallsprint` や共有 `logs` への代替保存はありません。
@@ -89,4 +89,4 @@ MSM2-WS-v0.1c37-YYYYMMDD-HHMMSS.log
 
 通常の入力で試してください。A/E の対応、ちらつき・停止・クラッシュなどがあれば添えてください。動画は見た目の異常時だけです。生ログや private game body を GitHub へ追加しないでください。
 
-今回の確認は自動試験と、必要なら実EXEによるオフラインのスロット参照候補解析です。既存c36のA/E繰返しは不要です。OFFSET_RANGEの証明とベース由来の未証明は独立で、store escape1/contained0/CFG停止を保持します。実画像のJSON結果が得られても、間接writer・除外したproducer・コード境界の完全性が未証明なら停止を続けます。
+今回の確認は新しいオフラインJSONのみです。`reference_candidates` の `address_proof_class/effective_rva`、直接／register_affineのwriter数、`unresolved_reasons/state_resets`、`external_anchors` とスキャン上限を確認します。`candidate_sweep_complete/writer_enumeration_complete/base_proven/destination_contained/CFG_continuation` はfalseを維持します。EXEや生コード・ポインタ値は共有せず、コンパクトJSONだけを返してください。

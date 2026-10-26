@@ -225,3 +225,39 @@ unproven x86 entry boundaries, excluded producer and indirect/base-register writ
 prevent completeness. Even one writer cannot establish allocation/range/lifetime.
 The JSON can guide a future bounded publication investigation; it never opens
 containment/CFG or ownership. Keep it private for review; do not upload the EXE.
+
+## c38 current offline register-affine scan (use this version)
+
+20 owned scanner groups (8 retained +12 new); native range/barrier rules unchanged.
+Update-WS, then rerun only the offline tool. No game or WallRun/A-E capture.
+
+```powershell
+$gameRoot = "C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2"
+$wsRoot = Join-Path $gameRoot "Mods Library\Mods-Developing\MSM2-WS"
+$toolWin = Join-Path $wsRoot "_source\source\tools\slot_publication.py"
+$outWin = Join-Path $wsRoot "logs\MSM2-WS-v0.1c38-slot-publication.json"
+$toolWsl = wsl -d Ubuntu-24.04 --exec wslpath -a -u $toolWin
+$exeWsl = wsl -d Ubuntu-24.04 --exec wslpath -a -u (Join-Path $gameRoot "Spider-Man2.exe")
+$outWsl = wsl -d Ubuntu-24.04 --exec wslpath -a -u $outWin
+wsl -d Ubuntu-24.04 --exec /workspace/toolchains/analysis-python/bin/python $toolWsl $exeWsl --output $outWsl
+```
+
+Return only the new compact JSON, keep the executable local. Existing exact SHA/
+Capstone5.0.6/file512MiB/code64MiB/5M instructions/256refs/runtime600000 caps and
+deferred0x351EB00 exclusion remain. The seven-byte accepted c28 consumer check
+reserves one instruction/seven bytes/one possible record WITHIN those aggregate
+caps. Its accepted external-parent anchor is separate, not local sweep coverage.
+
+Local state: RIP-relative LEA, full64 known-origin copy, displacement-only LEA,
+checked image interval/nonwrap. No load value/immediate-pointer/ADD/SUB/ABI rule.
+Invalidate on partial/unsupported writes, memory loads, control/system transfer,
+decode gap, runtime entry/end,64-instruction window or8-hop cap. Source addresses
+are used before destination invalidation, including same-register LEA/MOV.
+This remains a local linear-block candidate proof, not global entry/dominance.
+
+New JSON separates direct/register-affine writer counts and source/address proof
+classes, unresolved operand reasons and state resets, current external anchor,
+selected-byte coverage vs always-false candidate/all-writer completeness. No
+publication chain is followed automatically. Allocation/range/lifetime/base/
+ownership/critical disjointness/containment/CFG remain unproven/false. Even new
+candidates do not change native c37 range/c36 escape barrier or gameplay gates.

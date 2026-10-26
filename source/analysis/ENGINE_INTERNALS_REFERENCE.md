@@ -1,3 +1,15 @@
+## Current c37 accepted offline/runtime / c38 affine candidates prepared
+
+Owner c37 exact image direct-candidate scan found0 with1279672 unresolved/gaps737,
+not no-writers. Accepted c28 RCX image origin proves an existing register-based
+consumer outside that class. C38 adds bounded full64 static RIP-LEA/copy/affine
+LEA with aggressive loss, exact slot intervals, unresolved counters; explicit
+current-code external c28 anchor is not local coverage. Caps/deferred producer
+exclusion unchanged; no all-writer/base/lifetime/ownership/CFG claim. Actual c38
+image scan not run in cloud; next owner artifact is offline JSON, no A/E. Sources
+V01C38_REGISTER_AFFINE_SCAN.md / V01C38_SCAN_STATUS.json. Native c37 range/c36
+hard barrier unchanged; older cloud-missing scan notes below are historical.
+
 ## Current c36 accepted / c37 address components
 
 VERIFIED-RUNTIME c36 confirms potential-store escape1 before identity refusal.

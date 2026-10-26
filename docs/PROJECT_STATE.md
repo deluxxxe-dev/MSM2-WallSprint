@@ -232,3 +232,15 @@ C38 must start from the owner offline result, not repeat c37 gameplay capture or
 Use the accepted c28 exact consumer as an anchor for the address representation, but do not hard-code it into a false coverage/completeness result. If the offline representation cannot reproduce its interprocedural parent provenance, record that exact boundary and keep it as an authenticated external anchor.
 
 Do not infer writer completeness from zero/one/multiple candidates. Do not assume the slot or its value is a pointer, pool, array, allocation or owner. Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
+
+## c38 prepared — bounded static register-affine exact-slot candidates
+
+v0.1c38/package0.1.56 extends offline scanner only: full64 RIP-LEA/copy/checked
+affine LEA, no memory values or ABI. Partial/unsupported/loaded/control/gap/
+runtime/window64/hop8 loss, exact8byte slot overlap and unresolved causes. c28
+consumer uses explicitly separate accepted-parent/current-code external anchor,
+not fake local coverage. All original caps/deferred exclusion; all-writer/
+publication/allocation/lifetime/ownership/containment/CFG remain false. Actual
+c38 image scan not run in cloud. Native c37 offset/c36 escape unchanged. NEXT
+unchanged. Owner action: Update-WS then offline scanner only, return versioned
+c38-slot-publication.json; no WallRun/A-E. See V01C38_REGISTER_AFFINE_SCAN.md.
