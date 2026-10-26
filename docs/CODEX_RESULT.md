@@ -1,3 +1,138 @@
+# Codex result — c38 bounded register-affine exact-slot candidates
+
+Branch **codex/v01c20-edi-value-provenance**; task base **7ed084f**.
+Implementation **d52705484a7c9a82215fcce90c704d5b67a6cf3c**. Version **v0.1c38 / package0.1.56**.
+Outputs **MSM2-WS-v0.1c38.zip**, **MSM2-WS-v0.1c38-source.zip**,
+**MSM2-WS-v0.1c38.script.disabled**, **BUILD_MANIFEST.json**,
+**analysis/V01C38_RELEASE.json** / **V01C38_SCAN_STATUS.json**.
+
+## Accepted evidence / result scope
+
+Read AGENTS/manual/rules/workspace/state/NEXT, c28/c37/runtime/offline scan
+summaries, current scanner and Wisdoms instructions/engine/method/WS references.
+Unchanged previously read operational rules remain in force. Fast-forwarded only
+intended branch; no WS main merge/reset/force push. Five historic untracked
+artifacts preserved, NEXT byte-identical. No SF/ContextualIdle/ordinary-mod/shared
+infrastructure/updater changes. Native code/headers except version byte-unchanged.
+
+Owner c37 exact-image direct-only scan: candidates0, bytes17859460, gaps737,
+unresolved1279672, incomplete candidate/writer/base/lifetime proof. Zero direct
+candidates is not no-readers/writers. Accepted c28 consumer0x2CF7FE9 needs parent
+RCX image-origin0xC2D2480+0x100 ->exact slot0xC2D2580, outside that direct class.
+Owner c37 runtime confirms numeric offset proof and native c36 escape/control
+barrier. Early short upward/mixed sessions are not treated as intended stable
+motion samples; startup instruction proof is independent of those samples.
+
+**C38 extends offline candidate discovery only.** New actual-image candidates/
+unresolved distributions are UNKNOWN in cloud; no full authenticated EXE is
+available here. Owned fixture PASS is not actual new writer discovery or ownership.
+Owner reruns the new offline tool only; no new WallRun/A-E/live pointer capture.
+
+## Implementation / files
+
+- tools/slot_publication.py:16 optional exact image-RVA GPR origins plus unknown
+  reason/hop count. Only full64 RIP-LEA, known full64 register copy and checked
+  displacement-only LEA; no unresolved index/segment/address32, ADD/SUB, absolute-
+  immediate/relocation guess or generic arithmetic. Check complete operand range
+  within image and no virtual64bit wrap. Resolve sources in pre-state before
+  destination mutation (including self-copy/LEA).
+- Memory-loaded GPR remains unknown even for a known slot. Partial/unsupported
+  writes invalidate whole parent. Jump/call/return/interrupt/system transfers
+  clear all, no ABI preservation/call-return origins. Decode gap/runtime entry/
+  end/64instruction window/8hop cap also lose provenance. Fresh state per excluded
+  span; no traversal of deferred0x351EB00 or arbitrary calls.
+- Candidate metadata: site/width/access/conservative may-write/effective RVA,
+  source class, direct_rip/direct_absolute/register_affine_static and address-only
+  LEA vs memory operand. LEA never becomes a memory writer from missing access.
+  Direct/affine/aggregate writer counts and unresolved primary reasons/state
+  resets are distinct. No bytes/full bodies/private paths/raw pointer/vector/
+  live qword values exported. Local linear-block provenance is NOT global CFG
+  entry/dominance/execution proof.
+- Accepted c28 external parent origin is not injected into local scan state.
+  After exact image SHA/pinned decoder and unique readonly executable-section
+  check, validate current7byte MOV RAX,[RCX+100] form/site/width/access and only
+  then expose external_anchors/authenticated_external_anchor. Mismatched/unavailable/
+  excluded code refuses. This reader anchor is not a locally discovered result,
+  a writer or publication certificate. Its7bytes/1instruction/at most1record are
+  reserved within original aggregate byte/instruction/reference caps.
+- File512MiB/code64MiB/5M instructions/256refs/runtime600000/8MiB caps retained.
+  Producer containing runtime region or whole section fallback remains excluded.
+  Tool/schema fields identify v0.1c38/schema2. selected-byte coverage is separate;
+  candidate_sweep_complete and writer_enumeration_complete always remain false.
+  Gaps/caps/excluded code/unproved x86 entries/indirect aliases still prevent
+  all-writer proof. Zero/one/multiple candidates never infer allocation/lifetime/
+  uniqueness/ownership/base/critical exclusion/containment/CFG.
+- tools/test_slot_publication.py: retained8 +12 new groups =20. Owned PE integration
+  embeds a synthetic writer in excluded producer span, verifies exclusion, anchor
+  budget reservation and anchor/local separation. Accepted-c28-shaped synthetic
+  parent LEA resolves+100 without reading memory, isolated callee does not.
+  No captured proprietary body or actual image/value is a fixture.
+- Version/info/README_TEST/BUILD/package metadata, accepted c37 runtime/scan mirrors,
+  c38 analysis/gate/status/index, AGENTS/state updated. Ready PowerShell/WSL c38
+  command emits logs/MSM2-WS-v0.1c38-slot-publication.json. Native/tool input count231.
+
+Native c37 offset0..0xFFFC0/stride64/endExclusive0xFFFE0 and c36 escape1/pending1/
+contained0/control-alias1/CFG0 are unchanged. No new native opcode, memory model,
+effect certificate or MOD gameplay write. No report is auto-imported into admission.
+
+## Validation
+
+- Final warnings-as-errors full Windows x64 build PASS. **13 portable +7 DLL/logger
+  +270 hooks/native/contracts/workspace/scanner =290 public PASS records**, **5
+  optional private-input SKIP**, all final commands exit0. Native identity110/
+  read-call21 retained, new Python groups12 (20 total). No native assertion/deadline/
+  freshness/cleanup/ABI/lifecycle/cap/guard changed or relaxed.
+- Initial owned signed-displacement test incorrectly expected an off-slot address
+  in a slot-only result; corrected its synthetic origin/expectation. No production
+  policy/prior assertion weakened. Final focused20 and full final chain passed.
+- Coverage: LEA reader/writer, full copy/affine signed displacement, adjacent/
+  outside/wrap, loaded base, partial/unsupported/absolute immediate, branch/call/
+  indirect/return/system, index/segment, window/hop/runtime/decode boundaries,
+  external anchor/current-code mismatch/pinned decoder, capped/incomplete/multiple/
+  missing lifetime and deferred exclusion. All earlier direct/native/workspace
+  groups remain.
+- Fresh actual source ZIP extracted independently: full build PASS; **185 focused
+  entry/c14-c37 +7 DLL/logger +13 workspace +20 scanner =225 separate PASS records**,
+  all exits0/no private skips. Standalone packager separately PASS; do not add225
+  duplicate checks to290. Final reporting refresh retains all231 independently
+  tested native/tool inputs and rechecks the standalone package verifier.
+- Static comparison: all source/src and source/include files except version,
+  suite entrypoint/updater/Windows helpers/NEXT byte-identical to task base.
+  Final source/install CRC/hash/version/DLL/current docs/evidence/helpers/licenses/
+  one virtual active install script verified. No active source script/compiled/
+  private raw log/full native-body payload. Wine startup diagnostics remain;
+  final commands exit0, not actual c38 image candidate/runtime acceptance.
+
+Wisdoms **85070923b0975052b0685ad70068832e00be23c1** pushed: accepted owner scan
+limitation/c28 representation anchor, bounded affine origins/aggressive loss,
+local-vs-external coverage and cap reservation, candidates vs all-writer/
+publication/ownership proof. Other project knowledge preserved; no private image/
+function/value or credentials published.
+
+## Next owner action / unchanged safety
+
+After verified push: run installed MSM2-WS/Update-WS.cmd, then rerun only offline
+scanner using source/BUILD.md **c38** PowerShell/WSL command. Return compact
+logs/MSM2-WS-v0.1c38-slot-publication.json to ChatGPT (tool_version/schema fields
+identify the new scanner). EXE stays local. No WallRun/A-E/game capture or Install
+mods/Run modded game cycle is needed for this tooling task. Desktop launchers do
+not update. No routine download/repository/test-page links.
+
+Inspect local references/address proof/effective RVA, direct/affine writer counts,
+unresolved reasons/state resets, separate external anchor and cap/coverage status.
+Actual candidates are starting points for a future bounded publication-chain
+question only; source/allocation/extent/lifetime/all-writer/critical-disjointness
+remain separate requirements. Do not hard-code completeness to make c28 appear
+locally covered, infer an ABI/pool/array/base, or chase loaded values.
+
+All writable-source/caller-owned/ownership-exclusive/source-lifetime-exclusive/
+conflict gates0; Position/source/input/movement writes0; deferred producer unchanged.
+No native game call/hook/data-page mutation or gameplay/adhesion/camera/animation/
+physics work. The new offline JSON is the exact next evidence, not a raw executable
+upload or repeated movement capture.
+
+---
+
 # Codex result — c37 independent numeric offset / slot publication proof tracks
 
 Branch **codex/v01c20-edi-value-provenance**; task base **87b378f**.
