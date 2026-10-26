@@ -1,5 +1,30 @@
 # WallSprint project state
 
+## c41 current stage — owned continuation witness feasibility
+
+Current task: `docs/CODEX_NEXT.md` c41, base4b39a82. C40 completed its review
+with the fail-closed outcome; production retirement remains unproven. C41 adds
+only an owned test prototype, not production integration or a slot watch.
+Current c41 handoff classification: **PARTIAL SUCCESS** — owned Wine feasibility
+is established; native-Windows evidence is pending. No game/Update-WS request.
+
+The15byte MOV [RIP+dedicated marker],imm32 / JMP rel32 original-RIP stub provides
+an actual post-return token in the bounded owned Wine fixture. Separate immutable
+thread/lease/generation/context tickets preserve nested/multiple debt; close/
+deadline/kill refuse final release until all witnesses. Context-cap uncertainty
+poisons retirement; code/data stay alive until thread exit. Owned GPR/RFLAGS/RSP,
+active-stack, YMM0..15, FXSAVE and debug-state checks pass. This is not arbitrary
+process-wide accounting, a full-XSTATE runtime proof or a native-Windows/CET fix.
+
+Details: `analysis/V01C41_CONTINUATION_WITNESS.md`, `V01C41_GATE.md`,
+`V01C41_WITNESS_STATUS.json`. The minimal remaining native question uses only
+`analysis/native-probes/c41/continuation-witness.exe --position --multiple --json`.
+No game launch/update/slot scan/log is needed. Enabled/unknown native mitigation
+configurations refuse; no protections are changed. Native evidence and a later
+explicit integration task are required before c39-style slot work can resume.
+Runtime remains v0.1c38/package0.1.56; original c39/c40 production counterexamples
+remain intact. No production watch, source/Position/gameplay or shared-tool change.
+
 ## c39 admission audit (2026-10-26; follows accepted c38 scan)
 
 The c39 task's explicit stop-if-unsafe path applied. **No c39 exact-slot watch
@@ -25,10 +50,9 @@ outcome. No new owner offline/game test is needed for the test-only changes.
 C38 accepted scan/c28 reader, c37 range, c36 escape/CFG barrier, all publication/
 ownership/write gates and deferred producer0x351EB00 remain unchanged below.
 
-## c40 current task — bounded saved-exception CONTEXT retirement
+## c40 completed review — bounded retirement not established
 
-`docs/CODEX_NEXT.md` now defines c40 as the current task. C40 is limited to the
-retirement prerequisite exposed by c39: keep cleanup/serialization pending until
+The c40 task reviewed the retirement prerequisite exposed by c39: keep cleanup/serialization pending until
 an old saved exception CONTEXT can no longer reapply a retired owned DR
 configuration, or fail closed if that condition cannot be established.
 
@@ -49,8 +73,8 @@ The2 VCH probes register successfully but receive no callback on this owned
 Wine hardware path; VCH return-hold coverage is unavailable, not PASS. No API
 ordering guarantee or continuation trampoline is assumed/shipped. See
 `analysis/V01C40_RETIREMENT_REVIEW.md`, `V01C40_GATE.md` and
-`V01C40_RETIREMENT_STATUS.json`. C40 remains blocked on the precise post-return
-witness, not completed by green counterexample tests. Runtime remains
+`V01C40_RETIREMENT_STATUS.json`. Production retirement remains blocked on a reviewed
+post-return witness, not completed by green counterexample tests. Runtime remains
 v0.1c38/package0.1.56; c39 exact-slot mode stays unauthorized. No owner update,
 game test, offline scan or runtime log requested for this test-only review.
 
@@ -279,16 +303,17 @@ enough to certify phase re-arm/serialization: a delayed saved exception CONTEXT
 can restore a retired DR configuration after the coordinator has observed current
 thread DR restoration and inactive lease bookkeeping.
 
-C40 must resolve only that retirement prerequisite. The existing delayed-return
-owned regression is authoritative for this task's reproduced counterexample.
+C40 stopped without a safe production mechanism. C41 evaluates an owned
+post-return continuation witness only. The existing delayed-return regression
+remains authoritative for the production counterexample.
 The exact game/static slot remains:
 
 ```text
 module_base + 0xC2D2580
 ```
 
-but **no watch for that slot is authorized in c40**. After c40 is proven and
-committed, a later task may return to the separate value-free c39-style access
+but **no watch for that slot is authorized in c41**. After native evidence and
+separately authorized production integration, a later task may return to the value-free access
 capture. A future writer hit would still be only a runtime writer-site candidate;
 no hit would still not prove no writer.
 
@@ -328,25 +353,24 @@ The VMOVUPS store is existing game code, not a MOD write and not permission to w
 19. c37 direct exact-slot scan ✅ authenticated, incomplete by design
 20. c38 register-affine exact-slot scan ✅ actual image, 1360 affine operands resolved, no local slot writer
 21. c39 exact-slot watch admission audit ✅ STOPPED FAIL-CLOSED; retirement prerequisite reproduced
-22. c40 saved-exception CONTEXT retirement ▶ CURRENT
-23. exact-slot non-value runtime access-site capture ⏸ after c40 retirement proof
-24. bounded publication/source chain ⏸ pending writer-site evidence
-25. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
-26. resume full writer XYZ/W causal proof ⏸ after store containment
-27. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-28. safe writable upstream movement source ⬜ NOT AUTHORIZED
-29. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-30. adhesion/contact refinement ⏸ deferred
-31. animation/camera/later traversal ⬜
+22. c40 saved-exception CONTEXT retirement review ✅ STOPPED FAIL-CLOSED; no production fix
+23. c41 owned post-return continuation feasibility ▶ CURRENT; bounded Wine witness, native probe pending
+24. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
+25. bounded publication/source chain ⏸ pending writer-site evidence
+26. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
+27. resume full writer XYZ/W causal proof ⏸ after store containment
+28. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+29. safe writable upstream movement source ⬜ NOT AUTHORIZED
+30. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+31. adhesion/contact refinement ⏸ deferred
+32. animation/camera/later traversal ⬜
 
 ## Current action
 
-Follow `docs/CODEX_NEXT.md` for c40.
-
-Prove a bounded saved-exception CONTEXT retirement mechanism without weakening
-existing debugger/foreign-DR/lease/restoration/cap/deadline semantics. Preserve
-the delayed-return regression. If bounded retirement cannot be established,
-stop fail-closed and document the exact unresolved condition.
+Follow `docs/CODEX_NEXT.md` for c41. Preserve the owned witness/counterexample
+evidence and complete only the minimal native-Windows owned probe if requested.
+Do not integrate the prototype into production in c41. A later task must review
+all-thread registration/lease/lifecycle/mitigation and failure-policy integration.
 
 Do not add the exact-slot watch, PAGE_GUARD or broad memory interception merely
 to force progress. Do not merge `main`, do not traverse producer `0x351EB00`, and

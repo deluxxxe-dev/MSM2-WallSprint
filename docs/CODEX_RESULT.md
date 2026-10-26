@@ -1,3 +1,111 @@
+# Codex result — c41 owned continuation witness: PARTIAL SUCCESS
+
+Branch **codex/v01c20-edi-value-provenance**, task base **4b39a82**.
+Result: **PARTIAL SUCCESS**. Bounded owned Wine feasibility is established;
+native Windows behavior/mitigation compatibility remains unverified. Production
+integration and c39 slot work remain unauthorized. Runtime remains
+**v0.1c38/package0.1.56**; no new game release, Update-WS or game test requested.
+
+## Changes preserved and handoff
+
+- `source/src/NativeHooks/continuation_witness_smoke.cpp` and
+  `continuation_witness_harness.S`: test-only owned witness, state/identity/
+  nested-context/lifetime checks and bounded failure policy. Production watch
+  source is unchanged; original c39/c40 counterexamples remain intact.
+- `source/tools/test_continuation_witness.sh` and mandatory
+  `test_hooks_windows.sh`:12 owned cases, separately executable and retained in
+  the full regression path. No old assertion, cap or deadline was weakened.
+- `analysis/V01C41_CONTINUATION_WITNESS.md`, `V01C41_GATE.md`,
+  `V01C41_WITNESS_STATUS.json`, matching source/analysis mirrors, PROJECT_STATE
+  and this report. Current stage is c41, c40 records its fail-closed review.
+- `source/tools/package.py`: carry c41 evidence and explicitly test-only gate
+  metadata; no production admission is granted by the prototype.
+- `analysis/native-probes/c41/`: minimal standalone owned Windows EXE, source/
+  binary manifest, README and full license notices. The artifact is the exact
+  tested binary and emits compact JSON; it accesses no game process/data.
+
+On the user's continuation request, checked the existing working tree and saved
+logs instead of restarting or discarding work. Current branch/base verified.
+AGENTS/NEXT, prior published c38 artifacts and five original untracked outputs
+are retained. No main merge/reset/force-push, SF/shared-tool/updater change,
+private game body/log, slot value read or new gameplay write.
+
+## Executed tests: exact commands, expected and actual
+
+Commands below were executed from repository root with the configured Bash
+toolchains. The full pipeline exited0, with **316 public PASS records**:
+portable13 + smoke7 + hooks296. Focused runs overlap that count and are not added
+again. Full-chain SKIP5 and UNAVAILABLE2 are counted separately from PASS.
+
+| Executed command | Expected result | Actual result |
+| --- | --- | --- |
+| `bash source/tools/test_watch_retirement.sh` | Preserve original counterexamples and mode-specific restoration; report unavailable VCH honestly | exit0;14 PASS observation/recovery records,2 VCH UNAVAILABLE; production limitation still reproduced |
+| `bash source/tools/build_windows.sh` | Existing x64 Werror build succeeds | exit0 |
+| `bash source/tools/test.sh` | Portable/sanitizer assertions pass | exit0;13 PASS |
+| `bash source/tools/smoke_windows.sh` | DLL/logger regressions pass | exit0;7 PASS |
+| `bash source/tools/test_continuation_witness.sh` | Held close/deadline/kill stay pending, exact nested/context debt clears after actual witness; state/lifetime preserved; cap refuses | exit0;12 PASS and12 JSON records:10 positive bounded witnesses +2 expected cap refusals,0 SKIP/UNAVAILABLE |
+| `bash source/tools/test_hooks_windows.sh` | Full owned native/watch/ownership/workspace/scanner path passes including new cases | exit0;296 PASS,5 optional private SKIP,2 original VCH UNAVAILABLE |
+| `WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/analysis/native-probes/c41/continuation-witness.exe" --position --multiple --json` | Exact shipped artifact returns one compact scoped JSON record | exit0;one valid JSON, environment=Wine, contexts=3, OWNED_WITNESS_PASS, native_unmitigated_probe_passed=false, production_integrated=false |
+
+Machine-state/identity/safety details are in the analysis contract, not a game
+proof. Required/normal pipeline logs remain `/tmp/ws-c41-{retirement,build,
+portable,smoke,hooks}.log`; focused final log `/tmp/ws-c41-focused-ready.log`.
+The standalone JSON check is `/tmp/ws-c41-shipped-probe.json`. No private raw
+runtime log is committed. Initial new-code Werror formatting/function-pointer
+conversion and a test-helper name collision were corrected; no runtime assertion
+failure or old-guard relaxation was used to obtain the final focused/full PASS.
+
+## Continuation validation and why tests were not repeated
+
+All native/test changes were already built and exercised before the user's
+continuation request. Checked saved exits/counts, current tree and exact binary
+equality. Subsequent handoff work changes only analysis/report/package metadata;
+there is no new native behavior to justify repeating the completed full suite.
+The standalone artifact matches the executable used by the completed tests.
+
+Ran `python3 source/tools/package.py` once after completing the new handoff
+files: expected evidence/source/manifest consistency, actual exit0 and1 package
+PASS record. Checked236 packaged code/tool inputs byte-for-byte against current
+source, exact shipped/tested EXE equality and its SHA256 manifest. This is a
+separate package check, not an addition to316 native PASS records or a Windows
+test. Later SHA-only report updates do not change build/test/package behavior.
+Final publication is checked by remote SHA and re-reading GitHub commit contents.
+
+## Unperformed tests and reasons
+
+- Native Windows OS return/state/mitigation behavior: only Wine is available here.
+  The remaining evidence requires a **minimal standalone owned Windows probe**,
+  already supplied. Per the latest owner request, this handoff only identifies
+  that need; it does not ask the owner to run a command now.
+- Enabled/unknown native CFG/ACG/CET configurations: outside the candidate's
+  boundary and explicitly refused. No protections are disabled; no support claim.
+- Arbitrary production context registration, all-thread/lifecycle/lease reuse and
+  general integration: expressly outside c41. A later reviewed task is required.
+- Two original VCH return-hold branches: registration succeeds but the callbacks
+  are not dispatched in the current Wine hardware path;2 UNAVAILABLE, not PASS.
+- Five optional private positive replays: original bytes, AVX/CFG game bodies,
+  game installer body,584byte writer normalization and accepted Path-B capture
+  are absent/not redistributed. Independent owned rejection/proof tests ran.
+- Game launch, exact-slot scan/watch, producer traversal, live attached debugger,
+  full-XSTATE payload matrix or mitigation-enabled execution: not performed or
+  claimed. Game/slot/production actions are unauthorized; the remaining platform/
+  state configurations are beyond the explicitly tested boundary.
+
+## Interpretation and owner action
+
+This is a successful bounded owned Wine experiment and an overall partial handoff,
+not a production retirement fix or broad Windows certificate. The c39/c40
+production gap remains. C37 offset/c36 escape/CFG/publication/allocation/lifetime/
+ownership and all gameplay-write gates remain unchanged; producer0x351EB00 deferred.
+
+The source branch is committed/pushed and its published SHA verified before the
+completion response. No game release ZIP/script is generated for c41. Current
+owner action: **none requested**. Native Windows confirmation, when separately
+undertaken, needs only the standalone owned probe, never Spider-Man2/Overstrike,
+Update-WS, WallRun/A-E, an offline slot scan or a game runtime log.
+
+---
+
 # Codex result — c40 retirement review: positive implementation acceptance NOT MET
 
 Branch **codex/v01c20-edi-value-provenance**, task base **2b8124b**.

@@ -1,0 +1,117 @@
+{
+  "task": "c41_owned_post_return_continuation_witness_feasibility",
+  "base_commit": "4b39a82",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "outcome": "bounded_owned_Wine_witness_observed_native_gate_pending",
+  "production_integrated": false,
+  "production_retirement_fixed": false,
+  "production_watch_source_changed": false,
+  "runtime_version": "v0.1c38",
+  "package_version": "0.1.56",
+  "new_game_release": false,
+  "stub_bytes": 15,
+  "stub_instructions": [
+    "MOV_dword_RIP_relative_imm32_token",
+    "JMP_rel32_original_saved_RIP"
+  ],
+  "scratch_GPR_or_stack_or_flags_or_vector_operations": false,
+  "dedicated_aligned_marker_write_width": 4,
+  "per_thread_lease_generation_context_tickets": true,
+  "supported_model": "one_owned_hardware_event_and_up_to_two_owned_nested_software_contexts",
+  "unmodeled_context_or_cap": "poison_and_refuse_final_retirement",
+  "lifetime": "RX_code_and_RW_markers_retained_until_owned_thread_signaled",
+  "bounded_owned_cases": 12,
+  "positive_witness_cases": 10,
+  "expected_cap_refusals": 2,
+  "measured_machine_state": [
+    "16_GPR_including_RSP",
+    "observable_PUSHFQ_RFLAGS_TF_RF_excluded",
+    "64_active_stack_canary_bytes",
+    "YMM0_to_15_512_bytes",
+    "FXSAVE_legacy_FP_MXCSR_XMM_512_bytes",
+    "owned_DR_restore_and_foreign_DR2"
+  ],
+  "full_XSTATE_runtime_claim": false,
+  "known_mitigation_queries_on_Wine": [
+    true,
+    true,
+    true
+  ],
+  "mitigation_flags_on_Wine": [
+    0,
+    0,
+    0
+  ],
+  "native_Windows_verified": false,
+  "mitigation_enabled_support": false,
+  "native_unknown_policy": "refuse",
+  "native_probe": "analysis/native-probes/c41/continuation-witness.exe",
+  "native_probe_argv": [
+    "--position",
+    "--multiple",
+    "--json"
+  ],
+  "native_probe_requires_game": false,
+  "validation": {
+    "focused_script": "bash source/tools/test_continuation_witness.sh",
+    "focused_exit": 0,
+    "focused_PASS_records": 12,
+    "required_retirement_exit": 0,
+    "required_retirement_PASS_records": 14,
+    "required_retirement_UNAVAILABLE": 2,
+    "build_exit": 0,
+    "portable_exit": 0,
+    "portable_PASS_records": 13,
+    "smoke_exit": 0,
+    "smoke_PASS_records": 7,
+    "hooks_exit": 0,
+    "hooks_PASS_records": 296,
+    "total_full_chain_PASS_records": 316,
+    "private_input_SKIP_records": 5,
+    "original_VCH_UNAVAILABLE_records": 2,
+    "focused_overlaps_full_count": true,
+    "shipped_binary_json_mode_exit": 0,
+    "shipped_binary_json_lines": 1,
+    "tests_repeated_on_continuation": false,
+    "not_repeated_reason": "native_inputs_unchanged_after_successful_full_run_handoff_only_metadata_completed",
+    "package_command": "python3 source/tools/package.py",
+    "package_exit": 0,
+    "packaged_source_inputs_identical": 236,
+    "code_tool_input_digest_sha256": "d31fe3a990ec85d21f4eee9063a5b19548267f9c69ff1f46b743ae1de7b9422d",
+    "probe_binary_sha256": "83762944821727e488605aff18946366fc8da6bbe36a5bd7cbf04b0d57574702",
+    "probe_matches_tested_executable": true
+  },
+  "slot_watch_enabled": false,
+  "new_live_qword_reads": 0,
+  "new_gameplay_writes": 0,
+  "producer_0x351EB00_traversed": false,
+  "CFG_continuation": false,
+  "unperformed": [
+    {
+      "test": "native_Windows_RIP_redirection_state_and_mitigation_compatibility",
+      "reason": "Wine_only_here_minimal_standalone_owned_probe_provided"
+    },
+    {
+      "test": "enabled_CFG_ACG_CET_execution",
+      "reason": "explicitly_refused_outside_supported_boundary_no_protection_changes"
+    },
+    {
+      "test": "production_integration_all_thread_context_registration",
+      "reason": "not_authorized_c41_test_only"
+    },
+    {
+      "test": "original_VCH_held_return_two_modes",
+      "reason": "callbacks_not_dispatched_in_current_Wine_path"
+    },
+    {
+      "test": "five_optional_private_game_positive_replays",
+      "reason": "private_inputs_absent_not_redistributed"
+    },
+    {
+      "test": "game_or_slot_capture",
+      "reason": "not_authorized_or_required"
+    }
+  ],
+  "classification": "PARTIAL_SUCCESS",
+  "current_owner_action": "none_requested_only_native_standalone_need_identified"
+}
