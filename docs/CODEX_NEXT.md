@@ -1,23 +1,23 @@
-# Next task — c47 test-only retirement-configuration acceptance proof
+# Next task — c48 production continuation-witness integration review
 
 ## Status
 
-C46 is complete as a repository/test task and the owner ran the published native-Windows standalone probe.
+C47 is complete as a repository/test task and the owner has now run the published native-Windows standalone probe.
 
 Accepted native result:
 
-- `analysis/V01C46_NATIVE_WINDOWS_RESULT.md`
-- `source/analysis/V01C46_NATIVE_WINDOWS_RESULT.md`
-- `analysis/V01C46_PRE_ACCESS_BOUNDARY.md`
-- `analysis/V01C46_STATUS.json`
-- `analysis/native-probes/c46/README.md`
-- `analysis/native-probes/c46/PROBE_MANIFEST.json`
+- `analysis/V01C47_NATIVE_WINDOWS_RESULT.md`
+- `source/analysis/V01C47_NATIVE_WINDOWS_RESULT.md`
+- `analysis/V01C47_CONFIGURATION_RETIREMENT.md`
+- `analysis/V01C47_STATUS.json`
+- `analysis/native-probes/c47/README.md`
+- `analysis/native-probes/c47/PROBE_MANIFEST.json`
 
 Continue only on `codex/v01c20-edi-value-provenance`. Do not merge `main`.
 
-Before work read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, `docs/CODEX_REPORTING.md`, this file, all c39-c46 retirement/witness evidence, the current continuation-witness source/tests, and relevant `deluxxxe-dev/MSM2-Wisdoms` references.
+Before work read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, `docs/CODEX_REPORTING.md`, this file, all c39-c47 retirement/witness evidence, the current production watch implementation, the c41-c47 standalone implementation/tests, and relevant `deluxxxe-dev/MSM2-Wisdoms` references.
 
-## Accepted c46 native evidence
+## Accepted c47 native evidence
 
 Owner command:
 
@@ -28,311 +28,222 @@ Owner command:
 Observed native identity/result:
 
 ```text
-environment                         = native_Windows
-mode                                = Position
-scenario                            = multiple
-cpu_vendor                          = GenuineIntel
-mitigation_flags                    = [0,0,0x100]
-mitigation_classifier               = ADMIT
-contexts                            = 3
-watch_context_writes_observed       = 1
-outer_hardware_DB_events            = 1
-pending before/after final poll     = 0 / 0
-canRetire before final poll         = true
-active leases after final poll      = false
-final poll returned                 = false
-RAW_EXACT                           = false
-ARCHITECTURAL_CANONICAL             = false
-RETIREMENT_CONFIGURATION_SAFE_added = false
-result                              = FAIL
+result                         = OWNED_WITNESS_CONFIGURATION_PASS
+environment                    = native_Windows
+mode / scenario                = Position / multiple
+cpu_vendor                     = GenuineIntel
+mitigation_flags               = [0,0,0x100]
+mitigation_classifier          = ADMIT
+contexts                       = 3
+watch_context_writes_observed  = 1
+outer_hardware_DB_events       = 1
+RAW_EXACT                      = false
+ARCHITECTURAL_CANONICAL        = false
+RETIREMENT_CONFIGURATION_SAFE  = true
+acceptance_comparison          = RETIREMENT_CONFIGURATION_SAFE
+exact_slot_watch_enabled       = false
+production_integrated          = false
+game_used                      = false
+native_candidate_probe_passed  = true
+retirement_accepted            = true
 ```
 
-Final state remained stable across all three readbacks:
+The c47 predicate was `c47-v1` / profile
+`Intel_SDM253669_090US_DR6_owner_c46_Position_multiple_v1`. It accepted the exact owner-native c46 activated-state history, not a generic DR6 mask.
+
+Additional native facts:
 
 ```text
-Dr0 = saved
-Dr1 = saved
-Dr2 = synthetic foreign saved value
-Dr3 = saved
-Dr6 = 0x00000000ffff0ff0
-Dr7 = 0x0000000000000410
+ticket_count                       = 3
+all tickets acknowledged           = true
+all tickets current_code           = true
+same worker/lease/generation       = true
+pending before/after final poll    = 0 / 0
+canRetire before final poll        = true
+active leases after final poll     = false
+final poll returned                = false
+total context write attempts       = 2
+final-poll restore write attempts  = 1
+unscoped context write attempts    = 0
+failed context write attempts      = 0
 ```
 
-The c46 pre-access gate proved all of the following at the new observation:
+Dr0/Dr1/Dr3 restored exactly and the synthetic foreign Dr2 was preserved exactly. All three final readbacks were complete/stable. Historical `RAW_EXACT=false` and c44 `ARCHITECTURAL_CANONICAL=false` remain preserved and were not relabeled.
 
-```text
-gate reached/captured               = true
-release unsignaled at capture       = true
-active lease / owned slots          = true / true
-DB_events_at_arrival                = 0
-DB_events_before_suspend            = 0
-DB_events_at_capture                = 0
-DB_events_after_read                = 0
-machine_entries_at_capture          = 0
-tickets_at_capture                  = 0
-pending_at_capture                  = 0
-context_writes_at_watch             = 1
-context_writes_at_capture           = 1
-```
+The c46 pre-access timeline was reproduced: Dr6[11,16] changed 0/0 -> 1/1 after watch-enabled Resume but before watched access, machine entry, ticket creation, pending debt or owned #DB. C47 accepts only the exact measured full-status/configuration profile plus all original ownership/ticket/lifetime checks.
 
-The exact native transition was:
+## What c47 proves — and what it does not
 
-```text
-post_watch_set_readback_pre_resume   bit11=0 bit16=0 Dr6=0x0000000000000000
-post_watch_resume_pre_access         bit11=1 bit16=1 Dr6=0x00000000ffff0ff0
-outer_db_handler_entry               bit11=1 bit16=1 Dr6=0x00000000ffff0ff1
-outer_db_handler_after_engine        bit11=1 bit16=1 Dr6=0x00000000ffff0ff0
-post_return_pre_final_poll           bit11=1 bit16=1 Dr6=0x00000000ffff0ff0
-after_final_poll                     bit11=1 bit16=1 Dr6=0x00000000ffff0ff0
-verification_readback_1..3           bit11=1 bit16=1 Dr6=0x00000000ffff0ff0
-```
+### Accepted
 
-Both bit11 and bit16 therefore classify as:
+The owned standalone candidate can, on the measured native-Windows/GenuineIntel/Position-multiple profile, distinguish breakpoint configuration retirement from the observed DR6 status representation and can safely retire that **owned fixture** according to `RETIREMENT_CONFIGURATION_SAFE/c47-v1`.
 
-```text
-WATCH_ENABLED_RESUME_PRE_ACCESS
-```
+This closes the specific c41-c47 standalone feasibility chain.
 
-The transition occurs after the watch-enabled worker is resumed but before any watched access, machine entry, continuation ticket, pending debt, or owned #DB event. This supersedes c45's earlier first-observed `HARDWARE_DB_ENTRY` boundary. Do not claim the exact kernel/processor mechanism; c46 proves the bounded user-mode observation order, not internal causality.
+### Still unproven
 
-## Documentation/static boundary
+C47 is explicitly not production integration. It does not prove:
 
-Use the current official Intel SDM and current Microsoft thread-context documentation when accessible.
+- that every production saved exception `CONTEXT` is discovered/registered;
+- arbitrary game-thread and exception interleavings;
+- nested/reentrant production VEH cases beyond the owned fixture;
+- production thread exit while a ticket or saved context remains outstanding;
+- deinit/kill/timeout/module-unload lifetime across all pending continuations;
+- a process-wide bounded context cap/accounting rule;
+- safe executable-stub/code/data lifetime in the real game process;
+- mitigation/CET/CFG compatibility of the actual game process merely because the standalone process passed;
+- full production XSTATE/architectural preservation for arbitrary game threads;
+- permission to enable the deferred exact-slot watch at `module_base + 0xC2D2580`.
 
-Preserve these facts/distinctions:
-
-- Intel defines DR6 as a **debug status register**.
-- Intel defines DR7 plus Dr0-Dr3 as the breakpoint control/address configuration.
-- DR6 BLD11 and RTM16 have specific status semantics and are not breakpoint address/enable/type/length fields.
-- Microsoft documents that some thread-context values that cannot be specified are silently set to the correct value, including OS-controlled debug-register state; this is not a blanket permission to ignore DR differences.
-- Current production ownership is based on Dr0/Dr1 addresses plus owned Dr7 fields and claims the owned event through DR6 B0/B1.
-- Production does not use DR6 bit11/bit16 to enable a watch or identify the owned Dr0/Dr1 slots.
-
-C46 now provides native evidence that the bit11/16 representation changes **before the watched access/#DB**, so the owned event itself is not a necessary cause of this transition. That still does not prove a general Windows/Intel rule for arbitrary CPUs/processes/threads.
+The original c39/c40 delayed saved-`CONTEXT` resurrection counterexample remains authoritative until a production-shape integration proof closes these gaps.
 
 ## Current blocker
 
-Define whether the exact owner-native c46 state is safe as a **watch-configuration retirement** even though historical raw DR6 equality and the deliberately conservative c44 architectural comparator remain false.
+Determine whether the c41-c47 continuation-witness mechanism can be integrated into the **existing production watch engine** with complete, bounded and fail-closed saved-context accounting, without changing gameplay behavior and without enabling the deferred exact-slot watch.
 
-C47 may add one separately named, test-only predicate. It must not relabel or weaken the historical comparators.
-
-This task is still not production integration.
+C48 is a **production-integration review**, not production integration itself.
 
 ## Current bounded Codex task
 
-### 1. Preserve all historical comparisons/results unchanged
+### 1. Audit the exact production exception lifecycle
 
-Keep reporting:
+Trace the current production watch implementation from watch installation through every owned/foreign/mixed exception path and every cleanup/retirement path.
 
-```text
-RAW_EXACT
-ARCHITECTURAL_CANONICAL
-```
+At minimum map:
 
-For the accepted c46 owner result both remain false. Do not modify their definitions to make c47 green.
+- watch install and immutable lease publication;
+- suspend/GetThreadContext/SetThreadContext/readback/Resume ordering;
+- VEH entry and ownership matching;
+- normal owned hit;
+- closed/deadline/kill hit;
+- event-cap/budget/lock/ring-overflow paths;
+- mixed identity / foreign ownership loss;
+- reset and Position modes;
+- multithread expansion;
+- final cleanup / pollReset / deinit;
+- timeout/kill while handlers or saved contexts exist;
+- thread exit / invalid handle / Resume failure;
+- nested or repeated owned exceptions before an earlier saved context has fully returned;
+- any path that can return `EXCEPTION_CONTINUE_EXECUTION` with a saved `CONTEXT` capable of reapplying owned DR state.
 
-Preserve c44/c45/c46 native FAIL evidence unchanged.
+Produce a table of every such return path, the exact lease/thread/window identity available there, and whether a continuation ticket could be registered **before** that saved context becomes a future retirement debt.
 
-### 2. Implement a narrowly scoped test-only `RETIREMENT_CONFIGURATION_SAFE` predicate only if justified
+Do not infer completeness from the c47 fixture. Prove it from current production code plus bounded owned tests, or report the first exact blocker.
 
-Review current Intel and Microsoft documentation plus the exact c46 native timeline. If that evidence is sufficient, add a **separate** test-only predicate named exactly:
+### 2. Define a production-safe ticket/accounting contract
 
-```text
-RETIREMENT_CONFIGURATION_SAFE
-```
+Design, but do not yet integrate, the minimum production contract needed to discharge the c39/c40 counterexample.
 
-Its meaning is only: the owned hardware-watch **configuration** is retired and foreign configuration preserved under this exact supported owner profile, while DR6 bit11/bit16 are accepted only through the separately proven c46 status/representation contract.
+It must specify at minimum:
 
-A true result must require every item below. Missing/unknown data refuses.
+- immutable ticket identity: thread + lease/window generation + context sequence;
+- the exact moment a ticket is created relative to saved-`CONTEXT` mutation/return;
+- how nested/multiple outstanding contexts on one thread are represented;
+- maximum bounded tickets per thread/process and what happens on cap uncertainty;
+- no heap allocation, loader interaction, logging, user locks or unbounded work in the exception path;
+- how ticket storage is published atomically and read by cleanup;
+- how code/data lifetime is retained until every possible continuation witness is discharged;
+- how thread exit discharges or poisons outstanding debt;
+- how deinit/kill/timeout behaves when debt remains;
+- how module unload/process teardown avoids executing freed witness code;
+- how stale lease/window generations are rejected;
+- how mixed/foreign DR ownership remains fail-closed;
+- how context-registration failure poisons retirement rather than silently dropping debt.
 
-#### Environment/profile
+If any required production path cannot obtain a unique immutable identity or cannot register debt without unsafe work in VEH context, the review must fail closed.
 
-- `environment=native_Windows` for native acceptance;
-- `cpu_vendor=GenuineIntel`;
-- the exact supported Intel documentation/profile is identified;
-- c42 mitigation classifier remains admitted;
-- no debugger/unsupported mitigation/profile boundary is crossed;
-- unknown vendor or unsupported feature combination refuses.
+### 3. Audit executable continuation-stub feasibility in the real production process
 
-#### c46 ordering proof
+The c41-c47 standalone stub is not automatically a production-game certificate.
 
-Require the complete ordered c46 lifecycle and all pre-access gate facts:
+Review the exact production requirements for:
 
-- `post_watch_set_readback_pre_resume` captured;
-- `post_watch_resume_pre_access` captured;
-- release was unsignaled at capture;
-- same worker/thread/lease/generation identity;
-- active lease and owned slots were present at capture;
-- zero owned #DB events at arrival/before-suspend/capture/after-read;
-- zero machine entries at capture;
-- zero continuation tickets and pending debt at capture;
-- exactly one original watch context write;
-- no intervening SetThreadContext/repair write;
-- bit11 and bit16 each have exactly one accepted first transition `0 -> 1` at `WATCH_ENABLED_RESUME_PRE_ACCESS`;
-- no later reversal/drift in the native lifecycle/readbacks.
+- executable memory ownership and lifetime;
+- W^X / page protection transitions if any;
+- CFG/CET/shadow-stack/EH-continuation interactions;
+- current game-process mitigation queries required before use;
+- whether the current 15-byte continuation form is position/range safe for arbitrary production thread RIPs;
+- whether the continuation preserves every required GPR/RFLAGS/RSP/stack/vector/XSTATE property for production use;
+- instruction-cache coherency and publication ordering;
+- abrupt thread/process/module teardown.
 
-Do not accept `HARDWARE_DB_ENTRY`, ambiguous/multiple, handler-only, or post-return-only lifecycle classifications for this c47 predicate.
+Do not assume the actual game-process mitigation tuple equals the standalone `[0,0,0x100]` result. Define a runtime admission rule that would query the real process and fail closed on unknown/relevant settings.
 
-#### Actual watch configuration retirement
+Do not disable or relax Windows mitigations.
 
-Require:
+### 4. Build a test-only production-shape accounting model/harness
 
-- all continuation tickets acknowledged;
-- pending context debt zero;
-- `canRetire()` true before final poll;
-- final poll has the expected false return;
-- active leases false after final poll;
-- Dr0 exact saved value;
-- Dr1 exact saved value;
-- Dr2 exact synthetic foreign saved value;
-- Dr3 exact saved value;
-- Dr7 satisfies the c44 vendor-specific contract;
-- all owned Dr7 local-enable/type/length fields are retired to their saved state;
-- no global/foreign Dr7 control is lost or silently accepted;
-- no owned B0/B1 cause remains after final poll;
-- B2/B3, BD, BS and BT show no unexpected cause;
-- all c44 DR6 fixed/unknown-group fail-closed checks continue to pass;
-- final three readbacks are complete and stable.
+If the static review yields a coherent bounded contract, add test-only owned coverage that models the **production shapes**, not only the original c41 worker.
 
-#### Bit11/bit16 special contract
+At minimum cover:
 
-Do **not** mask bit11/bit16 generically.
+- one context / one thread;
+- multiple saved contexts on one thread with out-of-order scheduling;
+- multiple threads, each with independent debt;
+- delayed return after cleanup request;
+- close/deadline/kill while debt remains;
+- nested/reentrant owned exception registration;
+- lease/window generation reuse attempt;
+- context/ticket cap exhaustion;
+- thread exit with zero debt;
+- thread exit with unresolved debt;
+- deinit/module-lifetime boundary with outstanding debt;
+- mixed/foreign ownership;
+- failed ticket publication / unknown identity;
+- stale/duplicate witness token;
+- witness for one context must not discharge another;
+- all debt discharged then cleanup allowed;
+- original c39/c40 delayed-return resurrection must remain reproduced when the witness mechanism is absent/disabled.
 
-For this exact c47 predicate, accept their raw saved/current difference only when all of the following hold:
+Prefer reusing production structs/helpers where safe so the harness cannot drift into an unrelated abstract model. If exact production logic cannot be exercised without modifying production behavior, document that limitation explicitly.
 
-- saved pre-watch representation is `bit11=0, bit16=0` as actually observed;
-- immediate pre-Resume watch readback remains `0/0`;
-- first post-Resume/pre-access readback is `1/1` with all c46 zero-event/gate proof above;
-- final state and all three verification readbacks remain `1/1`;
-- current Intel documentation classifies these fields as DR6 status fields, not breakpoint configuration fields;
-- neither bit participates in the current production watch enable/address/type/length ownership identity;
-- no BLD/RTM event interpretation inconsistent with this fixture is present.
+Synthetic/model PASS is not a production certificate.
 
-Any different values, transition order, profile, event/cause, missing readback, or instability must refuse.
+### 5. Decide the c48 review result — do not integrate yet
 
-This is a positive match for one measured lifecycle, not a universal `ignore 0x10800` mask.
-
-### 3. Keep raw evidence visible and auditable
-
-Root JSON for a c47 standalone run must expose all three results independently:
-
-```text
-RAW_EXACT
-ARCHITECTURAL_CANONICAL
-RETIREMENT_CONFIGURATION_SAFE
-```
-
-If the c46-style native state is accepted by the new predicate, the expected relationship is allowed to be:
+Emit one of:
 
 ```text
-RAW_EXACT=false
-ARCHITECTURAL_CANONICAL=false
-RETIREMENT_CONFIGURATION_SAFE=true
+PRODUCTION_WITNESS_INTEGRATION_REVIEW_PASS
+PRODUCTION_WITNESS_INTEGRATION_REVIEW_FAIL
 ```
 
-That is intentional and must be explained in the JSON/report. It means the exact raw status representation differs while the narrowly defined watch configuration is retired; it does **not** mean the older comparators were wrong.
+A PASS requires a complete mapped return-path inventory, a bounded no-drop ticket/accounting contract, safe executable/code-data lifetime design, real-process mitigation admission design, and passing production-shape owned tests.
 
-### 4. Add focused fail-closed tests
+A PASS authorizes only a later explicit implementation task (c49 or later). It does **not** authorize modifying production code inside c48 and does not authorize the exact-slot watch.
 
-Add a pure/owned test helper for the c47 predicate. Synthetic tests are not native evidence.
+A FAIL must state the first exact missing guarantee and preserve all current production behavior unchanged.
 
-At minimum test:
+### 6. Preserve every historical predicate/result
 
-- exact accepted c46 lifecycle/configuration fixture => true;
-- bit11 transition at SetThreadContext roundtrip => false;
-- bit16 transition at SetThreadContext roundtrip => false;
-- transition first at #DB entry => false for this narrow c47 predicate;
-- multiple/reversed/drifting transition => false;
-- extra #DB before pre-access gate => false;
-- machine entry before capture => false;
-- extra context write/repair => false;
-- missing pre-access gate proof => false;
-- Dr0 mismatch => false;
-- Dr1 mismatch => false;
-- foreign Dr2 mismatch => false;
-- Dr3 mismatch => false;
-- Dr7 owned enable/type/length mismatch => false;
-- Dr7 foreign/global mismatch => false;
-- owned B0 or B1 remains after final poll => false;
-- unexpected B2/B3/BD/BS/BT => false;
-- unknown DR6 group => false;
-- bit11 or bit16 final value not 1 => false;
-- one final readback missing => false;
-- final readback drift => false;
-- pending debt nonzero => false;
-- active lease remains => false;
-- `canRetire()` false => false;
-- continuation ticket unacknowledged => false;
-- unknown/non-Intel vendor => false;
-- mitigation refusal => false.
+Do not weaken, replace or relabel:
 
-Preserve every c39-c46 regression.
+- c39/c40 delayed saved-context resurrection counterexamples;
+- c41 continuation witness semantics;
+- c42 mitigation classifier;
+- c43 exact restoration diagnostic;
+- c44 `RAW_EXACT` / `ARCHITECTURAL_CANONICAL` reporting;
+- c45/c46 lifecycle observations;
+- c47 `RETIREMENT_CONFIGURATION_SAFE` bounded owner predicate.
 
-### 5. Update only the test-owned standalone path
+C47 native PASS remains fixture-specific. Do not turn it into a generic DR6 ignore rule.
 
-If the predicate is justified and all owned tests pass, publish a c47 standalone under:
+### 7. Forbidden scope
 
-```text
-analysis/native-probes/c47
-```
-
-Prefer the same owner command:
-
-```powershell
-.\continuation-witness.exe --position --multiple --json
-```
-
-If the new predicate passes natively, use an explicit test-only result name such as:
-
-```text
-OWNED_WITNESS_CONFIGURATION_PASS
-```
-
-Do not reuse a generic production-sounding PASS without the qualification. JSON must include:
-
-- raw mitigation/vendor fields;
-- complete c46 lifecycle/pre-access gate evidence;
-- RAW_EXACT;
-- ARCHITECTURAL_CANONICAL;
-- RETIREMENT_CONFIGURATION_SAFE;
-- final Dr0/1/2/3/6/7 and all three readbacks;
-- pending/lease/ticket/canRetire/final-poll state;
-- `production_integrated=false`;
-- `exact_slot_watch_enabled=false`;
-- `game_used=false`.
-
-### 6. Explicitly audit production relevance without integrating it
-
-Document which c47 conditions already exist in production and which are test-fixture-only or still missing for arbitrary production threads.
-
-At minimum distinguish:
-
-- VERIFIED-RUNTIME owner-native c46 facts;
-- VERIFIED-STATIC production ownership/restore facts;
-- test-fixture-only synchronization/identity facts;
-- UNKNOWN requirements for production-wide application.
-
-Do not modify production `restore()`, ownership, watch installation, lease lifecycle, exception handler behavior, or equality semantics in c47.
-
-A native c47 configuration-safe PASS would authorize only a **later explicit production-integration review task**. It does not authorize c39 exact-slot work directly.
-
-## Forbidden scope
-
-C47 does not authorize:
+C48 does not authorize:
 
 - production continuation-witness integration;
-- production `restore()`/ownership/equality changes;
-- broad DR6 masking or normalization;
-- treating all DR6 status as irrelevant;
-- the deferred `module_base + 0xC2D2580` exact-slot watch;
+- changing production `restore()`, ownership, install, handler, lease or cleanup semantics;
+- enabling any new hardware watch mode;
+- the deferred `module_base + 0xC2D2580` exact-slot RW8/WRITE8 watch;
 - slot qword reads/logging or pointer chasing;
 - publication/source-chain interpretation;
 - producer `0x351EB00` traversal;
 - PAGE_GUARD or broad memory interception;
-- Windows mitigation disabling/relaxation;
+- mitigation disabling/relaxation;
 - gameplay/source/Position/input/movement/adhesion/camera/animation/physics writes.
 
-Runtime remains `v0.1c38 / package0.1.56`. Do not create a game release for c47.
+Runtime remains `v0.1c38 / package0.1.56`. Do not create a game release for c48.
 
 ## Required validation
 
@@ -344,6 +255,7 @@ bash source/tools/test_continuation_diagnostics.sh
 bash source/tools/test_debug_register_comparison.sh
 bash source/tools/test_dr6_lifecycle.sh
 bash source/tools/test_pre_access_lifecycle.sh
+bash source/tools/test_retirement_configuration.sh
 bash source/tools/test_continuation_witness.sh
 bash source/tools/test_watch_retirement.sh
 bash source/tools/build_windows.sh
@@ -353,33 +265,32 @@ bash source/tools/test_hooks_windows.sh
 python3 source/tools/package.py
 ```
 
-Run the exact new c47 retirement-configuration test command separately and report it.
+Run every new c48 production-shape/accounting test explicitly and report the exact command.
 
 Expected repository result:
 
-- c46 native FAIL remains preserved unchanged;
-- raw/c44 comparisons remain unchanged and auditable;
-- a c47 predicate exists only if documentation + native ordering + static ownership support it;
-- the predicate accepts only the exact narrow measured configuration/status lifecycle and fails closed otherwise;
-- all c39-c46 regressions retain their semantics;
-- no production integration or exact-slot work is enabled;
-- a c47 standalone artifact is produced only after owned validation passes.
+- c47 native PASS is preserved as bounded owner-fixture evidence;
+- all production exception-return paths are inventoried or the first exact coverage blocker is identified;
+- a bounded no-drop ticket/lifetime/admission design exists or the review fails closed;
+- c39/c40 counterexamples remain intact;
+- no production behavior or exact-slot watch is changed;
+- no game release is produced.
 
-If the evidence is not sufficient to justify the predicate, stop fail closed and document the precise missing guarantee instead of forcing a PASS.
-
-If any required test is not run, report the exact reason. Do not report unexecuted native-Windows/game tests as PASS.
+If any required test is not run, state the exact reason. Do not report unexecuted native-Windows/game tests as PASS.
 
 ## Required outputs / handoff
 
 Update as appropriate:
 
-- test-only c47 retirement-configuration comparator/predicate;
-- focused tests;
-- `analysis/` with c46 accepted native result and c47 evidence boundary;
-- `analysis/native-probes/c47` artifact/README/manifest only after validation;
-- `docs/PROJECT_STATE.md` so c46 native pre-access result is historical and c47 is current;
+- `analysis/V01C48_PRODUCTION_WITNESS_REVIEW.md`;
+- `analysis/V01C48_GATE.md`;
+- `analysis/V01C48_STATUS.json`;
+- test-only production-shape accounting helpers/tests if justified;
+- `docs/PROJECT_STATE.md` so c47 native PASS is historical/accepted and c48 is current;
 - `docs/CODEX_RESULT.md`;
-- relevant Wisdoms facts only if a reusable architecture/Windows rule is actually established.
+- relevant Wisdoms documentation only for truly reusable general debugging/safety rules.
+
+Do **not** create `analysis/native-probes/c48` unless the review discovers a specific OS-level native question that cannot be answered from c41-c47 evidence and owned repository tests. If such a probe is necessary, explain the exact missing guarantee first and keep it game-free.
 
 Commit and push the intended branch before claiming completion.
 
@@ -389,19 +300,14 @@ The final report must follow `docs/CODEX_REPORTING.md` and include:
 - exact commands;
 - expected result;
 - actual result;
-- PASS/SKIP/UNAVAILABLE separately;
+- PASS / SKIP / UNAVAILABLE separately;
 - all unperformed tests and reasons;
 - branch and commit SHA;
+- exact c48 review result;
 - whether owner action is required.
 
 ## Owner action
 
-No Update-WS, game launch, A/E comparison, WallRun capture, offline slot scan or game log is required for c47 repository work.
+No Update-WS, game launch, A/E comparison, WallRun capture, offline slot scan or game log is required for the c48 review by default.
 
-If a tested c47 standalone artifact is committed and pushed, request at most one game-free native-Windows standalone run:
-
-```powershell
-.\continuation-witness.exe --position --multiple --json
-```
-
-Return only its compact output/JSON. A native `OWNED_WITNESS_CONFIGURATION_PASS` would still be test-only and would lead to a separate production-integration review task, not directly to exact-slot watch work.
+If c48 reaches `PRODUCTION_WITNESS_INTEGRATION_REVIEW_PASS`, stop there and return the report. A later explicit task will decide whether to implement production integration. Do not proceed directly to exact-slot work.
