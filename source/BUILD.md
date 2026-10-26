@@ -208,9 +208,9 @@ $gameRoot = "C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2"
 $wsRoot = Join-Path $gameRoot "Mods Library\Mods-Developing\MSM2-WS"
 $toolWin = Join-Path $wsRoot "_source\source\tools\slot_publication.py"
 $outWin = Join-Path $wsRoot "logs\MSM2-WS-v0.1c37-slot-publication.json"
-$toolWsl = wsl -d Ubuntu-24.04 -- wslpath -a -u $toolWin
-$exeWsl = wsl -d Ubuntu-24.04 -- wslpath -a -u (Join-Path $gameRoot "Spider-Man2.exe")
-$outWsl = wsl -d Ubuntu-24.04 -- wslpath -a -u $outWin
+$toolWsl = wsl -d Ubuntu-24.04 --exec wslpath -a -u $toolWin
+$exeWsl = wsl -d Ubuntu-24.04 --exec wslpath -a -u (Join-Path $gameRoot "Spider-Man2.exe")
+$outWsl = wsl -d Ubuntu-24.04 --exec wslpath -a -u $outWin
 wsl -d Ubuntu-24.04 --exec /workspace/toolchains/analysis-python/bin/python $toolWsl $exeWsl --output $outWsl
 ```
 
