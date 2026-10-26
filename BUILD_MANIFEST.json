@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c35",
-  "package_version": "0.1.53",
-  "artifact": "MSM2-WS-v0.1c35.script.disabled",
-  "sha256": "71cc39a1dcc72910cb0ad7bdf840417125572d38d60b139535c74b9f1fdc318d",
-  "dll_sha256": "586cd285828202dff5c435ba3c35479d97928acffb89afe4ce67b94bb9a34dfc",
+  "version": "v0.1c36",
+  "package_version": "0.1.54",
+  "artifact": "MSM2-WS-v0.1c36.script.disabled",
+  "sha256": "07053644c2ee9c98640d7cbb81737b8c4c933b87fa5290c9671e76d09339e56e",
+  "dll_sha256": "fe27418407d390982d95b9ea1fdbfe5a516eed5dfeb387c6533c9366d2b50bca",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -656,7 +656,7 @@
   },
   "isolated_logging": {
     "directory": "game-root/Mods Library/Mods-Developing/MSM2-WS/logs",
-    "filename": "MSM2-WS-v0.1c35-YYYYMMDD-HHMMSS.log",
+    "filename": "MSM2-WS-v0.1c36-YYYYMMDD-HHMMSS.log",
     "filename_clock": "host_local_GetLocalTime",
     "line_clock": "UTC_unchanged",
     "collision_creation": "CREATE_NEW_atomic",
@@ -732,8 +732,8 @@
     "source": "_source_independent_clone",
     "archive": "_archive_disabled_only",
     "runtime_logs": "logs",
-    "active_script": "MSM2-WS-v0.1c35.script",
-    "artifact": "MSM2-WS-v0.1c35.script.disabled",
+    "active_script": "MSM2-WS-v0.1c36.script",
+    "artifact": "MSM2-WS-v0.1c36.script.disabled",
     "update_helper": "Update-WS.cmd",
     "migration_helper": "Migrate-WS.cmd",
     "overstrike": "game-root/Overstrike/Overstrike.exe",
@@ -827,7 +827,7 @@
     "branches_memory_stack_nested_CALL": "one_pinned_JA_qword_YMM0_reg_signextend_SHL_pinned_second_vector_all_other_memory_stack_calls_refuse",
     "snapshot": "guarded_double_read_equality_SHA256_admitted_prefix",
     "current_metadata_recheck": true,
-    "actual_result": "c34_exact_SHL_r8_6_accepted_next_second_VMOVUPS_0x2cf7ffb",
+    "actual_result": "c35_exact_VEX3_store_R8_RAX_YMM0_uncontained_0x2cf7ffb",
     "effect_certificate": false,
     "existing_c19_c20_refusal_preserved": true,
     "Position_source_input_movement_writes": 0
@@ -1030,7 +1030,7 @@
     "actual_form_next_barrier": "accepted_SHL_r8_6_next_VMOVUPS_0x2cf7ffb",
     "Position_source_input_movement_writes": 0
   },
-  "v01c35_gate": "SECOND_VMOVUPS_INDEPENDENTLY_CLASSIFIED_CONDITIONAL_PINNED_HERO_VEX2_LOAD_ACTUAL_PENDING",
+  "v01c35_gate": "ACTUAL_SECOND_VMOVUPS_VEX3_STORE_UNRESOLVED_DESTINATION_ACCEPTED",
   "second_vector_contract": {
     "site": "0x2cf7ffb",
     "independent_of_first_site": true,
@@ -1047,7 +1047,34 @@
     "generic_AVX": false,
     "new_hooks": 0,
     "effect_certificate": false,
-    "actual_form_next_barrier": "UNKNOWN",
+    "actual_form_next_barrier": "accepted_VEX3_256_store_R8_RAX_YMM0_containment_unproven",
+    "Position_source_input_movement_writes": 0
+  },
+  "v01c36_gate": "EXACT_STORE_ESCAPE_PROPAGATED_CONTROL_ALIAS_UNEXCLUDED_NO_CFG_CONTINUATION",
+  "store_effect_contract": {
+    "site": "0x2cf7ffb",
+    "identity": "exact6byte_VEX3_256_m32_R8_plus_RAX_from_YMM0",
+    "memory_write_width": 32,
+    "memory_address_tags": 7,
+    "value_low_high_may_tags": [
+      7,
+      7
+    ],
+    "alias_may_mask": 127,
+    "critical_alias_may_mask": 1023,
+    "memory_escape": true,
+    "pending_unknown_write": true,
+    "destination_contained": false,
+    "CFG_continuation": false,
+    "later_memory_facts_usable": false,
+    "memory_bytes_available": false,
+    "parent_propagation": "escape_firstEscape_before_identity_refusal",
+    "merge": "union_write_escape_tags_aliases_empty_state_cannot_erase",
+    "MOD_writes": 0,
+    "numeric_value_observation": false,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "next_evidence": "new_nonvalue_source_range_lifetime_control_critical_disjointness_proof_not_repeated_tags",
     "Position_source_input_movement_writes": 0
   },
   "runtime_table_validation": {
