@@ -1,5 +1,10 @@
 # c41 standalone owned Windows probe
 
+Historical artifact: the owner's native run of this version refused[0,0,256]
+before executing the witness. Its binary/manifest remain unchanged. The refreshed
+per-bit classifier probe is in ../c42; see V01C41_NATIVE_WINDOWS_RESULT.md and
+V01C42_MITIGATION_BOUNDARY.md for the evidence distinction.
+
 This executable tests only its own process, worker, generated code and allocated
 memory. It does not start Spider-Man2/Overstrike, inspect another process, install
 a MOD, update a workspace, access the network or enable the deferred slot watch.

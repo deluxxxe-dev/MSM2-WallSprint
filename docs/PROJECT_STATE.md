@@ -1,12 +1,34 @@
 # WallSprint project state
 
-## c41 current stage — owned continuation witness feasibility
+## c42 current stage — native mitigation boundary refinement
 
-Current task: `docs/CODEX_NEXT.md` c41, base4b39a82. C40 completed its review
+C41 remains a partial success: owned Wine witness feasibility passed, but the
+owner native run at ded0ce0 returned REFUSED before the witness because raw known
+policies were[0,0,0x100]. Accepted input: V01C41_NATIVE_WINDOWS_RESULT.md. This is
+not native witness PASS or FAIL. C42 changes only test/probe eligibility/reporting.
+
+C42 classifies every queried DWORD bit using canonical documentation/checked SDK.
+CetDynamicApisOutOfProcOnly0x100 restricts2 APIs absent from the exact candidate;
+the known observed tuple is admitted in pure synthetic classifier tests. Relevant,
+unknown/reserved bits and unknown queries still refuse; no setting is modified.
+JSON schema2 reports real raw queries plus per-policy/enabled-bit decisions.
+
+See analysis/V01C42_MITIGATION_BOUNDARY.md, V01C42_GATE.md, V01C42_STATUS.json.
+The refreshed owned standalone probe is under analysis/native-probes/c42 after
+required tests pass; the original c41 binary/manifest/native evidence are retained.
+One additional native Windows standalone run is needed after publication, with no
+game, Overstrike, Update-WS, slot scan or log. Classifier eligibility is not a
+native witness certificate. Production integration stays unauthorized; runtime
+v0.1c38/package0.1.56 and all proof/gameplay-write gates remain unchanged.
+
+## c41 historical stage — partial success and native refusal
+
+C41 task base4b39a82; current task is c42. C40 completed its review
 with the fail-closed outcome; production retirement remains unproven. C41 adds
 only an owned test prototype, not production integration or a slot watch.
 Current c41 handoff classification: **PARTIAL SUCCESS** — owned Wine feasibility
-is established; native-Windows evidence is pending. No game/Update-WS request.
+is established; native policy queries returned[0,0,256] and the witness did not
+execute due the old coarse boundary. Native witness verification remains pending.
 
 The15byte MOV [RIP+dedicated marker],imm32 / JMP rel32 original-RIP stub provides
 an actual post-return token in the bounded owned Wine fixture. Separate immutable
@@ -19,8 +41,8 @@ process-wide accounting, a full-XSTATE runtime proof or a native-Windows/CET fix
 Details: `analysis/V01C41_CONTINUATION_WITNESS.md`, `V01C41_GATE.md`,
 `V01C41_WITNESS_STATUS.json`. The minimal remaining native question uses only
 `analysis/native-probes/c41/continuation-witness.exe --position --multiple --json`.
-No game launch/update/slot scan/log is needed. Enabled/unknown native mitigation
-configurations refuse; no protections are changed. Native evidence and a later
+No game launch/update/slot scan/log is needed. This historical c41 artifact refused
+all nonzero native flags; c42 refines only the standalone test boundary. Native evidence and a later
 explicit integration task are required before c39-style slot work can resume.
 Runtime remains v0.1c38/package0.1.56; original c39/c40 production counterexamples
 remain intact. No production watch, source/Position/gameplay or shared-tool change.
@@ -354,22 +376,24 @@ The VMOVUPS store is existing game code, not a MOD write and not permission to w
 20. c38 register-affine exact-slot scan ✅ actual image, 1360 affine operands resolved, no local slot writer
 21. c39 exact-slot watch admission audit ✅ STOPPED FAIL-CLOSED; retirement prerequisite reproduced
 22. c40 saved-exception CONTEXT retirement review ✅ STOPPED FAIL-CLOSED; no production fix
-23. c41 owned post-return continuation feasibility ▶ CURRENT; bounded Wine witness, native probe pending
-24. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
-25. bounded publication/source chain ⏸ pending writer-site evidence
-26. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
-27. resume full writer XYZ/W causal proof ⏸ after store containment
-28. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-29. safe writable upstream movement source ⬜ NOT AUTHORIZED
-30. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-31. adhesion/contact refinement ⏸ deferred
-32. animation/camera/later traversal ⬜
+23. c41 owned post-return feasibility ✅ PARTIAL; owned Wine passed, native coarse-boundary REFUSED before witness
+24. c42 native mitigation boundary refinement ▶ CURRENT; classifier proven, refreshed native run pending
+25. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
+26. bounded publication/source chain ⏸ pending writer-site evidence
+27. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
+28. resume full writer XYZ/W causal proof ⏸ after store containment
+29. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+30. safe writable upstream movement source ⬜ NOT AUTHORIZED
+31. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+32. adhesion/contact refinement ⏸ deferred
+33. animation/camera/later traversal ⬜
 
 ## Current action
 
-Follow `docs/CODEX_NEXT.md` for c41. Preserve the owned witness/counterexample
-evidence and complete only the minimal native-Windows owned probe if requested.
-Do not integrate the prototype into production in c41. A later task must review
+Follow `docs/CODEX_NEXT.md` for c42. Preserve the accepted native refusal and
+classifier evidence; after verified publication only one refreshed standalone
+Windows run is requested. Do not integrate the prototype into production in c42.
+A later task must review
 all-thread registration/lease/lifecycle/mitigation and failure-policy integration.
 
 Do not add the exact-slot watch, PAGE_GUARD or broad memory interception merely

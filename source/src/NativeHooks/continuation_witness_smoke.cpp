@@ -15,8 +15,9 @@ static PVOID WINAPI c41_install(ULONG first,PVECTORED_EXCEPTION_HANDLER fn){asse
 #include <cstdarg>
 #include <string>
 #include <climits>
+#include "NativeHooks/continuation_mitigations.hpp"
 
-namespace c41 {const char* failureText();[[noreturn]] void failed(const char* expression,unsigned line){std::fprintf(stderr,"c41 owned assertion at line %u: %s\n",line,expression);std::printf("{\"schema\":1,\"task\":\"c41\",\"result\":\"FAIL\",\"reason\":\"owned_assertion_failed\",\"rejection\":\"%s\",\"line\":%u,\"game_used\":false}\n",failureText(),line);std::fflush(stdout);ExitProcess(3);}}
+namespace c41 {const char* failureText();const char* classifierReport();[[noreturn]] void failed(const char* expression,unsigned line){std::fprintf(stderr,"c41 owned assertion at line %u: %s\n",line,expression);std::printf("{\"schema\":2,\"task\":\"c42\",\"witness_task\":\"c41\",\"result\":\"FAIL\",\"reason\":\"owned_assertion_failed\",\"rejection\":\"%s\",\"line\":%u,\"mitigation_classifier\":%s,\"game_used\":false}\n",failureText(),line,classifierReport());std::fflush(stdout);ExitProcess(3);}}
 #undef assert
 #define assert(condition) do {if(!(condition))c41::failed(#condition,__LINE__);} while(false)
 
@@ -28,6 +29,9 @@ void ws_c41_machine(void*);
 extern unsigned char ws_c41_after_store[];
 }
 namespace c41 {
+namespace mitigation=ws::continuation_mitigations;
+std::string classifierJson=mitigation::json(mitigation::Inputs{});
+const char* classifierReport(){return classifierJson.c_str();}
 constexpr unsigned capacity=4;constexpr DWORD nestedCode=0xe0410041;
 constexpr std::uint64_t generation=101;constexpr unsigned lease=1;
 struct Ticket {
@@ -99,7 +103,11 @@ bool environment(){
  auto raw=GetProcAddress(GetModuleHandleW(L"kernel32.dll"),"GetProcessMitigationPolicy");static_assert(sizeof(query)==sizeof(raw));std::memcpy(&query,&raw,sizeof(query));
  PROCESS_MITIGATION_POLICY policies[]={ProcessDynamicCodePolicy,ProcessControlFlowGuardPolicy,ProcessUserShadowStackPolicy};
  static_assert(sizeof(PROCESS_MITIGATION_DYNAMIC_CODE_POLICY)==sizeof(DWORD)&&sizeof(PROCESS_MITIGATION_CONTROL_FLOW_GUARD_POLICY)==sizeof(DWORD)&&sizeof(PROCESS_MITIGATION_USER_SHADOW_STACK_POLICY)==sizeof(DWORD));
- for(unsigned i=0;i<3;++i){policyKnown[i]=query&&query(GetCurrentProcess(),policies[i],&policyFlags[i],sizeof(DWORD));if(policyKnown[i]&&policyFlags[i]){environmentFailure="mitigation_active_outside_supported_boundary";return false;}if(!wine&&!policyKnown[i]){environmentFailure="native_mitigation_query_unknown";return false;}}return true;
+ for(unsigned i=0;i<3;++i)policyKnown[i]=query&&query(GetCurrentProcess(),policies[i],&policyFlags[i],sizeof(DWORD));
+ mitigation::Inputs values{};for(unsigned i=0;i<3;++i)values[i]={policyKnown[i],std::uint32_t(policyFlags[i])};
+ classifierJson=mitigation::json(values);
+ if(!mitigation::admitted(values)){environmentFailure=(!policyKnown[0]||!policyKnown[1]||!policyKnown[2])?"mitigation_query_unknown":"mitigation_relevant_or_unknown_bit";return false;}
+ return true;
 }
 }
 namespace msm2::native_source {bool diagnosticIdentity(const msm2::reset_trace::Request&) noexcept{return false;}}
@@ -130,7 +138,7 @@ int main(int argc,char** argv){
  SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOGPFAULTERRORBOX|SEM_NOOPENFILEERRORBOX);
  for(int i=1;i<argc;++i){if(!std::strcmp(argv[i],"--position"))position=true;else if(!std::strcmp(argv[i],"--timeout"))timeout=true;else if(!std::strcmp(argv[i],"--kill"))killClose=true;else if(!std::strcmp(argv[i],"--nested"))nestedCount=1;else if(!std::strcmp(argv[i],"--multiple"))nestedCount=2;else if(!std::strcmp(argv[i],"--json"))jsonOnly=true;else if(!std::strcmp(argv[i],"--cap")){capCase=true;bound=1;nestedCount=1;}else assert(false&&"unknown probe argument");}
  assert(!(timeout&&killClose));
- if(!environment()){std::printf("{\"schema\":1,\"task\":\"c41\",\"result\":\"REFUSED\",\"reason\":\"%s\",\"mitigation_query_known\":[%s,%s,%s],\"mitigation_flags\":[%lu,%lu,%lu],\"game_used\":false}\n",environmentFailure,policyKnown[0]?"true":"false",policyKnown[1]?"true":"false",policyKnown[2]?"true":"false",policyFlags[0],policyFlags[1],policyFlags[2]);return 77;}
+ if(!environment()){std::printf("{\"schema\":2,\"task\":\"c42\",\"witness_task\":\"c41\",\"result\":\"REFUSED\",\"reason\":\"%s\",\"mitigation_query_known\":[%s,%s,%s],\"mitigation_flags\":[%lu,%lu,%lu],\"mitigation_classifier\":%s,\"game_used\":false}\n",environmentFailure,policyKnown[0]?"true":"false",policyKnown[1]?"true":"false",policyKnown[2]?"true":"false",policyFlags[0],policyFlags[1],policyFlags[2],classifierReport());return 77;}
  std::int32_t delta{};std::array<unsigned char,15> synthetic{};
  assert(relative(0x100000000,0x17fffffff,delta)&&delta==INT32_MAX);assert(relative(0x100000000,0x80000000,delta)&&delta==INT32_MIN);assert(!relative(0x100000000,0x180000000,delta));
  assert(!encode(UINTPTR_MAX-10,4096,8192,1,synthetic)&&!encode(4096,4101,8192,1,synthetic)&&!encode(4096,8192,UINTPTR_MAX,1,synthetic));
@@ -161,7 +169,7 @@ int main(int argc,char** argv){
  assert(windows[0].hits==1&&!freeStorage());InterlockedExchange(&ws_c41_finish,1);assert(WaitForSingleObject(worker,2000)==WAIT_OBJECT_0);msm2::trace::stop();assert(!activeLeases());assert(freeStorage());
  const auto scenario=capCase?"cap_refusal":nestedCount==2?"multiple":nestedCount?"nested":timeout?"timeout":killClose?"kill":"close";
  if(!jsonOnly)std::printf("PASS: c41 %s %s: exact GPR/RFLAGS/RSP/active-stack/YMM0-15/FXSAVE state; %s; no second watched hit; RX storage retained until thread exit\n",position?"Position":"reset",scenario,capCase?"unknown debt refuses final retirement, terminal-thread teardown only":"per-context post-return debt acknowledged then exact foreign DR2/owned DR restoration");
- std::printf("{\"schema\":1,\"task\":\"c41\",\"environment\":\"%s\",\"mode\":\"%s\",\"scenario\":\"%s\",\"result\":\"%s\",\"lease\":%u,\"generation\":%llu,\"contexts\":%u,\"retirement_accepted\":%s,\"new_gameplay_writes\":0,\"production_integrated\":false,\"native_unmitigated_probe_passed\":%s,\"mitigation_query_known\":[%s,%s,%s],\"mitigation_flags\":[%lu,%lu,%lu]}\n",wine?"Wine":"native_Windows",position?"Position":"reset",scenario,capCase?"FAIL_CLOSED_EXPECTED":"OWNED_WITNESS_PASS",lease,(unsigned long long)generation,published.load(),capCase?"false":"true",!wine&&!capCase?"true":"false",policyKnown[0]?"true":"false",policyKnown[1]?"true":"false",policyKnown[2]?"true":"false",policyFlags[0],policyFlags[1],policyFlags[2]);
+ std::printf("{\"schema\":2,\"task\":\"c42\",\"witness_task\":\"c41\",\"environment\":\"%s\",\"mode\":\"%s\",\"scenario\":\"%s\",\"result\":\"%s\",\"lease\":%u,\"generation\":%llu,\"contexts\":%u,\"retirement_accepted\":%s,\"game_used\":false,\"new_gameplay_writes\":0,\"production_integrated\":false,\"native_candidate_probe_passed\":%s,\"mitigation_query_known\":[%s,%s,%s],\"mitigation_flags\":[%lu,%lu,%lu],\"mitigation_classifier\":%s}\n",wine?"Wine":"native_Windows",position?"Position":"reset",scenario,capCase?"FAIL_CLOSED_EXPECTED":"OWNED_WITNESS_PASS",lease,(unsigned long long)generation,published.load(),capCase?"false":"true",!wine&&!capCase?"true":"false",policyKnown[0]?"true":"false",policyKnown[1]?"true":"false",policyKnown[2]?"true":"false",policyFlags[0],policyFlags[1],policyFlags[2],classifierReport());
  for(auto& t:tickets)for(auto h:{t.ready,t.prepared,t.held,t.release})CloseHandle(h);
  for(auto h:{worker,ready,go})CloseHandle(h);
  assert(VirtualFree(memory,0,MEM_RELEASE));

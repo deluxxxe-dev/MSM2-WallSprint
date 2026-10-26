@@ -1,3 +1,128 @@
+# Codex result — c42 per-bit native mitigation boundary
+
+Branch **codex/v01c20-edi-value-provenance**, task base **7ad4e55**.
+**Classifier implementation/owned validation succeeded; native witness recheck
+pending.** Runtime remains v0.1c38/package0.1.56. No production integration,
+mitigation setting change, slot watch or new game release.
+
+## Accepted input and result
+
+Owner c41 native run at ded0ce0 returned REFUSED with actual known flags[0,0,256]
+before executing the witness. Preserve that accepted result and old binary/
+manifest: this is neither a native witness PASS nor FAIL.
+
+Canonical documentation and checked SDK establish0x100 as
+CetDynamicApisOutOfProcOnly, restricting2 CET dynamic-registration APIs absent
+from this candidate. New pure classification admits the observed known tuple;
+unknown/reserved/relevant enabled bits and unknown queries still refuse. The
+unused thread-opt-out permission is also documented irrelevant; no opt-out is
+invoked. Other audit/XFG/remote-transition settings without sufficient evidence
+remain UNKNOWN_REFUSE. Detailed per-bit table, sources, exact dependency review
+and distinction between related settings and observed incompatibility are in
+`analysis/V01C42_MITIGATION_BOUNDARY.md`.
+
+Read current AGENTS/manual/rules/workspace/state/reporting/NEXT, c39-c41 evidence,
+actual probe/watch/helper/tests and Wisdoms references. Intended branch only;
+no main merge/reset/force push, task overwrite or historic artifact deletion.
+
+## Changes
+
+- `source/include/NativeHooks/continuation_mitigations.hpp`: pure policy/bit
+  decisions, masks and auditable per-policy/enabled-bit JSON. All19 named bit
+  masks checked against the Microsoft SDK; all96 positions covered by tests.
+- `source/src/NativeHooks/continuation_mitigations_tests.cpp`,
+  `source/tools/test_continuation_mitigations.sh`: isolated synthetic sanitizer/
+  classifier tests and strict JSON round-trip. No native API output is forged.
+- `continuation_witness_smoke.cpp`: collect all3 real query results, apply the
+  classifier, emit schema2/taskc42/witness_taskc41/raw/per-bit metadata on
+  success/refusal/failure. No actual runtime flag-injection option. All witness
+  ledger/context/state/DR/lifetime checks and the assembly harness stay intact.
+- Mandatory `test_hooks_windows.sh`, package metadata/evidence lists, current
+  PROJECT_STATE, this report, C42 analysis/gate/status and source mirrors. Accepted
+  c41 native result is also included in future source packages without editing it.
+- A new `analysis/native-probes/c42` artifact/manifest/README/licenses is refreshed
+  only after required validation. Historical c41 artifacts are retained.
+
+The predicate changes eligibility only. `SetThreadContext` is still used for
+owned DR setup/restoration; no explicit RtlRestoreContext import/call is added,
+but its documented OS SEH role is not dismissed. Neither restricted CET API,
+CFG registration, dynamic-code opt-out nor mitigation setter is used. No broad
+CET/CFG implementation or metadata certificate is invented.
+
+## Executed required validation (repository root, configured Bash)
+
+| Exact command | Expected result | Actual result |
+| --- | --- | --- |
+| `bash source/tools/test_continuation_witness.sh` | Preserve all12 owned close/deadline/kill/nested/multiple/cap cases and state/DR/lifetime semantics; emit genuine query metadata | exit0;12 PASS,0 SKIP/UNAVAILABLE;10 positive bounded witnesses +2 expected cap refusals |
+| `bash source/tools/test_watch_retirement.sh` | Original counterexamples/restoration semantics retained | exit0;14 PASS observation/recovery records,2 VCH UNAVAILABLE |
+| `bash source/tools/build_windows.sh` | Existing x64 Werror build succeeds | exit0 |
+| `bash source/tools/test.sh` | Portable/sanitizer regressions pass | exit0;13 PASS |
+| `bash source/tools/smoke_windows.sh` | DLL/logger regressions pass | exit0;7 PASS |
+| `bash source/tools/test_hooks_windows.sh` | Full native/watch/classifier/scanner/workspace regressions pass | exit0;306 PASS,5 optional private SKIP,2 VCH UNAVAILABLE |
+| `bash source/tools/test_continuation_mitigations.sh` | Zero/observed tuple, all single bits, mixed flags, failed queries, invalid inputs and synthetic JSON retain fail-closed behavior | exit0;10 PASS,0 SKIP/UNAVAILABLE |
+| `python3 source/tools/package.py` | Required source/evidence/manifest package integrity | exit0;1 separate package PASS;239 native/tool inputs match tested source |
+
+Full regression total **326 PASS** =13+7+306. Focused records overlap306 and
+are not added again. The5 SKIP and2 UNAVAILABLE are separate from PASS.
+First full required pipeline passed; no old deadline/cap/assertion was changed.
+Actual Wine results remain real[0,0,0], not the synthetic native tuple. All12
+actual JSON records parsed with matching raw/per-policy flags and native-pending
+scope. Focused synthetic JSON is explicitly labeled and never imported by the
+actual standalone execution path.
+
+After those tests and package exit0, copied the tested EXE to the new c42 folder
+and invoked its --position --multiple --json mode through the configured Wine
+runner. Expected one auditable scoped JSON line; actual exit0, one valid schema2
+record, actual flags[0,0,0], classifier admitted, native_candidate_probe_passed
+false. Source/input/binary hashes and system-only imports were checked. This is
+a shipped-artifact check, not new native evidence or an extra full-chain count.
+
+Logs: `/tmp/ws-c42-{classifier-final,witness-final,retirement,build,portable,
+smoke,hooks}.log`; no private raw game logs committed. Static source/import
+checks plus checked-SDK field-layout comparison were also performed. The binary
+does not import the restricted CET APIs; direct stub transfer does not justify
+admitting other related process-wide protection flags.
+
+## Unperformed tests and reasons
+
+- Refreshed native Windows witness under[0,0,0x100]: only Wine is available here.
+  One owner-side standalone run is required after the refreshed artifact is
+  committed/pushed. The supplied original native REFUSED remains the only actual
+  native observation; synthetic admission is not a new native witness result.
+- Actual enabling/disabling of CFG/ACG/CET/audit/opt-out policy combinations:
+  prohibited/outside scope. Their DWORD classification is tested synthetically;
+  settings are never modified to obtain a PASS.
+- Two original VCH held-return branches: callbacks are not dispatched in the
+  current Wine hardware path; UNAVAILABLE, not passing coverage.
+- Five optional private positives: original-byte replay, native AVX/CFG bodies,
+  game-body installer,584byte writer normalization and accepted Path-B capture
+  are absent/not redistributed. Independent owned proof/rejection tests ran.
+- Game/slot observation, producer traversal, live attached-debugger experiment,
+  arbitrary production integration and full-XSTATE runtime matrix: not authorized
+  or beyond the preserved c41 boundary; no unexecuted test is claimed PASS.
+
+## Handoff and owner action
+
+Classification is implementation success with native verification pending,
+not a production retirement fix. C37 range/c36 escape/CFG/publication/lifetime/
+ownership and gameplay-write gates, runtime version, SF/shared tools/updater,
+original task and the five historic untracked files remain unchanged.
+
+After verified push, the one additional command from
+`analysis/native-probes/c42` in native Windows PowerShell is:
+
+```powershell
+.\continuation-witness.exe --position --multiple --json
+```
+
+The result must be determined by actual execution: OWNED_WITNESS_PASS, REFUSED
+or FAIL with real raw flags and classifier interpretation. No Spider-Man2,
+Overstrike, Update-WS, WallRun, scan, settings change or game log is requested.
+Artifact hashes/source commit and final publication checks are preserved with
+the handoff before completion is reported.
+
+---
+
 # Codex result — c41 owned continuation witness: PARTIAL SUCCESS
 
 Branch **codex/v01c20-edi-value-provenance**, task base **4b39a82**.
