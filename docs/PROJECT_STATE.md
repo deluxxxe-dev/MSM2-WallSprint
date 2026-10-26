@@ -1,20 +1,19 @@
 # WallSprint project state
 
 ## Goal
-Convert vanilla WallRun into surface-relative locomotion. Do not advance movement rewrite, adhesion, or camera until runtime ownership gates authorize them.
+Convert vanilla WallRun into surface-relative locomotion. Do not advance movement rewrite, adhesion, camera, animation or physics until runtime ownership gates authorize them.
 
 ## Repository / branch policy
 - Canonical remote: `https://github.com/deluxxxe-dev/MSM2-WallSprint.git`
 - Current implementation line: `codex/v01c20-edi-value-provenance`
 - Historical organized baseline: `5192f05f32313919fdf4049bd734b971655d163f` (not a pin)
-- Continue from the latest intended branch history.
+- Continue from latest intended branch history.
 - Do **not** routinely merge `main`; it is heavily diverged.
 
-## Exact target / safety
+## Exact target
 - Spider-Man2.exe `2.810.0.0`
 - SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`
 - WallRun Init `0x14233C0`, Entry `0x14235C0`, Update `0x1424530`, Deinit `0x1416660`
-- Preserve exact-build fail-closed behavior, `AGENTS.md` / `docs/DEV_RULES.md`, independent implementation, and no raw private game logs/full proprietary bodies in public artifacts.
 
 ## Verified movement chain
 
@@ -36,10 +35,9 @@ Runtime source relation remains `RDX=entry RSP+0x28`; sampled `[RDX] XYZ` equals
 ```text
 0x2B2358E: mov dword ptr [RCX+0x10C], EDI
 RCX = writer-entry Hero Transform
-destination = Hero Transform+0x10C
 producer of EDI = 0x2B2356F memory load
 same-field read = 0x2B23578: mov EAX,[RCX+0x10C]
-0x2B235BE test r8b,r8b -> 0x2B235C1 je is tag-disjoint
+0x2B235BE test r8b,r8b -> 0x2B235C1 je tag-disjoint
 0x2B235D4 -> 0x2CF7FE0 carries selected read in raw GPR0 tag1
 ```
 
@@ -52,16 +50,10 @@ directory_rva=0xC566000
 directory_bytes=6325932
 entry_bytes=12
 derived_entries=527161
-metadata_bytes_read=6325932
 entries_validated=527161
 all_entries_read_and_validated=1
 table_structurally_valid=1
 runtime_lookup_queried=1
-```
-
-Exact target:
-
-```text
 target_rva=0x2CF7FE0
 runtime_lookup_found=0
 next_runtime_rva=0x2CF8020
@@ -69,14 +61,13 @@ missing_runtime_entry=1
 PE_runtime_table_valid=1
 ```
 
-The strict pinned no-unwind fallback is therefore legitimate for this exact image.
+The strict pinned no-unwind fallback is legitimate for this exact image.
 
-### c26-c27 prefix
+### c26-c27 control prefix
 
 ```text
 0x2CF7FE0: cmp r8d,0x3FFF
-flags-only
-R8/flag tags=0
+flags-only; R8/flag tags=0
 
 0x2CF7FE7: ja
 taken=0x2CF8013
@@ -91,12 +82,9 @@ Both outcomes remain mandatory.
 
 ```text
 0x2CF7FE9: mov rax,qword ptr [rcx+0x100]
-full64 RAX pure load
-source_rva=0xC2D2580
-address_component_tags=0
 ```
 
-C29 proved the source is writable `.data` / `PAGE_READWRITE`, so immutable/tag0 inference is refused. C30 admits only the exact load as an opaque may-top effect:
+Source is writable `.data` / `PAGE_READWRITE`; immutable/tag0 inference is refused. Exact load is modeled only as opaque may-top:
 
 ```text
 RAX tags <- 0x7
@@ -104,117 +92,111 @@ precise_value_tags_known=0
 observed_taint=0
 selected_dependence_killed=0
 source_value_reads=0
-raw_value_logged=0
 origin=unknown_loaded_qword_not_pointer
 ```
 
-### c31-c32 exact VMOVUPS and 256-bit dependency state
-
-Exact instruction:
+### c31-c32 first VMOVUPS
 
 ```text
-0x2CF7FF0: vmovups
-encoding=VEX2
-VL=256
-form=YMM0 <- 32 bytes [RDX]
-memory_read=1
-memory_write=0
-memory_RMW=0
+0x2CF7FF0: vmovups ymm0, ymmword ptr [rdx]
+VEX2.256
+memory pure load
 ```
 
-C31 established the actual 256-bit form and c32 added only the dependency state required for this pinned load:
+Pinned 256-bit dependency state:
 
 ```text
 YMM0.low128 tags  <- 0x7
 YMM0.high128 tags <- 0x7
 above256_known_zero=1
-represented_bits=256
-pinned_YMM0_rule_added=1
 generic_YMM_ZMM_rules=0
 source_value_reads=0
 ```
 
-C30 RAX `0x7` is preserved.
-
-## c33 accepted runtime result — exact MOVSXD modeled
-
-Evidence: `analysis/V01C33_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c33-20261025-152750(1).log`.
-
-Exact form:
+### c33 MOVSXD
 
 ```text
 0x2CF7FF4: movsxd r8,r8d
-instruction_bytes=3
-encoding=REX_W_opcode63
-source_bits=32
-destination_bits=64
-source_parent=R8
-destination_parent=R8
-full64_replacement=1
-memory_read=0
-memory_write=0
-memory_RMW=0
-flags_preserved=1
-SP_write=0
-vector_writes=0
+32->64 sign extension
+full64 replacement
+memory/flags/SP/vector effects=0
+incoming R8 tags=0
+outgoing R8 tags=0
 ```
 
-Dependency effect:
+### c34 accepted runtime result — SHL modeled
+
+Evidence: `analysis/V01C34_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c34-20261026-090013.log`.
+
+Test environment: remote environment with keyboard/mouse controls. Treat movement-shape observations as a separate input condition from prior controller/local captures. Instruction-level classification and safety gates below are not inferred from controller semantics.
+
+Exact instruction:
+
+```text
+0x2CF7FF7: shl r8, 6
+bytes=4
+encoding=group2_C0_C1_slash4_imm8
+destination_bits=64
+count_source=immediate
+encoded_count=6
+count_mask=0x3F
+effective_count=6
+```
+
+Dependency/data effect:
 
 ```text
 incoming R8 tags=0x0
-outgoing R8 tags=0x0
-sign_rule=source bit31 replicated to bits63:32
-no source numeric interpretation
-no value reads
-raw values=0
+count tags=0x0
+result R8 tags=0x0
+memory_read/write/RMW=0
+vector_writes=0
+SP_write=0
 semantic_modeled=1
-reason=target_MOVSXD_pinned_reg32_signextend_full64_modeled
+no_value_reads=1
 ```
 
-No stale destination-tag union is needed because this is a full 64-bit architectural replacement.
-
-The bounded walk advances to:
+Flag effect for count 6:
 
 ```text
-barrier_rva=0x2CF7FF7
-barrier_instruction=shl
-reason=target_cfg_instruction_effect_refused
-path=0
-edge_from_rva=0x2CF7FE7
-edge_target_rva=0x2CF7FE9
+CF defined from last shifted-out bit
+SF/ZF/PF defined from result
+AF undefined
+OF undefined for count>1
+defined_flag_may_tags=0x0
+pre_flags_tags=0x0
+post_flags_tags=0x7
+aggregate_undefined_top7=1
 ```
 
-Pre-barrier state:
+`post_flags_tags=0x7` is conservative undefined-state top, not observed taint.
+
+The bounded walk advances to a **new** site:
+
+```text
+barrier_rva=0x2CF7FFB
+barrier_instruction=vmovups
+reason=target_cfg_memory_operand_refused
+path=0
+unique_instructions=7
+visits=7
+return_paths=0
+```
+
+Pre-barrier abstract state:
 
 ```text
 RAX/GPR0 tags=0x7
 R8 tags=0x0
-other logged GPR tags=0
 YMM0.low128 tags=0x7
 YMM0.high128 tags=0x7
 above256_known_zero=1
-flags_may_depend_tags=0x0
+flags_may_depend_tags=0x7
 ```
 
-Current target state:
+Do **not** reuse the earlier `0x2CF7FF0` VMOVUPS rule by mnemonic alone. `0x2CF7FFB` requires independent exact encoding/operand/direction/memory classification.
 
-```text
-TARGET_IDENTITY admitted=0
-instructions=6
-LEAF_CFG complete=0
-return_paths=0
-unique_instructions=6
-visits=6
-final_code_rechecked=0
-effect_certificate=0
-first_unresolved_rva=0x2CF7FF7
-first_unresolved_instruction=shl
-```
-
-Do not infer SHL operand width, destination, count source/count masking, exact flags written/undefined, or tag effect from the mnemonic alone.
-
-## Current safety gate
+## Safety gate
 
 ```text
 writable_source_proven=0
@@ -225,24 +207,9 @@ downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
 
-C33 runtime safety remained closed across observed sessions: verified native Deinit, retention pass, hard kills 0, MOD Position writes 0, source-position writes 0, adhesion corrections 0.
+Completed c34 sessions in the remote/keyboard-mouse capture retained verified native Deinit, retention pass, hard kills 0, MOD Position writes 0, source-position writes 0, and adhesion corrections 0.
 
-Producer `0x351EB00` remains deferred. No movement, adhesion, camera, animation or physics advancement is authorized.
-
-## Local workspace / shared Overstrike
-
-Canonical workspace:
-
-```text
-<game>\Mods Library\Mods-Developing\MSM2-WS\
-├─ MSM2-WS-v<version>.script
-├─ Update-WS.cmd
-├─ logs\
-├─ _source\
-└─ _archive\
-```
-
-Shared ordinary mods + SF + WS, shared Overstrike, modded launch and versioned WS/SF runtime logs are accepted. The prior updater lock was game-root `Check for updates.exe` holding the root `WINMM.dll`; path-validated helper handling remains the accepted repair/launch method.
+Producer `0x351EB00` remains deferred. No movement-source write is authorized.
 
 ## Current stages
 
@@ -254,50 +221,30 @@ Shared ordinary mods + SF + WS, shared Overstrike, modded launch and versioned W
 6. exact writer callsite ✅
 7. true writer-entry capture ✅
 8. RDX stack-local XYZ correlation ✅
-9. c14-c19 writer/callee chain ✅
-10. c20 EDI provenance ✅ actual game
-11. c21 same-field read ✅ actual game
-12. c22 TEST/JE disjointness ✅ actual game
-13. c23 direct nested target/carrier ✅ actual game
-14. c24 old PE-table cap diagnosed ✅ actual game
-15. c25 full table validation + genuine no-entry ✅ actual game
-16. c26 exact CMP effect ✅ actual game
-17. c27 exact JA edges + bounded two-path fan-out ✅ actual game
-18. c28 exact MOV form/address provenance ✅ actual game
-19. c29 writable `.data` tag0 route refused ✅ actual game
-20. c30 exact qword unknown-top abstraction + continuation ✅ actual game
-21. c31 exact 256-bit VMOVUPS classification ✅ actual game
-22. c32 pinned 256-bit vector dependency state + VMOVUPS continuation ✅ actual game
-23. c33 exact MOVSXD register sign-extension + continuation ✅ actual game
-24. classify exact `0x2CF7FF7 SHL` operand/count/flag effect ▶ CURRENT
-25. resume full writer XYZ/W causal proof ⏸ after local effect classification
-26. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-27. safe writable upstream movement source ⬜ NOT AUTHORIZED
-28. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-29. adhesion/contact refinement ⏸ deferred
-30. animation/camera/later traversal ⬜
+9. c14-c23 writer/callee/provenance chain ✅
+10. c24-c25 runtime table/no-unwind basis ✅
+11. c26 CMP ✅
+12. c27 JA two-path fan-out ✅
+13. c28-c30 qword load + unknown-top continuation ✅
+14. c31-c32 first VMOVUPS + 256-bit state ✅
+15. c33 MOVSXD ✅
+16. c34 SHL data/flags + continuation ✅ actual game
+17. classify exact `0x2CF7FFB VMOVUPS` ▶ CURRENT
+18. resume full writer XYZ/W causal proof ⏸ after local effect classification
+19. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+20. safe writable upstream movement source ⬜ NOT AUTHORIZED
+21. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+22. adhesion/contact refinement ⏸ deferred
+23. animation/camera/later traversal ⬜
 
 ## Current action
 
 Follow `docs/CODEX_NEXT.md`.
 
-The next bounded question is the exact architectural form/effect of `0x2CF7FF7: shl`.
+C35 must classify `0x2CF7FFB: vmovups` independently: exact encoding/vector width, source/destination operands, load/store direction, memory width/access, address/provenance/aliases, vector parent/write width, mask/broadcast/rounding/upper-lane semantics, incoming tags and current-code stability.
 
-Classify exact encoding, destination operand/width, count source and x86 count-masking behavior, memory involvement, GPR write width, and all defined/undefined flag effects. Only add a pinned semantic rule if the existing dependency model can conservatively represent both the data result and relevant flags without numerical guessing.
+Only if the exact form is soundly representable by the existing c32 low/high128/above256 model may a pinned rule be added and the walk continue. Store/RMW, unsupported partial/masked/wider effects, unresolved memory, stack/call/extra branch/runtime crossing/snapshot mismatch remain fail-closed.
 
-Preserve c30 RAX `0x7`, c32 YMM0 low/high `0x7`, `above256_known_zero=1`, c33 R8 state, both c27 JA paths, runtime/cap/RET constraints, and all ownership/write gates.
+Preserve RAX `0x7`, R8 `0`, YMM0 low/high `0x7`, above256 zero knowledge, flags `0x7`, both c27 JA paths and all ownership/write gates.
 
 Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
-
-## c34 prepared — exact SHL count/data/flag classification
-
-v0.1c34/package0.1.52 adds pinned SHL0x2CF7FF7 diagnostics and conditional
-canonical register32/64 constant-count semantics. Mask63/31 is width-derived;
-count0 keeps operand/flags (register32 parent still zero-extends), nonzero
-counts retain destination dependence and undefined AF/OF yield aggregate7.
-CL/partial/SP/memory RMW refuse, no live numerical count/value observations.
-C30 RAX7/c32 low-high7/abovezero/c33 remain unless a legitimate destination
-write replaces that register. Both JA legs/RET/current-code/runtime/caps and
-all ownership/write gates remain. Actual SHL form/next barrier UNKNOWN, minimum
-SHL/FLAGS/OPERAND/ADDRESS plus next-barrier/CFG/state/safety A/E capture pending.
-NEXT unchanged. See analysis/V01C34_SHL_FLAGS.md and CODEX_RESULT.md.
