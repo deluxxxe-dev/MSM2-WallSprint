@@ -1,6 +1,7 @@
 # Codex result — c39 exact-slot admission audit: stopped fail-closed
 
 Branch **codex/v01c20-edi-value-provenance**, task base **750367f**.
+Implementation **8065b057587cc62e49b07be9df9c81767563f491**; source evidence mirrors **6b31f25**.
 Runtime remains **v0.1c38 / package0.1.56**. **No c39 slot watch or game release.**
 This implements the task's explicit stop-if-unsafe fallback, not its positive
 access-capture acceptance matrix. Detailed evidence:
@@ -65,8 +66,16 @@ Position's stronger full DR6 snapshot from legacy reset; diagnostic reserved-bit
 normalization explained it and the fixture now tests the two unchanged policies.
 See the detailed audit for the exact initial failure/correction.
 
-Source reproduction/package/publication checks are recorded below before final
-handoff. Existing v0.1c38 ZIP/script artifacts are not rewritten or relabeled.
+Independent `git clone --no-local` reproduced the Werror build and both new
+owned hardware tests (4 additional PASS records, not added to294). The first
+package attempt found missing source/analysis mirrors for the newly required
+evidence. Added the mirrors, synchronized the owner-accepted c38 scan status
+(previous source copy was stale), and reran the package verifier successfully.
+Subsequent packages explicitly include the c39 refusal gate and no-test owner
+action; historical c38 metadata does not authorize a new scan. Final source
+inputs and packaged evidence are checked against Git; all compiled native inputs
+remain identical to the independently built/tested commit. Existing v0.1c38
+ZIP/script artifacts are not rewritten or relabeled.
 No v0.1c39 ZIP/script/runtime log is produced; reproducible c39 audit/test sources
 are handed off in Git. This task does not claim that the legacy engine was fixed.
 

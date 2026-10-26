@@ -24,7 +24,10 @@
   "new_gameplay_writes": 0,
   "retirement_counterexample": {
     "scope": "owned_native_threads_and_memory_under_Wine_no_game",
-    "modes": ["reset", "Position"],
+    "modes": [
+      "reset",
+      "Position"
+    ],
     "actual_hardware_DR_and_VEH": true,
     "test_only_wrapper_pauses_after_unmodified_engine_handler_returns": true,
     "context_or_lease_state_forged": false,
@@ -48,7 +51,13 @@
     "new_retirement_PASS_records_in_hooks": 4,
     "original_deadlines_caps_and_assertions_changed": false
   },
-  "c37_offset_range": {"min": 0, "max_inclusive": 1048512, "stride": 64, "width": 32, "end_exclusive": 1048544},
+  "c37_offset_range": {
+    "min": 0,
+    "max_inclusive": 1048512,
+    "stride": 64,
+    "width": 32,
+    "end_exclusive": 1048544
+  },
   "memory_escape": true,
   "pending_unknown_write": true,
   "destination_contained": false,
@@ -61,5 +70,15 @@
   "lifetime_proven": false,
   "deferred_producer_traversed": false,
   "next_owner_game_or_offline_test": "none_for_test_only_admission_audit",
-  "next_development_prerequisite": "bounded_saved_exception_context_retirement_before_value_free_slot_mode"
+  "next_development_prerequisite": "bounded_saved_exception_context_retirement_before_value_free_slot_mode",
+  "implementation_commit": "8065b057587cc62e49b07be9df9c81767563f491",
+  "standalone_source": {
+    "method": "independent_no_local_Git_clone",
+    "tested_native_commit": "8065b057587cc62e49b07be9df9c81767563f491",
+    "fresh_Werror_build": "PASS_exit0",
+    "retirement_PASS_records": 4,
+    "package_verifier": "PASS_exit0_after_analysis_mirror_fix",
+    "native_input_changes_since_build": false,
+    "source_analysis_mirrors_current": true
+  }
 }
