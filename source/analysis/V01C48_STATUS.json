@@ -1,0 +1,268 @@
+{
+  "task": "c48_production_continuation_witness_integration_review",
+  "date_JST": "2026-10-27",
+  "base_commit": "95a32e4067d6b3a0b0cbf9c9074096ccc007346c",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "review_result": "PRODUCTION_WITNESS_INTEGRATION_REVIEW_FAIL",
+  "classification": "REVIEW_COMPLETE_FAIL_CLOSED_REGRESSION_AND_COUNTEREXAMPLE_VALIDATED",
+  "accepted_native_c47_result": "OWNED_WITNESS_CONFIGURATION_PASS_fixture_only_RAW_c44_false_preserved",
+  "accepted_native_evidence_sha256": "960ea34e5d487bf192cb85ce309e4476de29cd6aed926eb0ea5bd04dfc5e51e9",
+  "first_blocker": {
+    "source": "source/src/msm2/orientation_trace.cpp:211",
+    "condition": "owned_B0_claim_with_foreign_B2_residual_returns_CONTINUE_SEARCH_with_armed_modified_saved_CONTEXT",
+    "missing_guarantee": "no_drop_registration_of_every_saved_CONTEXT_capable_of_reapplying_owned_configuration_including_SEARCH_chain_returns",
+    "existing_c47_wrapper_scope": "only_engine_CONTINUE_EXECUTION_is_ticketed_SEARCH_explicitly_poisons_and_refuses_fixture_no_false_acceptance"
+  },
+  "inventory_scope": "all_textual_return_and_branch_shapes_of_current_production_VEH_mapped_not_every_OS_or_third_party_dispatch_path_proven",
+  "additional_blockers": [
+    "no_proven_atomic_complete_registration_before_concurrent_cleanup",
+    "single_lease_fixture_identity_not_mixed_obligation_set_or_thread_epoch",
+    "no_proven_bounded_unlimited_nested_or_repeated_context_admission",
+    "marker_ack_does_not_prove_RIP_left_stub_no_safe_live_thread_slot_reuse",
+    "arbitrary_RIP_rel32_reachability_and_prepared_RX_stub_pool_unproven",
+    "real_game_process_mitigation_and_full_XSTATE_contract_unknown",
+    "worker_module_ref_release_not_process_lifetime_PIN_or_pending_VEH_join"
+  ],
+  "new_owned_test": "bash source/tools/test_production_witness_review.sh",
+  "new_test_scope": "unmodified_production_handler_real_Wine_owned_memory_hardware_B0_B2_and_following_foreign_owner_VEH",
+  "mixed_SEARCH_resurrection_cases": 6,
+  "foreign_only_nonresurrection_controls": 2,
+  "observer_or_downstream_CONTEXT_writes": 0,
+  "no_drop_production_contract_established": false,
+  "positive_general_accounting_model_added": false,
+  "new_native_probe_created": false,
+  "owner_action": "none_no_Update_WS_game_standalone_or_logs_needed",
+  "production_restore_ownership_handler_lease_cleanup_changed": false,
+  "historical_c39_through_c47_unchanged": true,
+  "c47_predicate_generalized": false,
+  "exact_slot_watch_enabled": false,
+  "new_gameplay_writes": 0,
+  "new_game_release": false,
+  "runtime_version": "v0.1c38",
+  "package_version": "0.1.56",
+  "formal_document_provenance": [
+    {
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/errhandlingapi/nf-errhandlingapi-addvectoredexceptionhandler.md",
+      "name": "addvectoredexceptionhandler",
+      "sha256": "cab01c8d76d25d7476966d23a3b427961e9fdb184fa7179fd52a39854f288a96",
+      "bytes": 3476,
+      "status": 200
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/errhandlingapi/nf-errhandlingapi-removevectoredexceptionhandler.md",
+      "name": "removevectoredexceptionhandler",
+      "sha256": "5a86c52240b901fadd27ac4d160b0627d1b6e63ff643760a7396aac78490c151",
+      "bytes": 2612,
+      "status": 200
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/libloaderapi/nf-libloaderapi-freelibraryandexitthread.md",
+      "name": "freelibraryandexitthread",
+      "sha256": "0bee96a3c6e3526f91d240023e4018f4bb4828e7835a3772e9c28e70dbf8a1e7",
+      "bytes": 4057,
+      "status": 200
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/libloaderapi/nf-libloaderapi-getmodulehandleexw.md",
+      "name": "getmodulehandleexw",
+      "sha256": "a8653668ccbed3498f0fa8f40f82533d121561e2393649233eeb5a5589c1507f",
+      "bytes": 8984,
+      "status": 200
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/processthreadsapi/nf-processthreadsapi-getprocessmitigationpolicy.md",
+      "name": "getprocessmitigationpolicy",
+      "sha256": "8f27751fca5bfff4d2f547333b0cf5e3324deb3d16e905f916fcaa4cc3977586",
+      "bytes": 12760,
+      "status": 200
+    }
+  ],
+  "audited_source_sha256": {
+    "source/src/msm2/orientation_trace.cpp": "8a44206e52ea8fcc06d4fd85d335d3e43d264133fe992612691f531f1c58ef1e",
+    "source/src/msm2/telemetry.cpp": "aa4a24fea9ed64d073591ecbb97196e1f04150e062e5bfb2f5a87b8321f70045",
+    "source/src/msm2/guard.c": "0656693b8b4ac9176ad00c6ad27d4ac8f89b3d4700575232a7dac9827eae4ed1",
+    "source/src/NativeHooks/continuation_witness_smoke.cpp": "604357229d1e339104aae92bdc855ced8cee456e4ab68849adb0799d94946f6f",
+    "source/src/NativeHooks/continuation_witness_harness.S": "ea91ae9206a252786b2143cab9d57414750746b67a43e189f971b734ef9532ef"
+  },
+  "validation": {
+    "required_commands": [
+      {
+        "command": "bash source/tools/test_continuation_mitigations.sh",
+        "exit": 0,
+        "PASS": 10,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.59,
+        "log": "/tmp/ws-c48-test_continuation_mitigations.log"
+      },
+      {
+        "command": "bash source/tools/test_continuation_diagnostics.sh",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.72,
+        "log": "/tmp/ws-c48-test_continuation_diagnostics.log"
+      },
+      {
+        "command": "bash source/tools/test_debug_register_comparison.sh",
+        "exit": 0,
+        "PASS": 9,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.66,
+        "log": "/tmp/ws-c48-test_debug_register_comparison.log"
+      },
+      {
+        "command": "bash source/tools/test_dr6_lifecycle.sh",
+        "exit": 0,
+        "PASS": 11,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.75,
+        "log": "/tmp/ws-c48-test_dr6_lifecycle.log"
+      },
+      {
+        "command": "bash source/tools/test_pre_access_lifecycle.sh",
+        "exit": 0,
+        "PASS": 12,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.83,
+        "log": "/tmp/ws-c48-test_pre_access_lifecycle.log"
+      },
+      {
+        "command": "bash source/tools/test_retirement_configuration.sh",
+        "exit": 0,
+        "PASS": 13,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 1.04,
+        "log": "/tmp/ws-c48-test_retirement_configuration.log"
+      },
+      {
+        "command": "bash source/tools/test_continuation_witness.sh",
+        "exit": 0,
+        "PASS": 13,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 11.84,
+        "log": "/tmp/ws-c48-test_continuation_witness.log"
+      },
+      {
+        "command": "bash source/tools/test_watch_retirement.sh",
+        "exit": 0,
+        "PASS": 14,
+        "SKIP": 0,
+        "UNAVAILABLE": 2,
+        "seconds": 5.29,
+        "log": "/tmp/ws-c48-test_watch_retirement.log"
+      },
+      {
+        "command": "bash source/tools/test_production_witness_review.sh",
+        "exit": 0,
+        "PASS": 9,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 5.54,
+        "log": "/tmp/ws-c48-test_production_witness_review.log"
+      },
+      {
+        "command": "bash source/tools/build_windows.sh",
+        "exit": 0,
+        "PASS": 0,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 41.0,
+        "log": "/tmp/ws-c48-build_windows.log"
+      },
+      {
+        "command": "bash source/tools/test.sh",
+        "exit": 0,
+        "PASS": 13,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 8.27,
+        "log": "/tmp/ws-c48-test.log"
+      },
+      {
+        "command": "bash source/tools/smoke_windows.sh",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 14.37,
+        "log": "/tmp/ws-c48-smoke_windows.log"
+      },
+      {
+        "command": "bash source/tools/test_hooks_windows.sh",
+        "exit": 0,
+        "PASS": 368,
+        "SKIP": 5,
+        "UNAVAILABLE": 2,
+        "seconds": 159.56,
+        "log": "/tmp/ws-c48-test_hooks_windows.log"
+      },
+      {
+        "command": "python3 source/tools/package.py",
+        "exit": 0,
+        "PASS": 1,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "seconds": 0.78,
+        "log": "/tmp/ws-c48-package.log"
+      }
+    ],
+    "full_chain_nonduplicate_counts": {
+      "PASS": 388,
+      "SKIP": 5,
+      "UNAVAILABLE": 2
+    },
+    "package_PASS_separate": 1,
+    "focused_counts_overlap_hooks": true,
+    "new_test_final_result": {
+      "PASS": 9,
+      "mixed_SEARCH_resurrection": 6,
+      "foreign_only_nonresurrection_controls": 2,
+      "JSON_validation": 1,
+      "production_fix_or_positive_accounting_proof": false
+    },
+    "initial_new_compile": "writer_function_name_collided_with_msm2_writer_namespace_renamed_only_new_test_function_same_Werror_flags",
+    "initial_exploration": "foreign_only_resurrection_assert_failed_exit3_actual_own0_diagnostic_repeat_confirmed_own0_no_CONTEXT_patch_final_test_keeps_strict_negative_control_and_adds_real_modified_mixed_SEARCH_reproduction",
+    "required_final_chain_failures_or_interruptions": false,
+    "all_production_and_historical_tests_unchanged": true,
+    "additional_integrity_checks": "2_PASS_protected_paths_mirrors_audit_source_hashes_257_input_package_equality_no_c48_probe",
+    "SKIP_reason": "five_optional_private_game_capture_positive_replays_absent_not_distributed",
+    "UNAVAILABLE_reason": "two_original_Wine_VCH_return_hold_dispatch_cases",
+    "new_formal_document_delivery_UNAVAILABLE": 0
+  },
+  "implementation_commit": "PENDING_COMMIT",
+  "code_tool_input_count": 257,
+  "code_tool_input_digest_sha256": "b207f69038cef733d599b8115161eada7e6ce8a925a019d8c5cc1fa1d5a5d0ee",
+  "unperformed": [
+    {
+      "test": "complete_positive_production_shape_accounting_matrix",
+      "reason": "no_complete_registration_credit_or_lifetime_contract_established_review_FAIL_no_unrelated_abstract_green_model"
+    },
+    {
+      "test": "new_c48_native_standalone_or_game_process_queries",
+      "reason": "not_needed_for_precise_source_plus_owned_counterexample_blocker_no_OS_probe_added_no_game_environment_requested"
+    },
+    {
+      "test": "native_Windows_new_mixed_SEARCH_cases",
+      "reason": "executed_only_in_owned_Wine_scope_native_production_frequency_or_behavior_not_claimed"
+    },
+    {
+      "test": "actual_module_unload_with_pending_continuations_or_forced_thread_exit",
+      "reason": "audit_only_no_safe_lifetime_contract_no_game_thread_termination_or_unload_experiment"
+    },
+    {
+      "test": "two_VCH_return_hold_dispatch_branches",
+      "reason": "callback_not_invoked_on_owned_Wine_environment_UNAVAILABLE"
+    },
+    {
+      "test": "production_integration_exact_slot_gameplay_producer",
+      "reason": "explicitly_forbidden_and_review_FAIL"
+    }
+  ]
+}

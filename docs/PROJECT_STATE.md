@@ -1,46 +1,57 @@
 # WallSprint project state
 
-## c47 current stage — separate exact-owner configuration predicate
+## c48 current stage — production integration review FAIL, no integration
 
-Accepted owner c46 native result: V01C46_NATIVE_WINDOWS_RESULT.md. GenuineIntel,
-Position/multiple, actual admitted[0,0,256], complete zero-DB/access/ticket/debt
-pre-access gate, one watch write and stable final readbacks. Dr6[11,16] first
-changes0/0 ->1/1 after watch Resume BEFORE target access or DB, classified
-WATCH_ENABLED_RESUME_PRE_ACCESS. This supersedes the coarser c45 DB-entry
-observation boundary. Native c46 RAW_EXACT/c44 canonical FAIL remains unchanged.
+**PRODUCTION_WITNESS_INTEGRATION_REVIEW_FAIL**. C47 owner native
+OWNED_WITNESS_CONFIGURATION_PASS is accepted only for its cooperative
+GenuineIntel/Position/multiple/[0,0,256] fixture. Its RAW_EXACT/c44 canonical
+remain false; no generic DR6 mask or production certificate follows.
 
-C47 adds test-only RETIREMENT_CONFIGURATION_SAFE/c47-v1 for only that measured
-activated-state/documentation profile. It requires native Windows/Intel,
-Position/multiple, actual tuple0/0/256, full twelve-stage gate/unique transition,
-three individually acknowledged/current-code ticket identities, no pending debt,
-canRetire/false poll/inactive leases, exact Dr0-Dr3/foreign Dr2/Dr7 controls,
-all c44 final fixed/unknown/cause rules and complete stable readbacks. The ENTIRE
-Dr6 pattern is positively matched; no generic status mask is introduced. Exactly
-one watch Set and one original final-poll restore Set are required, with no extra/
-unscoped/failed write. Evidence is frozen before terminal cleanup and published
-atomically. No runtime vendor/policy/environment/timeline value is forged.
+First exact blocker: production orientation_trace.cpp:211 can claim owned B0,
+leave foreign B2, and return CONTINUE_SEARCH with modified saved CONTEXT still
+containing owned Dr0/Dr1. A following handler can resume it AFTER coordinator
+cleanup. Complete no-drop registration across SEARCH paths is not established.
+The c47 wrapper correctly poisons/refuses SEARCH rather than certifying it;
+its EXECUTION-only positive ticket path cannot become an all-path production
+mechanism by copying only the happy path.
 
-Schema7 exposes RAW_EXACT, ARCHITECTURAL_CANONICAL and the new configuration
-result separately. The old raw/c44/c45/c46 helper definitions remain unchanged.
-The clearly synthetic exact c46 model has false/false/true; synthetic truth is
-not native execution. Wine retains original raw-exact regression and its native-
-only configuration result is false. A successful native run is explicitly
-OWNED_WITNESS_CONFIGURATION_PASS, still production_integrated=false and
-exact_slot_watch_enabled=false. Native c47 acceptance is pending, not predeclared.
+New test-only production_witness_review_smoke.cpp includes the unmodified engine
+and observes real mixed B0+B2 events, with a following owned foreign handler
+holding return. No observer/downstream CONTEXT/register/lease edit. Six owned
+Wine reset/Position x close/deadline/kill cases restore current slots/bookkeeping,
+then reproduce saved-context owned-slot resurrection. Two foreign-only unchanged
+SEARCH controls do NOT resurrect on this Wine path and are explicitly separate.
+Original c39/c40 EXECUTION counterexamples and every c41-c47 regression remain.
 
-Current Intel SDM253669-090US/Feb2026/20.2.3 owner primary extraction and current
-Microsoft context API sources justify the bounded status/configuration distinction.
-Independent Intel PDF/hash remains proxy403/unavailable, never invented. CPU model
-is not pinned/invented: admission requires known actual CPUID/prerequisites and
-this exact activated-state/measurement profile, not arbitrary Intel support.
+All textual VEH return branches and install/cleanup/lifetime paths are inventoried
+in V01C48_PRODUCTION_WITNESS_REVIEW.md. Necessary candidate identities, multi-lease
+obligations, bounded no-drop reservation/publication/poison and lifetime rules
+are specified, but no complete positive design is established. Additional blockers:
+acknowledged marker precedes the stub JMP (not safe live-thread code-slot reuse),
+arbitrary-RIP near executable placement, thread-epoch/cap coverage, full XSTATE/
+actual-process mitigation admission and module/VEH quiescence/residency.
 
-See V01C47_CONFIGURATION_RETIREMENT.md (including production relevance audit),
-V01C47_GATE and V01C47_STATUS. Owned validation passed; source-pinned analysis/native-probes/c47 contains the
-exact tested standalone. At most one game-free owner native JSON run follows.
-Runtime v0.1c38/package0.1.56. Production restore/ownership/install/handler/lease/
-equality, c39/c40 counterexamples, exact-slot/gameplay/producer gates stay intact.
-Even native c47 PASS leads only to a later explicit production-integration review.
-No Update-WS/game/Overstrike/A-E/WallRun/scan/log/settings change is requested.
+No production restore/ownership/install/handler/lease/cleanup/equality change,
+new watch, exact-slot work, producer traversal or gameplay write. Runtime
+v0.1c38/package0.1.56, no game release or analysis/native-probes/c48. The owned
+test is a counterexample/observation harness, not a general accounting model.
+See V01C48_GATE/STATUS and CODEX_RESULT for precise scope/counts/initial probes.
+No owner operation is needed: no Update-WS/game/standalone/scan/log request.
+A later explicitly bounded design task must address the first missing guarantee;
+review completion does not authorize implementation or exact-slot work.
+
+## c47 historical accepted stage — native bounded configuration PASS
+
+Owner native schema7 at da624eef72535b5d27751317b4b467e88d32a383 reported
+OWNED_WITNESS_CONFIGURATION_PASS. Actual GenuineIntel/Position/multiple policies
+[0,0,256] were admitted, three same-worker/lease/generation current-code tickets
+were acknowledged, pending0/canRetire/false poll/inactive leases and stable exact
+Dr0-Dr3/foreign Dr2 restoration held. Two original context writes (watch+final
+restore), zero unscoped/failed writes. Root raw=false/c44=false/configuration=true
+remained independent. Complete c46 pre-access status history matched c47-v1.
+Production_integrated/exact_slot_watch_enabled/game_used=false. This closes the
+bounded standalone feasibility chain, not arbitrary-thread/context/lifetime
+integration. Canonical supplied proof: V01C47_NATIVE_WINDOWS_RESULT.md.
 
 ## c46 historical stage — native zero-event pre-access transition, FAIL
 
@@ -98,7 +109,7 @@ flags before executing the witness. Neither run proves native witness acceptance
 
 ## c41 historical stage — partial success and native refusal
 
-C41 task base4b39a82; current task is c47. C40 completed its review
+C41 task base4b39a82; current task is c48. C40 completed its review
 with the fail-closed outcome; production retirement remains unproven. C41 adds
 only an owned test prototype, not production integration or a slot watch.
 Current c41 handoff classification: **PARTIAL SUCCESS** — owned Wine feasibility
@@ -116,7 +127,7 @@ process-wide accounting, a full-XSTATE runtime proof or a native-Windows/CET fix
 Details: `analysis/V01C41_CONTINUATION_WITNESS.md`, `V01C41_GATE.md`,
 `V01C41_WITNESS_STATUS.json`. The historical c41 standalone command used
 `analysis/native-probes/c41/continuation-witness.exe --position --multiple --json`.
-Current native follow-up uses c47 above, not this historical artifact. No game
+Accepted native result is c47 above. No c48 native follow-up is needed. No game
 launch/update/slot scan/log is needed. This historical c41 artifact refused
 all nonzero native flags; c42 refines only the standalone test boundary. Native evidence and a later
 explicit integration task are required before c39-style slot work can resume.
@@ -458,24 +469,26 @@ The VMOVUPS store is existing game code, not a MOD write and not permission to w
 26. c44 vendor-specific DR comparison ✅ native Intel/stable RAW+canonical FAIL, Dr6[11,16] remainder
 27. c45 DR6 lifecycle ✅ native single DB-entry observed transition; raw/canonical FAIL
 28. c46 pre-access boundary ✅ native zero-DB pre-access0->1, raw/c44 FAIL
-29. c47 configuration predicate ▶ CURRENT; exact model tested, native c47 pending
-30. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
-31. bounded publication/source chain ⏸ pending writer-site evidence
-32. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
-33. resume full writer XYZ/W causal proof ⏸ after store containment
-34. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-35. safe writable upstream movement source ⬜ NOT AUTHORIZED
-36. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-37. adhesion/contact refinement ⏸ deferred
-38. animation/camera/later traversal ⬜
+29. c47 configuration predicate ✅ owner-native fixture PASS, production integration not established
+30. c48 production integration review ▶ CURRENT FAIL; SEARCH coverage and code/data lifetime blockers
+31. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
+32. bounded publication/source chain ⏸ pending writer-site evidence
+33. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
+34. resume full writer XYZ/W causal proof ⏸ after store containment
+35. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+36. safe writable upstream movement source ⬜ NOT AUTHORIZED
+37. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+38. adhesion/contact refinement ⏸ deferred
+39. animation/camera/later traversal ⬜
 
 ## Current action
 
-Follow `docs/CODEX_NEXT.md` for c47. Preserve native c46 FAIL and old comparators/
-production behavior. Validate/publish only the narrow test-owned configuration
-predicate and all prior regressions. After publication request at most one native
-standalone JSON run. Even native success requires a later explicit production-
-integration review; no exact-slot work is authorized by this predicate alone.
+C48 review is PRODUCTION_WITNESS_INTEGRATION_REVIEW_FAIL. Preserve current
+production behavior and historical native/owned predicates. Next work, if
+explicitly authorized, is a bounded design addressing complete saved-CONTEXT
+registration (including modified SEARCH returns), capacity and executable/module
+lifetime; do not transplant the fixture's happy path or enable exact-slot work.
+No owner runtime action is required for this completed review.
 
 Do not add the exact-slot watch, PAGE_GUARD or broad memory interception merely
 to force progress. Do not merge `main`, do not traverse producer `0x351EB00`, and

@@ -46,6 +46,8 @@ bash tools/test_position_writer.sh
 
 bash tools/test_watch_retirement.sh
 
+bash tools/test_production_witness_review.sh
+
 bash tools/test_continuation_mitigations.sh
 
 bash tools/test_continuation_diagnostics.sh

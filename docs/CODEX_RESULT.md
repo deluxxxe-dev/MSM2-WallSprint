@@ -1,3 +1,170 @@
+# Codex result — c48 production continuation-witness integration review
+
+2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
+Task base **95a32e4067d6b3a0b0cbf9c9074096ccc007346c**.
+Implementation/review commit **PENDING_COMMIT** (resolved in publication metadata).
+**PRODUCTION_WITNESS_INTEGRATION_REVIEW_FAIL**. Review work and owned validation
+are complete; complete no-drop production accounting/lifetime is NOT established.
+No production restore/ownership/handler/install/lease/cleanup/equality change,
+new watch, slot/Position/gameplay/producer write or game release. Runtime remains
+v0.1c38/package0.1.56. No new native c48 artifact or owner operation is required.
+
+## Accepted evidence / review outcome / first blocker
+
+Read AGENTS and current state/NEXT/reporting with unchanged development manual/
+rules/workspace, c39-c47 source/evidence/tests and relevant Wisdoms. Fast-forwarded
+only intended branch da624ee ->95a32e4; no main merge/reset/force push. Kept five
+original untracked artifacts. Accepted owner-native c47 result remains
+OWNED_WITNESS_CONFIGURATION_PASS only for native GenuineIntel/Position/multiple/
+[0,0,256], three bound acknowledged/current-code tickets, pending0/canRetire/
+false poll/inactive leases and exact stable configuration. Root raw/c44 remain
+false; separate configuration true is not a universal DR6 rule or production
+certificate. Both supplied result copies remain SHA256
+960ea34e5d487bf192cb85ce309e4476de29cd6aed926eb0ea5bd04dfc5e51e9.
+
+First exact guarantee missing: complete registration of saved CONTEXTs still
+capable of reapplying owned DR state when the production engine returns
+CONTINUE_SEARCH. orientation_trace.cpp:211 can claim/clear owned B0 while foreign
+B2 remains; saved Dr0/Dr1 stay armed. A following owner can resume the modified
+context after coordinator cleanup. Existing c47 wrapper correctly poisons/refuses
+SEARCH without issuing a ticket/certificate. Transplanting only its EXECUTION-
+only positive path would miss obligations; retaining poison is honest refusal
+but does not establish a complete positive production contract.
+
+The review inventories all explicit VEH return/branch shapes (early guards plus
+all shared-terminal branches), install/publication/ownership, ring/budget/lock
+pressure, mixed leases, reset/Position/expansion, cleanup/Resume failure/thread
+exit, close/deadline/kill/deinit/module lifetime. Coverage of arbitrary earlier
+third-party/kernel dispatch is not inferred. Necessary immutable multi-obligation
+identity/reservation/publication/poison/cap/exit/code/data invariants are specified,
+but a complete bounded no-drop contract is not proven. A green unrelated queue
+model would not resolve this, so no positive abstract accounting helper is added.
+
+Independent additional blockers: marker acknowledgment occurs before the stub's
+final JMP and cannot prove live-thread executable-slot reuse is safe; the fixture
+keeps storage until actual worker exit. Arbitrary-RIP rel32 near placement,
+ready executable pool, nested interruption/XSTATE, real game-process mitigation
+admission and stable thread-epoch/mixed obligations are unproved. Worker module
+reference release is not a process-lifetime pin or VEH/callback join. Current
+source leaves VEH registered; actual host-loader residency remains unknown,
+not an asserted observed unload crash. Complete audit/design/coverage matrix:
+analysis/V01C48_PRODUCTION_WITNESS_REVIEW.md.
+
+## New exact production-shape observations
+
+New test-only production_witness_review_smoke.cpp includes the unmodified
+production engine; an observer preserves its result and a separate following
+foreign owner holds return using bounded owned events. One actual store in
+allocated owned memory hits overlapping owned Dr0 and synthetic foreign Dr2.
+The original engine alone clears B0, leaves B2 and SEARCH. No observer/downstream
+CONTEXT/DR/RIP/stack/lease edit is made; no game address/slot/code is touched.
+
+Six reset/Position x close/deadline/kill cases: saved context owns both slots,
+inflight0/one captured hit; actual coordinator poll restores current Dr0-Dr3/Dr7
+and inactive lease bookkeeping while return is held; releasing it re-enables
+owned slots while bookkeeping stays inactive. Synthetic foreign Dr2/control is
+preserved. This extends SEARCH-path coverage without replacing c39/c40's original
+EXECUTION delayed-context counterexample. Their tests/caps/deadlines/assertions
+remain byte-identical.
+
+Two foreign-B2-only controls have unchanged engine context and do not resurrect
+on this Wine path. That observation is preserved separately and is not a general
+Windows safety rule. Initial new fixture compilation hit a writer-name collision
+with msm2::writer; only its new function was renamed, keeping Werror flags.
+An initial exploratory unchanged-context resurrection assertion then failed
+(exit3); a diagnostic repeat confirmed own0. The final harness keeps that strict
+negative control and exercises the separate genuinely modified/mixed path; no
+context was edited to force a result and no historical assertion was weakened.
+These initial trials are not relabeled PASS or hidden as SKIP.
+
+New command test_production_witness_review.sh runs eight actual Wine processes
+and strict independent JSON checks (9 PASS observations). It is mandatory in
+hooks. Package metadata/evidence, root/source mirrored review/gate/status,
+PROJECT_STATE, this report and Wisdoms are updated. No c48 standalone folder,
+DLL integration or release archive is created. Positive full production-shape
+acceptance cases are unimplemented because review FAIL applies.
+
+## Executed required validation
+
+| Exact command from repository root | Expected result | Actual final result |
+| --- | --- | --- |
+| `bash source/tools/test_continuation_mitigations.sh` | Preserve mitigation/query/unknown-bit refusal | exit0;10 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_continuation_diagnostics.sh` | Preserve exact diagnostic/missing-data semantics | exit0;7 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_debug_register_comparison.sh` | Preserve c44 raw/canonical/fixed/unknown/address/control/stability contract | exit0;9 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_dr6_lifecycle.sh` | Preserve c45 status lifecycle regression | exit0;11 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_pre_access_lifecycle.sh` | Preserve c46 zero-event pre-access classifier | exit0;12 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_retirement_configuration.sh` | Preserve exact c47 fixture predicate and all negatives | exit0;13 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_continuation_witness.sh` | Preserve twelve actual Wine witness/gate/ticket cases | exit0;13 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_watch_retirement.sh` | Retain original delayed-return resurrection and recovery | exit0;14 PASS /0 SKIP /2 UNAVAILABLE |
+| `bash source/tools/test_production_witness_review.sh` | Confirm six modified SEARCH resurrection paths plus two distinct unchanged SEARCH controls | exit0;9 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/build_windows.sh` | Production Werror Windows cross-build succeeds | exit0; build succeeded (no case count) |
+| `bash source/tools/test.sh` | Portable/sanitizer regressions pass | exit0;13 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/smoke_windows.sh` | DLL/export/logger smoke succeeds | exit0;7 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_hooks_windows.sh` | Full c39-c48 owned/scanner/workspace regression succeeds | exit0;368 PASS /5 SKIP /2 UNAVAILABLE |
+| `python3 source/tools/package.py` | Existing-version package/source/evidence/licensing integrity | exit0;1 PASS /0 SKIP /0 UNAVAILABLE |
+
+Full nonduplicated chain **388 PASS** =13 portable+7 smoke+368 hooks;
+**5 SKIP /2 UNAVAILABLE** separately. Focused results overlap hooks and are not
+added twice. Package1 PASS is separate. Counts are regression/counterexample/
+observation successes, NOT a production-witness review PASS. Five SKIPs are
+optional private game/native capture/positive replay inputs absent/not distributed.
+Two UNAVAILABLE are original Wine VCH return-hold dispatch limits. Every final
+required command passed without interruption; initial new-fixture exploration
+failures are documented above. No source/tool change followed full validation;
+only evidence/publication metadata was recopied by package checks, so repeating
+unchanged runtime tests was unnecessary. Exact exits/counts/timings are in status.
+
+## Additional executed checks / outputs
+
+- Source inventory commands included:
+  `nl -ba source/src/msm2/orientation_trace.cpp | sed -n '1,440p'`,
+  `nl -ba source/src/msm2/orientation_trace.cpp | sed -n '245,390p'`,
+  `nl -ba source/src/msm2/orientation_trace.cpp | sed -n '660,666p;718,780p'`,
+  `nl -ba source/src/msm2/telemetry.cpp | sed -n '158,226p'`,
+  `nl -ba source/src/NativeHooks/continuation_witness_smoke.cpp | sed -n '151,181p;272,310p'`.
+  Expected map return/cleanup/identity/lifetime and identify unproven guarantees;
+  actual complete textual inventory and exact modified SEARCH/lifetime blockers.
+- Current vendor Microsoft Add/RemoveVectoredExceptionHandler, FreeLibraryAndExitThread,
+  GetModuleHandleExW and GetProcessMitigationPolicy documentation was retrieved
+  directly from MicrosoftDocs/sdk-api. All5 returned200; exact URLs/bytes/SHA256
+  are in status. Expected identify registration/lifetime/admission contracts;
+  actual DLL-unload warning, PIN-versus-worker-reference distinction and actual-
+  process selective policy-query scope are documented. No mitigation is changed.
+- `python3 /tmp/ws-c48-verify-review.py`: expected byte-unchanged production/
+  headers/historical c39-c47 tests/helpers/probes/evidence/root release artifacts,
+  identical new mirrors/audited source SHA/no c48 probe; all257 source/tool hashes
+  match package copies, actual eight-case distinction and review package metadata.
+  Actual2 PASS records. `git diff --check` passed. Input digest SHA256
+  `b207f69038cef733d599b8115161eada7e6ce8a925a019d8c5cc1fa1d5a5d0ee`.
+
+Exact outputs: analysis/V01C48_PRODUCTION_WITNESS_REVIEW.md, V01C48_GATE.md,
+V01C48_STATUS.json and their source mirrors; new owned regression source/script.
+Build intermediates stay ignored. Existing-version package validation output is
+source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled, not a new game release.
+No raw user log/full proprietary function/credentials or private backup is added.
+
+## Not executed / precise reasons / owner action
+
+Complete positive no-drop production-accounting acceptance matrix: NOT IMPLEMENTED/
+NOT CLAIMED because registration/credit/lifetime guarantees are not established;
+current owned counterexamples and source audit trigger the permitted FAIL fallback.
+Native Windows new mixed SEARCH cases were not run (cloud Wine only); their game
+frequency/OS generality is not claimed. Actual game-process mitigations, forced
+game-thread exit, pending-continuation DLL unload and production integration are
+unperformed: review-only scope/no safe production lifetime contract, no game
+launch is needed. Two VCH dispatch-dependent branches remain UNAVAILABLE. No new
+native c48 probe is justified: another owner standalone cannot supply the missing
+production design. No positive model/native/game result is reported as PASS.
+
+**Owner action: none.** No Update-WS, game/Overstrike, standalone, A/E, WallRun,
+slot scan or log is needed. A later explicit bounded design task must address
+SEARCH-path registration and lifetime before any implementation/integration can
+be considered. C47 native PASS remains fixture evidence; exact-slot/producer/
+gameplay gates stay closed. Commit/push/source SHA and Wisdoms synchronization
+are resolved in publication metadata; only five original untracked artifacts remain.
+
+---
+
 # Codex result — c47 test-only exact-owner retirement configuration
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
