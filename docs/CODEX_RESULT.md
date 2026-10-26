@@ -1,6 +1,7 @@
 # Codex result — c44 conservative vendor-specific DR comparison
 
 Branch **codex/v01c20-edi-value-provenance**, task base **7336ef4**.
+Implementation **3e1d4db1ff61e510da2f7f9bab1b2b35a01c3976**.
 **PARTIAL SUCCESS:** comparison/diagnostic implementation and owned regression
 succeeded; native architectural acceptance remains unproven. The observed c43
 pair is still refused by both conservative profiles. Runtime remains
