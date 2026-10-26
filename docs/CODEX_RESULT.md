@@ -2,7 +2,7 @@
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
 Task base **192ff50f69625956028b5c51b00718759fb9e129**.
-Implementation commit: **PENDING_COMMIT** (resolved in publication metadata).
+Implementation commit: **3f90b1dc5994dc46cbdc5f74e8a8e99db792eca9**.
 **PARTIAL SUCCESS / native acceptance remains FAIL-CLOSED:** phase diagnostics,
 focused tests, full owned regression and standalone publication inputs succeeded;
 actual c45 native-Windows phase evidence remains unmeasured. No new
@@ -129,6 +129,24 @@ updates are recopied by package verification without recompiling unchanged code.
   can change rebuilt hashes. No game release ZIP/script is published. The ignored
   `source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled` is package
   validation output only; root release files are unchanged.
+
+## Persistence / publication
+
+Implementation commit **3f90b1dc5994dc46cbdc5f74e8a8e99db792eca9** was pushed to the intended branch and verified
+with `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance`.
+Wisdoms docs were committed/pushed on its main as
+**65d9b336f2f9ed801b7cdee1da95a3e370a7abdb**, with remote/local SHA equality verified.
+This report/status/source manifest receives a separate metadata-only descendant
+commit, also pushed and remote-verified in the final handoff; no source/tool or
+binary bytes change after validation. A fresh shallow clone of the published
+branch is used to compare all23 c45 changed files and PE hash against this tree.
+
+Standalone:6307578 bytes, SHA256
+`9894fde01c536bbef0d91ddd493cc8899db172e6ea410f504f1bcc81b2ad838d`.
+All249 code/tool-input digest SHA256
+`248dfea8883095302c0e87989cbcd9d23578a2791df017a3a71263dc289f83b5`.
+`git diff --check` and staged checks passed. Final working tree retains only the
+five original untracked artifacts; none is added, removed or overwritten.
 
 ## Unperformed verification and owner action
 

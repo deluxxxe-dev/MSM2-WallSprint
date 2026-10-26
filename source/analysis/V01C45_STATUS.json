@@ -168,7 +168,7 @@
       "reason": "Intel_landing_and_CDN_paths_proxy403_current_owner_primary_extraction_preserved_no_PDF_hash_invented"
     }
   },
-  "implementation_commit": "PENDING_COMMIT",
+  "implementation_commit": "3f90b1dc5994dc46cbdc5f74e8a8e99db792eca9",
   "standalone_artifact": {
     "path": "continuation-witness.exe",
     "bytes": 6307578,
@@ -222,5 +222,11 @@
       "test": "VCH_return_hold_two_physical_dispatch_cases",
       "reason": "not_dispatched_by_owned_Wine_fixture_retained_as_UNAVAILABLE"
     }
-  ]
+  ],
+  "publication": {
+    "implementation_remote_verified": "3f90b1dc5994dc46cbdc5f74e8a8e99db792eca9",
+    "wisdoms_main_remote_verified": "65d9b336f2f9ed801b7cdee1da95a3e370a7abdb",
+    "final_metadata_commit": "descendant_in_same_branch_reported_in_final_handoff",
+    "verification": "git_ls_remote_matches_local_HEAD_implementation_then_metadata_publication"
+  }
 }
