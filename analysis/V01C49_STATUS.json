@@ -1,0 +1,296 @@
+{
+  "task": "c49_VCH_SEARCH_continuation_bridge_feasibility",
+  "date_JST": "2026-10-27",
+  "base_commit": "53ad63810fc04255ebcaaff7880481b063764684",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "primary_result": "VCH_SEARCH_CONTINUATION_BRIDGE_UNAVAILABLE",
+  "classification": "OWNED_WINE_STAGE2_NO_VCH_CALLBACK_NATIVE_EVIDENCE_REQUIRED",
+  "native_VCH_evidence": false,
+  "stage3_bridge_implemented": false,
+  "reason": "stage2_boundary_not_observed_in_available_environment_no_speculative_RIP_redirection",
+  "owned_Wine_cases": 6,
+  "real_VCH_registrations": 6,
+  "real_VCH_callbacks": 0,
+  "WS_disposition": "CONTINUE_SEARCH",
+  "downstream_disposition": "CONTINUE_EXECUTION",
+  "foreign_CONTEXT_change": "only_own_DR6_B2_clear",
+  "reservation_before_SEARCH_escape": true,
+  "pending_until_worker_exit": 1,
+  "witness_acknowledgment": null,
+  "post_witness_cleanup_result": null,
+  "native_probe": "analysis/native-probes/c49/continuation-witness.exe",
+  "owner_command": ".\\continuation-witness.exe --position --mixed-search-vch --json",
+  "owner_action": "native_standalone_stage2_only_return_compact_JSON_no_Update_WS_game_or_log",
+  "c48_result_preserved": "PRODUCTION_WITNESS_INTEGRATION_REVIEW_FAIL",
+  "c39_c40_counterexamples_preserved": true,
+  "c40_VCH_callback0_preserved": "UNAVAILABLE",
+  "c47_native_fixture_PASS_preserved": true,
+  "production_changed": false,
+  "exact_slot_watch_enabled": false,
+  "new_gameplay_writes": 0,
+  "new_game_release": false,
+  "runtime_version": "v0.1c38",
+  "package_version": "0.1.56",
+  "synthetic_model_scope": "sequential_four_slots_required_contract_examples_not_OS_or_production_concurrent_accounting",
+  "formal_document_provenance": [
+    {
+      "name": "addvch",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/errhandlingapi/nf-errhandlingapi-addvectoredcontinuehandler.md",
+      "status": 200,
+      "bytes": 3318,
+      "sha256": "51ed60602b7efd27a0b9a97e5cf88dd7d094d210fddc35df9c6828ea68e40c99",
+      "retrieved_UTC": "2026-10-26",
+      "repository_commit": "656e9656bfaef34dd29cd7ee9e1146aec17e924c",
+      "pinned_url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/656e9656bfaef34dd29cd7ee9e1146aec17e924c/sdk-api-src/content/errhandlingapi/nf-errhandlingapi-addvectoredcontinuehandler.md",
+      "pinned_bytes_identical": true
+    },
+    {
+      "name": "removevch",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/errhandlingapi/nf-errhandlingapi-removevectoredcontinuehandler.md",
+      "status": 200,
+      "bytes": 2452,
+      "sha256": "d735198fdafff369f23c22c6e9d5ac0e03036ca2d74ad764d232b8cc09e05915",
+      "retrieved_UTC": "2026-10-26",
+      "repository_commit": "656e9656bfaef34dd29cd7ee9e1146aec17e924c",
+      "pinned_url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/656e9656bfaef34dd29cd7ee9e1146aec17e924c/sdk-api-src/content/errhandlingapi/nf-errhandlingapi-removevectoredcontinuehandler.md",
+      "pinned_bytes_identical": true
+    },
+    {
+      "name": "callback",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/winnt/nc-winnt-pvectored_exception_handler.md",
+      "status": 200,
+      "bytes": 2656,
+      "sha256": "9617c843a48b253ea46e483d4404cd0a041ce7d373868e38103a44e67325f1af",
+      "retrieved_UTC": "2026-10-26",
+      "repository_commit": "656e9656bfaef34dd29cd7ee9e1146aec17e924c",
+      "pinned_url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/656e9656bfaef34dd29cd7ee9e1146aec17e924c/sdk-api-src/content/winnt/nc-winnt-pvectored_exception_handler.md",
+      "pinned_bytes_identical": true
+    },
+    {
+      "name": "addveh",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/errhandlingapi/nf-errhandlingapi-addvectoredexceptionhandler.md",
+      "status": 200,
+      "bytes": 3476,
+      "sha256": "cab01c8d76d25d7476966d23a3b427961e9fdb184fa7179fd52a39854f288a96",
+      "retrieved_UTC": "2026-10-26",
+      "repository_commit": "656e9656bfaef34dd29cd7ee9e1146aec17e924c",
+      "pinned_url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/656e9656bfaef34dd29cd7ee9e1146aec17e924c/sdk-api-src/content/errhandlingapi/nf-errhandlingapi-addvectoredexceptionhandler.md",
+      "pinned_bytes_identical": true
+    },
+    {
+      "name": "ordering",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/win32/docs/desktop-src/Debug/vectored-exception-handling.md",
+      "status": 200,
+      "bytes": 1410,
+      "sha256": "6fb36064cf2f72484d0d92a25b0f0b9b3d47d3293aaf29cb25ea9db30d7385d5",
+      "retrieved_UTC": "2026-10-26",
+      "repository_commit": "ca8274decead49403d70ceeed4af8d4ca74eaf11",
+      "pinned_url": "https://raw.githubusercontent.com/MicrosoftDocs/win32/ca8274decead49403d70ceeed4af8d4ca74eaf11/desktop-src/Debug/vectored-exception-handling.md",
+      "pinned_bytes_identical": true
+    }
+  ],
+  "tests": [
+    {
+      "command": "bash source/tools/test_continuation_mitigations.sh",
+      "exit": 0,
+      "seconds": 0.63,
+      "log": "/tmp/ws-c49-test_continuation_mitigations.log",
+      "PASS": 10,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    },
+    {
+      "command": "bash source/tools/test_continuation_diagnostics.sh",
+      "exit": 0,
+      "seconds": 0.71,
+      "log": "/tmp/ws-c49-test_continuation_diagnostics.log",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    },
+    {
+      "command": "bash source/tools/test_debug_register_comparison.sh",
+      "exit": 0,
+      "seconds": 0.83,
+      "log": "/tmp/ws-c49-test_debug_register_comparison.log",
+      "PASS": 9,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    },
+    {
+      "command": "bash source/tools/test_dr6_lifecycle.sh",
+      "exit": 0,
+      "seconds": 0.69,
+      "log": "/tmp/ws-c49-test_dr6_lifecycle.log",
+      "PASS": 11,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    },
+    {
+      "command": "bash source/tools/test_pre_access_lifecycle.sh",
+      "exit": 0,
+      "seconds": 0.85,
+      "log": "/tmp/ws-c49-test_pre_access_lifecycle.log",
+      "PASS": 12,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    },
+    {
+      "command": "bash source/tools/test_retirement_configuration.sh",
+      "exit": 0,
+      "seconds": 1.05,
+      "log": "/tmp/ws-c49-test_retirement_configuration.log",
+      "PASS": 13,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    },
+    {
+      "command": "bash source/tools/test_continuation_witness.sh",
+      "exit": 0,
+      "seconds": 11.23,
+      "log": "/tmp/ws-c49-test_continuation_witness.log",
+      "PASS": 13,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    },
+    {
+      "command": "bash source/tools/test_watch_retirement.sh",
+      "exit": 0,
+      "seconds": 5.38,
+      "log": "/tmp/ws-c49-test_watch_retirement.log",
+      "PASS": 14,
+      "SKIP": 0,
+      "UNAVAILABLE": 2
+    },
+    {
+      "command": "bash source/tools/test_production_witness_review.sh",
+      "exit": 0,
+      "seconds": 5.45,
+      "log": "/tmp/ws-c49-test_production_witness_review.log",
+      "PASS": 9,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    },
+    {
+      "command": "bash source/tools/test_vch_search_bridge.sh",
+      "exit": 0,
+      "seconds": 12.54,
+      "log": "/tmp/ws-c49-test_vch_search_bridge.log",
+      "PASS": 22,
+      "SKIP": 0,
+      "UNAVAILABLE": 6
+    },
+    {
+      "command": "bash source/tools/build_windows.sh",
+      "exit": 0,
+      "seconds": 39.79,
+      "log": "/tmp/ws-c49-build_windows.log",
+      "PASS": 0,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    },
+    {
+      "command": "bash source/tools/test.sh",
+      "exit": 0,
+      "seconds": 7.63,
+      "log": "/tmp/ws-c49-test.log",
+      "PASS": 13,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    },
+    {
+      "command": "bash source/tools/smoke_windows.sh",
+      "exit": 0,
+      "seconds": 12.66,
+      "log": "/tmp/ws-c49-smoke_windows.log",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    },
+    {
+      "command": "bash source/tools/test_hooks_windows.sh",
+      "exit": 0,
+      "seconds": 183.99,
+      "log": "/tmp/ws-c49-test_hooks_windows.log",
+      "PASS": 381,
+      "SKIP": 5,
+      "UNAVAILABLE": 8
+    },
+    {
+      "command": "python3 source/tools/package.py",
+      "exit": 0,
+      "seconds": 0.91,
+      "log": "/tmp/ws-c49-package.log",
+      "PASS": 1,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    }
+  ],
+  "nonduplicated_full_chain": {
+    "PASS": 401,
+    "SKIP": 5,
+    "UNAVAILABLE": 8,
+    "scope": "portable13_smoke7_hooks381_focused_are_in_hooks_not_added_twice"
+  },
+  "package_validation": {
+    "PASS": 1,
+    "SKIP": 0,
+    "UNAVAILABLE": 0
+  },
+  "additional_copied_owner_cli": {
+    "command": "WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES=mscoree,mshtml= /workspace/toolchains/wine/usr/lib/wine/wine64 analysis/native-probes/c49/continuation-witness.exe --position --mixed-search-vch --json",
+    "environment": "Wine",
+    "PASS": 0,
+    "SKIP": 0,
+    "UNAVAILABLE": 1,
+    "exit": 0,
+    "callback_count": 0,
+    "JSON_only": true,
+    "native_evidence": false
+  },
+  "integrity_verification": {
+    "PASS": 2,
+    "protected_tracked_files": 929,
+    "source_input_count": 262,
+    "source_input_digest": "b16df3a931e8beeb80a79f1fac3461eb48f5ec11148c5ab7af1d1da91a70bf2a",
+    "artifact_sha256": "d8e8333fa65c01eb617dd360019bbb1aa5f88b0fab4990e149f29230ac3af989",
+    "additional_copied_owner_CLI_observation": "UNAVAILABLE_Wine_callback0_not_native_PASS"
+  },
+  "not_run": [
+    {
+      "test": "native_stage2_VCH_dispatch_order_final_CONTEXT",
+      "reason": "native_Windows_environment_not_available_Wine_callback0"
+    },
+    {
+      "test": "actual_VCH_hold_binding_c41_stub_exact_ack_post_witness_close_deadline_kill_no_resurrection",
+      "reason": "stage3_authorized_only_if_stage2_succeeds_no_actual_callback_boundary_observed"
+    },
+    {
+      "test": "runtime_nested_multiple_multithread_bridge_tokens",
+      "reason": "no_native_boundary_no_stage3_bridge_only_explicit_sequential_model_coverage"
+    },
+    {
+      "test": "optional_private_positive_replays_5",
+      "reason": "private_game_capture_inputs_absent_existing_optional_tests_SKIP"
+    },
+    {
+      "test": "production_game_Update_WS_slot_forced_exit_module_unload",
+      "reason": "expressly_out_of_scope"
+    }
+  ],
+  "SKIP_reason": "five_optional_private_original_body_positive_replay_capture_inputs_absent",
+  "UNAVAILABLE_reason": "historical_c40_2_VCH_callback0_plus_c49_6_mixed_callback0_native_not_inferred",
+  "focused_command_totals": {
+    "PASS": 22,
+    "SKIP": 0,
+    "UNAVAILABLE": 6,
+    "components": "12_synthetic_1_parser_9_unchanged_c48_controls"
+  },
+  "native_artifact": {
+    "path": "continuation-witness.exe",
+    "bytes": 5731386,
+    "sha256": "d8e8333fa65c01eb617dd360019bbb1aa5f88b0fab4990e149f29230ac3af989",
+    "exact_copy_of_tested_binary": true
+  },
+  "no_new_native_Windows_rule_established_Wisdoms_update_not_required_by_c49": true
+}

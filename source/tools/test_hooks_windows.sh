@@ -46,7 +46,8 @@ bash tools/test_position_writer.sh
 
 bash tools/test_watch_retirement.sh
 
-bash tools/test_production_witness_review.sh
+# c49 focused command also runs the original c48 counterexample/control suite.
+bash tools/test_vch_search_bridge.sh
 
 bash tools/test_continuation_mitigations.sh
 

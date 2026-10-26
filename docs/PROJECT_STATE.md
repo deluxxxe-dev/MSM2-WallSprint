@@ -1,6 +1,37 @@
 # WallSprint project state
 
-## c48 current stage — production integration review FAIL, no integration
+## c49 current stage — VCH SEARCH bridge UNAVAILABLE, native boundary question
+
+**VCH_SEARCH_CONTINUATION_BRIDGE_UNAVAILABLE**. Real owned mixed B0+B2 events
+reach the unchanged WS handler (B0 clear/SEARCH), then a separate foreign owner
+(B2-only clear/EXECUTION). Debt with thread creation epoch/context/exception/
+lease/generation/sequence is reserved before SEARCH escapes. Across reset/Position
+x close/deadline/kill on Wine, VCH registers but callback0. Pending1 is retained;
+no live final poll, fabricated witness or positive retirement claim. Actual
+retained-handle worker exit is required before terminal cleanup. Historical c40
+callback0 remains UNAVAILABLE, not a native impossibility claim.
+
+New focused command test_vch_search_bridge.sh covers12 clearly synthetic contract
+observations,6 real Wine UNAVAILABLE paths and1 independent JSON check, then runs
+the unchanged c48 suite (9 PASS). Focused total22 PASS/6 UNAVAILABLE. Models
+cover order/identity/nested/multiple/token/cap/publication/poison/pending/lifetime;
+they are not concurrent production accounting or OS dispatch proof. The separate
+unchanged c48 regression retains6 mixed SEARCH resurrection counterexamples and
+2 foreign-only controls; c39/c40 and every c41-c47 test/predicate are unchanged.
+
+Stage3 VCH-to-c41 redirection is not implemented: stage2 native callback/order
+has not been observed. The tested observation-only standalone at
+analysis/native-probes/c49 asks exactly that boundary question. One native command
+from that folder: `.\continuation-witness.exe --position --mixed-search-vch --json`.
+Return compact output; no Update-WS/game/Overstrike/scan/game log. Even an actual
+native boundary observation is not a bridge/witness PASS from this binary.
+
+Production source, restoration/ownership/handler/lease/cleanup, exact-slot and
+all gameplay behavior are unchanged. C48 review remains FAIL; c47 native PASS
+is fixture-only. Runtime v0.1c38/package0.1.56, no game release. Details:
+V01C49_VCH_SEARCH_BRIDGE/GATE/STATUS and CODEX_RESULT.
+
+## c48 historical stage — production integration review FAIL, no integration
 
 **PRODUCTION_WITNESS_INTEGRATION_REVIEW_FAIL**. C47 owner native
 OWNED_WITNESS_CONFIGURATION_PASS is accepted only for its cooperative
@@ -470,25 +501,26 @@ The VMOVUPS store is existing game code, not a MOD write and not permission to w
 27. c45 DR6 lifecycle ✅ native single DB-entry observed transition; raw/canonical FAIL
 28. c46 pre-access boundary ✅ native zero-DB pre-access0->1, raw/c44 FAIL
 29. c47 configuration predicate ✅ owner-native fixture PASS, production integration not established
-30. c48 production integration review ▶ CURRENT FAIL; SEARCH coverage and code/data lifetime blockers
-31. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
-32. bounded publication/source chain ⏸ pending writer-site evidence
-33. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
-34. resume full writer XYZ/W causal proof ⏸ after store containment
-35. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-36. safe writable upstream movement source ⬜ NOT AUTHORIZED
-37. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-38. adhesion/contact refinement ⏸ deferred
-39. animation/camera/later traversal ⬜
+30. c48 production integration review ✅ historical FAIL; SEARCH coverage and code/data lifetime blockers
+31. c49 mixed SEARCH/VCH boundary ▶ CURRENT UNAVAILABLE; native standalone evidence required
+32. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
+33. bounded publication/source chain ⏸ pending writer-site evidence
+34. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
+35. resume full writer XYZ/W causal proof ⏸ after store containment
+36. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+37. safe writable upstream movement source ⬜ NOT AUTHORIZED
+38. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+39. adhesion/contact refinement ⏸ deferred
+40. animation/camera/later traversal ⬜
 
 ## Current action
 
-C48 review is PRODUCTION_WITNESS_INTEGRATION_REVIEW_FAIL. Preserve current
-production behavior and historical native/owned predicates. Next work, if
-explicitly authorized, is a bounded design addressing complete saved-CONTEXT
-registration (including modified SEARCH returns), capacity and executable/module
-lifetime; do not transplant the fixture's happy path or enable exact-slot work.
-No owner runtime action is required for this completed review.
+C49 is VCH_SEARCH_CONTINUATION_BRIDGE_UNAVAILABLE. The only owner operation
+is the tested observation-only standalone command documented above/from c49's
+README, returning compact JSON. Do not use successful registration/model tests as
+native dispatch proof or add stage3/production integration without the required
+boundary evidence and subsequent explicit design scope. C48 production review
+FAIL remains authoritative; no game or updater action is required.
 
 Do not add the exact-slot watch, PAGE_GUARD or broad memory interception merely
 to force progress. Do not merge `main`, do not traverse producer `0x351EB00`, and

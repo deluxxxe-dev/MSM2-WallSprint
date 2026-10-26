@@ -1,3 +1,175 @@
+# Codex result — c49 mixed SEARCH / downstream EXECUTION / VCH boundary
+
+2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
+Task base **53ad63810fc04255ebcaaff7880481b063764684**.
+Implementation commit: recorded in the final publication metadata below.
+Primary: **VCH_SEARCH_CONTINUATION_BRIDGE_UNAVAILABLE**.
+
+Repository test-only work is complete; native callback/order and stage3 bridge
+feasibility are NOT established. Production restore/ownership/handler/install/
+lease/cleanup/equality and all gameplay behavior are unchanged. No exact-slot
+watch, new game data, generic DR6 mask, producer traversal or game release.
+Runtime remains v0.1c38/package0.1.56; c47 native PASS remains fixture-only and
+c48 production review FAIL remains authoritative.
+
+## Work and observed result
+
+Read AGENTS, manual/rules/workspace/state/NEXT/reporting/logging, c39-c48
+retirement/witness analyses and accepted native evidence, production handler,
+existing c40 VCH/c41-c47 witness and c48 mixed-path tests. Consulted Wisdoms
+at a8552b743d93cb2f7559026472786a622b5424ae. No new native Windows exception-
+dispatch rule was established/rejected, so per c49's narrower instruction no
+Wisdoms change is made; the Wine observation and native uncertainty are local
+handoff evidence. Fast-forwarded intended branch only3fc10cd ->53ad638; no main
+merge/reset/force push. Five original untracked ZIP/bundle artifacts preserved.
+
+Five current Microsoft primary documents were retrieved200 and byte-matched to
+commit-pinned copies. They document registration/ordering controls, callback
+SEARCH/EXECUTION semantics, handler restrictions and DLL registration lifetime.
+They do not establish the exact mixed hardware-DB downstream-final VCH/OS-return
+contract required here. Exact source commits/URLs/SHA256 are in c49 status.
+
+New vch_search_bridge_smoke.cpp includes the unmodified production engine. An
+owned store causes mixed B0+B2. WS claims/clears B0 and SEARCH; a separately
+registered following foreign owner authenticates the reserved context, clears
+only its own B2, and chooses EXECUTION. Immutable worker/creation epoch/context/
+exception/lease/generation/sequence/RIP debt is reserved BEFORE SEARCH escapes.
+Fixed capture records and monotonic order prove the actual WS/downstream steps.
+The real AddVCH observer performs no RIP/DR repair; a callback, if dispatched,
+must match the entire final CONTEXT, identity, expected cause/configuration and
+order after the downstream final mutation/decision. Ambiguity/duplicates poison.
+
+Actual Wine reset/Position x close/deadline/kill: six successful registrations,
+six callback0 results. Every case has WS SEARCH/downstream EXECUTION and pending1
+through cleanup request until actual retained-handle thread termination. No live
+final poll/retirement or fabricated witness. Null JSON fields explicitly retain
+unobserved VCH/binding/ack/post-witness cleanup/no-resurrection. This is not a
+bridge-disabled resurrection trial: no early cleanup occurs in this probe.
+The separate original c48 test still reproduces all six early-cleanup mixed
+resurrections and two distinct foreign-only controls; c39/c40 remain intact.
+
+**Stage3 was not implemented/tested:** CODEX_NEXT authorizes a VCH-to-c41 bridge
+only after stage2 succeeds. No actual VCH boundary was observable here, and no
+native Windows environment is attached. Model success/registration cannot justify
+speculative redirection before SEARCH or claim native order. This is UNAVAILABLE,
+not an exercised native bridge failure or a general rejection of VCH.
+
+The required12 pure ASan/UBSan contract observations are explicitly sequential
+synthetic examples, separate from OS evidence. Four never-reused ticket slots
+cover reserve/escape/downstream/order/bind/identity/nested/multiple/other-thread/
+token/cap/preparation/publication/sticky-poison/pending/lifetime conditions.
+They are not a concurrent production ledger, complete production coverage proof
+or executed continuation code. Marker acknowledgment never authorizes code reuse.
+
+New focused command runs12 model PASS +6 real Wine UNAVAILABLE +1 strict JSON
+parser PASS, then calls the unchanged original c48 suite (9 PASS): focused total
+22 PASS/6 UNAVAILABLE. Hooks reaches c48 through this focused command once; the
+original c48 command remains separately runnable. The wiring change was followed
+by another focused and full-hooks run, without any probe/production source edit. New code/tools, root/source
+mirrored c49 review/gate/status, package evidence/gates, PROJECT_STATE and this
+report are updated. The exact tested observation-only PE plus licenses/provenance
+is published only under analysis/native-probes/c49. No c48 artifact is created
+and all older native probes/results/predicates/counterexample sources are unchanged.
+
+## Exact required commands, expected versus actual
+
+All commands run from repository root. Full final validation commands are below;
+focused tests repeat inside hooks and counts must not be summed twice.
+
+| Exact command | Expected | Actual |
+| --- | --- | --- |
+| `bash source/tools/test_continuation_mitigations.sh` | c42 per-bit/unknown refusal regression | exit0,10 PASS |
+| `bash source/tools/test_continuation_diagnostics.sh` | c43 strict diagnostics/missing state | exit0,7 PASS |
+| `bash source/tools/test_debug_register_comparison.sh` | c44 raw/canonical separate, conservative exact/unknown refusal | exit0,9 PASS |
+| `bash source/tools/test_dr6_lifecycle.sh` | c45 lifecycle/status refusal | exit0,11 PASS |
+| `bash source/tools/test_pre_access_lifecycle.sh` | c46 zero-event pre-access contract | exit0,12 PASS |
+| `bash source/tools/test_retirement_configuration.sh` | c47 narrow configuration predicate unchanged | exit0,13 PASS |
+| `bash source/tools/test_continuation_witness.sh` | c41 owned return/state/identity/nesting/cap/lifetime | exit0,13 PASS |
+| `bash source/tools/test_watch_retirement.sh` | preserve c39/c40 EXECUTION counterexamples and honest VCH availability | exit0,14 PASS,2 UNAVAILABLE |
+| `bash source/tools/test_production_witness_review.sh` | preserve6 mixed SEARCH resurrections +2 foreign-only controls +parser | exit0,9 PASS |
+| `bash source/tools/test_vch_search_bridge.sh` | synthetic refusal/accounting +actual callback availability +unchanged c48 counterexamples/controls | exit0,22 PASS,6 UNAVAILABLE |
+| `bash source/tools/build_windows.sh` | warnings-as-errors DLL build, unchanged runtime | exit0,build success, no case count |
+| `bash source/tools/test.sh` | portable regressions/ASan/UBSan | exit0,13 PASS |
+| `bash source/tools/smoke_windows.sh` | Windows owned smoke | exit0,7 PASS |
+| `bash source/tools/test_hooks_windows.sh` | all hook/ABI/lifecycle/proof/workspace and c39-c49 regressions | exit0,381 PASS,5 SKIP,8 UNAVAILABLE |
+| `python3 source/tools/package.py` | validate disabled c38 package, full source/evidence and c48 FAIL/c49 UNAVAILABLE metadata | exit0,1 package-validation PASS |
+
+Nonduplicated full-chain totals: **401 PASS /5 SKIP /8 UNAVAILABLE** =portable13
++smoke7+hooks381; focused repeats already occur inside hooks. Package validation
+is1 separate PASS. SKIP5 are optional private original-body/positive replay/capture
+inputs absent. UNAVAILABLE8 are unchanged c40 callback0 in2 modes plus c49 mixed
+callback0 in6 mode/scenario cases. These are regression/model/observation counts,
+not a native VCH/bridge PASS. Full runner results are mirrored in c49 status.
+The focused script includes actual sanitized C++ model command, cross-link and
+six Wine commands. Its strict parser command is:
+`python3 source/tools/check_vch_search_bridge.py source/logs/windows_vch_search_bridge.log`.
+Parser success validates honest UNAVAILABLE reporting, not a native VCH PASS.
+The initial focused run and final focused rerun both exited0; the rerun followed
+reporting of registration-failure cleanup and one added synthetic identity case.
+No initial failing assertion or older assertion/cap/deadline relaxation was hidden.
+
+## Not run / unavailable / native next action
+
+- Native Windows dispatch/order/final-CONTEXT observation: not run, no native
+  Windows execution environment attached; Wine callback0 cannot answer it.
+- Actual VCH hold, binding to prepared c41 executable stub, exact post-return
+  acknowledgment and post-witness close/deadline/kill no-resurrection matrix:
+  not run/implemented because stage2 did not succeed. Model rows are not native
+  or executable-bridge coverage. Nested/multiple identities are synthetic only.
+- Optional private body/positive replay tests: SKIP where existing inputs absent;
+  do not reconstruct game-native bodies or package raw logs.
+- Production/game/Update-WS/slot/forced thread-kill/module-unload experiments:
+  not performed, expressly out of scope. Actual owned worker exits normally.
+- General c48 no-drop all-path credits, arbitrary third-party VCH final ordering,
+  code/data/module quiescence and production mitigations remain unproven.
+
+Owner action is only the tested stage2 standalone command from
+analysis/native-probes/c49, after fetching the latest branch in `_source`:
+
+```powershell
+.\continuation-witness.exe --position --mixed-search-vch --json
+```
+
+Return compact JSON/output. Do not run Update-WS or Spider-Man2/Overstrike.
+An actual callback with matching final-context identity can report
+native_boundary_observed=true; this observation-only binary still cannot report
+a bridge/witness PASS it does not implement. No callback stays UNAVAILABLE;
+observed exact-context/order violation is FAIL; unsupported prerequisites exit77.
+
+Current validation output is only
+source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled, not a new game release.
+The copied owner CLI was also executed under Wine with exactly the requested
+arguments (JSON-only branch), producing one additional UNAVAILABLE observation,
+not native evidence. Exact cloud command from repository root:
+
+```bash
+WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/analysis/native-probes/c49/continuation-witness.exe" --position --mixed-search-vch --json
+```
+
+`python3 /tmp/ws-c49-verify.py`:2 integrity PASS checks. All pre-existing tracked
+files except the explicitly authorized PROJECT_STATE/CODEX_RESULT/package/hooks
+updates match task base, including production, all c39-c48 helpers/evidence and
+older probes. All262 code/tool input hashes match both manifest and package
+copies; new root/source mirrors match. The PE imports real Add/RemoveVCH, the
+production DLL does not; no new test enters the production build. The exact
+owner CLI emits one JSON line, null witness fields and honest callback0. Re-ran
+the strict JSON parser directly from repository root (command above) successfully.
+Five primary-doc requests also passed commit-pinned byte-equality inspection;
+that documentary check is not native runtime evidence.
+
+Published observation PE:5731386bytes, SHA256
+d8e8333fa65c01eb617dd360019bbb1aa5f88b0fab4990e149f29230ac3af989.
+All262 source/tool inputs digest:
+b16df3a931e8beeb80a79f1fac3461eb48f5ec11148c5ab7af1d1da91a70bf2a.
+No probe/production code changed after validation; the final focused/hooks rerun
+checks the adjusted control-suite wiring. Later changes are handoff/publication metadata.
+Therefore the full code suite need not be repeated after documentation-only
+finalization. Package/copy/integrity checks are repeated after final metadata.
+Implementation commit and remote/fresh-clone publication check follow below.
+The task file is preserved.
+
+---
+
 # Codex result — c48 production continuation-witness integration review
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
