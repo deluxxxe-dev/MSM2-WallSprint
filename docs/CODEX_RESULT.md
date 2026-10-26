@@ -1,3 +1,91 @@
+# Codex result — c39 exact-slot admission audit: stopped fail-closed
+
+Branch **codex/v01c20-edi-value-provenance**, task base **750367f**.
+Runtime remains **v0.1c38 / package0.1.56**. **No c39 slot watch or game release.**
+This implements the task's explicit stop-if-unsafe fallback, not its positive
+access-capture acceptance matrix. Detailed evidence:
+`analysis/V01C39_WATCH_RETIREMENT.md` / `V01C39_GATE.md` /
+`V01C39_WATCH_STATUS.json`.
+
+## Result and exact missing mechanism
+
+Read current AGENTS/manual/rules/workspace/state/NEXT, accepted c28/c36/c37/c38
+evidence, offline scanner, orientation_trace.cpp/immediate_reset_trace.cpp and
+relevant Wisdoms instructions/manual/engine/method/WS references. Intended branch
+only, no main merge/reset/force-push. Owner's c38 scan is retained, not rerun.
+
+The existing hardware engine cannot presently certify retirement of pending
+saved VEH exception contexts. In both reset and Position owned real-thread Wine
+tests, the unmodified production handler returns with inflight0. Holding only
+the test wrapper's exception return lets the real coordinator restore current
+DR state, close leases and report cleanup_pending0/activeLeasesfalse. A real
+thread-context readback confirms that instantaneous restoration. Releasing the
+pending exception then re-enables the retired DR0/DR1 settings from its saved
+CONTEXT, despite no active lease bookkeeping. A later matching hit recovers
+through retained tombstones without new capture; silence has no such recovery
+proof. **This is owned-fixture execution, not observed game/real-Windows evidence.**
+
+Thus neither inflight0 nor lease cleanup0 certifies safe RW8 ->WRITE8 re-arm or
+serialization with old reset/Position windows. A single RW8 phase still lacks
+bounded close/timeout/kill retirement. The task explicitly permits stopping at
+this prerequisite rather than weakening cleanup. No broad interception,
+PAGE_GUARD, arbitrary detour, debugger/foreign-DR bypass or slot mode is added.
+Additionally, the current engine's normal path reads12/16 watched bytes and
+copies GPR/XMM/stack metadata; it must never be repointed at the8byte game slot.
+
+Required next mechanism: account for saved exception contexts until retired
+debug configurations cannot be reapplied, keep cleanup/serialization pending
+while unproven, preserve existing foreign/owned debug-state semantics, and prove
+it with the delayed-return regression. A last in-handler counter/check alone
+still precedes OS exception return. Only then implement the separate value-free
+RW8/WRITE8 event path and exact post-RIP identity tests. Those positive c39 tests
+remain **unimplemented/not claimed**, not silently passed by legacy coverage.
+
+## Changes and validation
+
+- `source/src/NativeHooks/watch_retirement_smoke.cpp`: independently owned scalar
+  store/thread, actual DR/VEH and transparent test-only return hold. Production
+  CONTEXT/lease data, caps, deadlines, handlers and memory protections unchanged.
+  Two modes show both the retirement gap and later tombstone recovery. Reset's
+  existing DR6 status policy and Position's exact saved DR6 are asserted separately.
+- `source/tools/test_watch_retirement.sh` and mandatory `test_hooks_windows.sh`:
+  compile Werror and execute both owned modes,4 new PASS records.
+- `source/tools/package.py`: include accepted c38 scan and c39 refusal evidence
+  in subsequent packages, without adding a mode or changing runtime version.
+- Analysis/status, additive PROJECT_STATE entry and this handoff. NEXT remains
+  byte-identical, five historic untracked archives untouched. No SF/ordinary-mod/
+  shared-tool/updater changes. Existing game/native production source unchanged.
+
+Full pipeline **exit0**: Windows x64 Werror build, portable13, DLL/logger smoke7,
+hooks/native/workspace/offline scanner274 = **294 public PASS records**, plus
+**5 optional private-input SKIPs**. Identity110/read-call21/scanner20 retained.
+No original test assertion/cap/deadline changed. No full-suite rerun was needed
+for a failure; its first run passed. New focused fixture initially demanded
+Position's stronger full DR6 snapshot from legacy reset; diagnostic reserved-bit
+normalization explained it and the fixture now tests the two unchanged policies.
+See the detailed audit for the exact initial failure/correction.
+
+Source reproduction/package/publication checks are recorded below before final
+handoff. Existing v0.1c38 ZIP/script artifacts are not rewritten or relabeled.
+No v0.1c39 ZIP/script/runtime log is produced; reproducible c39 audit/test sources
+are handed off in Git. This task does not claim that the legacy engine was fixed.
+
+## Safety and owner action
+
+No actual slot qword/current game function/value/pointer read, pointer chase,
+register/stack/vector dump or MOD slot write is added. C37 relative offset
+0..0xFFFC0/stride64/endExclusive0xFFFE0 and c36 escape1/pending1/contained0/
+control-alias1/CFG0 remain. Publication/allocation/base/lifetime/all-writer/
+ownership/conflict and all new Position/source/input/movement/gameplay write
+gates remain closed; producer0x351EB00 excluded/deferred.
+
+**No Update-WS, game test, A/E comparison or offline scanner rerun is needed for
+this test-only audit.** No c39 runtime log can exist yet. Next development task
+must review the bounded retirement prerequisite, then authorize the postponed
+non-value exact-slot mode; do not proceed to publication-chain interpretation.
+
+---
+
 # Codex result — c38 bounded register-affine exact-slot candidates
 
 Branch **codex/v01c20-edi-value-provenance**; task base **7ed084f**.

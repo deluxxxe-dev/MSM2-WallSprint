@@ -44,6 +44,8 @@ bash tools/test_position_proof.sh
 
 bash tools/test_position_writer.sh
 
+bash tools/test_watch_retirement.sh
+
 bash tools/test_movement_lineage.sh
 
 bash tools/test_writer_entry.sh

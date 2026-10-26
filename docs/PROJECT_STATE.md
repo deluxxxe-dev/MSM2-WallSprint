@@ -1,5 +1,30 @@
 # WallSprint project state
 
+## c39 admission audit (2026-10-26; follows accepted c38 scan)
+
+The current NEXT's explicit stop-if-unsafe path applies. **No c39 exact-slot watch
+is enabled.** Runtime remains v0.1c38/package0.1.56; no c39 game ZIP/script/log.
+See `analysis/V01C39_WATCH_RETIREMENT.md`, `V01C39_GATE.md` and
+`V01C39_WATCH_STATUS.json` for the reproducible prerequisite failure.
+
+Owned real-thread Wine DR/VEH tests reproduce reset and Position cleanup reporting
+pending0/inflight0/no active leases, with exact saved debug registers restored at
+that instant, followed by a delayed exception return re-enabling the retired
+watch from its saved CONTEXT. A subsequent hit recovers through immutable lease
+tombstones, but that is not bounded cleanup during silence. Real-game/Windows
+manifestation is UNKNOWN. Existing production code is unchanged; normal prior
+cleanup tests passing does not close this newly tested exception-return interval.
+
+Do not treat existing cleanup bookkeeping as a c39 phase-rearm/serialization
+certificate. A bounded exception-context retirement mechanism must be reviewed
+and proven before adding a separate value-free single8byte watch/event path and
+unique current-code trigger identity. Existing value/GPR/XMM capture must never
+be repointed at the static slot. Full positive c39 access-capture acceptance
+matrix remains unimplemented; this is the explicitly permitted fail-closed audit
+outcome. No new owner offline/game test is needed for the test-only changes.
+C38 accepted scan/c28 reader, c37 range, c36 escape/CFG barrier, all publication/
+ownership/write gates and deferred producer0x351EB00 remain unchanged below.
+
 ## Goal
 Convert vanilla WallRun into surface-relative locomotion. Do not advance movement rewrite, adhesion, camera, animation or physics until runtime ownership gates authorize them.
 
