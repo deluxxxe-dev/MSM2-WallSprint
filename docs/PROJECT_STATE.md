@@ -103,50 +103,59 @@ reason=target_store_destination_code_or_control_stack_alias_unexcluded
 
 The critical may-mask conservatively includes current code/runtime data, control/return stack, caller-home and callee-private stack, Hero/Transform, `Transform+0x10C`, writer source, Position storage and other later memory. This is uncertainty, not proof of actual overlap.
 
-The unresolved effect now propagates correctly into the parent summaries before target-identity refusal:
+The unresolved effect propagates correctly into parent summaries before target-identity refusal. The prior c35 parent `memory_escape=0` was an admission artifact, not proof of no escape.
+
+Target remains incomplete and no next opcode may be inferred while code/control-stack alias remains possible.
+
+## c37 accepted result — fallthrough offset proven; base publication still unresolved
+
+Implementation/static proof: `analysis/V01C37_ADDRESS_COMPONENTS.md` and `analysis/V01C37_PUBLICATION_STATUS.json`.
+
+Actual-game confirmation: `analysis/V01C37_RUNTIME_RESULT.md` from owner-supplied `MSM2-WS-v0.1c37-20261026-164009.log`.
+
+The JA fallthrough predicate and exact MOVSXD/SHL sequence prove the relative R8 store offset without observing a live value:
 
 ```text
-READ_CALL memory_escape=1
-READ_CALL first_escape_rva=0x2CF7FFB
-READ_CALL pending_unknown_write=1
-
-READ_FLOW memory_escape=1
-READ_FLOW first_escape_rva=0x2CF7FFB
-READ_FLOW first_unresolved_rva=0x2CF7FFB
+R8D range on fallthrough = 0..0x3FFF
+MOVSXD exact nonnegative 64-bit range = 0..0x3FFF
+SHL count = 6
+offset_min = 0
+offset_max_inclusive = 0xFFFC0
+offset_stride = 64
+store_width = 32
+end_extent_exclusive = 0xFFFE0
+overflow_wrap_excluded = 1
+offset_proven = 1
 ```
 
-The prior c35 parent `memory_escape=0` was an admission artifact, not proof of no escape.
+This is range metadata separate from unchanged may-tags.
 
-Target remains incomplete:
+The RAX source qword remains the writable image slot at `RVA 0xC2D2580`. Runtime confirms that the publication track is still unresolved:
 
 ```text
-TARGET_IDENTITY admitted=0
-barrier_rva=0x2CF7FFB
-barrier_instruction=vmovups
-reason=target_store_destination_code_or_control_stack_alias_unexcluded
-LEAF_CFG complete=0
-return_paths=0
-unique_instructions=7
-visits=7
-effect_certificate=0
+reference_scan_performed=0
+writer_enumeration_complete=0
+publication_source=opaque_loaded_qword_not_pointer
+source_known=0
+allocation_proven=0
+range_proven=0
+lifetime_proven=0
+critical_disjointness_proven=0
+base_proven=0
+offset_proven=1
+destination_contained=0
+CFG_continuation=0
 ```
 
-No next opcode is inferred. A clean JA path cannot erase an unresolved store on the fallthrough path.
+Therefore c36's escape/control barrier remains closed.
 
-## Current address-containment decomposition
+### c37 test-condition note
 
-The hard blocker is now specifically the destination:
+The owner reported an initial failed wall attachment that briefly entered upward/vertical WallRun. The log agrees: sessions 1-4 are short `Mixed`/`WallRunUp` attempts. They are not treated as intended stable samples.
 
-```text
-[R8 + RAX]
-```
+Sessions 5 and 6 are the usable `WallRunSide` sessions (~3.77 s and ~4.32 s) and both retain verified native Deinit, retention pass, no hard kill, MOD `Position_writes=0`, `source_position_writes=0`, and zero adhesion corrections.
 
-The next useful evidence must separate two facts rather than repeat the same runtime capture:
-
-1. **Fallthrough R8 offset range.** The branch is the non-JA outcome of unsigned `cmp r8d,0x3FFF`; c37 should prove path-sensitively whether this implies `r8d <= 0x3FFF`, then carry that exact range through `movsxd` and `shl 6` without live numeric observation.
-2. **RAX base publication/provenance.** RAX is loaded from the exact writable-image qword at source RVA `0xC2D2580`. c37 should find authenticated non-value evidence for writers/publication/allocation/range/lifetime of that slot. Zero tags, stable sessions, or a numeric pointer value alone are insufficient.
-
-If the first proof succeeds, the expected mathematical maximum must be derived by the implementation, not assumed. If both proofs eventually establish an allocation base plus a bounded offset and 32-byte store extent, only then may critical non-overlap/containment be considered.
+This does not invalidate the c37 address proof because the new OFFSET_RANGE/SLOT_PUBLICATION records are startup/current-code diagnostics and are independent of those motion samples.
 
 ## Safety gate
 
@@ -158,8 +167,6 @@ source_lifetime_exclusive=0
 downstream_conflicts_proven_absent=0
 Position/source/input/movement writes=0
 ```
-
-Observed c36 sessions retained verified native Deinit, retention pass, hard kills 0, MOD Position writes 0, source-position writes 0 and adhesion corrections 0.
 
 The VMOVUPS store is existing game code, not a MOD write and not permission to write movement/Position data.
 
@@ -184,33 +191,22 @@ Producer `0x351EB00` remains deferred.
 15. c34 SHL data/flags ✅
 16. c35 second VMOVUPS exact store ✅
 17. c36 unresolved store escape / hard control-alias barrier ✅ actual game
-18. prove fallthrough offset range + exact qword-slot base publication ▶ CURRENT
-19. contain `0x2CF7FFB` store destination ⏸ pending both address components
-20. resume full writer XYZ/W causal proof ⏸ after store containment
-21. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-22. safe writable upstream movement source ⬜ NOT AUTHORIZED
-23. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-24. adhesion/contact refinement ⏸ deferred
-25. animation/camera/later traversal ⬜
+18. c37 fallthrough R8 offset range ✅ static + actual diagnostic confirmation
+19. exact qword-slot publication candidate scan / base provenance ▶ CURRENT
+20. contain `0x2CF7FFB` store destination ⏸ pending base proof
+21. resume full writer XYZ/W causal proof ⏸ after store containment
+22. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+23. safe writable upstream movement source ⬜ NOT AUTHORIZED
+24. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+25. adhesion/contact refinement ⏸ deferred
+26. animation/camera/later traversal ⬜
 
 ## Current action
 
 Follow `docs/CODEX_NEXT.md`.
 
-C37 must not repeat c36 A/E metadata as if that could solve containment. It should add only new authenticated non-value proof for the two address components: path-sensitive R8 range from the accepted CMP/JA/MOVSXD/SHL sequence, and exact source/publication analysis for the qword slot at RVA `0xC2D2580` that supplies RAX.
+Do not repeat the c37 gameplay capture. The next required evidence is an owner-run offline exact-slot candidate scan of the exact on-disk executable using `source/tools/slot_publication.py`, producing `logs/MSM2-WS-v0.1c37-slot-publication.json`.
 
-Do not observe/log a live numeric pointer merely to narrow aliases. Do not assume the slot is a pointer, pool, array, allocation or owner until its writer/publication chain proves that. Exact-slot xref/write discovery is allowed; generic arbitrary memory emulation is not.
+That scan is candidate metadata only. It must not be interpreted as complete writer enumeration, allocation/lifetime proof, or store containment by itself.
 
-Do not merge `main`, do not traverse producer `0x351EB00`, and do not enable gameplay writes.
-
-## c37 prepared — offset range proven independently of opaque base
-
-v0.1c37/package0.1.55 derives fallthrough unsigned R8D interval through exact
-MOVSXD/SHL6: offsets0..0xFFFC0/stride64/endExclusive0xFFFE0 for32bytes, checked
-nonwrap, separate from unchanged tags. Other R8 writes invalidate it. Publication
-slot0xC2D2580 writers/source/allocation/extent/lifetime remain unproven; no actual
-authenticated EXE in cloud, counts unknown/not scanned. Bounded hash-guarded
-offline exact-slot candidate tool included; no all-writer/ownership claim and
-deferred producer excluded. Base+offset/control containment false; c36 escape1/
-pending/hard CFG stop and all safety gates preserved. No repeated A/E capture.
-NEXT unchanged; see V01C37_ADDRESS_COMPONENTS.md / PUBLICATION_STATUS / CODEX_RESULT.
+Do not observe/log the live qword value, do not pointer-chase it, do not assume pool/array/allocation semantics, do not traverse producer `0x351EB00`, do not merge `main`, and do not enable gameplay writes.
