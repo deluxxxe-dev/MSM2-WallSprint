@@ -2,7 +2,7 @@
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
 Task base **5356dd21dbe45e2abfa674f4eb0a5e6b810e3052**.
-Implementation commit **PENDING_COMMIT** (resolved in metadata handoff).
+Implementation commit **be786de584be36f0941fc5566bcbbc82f2a0d715**.
 **PARTIAL SUCCESS / native acceptance remains FAIL-CLOSED:** deterministic
 pre-access observation, focused/owned regression and standalone validation
 succeeded. Actual native c46 pre-access values remain UNKNOWN; no
@@ -145,6 +145,24 @@ can change rebuild hashes. Package validation output is only ignored
 source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled. No root release ZIP,
 active script, private game data or runtime version change is published.
 
+## Persistence / publication
+
+Implementation **be786de584be36f0941fc5566bcbbc82f2a0d715** was pushed on the intended branch. Executed
+`git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance` matched local
+implementation HEAD. Wisdoms **6a7d0d061c2437b48de386fead4400b82ad0c8cf** was committed/pushed to its main;
+`git ls-remote origin refs/heads/main` in that repository matched local HEAD.
+A separate metadata-only descendant pins this implementation SHA in status,
+manifest and this report, and is also pushed/remote-verified in the final handoff.
+No source/tool/binary bytes change after required validation.
+
+Final independent publication check:
+`git clone --depth 1 --single-branch --branch codex/v01c20-edi-value-provenance --filter=blob:none --no-checkout https://github.com/deluxxxe-dev/MSM2-WallSprint.git /tmp/ws-c46-published`,
+then `python3 /tmp/ws-c46-check-publication.py` restores/compares all23 changed
+files and checks final HEAD/manifest/PE hash. Expected remote/local equality and
+all bytes identical; final handoff records actual result. Production/integrity
+checks and package validation are repeated only for metadata packaging, without
+rerunning unchanged runtime tests or adding duplicate PASS counts.
+
 ## Unperformed / owner action
 
 Native Windows c46 pre-access test: NOT RUN because this cloud has Wine only;
@@ -166,8 +184,8 @@ analysis/native-probes/c46:
 If the folder is absent, first git pull --ff-only in the existing independent
 _source clone on this branch. Return JSON even if FAIL: original c44 acceptance
 remains strict; the purpose is the missing native pre-access boundary. No game
-launch/Update-WS request. Commit/push/remote-SHA and Wisdoms handoff are resolved
-in publication metadata; only the five original untracked artifacts remain.
+launch/Update-WS request. Implementation push and Wisdoms publication are verified below; only the five
+original untracked artifacts remain.
 
 ---
 

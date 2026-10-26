@@ -192,7 +192,7 @@
       "reason": "proxy403_owner_current_primary_extraction_retained"
     }
   },
-  "implementation_commit": "PENDING_COMMIT",
+  "implementation_commit": "be786de584be36f0941fc5566bcbbc82f2a0d715",
   "standalone_artifact": {
     "path": "continuation-witness.exe",
     "bytes": 6602573,
@@ -257,5 +257,11 @@
       "test": "RETIREMENT_CONFIGURATION_SAFE_positive_acceptance",
       "reason": "no_such_comparator_added_without_native_phase_proof_synthetic_model_not_acceptance"
     }
-  ]
+  ],
+  "publication": {
+    "implementation_remote_verified": "be786de584be36f0941fc5566bcbbc82f2a0d715",
+    "wisdoms_main_remote_verified": "6a7d0d061c2437b48de386fead4400b82ad0c8cf",
+    "final_metadata_commit": "same_branch_descendant_reported_in_final_handoff",
+    "final_verification": "remote_local_SHA_equality_and_fresh_clone_23file_byte_comparison"
+  }
 }
