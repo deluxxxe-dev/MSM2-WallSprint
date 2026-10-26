@@ -8,7 +8,7 @@ records = [json.loads(line) for line in Path(sys.argv[1]).read_text().splitlines
 assert len(records) == 12
 seen = set()
 for record in records:
-    assert record['schema'] == 6 and record['task'] == 'c46'
+    assert record['schema'] == 7 and record['task'] == 'c47'
     assert record['witness_task'] == 'c41' and record['environment'] == 'Wine'
     assert record['thread'] > 0 and record['lease'] == 1 and record['generation'] == 101
     assert record['game_used'] is False and record['production_integrated'] is False
@@ -116,17 +116,33 @@ for record in records:
             assert result['classification']=='UNCHANGED' and result['unique'] is True
         else:
             assert result['classification']==first and result['unique'] is (first!='UNRESOLVED_OR_MULTIPLE')
+    config = record['retirement_configuration']
+    assert record['exact_slot_watch_enabled'] is False and record['RETIREMENT_CONFIGURATION_SAFE'] is False
+    assert config['revision']=='c47-v1' and config['RETIREMENT_CONFIGURATION_SAFE'] is False
+    assert config['reason']=='native_Windows_required_not_Wine' and config['synthetic_inputs'] is False
+    assert config['ticket_capture_complete'] is (scenario!='cap_refusal')
+    assert config['ticket_count']==(0 if scenario=='cap_refusal' else record['contexts'])
+    for i,ticket in enumerate(config['tickets']):
+        assert ticket['sequence']==i+1 and ticket['thread']==record['thread']
+        assert ticket['lease']==record['lease'] and ticket['generation']==record['generation']
+        assert ticket['acknowledged'] and ticket['current_code']
+    assert config['total_context_write_attempts']==(1 if scenario=='cap_refusal' else 2)
+    assert config['final_poll_context_write_attempts']==(0 if scenario=='cap_refusal' else 1)
+    assert config['unscoped_context_write_attempts']==config['failed_context_write_attempts']==0
     report = record['final_restoration']
     assert report['revision'] == 'c43-v1' and report['comparison'] == 'EXACT_UNMASKED'
     assert report['synthetic_inputs'] is False
     assert set(report['registers']) == {'Dr0', 'Dr1', 'Dr2', 'Dr3', 'Dr6', 'Dr7'}
     if scenario == 'cap_refusal':
+        assert record['RAW_EXACT'] is None and record['ARCHITECTURAL_CANONICAL'] is None
         assert record['result'] == 'FAIL_CLOSED_EXPECTED' and record['retirement_accepted'] is False
         assert report['attempted'] is False and report['capture_complete'] is False
         assert report['classification'] == 'NOT_OBSERVED' and report['final_predicate'] is None
         assert report['active_leases_after_final_poll'] is None and report['final_poll_returned'] is None
         assert comparison['readbacks_complete'] is False and comparison['after'] is None
         continue
+    assert record['RAW_EXACT'] is comparison['raw_all_exact'] is True
+    assert record['ARCHITECTURAL_CANONICAL'] is comparison['architectural_all_equivalent'] is False
     assert record['result'] == 'OWNED_WITNESS_PASS' and record['retirement_accepted'] is True
     assert report['attempted'] is True and report['capture_complete'] is True
     assert report['active_leases_before_final_poll'] is True
@@ -163,4 +179,4 @@ for record in records:
         boundary = int(current_dr6,16) & 0x10800 == 0x10800
         assert phase['status_boundary_valid'] == boundary
         assert phase['current_fixed_bits_valid'] == valid and phase['ARCHITECTURAL_CANONICAL'] == (valid and boundary)
-print('PASS: c46 actual Wine JSON validates12 zero-DB pre-access gates,10 complete12-stage lifecycles,2 partial cap refusals and unchanged c43/c44/c45 evidence without configuration certificates')
+print('PASS: c47 actual Wine JSON retains12 prior scenarios, gates/raw/c44/c45/c46 evidence, actual ticket/write counts and false native-only configuration predicate')

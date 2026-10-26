@@ -56,6 +56,8 @@ bash tools/test_dr6_lifecycle.sh
 
 bash tools/test_pre_access_lifecycle.sh
 
+bash tools/test_retirement_configuration.sh
+
 bash tools/test_continuation_witness.sh
 
 bash tools/test_movement_lineage.sh

@@ -1,42 +1,60 @@
 # WallSprint project state
 
-## c46 current stage — watch-enabled pre-access observation
+## c47 current stage — separate exact-owner configuration predicate
 
-Accepted c45 native evidence: analysis/V01C45_NATIVE_WINDOWS_RESULT.md (distinct
-source compact summary preserved). GenuineIntel, actual policies[0,0,256] ADMIT,
-one watch write/one owned hardware DB, three acknowledged contexts, pending0,
-canRetire true, false poll/inactive leases, exact Dr0-Dr3 and stable final
-Dr6=0xFFFF0FF0/Dr7=0x410. RAW_EXACT and c44 ARCHITECTURAL_CANONICAL remained FAIL.
-Eleven ordered stages first observed11/16=1 at DB entry and retained1 thereafter;
-c45's HARDWARE_DB_ENTRY label was a context-view boundary, not CPU causality.
+Accepted owner c46 native result: V01C46_NATIVE_WINDOWS_RESULT.md. GenuineIntel,
+Position/multiple, actual admitted[0,0,256], complete zero-DB/access/ticket/debt
+pre-access gate, one watch write and stable final readbacks. Dr6[11,16] first
+changes0/0 ->1/1 after watch Resume BEFORE target access or DB, classified
+WATCH_ENABLED_RESUME_PRE_ACCESS. This supersedes the coarser c45 DB-entry
+observation boundary. Native c46 RAW_EXACT/c44 canonical FAIL remains unchanged.
 
-C46 adds a disjoint test-owned gate after initial watch Resume and before the
-sole machine call/target-address evaluation. Actual arrival/capture/read counters
-must prove DB0/machine0/tickets0/pending0, same thread/lease/generation, live owned
-slots, one original context write and no intervening write/repair. Suspend0,
-debug-context capture and Resume1 precede coordinator release to the only access.
-Old c45 eleven-phase view/helpers remain intact; schema6 additionally exposes
-pre_access_lifecycle/c46-v1 with twelve phases and post_watch_resume_pre_access.
+C47 adds test-only RETIREMENT_CONFIGURATION_SAFE/c47-v1 for only that measured
+activated-state/documentation profile. It requires native Windows/Intel,
+Position/multiple, actual tuple0/0/256, full twelve-stage gate/unique transition,
+three individually acknowledged/current-code ticket identities, no pending debt,
+canRetire/false poll/inactive leases, exact Dr0-Dr3/foreign Dr2/Dr7 controls,
+all c44 final fixed/unknown/cause rules and complete stable readbacks. The ENTIRE
+Dr6 pattern is positively matched; no generic status mask is introduced. Exactly
+one watch Set and one original final-poll restore Set are required, with no extra/
+unscoped/failed write. Evidence is frozen before terminal cleanup and published
+atomically. No runtime vendor/policy/environment/timeline value is forged.
 
-Owned Wine reaches all twelve gates with zero DB/access/ticket/debt counts. Both
-bits are still0 at pre-access and first1 at DB entry: first_transition_boundary
-DEBUG_EXCEPTION_DELIVERY_BOUNDARY. They later return0 after final poll, so the
-whole history remains UNRESOLVED_OR_MULTIPLE, not native configuration proof.
-No RETIREMENT_CONFIGURATION_SAFE or RETIREMENT_STATUS_SAFE acceptance is added.
-Original raw/c44 predicates and all controls/addresses/foreign causes/continuation
-and lifetime gates remain. Native missing/ambiguous evidence refuses.
+Schema7 exposes RAW_EXACT, ARCHITECTURAL_CANONICAL and the new configuration
+result separately. The old raw/c44/c45/c46 helper definitions remain unchanged.
+The clearly synthetic exact c46 model has false/false/true; synthetic truth is
+not native execution. Wine retains original raw-exact regression and its native-
+only configuration result is false. A successful native run is explicitly
+OWNED_WITNESS_CONFIGURATION_PASS, still production_integrated=false and
+exact_slot_watch_enabled=false. Native c47 acceptance is pending, not predeclared.
 
-Current Intel primary lead is owner-retrieved SDM Vol3B253669-090US/February2026/
-20.2.3. Current Microsoft context API sources are retrieved and SHA-pinned; Intel
-independent cloud PDF/hash is still403/unavailable. API snapshots do not directly
-sample hardware or prove the cause of a change; the post-snapshot Resume remains
-an observation limit. Detailed reasoning/provenance is in V01C46_PRE_ACCESS_BOUNDARY,
-V01C46_GATE and V01C46_STATUS. Required owned validation passed; analysis/native-probes/c46 contains the exact
-tested source-pinned standalone. One game-free native JSON command remains.
+Current Intel SDM253669-090US/Feb2026/20.2.3 owner primary extraction and current
+Microsoft context API sources justify the bounded status/configuration distinction.
+Independent Intel PDF/hash remains proxy403/unavailable, never invented. CPU model
+is not pinned/invented: admission requires known actual CPUID/prerequisites and
+this exact activated-state/measurement profile, not arbitrary Intel support.
 
-Runtime remains v0.1c38/package0.1.56. No production restore/ownership integration,
-exact-slot watch, producer traversal or gameplay write is enabled. No Update-WS,
-game/Overstrike/A-E/WallRun/scan/log or mitigation-setting change is needed.
+See V01C47_CONFIGURATION_RETIREMENT.md (including production relevance audit),
+V01C47_GATE and V01C47_STATUS. Owned validation passed; source-pinned analysis/native-probes/c47 contains the
+exact tested standalone. At most one game-free owner native JSON run follows.
+Runtime v0.1c38/package0.1.56. Production restore/ownership/install/handler/lease/
+equality, c39/c40 counterexamples, exact-slot/gameplay/producer gates stay intact.
+Even native c47 PASS leads only to a later explicit production-integration review.
+No Update-WS/game/Overstrike/A-E/WallRun/scan/log/settings change is requested.
+
+## c46 historical stage — native zero-event pre-access transition, FAIL
+
+Owner ran published27a7e44. The resumed pre-access gate proved DB0 at all four
+observation points, machine0/tickets0/pending0, active owned lease/slots,
+release unsignaled and one original watch write/no intervening repair. Both
+status bits were already1 at pre-access (prior watch readback0), remained1 at
+ordinary DB entry/after engine/post-return/poll/three readbacks. The engine
+cleared owned B0. Three contexts were acknowledged, pending0/canRetire true,
+false poll/inactive leases and exact Dr0-Dr3/foreign Dr2. Stable final
+Dr6=0xFFFF0FF0/Dr7=0x410 still failed unchanged raw/c44 comparisons. This is a
+bounded Windows-context observation, not kernel/CPU micro-mechanism proof or a
+production-wide saved-context retirement certificate. C47 now separately tests
+configuration retirement without changing or relabeling that historical FAIL.
 
 ## c45 historical stage — native first-observed DB-entry transition, FAIL
 
@@ -80,7 +98,7 @@ flags before executing the witness. Neither run proves native witness acceptance
 
 ## c41 historical stage — partial success and native refusal
 
-C41 task base4b39a82; current task is c46. C40 completed its review
+C41 task base4b39a82; current task is c47. C40 completed its review
 with the fail-closed outcome; production retirement remains unproven. C41 adds
 only an owned test prototype, not production integration or a slot watch.
 Current c41 handoff classification: **PARTIAL SUCCESS** — owned Wine feasibility
@@ -98,7 +116,7 @@ process-wide accounting, a full-XSTATE runtime proof or a native-Windows/CET fix
 Details: `analysis/V01C41_CONTINUATION_WITNESS.md`, `V01C41_GATE.md`,
 `V01C41_WITNESS_STATUS.json`. The historical c41 standalone command used
 `analysis/native-probes/c41/continuation-witness.exe --position --multiple --json`.
-Current native follow-up uses c46 above, not this historical artifact. No game
+Current native follow-up uses c47 above, not this historical artifact. No game
 launch/update/slot scan/log is needed. This historical c41 artifact refused
 all nonzero native flags; c42 refines only the standalone test boundary. Native evidence and a later
 explicit integration task are required before c39-style slot work can resume.
@@ -439,24 +457,25 @@ The VMOVUPS store is existing game code, not a MOD write and not permission to w
 25. c43 final-restoration diagnostic ✅ native lease cleanup/Dr0-Dr3 exact, RAW Dr6/Dr7 FAIL
 26. c44 vendor-specific DR comparison ✅ native Intel/stable RAW+canonical FAIL, Dr6[11,16] remainder
 27. c45 DR6 lifecycle ✅ native single DB-entry observed transition; raw/canonical FAIL
-28. c46 pre-access boundary ▶ CURRENT; native pre-access state pending, no configuration acceptance
-29. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
-30. bounded publication/source chain ⏸ pending writer-site evidence
-31. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
-32. resume full writer XYZ/W causal proof ⏸ after store containment
-33. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-34. safe writable upstream movement source ⬜ NOT AUTHORIZED
-35. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-36. adhesion/contact refinement ⏸ deferred
-37. animation/camera/later traversal ⬜
+28. c46 pre-access boundary ✅ native zero-DB pre-access0->1, raw/c44 FAIL
+29. c47 configuration predicate ▶ CURRENT; exact model tested, native c47 pending
+30. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
+31. bounded publication/source chain ⏸ pending writer-site evidence
+32. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
+33. resume full writer XYZ/W causal proof ⏸ after store containment
+34. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+35. safe writable upstream movement source ⬜ NOT AUTHORIZED
+36. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+37. adhesion/contact refinement ⏸ deferred
+38. animation/camera/later traversal ⬜
 
 ## Current action
 
-Follow `docs/CODEX_NEXT.md` for c46. Preserve native c45 FAIL and original
-comparators/production restoration. Validate/publish the test-owned zero-DB
-pre-access gate and explicit first-context-boundary/multiple refusal. No new
-configuration acceptance is justified without the missing native pre-access
-observation. After publication request only the native standalone JSON command.
+Follow `docs/CODEX_NEXT.md` for c47. Preserve native c46 FAIL and old comparators/
+production behavior. Validate/publish only the narrow test-owned configuration
+predicate and all prior regressions. After publication request at most one native
+standalone JSON run. Even native success requires a later explicit production-
+integration review; no exact-slot work is authorized by this predicate alone.
 
 Do not add the exact-slot watch, PAGE_GUARD or broad memory interception merely
 to force progress. Do not merge `main`, do not traverse producer `0x351EB00`, and

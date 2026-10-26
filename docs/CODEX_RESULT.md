@@ -1,3 +1,174 @@
+# Codex result — c47 test-only exact-owner retirement configuration
+
+2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
+Task base **ec4fe902c8d52e96c01e838a72dcdd41d16caa70**.
+Implementation **PENDING_COMMIT** (resolved in metadata handoff).
+**PARTIAL SUCCESS:** documentation/native-order-backed separate predicate,
+focused models, full owned regressions and source-pinned standalone succeeded;
+actual native c47 execution remains pending. No production integration/general
+retirement certificate/slot watch/gameplay write. Runtime v0.1c38/package0.1.56.
+
+## Evidence / implementation / resulting behavior
+
+Read AGENTS and unchanged development manual/rules/workspace/reporting, latest
+state/NEXT, relevant c39-c46 evidence/source/tests and Wisdoms. Fast-forwarded
+only intended branch from27a7e44 toec4fe90, no main merge/reset/force push.
+Preserved five original untracked artifacts and historical c41-c46 standalone
+files/native FAIL evidence. Both accepted c46 result files remain byte-identical,
+SHA256 e09d11148a3f82c5becc484e65c365c036617d7d4ea492243bfd3b10f24e553b.
+
+Native c46 establishes full zero-event pre-access ordering: bit11/16 are already1
+before the first target access/DB, with one original watch write, unchanged owned
+configuration, three acknowledged contexts, pending0/canRetire/false poll/inactive
+leases and stable final Dr0-Dr3/foreign Dr2. Raw/c44 FAIL remains historical.
+Current accepted Intel SDM Vol3B253669-090US/February2026/20.2.3 defines these two
+fields as status, not watch controls; current Microsoft context APIs describe
+OS-controlled corrections without granting blanket equivalence. Combined with
+static production ownership and actual c46 ordering this justifies one separately
+named, test-only configuration property; it does not make older comparators wrong.
+
+New retirement_configuration.hpp/c47-v1 positively matches the entire12-stage
+DR6 history (not a broad mask), native GenuineIntel activated-state/documentation
+profile, Position/multiple, exact actual tuple[0,0,256] under unchanged c42
+admission, complete c46 gate, exactly one pre-access0->1 transition per field,
+exact addresses/foreign Dr2/Dr7 control and c44 fixed/unknown/cause requirements,
+three individual acknowledged/current-code ticket identities, pending0/canRetire/
+false poll/inactive leases and three complete raw-stable readbacks. Exactly one
+watch and one original final-poll restore are required; extra/unscoped/failed
+context writes refuse. Unknown vendor/prerequisites/active profile, other native
+scenarios/tuples/transitions/readback drift refuse. CPU model was not supplied
+and is NOT invented/pinned: this is an exact activated-state/timeline profile,
+not arbitrary Intel support. Physical kernel/CPU mechanism remains unknown.
+
+New retirement_configuration_tests.cpp and test_retirement_configuration.sh
+cover the clearly synthetic exact positive plus all required negative cases.
+The model has RAW_EXACT=false/c44 canonical=false/configuration=true, explicitly
+synthetic/native_execution=false. Actual Wine retains original raw-only success
+and its native configuration predicate is false. There is no native-query/policy/
+vendor/timeline injection or new DR repair/read/write operation.
+
+The test-owned continuation_witness_smoke.cpp emits schema7/taskc47 and three
+independent ROOT results, retaining old c43/c44/c45/c46 subobjects/definitions.
+It records three per-ticket acknowledgments/current-code identities before poll,
+counts original API writes by watch/final-poll/unscoped/failure scope, freezes
+all inputs after original readbacks, and atomically publishes immutable evidence
+before terminal cleanup/freeing. Counters must still match after teardown.
+Native success is explicitly OWNED_WITNESS_CONFIGURATION_PASS and requires all
+original GPR/RFLAGS/RSP/stack/YMM/FXSAVE/context/identity/lifetime assertions as well
+as the new predicate. production_integrated=false/exact_slot_watch_enabled=false/
+game_used=false are explicit. A native c47 success is not predeclared.
+
+Updated strict real-output validator, mandatory hooks invocation, future-package
+metadata/evidence, three new analysis/source mirrors, PROJECT_STATE and this
+report, source-pinned standalone/README/manifest/licenses. Production engines/
+restore/ownership/installation/handler/lease/equality, old raw/c44/c45/c46 helpers/
+tests, owned worker/pre-access gate/assembly and c39/c40 counterexamples remain
+byte-unchanged. Root releases/mod/version/updater/shared environment are unchanged.
+Wisdoms preserves the reusable evidence/property distinction, no private game data.
+
+## Production relevance / documentation limits
+
+VERIFIED-RUNTIME owner c46: bounded zero-DB pre-access change and exact/stable
+configuration/continuation retirement facts. VERIFIED-STATIC production: address/
+Dr7 ownership, B0/B1 claims and unchanged guarded restore; c39/c40 resurrection
+counterexample still applies. TEST-FIXTURE-ONLY: cooperative gate, one known worker/
+access, three bounded current-code tickets and post-return markers/code/storage
+lifetime. UNKNOWN production: arbitrary-thread saved contexts, process-wide debt,
+unwind/abrupt-exit/races, wider XSTATE/lifetime and integration. A native c47 PASS
+can lead only to a later expressly authorized integration review, not exact-slot
+work. Full audit and exact predicate/feature-state boundaries are in
+V01C47_CONFIGURATION_RETIREMENT.md.
+
+Current Microsoft Get/SetThreadContext sources were retrieved and SHA-pinned
+(4479/4383bytes; exact URLs/hashes in status/evidence). Independent current Intel
+PDF/hash still proxy403; current owner official primary extraction remains best
+evidence, not replaced by older mirrors or mislabeled a PDF hash. This is one
+additional research UNAVAILABLE, not a suite/native PASS.
+
+## Executed required validation
+
+| Exact command from repository root | Expected result | Actual final result |
+| --- | --- | --- |
+| `bash source/tools/test_continuation_mitigations.sh` | Preserve mitigation per-bit/query/unknown refusal | exit0;10 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_continuation_diagnostics.sh` | Preserve c43 raw diagnostic/missing-data semantics | exit0;7 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_debug_register_comparison.sh` | Preserve c44 vendor/fixed/meaningful/unknown/readback contract | exit0;9 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_dr6_lifecycle.sh` | Preserve c45 lifecycle/necessary-only tests unchanged | exit0;11 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_pre_access_lifecycle.sh` | Preserve c46 gate/order/status classifier unchanged | exit0;12 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_retirement_configuration.sh` | Exact synthetic owner positive and every required fail-closed negative; no native proof | exit0;13 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_continuation_witness.sh` | Original12 real Wine scenarios plus root comparisons/ticket/write/gate validation | exit0;13 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_watch_retirement.sh` | Retain delayed saved-CONTEXT counterexamples/recovery | exit0;14 PASS /0 SKIP /2 UNAVAILABLE |
+| `bash source/tools/build_windows.sh` | Production Windows Werror cross-build succeeds | exit0; build succeeded (no case count) |
+| `bash source/tools/test.sh` | Portable/sanitizer regressions pass | exit0;13 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/smoke_windows.sh` | DLL/export/logger smoke succeeds | exit0;7 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_hooks_windows.sh` | Full c39-c47 owned/scanner/workspace regressions succeed | exit0;359 PASS /5 SKIP /2 UNAVAILABLE |
+| `python3 source/tools/package.py` | Existing-version package/source/evidence/licensing integrity | exit0;1 PASS /0 SKIP /0 UNAVAILABLE |
+
+Full nonduplicated regression **379 PASS** =13 portable+7 smoke+359 hooks;
+**5 SKIP /2 UNAVAILABLE** separately. Focused counts overlap hooks and are not
+added twice. Package1 PASS is separate. Five SKIPs are optional private game/native
+capture/positive replays absent/not redistributed; two UNAVAILABLE are original
+Wine VCH return-hold dispatch limits, never passing retirement proof.
+
+Initial c47 focused and actual witness tests both passed13. Every required
+command passed without failure/interruption. Final review made new immutable
+ticket/final-input publication release/acquire atomic. The full hooks chain
+compiled and validated this latest CPP; then the exact standalone witness command
+was separately rerun (exit0;13 PASS,10.59s). Pure helpers and production DLL/
+portable/smoke linked inputs did not change, so repeating those unaffected tests
+was unnecessary. Only docs/provenance metadata changed after final validation;
+package/source-copy checks were repeated for final evidence without inflating
+PASS counts. Per-command exits/counts/timings are recorded in V01C47_STATUS.json.
+
+## Additional checks / exact outputs
+
+- `python3 /tmp/ws-c47-prepare-artifact.py`: enforce successful13 required commands
+  and latest affected witness rerun before creating c47; copy tested PE/licenses,
+  compare all255 source/tool inputs with package copies and pin SHA. PASS.
+- Exact shipped PE from repository root:
+  `WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/analysis/native-probes/c47/continuation-witness.exe" --position --multiple --json`.
+  Expected actual one-line schema7/three independent results, original Wine raw
+  success/native configuration refusal and3 ack/current-code tickets/2 scoped
+  original writes; actual exit0; RAWtrue/c44false/configurationfalse, native_Windows
+  false, no production/slot/game, tickets and counters correct. Separate1 PASS.
+- `python3 /tmp/ws-c47-verify-handoff.py`: expected unchanged production/helper/
+  handler/worker/gate/ASM/old raw same() and c41-c46 artifacts, owner evidence
+  SHA preservation, new mirror equality, tested/shipped PE identity/licenses,
+  all255 input digests/package copies and `git diff --check`; actual2 PASS records.
+- `objdump -p analysis/native-probes/c47/continuation-witness.exe`: expected only
+  system dependencies; actual bcrypt.dll/KERNEL32.dll/msvcrt.dll.
+
+Standalone: 6819210bytes, SHA256
+`a6a4a95712d2f4696b630c84aa89a1012ed81629522bff220ec71091d6567cb8`.
+Input digest SHA256 `9766e04acf6c65e39368b37ff26ea7a37b17b49c416d0afb68a23607a765fda9`.
+Manifest pins all255 source/tool inputs and implementation commit; PE timestamps
+can change rebuilt hashes. Existing-version ignored validation output only:
+source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled. No new root release
+ZIP/active script/version/private game payload is published.
+
+## Not executed / owner action
+
+Native Windows c47: NOT RUN (cloud has Wine only); c46 evidence and synthetic
+positive are not promoted to a new native execution. Independent current Intel
+PDF/hash: UNAVAILABLE(proxy403), accepted owner primary retained. Arbitrary CPU/
+OS/attached-debugger profiles are outside support; pure refusal tests ran. Two
+VCH dispatch-dependent branches cannot run here. Production integration/game/
+Update-WS/Overstrike/A-E/WallRun/slot/scan/producer tests are not authorized or
+required; no general production guarantee exists.
+
+After tested publication request at most one owner command from c47 folder:
+
+```powershell
+.\continuation-witness.exe --position --multiple --json
+```
+
+If absent, first git pull --ff-only in the independent _source clone on this branch.
+Return compact output/JSON, including FAIL/REFUSED. Configuration PASS remains
+fixture-only and leads only to a later explicit integration review. No game/
+Update-WS request. Commit/push/remote verification and Wisdoms synchronization
+are pinned in the publication metadata; preserve five original untracked artifacts.
+
+---
+
 # Codex result — c46 watch-enabled pre-access DR6 boundary
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.

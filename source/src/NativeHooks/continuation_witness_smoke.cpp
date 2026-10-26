@@ -26,8 +26,9 @@ static PVOID WINAPI c41_install(ULONG first,PVECTORED_EXCEPTION_HANDLER fn){asse
 #include "NativeHooks/debug_register_comparison.hpp"
 #include "NativeHooks/dr6_lifecycle.hpp"
 #include "NativeHooks/pre_access_lifecycle.hpp"
+#include "NativeHooks/retirement_configuration.hpp"
 
-namespace c41 {const char* failureText();std::string reportFields();[[noreturn]] void failed(const char* expression,unsigned line){std::fprintf(stderr,"c41 owned assertion at line %u: %s\n",line,expression);std::printf("{\"schema\":6,\"task\":\"c46\",\"witness_task\":\"c41\",\"result\":\"FAIL\",\"reason\":\"owned_assertion_failed\",\"rejection\":\"%s\",\"line\":%u,%s,\"game_used\":false}\n",failureText(),line,reportFields().c_str());std::fflush(stdout);ExitProcess(3);}}
+namespace c41 {const char* failureText();std::string reportFields();[[noreturn]] void failed(const char* expression,unsigned line){std::fprintf(stderr,"c41 owned assertion at line %u: %s\n",line,expression);std::printf("{\"schema\":7,\"task\":\"c47\",\"witness_task\":\"c41\",\"result\":\"FAIL\",\"reason\":\"owned_assertion_failed\",\"rejection\":\"%s\",\"line\":%u,%s,\"game_used\":false,\"production_integrated\":false}\n",failureText(),line,reportFields().c_str());std::fflush(stdout);ExitProcess(3);}}
 #undef assert
 #define assert(condition) do {if(!(condition))c41::failed(#condition,__LINE__);} while(false)
 
@@ -44,6 +45,7 @@ namespace diagnostics=ws::continuation_diagnostics;
 namespace drCompare=ws::debug_register_comparison;
 namespace lifecycle=ws::dr6_lifecycle;
 namespace preAccess=ws::pre_access_lifecycle;
+namespace configuration=ws::retirement_configuration;
 using Phase=lifecycle::Phase;
 diagnostics::Report restoration;
 drCompare::Vendor cpuVendor=drCompare::Vendor::Unknown;
@@ -68,6 +70,11 @@ std::array<ObservationCell,lifecycle::count> observations;
 ObservationCell preAccessObservation;
 HANDLE preAccessReady{},preAccessRelease{};
 std::atomic<unsigned> gateArrivalThread{0},gateArrivalDb{0},machineEntries{0},workerContextWriteAttempts{0},writesAtWatchReadback{0},gatePublished{0};
+std::atomic<unsigned> finalPollWriteAttempts{0},unscopedWriteAttempts{0},failedWriteAttempts{0};
+std::atomic<bool> observingFinalPoll{false};
+bool prerequisitesAdmitted{};std::atomic<bool> ticketCaptureComplete{false};unsigned capturedTicketCount{};std::array<configuration::Ticket,3> capturedTickets{};
+configuration::Inputs configurationSnapshot;std::atomic<bool> configurationSnapshotReady{false};
+configuration::Inputs configurationInputs();
 std::atomic<bool> gateReached{false},preAccessCaptured{false},gateReleaseIssued{false};
 preAccess::Gate gateRecord;
 std::atomic<unsigned> observationSequence{0},armWrites{0},outerDbEvents{0};
@@ -115,9 +122,11 @@ std::string reportFields(){
  for(auto byte:cpuVendorBytes){const auto b=static_cast<unsigned char>(byte);out+="0123456789abcdef"[b>>4];out+="0123456789abcdef"[b&15];}
  out+="\",\"cpuid_known\":"+diagnostics::boolean(cpuQueryKnown)+",\"cpuid_signature\":"+std::to_string(cpuSignature);
  out+=",\"cpuid_leaf7_known\":"+diagnostics::boolean(leaf7Known)+",\"cpuid_leaf7_EBX\":"+std::to_string(leaf7B)+",\"cpuid_leaf7_ECX\":"+std::to_string(leaf7C)+",\"cpuid_leaf7_EDX\":"+std::to_string(leaf7D);
- out+=",\"acceptance_comparison\":\"";out+=wine?"RAW_EXACT":"ARCHITECTURAL_CANONICAL";
+ out+=",\"acceptance_comparison\":\"";out+=wine?"RAW_EXACT":"RETIREMENT_CONFIGURATION_SAFE";
  out+="\",\"acceptance_scope\":\"";out+=wine?"owned_Wine_only_not_architectural_certificate":"owned_native_candidate_only_not_production";
  out+="\",\"watch_context_writes_observed\":"+std::to_string(armWrites.load())+",\"outer_hardware_DB_events\":"+std::to_string(outerDbEvents.load())+",\"observer_win32_error\":"+std::to_string(observerWinError.load());
+ const auto config=configurationInputs();const auto decision=configuration::compare(config);const auto stability=drCompare::stability(cpuVendor,restoration);
+ out+=",\"exact_slot_watch_enabled\":false,\"RAW_EXACT\":"+diagnostics::boolean(stability.complete?std::optional<bool>(stability.rawAll):std::nullopt)+",\"ARCHITECTURAL_CANONICAL\":"+diagnostics::boolean(stability.complete?std::optional<bool>(stability.canonicalAll):std::nullopt)+",\"RETIREMENT_CONFIGURATION_SAFE\":"+diagnostics::boolean(decision.safe)+",\"retirement_configuration\":"+configuration::json(config);
  return out+",\"mitigation_classifier\":"+classifierReport()+",\"final_restoration\":"+diagnostics::json(restoration)+",\"debug_register_comparison\":"+drCompare::reportJson(cpuVendor,restoration)+",\"dr6_lifecycle\":"+lifecycle::json(timeline(),lifecycleFacts())+",\"pre_access_lifecycle\":"+preAccess::json(preAccessEvidence(),lifecycleFacts());
 }
 LONG load(volatile LONG* p){return InterlockedCompareExchange(p,0,0);}
@@ -197,6 +206,22 @@ void capturePreAccess(){
  assert(preAccess::gateProven(preAccessEvidence()));
  preAccessCaptured=true;gateReleaseIssued=true;assert(SetEvent(preAccessRelease));
 }
+configuration::Inputs configurationInputs(){
+ if(configurationSnapshotReady.load(std::memory_order_acquire))return configurationSnapshot;
+ configuration::Inputs f;f.profile=configuration::Profile::OwnerC46IntelPositionMultipleV1;f.vendor=cpuVendor;f.nativeWindows=!wine;
+ f.prerequisitesKnown=prerequisitesAdmitted;f.cpuidKnown=cpuQueryKnown;f.leaf7Known=leaf7Known;f.signature=cpuSignature;f.debuggerAbsent=prerequisitesAdmitted;
+ f.positionMultiple=position&&nestedCount==2&&!timeout&&!killClose&&!capCase;f.poisoned=poisoned.load();
+ for(unsigned i=0;i<3;++i)f.mitigations[i]={policyKnown[i],std::uint32_t(policyFlags[i])};
+ f.lifecycle=preAccessEvidence();f.restoration=restoration;f.ticketsCaptured=ticketCaptureComplete.load(std::memory_order_acquire);if(f.ticketsCaptured){f.ticketCount=capturedTicketCount;f.tickets=capturedTickets;}
+ f.watchWrites=armWrites.load();f.outerDbEvents=outerDbEvents.load();f.machineEntries=machineEntries.load();f.watchHits=windows[0].hits.load();
+ f.totalWriteAttempts=workerContextWriteAttempts.load();f.finalPollWriteAttempts=finalPollWriteAttempts.load();f.unscopedWriteAttempts=unscopedWriteAttempts.load();f.failedWriteAttempts=failedWriteAttempts.load();
+ f.ordinaryOwnedDataDb=ordinaryDataDb.load();f.engineClaimed=engineClaimed.load();return f;
+}
+void captureTickets(){
+ capturedTicketCount=published.load();if(capturedTicketCount>capturedTickets.size())return;
+ for(unsigned i=0;i<capturedTicketCount;++i){const auto& t=tickets[i];capturedTickets[i]={t.thread,t.sequence,t.watchLease,t.gen,acknowledged(t),current(t)};}
+ ticketCaptureComplete.store(true,std::memory_order_release);
+}
 bool environment(){
  wine=GetProcAddress(GetModuleHandleW(L"ntdll.dll"),"wine_get_version")!=nullptr;
  unsigned va{},vb{},vc{},vd{};cpuQueryKnown=__get_cpuid(0,&va,&vb,&vc,&vd);
@@ -217,7 +242,7 @@ bool environment(){
  mitigation::Inputs values{};for(unsigned i=0;i<3;++i)values[i]={policyKnown[i],std::uint32_t(policyFlags[i])};
  classifierJson=mitigation::json(values);
  if(!mitigation::admitted(values)){environmentFailure=(!policyKnown[0]||!policyKnown[1]||!policyKnown[2])?"mitigation_query_unknown":"mitigation_relevant_or_unknown_bit";return false;}
- return true;
+ prerequisitesAdmitted=true;return true;
 }
 }
 // These wrappers exist only in this test translation unit. They call the same
@@ -225,7 +250,11 @@ bool environment(){
 // successful watch-install readback before production ResumeThread. No repair.
 static BOOL WINAPI c45_set_thread_context(HANDLE h,const CONTEXT* c){
  const BOOL ok=SetThreadContext(h,c);const DWORD error=GetLastError();
- if(GetThreadId(h)==c41::workerId)++c41::workerContextWriteAttempts;
+ if(GetThreadId(h)==c41::workerId){
+  ++c41::workerContextWriteAttempts;if(c41::observingFinalPoll.load())++c41::finalPollWriteAttempts;
+  else if(!c41::observingArm.load())++c41::unscopedWriteAttempts;
+  if(!ok)++c41::failedWriteAttempts;
+ }
  if(c41::observingArm.load()&&GetThreadId(h)==c41::workerId){
   if(ok){++c41::armWrites;if(c41::armReadPending.exchange(true))c41::observerError=true;}
   else {c41::observerError=true;c41::observerWinError=error;}
@@ -281,7 +310,7 @@ int main(int argc,char** argv){
  SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOGPFAULTERRORBOX|SEM_NOOPENFILEERRORBOX);
  for(int i=1;i<argc;++i){if(!std::strcmp(argv[i],"--position"))position=true;else if(!std::strcmp(argv[i],"--timeout"))timeout=true;else if(!std::strcmp(argv[i],"--kill"))killClose=true;else if(!std::strcmp(argv[i],"--nested"))nestedCount=1;else if(!std::strcmp(argv[i],"--multiple"))nestedCount=2;else if(!std::strcmp(argv[i],"--json"))jsonOnly=true;else if(!std::strcmp(argv[i],"--cap")){capCase=true;bound=1;nestedCount=1;}else assert(false&&"unknown probe argument");}
  assert(!(timeout&&killClose));
- if(!environment()){std::printf("{\"schema\":6,\"task\":\"c46\",\"witness_task\":\"c41\",\"result\":\"REFUSED\",\"reason\":\"%s\",%s,\"game_used\":false}\n",environmentFailure,reportFields().c_str());return 77;}
+ if(!environment()){std::printf("{\"schema\":7,\"task\":\"c47\",\"witness_task\":\"c41\",\"result\":\"REFUSED\",\"reason\":\"%s\",%s,\"game_used\":false,\"production_integrated\":false}\n",environmentFailure,reportFields().c_str());return 77;}
  std::int32_t delta{};std::array<unsigned char,15> synthetic{};
  assert(relative(0x100000000,0x17fffffff,delta)&&delta==INT32_MAX);assert(relative(0x100000000,0x80000000,delta)&&delta==INT32_MIN);assert(!relative(0x100000000,0x180000000,delta));
  assert(!encode(UINTPTR_MAX-10,4096,8192,1,synthetic)&&!encode(4096,4101,8192,1,synthetic)&&!encode(4096,8192,UINTPTR_MAX,1,synthetic));
@@ -318,7 +347,8 @@ int main(int argc,char** argv){
   restoration.attempted=true;restoration.before=registers(postReturn);
   restoration.activeBefore=activeLeases();restoration.pendingBefore=pending();
   restoration.canRetireBefore=canRetire();assert(*restoration.canRetireBefore);
-  restoration.pollReturned=msm2::trace::pollReset(false,"owned_c41_post_return_witness");
+  captureTickets();observingFinalPoll=true;
+  restoration.pollReturned=msm2::trace::pollReset(false,"owned_c41_post_return_witness");observingFinalPoll=false;
   restoration.activeAfter=activeLeases();restoration.pendingAfter=pending();
   const auto after=debug(Phase::AfterPoll);restoration.after=registers(after);
   // Obtain all three original readbacks BEFORE deciding final acceptance.
@@ -327,6 +357,7 @@ int main(int argc,char** argv){
   assert(lifecycle::completeOrdered(timeline()));
   assert(preAccess::completeOrdered(preAccessEvidence()));
   for(const auto& stage:timeline().stages)assert(!(stage->registers[5]&0x800));
+  configurationSnapshot=configurationInputs();configurationSnapshotReady.store(true,std::memory_order_release);
   const auto stability=drCompare::stability(cpuVendor,restoration);
   assert(!*restoration.pollReturned);
   assert(!*restoration.activeAfter&&*restoration.pendingAfter==0&&stability.complete&&stability.rawStable&&stability.canonicalResultsStable);
@@ -340,15 +371,17 @@ int main(int argc,char** argv){
    assert(lifecycle::classify(phases,11).unique&&lifecycle::classify(phases,16).unique);
    const auto boundary=preAccessEvidence();
    assert(preAccess::classify(boundary,11).unique&&preAccess::classify(boundary,16).unique);
-   assert(stability.canonicalAll); // c44 acceptance intact; no configuration-safe alternative.
+   assert(!configurationSnapshot.restoration.syntheticInputs);
+   assert(configuration::compare(configurationInputs()).safe); // New scoped test-only result; raw/c44 remain independently reported.
   }
  }
  deadline=GetTickCount64()+2000;while(!load(&ws_c41_captured)&&GetTickCount64()<deadline)SwitchToThread();assert(load(&ws_c41_captured));
  assert(!std::memcmp(ws_c41_before,ws_c41_after,128));assert(!std::memcmp(ws_c41_before+128,ws_c41_after+128,8));assert(!std::memcmp(ws_c41_before+160,ws_c41_after+160,512));assert(!std::memcmp(ws_c41_before+672,ws_c41_after+672,512));assert(!std::memcmp(ws_c41_before+1184,ws_c41_after+1184,64));
  assert(windows[0].hits==1&&machineEntries.load()==1&&preAccess::gateProven(preAccessEvidence())&&!freeStorage());InterlockedExchange(&ws_c41_finish,1);assert(WaitForSingleObject(worker,2000)==WAIT_OBJECT_0);msm2::trace::stop();assert(!activeLeases());assert(freeStorage());
+ if(!capCase)assert(workerContextWriteAttempts.load()==configurationSnapshot.totalWriteAttempts.value()&&unscopedWriteAttempts.load()==0&&failedWriteAttempts.load()==0);
  const auto scenario=scenarioName();
  if(!jsonOnly)std::printf("PASS: c41 %s %s: exact GPR/RFLAGS/RSP/active-stack/YMM0-15/FXSAVE state; %s; no second watched hit; RX storage retained until thread exit\n",position?"Position":"reset",scenario,capCase?"unknown debt refuses final retirement, terminal-thread teardown only":"per-context post-return debt acknowledged then exact foreign DR2/owned DR restoration");
- std::printf("{\"schema\":6,\"task\":\"c46\",\"witness_task\":\"c41\",\"result\":\"%s\",%s,\"retirement_accepted\":%s,\"game_used\":false,\"new_gameplay_writes\":0,\"production_integrated\":false,\"native_candidate_probe_passed\":%s}\n",capCase?"FAIL_CLOSED_EXPECTED":"OWNED_WITNESS_PASS",reportFields().c_str(),capCase?"false":"true",!wine&&!capCase?"true":"false");
+ std::printf("{\"schema\":7,\"task\":\"c47\",\"witness_task\":\"c41\",\"result\":\"%s\",%s,\"retirement_accepted\":%s,\"game_used\":false,\"new_gameplay_writes\":0,\"production_integrated\":false,\"native_candidate_probe_passed\":%s}\n",capCase?"FAIL_CLOSED_EXPECTED":wine?"OWNED_WITNESS_PASS":"OWNED_WITNESS_CONFIGURATION_PASS",reportFields().c_str(),capCase?"false":"true",!wine&&!capCase?"true":"false");
  for(auto& t:tickets)for(auto h:{t.ready,t.prepared,t.held,t.release})CloseHandle(h);
  for(auto h:{worker,ready,go,preAccessReady,preAccessRelease})CloseHandle(h);
  assert(VirtualFree(memory,0,MEM_RELEASE));
