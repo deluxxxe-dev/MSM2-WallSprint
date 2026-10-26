@@ -1,0 +1,268 @@
+{
+  "version": "v0.1c35",
+  "package_version": "0.1.53",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "base_commit": "96cabbc330c607f987edb4bc5b73dd959593c72e",
+  "implementation_commit": "8ed4dcfdbda851f69578b0c66a0489ce5a26afec",
+  "source_snapshot_commit": "74f41e4abec30180f4962b5609ec76da95196ccc",
+  "outputs": [
+    {
+      "path": "MSM2-WS-v0.1c35.zip",
+      "bytes": 4030986,
+      "sha256": "3c473ad0e953d6c6eda838d4361365d5a036d8182263ba5c203e8da70c5615c8"
+    },
+    {
+      "path": "MSM2-WS-v0.1c35-source.zip",
+      "bytes": 1030745,
+      "sha256": "c996ba5de42d145610feacc8776425e41c6439d7a9b314fd9a42f044b856ab65"
+    }
+  ],
+  "script": {
+    "path": "MSM2-WS-v0.1c35.script.disabled",
+    "sha256": "71cc39a1dcc72910cb0ad7bdf840417125572d38d60b139535c74b9f1fdc318d",
+    "dll_sha256": "586cd285828202dff5c435ba3c35479d97928acffb89afe4ce67b94bb9a34dfc"
+  },
+  "public_test_pass_records": {
+    "portable": 13,
+    "smoke": 7,
+    "hooks": 236
+  },
+  "total_public_pass_records": 256,
+  "private_input_skips": 5,
+  "identity_groups": 96,
+  "new_identity_groups": 9,
+  "retained_read_call_groups": 21,
+  "standalone_source": {
+    "build": "PASS_exit0",
+    "phases": [
+      {
+        "phase": "writer_entry",
+        "exit": 0,
+        "PASS": 11,
+        "SKIP": 0
+      },
+      {
+        "phase": "rdx_contract",
+        "exit": 0,
+        "PASS": 4,
+        "SKIP": 0
+      },
+      {
+        "phase": "writer_branch",
+        "exit": 0,
+        "PASS": 6,
+        "SKIP": 0
+      },
+      {
+        "phase": "writer_call",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0
+      },
+      {
+        "phase": "callee_alias",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0
+      },
+      {
+        "phase": "callee_branch_alias",
+        "exit": 0,
+        "PASS": 6,
+        "SKIP": 0
+      },
+      {
+        "phase": "transform_write",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0
+      },
+      {
+        "phase": "edi_value",
+        "exit": 0,
+        "PASS": 6,
+        "SKIP": 0
+      },
+      {
+        "phase": "read_dependency",
+        "exit": 0,
+        "PASS": 21,
+        "SKIP": 0
+      },
+      {
+        "phase": "read_target_identity",
+        "exit": 0,
+        "PASS": 96,
+        "SKIP": 0
+      },
+      {
+        "phase": "smoke",
+        "exit": 0,
+        "PASS": 7,
+        "SKIP": 0
+      },
+      {
+        "phase": "workspace",
+        "exit": 0,
+        "PASS": 13,
+        "SKIP": 0
+      },
+      {
+        "phase": "package",
+        "exit": 0,
+        "PASS": 1,
+        "SKIP": 0
+      }
+    ],
+    "separate_PASS_excluding_package": 191,
+    "final_package_verifier": "PASS_exit0",
+    "native_tool_input_files": 228,
+    "all_final_native_tool_inputs_identical_to_tested_source": true,
+    "current_reporting_docs_refreshed": true
+  },
+  "implementation_iterations": {
+    "initial_focused_exit": 3,
+    "initial_assertion": "unchanged_instruction_cap_fixture",
+    "fix": "restrict_new_site_dispatch_to_vector_mnemonics_do_not_intercept_NOP",
+    "new_parent_fixture_exit": 3,
+    "new_fixture_correction": "entry_identity_may_admit_but_current_parent_flow_refuses",
+    "replay_diagnostic_fix": "invalidate_second_site_source_applied_evidence_if_not_reached_or_budget_exhausted",
+    "final_focused_and_full_chain": "PASS_exit0",
+    "old_assertions_deadlines_guards_relaxed": false
+  },
+  "accepted_c34": {
+    "evidence": "analysis/V01C34_RUNTIME_RESULT.md",
+    "SHL": "R8_imm6_full64_result_tags0_flags_undefined_top7_no_values",
+    "input_condition": "remote_keyboard_mouse_not_controller_equivalence",
+    "next_barrier": "second_VMOVUPS_0x2cf7ffb",
+    "path": 0,
+    "pre_state": "RAX7_R8zero_vector_halves7_above_zero_flags7",
+    "actual_second_vector_operands_width_direction_address": "UNKNOWN"
+  },
+  "second_vector_contract": {
+    "site": "0x2cf7ffb",
+    "independent_of_first_site": true,
+    "conditional_form": "canonical4byte_VEX2_full_XMM_YMM_load_RDX0",
+    "source": "current_pointer_Hero0_tags0_after_prior_GPR_writes_not_stale_entry",
+    "destination_parents": 16,
+    "load128": "low_top7_high_zero_above256_zero",
+    "load256": "low_top7_high_top7_above256_zero",
+    "flags": "preserve_SHL_aggregate_top7",
+    "other_forms": "store_RMW_dynamic_EVEX_mask_partial_wider_other_source_refuse",
+    "source_vector_tags": "separate_low_high_unknown_if_unrepresented",
+    "numeric_value_observation": false,
+    "source_value_reads": 0,
+    "generic_AVX": false,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "actual_form_next_barrier": "UNKNOWN",
+    "Position_source_input_movement_writes": 0
+  },
+  "shl_contract": {
+    "site": "0x2cf7ff7",
+    "register_form": "canonical_group2_slash4_reg32_64_constant_count",
+    "count": "implicit1_or_verified_imm8",
+    "mask64": 63,
+    "mask8_16_32": 31,
+    "CL_partial_memory_SP": "refuse",
+    "count0": "operand_and_flags_unchanged_reg32_parent_zeroextended",
+    "result_tags": "destination_input_upper_bound_constant_count0_no_unrelated_union",
+    "flags1": "CF_OF_SF_ZF_PF_defined_AF_undefined",
+    "flags_multiple": "CF_SF_ZF_PF_defined_OF_AF_undefined",
+    "undefined_aggregate_tags": 7,
+    "flags_consumers": "original_rules_only_unknown_flag_reads_refuse_returns_merge",
+    "numeric_value_observation": false,
+    "source_value_reads": 0,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "actual_form_next_barrier": "accepted_SHL_r8_6_next_VMOVUPS_0x2cf7ffb",
+    "Position_source_input_movement_writes": 0
+  },
+  "movsxd_contract": {
+    "site": "0x2cf7ff4",
+    "register_form": "exact3byte_REX_W_opcode63_GPR64_from_GPR32",
+    "access": "sole_full_destination_write_source_read_no_flags_SP_vector_memory_effect",
+    "tag_rule": "source_parent_upper_bound_full_destination_replace_no_stale_union",
+    "origin": "opaque_unknown_not_pointer",
+    "memory_forms": "diagnose_address_access_aliases_and_refuse_no_new_load_rule",
+    "other_sites_widths_stack_partial": "refuse",
+    "numeric_value_observation": false,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "actual_form_next_barrier": "accepted_r8_from_r8d_next_SHL_0x2cf7ff7",
+    "Position_source_input_movement_writes": 0
+  },
+  "vector256_contract": {
+    "site": "0x2cf7ff0",
+    "encoding": "exact4byte_VEX2_VL256",
+    "form": "YMM0_m256_RDX",
+    "source": "current_same_Hero_root1_offset0_address_tags0",
+    "parents": 16,
+    "halves": "low128_high128",
+    "loaded_low_top": 7,
+    "loaded_high_top": 7,
+    "above256": "destination_known_zero_all_future_ZMM_EVEX_refused",
+    "legacy_XMM": "low_alias_high_preserved",
+    "other_vector_forms": "refused",
+    "return_merge": "category_union_zero_knowledge_intersection",
+    "source_value_reads": 0,
+    "observed_taint": false,
+    "generic_AVX": false,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "actual_next_barrier": "MOVSXD_0x2cf7ff4",
+    "Position_source_input_movement_writes": 0
+  },
+  "read_target_identity": {
+    "single_target": "0x2cf7fe0",
+    "code_region": "unique_readonly_executable_PE_code",
+    "PE_runtime_table_entry_cap": 600000,
+    "PE_runtime_table_byte_cap": 8388608,
+    "lookup_table_consistency": true,
+    "no_unwind_only_if_no_containing_entry": true,
+    "no_crossing_static_or_dynamic_runtime_region": true,
+    "byte_cap": 128,
+    "instruction_cap": 32,
+    "leaf_shape": "single_entry_all_normal_RET_pinned_JA_qword_YMM0_and_c35_reg_signextend_SHL_and_pinned_second_vector",
+    "branches_memory_stack_nested_CALL": "one_pinned_JA_qword_YMM0_reg_signextend_SHL_pinned_second_vector_all_other_memory_stack_calls_refuse",
+    "snapshot": "guarded_double_read_equality_SHA256_admitted_prefix",
+    "current_metadata_recheck": true,
+    "actual_result": "c34_exact_SHL_r8_6_accepted_next_second_VMOVUPS_0x2cf7ffb",
+    "effect_certificate": false,
+    "existing_c19_c20_refusal_preserved": true,
+    "Position_source_input_movement_writes": 0
+  },
+  "runtime_table_validation": {
+    "observed_c24_entries": 527161,
+    "aligned_bytes_from_c24_count": 6325932,
+    "actual_directory_bytes": 6325932,
+    "entry_bytes": 12,
+    "entry_cap": 600000,
+    "metadata_byte_cap": 8388608,
+    "chunk_entries": 64,
+    "max_chunk_bytes": 768,
+    "max_chunk_reads": 9375,
+    "directory_pair_range_divisibility_checked_before_budget": true,
+    "all_entries_required_before_lookup": true,
+    "lookup_queried_reported": true,
+    "cap_structure_and_read_failure_separate": true,
+    "no_unwind_128byte_32instruction_rule_unchanged": true,
+    "new_hooks": 0,
+    "effect_certificate": false,
+    "Position_source_input_movement_writes": 0
+  },
+  "actual_c35": "pending_minimum_VECTOR2_OPERAND_ADDRESS_ARCH_next_barrier_A_E",
+  "ownership_and_gameplay": {
+    "writable_source_proven": false,
+    "caller_owned": false,
+    "ownership_exclusive": false,
+    "source_lifetime_exclusive": false,
+    "downstream_conflicts_proven_absent": false,
+    "Position_source_input_movement_writes": 0,
+    "producer_traversal": false
+  },
+  "Wisdoms_commit": "2cda2edaf1c94f1c2ed0c3004df08fac5c98d08c",
+  "CODEX_NEXT_unchanged": true,
+  "shared_launch_updater_environment_unchanged": true,
+  "no_private_logs_or_game_body_payload": true
+}
