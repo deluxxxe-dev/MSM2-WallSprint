@@ -1,6 +1,7 @@
 # Codex result — c41 owned continuation witness: PARTIAL SUCCESS
 
 Branch **codex/v01c20-edi-value-provenance**, task base **4b39a82**.
+Implementation **67cc36410129ed8d4b2d132dc6627431c37d7578**.
 Result: **PARTIAL SUCCESS**. Bounded owned Wine feasibility is established;
 native Windows behavior/mitigation compatibility remains unverified. Production
 integration and c39 slot work remain unauthorized. Runtime remains

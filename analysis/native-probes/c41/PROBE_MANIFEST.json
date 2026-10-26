@@ -986,5 +986,6 @@
   "production_integrated": false,
   "game_launch_required": false,
   "current_owner_execution_requested": false,
-  "rebuild_binary_byte_identity_not_claimed_due_to_PE_link_timestamp": true
+  "rebuild_binary_byte_identity_not_claimed_due_to_PE_link_timestamp": true,
+  "source_commit": "67cc36410129ed8d4b2d132dc6627431c37d7578"
 }
