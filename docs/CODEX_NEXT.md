@@ -1,182 +1,211 @@
-# Next task — c41 owned post-return continuation witness feasibility
+# Next task — c42 native mitigation boundary refinement for continuation witness
 
 ## Status
 
-C40 completed its review and took the required fail-closed fallback. No bounded production retirement mechanism was established. Production hardware-watch code remains unchanged and the postponed exact-slot watch remains disabled.
+C41 is a **PARTIAL SUCCESS** only. The owned Wine continuation witness is feasible, but production integration remains unauthorized.
 
-Accepted c40 evidence:
+The owner has now run the c41 standalone probe on native Windows from commit `ded0ce052d2c39e5640d1ac5b79be0b85046ccac`:
 
-- `analysis/V01C40_RETIREMENT_REVIEW.md`
-- `analysis/V01C40_GATE.md`
-- `analysis/V01C40_RETIREMENT_STATUS.json`
+```json
+{"schema":1,"task":"c41","result":"REFUSED","reason":"mitigation_active_outside_supported_boundary","mitigation_query_known":[true,true,true],"mitigation_flags":[0,0,256],"game_used":false}
+```
+
+Accepted evidence:
+
+- `analysis/V01C41_CONTINUATION_WITNESS.md`
+- `analysis/V01C41_WITNESS_STATUS.json`
+- `analysis/V01C41_NATIVE_WINDOWS_RESULT.md`
+- `analysis/native-probes/c41/README.md`
+- `analysis/native-probes/c41/PROBE_MANIFEST.json`
 - `docs/CODEX_RESULT.md`
-
-C40 established in the owned Wine fixture that current-thread DR restoration, repeated `GetThreadContext` readbacks, timeout, kill, `inflight=0`, inactive lease bookkeeping and later tombstone recovery do **not** prove that a saved exception CONTEXT has retired. Normal cooperative code running after the actual exception return is a valid witness in the fixture, but no equivalent production witness is available. VCH registration succeeded but its callback was not reached in the tested Wine hardware-breakpoint path, so VCH cannot be promoted to a retirement certificate from current evidence.
 
 Continue only on `codex/v01c20-edi-value-provenance`. Do not merge `main`.
 
-Before work, read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, `docs/CODEX_REPORTING.md`, this file, all c39/c40 retirement evidence, the existing watch implementation/tests, and relevant `deluxxxe-dev/MSM2-Wisdoms` references.
+Before work read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, `docs/CODEX_REPORTING.md`, this file, all c39-c41 retirement/witness evidence, the c41 probe source/tests, and relevant `deluxxxe-dev/MSM2-Wisdoms` references.
+
+## Evidence boundary
+
+### VERIFIED-RUNTIME — native Windows
+
+The c41 probe queried three policies successfully and returned:
+
+```text
+ProcessDynamicCodePolicy        = 0
+ProcessControlFlowGuardPolicy   = 0
+ProcessUserShadowStackPolicy    = 256 / 0x100
+```
+
+The current c41 probe rejects **any nonzero policy DWORD**, so the continuation-witness path did not execute on this native run. Do not call this a witness PASS or witness FAIL.
+
+### VERIFIED-STATIC — current c41 source
+
+`continuation_witness_smoke.cpp` queries policies in this order:
+
+1. `ProcessDynamicCodePolicy`
+2. `ProcessControlFlowGuardPolicy`
+3. `ProcessUserShadowStackPolicy`
+
+and refuses when any returned DWORD is nonzero.
+
+### VERIFIED-DOCUMENTATION
+
+Microsoft documents `PROCESS_MITIGATION_USER_SHADOW_STACK_POLICY` bit `0x100` as `CetDynamicApisOutOfProcOnly`. Its documented purpose concerns the process boundary for specific CET dynamic-code APIs. The current c41 witness does not call those APIs.
+
+This does **not** automatically prove that the witness is safe under the observed native configuration. It only proves that the existing all-nonzero refusal is coarser than the documented per-bit policy semantics.
 
 ## Current blocker
 
-The missing fact is a **post-OS-exception-return witness** tied to the exact thread/lease and to every saved exception CONTEXT that could later reapply an owned DR configuration.
+Determine whether `0x100` is materially relevant to the exact c41 continuation witness, and define a defensible per-bit native mitigation admission policy.
 
-C41 must not repeat c40's rejected evidence classes. In particular, do not treat any of these as sufficient by themselves:
-
-```text
-positionInflight == 0
-cleanup_pending == 0
-activeLeases == false
-current == -1
-finite repeated GetThreadContext readbacks
-timeout
-kill/shutdown
-successful VCH registration
-handler/VCH exit counters
-later tombstone recovery
-```
+Do not disable, relax or modify Windows mitigation settings to make the probe run.
 
 ## Current bounded Codex task
 
-Investigate and, only if supported by evidence, implement a **test-only owned continuation witness** that runs only after the OS has resumed execution from the saved exception CONTEXT.
+### 1. Review the exact mitigation-policy bits
 
-The primary candidate to evaluate is a minimal context-redirection trampoline in the owned fixture. This is a feasibility/proof task, **not production integration**.
+For each bit in the queried policy structures that the c41 mechanism could encounter, classify it as one of:
 
-### 1. Test-only scope first
+- `RELEVANT_REFUSE`: documented or owned-tested to affect this exact mechanism;
+- `IRRELEVANT_TO_C41_CANDIDATE`: documented to govern behavior/API paths that this candidate does not use;
+- `UNKNOWN_REFUSE`: insufficient evidence, therefore fail closed.
 
-Do not modify the production WallSprint watch engine merely to obtain a green result.
+At minimum cover:
 
-Any continuation/trampoline mechanism must first live in owned test code and operate only on owned threads/functions/memory. It must not touch the game, the static slot, gameplay state, or proprietary function bodies.
+- `PROCESS_MITIGATION_DYNAMIC_CODE_POLICY` bits;
+- `PROCESS_MITIGATION_CONTROL_FLOW_GUARD_POLICY` bits;
+- `PROCESS_MITIGATION_USER_SHADOW_STACK_POLICY` bits, including `0x100 CetDynamicApisOutOfProcOnly`;
+- reserved/unknown bits.
 
-If the mechanism cannot be proven safe in the owned fixture, stop fail-closed and document the exact failed guarantee.
+Use canonical Microsoft documentation or checked SDK definitions. Do not infer a bit's semantics from its numeric value alone.
 
-### 2. Required continuation property
+### 2. Verify exact c41 mechanism dependencies
 
-A successful candidate must establish all of the following:
+Statically confirm whether the c41 candidate uses or depends on:
 
-- the continuation marker is impossible to observe before the OS has actually resumed from the relevant saved exception CONTEXT;
-- the marker is bound to the exact thread and watch lease/generation;
-- delayed/nested saved contexts cannot be silently collapsed into a single false completion;
-- cleanup remains pending until every relevant outstanding context for that lease has an acknowledged post-return witness;
-- the witness does not require a second watched-memory access;
-- timeout/kill while acknowledgments remain outstanding fails closed rather than declaring final retirement.
+- `SetProcessDynamicEHContinuationTargets`;
+- `SetProcessDynamicEnforcedCetCompatibleRanges`;
+- `SetThreadContext` or `RtlRestoreContext` for candidate execution;
+- indirect JMP/CALL or RET in the generated stub;
+- CFG call-target registration;
+- CET-compatible image metadata;
+- EH continuation metadata;
+- dynamic-code policy opt-out APIs;
+- any other API directly governed by an observed mitigation bit.
 
-A marker written inside VEH/VCH before returning is not sufficient.
+Do not broaden this into a general CET/CFG implementation project.
 
-### 3. Minimal trampoline candidate
+### 3. Refine only the test/probe admission classifier if justified
 
-Evaluate a continuation that redirects the saved `RIP` to a minimal owned stub, records a bounded per-context/per-lease completion token, and then transfers control to the original post-exception `RIP`.
+If documentation plus static mechanism review supports it, replace the current `any nonzero DWORD => REFUSED` rule with a precise per-bit classifier.
 
-Do **not** assume this is safe merely because it works once. Prove or reject the required architectural properties.
+Requirements:
 
-Prefer an instruction sequence whose static semantics do not alter GPRs, RFLAGS, stack contents/pointer, vector state or application data except the dedicated owned witness storage. If the implementation requires scratch registers, stack use, code patching, executable allocation, ABI assumptions, unwind assumptions or undocumented behavior, those dependencies must be explicitly proved or the candidate must be rejected.
+- `0x100` may be admitted only if its documented restriction is demonstrably irrelevant to the exact APIs/control transfer used by this candidate;
+- all unknown/reserved bits must refuse;
+- materially relevant enabled bits must refuse;
+- no Windows mitigation may be disabled or changed;
+- no production WallSprint watch code may be modified;
+- JSON must report raw flags plus the per-policy/per-bit admission decision so the next native run is auditable.
 
-Account for at least:
+If `0x100` cannot be safely classified, stop fail closed and document the missing guarantee instead of changing the classifier.
 
-- original continuation RIP preservation;
-- GPR preservation;
-- RFLAGS preservation;
-- RSP / stack preservation;
-- XMM/YMM/XSTATE non-interference or a justified exact boundary if untouched by construction;
-- debug-register restoration semantics;
-- thread/lease generation identity;
-- multiple pending contexts for one thread/lease;
-- nested/re-entrant exception cases within the supported bounded model;
-- trampoline/witness storage lifetime until all acknowledgments are retired;
-- executable-code identity/lifetime if executable stubs are used;
-- CFG/CET/mitigation implications if relevant to the generated or compiled control transfer;
-- safe failure when any required guarantee cannot be established.
+### 4. Add owned classifier tests
 
-Do not claim support for architectural state that was not actually preserved/proved.
+Add focused tests for the pure classification logic using synthetic policy DWORD inputs. These tests are only parser/classifier tests; they are not native mitigation runtime evidence.
 
-### 4. Preserve the c39/c40 counterexamples
+At minimum test:
 
-Keep the existing held-return regression intact. The c41 test must still be able to hold the original exception return past close/timeout/kill.
+- all-zero accepted boundary;
+- the observed native tuple `[0,0,0x100]`;
+- each materially relevant known bit individually;
+- multiple known bits;
+- unknown/reserved bits;
+- query-unknown on native Windows remains REFUSED.
 
-The key acceptance sequence is:
+Do not forge `GetProcessMitigationPolicy` runtime output in the actual standalone native execution path.
 
-1. real owned hardware breakpoint occurs;
-2. saved exception return is deliberately held;
-3. close/timeout/kill is requested;
-4. retirement remains pending/refused;
-5. release the original saved exception return;
-6. the continuation witness runs after that return;
-7. only then may that exact pending-context debt be discharged;
-8. final restoration remains stable without requiring a later watched hit.
+### 5. Preserve c41 witness behavior
 
-Run this for both reset and Position mode semantics.
+The existing owned continuation-witness tests must remain intact:
 
-### 5. Distinguish feasibility from production authorization
+- close/deadline/kill pending before acknowledgment;
+- nested and multiple context accounting;
+- context-cap poison/refusal;
+- exact thread/lease/generation/context identity;
+- GPR/RFLAGS/RSP/stack/YMM/FXSAVE checks;
+- debug-register restoration checks;
+- no later watched access required for repair;
+- code/data lifetime until worker termination.
 
-Even if the owned continuation witness succeeds, **do not integrate it into production c39/c40 watch code in this task**.
+The original c39/c40 delayed-return counterexample must also remain intact.
 
-A c41 success means only that a specific bounded post-return witness mechanism is feasible under the tested owned environment and has a documented preservation contract. A separate next task must review production integration, per-thread lease accounting, actual Windows support and failure policy before c39 slot-watch work can resume.
+### 6. Produce a refreshed standalone native probe only after tests pass
 
-### 6. Fail-closed outcomes are acceptable
+If the observed `[0,0,0x100]` tuple is admitted by the justified classifier, rebuild and refresh the standalone c41/c42 probe artifact and manifest for one additional owner-side native Windows run.
 
-Stop and record the blocker if any of these remain unproven:
+The requested native command must remain a single game-free command equivalent to:
 
-- marker ordering relative to actual OS exception return;
-- exact thread/lease/context identity;
-- full required machine-state preservation;
-- nested/multiple-context accounting;
-- safe lifetime of trampoline/witness data;
-- mitigation/control-transfer compatibility;
-- bounded cleanup on timeout/kill/failure.
+```powershell
+.\continuation-witness.exe --position --multiple --json
+```
 
-Do not substitute VCH registration, APC delivery assumptions, repeated snapshots, sleeps or arbitrary delays for a proof.
+The resulting JSON must distinguish `OWNED_WITNESS_PASS`, `REFUSED`, and `FAIL`, and include raw mitigation flags plus classifier interpretation.
+
+Do not request Spider-Man 2, Overstrike, Update-WS, WallRun capture, or a game log for this OS-level question.
 
 ## Forbidden scope
 
-C41 does not authorize:
+C42 does not authorize:
 
-- `module_base + 0xC2D2580` RW8/WRITE8 watch;
+- production integration of the continuation witness;
+- the deferred `module_base + 0xC2D2580` RW8/WRITE8 watch;
 - slot qword reads/logging or pointer chasing;
 - publication/source-chain interpretation;
 - producer `0x351EB00` traversal;
 - PAGE_GUARD or broad memory interception;
-- arbitrary debugger framework expansion;
-- Position/source/input/movement/gameplay/adhesion/camera/animation/physics writes;
-- weakening debugger/foreign-DR refusal, lease identity, caps, deadlines, restoration or tombstone behavior.
+- mitigation disabling/relaxation;
+- gameplay/source/Position/input/movement/adhesion/camera/animation/physics writes.
 
-Runtime remains `v0.1c38 / package0.1.56` unless the task produces an independently justified test-only metadata change. Do not create a game release for c41.
+Runtime remains `v0.1c38 / package0.1.56`. Do not create a game release for c42.
 
 ## Required validation
 
-At minimum run:
+Run from repository root:
 
 ```bash
+bash source/tools/test_continuation_witness.sh
 bash source/tools/test_watch_retirement.sh
 bash source/tools/build_windows.sh
+bash source/tools/test.sh
+bash source/tools/smoke_windows.sh
 bash source/tools/test_hooks_windows.sh
+python3 source/tools/package.py
 ```
 
-If new focused test tooling is added, run its exact command separately and include it in the report.
+If a new focused mitigation-classifier test script is added, run it explicitly and report its exact command separately.
 
-For a **successful feasibility result**, expected evidence includes:
+Expected result for a successful c42 implementation:
 
-- held-return close/timeout/kill remains pending before post-return witness;
-- a real post-return continuation witness is observed after release;
-- exact per-context/per-lease debt is discharged only after that witness;
-- retired DR configuration does not resurrect afterward;
-- no later watched hit is needed for repair;
-- reset and Position restoration policies remain unchanged;
-- required machine state is preserved by static proof plus owned runtime checks appropriate to the implemented mechanism;
-- existing watch ownership/refusal regressions remain PASS.
+- the mitigation classifier has explicit per-bit evidence-backed decisions;
+- unknown/reserved/relevant enabled protections still fail closed;
+- the observed native tuple `[0,0,0x100]` is either admitted with documented justification or remains REFUSED with a precise documented reason;
+- all c41 witness and c39/c40 retirement regressions retain their prior semantics;
+- no production watch integration or slot-watch functionality is enabled;
+- a refreshed standalone probe is produced only if its admission boundary is justified.
 
-For a **fail-closed result**, the report must name the exact missing guarantee and must not claim a retirement fix.
-
-Do not report an unexecuted native-Windows/game test as PASS. If Wine cannot establish a required Windows property, identify a minimal standalone real-Windows owned probe as the next evidence instead of requesting a game test.
+If any required test is not run, report the exact reason. Do not report unexecuted native Windows/game tests as PASS.
 
 ## Required outputs / handoff
 
 Update as appropriate:
 
-- owned test implementation only for the continuation witness feasibility work;
-- `analysis/` with mechanism, instruction/control-flow contract, evidence class, assumptions, limitations and rejection reasons;
-- `docs/PROJECT_STATE.md` to record c40 fail-closed and c41 as the current feasibility stage;
+- focused test/probe classifier implementation only;
+- `analysis/` with per-bit mitigation table, documentation sources, static dependencies, evidence classes and remaining unknowns;
+- `analysis/V01C41_NATIVE_WINDOWS_RESULT.md` or a new c42 result file without erasing the original native evidence;
+- standalone probe README/manifest if a refreshed probe is produced;
+- `docs/PROJECT_STATE.md` so c41 partial success/native refusal and c42 current stage are explicit;
 - `docs/CODEX_RESULT.md`;
-- relevant Wisdoms facts if a reusable exception-return/continuation rule is established.
+- relevant Wisdoms facts only if a reusable general rule is actually established.
 
 Commit and push the intended branch before claiming completion.
 
@@ -188,12 +217,13 @@ The final report must follow `docs/CODEX_REPORTING.md` and include:
 - exact commands used;
 - expected result;
 - actual result;
+- PASS/SKIP/UNAVAILABLE counts separately;
 - unperformed tests and reasons;
 - branch and commit SHA;
-- whether owner action is required.
+- whether one additional owner-side native standalone probe run is required.
 
 ## Owner action
 
-No Update-WS, game launch, A/E comparison, WallRun capture, offline slot scan or game runtime log is required for the c41 feasibility work itself.
+No owner action is required while Codex performs c42 classification/refinement.
 
-If the owned environment cannot establish a property that specifically requires native Windows, the only acceptable owner request is a **minimal standalone owned Windows probe** with one exact command and a compact machine-readable result. Do not require launching Spider-Man 2 merely to answer an OS exception-return ordering question.
+Only after a refreshed probe is committed and pushed may the owner be asked to run the one standalone native Windows command. Do not ask for a game launch or Update-WS.
