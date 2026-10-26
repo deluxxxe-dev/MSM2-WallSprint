@@ -236,7 +236,7 @@
     "UNAVAILABLE_reason": "two_original_Wine_VCH_return_hold_dispatch_cases",
     "new_formal_document_delivery_UNAVAILABLE": 0
   },
-  "implementation_commit": "PENDING_COMMIT",
+  "implementation_commit": "b97385ea30a484b32a781726a438e8c50b0d1af2",
   "code_tool_input_count": 257,
   "code_tool_input_digest_sha256": "b207f69038cef733d599b8115161eada7e6ce8a925a019d8c5cc1fa1d5a5d0ee",
   "unperformed": [
@@ -264,5 +264,12 @@
       "test": "production_integration_exact_slot_gameplay_producer",
       "reason": "explicitly_forbidden_and_review_FAIL"
     }
-  ]
+  ],
+  "publication": {
+    "implementation_remote_verified": "b97385ea30a484b32a781726a438e8c50b0d1af2",
+    "wisdoms_main_remote_verified": "a8552b743d93cb2f7559026472786a622b5424ae",
+    "wisdoms_upstream_update_preserved": "fast_forwarded_6fde254_new_HARDWARE_WATCH_RETIREMENT_reference_before_updating_it",
+    "final_metadata_commit": "same_branch_descendant_reported_in_final_handoff",
+    "final_verification": "remote_local_SHA_equality_and_fresh_clone_12file_comparison"
+  }
 }

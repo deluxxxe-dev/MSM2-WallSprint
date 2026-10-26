@@ -2,7 +2,7 @@
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
 Task base **95a32e4067d6b3a0b0cbf9c9074096ccc007346c**.
-Implementation/review commit **PENDING_COMMIT** (resolved in publication metadata).
+Implementation/review commit **b97385ea30a484b32a781726a438e8c50b0d1af2**.
 **PRODUCTION_WITNESS_INTEGRATION_REVIEW_FAIL**. Review work and owned validation
 are complete; complete no-drop production accounting/lifetime is NOT established.
 No production restore/ownership/handler/install/lease/cleanup/equality change,
@@ -142,6 +142,26 @@ V01C48_STATUS.json and their source mirrors; new owned regression source/script.
 Build intermediates stay ignored. Existing-version package validation output is
 source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled, not a new game release.
 No raw user log/full proprietary function/credentials or private backup is added.
+
+## Persistence / publication
+
+Review/test implementation **b97385ea30a484b32a781726a438e8c50b0d1af2** was pushed to the intended branch and
+`git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance` matched local
+HEAD. Wisdoms was safely fast-forwarded to its concurrent upstream6fde254 (new
+HARDWARE_WATCH_RETIREMENT reference), preserving this update. That canonical
+reference plus internals/method guide now include the c48 corrections and source
+pointer, committed/pushed as **a8552b743d93cb2f7559026472786a622b5424ae** with its main remote/local SHA
+verified. No WallSprint main merge or force push occurred.
+
+A same-branch metadata-only descendant pins these references in this report and
+status/source mirror, and is also pushed/remote-verified in the final handoff.
+Code/tool hashes and all production files remain unchanged after validation.
+Final independent publication commands:
+`git clone --depth 1 --single-branch --branch codex/v01c20-edi-value-provenance --filter=blob:none --no-checkout https://github.com/deluxxxe-dev/MSM2-WallSprint.git /tmp/ws-c48-published`,
+then `python3 /tmp/ws-c48-check-publication.py` compares final HEAD and all12
+changed files. Expected remote/local SHA and byte equality, review FAIL preserved,
+no c48 native artifact. Final handoff records actual result. Working tree retains
+only the five original untracked artifacts, none overwritten or committed.
 
 ## Not executed / precise reasons / owner action
 
