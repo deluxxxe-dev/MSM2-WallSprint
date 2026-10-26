@@ -1,6 +1,7 @@
 # Codex result — c40 retirement review: positive implementation acceptance NOT MET
 
 Branch **codex/v01c20-edi-value-provenance**, task base **2b8124b**.
+Implementation **3a494b991e091a79a56c7ca5003c319be1b98572**.
 Runtime remains **v0.1c38/package0.1.56**, no c40 game ZIP/script/log.
 **CODEX_NEXT section5 fail-closed fallback taken. No retirement fix is claimed.**
 Production hardware-watch code is unchanged and retains the c39 known limitation;
@@ -91,8 +92,22 @@ Do not report this task as a successful production retirement implementation.
 - C39 exact-slot watch matrix/gameplay/new offline scan: explicitly unauthorized/
   deferred by c40. No qword/current game code/value is fetched for this review.
 
-Independent Git/package/publication verification is recorded before final
-handoff. Existing published c38 release ZIP/script bytes are not rewritten.
+Independent Git reproduction also passed (separate counts, not added to304):
+
+```bash
+git clone --no-local --single-branch --branch codex/v01c20-edi-value-provenance /workspace/WallSprint /tmp/ws-c40-independent
+cd /tmp/ws-c40-independent
+bash source/tools/build_windows.sh
+bash source/tools/test_watch_retirement.sh
+python3 source/tools/package.py
+```
+
+Expected: build/owned outcomes repeat, package evidence matches Git, gate remains
+closed. Actual: all exit0; focused14 PASS/2 UNAVAILABLE;233 packaged native/tool
+inputs byte-identical to tested Git source, c40 mirrored evidence and standing
+CODEX_REPORTING included. The package manifest explicitly says implementation
+acceptance NOT MET/slot disabled. Final reporting-only refresh is package-checked
+again. Existing published c38 release ZIP/script bytes are not rewritten.
 
 ## Safety, outputs and owner action
 

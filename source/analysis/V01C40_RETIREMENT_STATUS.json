@@ -89,5 +89,19 @@
   "base_allocation_lifetime_ownership_proven": false,
   "producer_0x351EB00_traversed": false,
   "next_owner_action": "none_no_update_game_scan_or_log",
-  "next_evidence": "supported_owned_tested_post_OS_return_witness_per_thread_lease_covering_all_pending_saved_contexts"
+  "next_evidence": "supported_owned_tested_post_OS_return_witness_per_thread_lease_covering_all_pending_saved_contexts",
+  "implementation_commit": "3a494b991e091a79a56c7ca5003c319be1b98572",
+  "independent_Git_validation": {
+    "method": "clone_no_local_independent_objects",
+    "source_commit": "3a494b991e091a79a56c7ca5003c319be1b98572",
+    "fresh_Werror_build_exit": 0,
+    "focused_exit": 0,
+    "focused_PASS_records": 14,
+    "focused_UNAVAILABLE_records": 2,
+    "package_command": "python3 source/tools/package.py",
+    "package_exit": 0,
+    "packaged_native_tool_inputs": 233,
+    "inputs_identical_to_tested_Git_source": true,
+    "standing_reporting_included": true
+  }
 }
