@@ -2,7 +2,7 @@
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
 Task base **e4ed9f2d3cc4616e00e10a7acc2d6a840382573e**.
-Implementation/source commit is pinned after publication below.
+Implementation/source commit: **c875d2fa6bdf8baade19f893dcb6b6984070ef99** (pushed and independently verified).
 Primary: **CALLEE_PRESERVATION_SLOT_SCANNER_READY**. BLOCKED0.
 
 Only bounded offline tooling is implemented. READY is not a discovered writer,
@@ -121,6 +121,28 @@ compact evidence/docs are packaged without private image or full game bodies.
 Integrity check: `python3 /workspace/scratch/ws-c54/verify.py` expected unchanged protected inputs, complete packaged code/evidence and READY/FAIL separation; actual1 PASS across1010 protected baseline files and280 current source/tool inputs. `git diff --check` also passed. Final commit/publication provenance follows. After metadata-only
 changes package/integrity are repeated; no code/tool changes require another
 full suite run.
+
+## Publication / shared handoff
+
+- Implementation commit: **c875d2fa6bdf8baade19f893dcb6b6984070ef99** on
+  **codex/v01c20-edi-value-provenance**, normal push succeeded.
+- `python3 /workspace/scratch/ws-c54/check_publication.py`: expected remote
+  SHA=HEAD and independent GitHub code/evidence byte agreement; actual1 PASS,
+  14 changed paths /295 compared files /280 code-tool inputs. Verifies c54 real
+  metrics null and c52 FAIL retained. No WS main merge or history rewrite.
+- `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance`: remote
+  equals implementation HEAD; repeated after this metadata commit/push.
+- Wisdoms `docs/REVERSE_ENGINEERING_GUIDE.md`: accepted c53 offline evidence and
+  reusable bounded never-written/cached-depth/fail-closed method synchronized;
+  commit **d2475df06f16267c25862a9d035cfa499c05a973** on Wisdoms main, push and
+  `git ls-remote origin refs/heads/main` equality verified. Wisdoms working tree clean.
+- Final status/report additions are metadata only. Package/integrity/publication
+  checks are repeated after them; all9 full tests need no further repetition
+  because all executable source/tool bytes remain the tested input digest.
+- Package/integrity/publication checks contribute1 PASS each separately from
+  the478 nonduplicated regression cases; repeated checks are not accumulated.
+- Final40-character handoff HEAD is reported in chat after its push; the pinned
+  implementation commit above avoids a self-referential commit hash.
 
 ---
 
