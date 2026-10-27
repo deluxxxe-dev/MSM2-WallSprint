@@ -95,3 +95,4 @@ python tools/test-workspace.py
 /workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_direct_entry.py
 /workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_sharded.py
 /workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_boundary.py
+/workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_stitched.py

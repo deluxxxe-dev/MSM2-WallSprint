@@ -1,36 +1,45 @@
 # WallSprint project state
 
-## c57 current stage — exact runtime-boundary diagnostic classifier READY
+## c58 current stage — exact-runtime-begin entry-instance continuation TOOL READY
 
-**RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**. Separatev0.1c57/schema1 diagnostic
-layer authenticates the exact image and complete c56 boundary-refusal set. It
-replays unchanged c53 canonical partition/heap/effect/successor/cap order to
-recover the first refusing instruction and every row-external modeled successor.
-Source row/code/instruction identity and replay work must agree with c56 evidence.
-No row boundary is traversed and no target code is read by the classifier.
+**EXACT_RUNTIME_BEGIN_STITCH_SCANNER_READY**. Separatev0.1c58/schema1 offline tool
+carries existing c53 GPR image-address Facts only over authenticated architectural
+c57 first-boundary edges to exact_unique_runtime_begin. Original root+row+exact
+incoming-state identities keep continuations separate from historical EMPTY-root
+scans; different states never fabricate a global target fact. Local c53 must joins,
+fact hops and c54/c55 CALL per-register summaries/RSP kill remain unchanged.
 
-Six edge kinds and eight exact metadata relations have independent exact totals,
-including exact target row/overlap/adjacency fields. Adjacency is never admission.
-Decoder instruction identity distinguishes unconditional jumps from decorated
-mnemonics; old model-only fallthroughs are explicitly labeled and counted, while
-all original scanner behavior remains unchanged. Source-set identity/order/count,
-stale bytes, wrong tool/image/schema/contracts or malformed records poison/refuse
-aggregation. Small per-kind/relation examples do not truncate counts.
+Stable exact-state cycles dedup; changed-state cycles, later uncertified exits,
+unsupported targets/semantics or caps abort the entire root with zero candidates.
+Boundary paths are separate from Fact chains. Readonly c56 checkpoints+c57 JSON
+must match complete replay/image/tool/contracts/schema/distribution. No silent
+repair/fallback. Counts are completed-root entry-instance observations, not unique
+program sites or all-entry invariants. All old scanners/tests/evidence unchanged.
 
-C56 checkpoints can be reused read-only; missing/stale/corrupt input refuses
-without repair. Without that option the unchanged c56 baseline is recomputed
-in memory. All c38-c56 scanner sources/tests/evidence remain unchanged. Candidate
-outputs, c28 separation, deferred exclusion and every false completeness/
-publication/ownership/lifetime gate are preserved. cross_runtime_fact_propagation
-is false. classification_complete covers the162472-row diagnostic domain only.
+Actual c58 edge/instance/candidate counts are UNKNOWN/null (private EXE absent).
+Owned mechanism validation does not establish a writer or writer absence. All
+completeness/publication/allocation/base/range/lifetime/ownership/containment/CFG/
+EH/production/watch/gameplay gates remain false, C52 FAIL binding. No loaded-value/
+pointer chase/slot qword/producer traversal/mitigation change. Production runtime
+v0.1c38/package0.1.56, no new game release/native probe. After verified publication,
+one owner offline command with existing c56 cache+c57 JSON; no Update-WS/game/
+Overstrike/EXE upload/runtime log. Detailed method/results: V01C58_STITCHED_CONTINUATION,
+V01C58_GATE, V01C58_STATUS.json, CODEX_RESULT.
 
-Actual c57 target distributions/counts are UNKNOWN/null: private EXE absent here.
-After verified publication only one owner offline classification/compact JSON is
-needed, optionally reusing the existing c56 private cache. No Update-WS/game/
-Overstrike/watch/EXE upload/new runtime log. Production/VCH/restoration/ownership/
-handler/lease/cleanup, gameplay and mitigations unchanged. C52 FAIL binding;
-runtimev0.1c38/package0.1.56, no game release. V01C57_RUNTIME_BOUNDARY/GATE/STATUS
-and CODEX_RESULT hold detailed method/results.
+## c57 historical accepted owner VERIFIED-STATIC classification
+
+162472/162472 first-boundary rows;201788/201788 architectural edges;0 model-only;
+classification_complete=true, cross_runtime_fact_propagation=false.159734 exact
+unique runtime beginnings (79.1593%),29560 interiors (14.6490%),12494 metadata-free
+RX (6.1916%); other relations0.90430 exact adjacency,69304 nonadjacent exact edges.
+Adjacency never substitutes for edge proof. Owner V01C57_OWNER_OFFLINE_RESULT.md
+root/source copies immutable. Historical c57 cloud UNKNOWN remains historical;
+accepted later owner result supersedes pending status for c57 only, not c58.
+The older prefixed-JMP model-only finding is owned decoder behavior; c57 measured
+zero such outgoing edges in this exact first-boundary domain. This does not prove
+none elsewhere. C57 diagnostics themselves did not authorize cross-row facts or
+writer/publication/ownership/production claims. c58 adds only its bounded offline
+entry-instance mechanism; all other domains remain open.
 
 ## c56 historical accepted stage — full runtime-metadata row coverage
 
