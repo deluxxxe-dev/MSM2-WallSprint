@@ -142,3 +142,26 @@ updates repeat package/verify; this integrity PASS is separate from699 regressio
 groups. Initial local docs-generator invocation omitted the analysis-python PATH,
 so import failed with missing capstone before writing outputs; rerun with the
 recorded pinned PATH succeeded. This was not a required-test failure.
+
+## Publication and shared knowledge
+
+Implementation commit **3543a2ac4168afc4393abef09f332cb236d1651f** on
+**codex/v01c20-edi-value-provenance** pushed successfully (bcb1418→3543a2a).
+`python3 /workspace/scratch/ws-c62/check_publication.py`: expected intended remote
+head and independent fetched-checkout byte equality, actual exit0/PASS1,12 changed
+files/361 compared files/297 current code-tool files, matching recorded digest.
+This publication check is separate from regression699 groups. Remote branch SHA
+independently confirmed through `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance`
+and independent checkout fetch,not inferred from local commit alone.
+
+Wisdoms `docs/REVERSE_ENGINEERING_GUIDE.md` corrects pending c61 actual distribution
+with accepted owner6566/7206/6946/phase5759/805/2, and records the reusable full-prefix
+first-use/same-scan-sibling/dedup-origin/late-invalidation rule. Pushed Wisdoms main
+commit **72bd503706f9128305f7138565a67f087676933c**; `git ls-remote origin refs/heads/main`
+matched that HEAD,working tree clean. No private logs/bytes/personal paths added.
+
+This final metadata-only commit records the implementation SHA and already
+verified publication/Wisdoms evidence. After it, repeat package/integrity/diff and
+independent remote-head checkout verification. Its own final SHA belongs in the
+owner handoff rather than a self-referential in-tree hash. Executable source/tool
+bytes remain identical to tested implementation; no need to repeat full suite.
