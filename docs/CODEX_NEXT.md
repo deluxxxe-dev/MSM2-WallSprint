@@ -1,182 +1,243 @@
-# Next task — c57 exact runtime-boundary exit classification
+# Next task — c58 exact-runtime-begin cross-row provenance continuation
 
 ## Status
 
-Accepted owner c56 VERIFIED-STATIC result:
+Accepted owner c57 VERIFIED-STATIC result:
 
-- `analysis/V01C56_OWNER_OFFLINE_RESULT.md`
-- `source/analysis/V01C56_OWNER_OFFLINE_RESULT.md`
+- `analysis/V01C57_OWNER_OFFLINE_RESULT.md`
+- `source/analysis/V01C57_OWNER_OFFLINE_RESULT.md`
 
 Continue only on `codex/v01c20-edi-value-provenance`; do not merge `main`.
 
-C56 authenticated the exact pinned image and covered every runtime-function metadata row with deterministic sharding:
+C57 authenticated and completely classified the accepted c56 `unsupported_runtime_boundary` set:
 
 ```text
-runtime_functions_in_metadata = 527161
-runtime_rows_covered = 527161
-runtime_functions_not_considered = 0
-shard_count = 4119
-shard_failures = []
-regions_modeled = 204770
-regions_refused = 322390
-regions_excluded = 1
-writer_candidates = 0
-candidate_sweep_complete = false
-writer_enumeration_complete = false
+boundary_refused_rows_expected = 162472
+boundary_refused_rows_classified = 162472
+boundary_edges_total = 201788
+architectural_boundary_edges_total = 201788
+model_only_boundary_edges_total = 0
+classification_complete = true
+cross_runtime_fact_propagation = false
 ```
 
-This closes only the prior process-global omission of later runtime-metadata rows. It does not close executable gaps, refused regions, alternate/EH entries, indirect targets/writers, deferred producer, or publication/allocation/ownership/lifetime.
-
-The largest c56 refusal classes are:
+Exact target distribution:
 
 ```text
-unsupported_runtime_boundary = 162472
-indirect_call = 153992
+exact_unique_runtime_begin = 159734   # 79.1593%
+inside_unique_runtime_span_nonentry = 29560   # 14.6490%
+executable_file_backed_outside_runtime_metadata = 12494   # 6.1916%
+all ambiguous/unbacked/nonexec/outside/deferred classes = 0
 ```
 
-Together they account for about 98.16% of refused metadata rows. C57 addresses only the first class.
+Exact adjacency is 90430 edges, but adjacency is diagnostic only. The remaining 69304 exact-runtime-begin edges are non-adjacent direct control transfers. C57 itself did not authorize any cross-row continuation.
 
-C56 shard-local additive summary counters are not globally unique c55 counters. In particular `call_clobber_all_address_origins_remaining=932595` must not be compared numerically with c55's single-process `301194` as a regression/improvement.
-
-Before work read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, `docs/CODEX_REPORTING.md`, this file, `analysis/V01C56_OWNER_OFFLINE_RESULT.md`, c53-c56 scanner evidence/tools/tests, and relevant Wisdoms references.
+Before work read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, `docs/CODEX_REPORTING.md`, this file, `analysis/V01C57_OWNER_OFFLINE_RESULT.md`, c53-c57 scanner evidence/tools/tests, and relevant Wisdoms references.
 
 ## Current bounded task
 
-C57 is **OFFLINE/STATIC diagnostic classification only**.
+C58 is **OFFLINE/STATIC address-provenance continuation only**.
 
-Determine exactly why the existing c53/c56 per-runtime-row CFG rejects `unsupported_runtime_boundary`, and classify every such outgoing edge on the exact authenticated image. Do **not** yet carry register/address facts across runtime rows and do not change candidate output.
+Implement a separate v0.1c58 tool/mode that can carry an already-proven c53-style GPR image-address fact across an authenticated architectural c57 boundary edge **only when the target relation is exactly `exact_unique_runtime_begin`**.
 
-Preferred shape: a separate `v0.1c57` tool/mode or a strictly diagnostic layer over c56 that can be run once on the owner image and emits compact aggregate JSON.
+The purpose is to test whether the dominant 79.16% exact-entry boundary class can extend existing exact-slot candidate discovery without weakening any other refusal domain.
 
-### 1. Preserve all existing semantics
+Do not broaden memory/value semantics. Do not make publication/writer-completeness claims.
 
-Do not change c53-c56 candidate admission, summary contracts, access semantics, refusal behavior, deferred producer exclusion, external c28 handling, or historical outputs.
+### 1. Admitted cross-row edge contract
 
-No cross-row CFG stitching is authorized in c57.
+A cross-row continuation may be attempted only when all of the following are independently authenticated on the exact pinned image:
 
-No runtime-span interior target, fallthrough across a metadata boundary, nearest metadata entry, overlapping metadata row, or metadata-free target becomes an admitted continuation merely because control reaches it.
+- source row identity/order/bounds/hash matches the accepted c56/c57 evidence;
+- source instruction identity/bytes and architectural edge kind match c57 replay;
+- `architectural_successor == true`;
+- target relation is exactly `exact_unique_runtime_begin`;
+- target row index/begin/end is exact and unique at that target point;
+- target row code is the same immutable/file-backed executable domain already accepted by c53-c57;
+- source/target are outside the deferred producer exclusion;
+- no stale image/tool/schema/contract/caps evidence exists.
 
-### 2. Classify every boundary exit exactly
+Adjacency is not required for a direct branch and never substitutes for edge authentication.
 
-For every c56 row whose first/terminal refusal is `unsupported_runtime_boundary`, recover the exact outgoing successor(s) that crossed the row's half-open runtime span and report bounded deterministic diagnostics.
+The following remain refused and must never be stitched in c58:
 
-At minimum record/count:
+- `inside_unique_runtime_span_nonentry`;
+- `executable_file_backed_outside_runtime_metadata`;
+- overlapping metadata;
+- unbacked executable targets;
+- non-executable/writable targets;
+- outside-image targets;
+- deferred producer targets;
+- indirect jump/call targets;
+- EH/alternate entries not represented by an admitted exact architectural edge;
+- any model-only/synthetic successor.
 
-```text
-source_runtime_row_index
-source_begin_rva / source_end_rva
-source_instruction_rva
-source_instruction_sha256 or exact bounded identity
-edge_kind
-edge_target_rva
-target_metadata_relation
-```
+### 2. Entry-instance semantics are mandatory
 
-`edge_kind` must distinguish at least:
+Do **not** turn a predecessor-carried fact into a global fact for the target runtime row.
 
-```text
-ordinary_fallthrough
-direct_unconditional_branch
-direct_conditional_taken
-conditional_fallthrough
-call_fallthrough
-other_supported_direct_successor
-```
+The target row's historical independent scan from an empty root remains separate and unchanged.
 
-Use exact decoder semantics; do not infer edge kind from proximity.
+A carried state must be analyzed as a separate continuation instance keyed by an authenticated predecessor/root and exact incoming state identity (or an equivalent representation with the same safety property).
 
-### 3. Target relation must be deterministic and fail-closed
+Required semantics:
 
-Classify the target at minimum as:
+- incoming predecessor state is not merged with the target row's independent EMPTY-root state;
+- two different incoming carried states are not merged into a fabricated common fact;
+- identical continuation states may be deterministically deduplicated;
+- within one continuation instance, retain c53 must-join semantics exactly: a fact survives a join only when all reachable incoming states in that instance agree exactly;
+- a candidate reached from a continuation instance is **path/entry-instance static candidate evidence**, not an all-entry invariant for the target row.
 
-```text
-exact_unique_runtime_begin
-inside_unique_runtime_span_nonentry
-overlapping_multiple_runtime_spans
-executable_file_backed_outside_runtime_metadata
-executable_not_fully_file_backed
-non_executable_or_writable_section
-outside_image
-deferred_producer_excluded
-```
+If a coherent bounded implementation cannot preserve this distinction, return BLOCKED rather than weakening it.
 
-If a target is an exact unique runtime begin, report the target row index/begin/end and whether the source and target spans overlap. This is diagnostic only.
+### 3. Fact language remains unchanged
 
-If useful, also report exact adjacency (`source_end == target_begin`) separately from admission. Adjacency is never proof of one function or safe fallthrough.
+Carry only the existing c53 accepted GPR address facts:
 
-Nearest-entry distances may be diagnostic only and must never affect classification/admission.
+- RIP-relative LEA image origin;
+- full64 register copy;
+- checked full64 affine LEA constant displacement;
+- exact constant memory displacement from a proven base.
 
-### 4. Aggregate diagnostics
+Do not introduce:
 
-Emit compact exact totals including:
+- memory-loaded pointer/value propagation;
+- slot qword reads;
+- pointer chase;
+- stack/local value facts;
+- callee return-value facts;
+- ABI preservation assumptions;
+- immediate pointer materialization or unsupported arithmetic/shift generality;
+- indexed/segment generality;
+- partial-register recovery.
+
+Crossing a row boundary does not change the underlying address `Fact`. Keep boundary-path proof metadata separate from the c53 address-derivation hop chain so c53 provenance-hop semantics are not silently changed.
+
+### 4. CALL behavior remains c54/c55-only
+
+C57 `call_fallthrough` denotes the modeled return site, not the callee target.
+
+At a CALL:
+
+- use only the already-authenticated c54/c55 per-register preservation result available to the existing scanner;
+- RSP remains killed;
+- any non-preserved address facts remain killed;
+- c58 must not use the boundary classifier to infer callee preservation, return values, or a new call target rule.
+
+The single measured c57 call-fallthrough boundary edge is not special-cased.
+
+### 5. Bounded cross-row graph / fail-closed behavior
+
+Use deterministic finite caps for cross-row continuation instances, row transitions, instructions, edges, states, iterations, cycles and retained proof-path records.
+
+Required behavior:
+
+- exact-entry row cycles are detected/deduplicated by authenticated state identity;
+- state-changing cycles or cap exhaustion refuse the affected continuation instance;
+- no candidate may escape from an incomplete/refused continuation instance;
+- any stale/missing/corrupt c56/c57 evidence refuses rather than falling back to a weaker mode;
+- historical c53-c57 source behavior and outputs remain unchanged.
+
+Prefer read-only reuse of the owner's valid c56 checkpoints and c57 boundary JSON when available. Do not rewrite historical private evidence. A fresh in-memory recomputation is acceptable only if it authenticates the same exact contracts and produces the same accepted c56/c57 identities.
+
+### 6. Candidate records / diagnostics
+
+Keep the existing access classification and exact-slot effective-address proof.
+
+Any c58 continuation candidate must additionally identify, directly or by bounded hashes/IDs:
+
+- original root/runtime row;
+- continuation target row;
+- incoming state identity;
+- cross-row edge kind and source instruction identity;
+- bounded cross-row path/transition proof;
+- ordinary c53 address provenance chain;
+- access kind/width/effective RVA/overlap and instruction identity.
+
+Emit compact exact diagnostics including at minimum:
 
 ```text
 repository_result
 image_authenticated / image_sha256
-boundary_refused_rows_expected = 162472
-boundary_refused_rows_classified
-boundary_edges_total
-edge_kind_counts
-target_metadata_relation_counts
-exact_runtime_begin_edge_kind_counts
-interior_target_edge_kind_counts
-metadata_free_RX_edge_kind_counts
-ambiguous_or_invalid_target_counts
-bounded examples per major class
-classification_complete
+accepted_c57_boundary_identity
+exact_runtime_begin_edges_available = 159734
+exact_runtime_begin_edges_considered
+exact_runtime_begin_edges_admitted
+exact_runtime_begin_edges_refused
+continuation_instances_created
+continuation_instances_deduplicated
+continuation_instances_refused
+cross_row_cycles_seen
+cross_row_cap_refusals
+rows_reached_by_continuation
+address_facts_crossing_runtime_rows
+call_edges_with_preserved_facts_crossing_rows
+remaining_boundary_refusal_relation_counts
+reference/reader/writer/rmw/address_only candidate counts
+new_cross_row_candidate_count
+candidate_sweep_complete
+writer_enumeration_complete
+all publication/allocation/base/range/lifetime/ownership/destination/CFG/EH gates
 ```
 
-The aggregate must poison/refuse on missing/duplicate source rows, inconsistent row identity/order, stale bytes, wrong image/tool/schema/contract, malformed target relation, or any count mismatch against the accepted c56 boundary-refusal set.
+Do not compare c56 shard-local additive CALL-clobber totals numerically with c55 single-process totals unless the scope is explicitly made identical.
 
-Do not emit full proprietary function bodies. A bounded source instruction identity and small examples are sufficient.
+### 7. Completeness boundaries remain false
 
-### 5. No positive cross-row proof in c57
-
-C57 must leave:
+C58 is not expected to close the overall candidate/writer domain. Preserve:
 
 ```text
 candidate_sweep_complete = false
 writer_enumeration_complete = false
-cross_runtime_fact_propagation = false
+publication_source_kind = unproven
+allocation_proven = false
+base_proven = false
+lifetime_proven = false
+ownership_exclusive = false
+destination_contained = false
+alternate_entries_EH_indirect_writers_closed = false
+production_integrated = false
+hardware_watch_enabled = false
+live_qword_reads = 0
+pointer_chase = false
+game_used = false
 ```
 
-Even if many exits target `exact_unique_runtime_begin`, c57 only establishes the measured distribution needed to design a later bounded stitching proof.
+Even if no new candidate appears, do not claim no writer. Interior targets, metadata-free RX, indirect calls/writers, EH/alternate entries, executable gaps, unsupported semantics and deferred producer remain open.
 
-Do not treat:
+C52 `PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL` remains binding.
 
-- `ordinary_fallthrough` into an adjacent runtime row,
-- direct branch into a runtime-row interior,
-- metadata-free RX target,
-- or overlapping metadata
-
-as safe continuation without a separately reviewed contract in a later task.
-
-### 6. Focused owned tests
+### 8. Focused owned tests
 
 Add a focused test, preferably:
 
 ```bash
-python3 source/tools/test_slot_publication_boundary.py
+python3 source/tools/test_slot_publication_stitched.py
 ```
 
 Cover at minimum:
 
-- ordinary fallthrough crossing row end;
-- unconditional direct branch to exact next runtime begin;
-- conditional taken edge to exact runtime begin with in-row fallthrough;
-- conditional fallthrough crossing boundary;
-- call fallthrough crossing boundary;
-- target inside unique runtime span but not begin;
-- target in overlapping runtime spans;
-- metadata-free RX target;
-- unbacked/nonexec/writable/outside-image target;
-- deferred producer target;
-- exact adjacency reported but never admitted;
-- stale/wrong image/schema/tool/row identity refuses;
-- duplicate/missing classification refuses aggregate;
-- bounded examples do not affect counts;
-- historical c38/c53/c54/c55/c56 tests remain unchanged/green;
-- candidate counts and all completeness/publication gates remain unchanged.
+- ordinary fallthrough to exact adjacent unique runtime begin carries an exact fact;
+- conditional fallthrough to exact adjacent begin;
+- direct conditional taken to non-adjacent exact begin;
+- direct unconditional branch to non-adjacent exact begin;
+- CALL fallthrough carries only c54/c55-preserved facts;
+- target interior refuses;
+- metadata-free RX target refuses;
+- overlap/unbacked/nonexec/outside/deferred target refuses;
+- model-only successor refuses;
+- independent target EMPTY-root analysis remains separate from predecessor continuation;
+- two different incoming states remain separate and never fabricate a merge fact;
+- identical continuation states deduplicate deterministically;
+- within-instance branch merge keeps only exact agreement;
+- exact-entry cross-row cycle converges/deduplicates safely;
+- state-changing cycle/cap exhaustion refuses and emits no candidate;
+- stale/wrong image/schema/tool/c56/c57/row/edge identity refuses;
+- exact-slot reader/writer candidate after a safe cross-row path is reported with boundary provenance;
+- adjacent non-slot access is not promoted;
+- memory-loaded base still does not become a pointer fact;
+- deferred producer and external c28 separation remain unchanged;
+- historical c38/c53/c54/c55/c56/c57 tests remain green and unchanged.
 
 Synthetic/model success is not real-image evidence.
 
@@ -185,13 +246,13 @@ Synthetic/model success is not real-image evidence.
 Emit exactly one:
 
 ```text
-RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY
-RUNTIME_BOUNDARY_EDGE_CLASSIFIER_BLOCKED
+EXACT_RUNTIME_BEGIN_STITCH_SCANNER_READY
+EXACT_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED
 ```
 
-`READY` means the classifier is deterministic, complete over the accepted c56 `unsupported_runtime_boundary` set, fail-closed and tested. It does not authorize cross-row propagation or prove writer completeness.
+`READY` means only that the exact-entry continuation mechanism is bounded, fail-closed and tested. It does not mean the private image has been rescanned, that a writer exists/does not exist, or that publication/production is solved.
 
-If the exact image is unavailable to Codex, publish one owner OFFLINE command that runs the c57 classifier against the exact pinned image and emits compact JSON. No game launch, Update-WS, Overstrike, hardware watch, EXE upload, or runtime log is needed.
+If the exact image is unavailable to Codex, publish **one owner OFFLINE command** that runs the c58 scanner on the exact pinned image, preferably reusing the owner's c56 checkpoints and c57 JSON read-only, and emits one compact c58 JSON. No game launch, Update-WS, Overstrike, hardware watch, EXE upload or runtime log.
 
 ## Required validation
 
@@ -205,6 +266,7 @@ python3 source/tools/test_slot_publication_callee.py
 python3 source/tools/test_slot_publication_direct_entry.py
 python3 source/tools/test_slot_publication_sharded.py
 python3 source/tools/test_slot_publication_boundary.py
+python3 source/tools/test_slot_publication_stitched.py
 bash source/tools/build_windows.sh
 bash source/tools/test.sh
 bash source/tools/smoke_windows.sh
@@ -212,25 +274,29 @@ bash source/tools/test_hooks_windows.sh
 python3 source/tools/package.py
 ```
 
-If the focused c57 test uses a different exact filename, run/report that exact command instead.
+If the focused test uses a different exact filename, run/report that exact command instead.
 
 Expected:
 
-- historical c38-c56 behavior remains green and immutable;
-- the accepted c56 boundary-refusal set is classified exactly and deterministically;
-- no cross-row fact propagation or candidate-semantic broadening occurs;
-- no slot qword read, pointer chase, producer traversal, hardware watch, production integration or gameplay change occurs.
+- all historical c38-c57 behavior remains green and immutable;
+- only authenticated architectural `exact_unique_runtime_begin` edges can carry existing address facts;
+- independent target entry analysis never acquires predecessor facts;
+- unsupported targets/cycles/caps refuse fail-closed;
+- no value/pointer semantic broadening;
+- no production/gameplay behavior change;
+- all completeness/publication/ownership/lifetime gates remain false.
 
-## Required outputs / handoff
+## Required outputs
 
-Update as appropriate:
+Update/create:
 
-- `analysis/V01C57_*` evidence/gate/status;
-- c57 tool/test files;
-- `docs/PROJECT_STATE.md` so accepted c56 owner evidence is recorded and c57 is current;
+- separate c58 offline tool/mode and focused tests;
+- `analysis/V01C58_*` and source mirror as appropriate;
+- `docs/PROJECT_STATE.md`: c57 owner VERIFIED-STATIC result historical, c58 current;
 - `docs/CODEX_RESULT.md`;
-- relevant Wisdoms rule if the boundary classification yields a reusable static-analysis rule.
+- Wisdoms only if a reusable cross-boundary must/may-analysis rule is established;
+- commit and push the implementation branch, then verify remote publication.
 
-Commit and push the intended branch before claiming completion.
+Do not overwrite `analysis/V01C57_OWNER_OFFLINE_RESULT.md`.
 
-Final report must follow `docs/CODEX_REPORTING.md`: every executed command, expected/actual result, PASS/SKIP/UNAVAILABLE/BLOCKED, every unrun test with reason, branch+SHA, and exact owner action if one remains.
+Final report must follow `docs/CODEX_REPORTING.md`: every executed command, expected/actual result, PASS/SKIP/UNAVAILABLE/BLOCKED, every unrun test with reason, branch + commit SHA, publication verification, and exact owner action if a private-image scan is needed.
