@@ -229,6 +229,7 @@ record=s.record(e.image_id);assert record['end_rva'] is None and record['contrac
 assert 'code' not in record and 'bytes' not in record
 r=e.report();assert sum(r['target_metadata_relation_request_counts'].values())==2 and sum(r['target_metadata_relation_unique_counts'].values())==1
 assert r['unique_callsites_reported']==1 and r['target_frequency_examples'][0]['requests']==2
+assert r['call_edge_verification_decode_attempts']==r['call_edge_verification_instructions_decoded']==2
 print('PASS: c55 immutable reachable-code/CFG/child cache identity, request versus unique versus callsite totals, no raw bodies')
 
 for limits in [dict(diagnostic_targets=1),dict(diagnostic_callsites=1)]:
@@ -275,6 +276,8 @@ try:
     assert a['repository_result']=='DIRECT_CALL_ENTRY_SLOT_SCANNER_READY' and a['schema_version']==3
     assert a['reader_candidates']==a['writer_candidates']==a['direct_entry_summary_admitted']==1
     assert a['c54_runtime_entry_summary_attempted']==0 and a['call_edges_with_any_preserved_origin']==1
+    assert a['call_edge_verification_instructions_decoded']==1
+    assert a['total_instructions_decoded_including_summaries']==a['coverage']['instructions_decoded']+a['direct_entry_instructions_decoded']+a['call_edge_verification_instructions_decoded']+a['c54_runtime_entry_analysis']['summary_instructions_decoded']
     assert not a['writer_enumeration_complete'] and not a['production_integrated'] and a['live_qword_reads']==0 and not a['pointer_chase']
     assert a['c52_production_watch_gate']=='PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL'
     with tempfile.TemporaryDirectory(prefix='c55 owned ') as tmp:

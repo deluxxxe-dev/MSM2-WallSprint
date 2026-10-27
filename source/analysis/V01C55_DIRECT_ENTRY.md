@@ -96,7 +96,10 @@ recursion. No SCC is approximated as preserved.
 Each engine has depth8, entries2048, bytes8MiB, work1000000; per summary decoded
 bytes16384/instructions512/states512/edges1024/blocks256. Direct budgets include
 CALL verification/lookahead/final rechecks and global partition ownership work.
-Runtime c54 budgets remain separately explicit. Combined maxima:4096 entries,
+CALL-edge verification has separate decode-attempt/success counters; actual
+decodes are counted even when a subsequent graph overlap/cap check refuses.
+Aggregate instructions include main, runtime, direct graph and CALL verification
+decoding. Runtime c54 budgets remain separately explicit. Combined maxima:4096 entries,
 16MiB code reads and2000000 work credits, separate from unchanged main scan caps.
 If EITHER engine exhausts a global budget, all subsequent requests, even caches
 in the other engine, refuse. Finite negative caches may conservatively retain an
@@ -128,7 +131,16 @@ Initial exhaustion test fixture mistakenly stayed within two separate entry
 budgets; it was corrected to actually request a SECOND direct entry and to assert
 both earlier positive proofs exist. No refusal assertion was weakened.
 
-Required validation commands/counts and source hashes are in V01C55_STATUS.json
+After an initial full green chain, final review corrected missing CALL-edge
+verification and refused-graph decodes in aggregate instruction accounting.
+Focused arithmetic assertions were added and ALL10 required commands repeated;
+no admission condition changed. One hooks attempt failed the unchanged legacy
+30ms reset assertion at immediate_reset_smoke.cpp:230 (second reset capture).
+Unchanged standalone test_reset_trace.sh passed12/skip1 and full hooks retry
+passed490/skip5/unavailable17; failure cause is UNKNOWN, no timing or assertion
+was relaxed. Interrupted counts are preserved separately, not accumulated.
+Required validation commands/counts and source
+hashes are in V01C55_STATUS.json
 and CODEX_RESULT. No legitimately supplied Spider-Man2.exe exists here. After
 verified publication fetch the independent _source intended branch normally,
 then run ONE owner offline command and return compact JSON only:

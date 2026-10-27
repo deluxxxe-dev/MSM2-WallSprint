@@ -123,7 +123,9 @@ class Engine:
         self.metrics=Counter(dict.fromkeys(['direct_entry_summary_attempted','direct_entry_summary_admitted',
             'direct_entry_summary_refused','direct_entry_cache_hits','direct_entry_nested_summaries_used',
             'direct_entry_cycles_refused','direct_entry_entries_loaded','direct_entry_code_bytes_loaded',
-            'direct_entry_instructions_decoded','direct_entry_work','summary_requests'],0))
+            'direct_entry_instructions_decoded','direct_entry_decode_attempts',
+            'call_edge_verification_instructions_decoded','call_edge_verification_decode_attempts',
+            'direct_entry_work','summary_requests'],0))
         self.relation_requests=Counter(dict.fromkeys(RELATIONS,0))
         self.relation_callsites=Counter(dict.fromkeys(RELATIONS,0))
         self.targets,self.sites,self.callsites={},set(),[]
@@ -199,7 +201,9 @@ class Engine:
         self.source.code_range(pc,n)
         raw=self.read(pc,n)
         self.charge()
+        self.metrics['call_edge_verification_decode_attempts']+=1
         ins=next(cfg.old.decoder().disasm(raw,pc,count=1),None)
+        self.metrics['call_edge_verification_instructions_decoded']+=ins is not None
         if (ins is None or ins.size!=n or not ins.group(cfg.cs.CS_GRP_CALL)
             or len(ins.operands)!=1 or ins.operands[0].type!=cfg.x.X86_OP_IMM
             or ins.operands[0].imm!=target or hashlib.sha256(raw).hexdigest()!=edge['instruction_sha256']):
@@ -265,8 +269,10 @@ class Engine:
             if len(nodes)>=self.caps.states:raise ValueError('direct_entry_state_cap')
             window=self.source.window(pc)
             raw=self.read(pc,window)
+            self.metrics['direct_entry_decode_attempts']+=1
             ins=next(md.disasm(raw,pc,count=1),None)
             if ins is None:raise ValueError('direct_entry_decode_gap_or_boundary')
+            self.metrics['direct_entry_instructions_decoded']+=1
             index=bisect_left(starts,pc)
             if (index and starts[index-1]+nodes[starts[index-1]].size>pc) or (index<len(starts) and pc+ins.size>starts[index]):
                 raise ValueError('direct_entry_conflicting_instruction_intervals')
@@ -280,7 +286,6 @@ class Engine:
             self.decoded_code[pc]=signature
             for at in range(pc,pc+ins.size):self.decoded_owners[at]=pc
             starts.insert(index,pc);nodes[pc]=ins;decoded_bytes+=ins.size
-            self.metrics['direct_entry_instructions_decoded']+=1
             following,kind=cfg.successors(ins,0,self.source.image_size,self.source.image_size)
             if kind=='return' and ins.operands:raise ValueError('unsupported_direct_entry_return_adjustment')
             following=list(dict(following).items());edges[pc],kinds[pc]=following,kind
@@ -376,7 +381,7 @@ def analyze_image(data,caps=cfg.Caps(),summary_caps=Caps()):
         preserved_origin_register_facts_across_calls=result['coverage'].get('preserved_origin_register_facts_across_calls',0),
         call_clobber_all_address_origins_remaining=result['unresolved_memory_reasons'].get('call_clobber_all_address_origins',0),
         c53_call_clobber_all_address_origins_baseline=324714,
-        total_instructions_decoded_including_summaries=result['coverage']['instructions_decoded']+report['direct_entry_instructions_decoded']+report['c54_runtime_entry_analysis']['summary_instructions_decoded'],
+        total_instructions_decoded_including_summaries=result['coverage']['instructions_decoded']+report['direct_entry_instructions_decoded']+report['call_edge_verification_instructions_decoded']+report['c54_runtime_entry_analysis']['summary_instructions_decoded'],
         total_code_bytes_loaded_including_summaries=result['coverage']['file_code_bytes_loaded']+report['direct_entry_code_bytes_loaded']+report['c54_runtime_entry_analysis']['summary_code_bytes_loaded'],
         real_image_effect_not_inferred_from_synthetic=True,
         reason='bounded_exact_direct_CALL_candidates_not_writer_or_publication_completeness')

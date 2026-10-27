@@ -1,7 +1,7 @@
 # Codex result — c55 authenticated direct-CALL entry summaries
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
-Task base **e2a0438a48aaa66a46a5824193000f601b0c6b04**. Implementation/source commit: **537957a6fa087320bd1cb92f21f493a566abdd3d**, pushed and independently verified.
+Task base **e2a0438a48aaa66a46a5824193000f601b0c6b04**. Implementation commit is pinned after publication.
 Primary: **DIRECT_CALL_ENTRY_SLOT_SCANNER_READY**; BLOCKED0.
 
 ## Result / accepted evidence / boundaries
@@ -68,8 +68,21 @@ export PATH=/workspace/toolchains/analysis-python/bin:$PATH
 No dependency install/system Python change. Initial focused fixture erroneously
 stayed within the SEPARATE entry budgets; corrected it to request a SECOND direct
 entry and assert the earlier runtime/direct proofs both exist. No refusal assertion
-or cap weakened. Focused final32 PASS; all10 Required validation commands then ran
-on final executable source and exited0. Initial repeats are not accumulated.
+or cap weakened. Focused final32 PASS. After the initial full green chain, final review found
+CALL-edge revalidation decodes absent from the aggregate instruction total. Added
+separate verification/attempt counters, counted decoded instructions even when a
+later overlap/cap check refuses, and included verification in aggregate decoding.
+No admission rule changed; focused assertions cover the exact arithmetic. ALL10
+Required validation commands were repeated on final executable source, exit0.
+One hooks attempt then stopped in the unchanged legacy30ms reset test at
+immediate_reset_smoke.cpp:230 (windows[1].capture && hits==2), exit3/28 partial
+PASS/3 SKIP. Saved the failure, verified production/test bytes unchanged, and ran
+`bash source/tools/test_reset_trace.sh`: expected all unchanged reset modes and
+refusals; actual12 PASS/1 SKIP, exit0. Full hooks then repeated successfully,
+followed by package. Cause remains UNKNOWN; no timing/guard/assertion was relaxed.
+Final command table below reports successful final runs; the interrupted attempt
+and focused recheck remain in status. Neither partial nor repeated case counts
+are accumulated.
 
 | Exact command | Expected | Actual |
 | --- | --- | --- |
@@ -118,30 +131,6 @@ measures c55 offline impact, preserving all false completeness/publication gates
 Integrity check: `python3 /workspace/scratch/ws-c55/verify.py` expected protected baseline/source hashes, complete packaged code/evidence and c55 READY/c52 FAIL separation; actual1 PASS across1020 protected baseline files and283 current source/tool inputs. `git diff --check` passed. Publication/source commit/Wisdoms synchronization follow below. After
 metadata-only changes package/integrity are repeated; full tests need no further
 rerun when tested executable source hashes remain identical.
-
-## Publication / shared handoff
-
-- Implementation/source commit **537957a6fa087320bd1cb92f21f493a566abdd3d** on
-  **codex/v01c20-edi-value-provenance**. Normal push succeeded.
-- `python3 /workspace/scratch/ws-c55/check_publication.py`: expected GitHub
-  remoteSHA=HEAD and independent checkout byte agreement; actual1 PASS across
-  15 changed paths /302 compared files /283 source-tool inputs, including both
-  immutable supplied c54 owner variants and no c55 native probe. C55 real metrics
-  remain null and c52 FAIL remains binding.
-- `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance`: remote
-  equals pushed implementation HEAD; repeated after final metadata commit/push.
-- Wisdoms docs/REVERSE_ENGINEERING_GUIDE.md updated with accepted c54 evidence and
-  bounded c55 exact invocation/metadata-free graph/cache/accounting limitations;
-  commit **e67d6f16155d36d8a1bd1d3be2711c005c2912a3**, Wisdoms main, push and
-  `git ls-remote origin refs/heads/main` equality verified; working tree clean.
-- This final handoff changes status/report metadata only. Package/integrity and
-  independent publication checks are repeated. No full test rerun is needed:
-  every executable source/tool input still matches the tested digest.
-- Package/integrity/publication each contribute1 separate PASS, not added to
-  the510 nonduplicated regressions. Repeated checks do not inflate case totals.
-- Final40-character handoff HEAD is reported in chat after its push/remote and
-  independent checkout verification. The pinned implementation SHA above avoids
-  writing a self-referential commit hash. No WS main merge/history rewrite.
 
 ---
 

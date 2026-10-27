@@ -120,7 +120,7 @@
     {
       "command": "python3 source/tools/test_slot_publication.py",
       "exit": 0,
-      "seconds": 0.35,
+      "seconds": 0.43,
       "log": "/workspace/scratch/ws-c55/test_slot_publication.log",
       "PASS": 20,
       "SKIP": 0,
@@ -130,7 +130,7 @@
     {
       "command": "python3 source/tools/test_static_access_v2.py",
       "exit": 0,
-      "seconds": 0.09,
+      "seconds": 0.1,
       "log": "/workspace/scratch/ws-c55/test_static_access_v2.log",
       "PASS": 1,
       "SKIP": 1,
@@ -140,7 +140,7 @@
     {
       "command": "python3 source/tools/test_slot_publication_cfg.py",
       "exit": 0,
-      "seconds": 0.38,
+      "seconds": 0.59,
       "log": "/workspace/scratch/ws-c55/test_slot_publication_cfg.log",
       "PASS": 22,
       "SKIP": 0,
@@ -150,7 +150,7 @@
     {
       "command": "python3 source/tools/test_slot_publication_callee.py",
       "exit": 0,
-      "seconds": 0.37,
+      "seconds": 0.65,
       "log": "/workspace/scratch/ws-c55/test_slot_publication_callee.log",
       "PASS": 26,
       "SKIP": 0,
@@ -160,7 +160,7 @@
     {
       "command": "python3 source/tools/test_slot_publication_direct_entry.py",
       "exit": 0,
-      "seconds": 0.27,
+      "seconds": 0.5,
       "log": "/workspace/scratch/ws-c55/test_slot_publication_direct_entry.log",
       "PASS": 32,
       "SKIP": 0,
@@ -170,7 +170,7 @@
     {
       "command": "bash source/tools/build_windows.sh",
       "exit": 0,
-      "seconds": 43.72,
+      "seconds": 46.77,
       "log": "/workspace/scratch/ws-c55/build_windows.log",
       "PASS": 0,
       "SKIP": 0,
@@ -180,7 +180,7 @@
     {
       "command": "bash source/tools/test.sh",
       "exit": 0,
-      "seconds": 7.53,
+      "seconds": 9.81,
       "log": "/workspace/scratch/ws-c55/test.log",
       "PASS": 13,
       "SKIP": 0,
@@ -190,7 +190,7 @@
     {
       "command": "bash source/tools/smoke_windows.sh",
       "exit": 0,
-      "seconds": 12.28,
+      "seconds": 12.62,
       "log": "/workspace/scratch/ws-c55/smoke_windows.log",
       "PASS": 7,
       "SKIP": 0,
@@ -200,7 +200,7 @@
     {
       "command": "bash source/tools/test_hooks_windows.sh",
       "exit": 0,
-      "seconds": 191.26,
+      "seconds": 194.04,
       "log": "/workspace/scratch/ws-c55/test_hooks_windows.log",
       "PASS": 490,
       "SKIP": 5,
@@ -210,7 +210,7 @@
     {
       "command": "python3 source/tools/package.py",
       "exit": 0,
-      "seconds": 0.72,
+      "seconds": 0.83,
       "log": "/workspace/scratch/ws-c55/package.log",
       "PASS": 1,
       "SKIP": 0,
@@ -1002,7 +1002,7 @@
     },
     {
       "path": "source/tools/slot_publication_direct_entry.py",
-      "sha256": "ed4dbb4d178edf67428689759243adaef70c9b0585a81645c443164f874d81ef"
+      "sha256": "9171e019c997fc8d3b7cfaa33502d99e4c9aa0790d6f14daf7e1548b155263f7"
     },
     {
       "path": "source/tools/smoke_windows.sh",
@@ -1166,7 +1166,7 @@
     },
     {
       "path": "source/tools/test_slot_publication_direct_entry.py",
-      "sha256": "d03326d919fc7c34d1ecb3d984875729bfa62e9b15ee8624e353532ecfea96b8"
+      "sha256": "cc80deda13d523192cf90fcca5f1b1867bfac211716c134be03568959d409b6f"
     },
     {
       "path": "source/tools/test_source_lifecycle.sh",
@@ -1382,7 +1382,7 @@
     }
   ],
   "code_tool_input_count": 283,
-  "code_tool_input_digest": "5d7a273a5596bd9ea9ef832c0951b7f7a56c66b279f0e3f9e4b524cbd27a113a",
+  "code_tool_input_digest": "b91b34ab77a644e0b7d048396b7a508a9c9040abc7347e815362ca4884fea629",
   "direct_entry_caps": {
     "depth": 8,
     "functions": 2048,
@@ -1428,6 +1428,39 @@
     "additional_real_image_scan_unavailable": 1
   },
   "initial_test_fixture_correction": "initial_functions_cap_test_did_not_exceed_separate_runtime_and_direct_limits; corrected_to_request_second_direct_entry_and_assert_both_earlier_positive_proofs_exist; no guard/assertion weakened",
+  "wisdoms_sync": {
+    "branch": "main",
+    "commit": "e67d6f16155d36d8a1bd1d3be2711c005c2912a3",
+    "path": "docs/REVERSE_ENGINEERING_GUIDE.md",
+    "pushed_and_remote_verified": true
+  },
+  "validation_rerun": "all10_required_commands_repeated_after_actual_CALL_edge_and_refused_graph_decode_accounting_correction; preliminary_counts_not_accumulated",
+  "legacy_reset_retry": {
+    "interrupted_hooks_attempt": {
+      "command": "bash source/tools/test_hooks_windows.sh",
+      "exit": 3,
+      "seconds": 98.56,
+      "log": "/workspace/scratch/ws-c55/test_hooks_windows.log",
+      "PASS": 28,
+      "SKIP": 3,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    "focused_recheck": {
+      "command": "bash source/tools/test_reset_trace.sh",
+      "exit": 0,
+      "seconds": 5.88,
+      "log": "/workspace/scratch/ws-c55/reset-focused.log",
+      "PASS": 12,
+      "SKIP": 1,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    "assertion": "windows[1].capture&&windows[1].hits==2 at immediate_reset_smoke.cpp:230",
+    "production_and_test_sources_unchanged": true,
+    "root_cause": "UNKNOWN; legacy30ms window under Wine; no admission or timing condition changed",
+    "partial_counts_not_accumulated": true
+  },
   "integrity_validation": {
     "PASS": 1,
     "SKIP": 0,
@@ -1435,26 +1468,6 @@
     "BLOCKED": 0,
     "protected_base_files": 1020,
     "code_tool_input_count": 283,
-    "code_tool_input_digest": "5d7a273a5596bd9ea9ef832c0951b7f7a56c66b279f0e3f9e4b524cbd27a113a"
-  },
-  "implementation_commit": "537957a6fa087320bd1cb92f21f493a566abdd3d",
-  "publication_validation": {
-    "PASS": 1,
-    "SKIP": 0,
-    "UNAVAILABLE": 0,
-    "BLOCKED": 0,
-    "branch": "codex/v01c20-edi-value-provenance",
-    "verified_remote_commit": "537957a6fa087320bd1cb92f21f493a566abdd3d",
-    "changed_files": 15,
-    "compared_files": 302,
-    "code_tool_input_count": 283,
-    "code_tool_input_digest": "5d7a273a5596bd9ea9ef832c0951b7f7a56c66b279f0e3f9e4b524cbd27a113a"
-  },
-  "wisdoms_sync": {
-    "branch": "main",
-    "commit": "e67d6f16155d36d8a1bd1d3be2711c005c2912a3",
-    "path": "docs/REVERSE_ENGINEERING_GUIDE.md",
-    "pushed_and_remote_verified": true
-  },
-  "final_metadata_note": "Final handoff metadata follows the pinned implementation commit. All executable source/tool bytes match tested digest; final HEAD is independently GitHub-verified and reported in chat."
+    "code_tool_input_digest": "b91b34ab77a644e0b7d048396b7a508a9c9040abc7347e815362ca4884fea629"
+  }
 }
