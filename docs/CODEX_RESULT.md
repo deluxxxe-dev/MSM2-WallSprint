@@ -1,7 +1,7 @@
 # Codex result — c55 authenticated direct-CALL entry summaries
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
-Task base **e2a0438a48aaa66a46a5824193000f601b0c6b04**. Implementation commit is pinned after publication.
+Task base **e2a0438a48aaa66a46a5824193000f601b0c6b04**. Implementation/source commit: **295123fa12342506482dc0dd06734f71073cbd20**, pushed and independently verified.
 Primary: **DIRECT_CALL_ENTRY_SLOT_SCANNER_READY**; BLOCKED0.
 
 ## Result / accepted evidence / boundaries
@@ -131,6 +131,30 @@ measures c55 offline impact, preserving all false completeness/publication gates
 Integrity check: `python3 /workspace/scratch/ws-c55/verify.py` expected protected baseline/source hashes, complete packaged code/evidence and c55 READY/c52 FAIL separation; actual1 PASS across1020 protected baseline files and283 current source/tool inputs. `git diff --check` passed. Publication/source commit/Wisdoms synchronization follow below. After
 metadata-only changes package/integrity are repeated; full tests need no further
 rerun when tested executable source hashes remain identical.
+
+## Final publication / shared handoff
+
+- Final executable implementation/source commit **295123fa12342506482dc0dd06734f71073cbd20** on
+  **codex/v01c20-edi-value-provenance**. Normal push succeeded after accounting
+  correction and complete required validation; all prior work/history preserved.
+- `python3 /workspace/scratch/ws-c55/check_publication.py`: expected GitHub
+  remoteSHA=HEAD and independent checkout byte agreement; actual1 PASS across
+  15 changed paths /302 compared files /283 code-tool inputs. Both immutable c54
+  owner variants, c55 real null metrics and c52 FAIL are checked.
+- `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance`: remote
+  equals implementation HEAD, repeated after final metadata commit/push.
+- Wisdoms docs/REVERSE_ENGINEERING_GUIDE.md accepted c54/c55 method and limits:
+  **e67d6f16155d36d8a1bd1d3be2711c005c2912a3**, Wisdoms main, normal push plus
+  `git ls-remote origin refs/heads/main` equality verified, tree clean.
+- Only status/report metadata follow the tested implementation. Package/integrity/
+  independent publication are repeated; full tests need no further repetition
+  because executable source/tool hashes still match the final tested digest.
+- Package/integrity/publication contribute1 PASS each separately from510
+  nonduplicated regressions. Interrupted reset attempt/focused successful recheck
+  are preserved separately and never accumulated or hidden as native acceptance.
+- Final40-character handoff HEAD is reported in chat after push/remote/checkout
+  verification. Pinned implementation SHA avoids a self-referential commit hash.
+  No WS main merge/reset/force push, new native probe or game release.
 
 ---
 

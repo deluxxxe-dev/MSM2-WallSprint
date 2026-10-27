@@ -1469,5 +1469,19 @@
     "protected_base_files": 1020,
     "code_tool_input_count": 283,
     "code_tool_input_digest": "b91b34ab77a644e0b7d048396b7a508a9c9040abc7347e815362ca4884fea629"
-  }
+  },
+  "implementation_commit": "295123fa12342506482dc0dd06734f71073cbd20",
+  "publication_validation": {
+    "PASS": 1,
+    "SKIP": 0,
+    "UNAVAILABLE": 0,
+    "BLOCKED": 0,
+    "branch": "codex/v01c20-edi-value-provenance",
+    "verified_remote_commit": "295123fa12342506482dc0dd06734f71073cbd20",
+    "changed_files": 15,
+    "compared_files": 302,
+    "code_tool_input_count": 283,
+    "code_tool_input_digest": "b91b34ab77a644e0b7d048396b7a508a9c9040abc7347e815362ca4884fea629"
+  },
+  "final_metadata_note": "Final metadata follows the pinned implementation with corrected decode accounting. All executable source/tool bytes match tested digest; final HEAD is independently GitHub-verified and reported in chat."
 }
