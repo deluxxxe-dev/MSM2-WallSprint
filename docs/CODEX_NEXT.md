@@ -1,190 +1,198 @@
-# Next task — c49 VCH bridge feasibility for modified CONTINUE_SEARCH contexts
+# Next task — c50 native mixed-SEARCH identity/cause predicate decomposition
 
 ## Status
 
-C48 production continuation-witness integration review is complete and failed closed.
+C49 test-only VCH/search boundary probe is complete in repository and the owner ran the published native-Windows standalone.
 
-Accepted c48 result:
+Accepted native result:
 
-```text
-PRODUCTION_WITNESS_INTEGRATION_REVIEW_FAIL
-```
-
-Accepted implementation/report head before this task:
-
-```text
-branch = codex/v01c20-edi-value-provenance
-commit = 3fc10cd567ee569102295ee6176df866f5891b7b
-```
+- `analysis/V01C49_NATIVE_WINDOWS_RESULT.md`
+- `source/analysis/V01C49_NATIVE_WINDOWS_RESULT.md`
+- `analysis/V01C49_VCH_SEARCH_BRIDGE.md`
+- `analysis/V01C49_STATUS.json`
+- `analysis/native-probes/c49/README.md`
+- `analysis/native-probes/c49/PROBE_MANIFEST.json`
 
 Continue only on `codex/v01c20-edi-value-provenance`. Do not merge `main`.
 
-Before work read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, `docs/CODEX_REPORTING.md`, this file, all c39-c48 retirement/witness evidence, current production `orientation_trace.cpp`, current c40 VCH probe, c41-c47 continuation-witness implementation/tests, c48 production-review harness, and relevant `deluxxxe-dev/MSM2-Wisdoms` references.
+Before work read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, `docs/CODEX_REPORTING.md`, this file, c48/c49 evidence, current production `orientation_trace.cpp`, c49 probe source/tests, c41-c47 continuation-witness evidence, and relevant `deluxxxe-dev/MSM2-Wisdoms` references.
 
-## Accepted c48 blocker
+## Accepted c49 native facts
 
-C48 established a new owned Wine counterexample in addition to c39/c40.
+Owner command:
 
-A real mixed hardware debug event can contain:
-
-```text
-owned B0 + foreign B2
+```powershell
+.\continuation-witness.exe --position --mixed-search-vch --json
 ```
 
-Current production code may:
+Primary result remains:
 
-1. authenticate and claim owned B0;
-2. clear B0 in the saved exception `CONTEXT`;
-3. leave foreign B2 for another owner;
-4. return `EXCEPTION_CONTINUE_SEARCH`;
-5. allow a following handler to eventually return `EXCEPTION_CONTINUE_EXECUTION`;
-6. later apply that saved `CONTEXT` after WallSprint coordinator cleanup has restored the thread's current DRs and marked the lease inactive.
+```text
+VCH_SEARCH_CONTINUATION_BRIDGE_FEASIBILITY_FAIL
+reason = WS_mixed_SEARCH_identity_or_cause_mismatch
+```
 
-Across reset/Position x close/deadline/kill, c48 reproduced owned-slot resurrection after the downstream handler released the saved context. Two foreign-only unchanged-context controls did not resurrect on that Wine path and remain separate evidence.
+Do not relabel that run PASS.
 
-Therefore the first missing production guarantee is not merely "create a ticket on CONTINUE_EXECUTION". A modified saved `CONTEXT` can escape WallSprint through `CONTINUE_SEARCH` and still become a future return debt.
+However the same native run establishes these bounded runtime facts:
 
-## Why entry reservation alone is insufficient
+```text
+environment                    = native_Windows
+cpu_vendor                     = GenuineIntel
+mode/scenario                  = Position/close
+mitigation tuple               = [0,0,0x100], ADMIT
+WS disposition                 = CONTINUE_SEARCH
+downstream disposition         = CONTINUE_EXECUTION
+VCH registered                 = true
+VCH callback count             = 1
+ordered_final_context_observed = true
+native_boundary_observed       = true
+```
 
-A future design may need to reserve debt before such a saved context escapes, but reservation by itself does not provide a post-return witness.
+Observed order:
 
-After WallSprint returns `CONTINUE_SEARCH`, a downstream VEH/SEH owner may inspect or modify the same exception `CONTEXT` before choosing continuation. Redirecting RIP to a WallSprint witness before passing the context downstream could alter foreign-handler semantics and is not authorized by current evidence.
+```text
+1 WS_entry
+2 WS_after_engine
+3 reserved debt
+4 SEARCH escape
+5 downstream_before
+6 downstream_final
+7 VCH
+```
 
-C49 therefore asks a narrower question first:
+The downstream-final and VCH snapshots have identical thread/context/exception/RIP/EFlags/ContextFlags and Dr0/Dr1/Dr2/Dr3/Dr6/Dr7. Thus native Windows did exercise the stage-2 VCH boundary that Wine could not.
 
-> Is there a supported, observable Windows continuation boundary after the downstream handler has chosen continuation and finalized the context, but before the OS resumes the interrupted thread, where a previously reserved owned debt can be bound to the final context and redirected to the already-reviewed c41-style post-return witness?
+The strict run still poisoned earlier at one aggregate predicate. Existing schema1 combines:
 
-The primary candidate is a vectored continue handler (VCH), because Windows exposes `AddVectoredContinueHandler`. Documentation confirms registration/ordering controls for VCH, but the exact hardware-#DB dispatch/order/final-context behavior needed here is not sufficiently established by documentation alone.
+- WS disposition;
+- entry Dr6 mixed-cause mask;
+- after-engine Dr6 residual mask;
+- exact B0-only delta;
+- RIP preservation;
+- Dr0/Dr1/Dr2/Dr3/Dr7 preservation;
+- global `usedLeases==1`;
+- `own(after, leases[0])==3`;
+- window id;
+- reset generation.
 
-Historical c40 evidence must remain intact:
+The native JSON proves several of these from printed values, but does not expose every internal lease/window conjunct individually. Therefore the exact failing conjunct remains UNKNOWN.
 
-- Wine VCH registration succeeded;
-- callback count remained zero on the owned hardware-watch path;
-- those cases are `UNAVAILABLE`, not PASS and not proof that VCH cannot work on native Windows.
+Static inspection identifies one hypothesis only: the test request sets `multithread=true` while the aggregate predicate requires global `usedLeases==1`. Native multithread expansion may make that fixture-only assumption false. Do not accept that hypothesis without direct reporting.
 
 ## Current bounded task
 
-C49 is a **test-only VCH/search-continuation feasibility task**. It does not authorize production integration.
+C50 is a **test-only predicate-decomposition and lease-set identity task**. It does not authorize the VCH-to-c41 redirection yet and does not modify production behavior.
 
-### 1. Audit the exact VCH contract and preserve uncertainty
+### 1. Split the c49 aggregate predicate into explicit evidence
 
-Review current Microsoft documentation/source for:
+Change only the test-owned c49/c50 probe and diagnostics so every conjunct is reported independently before any sticky poison decision.
 
-- `AddVectoredContinueHandler` / `RemoveVectoredContinueHandler`;
-- vectored exception/continue ordering;
-- `PVECTORED_EXCEPTION_HANDLER` context mutation/return semantics;
-- DLL unload/registered-handler lifetime;
-- any documented relationship between a downstream handler's `EXCEPTION_CONTINUE_EXECUTION` decision and subsequent VCH dispatch.
-
-Record exact source/version/provenance.
-
-Do not infer undocumented ordering. In particular, documentation that a VCH can be registered is not proof that it runs for this hardware-#DB path, sees the downstream-finalized context, or is the last callback before OS context application.
-
-If documentation alone cannot establish those facts, mark them runtime questions rather than assumptions.
-
-### 2. Build a test-owned mixed SEARCH -> downstream EXECUTION -> VCH probe
-
-Reuse the c48 real hardware-debug shape as closely as practical while keeping production source unchanged.
-
-The owned test sequence must include:
-
-1. an owned hardware watch corresponding to B0;
-2. a synthetic foreign hardware watch corresponding to B2;
-3. a WallSprint-like first handler that runs the unmodified production engine, claims/clears only B0, preserves B2 and returns `CONTINUE_SEARCH`;
-4. a separate following foreign owner that handles B2, performs only its own documented/test-owned cause cleanup, and returns `CONTINUE_EXECUTION`;
-5. a real VCH registered through `AddVectoredContinueHandler`;
-6. bounded sequence/thread/context identity capture for all three stages.
-
-The VCH observation must prove or refuse all of:
-
-- VCH callback was actually invoked for this hardware-#DB continuation;
-- it ran after the downstream foreign handler's final context mutation/decision;
-- it sees the expected owned Dr0/Dr1 configuration still present before final OS resume;
-- owned B0 and foreign B2 cause handling matches the expected post-handler state;
-- no unrelated observer rewrites the context merely to force the ordering result;
-- same thread and same exception/debt identity can be bound without ambiguity.
-
-If VCH is not invoked, order is ambiguous, the downstream context cannot be authenticated, or observation itself changes handler semantics, fail closed.
-
-### 3. Test a VCH-to-c41 continuation bridge only if stage 2 succeeds
-
-Only if the VCH boundary is observed and authenticated, build a test-only bridge using the already-reviewed c41 continuation-witness concept.
-
-The required flow is:
+At minimum report:
 
 ```text
-WS handler sees owned obligation
-    -> reserve immutable debt before CONTINUE_SEARCH escape
-    -> downstream foreign handler finalizes context and chooses CONTINUE_EXECUTION
-    -> VCH authenticates the matching reserved debt/final context
-    -> VCH binds that final context to a prepared c41-style continuation witness
-    -> VCH returns
-    -> OS resumes through witness
-    -> witness token acknowledges that exact context only
-    -> original continuation resumes
+ws_search_ok
+entry_cause_mask
+entry_cause_expected
+post_engine_cause_mask
+post_engine_cause_expected
+cause_delta
+cause_delta_expected
+rip_preserved
+Dr0_preserved
+Dr1_preserved
+Dr2_preserved
+Dr3_preserved
+Dr7_preserved
+used_leases_total
+matching_worker_lease_count
+matching_owned_context_lease_count
+selected_lease_index
+selected_window_id
+selected_window_generation
+selected_own_mask
+expected_window_id
+expected_generation
 ```
 
-Requirements:
+Also emit a stable list/summary for every currently published lease that could match the worker/context, including at least lease index, tid, window, `up`, `own(context, lease)` and installed/suspended status where safely observable.
 
-- reservation must precede escape from the WS handler;
-- VCH binding must be allocation-free/bounded and must not use the diagnostic event lock/ring;
-- nested/multiple debts must remain independently identified;
-- one token cannot discharge another context/thread/lease/generation;
-- downstream handler modifications must be preserved except for the explicitly reviewed continuation redirection required by the test bridge;
-- no DR repair/masking may be added merely to make the bridge pass;
-- marker observation does not prove stub code exit/reclamation; retain c48 lifetime distinction;
-- executable code/data must remain alive until the owned worker exits in this feasibility task unless a stronger separately tested code-exit witness is provided;
-- any missing reservation, VCH callback, identity, prepared stub, publication, cap or lifetime condition must poison/refuse rather than drop debt.
+Do not expose unrelated process/game secrets; this is an owned standalone fixture.
 
-Do not copy c47's cooperative fixture assumption that every return path directly produces `CONTINUE_EXECUTION` from the WallSprint handler.
+### 2. Distinguish global lease count from unique debt identity
 
-### 4. Exercise close / deadline / kill while the VCH/final context is held
+Audit the static requirement `usedLeases==1`.
 
-For reset and Position where practical, cover the c48 mixed B0+B2 shape under:
+Do not simply delete it to make native pass.
 
-- explicit close;
-- unchanged deadline;
-- kill/shutdown.
+Determine whether the property actually needed for this bounded debt is:
 
-At minimum prove this order:
+- exactly one global lease; or
+- exactly one authenticated matching lease/obligation for the current worker/context/window/generation while unrelated leases may exist.
 
-1. mixed event reaches WS and escapes via SEARCH;
-2. downstream handler selects EXECUTION;
-3. VCH has authenticated/published the matching continuation debt and is deliberately held before return;
-4. coordinator cleanup is requested while debt is still outstanding;
-5. retirement/re-arm is refused or remains pending honestly;
-6. VCH is released;
-7. the post-return witness for that exact context is observed;
-8. cleanup can then complete without later owned-slot resurrection and without needing a second watched access.
+Use current production lease semantics and the native fixture shape. If multiple candidate owned obligations match the same context, remain fail closed.
 
-When the bridge is disabled, preserve the c48 mixed-SEARCH resurrection counterexample unchanged.
+If the only failing old conjunct is global `usedLeases==1`, and there is exactly one unambiguous matching owned lease with the expected worker/window/generation/Dr0-Dr1 ownership, add a separately named test-only c50 predicate for **UNIQUE_MATCHING_DEBT_IDENTITY**. Preserve the old c49 aggregate result as historical FAIL; do not rewrite it.
 
-### 5. Preserve foreign-only and unrelated controls
+If any ownership/window/generation/cause field genuinely conflicts, report the exact conflict and stop.
 
-Keep at least these controls separate:
+### 3. Preserve the already-observed native VCH boundary
 
-- foreign B2-only unchanged-context SEARCH;
-- owned normal EXECUTION path from c39/c40/c41-c47;
-- mixed B0+B2 SEARCH path with bridge disabled;
-- unknown/stale lease identity;
-- VCH registered but not dispatched;
-- downstream handler changes/invalidates expected identity;
-- nested/multiple reservations;
-- cap exhaustion/publication failure;
-- duplicate/stale/wrong-context token.
-
-A foreign-only negative observation must not be promoted into a general safety rule.
-
-### 6. Native Windows is required for positive VCH evidence
-
-The historical Wine environment did not dispatch the c40 VCH callback for the owned hardware path. Preserve that as `UNAVAILABLE`.
-
-C49 may use Wine for regression/counterexample/synthetic/model coverage, but a positive VCH dispatch/order/bridge result requires an owned native-Windows standalone run.
-
-If owned tests/build pass and a bounded native question remains, publish only a test-owned artifact under:
+The new probe must still observe, without manufacturing it:
 
 ```text
-analysis/native-probes/c49
+WS SEARCH
+-> downstream EXECUTION
+-> VCH callback
+```
+
+Require exact downstream-final to VCH CONTEXT equality as c49 did.
+
+Do not redirect RIP, repair DR state, mask causes, or create a post-return witness in c50.
+
+### 4. Keep debt pending and fail closed
+
+As in c49:
+
+- reserve debt before SEARCH escape;
+- request close/deadline/kill while debt remains;
+- do not perform legacy live final cleanup while no witness exists;
+- retain pending debt until actual worker exit;
+- keep code/data alive until worker exit;
+- do not infer retirement from VCH observation alone.
+
+### 5. Focused test coverage
+
+Add/update a focused command, preferably:
+
+```bash
+bash source/tools/test_vch_search_identity.sh
+```
+
+Cover at minimum:
+
+- all c49 aggregate conjuncts serialized individually;
+- one unrelated lease plus one unique matching lease;
+- multiple matching leases => refuse;
+- wrong worker tid => refuse;
+- wrong window id => refuse;
+- wrong generation => refuse;
+- own mask != 3 => refuse;
+- cause pattern mismatch => refuse;
+- preserved register mismatch => refuse;
+- exact unique matching debt => positive synthetic/model result only;
+- historical c49 aggregate FAIL representation remains available;
+- Wine no-VCH path remains UNAVAILABLE, not PASS;
+- c48 mixed SEARCH resurrection counterexample remains reproduced separately.
+
+Synthetic/model success is not native evidence.
+
+### 6. Publish one bounded native probe if needed
+
+If all repository tests pass and the exact native subpredicate remains necessary, publish only a test-owned artifact under:
+
+```text
+analysis/native-probes/c50
 ```
 
 Prefer one owner command:
@@ -193,74 +201,29 @@ Prefer one owner command:
 .\continuation-witness.exe --position --mixed-search-vch --json
 ```
 
-The exact CLI may differ only if the implementation has a strong reason; document it in the c49 README.
+The JSON must expose all decomposed predicate fields plus the c49 ordered stages and VCH boundary evidence.
 
-The compact JSON must expose at minimum:
+No game, Update-WS, Overstrike, scan, game log or mitigation-setting change is required.
 
-- environment / CPU vendor / mitigation query state;
-- WS handler disposition;
-- downstream handler disposition;
-- VCH registration success;
-- VCH callback count;
-- ordered WS -> downstream -> VCH sequence identities;
-- relevant before/downstream/VCH Dr0/1/2/3/6/7 state;
-- reserved debt identity;
-- VCH-to-witness binding result;
-- witness acknowledgment identity;
-- pending debt before/after witness;
-- close/deadline/kill scenario result as applicable;
-- resurrection observed/not observed after final cleanup;
-- production_integrated=false;
-- exact_slot_watch_enabled=false;
-- game_used=false.
-
-Do not request the game for this OS/exception-dispatch question.
-
-### 7. Decide the c49 result
+### 7. Decide c50 result
 
 Emit exactly one primary result:
 
 ```text
-VCH_SEARCH_CONTINUATION_BRIDGE_FEASIBILITY_PASS
-VCH_SEARCH_CONTINUATION_BRIDGE_FEASIBILITY_FAIL
-VCH_SEARCH_CONTINUATION_BRIDGE_UNAVAILABLE
+MIXED_SEARCH_IDENTITY_DIAGNOSTIC_PASS
+MIXED_SEARCH_IDENTITY_DIAGNOSTIC_FAIL
+MIXED_SEARCH_IDENTITY_DIAGNOSTIC_UNAVAILABLE
 ```
 
-A PASS requires native-Windows runtime evidence that the VCH boundary is actually invoked for the owned mixed hardware-#DB path, is ordered after the downstream handler's final mutation/continuation decision, can bind the exact pre-reserved debt to the final context, and can drive the c41-style post-return witness without later resurrection in the bounded owned cases.
+PASS means the exact old failing conjunct is identified and, if the issue is only an over-strong global lease-count assumption, a separately named unique-matching-debt predicate is demonstrated on native Windows without weakening production ownership semantics.
 
-A FAIL means the mechanism was exercised and violated a required property.
+FAIL means a genuine cause/ownership/window/generation ambiguity or contradiction remains.
 
-UNAVAILABLE means the required native callback/boundary could not be exercised or the environment cannot answer the question. Do not convert UNAVAILABLE into PASS or general rejection.
+UNAVAILABLE means the required native boundary/subpredicate cannot be exercised.
 
-Even PASS authorizes only a later explicit production-design/integration review. It does not authorize modifying production code in c49 and does not authorize the deferred exact-slot watch.
+Even PASS authorizes only a later explicit VCH-to-c41 bridge feasibility task (c51 or later). It does not authorize production integration or exact-slot watch work.
 
-## Required focused tests
-
-Add a focused c49 test command, preferably:
-
-```bash
-bash source/tools/test_vch_search_bridge.sh
-```
-
-Cover at minimum:
-
-- reservation before SEARCH escape;
-- downstream EXECUTION ordering;
-- VCH-after-downstream model;
-- VCH-before/downstream or ambiguous ordering => refuse;
-- no VCH callback => unavailable/refuse for positive certificate;
-- mismatched context/thread/lease/generation => refuse;
-- nested/multiple reservation identity;
-- duplicate/stale token => refuse;
-- cap/publication failure => sticky poison;
-- close/deadline/kill pending until exact witness;
-- bridge-disabled c48 resurrection remains reproduced;
-- foreign-only control remains separate;
-- marker observed but stub code exit not proven => code storage not reclaimable.
-
-Pure/synthetic ordering tests are not native VCH evidence.
-
-## Required regression validation
+## Required validation
 
 Run from repository root:
 
@@ -275,6 +238,7 @@ bash source/tools/test_continuation_witness.sh
 bash source/tools/test_watch_retirement.sh
 bash source/tools/test_production_witness_review.sh
 bash source/tools/test_vch_search_bridge.sh
+bash source/tools/test_vch_search_identity.sh
 bash source/tools/build_windows.sh
 bash source/tools/test.sh
 bash source/tools/smoke_windows.sh
@@ -282,63 +246,36 @@ bash source/tools/test_hooks_windows.sh
 python3 source/tools/package.py
 ```
 
-If the exact focused command differs, run and report the actual command.
+If the focused c50 command uses a different exact name, run and report that exact command.
 
-Expected repository result:
+## Reporting requirements
 
-- c48 FAIL remains preserved unchanged;
-- c39/c40 EXECUTION counterexamples remain;
-- c48 mixed SEARCH counterexamples remain when the c49 bridge is absent/disabled;
-- c47 bounded native configuration predicate remains unchanged;
-- no production watch behavior changes;
-- native VCH evidence is requested only if the test-owned implementation reaches a precise remaining runtime question;
-- no exact-slot watch or gameplay work.
+Report:
+
+- every executed test/check;
+- exact command;
+- expected result;
+- actual result;
+- PASS / SKIP / UNAVAILABLE counts separately;
+- every unrun test and reason;
+- every decomposed predicate field from repository tests and any native result;
+- c50 primary result;
+- whether owner native Windows action is required;
+- final branch name and commit SHA.
+
+Do not report an unexecuted native case as PASS.
 
 ## Forbidden scope
 
-C49 does not authorize:
+C50 does not authorize:
 
-- production continuation-witness/VCH integration;
-- modifying production `orientation_trace.cpp` exception disposition, restore, lease, install or cleanup behavior;
-- mutating a context before `CONTINUE_SEARCH` merely to force the downstream path through WallSprint code;
-- broad DR6 masking/normalization;
-- disabling/relaxing Windows mitigations;
-- the deferred `module_base + 0xC2D2580` exact-slot RW8/WRITE8 watch;
-- slot qword reads/logging or pointer chasing;
-- publication/source-chain interpretation;
-- producer `0x351EB00` traversal;
-- PAGE_GUARD/broad interception;
-- gameplay/source/Position/input/movement/adhesion/camera/animation/physics writes.
+- production continuation-witness integration;
+- VCH RIP redirection / c41 witness bridge;
+- production restore/ownership/install/handler/lease/cleanup changes;
+- exact-slot watch;
+- slot qword reads or pointer chasing;
+- producer traversal;
+- mitigation changes;
+- gameplay/source/Position/movement/adhesion/camera/animation/physics writes.
 
-Runtime remains `v0.1c38 / package0.1.56`. Do not create a game release for c49.
-
-## Required outputs / handoff
-
-Update as appropriate:
-
-- test-only VCH/search bridge implementation and focused tests;
-- `analysis/V01C49_*.md` / status/gate evidence;
-- `analysis/native-probes/c49` only if owned validation passes and native evidence is required;
-- `docs/PROJECT_STATE.md` so c48 is historical and c49 is current;
-- `docs/CODEX_RESULT.md`;
-- Wisdoms only if c49 establishes or rejects a reusable Windows exception-dispatch rule.
-
-Commit and push the intended branch before claiming completion.
-
-Final report must follow `docs/CODEX_REPORTING.md` and include:
-
-- exact checks/tests performed;
-- exact commands;
-- expected result;
-- actual result;
-- PASS / SKIP / UNAVAILABLE separately;
-- unperformed tests and reasons;
-- c49 primary result;
-- branch and commit SHA;
-- whether owner native action is required.
-
-## Owner action
-
-No Update-WS, game launch, A/E comparison, WallRun capture, offline slot scan or game log is required for repository work.
-
-If and only if Codex publishes a tested `analysis/native-probes/c49` artifact and reports that native Windows evidence is required, request the single documented standalone command from that folder and return the compact JSON/output.
+Runtime remains `v0.1c38/package0.1.56`.
