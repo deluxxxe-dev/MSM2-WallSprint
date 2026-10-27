@@ -81,7 +81,7 @@ def address(ins, op, state, image_base, image_size, width, reasons=None):
     return result, proof, reason
 
 
-def transfer(ins, state, image_base, image_size, hops):
+def transfer(ins, state, image_base, image_size, hops, preserved=()):
     """No loads/constants/arithmetic/ABI summaries; sources are pre-state."""
     result = list(state)
     ops = ins.operands
@@ -111,14 +111,16 @@ def transfer(ins, state, image_base, image_size, hops):
     if assigned and dest is not None and banks == {dest} and len(assigned.chain) <= hops:
         result[dest] = assigned
     if ins.group(cs.CS_GRP_CALL):
-        result = list(EMPTY)  # ALL address facts, including nonvolatile, killed.
+        # Default c53 still kills ALL facts. Only the separate c54 caller can
+        # supply an authenticated per-register summary; RSP is always killed.
+        result = [state[i] if i in preserved and i != 4 else None for i in range(16)]
     return tuple(result)
 
 
-def transfer_reasons(ins, state, reasons, nxt):
+def transfer_reasons(ins, state, reasons, nxt, preserved=()):
     """Diagnostic labels only, never used to introduce an exact fact."""
     if ins.group(cs.CS_GRP_CALL):
-        return ('call_clobber_all_address_origins',) * 16
+        return tuple(reasons[i] if i in preserved and i != 4 else 'call_clobber_all_address_origins' for i in range(16))
     result = list(reasons)
     for reg in ins.regs_access()[1]:
         if reg not in old.PARENT:
@@ -216,7 +218,7 @@ def successors(ins, low, high, image_size, call_target_allowed=None):
 
 
 def scan_region(code, rva, slot=SLOT, image_base=0x140000000, image_size=0xD000000,
-                caps=Caps(), excluded=(), call_target_allowed=None):
+                caps=Caps(), excluded=(), call_target_allowed=None, call_preservation=None):
     """One entry, complete reachable normal CFG, then must fixpoint, THEN emit.
 
     Any unresolved reachable edge/decoding/graph or convergence cap rejects this
@@ -247,6 +249,7 @@ def scan_region(code, rva, slot=SLOT, image_base=0x140000000, image_size=0xD0000
         return finish('region_byte_cap')
     stats['file_code_bytes_loaded'] = len(code)
     nodes, edges, kinds, decoded = {}, {}, {}, {}
+    call_proofs, preserved_at, call_targets = {}, {}, {}
     todo, queued = [rva], {rva}
     try:
         # Establish a single strict byte partition first, including unreachable
@@ -278,6 +281,9 @@ def scan_region(code, rva, slot=SLOT, image_base=0x140000000, image_size=0xD0000
             nodes[pc] = ins
             stats['states_discovered'] += 1
             following, kinds[pc] = successors(ins, rva, rva + len(code), image_size, call_target_allowed)
+            if call_preservation is not None and kinds[pc] == 'call':
+                call_targets[pc] = ins.operands[0].imm
+                following = [(target, 'call_fallthrough_summary_candidate') for target, _ in following]
             edges[pc] = following
             for target, kind in following:
                 if stats['edges_traversed'] >= min(caps.edges, caps.region_edges):
@@ -308,6 +314,18 @@ def scan_region(code, rva, slot=SLOT, image_base=0x140000000, image_size=0xD0000
     reasons = {rva: ('register_base_without_exact_origin',) * 16}
     todo = deque([rva])
     queued = {rva}
+
+    def preserved_for(pc, state):
+        # Do not spend summary budget on calls with no existing exact non-RSP
+        # origin. Must states only lose facts after first reach; a later merge
+        # cannot create a previously absent incoming origin at this same PC.
+        if pc in call_targets and pc not in preserved_at and any(f is not None for i, f in enumerate(state) if i != 4):
+            proof = call_preservation(call_targets[pc])
+            allowed = proof.get('preserved_banks', ()) if proof.get('status') == 'ADMITTED' else ()
+            preserved_at[pc] = frozenset(i for i in allowed if isinstance(i, int) and 0 <= i < 16 and i != 4)
+            call_proofs[pc] = dict(proof, site_rva=pc, target_rva=call_targets[pc])
+        return preserved_at.get(pc, ())
+
     try:
         while todo:
             if stats['worklist_iterations'] >= min(caps.iterations, caps.region_iterations):
@@ -315,8 +333,9 @@ def scan_region(code, rva, slot=SLOT, image_base=0x140000000, image_size=0xD0000
             pc = todo.popleft()
             queued.remove(pc)
             stats['worklist_iterations'] += 1
-            nxt = transfer(nodes[pc], states[pc], image_base, image_size, caps.hops)
-            why = transfer_reasons(nodes[pc], states[pc], reasons[pc], nxt)
+            preserved = preserved_for(pc, states[pc])
+            nxt = transfer(nodes[pc], states[pc], image_base, image_size, caps.hops, preserved)
+            why = transfer_reasons(nodes[pc], states[pc], reasons[pc], nxt, preserved)
             for target, _ in edges[pc]:
                 before = states.get(target)
                 if before is None:
@@ -343,13 +362,20 @@ def scan_region(code, rva, slot=SLOT, image_base=0x140000000, image_size=0xD0000
     stats['unique_joins'] = sum(len(p) > 1 for p in predecessors.values())
     stats['loop_back_edges'] = sum(t <= pc for pc, e in edges.items() for t, _ in e)
     graph_hash = hashlib.sha256(json.dumps([(pc, edges[pc]) for pc in sorted(edges)], separators=(',', ':')).encode()).hexdigest()
+    if call_preservation is not None:
+        proof_hash = hashlib.sha256(json.dumps(call_proofs, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+        result['call_preservation_evidence'] = [call_proofs[pc] for pc in sorted(call_proofs)]
 
     for pc in sorted(nodes):
         ins = nodes[pc]
         state = states[pc]
-        nxt = transfer(ins, state, image_base, image_size, caps.hops)
+        nxt = transfer(ins, state, image_base, image_size, caps.hops, preserved_at.get(pc, ()))
         if kinds[pc] == 'call':
-            stats['direct_calls_all_facts_invalidated'] += 1
+            survived = sum(f is not None for f in nxt)
+            stats['direct_calls_all_facts_invalidated'] += not survived
+            if call_preservation is not None:
+                stats['call_edges_with_any_preserved_origin'] += bool(survived)
+                stats['preserved_origin_register_facts_across_calls'] += survived
         for target, kind in edges[pc]:
             if kind in ('direct_branch', 'conditional_fallthrough'):
                 carried = any(a is not None and a == b for a, b in zip(nxt, states[target]))
@@ -390,6 +416,9 @@ def scan_region(code, rva, slot=SLOT, image_base=0x140000000, image_size=0xD0000
                          fixpoint_complete=True, address_fact_agrees_on_all_reachable_incoming_states=True,
                          scope='conditional_normal_CFG_from_single_runtime_entry_not_all_instruction_entries'),
                 runtime_function=dict(begin_rva=rva, end_rva=rva+len(code)), section=None))
+            if call_preservation is not None:
+                result['references'][-1]['cfg'].update(call_preservation_graph_sha256=proof_hash,
+                    callsite_summary_count=len(call_proofs), preservation_scope='per_register_never_written_no_ABI_or_return_value_origin')
     result['status'] = 'MODELED_NORMAL_CFG'
     stats['regions_modeled'] = 1
     return finish()
@@ -410,7 +439,7 @@ def image_metadata(data):
     return sections, names, base, size, excluded, file_range, rows
 
 
-def analyze_image(data, caps=Caps()):
+def analyze_image(data, caps=Caps(), *, call_context_factory=None):
     if any(v <= 0 for v in asdict(caps).values()):
         raise ValueError('all caps must be positive')
     if len(data) > old.MAX_FILE:
@@ -424,6 +453,8 @@ def analyze_image(data, caps=Caps()):
     slot_sections = [s for s in sections if s[0] <= SLOT and SLOT+8 <= s[1]]
     if len(slot_sections) != 1 or not slot_sections[0][4] & 0x40000000 or slot_sections[0][4] & 0x20000000:
         raise ValueError('slot must be unique readable non-executable image storage')
+    call_context = (call_context_factory(image_id=EXPECTED_SHA, rows=rows, sections=sections,
+                    image_size=size, excluded=excluded, read=file_range) if call_context_factory else None)
     stats, stopped, unresolved = statistics(), Counter(), Counter()
     references, anchors = [], []
     # Anchor is separately reauthenticated, never installed in ANY CFG entry.
@@ -502,7 +533,10 @@ def analyze_image(data, caps=Caps()):
                              caps=replace(caps, **remaining, references=caps.references-len(references)-len(anchors)), excluded=excluded,
                              call_target_allowed=lambda pc: any(b <= pc < min(e, b+raw_size) and
                                  flags & 0x60000000 == 0x60000000 and not flags & 0x80000000
-                                 for b, e, _, raw_size, flags in sections))
+                                 for b, e, _, raw_size, flags in sections),
+                             call_preservation=call_context.for_call if call_context is not None else None)
+        if call_context is not None:
+            call_context.observe_region(region)
         stats.update({k:v for k, v in region['stats'].items() if k != 'regions_considered'})
         stopped.update(region['stopped_paths'])
         unresolved.update(region['unresolved_reasons'])
@@ -520,7 +554,7 @@ def analyze_image(data, caps=Caps()):
             stopped['reference_cap'] += 1
             break
     modeled_edges = stats['previously_control_lost_edges_safely_modeled']
-    return dict(tool_version=VERSION, schema_version=SCHEMA, repository_result='CFG_SLOT_PUBLICATION_SCANNER_READY',
+    result = dict(tool_version=VERSION, schema_version=SCHEMA, repository_result='CFG_SLOT_PUBLICATION_SCANNER_READY',
         evidence='OFFLINE_STATIC', image_authenticated=True, image_sha256=EXPECTED_SHA,
         slot_rva=SLOT, slot_metadata=dict(readable=True, writable=bool(slot_sections[0][4] & 0x80000000)),
         scan_scope='bounded_single_runtime_entry_normal_CFG_must_address_candidates_not_all_writers',
@@ -556,6 +590,9 @@ def analyze_image(data, caps=Caps()):
         production_integrated=False, hardware_watch_enabled=False, game_used=False,
         c52_production_watch_gate='PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL',
         reason='bounded_normal_CFG_candidates_not_writer_or_publication_completeness')
+    if call_context is not None:
+        result['callee_summary_analysis'] = call_context.report()
+    return result
 
 
 def main():

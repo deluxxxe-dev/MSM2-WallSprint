@@ -1,6 +1,32 @@
 # WallSprint project state
 
-## c53 current stage — offline CFG address-provenance scanner READY
+## c54 current stage — offline direct-callee preservation scanner READY
+
+**CALLEE_PRESERVATION_SLOT_SCANNER_READY**. Separate schema2/toolv0.1c54 adds
+only per-register never-written preservation across authenticated direct CALLs.
+Exact runtime entry/span/code hash, complete canonical domain, known effects,
+finite all-normal-RET paths and bounded child summaries are required. Any write
+(including write then restore), indirect/system/boundary/unknown effect, cycle,
+recursion or cap failure refuses. No ABI assumption or return-value origin.
+RSP always dies. Global summary exhaustion stays closed; cached transitive height
+cannot bypass depth admission. No callee body or slot value is exported.
+
+Only existing exact non-RSP caller facts may survive; no loaded/local/stack value
+is imported. C53's normal must joins/access classification remain shared, with
+optional internal summary hooks defaulting to historical all-clobber behavior.
+Old c38/c53 tests are unchanged;14 pre-change owned c53 output snapshots also
+verify compatibility. C53's owner result is accepted below without relabeling it.
+Main scan and summary caps/work totals are separate; no smaller unresolved count
+can grant writer/publication/ownership/allocation/lifetime/containment proof.
+
+The exact private executable is unavailable here, so actual c54 candidate/summary
+counts are UNKNOWN, not zero. After verified publication the only owner action
+is one offline c54 command and compact JSON. No Update-WS/game/Overstrike/hardware
+watch or new runtime log. C52 FAIL remains binding; production/gameplay unchanged.
+Runtime v0.1c38/package0.1.56, no game release. Details:
+V01C54_CALLEE_PRESERVATION/GATE/STATUS and CODEX_RESULT.
+
+## c53 historical accepted stage — real-image offline scan, incomplete zero local candidates
 
 **CFG_SLOT_PUBLICATION_SCANNER_READY**. Separate schema1/toolv0.1c53 leaves the
 historical c38 scanner/tests/evidence unchanged. It extends only offline exact
@@ -21,12 +47,15 @@ metrics are not subtracted from c38's historical operand/reset totals.
 Writer enumeration, publication/allocation/base/lifetime/ownership/containment
 and CFG-continuation certificates remain false even if a writer candidate appears.
 
-No exact Spider-Man2.exe is present here: actual new-image candidates and coverage
-are UNKNOWN, not zero. After verified commit/push, the owner runs ONE offline
-command with the pinned WSL analysis environment and returns compact c53 JSON.
-Details: V01C53_CFG_SLOT_PUBLICATION/GATE/STATUS and CODEX_RESULT. No Update-WS,
-game/Overstrike launch, hardware watch, qword read or new gameplay write.
-C52 production-watch FAIL remains binding. Runtime v0.1c38/package0.1.56, no release.
+Accepted owner VERIFIED-STATIC result at337f953 authenticated the pinned image:
+0 local candidates/readers/writers/RMW/address-only, separate current c28 reader,
+527161 runtime functions,174498 considered/65455 modeled/109043 refused,
+352663 unconsidered,5M instruction cap reached. It safely modeled10471 control
+edges but retained560919 unresolved operands, dominated by CALL all-clobber324714.
+This is incomplete zero-observation, not no-writer proof. Both canonical supplied
+V01C53_OWNER_OFFLINE_RESULT.md copies are preserved. Original cloud unavailability
+and historical c53 status remain immutable; this later owner evidence supersedes
+only the earlier pending-image summary. It supplies no c54 real-image result.
 
 ## c52 historical stage — production-shape VCH witness review FAIL
 
@@ -591,25 +620,26 @@ The VMOVUPS store is existing game code, not a MOD write and not permission to w
 32. c50 native unique worker identity ✅ PASS; sole global-count conjunct identified
 33. c51 one-debt VCH post-return bridge ✅ accepted native fixture PASS; terminal-only storage free
 34. c52 production-shape VCH integration review ✅ historical FAIL; terminal-boundary/credits/pool/lifetime unresolved
-35. c53 offline CFG exact-address scanner ▶ CURRENT READY; real-image owner JSON pending
-36. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
-37. bounded publication/source chain ⏸ pending writer-site evidence
-38. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
-39. resume full writer XYZ/W causal proof ⏸ after store containment
-40. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-41. safe writable upstream movement source ⬜ NOT AUTHORIZED
-42. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-43. adhesion/contact refinement ⏸ deferred
-44. animation/camera/later traversal ⬜
+35. c53 offline CFG exact-address scanner ✅ owner authenticated static result0 local candidates, incomplete/capped
+36. c54 direct-callee preservation scanner ▶ CURRENT READY; new offline owner JSON pending
+37. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
+38. bounded publication/source chain ⏸ pending writer-site evidence
+39. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
+40. resume full writer XYZ/W causal proof ⏸ after store containment
+41. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+42. safe writable upstream movement source ⬜ NOT AUTHORIZED
+43. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+44. adhesion/contact refinement ⏸ deferred
+45. animation/camera/later traversal ⬜
 
 ## Current action
 
-C53 is CFG_SLOT_PUBLICATION_SCANNER_READY. After verified publication, fetch the
-intended branch and run only the new offline file scanner once; return its compact
-JSON. Real-image counts are unmeasured here. Do not launch game/Update-WS or treat
-a candidate/smaller unresolved count as publication proof. C52's supported final-
-context/credit/pool/lifetime gaps still prohibit production witness/watch work;
-all historical native fixture results and deferred slot/gameplay gates remain.
+C54 is CALLEE_PRESERVATION_SLOT_SCANNER_READY. After verified publication, fetch
+the intended branch and run only the new c54 offline file scanner once; return
+compact JSON. Actual c54 impact remains unmeasured here; accepted c53 counts are
+historical input. Do not launch game/Update-WS or promote a candidate/smaller
+unresolved count to publication proof. C52's final-context/credit/pool/lifetime
+gaps still prohibit production witness/watch work; all deferred gates remain.
 
 Do not add the exact-slot watch, PAGE_GUARD or broad memory interception merely
 to force progress. Do not merge `main`, do not traverse producer `0x351EB00`, and
