@@ -153,3 +153,30 @@ and packaged bytes. Input digest
 Actual repaired c63 metrics remain null. Integrity PASS is separate from733
 regression groups. Package was repeated after documentation updates; no compiled
 suite rerun needed for later metadata-only publication records.
+
+## Repair publication and shared knowledge
+
+Repair implementation commit **f29fe54c55bb4612bab19c050908e457ee256e6a** on
+**codex/v01c20-edi-value-provenance** pushed successfully (0d927eb→f29fe54).
+`python3 /workspace/scratch/ws-c63-repair/check_publication.py`: expected intended
+GitHub head and independent fetched-checkout bytes equality,actual exit0/PASS1,
+11 changed files/373 compared files/299 code-tool files,matching recorded digest.
+`git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance` matched local
+HEAD; independent checkout fetch/byte comparison confirmed actual publication.
+Publication PASS is separate from733 regression groups.
+
+Wisdoms REVERSE_ENGINEERING_GUIDE records prior c63 owner BLOCKED and the reusable
+root-history-refusal versus current-reachability distinction,passive entry/delta/
+predicate provenance,sealed prior proof versus failing current lookup,and natural
+replay versus protocol-boundary seam evidence. Pushed Wisdoms main commit
+**9ad76f635ec88620f2ef51b7c364a6d1b320f1c9**; `git ls-remote origin refs/heads/main`
+matched HEAD. No raw private bytes/logs/personal paths added.
+
+Final metadata-only commit records repair SHA and verified publication/Wisdoms
+results. Repeat package/hash/mirror/diff and independent GitHub head/checkout checks
+after it. Its own final SHA is reported in owner handoff instead of a self-referential
+in-tree field (`git rev-parse HEAD` on intended branch). Final code/tool bytes are
+identical to required focused+hooks suite; no compiled rerun after docs-only edits.
+Repaired private c63 distribution remains UNKNOWN. Next owner action is only the
+same-input offline rerun block above; prior failure does not authorize changing
+c62 evidence/admission,game/runtime or native-probe work.
