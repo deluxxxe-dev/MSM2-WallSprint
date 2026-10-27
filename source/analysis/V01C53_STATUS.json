@@ -1319,5 +1319,40 @@
     "optional_accepted_build_capture_replay"
   ],
   "validation_rerun": "all8_required_commands_repeated_after_final_external_anchor_metadata_and_exclusion_overlap_hardening; preliminary totals not added",
-  "owner_output": "MSM2-WS-v0.1c53-slot-publication-cfg.json"
+  "owner_output": "MSM2-WS-v0.1c53-slot-publication-cfg.json",
+  "implementation_commit": "cf7dbd999d50c71e0271ec434d816e928de0cf64",
+  "implementation_publication": {
+    "PASS": 1,
+    "SKIP": 0,
+    "UNAVAILABLE": 0,
+    "BLOCKED": 0,
+    "branch": "codex/v01c20-edi-value-provenance",
+    "verified_remote_commit": "cf7dbd999d50c71e0271ec434d816e928de0cf64",
+    "changed_files": 12,
+    "compared_files": 291,
+    "code_tool_input_count": 277,
+    "code_tool_input_digest": "dc2f57bd1af4c2563d5db30edb7f251076027517ece726fd18ac448d1cbb2bef"
+  },
+  "final_integrity_verification": {
+    "PASS": 1,
+    "SKIP": 0,
+    "UNAVAILABLE": 0,
+    "BLOCKED": 0,
+    "protected_base_files": 1001,
+    "code_tool_input_count": 277,
+    "code_tool_input_digest": "dc2f57bd1af4c2563d5db30edb7f251076027517ece726fd18ac448d1cbb2bef"
+  },
+  "additional_owned_loop_diagnostic": {
+    "PASS": 1,
+    "worklist_iterations": 18,
+    "exact_candidates": 0,
+    "real_image_evidence": false
+  },
+  "Wisdoms_sync": {
+    "repository": "deluxxxe-dev/MSM2-Wisdoms",
+    "branch": "main",
+    "commit": "ba4012890164f283128010779064f66cbb70a7a0",
+    "file": "docs/REVERSE_ENGINEERING_GUIDE.md",
+    "push_and_remote_verified": true
+  }
 }

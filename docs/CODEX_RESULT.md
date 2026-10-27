@@ -2,7 +2,7 @@
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
 Task base **7559677b4f440a24180e87582cdf38b4456e32b8**.
-Implementation/source commit is pinned after publication below.
+Implementation/source commit: **cf7dbd999d50c71e0271ec434d816e928de0cf64**.
 Primary: **CFG_SLOT_PUBLICATION_SCANNER_READY**. BLOCKED0.
 
 Implemented only owned offline tooling. READY is not a discovered writer or a
@@ -123,6 +123,45 @@ and current docs are packaged; no private image or whole game body is included.
 Final integrity/publication/source commit provenance follows below. After final
 metadata only, package and integrity are rechecked; full code-suite repetition
 is unnecessary because code/tool inputs remain unchanged.
+
+
+## Verified persistence / auxiliary checks
+
+Implementation/source commit **cf7dbd999d50c71e0271ec434d816e928de0cf64** was
+normally pushed to codex/v01c20-edi-value-provenance; origin ls-remote matched.
+Independent GitHub checkout byte comparison matched all12 changed files, all277
+code/tool inputs and protected proof/task inputs:291 files,1 publication PASS.
+Code/tool input digest:
+dc2f57bd1af4c2563d5db30edb7f251076027517ece726fd18ac448d1cbb2bef.
+
+Additional exact commands from repository root (pinned PATH above):
+
+```bash
+python3 /workspace/scratch/ws-c53/check_loop_diagnostics.py
+python3 /workspace/scratch/ws-c53/verify.py
+python3 /workspace/scratch/ws-c53/check_publication.py
+git diff --check
+git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance
+```
+
+Expected/actual: the additional owned known/unknown diamond inside a loop
+converges with no exact candidate (1 PASS,18 worklist iterations);1 integrity
+PASS for all1001 other base-tracked files unchanged, all source/package/proof/
+report copies current, no real-image result fabricated;1 publication PASS for
+remote SHA/bytes. These are separate from452 regression PASS/5 SKIP/17 Wine
+UNAVAILABLE and package1 PASS. The additional unperformed exact-image scan is
+UNAVAILABLE1 separately. No auxiliary check is native/game evidence.
+
+Final metadata commit is normally pushed and checked with the same publication
+command; its full SHA is reported in the handoff (a commit cannot contain its
+own SHA). Only report/provenance metadata follows the implementation commit,
+with all277 code/tool hashes unchanged. Package/integrity are repeated for that
+metadata; another full code rerun is unnecessary.
+
+Wisdoms docs/REVERSE_ENGINEERING_GUIDE.md was updated/pushed on its canonical
+main as **ba4012890164f283128010779064f66cbb70a7a0**; ls-remote matched. The rule
+keeps CFG must facts, address/access proof, external anchors and incomplete
+coverage distinct; no actual-image writer is asserted. No WS main merge occurred.
 
 ---
 
