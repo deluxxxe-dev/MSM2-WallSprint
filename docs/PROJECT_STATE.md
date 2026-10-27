@@ -1,29 +1,41 @@
 # WallSprint project state
 
-## c62 current stage — c61-authenticated terminal-POST continuation TOOL READY
+## c63 current stage — first terminal post-c61 diagnostic TOOL READY
 
-**POST_C59_RUNTIME_BEGIN_STITCH_SCANNER_READY**. Separatev0.1c62/schema1 offline
-scanner reconstructs and independently authenticates full ordered accepted c56→c61
-chain. First use requires the entire original terminal record including original
-prefix work/graph, exact root/row/state/path/source/phase/origin/local c59 identities.
-All successors exact architectural unique nonoverlap/nondeferred immutable
-file-backed executable entries before any use. Sibling reuse same scan only.
-Three phases stay distinct; source-local preflight is not a completed c59 crossing;
-stored first path and actual post-c59 arrival/closure origin remain separate.
-Late path/origin/dedup changes invalidate any used certificate and root. Next wave
-refuses uncertified_post_c61_runtime_boundary; no new certificate inference.
+**POST_C61_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**. Separatev0.1c63/schema1
+OFFLINE/STATIC diagnostic reconstructs/authenticates accepted c56→c62 chain and full
+c62 JSON/counts/identities. Capture only first original terminal post-c61 edge per
+root and rethrow unchanged; audit every dynamic c62 accounting field and complete
+candidate bytes. Second full ordered replay authenticates each record and entire
+expected2923-root domain. Exact original root/row/entry seed/path/transitions/source/
+metadata/prefix plus accepted c61 phase/origin/full-prefix and c62 result IDs bound.
 
-Original EMPTY-root/must/GPR Facts/CALL/RSP/c57/c59/c60/caps/incoming-carried-fact
-candidate/whole-root transaction rules unchanged. Structural factless admission
-counts separately from useful crossings. New actual c62 admission/continuation/
-fact/refusal/candidate metrics UNKNOWN/null: private EXE/complete JSON absent here.
-Owned31 focused groups pass; detailed required command table in CODEX_RESULT.
-All completeness/publication/allocation/base/range/lifetime/ownership/destination/
-CFG/EH/production/watch/game gates false,C52 FAIL binding. Runtimev0.1c38/package
-0.1.56 unchanged; no native production/restore/ownership/VCH/gameplay/producer change.
-After verified push owner runs one offline c62 block with c56 checkpoints+c57-c61
-JSONs read-only and returns compact new c62 JSON. No Update-WS/game/Overstrike/
-EXE upload/runtime log/native probe required. Details V01C62_POST_C59_STITCHED/GATE/STATUS.
+New terminal phase distinct from historical c61 authorization phase. Stored first
+path and actual post-arrival/closure origin remain separate. Source-local preflight
+is not a completed crossing. Invalidation-only terminal without source edge callback
+BLOCKS aggregate; do not invent PC or publish partial completeness. Cloud actual
+c63 edge/row/phase/completeness distribution UNKNOWN/null:private EXE/full JSON absent.
+
+Successors classify only; no edge admission/new Fact/candidate/target traversal.
+Original EMPTY-root/must/GPR Facts/CALL/RSP/c57/c59/c61/c60/c62/caps/root transaction
+rules unchanged. All completeness/publication/allocation/base/range/lifetime/
+ownership/destination/CFG/EH/production/watch/game gates false,C52 FAIL binding.
+Runtimev0.1c38/package0.1.56 unchanged,no release/native probe. After verified push,
+owner runs one offline c63 command with c56 checkpoints+c57-c62 JSONs read-only,
+returns compact c63 JSON. No Update-WS/game/Overstrike/EXE upload/runtime capture.
+Details V01C63_POST_C61_RUNTIME_BOUNDARY/GATE/STATUS and CODEX_RESULT.
+
+## c62 historical accepted owner VERIFIED-STATIC continuation result
+
+162472 roots,103933 completed/58539 refused. C61 instances6566 considered/3204
+admitted/3362 refused;6946 exact edges considered/3765 admitted/3181 refused.
+1317 reached rows/2635 crossing Facts,13 useful c61 crossings/16 c61 Facts,
+0 CALL fact crossings,8798 created/51 dedup/6590 refused instances,44 caps/0 cycles.
+0 candidates. Next terminal post-c61 wave2923 roots. C61 phase admission2800/403/1,
+refusal2959/402/1;15 full-prefix/context/phase/origin mismatches remain refused.
+Availability6566/7206/6946 stays distinct from admission. Both owner report copies
+immutable; accepted owner evidence supersedes pending c62 distribution only,
+not historical cloud UNKNOWN or writer/publication/ownership/production gates.
 
 ## c61 historical accepted owner VERIFIED-STATIC diagnostic result
 
@@ -799,12 +811,12 @@ The VMOVUPS store is existing game code, not a MOD write and not permission to w
 
 ## Current action
 
-C62 is POST_C59_RUNTIME_BEGIN_STITCH_SCANNER_READY (owned mechanism only).
-After verified publication, fetch the intended branch and run the one offline c62
-scanner with existing c56 checkpoints+c57-c61 JSONs read-only; return compact c62
-JSON. Historical c61 availability6566/7206/6946 is not c62 admission or cloud actual
-data. Actual c62 metrics UNKNOWN. No Update-WS/game/Overstrike/EXE upload/runtime
-capture/native probe. C52 production FAIL and all closed gates remain binding.
+C63 is POST_C61_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY (owned diagnostic mechanism).
+After verified publication, fetch intended branch and run one offline c63 command
+with existing c56 checkpoints+c57-c62 JSONs read-only; return compact c63 JSON.
+Accepted2923-root c62 POST domain is input evidence,not actual cloud classification.
+Actual c63 distribution UNKNOWN. No Update-WS/game/Overstrike/EXE upload/runtime
+capture/native probe. C63 admits no new edge or Fact; C52 FAIL remains binding.
 
 Do not add the exact-slot watch, PAGE_GUARD or broad memory interception merely
 to force progress. Do not merge `main`, do not traverse producer `0x351EB00`, and
