@@ -1,8 +1,8 @@
 # Codex result — c58 exact-runtime-begin continuation
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**. Task base **9c66715e8b3b29a4a0f5d02df0b172b44ab005b2**.
-Primary **EXACT_RUNTIME_BEGIN_STITCH_SCANNER_READY**; implementation SHA and final
-publication verification are pinned below after push. BLOCKED0. Real c58 private
+Primary **EXACT_RUNTIME_BEGIN_STITCH_SCANNER_READY**; implementation/source commit **5897ef8d00ef5d830e242ed4bfb61c65e593b304** was pushed and
+independently verified; final metadata HEAD is reverified and reported in chat. BLOCKED0. Real c58 private
 image scan **UNAVAILABLE**, all new real metrics UNKNOWN/null, not zero.
 
 ## Result and changes
@@ -119,3 +119,20 @@ if ($LASTEXITCODE -ne 0) { throw "c58 offline scan refused; preserve existing ev
   Commit **b74c32c2792a1991a61b3da33e55f8ae4185e99b**, pushed main.
   `git -C /workspace/scratch/msm2-wisdoms-c51 ls-remote origin refs/heads/main`:
   expected pushed SHA; actual exact match (PASS1).
+
+
+## Publication accepted
+
+Implementation/source commit **5897ef8d00ef5d830e242ed4bfb61c65e593b304** is published on
+**codex/v01c20-edi-value-provenance**. `git push origin codex/v01c20-edi-value-provenance`
+succeeded (normal push). `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance`
+matched local HEAD exactly. `python3 /workspace/scratch/ws-c58/check_publication.py`
+fetched the intended branch in an independent GitHub checkout: expected identical
+12 changed files, all289 tested code/tool inputs and protected evidence; actual
+**320 distinct files byte/hash equal, PASS1**. Tested input digest:
+`91a7f2e66f551a172e88644d4ec79a07ee54edb39985942fd28ed9fb296da770`.
+C58 actual counts UNKNOWN and C52 FAIL retained in fetched evidence. Final
+publication-record-only commit follows this pinned implementation; its HEAD is
+again remote/checkout verified and returned in chat (avoids self-referential SHA).
+No compiled regression rerun needed: all289 executable inputs still match the
+successfully tested digest. Final package/mirror/integrity checks are repeated.

@@ -1593,6 +1593,25 @@
       "command": "git -C /workspace/scratch/msm2-wisdoms-c51 ls-remote origin refs/heads/main",
       "expected": "Wisdoms pushed commit equals remote",
       "actual": "b74c32c2792a1991a61b3da33e55f8ae4185e99b"
+    },
+    {
+      "command": "python3 /workspace/scratch/ws-c58/check_publication.py",
+      "expected": "remote intended-branch HEAD and independent GitHub checkout match all12 changed/289 tested code+protected evidence paths",
+      "actual": "PASS1;320 distinct files byte/hash equal; 5897ef8d00ef5d830e242ed4bfb61c65e593b304"
     }
-  ]
+  ],
+  "implementation_commit": "5897ef8d00ef5d830e242ed4bfb61c65e593b304",
+  "publication_validation": {
+    "PASS": 1,
+    "SKIP": 0,
+    "UNAVAILABLE": 0,
+    "BLOCKED": 0,
+    "branch": "codex/v01c20-edi-value-provenance",
+    "verified_remote_commit": "5897ef8d00ef5d830e242ed4bfb61c65e593b304",
+    "changed_files": 12,
+    "compared_files": 320,
+    "code_tool_input_count": 289,
+    "code_tool_input_digest": "91a7f2e66f551a172e88644d4ec79a07ee54edb39985942fd28ed9fb296da770"
+  },
+  "final_metadata_note": "Final metadata follows pinned implementation. All289 executable source/tool bytes match tested digest; final handoff HEAD is independently remote/checkout verified again and reported in chat (no self-referential commit hash)."
 }
