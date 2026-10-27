@@ -1,30 +1,59 @@
 # WallSprint project state
 
-## c58 current stage — exact-runtime-begin entry-instance continuation TOOL READY
+## c60 current stage — c59-authenticated later-runtime-begin TOOL READY
 
-**EXACT_RUNTIME_BEGIN_STITCH_SCANNER_READY**. Separatev0.1c58/schema1 offline tool
-carries existing c53 GPR image-address Facts only over authenticated architectural
-c57 first-boundary edges to exact_unique_runtime_begin. Original root+row+exact
-incoming-state identities keep continuations separate from historical EMPTY-root
-scans; different states never fabricate a global target fact. Local c53 must joins,
-fact hops and c54/c55 CALL per-register summaries/RSP kill remain unchanged.
+**LATER_RUNTIME_BEGIN_STITCH_SCANNER_READY**. Separatev0.1c60/schema1 offline mode
+reconstructs the full original c56/c57/c58/c59 chain and c59 ordered record stream,
+validating all supplied read-only JSONs/checkpoints and record-set/proof identities.
+Only exact current root,row,entry seed,path,source instruction matching a validated
+c59 record can authorize its architectural exact-runtime-begin successors. Every
+external successor must pass current row/code/RX backing/nonoverlap/exclusion
+preflight before any edge is usable. Original c57 proofs remain unchanged pre-c59.
 
-Stable exact-state cycles dedup; changed-state cycles, later uncertified exits,
-unsupported targets/semantics or caps abort the entire root with zero candidates.
-Boundary paths are separate from Fact chains. Readonly c56 checkpoints+c57 JSON
-must match complete replay/image/tool/contracts/schema/distribution. No silent
-repair/fallback. Counts are completed-root entry-instance observations, not unique
-program sites or all-entry invariants. All old scanners/tests/evidence unchanged.
+C53 exact must joins/Fact hops/language, c54/c55 CALL preservation/RSP kill,
+independent EMPTY roots and finite c58 caps remain. Different-path same-state dedup
+cannot lend a c59 proof to another arrival/descendant. Post-c59 reachability is
+preserved even if dedup keeps an earlier path; its next unknown boundary refuses
+uncertified_post_c59_runtime_boundary, including a row-global c57 proof that cannot
+authorize this new path. Unknown pre-c59 context keeps original LATER refusal.
+Whole root must complete before candidates/counts commit. Boundary path proof is
+separate from Fact chain; candidates depend on an incoming carried Fact only.
 
-Actual c58 edge/instance/candidate counts are UNKNOWN/null (private EXE absent).
-Owned mechanism validation does not establish a writer or writer absence. All
-completeness/publication/allocation/base/range/lifetime/ownership/containment/CFG/
-EH/production/watch/gameplay gates remain false, C52 FAIL binding. No loaded-value/
-pointer chase/slot qword/producer traversal/mitigation change. Production runtime
-v0.1c38/package0.1.56, no new game release/native probe. After verified publication,
-one owner offline command with existing c56 cache+c57 JSON; no Update-WS/game/
-Overstrike/EXE upload/runtime log. Detailed method/results: V01C58_STITCHED_CONTINUATION,
-V01C58_GATE, V01C58_STATUS.json, CODEX_RESULT.
+Actual c60 edge/instance/fact/refusal/candidate counts UNKNOWN/null: no private EXE
+here. Available33719 c59 instances/35921 architectural edges/28201 exact edges are
+historical availability, not c60 admission. No writer/absence/publication proof.
+All completeness/publication/allocation/base/range/lifetime/ownership/containment/
+CFG/EH/production/watch/game gates false,C52 FAIL binding. No loaded-pointer/qword/
+producer/indirect/mitigation/production/gameplay broadening. Runtimev0.1c38/
+package0.1.56 unchanged,no game release/native probe. After verified push, one
+offline owner command reuses c56 cache+c57/c58/c59 JSON read-only and returns c60
+compact JSON; no Update-WS/game/Overstrike/EXE upload/runtime log. Details:
+V01C60_LATER_STITCHED/GATE/STATUS and CODEX_RESULT. Old tools/tests/reports unchanged.
+
+## c59 historical accepted owner VERIFIED-STATIC diagnostic result
+
+33719/33719 refused roots/instances,35921 architectural edges,0 model-only;
+classification_complete=true.28201 exact beginnings (78.5084%),1566 interiors,
+6154 metadata-free RX; other relation classes0. Exact kinds16975 ordinary/2309
+conditional fallthrough/7425 taken/1471 unconditional/21 CALL,20863 adjacent exact.
+33582 unique source rows,33582 EMPTY entry seeds/original-root instances;137
+nonempty/nonroot. These ENTRY-SEED counts precede row-local must-fixpoint and are
+not source-instruction fact counts. Both V01C59_OWNER_OFFLINE_RESULT.md copies
+immutable; earlier cloud UNKNOWN remains historical. C59 itself admitted0 edges/
+candidates, preserved c58 output and all false gates. c60 adds only bounded exact-
+instance authorization; no later recursive certificate inference.
+
+## c58 historical accepted owner VERIFIED-STATIC continuation result
+
+159734 available/147338 considered/1299 admitted exact edges;482 reached rows,
+1686 crossing Facts,0 CALL fact crossings,0 cross-row candidates.6808 created/
+11 dedup/5499 refused continuation instances;34 cap refusals/0 cycles.162472 root
+attempts,81896 completed/80576 refused;33719 uncertified later-boundary failures,
+29818 interior,12526 free RX,4330 indirect CALL. Remaining relation counts in
+aborted roots are attempts, not writer census. Existing c53 Facts survived some
+boundaries without globalizing target state. Both owner copies immutable; prior
+cloud UNKNOWN evidence stays historical. This is mechanism evidence, not writer
+absence/publication/ownership/lifetime/production permission.
 
 ## c57 historical accepted owner VERIFIED-STATIC classification
 
