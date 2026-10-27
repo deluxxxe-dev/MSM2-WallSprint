@@ -1499,5 +1499,25 @@
     "protected_base_files": 1033,
     "code_tool_input_count": 285,
     "code_tool_input_digest": "727f30d31978f9b0a91a89f6c24d92490ffd614d53075f13cff937383d904cbd"
-  }
+  },
+  "implementation_commit": "aaf3b6917517146627b5ea56c16077710abeb181",
+  "publication_validation": {
+    "PASS": 1,
+    "SKIP": 0,
+    "UNAVAILABLE": 0,
+    "BLOCKED": 0,
+    "branch": "codex/v01c20-edi-value-provenance",
+    "verified_remote_commit": "aaf3b6917517146627b5ea56c16077710abeb181",
+    "changed_files": 12,
+    "compared_files": 308,
+    "code_tool_input_count": 285,
+    "code_tool_input_digest": "727f30d31978f9b0a91a89f6c24d92490ffd614d53075f13cff937383d904cbd"
+  },
+  "wisdoms_sync": {
+    "branch": "main",
+    "commit": "aeabd580e5895756accd7df03c00a371ac359c89",
+    "path": "docs/REVERSE_ENGINEERING_GUIDE.md",
+    "pushed_and_remote_verified": true
+  },
+  "final_metadata_note": "Final status/report metadata follows pinned implementation. Executable source/tool bytes match tested digest. Final handoff HEAD is separately GitHub-verified and reported in chat."
 }

@@ -1,7 +1,7 @@
 # Codex result — c56 deterministic sharded runtime-metadata sweep
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
-Task base **c3013eae59803a280f158311758a2cb65ef23fe5**. Implementation commit is pinned after publication.
+Task base **c3013eae59803a280f158311758a2cb65ef23fe5**. Implementation/source commit: **aaf3b6917517146627b5ea56c16077710abeb181**, pushed and independently verified.
 Primary: **SHARDED_SLOT_PUBLICATION_SCANNER_READY**; BLOCKED0.
 
 ## Result / accepted evidence / scope
@@ -132,6 +132,28 @@ start an intentionally different fresh compatible run without deleting old data.
 Integrity: `python3 /workspace/scratch/ws-c56/verify.py` expected protected baseline/source hashes, complete package/mirrors and c56 READY/c52 FAIL separation; actual1 PASS across1033 protected baseline files and285 source/tool inputs. `git diff --check` passed. Implementation SHA/publication/Wisdoms provenance follow below. Later
 metadata-only edits require package/integrity/publication checks; no full rerun
 when all executable source/tool hashes remain the final tested digest.
+
+## Publication / shared handoff
+
+- Implementation/source commit **aaf3b6917517146627b5ea56c16077710abeb181**, intended branch
+  **codex/v01c20-edi-value-provenance**, normal push succeeded.
+- `python3 /workspace/scratch/ws-c56/check_publication.py`: expected remote
+  SHA=HEAD and independent GitHub checkout byte agreement; actual1 PASS across
+  12 changed paths /308 compared files /285 source-tool inputs. Checks actual c56
+  counts remain null, owned0-unconsidered result is separate, and c52 FAIL remains.
+- `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance`: exact
+  remote/local equality, repeated after final metadata commit/push.
+- Wisdoms docs/REVERSE_ENGINEERING_GUIDE.md updated with accepted c55 evidence
+  and reusable sharded metadata coverage/checkpoint/count-scope/completeness limits;
+  **aeabd580e5895756accd7df03c00a371ac359c89**, Wisdoms main, push plus
+  `git ls-remote origin refs/heads/main` equality verified. Wisdoms tree clean.
+- Final status/report additions are metadata only. Package/integrity/publication
+  repeat; no full test rerun needed because all executable source/tool input hashes
+  remain the tested digest. Package/integrity/publication each contribute1 separate
+  PASS, outside535 nonduplicated regressions. Repeated checks are not accumulated.
+- Final40-character handoff HEAD is reported in chat after push/remote/independent
+  checkout verification. Pinned implementation avoids a self-referential SHA.
+  No WS main merge/reset/force push, new game release or native c56 probe.
 
 ---
 
