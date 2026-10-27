@@ -1,3 +1,215 @@
+# Codex result — c50 mixed SEARCH predicate decomposition
+
+2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
+Task base **9a24784b71fb3438446d9632f35402ac90b27c02**.
+Implementation/source SHA is recorded in final provenance below.
+Primary: **MIXED_SEARCH_IDENTITY_DIAGNOSTIC_UNAVAILABLE**.
+
+Repository test-only diagnostics/model/owned Wine work is complete. The accepted
+c49 native VCH1 boundary is observed, not unavailable; its primary FAIL remains
+FAIL and the exact old failing conjunct is still UNKNOWN pending the new native
+measurement. BLOCKED0; no requested diagnostic/test subtask was security-blocked.
+No production behavior/source/ownership/restore/handler/lease/cleanup change,
+VCH-to-c41 bridge, RIP redirection, DR repair/status normalization, exact-slot or
+gameplay write. Runtime stays v0.1c38/package0.1.56; no game release.
+
+## Scope, inputs and static findings
+
+Read AGENTS/manual/rules/workspace/reporting/PROJECT_STATE/NEXT, accepted c49
+native input, c48/c49 evidence/source/tests and retained c41-c47 proof/helper
+chain. Consulted Wisdoms at e53c85d with its new VCH boundary reference. This
+continues intended branch by fast-forward only6a6fae9 ->9a24784. No main merge,
+reset, force-push or original untracked-artifact modification. PROJECT_STATE and
+CODEX_NEXT remain read-only: AGENTS prohibits overwriting them absent explicit
+current-task authorization; c50 specifies diagnosis/tests/reporting. This report
+and c50 analysis/gate/status provide the current handoff without replacing them.
+
+Both accepted V01C49_NATIVE_WINDOWS_RESULT copies stay SHA256
+30031c6c243c09e5ef85b2dd603222ccd50da9ad588025d76e97ea96c3ee240b.
+Native GenuineIntel/Position/close/[0,0,256] returned c49 FAIL at the aggregate
+condition but actually observed WS SEARCH ->foreign EXECUTION ->VCH1, exact final
+CONTEXT/order and honest pending1 until worker exit. That is not an unavailable
+native VCH result, a bridge PASS or evidence of the missing internal conjunct.
+
+Static audit: usedLeases counts append-only allocated global slots, including
+unrelated workers or failed/unpublished attempts. own(context,lease) checks
+addresses/Dr7, while the production handler separately checks published tid.
+Position begin synchronously expands to eligible process threads before returning.
+Thus a fixture may have more than one global slot yet one worker-owned obligation.
+That is a supported possibility, NOT proof of the earlier native failing cause.
+The old guard uses own(after,leases[0]) and windows[0] id/generation; c50 reports
+these exact14 old conjunctions independently of the selected lease's window.
+
+## Test-only implementation and complete fields
+
+New header/test/probe/script/parser: vch_search_identity.hpp,
+vch_search_identity_tests.cpp, vch_search_identity_smoke.cpp,
+test_vch_search_identity.sh and check_vch_search_identity.py. The new probe keeps
+c49's source/artifact/tests byte-identical and preserves the same actual hardware
+SEARCH/foreign/VCH observation flow. Coordinator finishes original begin/expansion
+before go, freezes counts and does not install/release while capture runs.
+Every old predicate and every used slot is captured into fixed bounded storage
+before any sticky diagnostic decision. Mutable installed/suspended status is
+observed only in this explicitly serialized owned fixture, not claimed as a
+production publication guarantee. No allocation/log/ring lock is added to capture.
+
+UNIQUE_MATCHING_DEBT_IDENTITY requires a complete stable snapshot, exactly one
+published worker lease with any owned bit, full own3, correct expected window/
+index/generation/up and installed/not suspended. Competing partial/full or
+retained matches refuse; unrelated tids remain separately visible. New diagnostic
+admission still requires every old conjunct other than global usedLeases==1.
+Only a sole global-count failure can be distinguished as a different bounded
+property; no other cause/ownership/window/register failure is removed.
+
+All fields below are actual owned Wine observations; no native result is forged.
+Normal=six reset/Position x close/deadline/kill; extra=one Position/close with a
+real extra test-owned idle thread, legitimately armed by the unchanged expansion.
+
+| Decomposed field | Normal | Extra idle worker |
+| --- | --- | --- |
+| ws_search_ok |true|true|
+| entry_cause_mask /entry_cause_expected |5 /true|5 /true|
+| post_engine_cause_mask /post_engine_cause_expected |4 /true|4 /true|
+| cause_delta /cause_delta_expected |1 /true|1 /true|
+| rip_preserved |true|true|
+| Dr0_preserved /Dr1_preserved /Dr2_preserved /Dr3_preserved /Dr7_preserved |all true|all true|
+| used_leases_total /records_observed |1 /1|2 /2|
+| matching_worker_lease_count |1|1|
+| matching_owned_context_lease_count (worker AND nonzero own) |1|1|
+| context_owning_lease_count_all_threads |1|2|
+| selected_lease_index |0|0|
+| selected_window_id /expected_window_id |1 /1|1 /1|
+| selected_window_generation /expected_generation |149 /149|149 /149|
+| selected_own_mask |3|3|
+| legacy_first_own_mask_is_three |true|true|
+| legacy_window_zero_id_ok /legacy_window_zero_generation_ok |true /true|true /true|
+| global_used_leases_is_one |true|false|
+| legacy_c49_aggregate |true|false|
+| legacy_failed_conjuncts |empty|global_used_leases_is_one only|
+| UNIQUE_MATCHING_DEBT_IDENTITY /c50_diagnostic_admissible |true /true|true /true|
+| VCH callback count |0|0|
+| primary /pending at worker exit |UNAVAILABLE /1|UNAVAILABLE /1|
+
+Every slot additionally prints index/tid/published/window index/id/generation/up/
+own/status-known/installed/suspended. Expected up equals the actual owned target
+(Transform fixture+0x10 reset or+0x30 Position), with exact comparison, not a pointer
+inference. No per-slot metadata is suppressed to manufacture uniqueness. A real
+second idle-thread control demonstrates global2/unique1 on Wine. It does not
+identify the unknown native old conjunct. Native PASS requires a new actual VCH
+measurement plus the sole old global failure and unique tuple on that same run.
+A native run with no old failure reproduced remains UNAVAILABLE for that question.
+
+Reservation still precedes SEARCH escape, even a refused/unknown identity retains
+pending debt. Downstream-final/VCH CONTEXT equality and exact context/thread/
+epoch/debt order remain; no RIP redirect, witness or live final polling is added.
+Close/deadline/kill keep pending1; actual normal worker exit (and optional idle
+thread exit) precedes terminal cleanup/free. No second watched access or forced
+thread termination. Existing c39/c40/c48 counterexamples, c47 property and all
+old c49 sources/tests/native results/binaries are unchanged.
+
+## Required commands — expected and actual
+
+Executed from repository root. All16 required commands exited0; counts are final full-run observations.
+
+| Exact command | Expected | Actual |
+| --- | --- | --- |
+| `bash source/tools/test_continuation_mitigations.sh` | unchanged c42 classification/refusal |10 PASS|
+| `bash source/tools/test_continuation_diagnostics.sh` | unchanged c43 diagnosis |7 PASS|
+| `bash source/tools/test_debug_register_comparison.sh` | raw/c44 independent conservative checks |9 PASS|
+| `bash source/tools/test_dr6_lifecycle.sh` | c45 lifecycle |11 PASS|
+| `bash source/tools/test_pre_access_lifecycle.sh` | c46 pre-access |12 PASS|
+| `bash source/tools/test_retirement_configuration.sh` | c47 bounded property unchanged |13 PASS|
+| `bash source/tools/test_continuation_witness.sh` | c41 state/identity/lifetime regressions |13 PASS|
+| `bash source/tools/test_watch_retirement.sh` | old counterexamples + honest VCH capability |14 PASS /2 UNAVAILABLE|
+| `bash source/tools/test_production_witness_review.sh` | six mixed resurrections/two foreign controls/parser |9 PASS|
+| `bash source/tools/test_vch_search_bridge.sh` | unchanged c49 plus c48 control chain |22 PASS /6 UNAVAILABLE|
+| `bash source/tools/test_vch_search_identity.sh` | all14 fields/identity negatives; real Wine unavailable; no forged native result |13 PASS /7 UNAVAILABLE|
+| `bash source/tools/build_windows.sh` | existing Werror build |build success|
+| `bash source/tools/test.sh` | portable/ASan/UBSan |13 PASS|
+| `bash source/tools/smoke_windows.sh` | owned Windows smoke |7 PASS|
+| `bash source/tools/test_hooks_windows.sh` | full c39-c50 and earlier hook/proof/workspace regressions |394 PASS /5 SKIP /15 UNAVAILABLE /0 BLOCKED|
+| `python3 source/tools/package.py` | unchanged disabled c38 artifact/full source/evidence/gates |1 package-validation PASS|
+
+The new focused suite is12 synthetic ASan/UBSan observations,7 actual Wine
+UNAVAILABLE cases and1 strict JSON PASS. It is now required inside hooks. All
+cause/register/window/generation/partial/multiple/unknown status/cap failures
+refuse in models. One matching tuple with unrelated global slots is separate from
+historical aggregate FAIL. The direct parser also validates both serialized pure
+synthetic input and actual snapshots without treating them as native execution.
+
+Initial focused run exited0. Static review then corrected a diagnostic detail:
+legacy windows[0] must be reported separately from a selected lease's window.
+Only the new code/model/schema was corrected, and focused plus required full
+regression were run on that final code. No old guard/assertion/wait/cap was relaxed.
+
+Nonduplicated regression totals: **414 PASS /5 SKIP /15 UNAVAILABLE /0 BLOCKED**
+=portable13+smoke7+hooks394. Focused command repeats already occur inside hooks;
+do not add them again. Package validation is1 separate PASS. UNAVAILABLE15 are
+c40 callback0 cases2+c49 Wine cases6+c50 Wine cases7. Accepted c49 native VCH1/
+primary FAIL is distinct from these Wine availability records. No native c50
+case is counted PASS. No source/tool code changed after the final full chain;
+only analysis, handoff and publication metadata are finalized afterward.
+
+## Unperformed, SKIP, UNAVAILABLE and BLOCKED
+
+- C50 native decomposed measurement: not run; no native Windows environment is
+  attached. The new owner command is necessary to measure the exact old failing
+  conjunct. Accepted c49 boundary evidence is retained; it cannot fill new fields.
+- Actual new c50 VCH hold/order on this compiled version: unavailable under Wine,
+  callback0. Twelve synthetic and seven Wine results are not native PASS.
+- Private original-byte positive replay, native replay, game-body installer,
+  584byte normalization replay and accepted-build capture replay: five existing
+  optional SKIPs, private inputs not distributed. Independent tests still run.
+- Production integration, c41 redirection, live witness/retirement/forced exit/
+  module-unload/gameplay/exact-slot tests: not implemented/run, explicitly forbidden.
+- BLOCKED0; no requested permitted diagnostic was bypassed due to a security block.
+
+## Owner handoff and publication
+
+The exact tested c50 PE is published only under analysis/native-probes/c50 with
+README, licenses, accepted-evidence SHA, full code/tool hash list and manifest.
+From that new folder in native PowerShell, run:
+
+```powershell
+.\continuation-witness.exe --position --mixed-search-vch --json
+```
+
+Return compact JSON with identity_diagnostics and stages. It is the new diagnostic,
+not an identical c49 rerun. No Update-WS/game/Overstrike/scan/log/mitigation change.
+Even a native diagnostic PASS authorizes no production/bridge work in this task.
+
+Validation-only package remains
+source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled. New c50 analysis/
+gate/status are mirrored under source/analysis; package includes accepted c49
+native FAIL/boundary evidence and c50 UNAVAILABLE independently. Wisdoms's VCH
+reference records the static count semantics and bounded Wine contrast, explicitly
+keeping the historical native culprit UNKNOWN. No raw user logs are added. Exact tested PE6065418bytes, SHA256
+e25d883a20e2a55cc239b6e71a93a84bd3f69a441a0cb2ae00bd327fba6569af.
+All267 code/tool input digest:
+c5ae6c2f6ff08ba50915a68fecb505441c7ff067389dd18f36cd5c23b5bb0ee7.
+Source implementation/publication verification follows after commit/push.
+
+Additional exact checks:
+
+```bash
+python3 source/tools/check_vch_search_identity.py source/logs/windows_vch_search_identity.log source/logs/vch_search_identity_synthetic.json
+python3 /tmp/ws-c50-verify.py
+```
+
+Expected/actual: strict parser agrees on all14 fields, original aggregate and
+real global2/unique1, keeping models separate;1 repeated parser PASS. Integrity
+checks verify unchanged historical/production files and all267 packaged code/
+tool hashes plus exact PE and accepted native input;2 PASS. The full code suite
+need not repeat after metadata-only changes; package/copy integrity is repeated.
+The published owner CLI also ran on Wine with the exact JSON-only arguments,
+1 additional unique UNAVAILABLE observation (not native evidence):
+
+```bash
+WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/analysis/native-probes/c50/continuation-witness.exe" --position --mixed-search-vch --json
+```
+
+---
+
 # Codex result — c49 mixed SEARCH / downstream EXECUTION / VCH boundary
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.

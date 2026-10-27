@@ -49,6 +49,8 @@ bash tools/test_watch_retirement.sh
 # c49 focused command also runs the original c48 counterexample/control suite.
 bash tools/test_vch_search_bridge.sh
 
+bash tools/test_vch_search_identity.sh
+
 bash tools/test_continuation_mitigations.sh
 
 bash tools/test_continuation_diagnostics.sh

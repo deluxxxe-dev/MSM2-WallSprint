@@ -1,0 +1,434 @@
+{
+  "task": "c50_native_mixed_SEARCH_identity_cause_predicate_decomposition",
+  "date_JST": "2026-10-27",
+  "base_commit": "9a24784b71fb3438446d9632f35402ac90b27c02",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "primary_result": "MIXED_SEARCH_IDENTITY_DIAGNOSTIC_UNAVAILABLE",
+  "accepted_native_c49_result": "VCH_SEARCH_CONTINUATION_BRIDGE_FEASIBILITY_FAIL",
+  "accepted_native_c49_VCH_callbacks": 1,
+  "accepted_native_c49_ordered_final_context": true,
+  "accepted_native_c49_exact_failing_conjunct": "UNKNOWN_not_guessed",
+  "accepted_native_c49_evidence_sha256": "30031c6c243c09e5ef85b2dd603222ccd50da9ad588025d76e97ea96c3ee240b",
+  "all_14_legacy_conjuncts_reported": true,
+  "legacy_window_zero_separate_from_selected_window": true,
+  "named_test_property": "UNIQUE_MATCHING_DEBT_IDENTITY",
+  "unique_property_requires": "one_worker_owned_candidate_full_mask3_exact_window_index_id_generation_up_installed_not_suspended_complete_stable_metadata",
+  "old_failure_relaxation_condition": "only_global_usedLeases_equals_one_failed_every_other_old_conjunct_true_no_other_conflict",
+  "native_PASS_requires": "new_native_run_reproduces_exact_sole_old_global_failure_and_unique_identity_and_observed_downstream_final_VCH",
+  "native_c50_run": false,
+  "Wine_normal_cases": 6,
+  "Wine_real_extra_idle_worker_cases": 1,
+  "Wine_VCH_callbacks": 0,
+  "unresolved_debt_until_worker_exit": 1,
+  "production_changed": false,
+  "c39_c40_c48_counterexamples_preserved": true,
+  "c49_source_tests_artifact_native_result_preserved": true,
+  "c47_predicate_preserved": true,
+  "VCH_to_c41_bridge": false,
+  "RIP_redirection": false,
+  "DR_repair_or_normalization": false,
+  "exact_slot_watch_enabled": false,
+  "new_gameplay_writes": 0,
+  "new_game_release": false,
+  "runtime_version": "v0.1c38",
+  "package_version": "0.1.56",
+  "BLOCKED": 0,
+  "blocked_subtasks": [],
+  "owner_command": ".\\continuation-witness.exe --position --mixed-search-vch --json",
+  "native_probe": "analysis/native-probes/c50/continuation-witness.exe",
+  "owner_action": "new_native_decomposed_predicate_JSON_only_no_Update_WS_game_Overstrike_or_logs",
+  "PROJECT_STATE_and_CODEX_NEXT_preserved": "read_only_per_AGENTS_current_task_does_not_explicitly_authorize_updates",
+  "tests": [
+    {
+      "command": "bash source/tools/test_continuation_mitigations.sh",
+      "exit": 0,
+      "seconds": 0.5,
+      "log": "/tmp/ws-c50-test_continuation_mitigations.log",
+      "PASS": 10,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_continuation_diagnostics.sh",
+      "exit": 0,
+      "seconds": 0.68,
+      "log": "/tmp/ws-c50-test_continuation_diagnostics.log",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_debug_register_comparison.sh",
+      "exit": 0,
+      "seconds": 0.58,
+      "log": "/tmp/ws-c50-test_debug_register_comparison.log",
+      "PASS": 9,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_dr6_lifecycle.sh",
+      "exit": 0,
+      "seconds": 0.78,
+      "log": "/tmp/ws-c50-test_dr6_lifecycle.log",
+      "PASS": 11,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_pre_access_lifecycle.sh",
+      "exit": 0,
+      "seconds": 0.89,
+      "log": "/tmp/ws-c50-test_pre_access_lifecycle.log",
+      "PASS": 12,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_retirement_configuration.sh",
+      "exit": 0,
+      "seconds": 1.33,
+      "log": "/tmp/ws-c50-test_retirement_configuration.log",
+      "PASS": 13,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_continuation_witness.sh",
+      "exit": 0,
+      "seconds": 10.43,
+      "log": "/tmp/ws-c50-test_continuation_witness.log",
+      "PASS": 13,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_watch_retirement.sh",
+      "exit": 0,
+      "seconds": 5.54,
+      "log": "/tmp/ws-c50-test_watch_retirement.log",
+      "PASS": 14,
+      "SKIP": 0,
+      "UNAVAILABLE": 2,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_production_witness_review.sh",
+      "exit": 0,
+      "seconds": 5.49,
+      "log": "/tmp/ws-c50-test_production_witness_review.log",
+      "PASS": 9,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_vch_search_bridge.sh",
+      "exit": 0,
+      "seconds": 12.77,
+      "log": "/tmp/ws-c50-test_vch_search_bridge.log",
+      "PASS": 22,
+      "SKIP": 0,
+      "UNAVAILABLE": 6,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_vch_search_identity.sh",
+      "exit": 0,
+      "seconds": 8.54,
+      "log": "/tmp/ws-c50-test_vch_search_identity.log",
+      "PASS": 13,
+      "SKIP": 0,
+      "UNAVAILABLE": 7,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/build_windows.sh",
+      "exit": 0,
+      "seconds": 45.64,
+      "log": "/tmp/ws-c50-build_windows.log",
+      "PASS": 0,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test.sh",
+      "exit": 0,
+      "seconds": 8.41,
+      "log": "/tmp/ws-c50-test.log",
+      "PASS": 13,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/smoke_windows.sh",
+      "exit": 0,
+      "seconds": 14.47,
+      "log": "/tmp/ws-c50-smoke_windows.log",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_hooks_windows.sh",
+      "exit": 0,
+      "seconds": 183.38,
+      "log": "/tmp/ws-c50-test_hooks_windows.log",
+      "PASS": 394,
+      "SKIP": 5,
+      "UNAVAILABLE": 15,
+      "BLOCKED": 0
+    },
+    {
+      "command": "python3 source/tools/package.py",
+      "exit": 0,
+      "seconds": 0.86,
+      "log": "/tmp/ws-c50-package.log",
+      "PASS": 1,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    }
+  ],
+  "nonduplicated_full_chain": {
+    "PASS": 414,
+    "SKIP": 5,
+    "UNAVAILABLE": 15,
+    "BLOCKED": 0,
+    "scope": "portable13_smoke7_hooks394_focused_repeats_not_added_twice"
+  },
+  "package_validation": {
+    "PASS": 1,
+    "SKIP": 0,
+    "UNAVAILABLE": 0,
+    "BLOCKED": 0
+  },
+  "SKIP_tests": [
+    {
+      "name": "original_byte_positive_replay",
+      "reason": "optional_private_input_not_distributed"
+    },
+    {
+      "name": "private_native_replay",
+      "reason": "optional_private_input_not_distributed"
+    },
+    {
+      "name": "game_body_installer_replay",
+      "reason": "optional_private_input_not_distributed"
+    },
+    {
+      "name": "584byte_normalization_replay",
+      "reason": "optional_private_input_not_distributed"
+    },
+    {
+      "name": "accepted_build_capture_replay",
+      "reason": "optional_private_input_not_distributed"
+    }
+  ],
+  "UNAVAILABLE_cases": {
+    "historical_c40_callback0": 2,
+    "historical_c49_Wine_callback0": 6,
+    "new_c50_Wine_callback0": 7
+  },
+  "not_run": [
+    {
+      "name": "c50_native_all14_conjuncts_and_lease_set",
+      "reason": "no_native_Windows_environment_attached_accepted_c49_JSON_lacks_new_fields"
+    },
+    {
+      "name": "actual_c50_native_VCH_exact_final_CONTEXT_and_only_global_failure_classification",
+      "reason": "Wine_callback0_cannot_supply_new_native_measurement"
+    },
+    {
+      "name": "production_witness_bridge_exact_slot_gameplay_forced_exit_module_unload",
+      "reason": "explicitly_unauthorized_no_implementation_added"
+    }
+  ],
+  "decomposed_Wine_samples": [
+    {
+      "environment": "Wine",
+      "mode": "reset",
+      "scenario": "close",
+      "unrelated_worker_requested": false,
+      "result": "MIXED_SEARCH_IDENTITY_DIAGNOSTIC_UNAVAILABLE",
+      "sanitized_derived_evidence_not_verbatim_JSON": true,
+      "identity_diagnostics": {
+        "revision": "c50-v1",
+        "observed": true,
+        "entry_cause_mask": 5,
+        "post_engine_cause_mask": 4,
+        "cause_delta": 1,
+        "expected_entry_cause_mask": 5,
+        "expected_post_engine_cause_mask": 4,
+        "expected_cause_delta": 1,
+        "ws_search_ok": true,
+        "entry_cause_expected": true,
+        "post_engine_cause_expected": true,
+        "cause_delta_expected": true,
+        "rip_preserved": true,
+        "Dr0_preserved": true,
+        "Dr1_preserved": true,
+        "Dr2_preserved": true,
+        "Dr3_preserved": true,
+        "Dr7_preserved": true,
+        "global_used_leases_is_one": true,
+        "legacy_first_own_mask_is_three": true,
+        "legacy_window_zero_id_ok": true,
+        "legacy_window_zero_generation_ok": true,
+        "used_leases_total": 1,
+        "records_observed": 1,
+        "matching_worker_lease_count": 1,
+        "matching_owned_context_lease_count": 1,
+        "context_owning_lease_count_all_threads": 1,
+        "snapshot_complete_and_stable": true,
+        "expected_window_id": 1,
+        "expected_generation": 149,
+        "expected_up": "owned_allocation+0x10",
+        "selected_lease_index": 0,
+        "selected_window_id": 1,
+        "selected_window_generation": 149,
+        "selected_own_mask": 3,
+        "legacy_window_zero_id": 1,
+        "legacy_window_zero_generation": 149,
+        "legacy_c49_aggregate": true,
+        "only_global_usedLeases_conjunct_failed": false,
+        "UNIQUE_MATCHING_DEBT_IDENTITY": true,
+        "c50_diagnostic_admissible": true,
+        "legacy_failed_conjuncts": [],
+        "leases": [
+          {
+            "index": 0,
+            "tid": "primary_worker",
+            "published": true,
+            "window_index": 0,
+            "window_id": 1,
+            "generation": 149,
+            "up": "owned_allocation+0x10",
+            "own_mask": 3,
+            "metadata_known": true,
+            "status_known": true,
+            "installed": true,
+            "suspended": false
+          }
+        ]
+      }
+    },
+    {
+      "environment": "Wine",
+      "mode": "Position",
+      "scenario": "close",
+      "unrelated_worker_requested": true,
+      "result": "MIXED_SEARCH_IDENTITY_DIAGNOSTIC_UNAVAILABLE",
+      "sanitized_derived_evidence_not_verbatim_JSON": true,
+      "identity_diagnostics": {
+        "revision": "c50-v1",
+        "observed": true,
+        "entry_cause_mask": 5,
+        "post_engine_cause_mask": 4,
+        "cause_delta": 1,
+        "expected_entry_cause_mask": 5,
+        "expected_post_engine_cause_mask": 4,
+        "expected_cause_delta": 1,
+        "ws_search_ok": true,
+        "entry_cause_expected": true,
+        "post_engine_cause_expected": true,
+        "cause_delta_expected": true,
+        "rip_preserved": true,
+        "Dr0_preserved": true,
+        "Dr1_preserved": true,
+        "Dr2_preserved": true,
+        "Dr3_preserved": true,
+        "Dr7_preserved": true,
+        "global_used_leases_is_one": false,
+        "legacy_first_own_mask_is_three": true,
+        "legacy_window_zero_id_ok": true,
+        "legacy_window_zero_generation_ok": true,
+        "used_leases_total": 2,
+        "records_observed": 2,
+        "matching_worker_lease_count": 1,
+        "matching_owned_context_lease_count": 1,
+        "context_owning_lease_count_all_threads": 2,
+        "snapshot_complete_and_stable": true,
+        "expected_window_id": 1,
+        "expected_generation": 149,
+        "expected_up": "owned_allocation+0x30",
+        "selected_lease_index": 0,
+        "selected_window_id": 1,
+        "selected_window_generation": 149,
+        "selected_own_mask": 3,
+        "legacy_window_zero_id": 1,
+        "legacy_window_zero_generation": 149,
+        "legacy_c49_aggregate": false,
+        "only_global_usedLeases_conjunct_failed": true,
+        "UNIQUE_MATCHING_DEBT_IDENTITY": true,
+        "c50_diagnostic_admissible": true,
+        "legacy_failed_conjuncts": [
+          "global_used_leases_is_one"
+        ],
+        "leases": [
+          {
+            "index": 0,
+            "tid": "primary_worker",
+            "published": true,
+            "window_index": 0,
+            "window_id": 1,
+            "generation": 149,
+            "up": "owned_allocation+0x30",
+            "own_mask": 3,
+            "metadata_known": true,
+            "status_known": true,
+            "installed": true,
+            "suspended": false
+          },
+          {
+            "index": 1,
+            "tid": "unrelated_owned_thread",
+            "published": true,
+            "window_index": 0,
+            "window_id": 1,
+            "generation": 149,
+            "up": "owned_allocation+0x30",
+            "own_mask": 3,
+            "metadata_known": true,
+            "status_known": true,
+            "installed": true,
+            "suspended": false
+          }
+        ]
+      }
+    }
+  ],
+  "native_artifact": {
+    "path": "continuation-witness.exe",
+    "bytes": 6065418,
+    "sha256": "e25d883a20e2a55cc239b6e71a93a84bd3f69a441a0cb2ae00bd327fba6569af",
+    "exact_copy_of_tested_binary": true
+  },
+  "additional_copied_owner_CLI_Wine_observation": {
+    "UNAVAILABLE": 1,
+    "PASS": 0,
+    "SKIP": 0,
+    "BLOCKED": 0,
+    "native_evidence": false
+  },
+  "integrity_verification": {
+    "PASS": 2,
+    "SKIP": 0,
+    "UNAVAILABLE": 0,
+    "BLOCKED": 0,
+    "protected_tracked_files": 951,
+    "source_input_count": 267,
+    "source_input_digest": "c5ae6c2f6ff08ba50915a68fecb505441c7ff067389dd18f36cd5c23b5bb0ee7",
+    "artifact_sha256": "e25d883a20e2a55cc239b6e71a93a84bd3f69a441a0cb2ae00bd327fba6569af"
+  }
+}
