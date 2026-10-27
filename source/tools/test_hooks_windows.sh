@@ -99,3 +99,4 @@ python tools/test-workspace.py
 /workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_later_boundary.py
 /workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_later_stitched.py
 /workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_post_c59_boundary.py
+/workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_post_c59_stitched.py
