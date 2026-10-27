@@ -1,244 +1,215 @@
-# Next task — c52 production-shape VCH witness integration review
+# Next task — c53 CFG-aware offline exact-slot publication scan
 
 ## Status
 
-C51 repository work is complete and the owner ran the published native-Windows standalone probe.
-
-Accepted native result:
-
-- `analysis/V01C51_NATIVE_WINDOWS_RESULT.md`
-- `source/analysis/V01C51_NATIVE_WINDOWS_RESULT.md`
-- `analysis/V01C51_VCH_POST_RETURN_WITNESS.md`
-- `analysis/V01C51_STATUS.json`
-- `analysis/native-probes/c51/README.md`
-- `analysis/native-probes/c51/PROBE_MANIFEST.json`
-
-Continue only on `codex/v01c20-edi-value-provenance`. Do not merge `main`.
-
-Before work read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, `docs/CODEX_REPORTING.md`, this file, all c39-c51 retirement/witness evidence, current production `orientation_trace.cpp`, c48 production review, c49-c51 SEARCH/VCH harnesses, the reviewed c41 stub helpers, and relevant `deluxxxe-dev/MSM2-Wisdoms` references.
-
-## Accepted c51 native evidence
-
-Owner command:
-
-```powershell
-.\continuation-witness.exe --position --mixed-search-vch --json
-```
-
-Primary result:
+C52 production-shape VCH witness integration review is complete and failed closed:
 
 ```text
-VCH_POST_RETURN_WITNESS_BRIDGE_FEASIBILITY_PASS
-reason = native_exact_one_debt_post_return_token_then_configuration_cleanup
-```
-
-Bounded native facts:
-
-```text
-environment                    = native_Windows
-cpu_vendor                     = GenuineIntel
-mode/scenario                  = Position/close
-mitigation tuple               = [0,0,0x100], ADMIT
-WS disposition                 = CONTINUE_SEARCH
-downstream disposition         = CONTINUE_EXECUTION
-VCH registered/callbacks       = true / 1
-c50 unique matching debt       = true
-VCH changed context fields     = [Rip] only
-exact witness token            = observed
-pending debt                   = 1 -> 0 after token only
-cleanup requested before token = true
-live final cleanup             = after token only
-second watched accesses        = 0
-resurrection after cleanup     = false
-machine state preserved        = true
-```
-
-The reviewed c41 continuation form was prepared/published outside VCH, then the authenticated VCH redirected only RIP. The exact token acknowledged only the bound thread/creation-epoch/context/exception/lease/window/generation/sequence/original-RIP debt. Final cleanup and three stable debug-register readbacks followed without a second watched access.
-
-Historical RAW_EXACT/c44 canonical comparisons remain false. The separate c51 same-event configuration contract passed; no DR repair/masking/normalization was introduced. Test-owned stub/marker storage remained allocated until actual worker exit. Marker acknowledgment did not by itself authorize storage reclamation.
-
-C51 is **not production integration**. It proves one owned Position/close debt shape only.
-
-## Current blocker
-
-Determine whether the c51 bridge primitive can be turned into a complete, bounded, no-drop **production-shape design** covering every production saved-context obligation before any production code is modified.
-
-C48 previously failed because modified saved contexts could escape through `CONTINUE_SEARCH`, accounting was incomplete, code lifetime was unresolved, and the c41 fixture assumptions did not cover production. C49-c51 close one specific SEARCH/VCH/one-debt path, but do not establish all-path registration, concurrent debt bounds, callback ordering guarantees, executable-stub availability, module lifetime, or actual game-process admission.
-
-C52 is a review/design task. **Do not integrate into production in c52.**
-
-## Current bounded task
-
-### 1. Re-audit every production exception/return path using c51 as a primitive
-
-Start from the c48 return-path inventory and current `orientation_trace.cpp`. For every path that can carry or later apply an owned saved `CONTEXT`, state:
-
-- entry/terminal disposition (`CONTINUE_SEARCH` / `CONTINUE_EXECUTION`);
-- whether production mutates owned Dr0/Dr1/Dr6/Dr7 fields before returning;
-- exact thread/lease/window/generation identities available;
-- whether one or multiple lease obligations can be present;
-- earliest safe debt-reservation point;
-- whether the final continuation context is later observable/authenticatable in VCH;
-- whether a prepared continuation target can be available before VCH returns;
-- what cleanup/deinit/thread-exit behavior applies while debt is outstanding.
-
-Include normal owned hit, mixed cause, partial ownership, closed/deadline/kill, cap/budget/lock/ring-drop, reset/Position, multithread expansion, nested/reentrant handler entry, stale/tombstone lease, thread exit/invalid handle/resume failure, and all c48 S/C rows.
-
-A diagnostic/event drop is never permission to drop return debt.
-
-If any reachable production obligation cannot be reserved/authenticated without ambiguity, identify the first exact blocker and fail closed.
-
-### 2. Define a bounded production debt ledger contract
-
-Design, but do not integrate, a fixed-capacity pre-reserved ledger whose states distinguish at least:
-
-```text
-FREE
-RESERVED
-PUBLISHED
-FINAL_CONTEXT_BOUND
-RIP_REDIRECTED
-DEBT_ACKNOWLEDGED
-EXECUTION_QUIESCENT_OR_THREAD_EXIT
-RECLAIMABLE
-UNKNOWN_POISON
-```
-
-Requirements:
-
-- stable thread handle/creation epoch, lease/window/session/generation, context sequence and obligation set;
-- reserve before a saved context can escape WS or cleanup can observe zero;
-- reserved-but-not-yet-published entries count as debt;
-- nested/multiple debts on one thread are independent;
-- multiple threads are independent;
-- mixed contexts can bind all relevant owned lease obligations without collapsing identities;
-- fixed process/thread caps are proven before arming; exhaustion/publication uncertainty becomes sticky `UNKNOWN_POISON` and blocks retirement/re-arm;
-- no heap allocation, loader operation, formatting/logging, user lock, diagnostic ring/event lock or unbounded work in VEH/VCH registration/binding;
-- duplicate/stale/wrong identity/token cannot discharge another debt;
-- timeout/kill/deinit cannot silently clear debt;
-- actual thread exit may terminate execution debt only through a retained signaled thread handle/epoch and must still respect readers/code lifetime;
-- marker acknowledgment and stub-code quiescence remain separate.
-
-Do not use global `usedLeases==1`; preserve c50 unique worker/obligation identity semantics and refuse ambiguous matches.
-
-### 3. Audit production VCH ordering/coverage as an explicit admission requirement
-
-C51 proves one real native VCH observation, not universal callback ordering.
-
-Using current Microsoft documentation plus bounded owned tests where possible, determine:
-
-- whether every relevant production continuation path is documented/observed to dispatch VCH after downstream finalization;
-- how multiple VCH registrations are ordered;
-- whether another VCH can run after WallSprint and alter the redirected context;
-- whether WallSprint can establish a supported last/terminal mutation boundary, or must refuse when that cannot be guaranteed;
-- what the VCH return value does/does not guarantee for subsequent handlers;
-- how VCH registration/removal and DLL/module unload interact with outstanding callbacks/debts.
-
-Do not infer "last callback" from one native c51 run. If the API contract cannot guarantee a required ordering property, state whether a safe fail-closed admission rule exists. If no observable/admissible rule can close it, this is a review blocker.
-
-### 4. Audit production stub availability without blocking/allocation inside VCH
-
-C51 deliberately held VCH while a coordinator prepared the stub. That is allowed only in the test fixture and is not automatically production-safe.
-
-Design or reject a production-ready preparation strategy that ensures a fully validated continuation target is already published before VCH must return.
-
-Audit at minimum:
-
-- whether original RIP is known early enough to prepare outside VCH;
-- preallocated executable/marker pools and W^X transitions;
-- signed-32-bit reach for both marker store and original-RIP jump;
-- coverage for all admitted production RIP/module ranges;
-- finite slot capacity and per-debt ownership;
-- current-code/target revalidation at bind time;
-- instruction-cache publication ordering;
-- no allocation/Capstone/page-protection transition while VCH is on the critical path unless explicitly proven safe/supported;
-- failure after a debt exists must poison/retain debt, not drop it;
-- no live slot reuse merely because marker was observed.
-
-If arbitrary admitted production RIPs cannot be served by a bounded prevalidated pool, define the exact admission/refusal boundary rather than assuming near allocation will succeed later.
-
-### 5. Audit actual game-process admission and architectural preservation design
-
-Do not assume standalone `[0,0,0x100]` equals the game process.
-
-Define the production admission checks required before the first witness-capable watch is armed:
-
-- actual process DynamicCode/CFG/UserShadowStack and any additional relevant continuation/EH policies;
-- supported CPU/OS/XSTATE prerequisites;
-- debugger/foreign-DR ownership rules;
-- exact-build/current-code identity;
-- required GPR/RFLAGS/RSP/stack/vector/XSTATE preservation scope;
-- module/VEH/stub code/data residency and unload/deinit quiescence.
-
-Unknown/relevant mitigation or unsupported XSTATE/lifetime condition must refuse. Do not disable/relax mitigations.
-
-### 6. Build a test-only production-shape ledger/bridge review harness only if the design is coherent
-
-Prefer reusing production structs/helpers and the c51 bridge helpers without modifying production behavior.
-
-Cover at minimum:
-
-- one EXECUTION debt and one mixed SEARCH debt;
-- multiple outstanding contexts on one thread, including out-of-order return/witness;
-- multiple threads with independent debts;
-- nested/reentrant registration;
-- multiple owned lease obligations in one saved context;
-- unrelated global leases with one unique current obligation;
-- close/deadline/kill while debt remains;
-- context/ticket/stub pool cap exhaustion;
-- reservation/publication failure and sticky poison;
-- VCH missing, duplicate, reordered, or final-context mismatch;
-- another simulated later VCH mutation => refuse unless a documented terminal boundary exists;
-- wrong/stale/duplicate token;
-- acknowledgment of A must not discharge B;
-- marker observed while stub execution is not quiescent;
-- worker exit with/without debt;
-- deinit/module-lifetime boundary with debt/stub readers;
-- all debt acknowledged plus quiescence/thread-exit => reclaimable;
-- original c39/c40/c48 counterexamples remain reproduced when witness support is absent/disabled.
-
-Pure/model PASS is not production or native-game evidence.
-
-### 7. Decide c52 review result — no production integration yet
-
-Emit exactly one:
-
-```text
-PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_PASS
 PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL
 ```
 
-PASS requires all of:
+Accepted c52 evidence is in:
 
-- complete production return-path/debt inventory;
-- bounded no-drop ledger contract;
-- supported VCH ordering/coverage admission design;
-- bounded no-block/no-allocation VCH stub-availability design;
-- explicit game-process mitigation/XSTATE/lifetime admission design;
-- passing production-shape owned/model tests with all historical counterexamples preserved;
-- no unresolved path that can silently escape or discharge debt.
+- `analysis/V01C52_PRODUCTION_VCH_WITNESS_REVIEW.md`
+- `analysis/V01C52_GATE.md`
+- `analysis/V01C52_STATUS.json`
+- `docs/CODEX_RESULT.md`
 
-PASS authorizes only a later explicit production implementation task (c53 or later). It does not modify production code in c52 and does not authorize exact-slot watch work.
+The accepted c51 native one-debt bridge PASS remains valid, but c52 established that production cannot currently guarantee a complete terminal/final-CONTEXT VCH boundary for every admitted saved-context obligation. Do not continue production witness integration or exact-slot hardware-watch work from that evidence.
 
-FAIL must state the first exact missing guarantee and leave production unchanged. A failed review is a valid completion result.
+Continue only on `codex/v01c20-edi-value-provenance`. Do not merge `main`.
+
+Before work read `AGENTS.md`, `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, `docs/CODEX_REPORTING.md`, this file, `analysis/V01C38_SLOT_PUBLICATION_SCAN_RESULT.md`, current `source/tools/slot_publication.py`, `source/tools/test_slot_publication.py`, `source/tools/static_access_v2.py`, `source/tools/test_static_access_v2.py`, c52 evidence, and relevant `deluxxxe-dev/MSM2-Wisdoms` references.
+
+## Accepted c38 static evidence
+
+Exact target remains build-specific:
+
+```text
+Spider-Man2.exe 2.810.0.0
+SHA256 c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9
+slot RVA = 0xC2D2580
+accepted external reader = 0x2CF7FE9
+external origin RVA = 0xC2D2480
+```
+
+The c38 authenticated offline scanner found no local direct/register-affine writer candidate, but explicitly did **not** prove writer completeness. Its dominant unresolved category was control-flow provenance loss:
+
+```text
+control_flow_boundary_loss = 822382
+runtime_region_boundary_loss = 208548
+memory_loaded_base = 85282
+writer_enumeration_complete = 0
+publication_source_kind = unproven
+reason = xref_coverage_incomplete_indirect_writers_unexcluded
+```
+
+C38 intentionally discarded exact address provenance at every branch/call/return/system boundary. Separately, `static_access_v2.py` already contains a bounded CFG must-analysis pattern whose merge keeps facts only when all incoming states agree exactly.
+
+C53 returns to this static evidence path because production hardware-watch retirement remains blocked by c52. It must not weaken the c52 fail-closed result.
+
+## Current blocker
+
+Reduce the c38 `control_flow_boundary_loss` blind spot using conservative, bounded CFG-aware **address provenance only**, without reading the slot qword, propagating loaded pointer values, enabling a hardware watch, or claiming all-writer completeness.
+
+C53 is an offline/static tooling task. It does not authorize production/gameplay changes.
+
+## Current bounded task
+
+### 1. Preserve c38 historical semantics
+
+Do not silently reinterpret or overwrite c38 evidence.
+
+Prefer a separate tool/mode such as:
+
+```text
+source/tools/slot_publication_cfg.py
+```
+
+with a separate schema/tool revision. Shared pure helpers may be extracted only if existing c38 tests prove the old scanner's semantics/results remain unchanged.
+
+Keep the accepted c28 reader anchor separate from local scanner coverage. Do not inject the external anchor as an entry state or use it to claim local writer coverage.
+
+### 2. Add bounded CFG must-analysis for exact static-image address provenance
+
+Use only the exact authenticated executable and pinned Capstone version already required by c38.
+
+For executable code covered by authenticated PE/runtime metadata, construct bounded local CFG states and propagate only exact static-image address origins.
+
+Required supported control flow:
+
+- normal fallthrough;
+- direct conditional branch: both target and fallthrough;
+- direct unconditional branch: target only;
+- bounded loops/fixpoint convergence;
+- direct CALL may continue at fallthrough only after conservatively invalidating all address-origin register facts unless an already-verified explicit summary is used; do not invent ABI preservation;
+- RET, indirect jump/call, system transfer, unresolved target, branch into undecodable/middle bytes, decode gap, unsupported runtime boundary or cap exhaustion => fail closed for the affected state/path.
+
+State merge must be a must-analysis: retain a register origin only when every incoming reachable state agrees on the exact same origin/provenance. Any disagreement, missing fact or unknown incoming state removes that fact. Never union alternatives into a speculative exact origin.
+
+Use deterministic finite caps for decoded instructions, CFG edges, states, worklist iterations, blocks/functions and per-register provenance hops. Cap exhaustion must be reported and must keep completeness false.
+
+### 3. Keep the address-provenance language narrow
+
+C53 may retain the already accepted c38 forms:
+
+- RIP-relative LEA exact image origin;
+- full-64-bit register copy of an exact origin;
+- checked full-64-bit LEA with constant displacement;
+- exact constant memory displacement from a proven full-64-bit base.
+
+Keep these fail closed:
+
+- memory-loaded base / pointer chase;
+- value propagation from the target qword or any other memory load;
+- partial-register writes;
+- unsupported arithmetic/shift/immediate pointer materialization;
+- indexed addressing unless independently proven in this task with a constant, value-free rule; default is refuse;
+- segment addressing;
+- unknown register effects;
+- unresolved indirect control flow;
+- unsupported interprocedural assumptions.
+
+Do not read or emit the slot's qword contents. `live_qword_reads` must remain zero and `pointer_chase` false.
+
+### 4. Exact access classification
+
+For every memory operand whose address is exactly proven to overlap the 8-byte target slot, report at minimum:
+
+- instruction/site RVA;
+- instruction bytes or stable bytes hash;
+- decoded mnemonic/operands;
+- operand width;
+- READ / WRITE / RMW / ADDRESS_ONLY classification;
+- exact effective RVA and overlap extent;
+- address-proof chain/class;
+- containing PE section;
+- containing authenticated runtime-function span when available;
+- CFG entry/block/path provenance summary sufficient to audit why the address is exact.
+
+Encoding-verified stores must remain writes even if decoder metadata is incomplete. Unsupported access semantics must refuse rather than downgrade a possible write to read-only.
+
+### 5. Coverage accounting and comparison with c38
+
+The output must separately report:
+
+- runtime functions/regions considered;
+- CFG entries/blocks/edges traversed;
+- fallthrough/direct-branch edges;
+- merge count and conflicting facts discarded;
+- loop/state revisits;
+- decoded instruction/byte totals and caps;
+- paths/states stopped for every unresolved reason;
+- exact reader/writer/address-only candidates;
+- legacy c38 unresolved categories where comparable;
+- how many previously-control-boundary-lost states are now safely modeled versus still unresolved.
+
+A smaller unresolved count is useful evidence, not proof of completeness.
+
+If no writer is found, keep `writer_enumeration_complete=false` unless every relevant instruction-entry/control-flow/indirect-writer class is independently closed. C53 is not expected to establish such completeness.
+
+### 6. Preserve deferred and safety boundaries
+
+Keep the deferred producer `0x351EB00` / its authenticated runtime span excluded exactly as current policy requires. Report that exclusion explicitly so it cannot be mistaken for coverage.
+
+Do not infer from a candidate or lack of candidates:
+
+- publication ownership;
+- allocation identity;
+- base lifetime;
+- exclusive writability;
+- destination containment;
+- downstream conflict absence;
+- permission for gameplay writes.
+
+C36 store/CFG barrier, c37 range proof, c38 external reader, c39-c52 retirement evidence and all existing gameplay/write gates remain unchanged.
+
+### 7. Owned focused tests
+
+Add focused synthetic tests for the CFG scanner. At minimum cover:
+
+- exact origin surviving a direct conditional branch when both paths preserve the same fact;
+- one branch mutates the base => merged origin becomes unknown;
+- direct unconditional jump propagation;
+- loop convergence with a stable fact;
+- loop mutation/conflict => unknown;
+- direct CALL fallthrough invalidates unsafe address facts;
+- indirect jump/call refuses;
+- branch into middle/undecodable bytes refuses;
+- cap exhaustion remains incomplete;
+- exact reader and writer detection after safe branch propagation;
+- adjacent/non-overlapping storage excluded;
+- memory-loaded base never becomes pointer provenance;
+- partial/unsupported mutation invalidates origin;
+- external c28 anchor remains separate from local coverage;
+- deferred producer region remains excluded;
+- legacy c38 tests stay unchanged/green.
+
+Synthetic fixture success is not real-image evidence.
+
+### 8. Repository result and optional owner offline run
+
+After repository tests, emit one primary repository result:
+
+```text
+CFG_SLOT_PUBLICATION_SCANNER_READY
+CFG_SLOT_PUBLICATION_SCANNER_BLOCKED
+```
+
+`READY` means the conservative scanner/tooling is implemented, bounded and tested. It does not mean a writer/publication source is found.
+
+If the exact authenticated `Spider-Man2.exe` is unavailable in the Codex environment, do not fabricate a real-image result. Publish/document one exact owner **offline** command using the new scanner and request only its compact JSON output. No game launch is needed.
+
+If the exact image is available and legitimately supplied in the task environment, a real-image scan may be run, but classify it as OFFLINE/STATIC and preserve all incompleteness flags.
 
 ## Required validation
 
 Run from repository root:
 
 ```bash
-bash source/tools/test_continuation_mitigations.sh
-bash source/tools/test_continuation_diagnostics.sh
-bash source/tools/test_debug_register_comparison.sh
-bash source/tools/test_dr6_lifecycle.sh
-bash source/tools/test_pre_access_lifecycle.sh
-bash source/tools/test_retirement_configuration.sh
-bash source/tools/test_continuation_witness.sh
-bash source/tools/test_watch_retirement.sh
-bash source/tools/test_production_witness_review.sh
-bash source/tools/test_vch_search_bridge.sh
-bash source/tools/test_vch_search_identity.sh
-bash source/tools/test_vch_post_return_witness.sh
+python3 source/tools/test_slot_publication.py
+python3 source/tools/test_static_access_v2.py
+python3 source/tools/test_slot_publication_cfg.py
 bash source/tools/build_windows.sh
 bash source/tools/test.sh
 bash source/tools/smoke_windows.sh
@@ -246,25 +217,26 @@ bash source/tools/test_hooks_windows.sh
 python3 source/tools/package.py
 ```
 
-If c52 adds a focused review/harness command, execute and report that exact command separately.
+If the new focused test uses a different exact filename, run and report that exact command instead of inventing a duplicate.
 
 Expected result:
 
-- c51 native PASS is preserved as bounded one-debt evidence;
-- production remains unchanged;
-- c39/c40/c48 counterexamples remain intact;
-- all unresolved production assumptions are either closed by a bounded auditable contract or cause review FAIL;
-- no exact-slot/gameplay work is enabled.
+- historical c38 scanner/tests remain green;
+- new CFG must-analysis preserves exact provenance only across supported direct CFG edges;
+- conflicting merges and unsupported edges refuse;
+- no memory-value propagation/pointer chase/live qword read is introduced;
+- c52 production-watch FAIL remains unchanged;
+- no production/exact-slot/gameplay behavior is enabled.
 
 ## Required outputs / handoff
 
 Update as appropriate:
 
-- `analysis/V01C52_*` review/gate/status evidence;
-- any test-only production-shape model/harness and focused tests;
-- `docs/PROJECT_STATE.md` so c51 native PASS is accepted and c52 is current;
+- new CFG-aware offline scanner/tool and focused tests;
+- `analysis/V01C53_*` design/gate/status evidence;
+- `docs/PROJECT_STATE.md` so c52 FAIL is historical and c53 is current;
 - `docs/CODEX_RESULT.md`;
-- relevant `MSM2-Wisdoms` reusable rules, especially the c51 distinction between exact post-return debt acknowledgment and later code/storage quiescence.
+- relevant Wisdoms rule only if a reusable CFG/static-provenance rule is established.
 
 Commit and push the intended branch before claiming completion.
 
@@ -277,27 +249,24 @@ The final report must follow `docs/CODEX_REPORTING.md` and include:
 - PASS / SKIP / UNAVAILABLE / BLOCKED separately;
 - every unperformed test and reason;
 - branch and commit SHA;
-- whether owner action is required.
+- whether owner action is required and, if so, the single exact offline command.
 
 ## Forbidden scope
 
-C52 does not authorize:
+C53 does not authorize:
 
-- production continuation-witness integration;
-- production `orientation_trace.cpp` behavior changes;
-- production restore/ownership/install/handler/lease/cleanup changes;
-- broad DR6 masking/normalization;
-- live-thread stub reuse without a separate quiescence proof;
-- the deferred `module_base + 0xC2D2580` exact-slot watch;
-- slot qword reads/logging or pointer chasing;
-- publication/source-chain interpretation;
+- production continuation-witness/VCH integration;
+- any new hardware-breakpoint watch, including the exact-slot watch;
+- reading/logging the slot qword;
+- pointer chasing or interpreting loaded qwords as pointers;
 - producer `0x351EB00` traversal;
 - PAGE_GUARD or broad memory interception;
-- mitigation disabling/relaxation;
+- production `orientation_trace.cpp` behavior changes;
+- mitigation changes;
 - gameplay/source/Position/input/movement/adhesion/camera/animation/physics writes.
 
-Runtime remains `v0.1c38 / package0.1.56`. Do not create a game release for c52.
+Runtime remains `v0.1c38 / package0.1.56`. Do not create a game release for c53.
 
 ## Owner action
 
-No owner action is required for the c52 repository review unless Codex establishes a narrowly defined native OS-level question that cannot be answered from the accepted c51 evidence. Do not request Update-WS or game launch for review-only work.
+No owner action is required until c53 repository work has built, tested, committed and pushed. If a real-image offline scan remains necessary, request exactly one offline command and compact JSON. Do not request Update-WS or game launch.
