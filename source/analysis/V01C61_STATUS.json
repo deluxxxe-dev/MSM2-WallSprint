@@ -1828,6 +1828,25 @@
       "command": "git -C /workspace/scratch/msm2-wisdoms-c51 ls-remote origin refs/heads/main",
       "expected": "Wisdoms pushed commit equals remote",
       "actual": "cbbd43f4d9684e13234d68346e85aa5aa2e5adde"
+    },
+    {
+      "command": "python3 /workspace/scratch/ws-c61/check_publication.py",
+      "expected": "remote intended HEAD and independent checkout match12 changed files,295 tested source/tool inputs and protected evidence",
+      "actual": "PASS1;351 distinct files byte/hash equal; 82a4d7d6db0c5318d12faad7812f816bb645f8ff"
     }
-  ]
+  ],
+  "implementation_commit": "82a4d7d6db0c5318d12faad7812f816bb645f8ff",
+  "publication_validation": {
+    "PASS": 1,
+    "SKIP": 0,
+    "UNAVAILABLE": 0,
+    "BLOCKED": 0,
+    "branch": "codex/v01c20-edi-value-provenance",
+    "verified_remote_commit": "82a4d7d6db0c5318d12faad7812f816bb645f8ff",
+    "changed_files": 12,
+    "compared_files": 351,
+    "code_tool_input_count": 295,
+    "code_tool_input_digest": "686dbb854be7d999fe96c549bae33c87f8d8a5a7458cfee6accdbd08da9d8a57"
+  },
+  "final_metadata_note": "Final publication-record commit follows pinned implementation. All295 tested executable inputs remain byte-identical; final handoff HEAD is independently remote/checkout verified again and reported in chat (no self-referential commit SHA)."
 }

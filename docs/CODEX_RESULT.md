@@ -1,8 +1,8 @@
 # Codex result — c61 first-terminal post-c59 diagnostics
 
 2026-10-28 JST. Branch **codex/v01c20-edi-value-provenance**. Task base **26e14730f28131fb7ce757effdd219c66241c046**.
-Primary **POST_C59_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**. Implementation SHA and
-verified publication pinned below after push. BLOCKED0. Actual c61 private-image
+Primary **POST_C59_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**. Implementation/source commit **82a4d7d6db0c5318d12faad7812f816bb645f8ff**
+was pushed and independently verified; final metadata HEAD is reverified and reported in chat. BLOCKED0. Actual c61 private-image
 classification UNAVAILABLE; roots/instances/edges/phases/completeness UNKNOWN/null.
 
 ## Changes and proof scope
@@ -127,3 +127,21 @@ if ($LASTEXITCODE -ne 0) { throw "c61 offline classification refused; preserve e
   Commit **cbbd43f4d9684e13234d68346e85aa5aa2e5adde**, pushed main.
   `git -C /workspace/scratch/msm2-wisdoms-c51 ls-remote origin refs/heads/main`:
   expected pushed SHA,actual exact match(PASS1). No WS main merge/force push.
+
+
+## Publication accepted
+
+Implementation/source commit **82a4d7d6db0c5318d12faad7812f816bb645f8ff** is pushed on
+**codex/v01c20-edi-value-provenance**. `git push origin codex/v01c20-edi-value-provenance`
+succeeded normally. `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance`
+matched local HEAD. `python3 /workspace/scratch/ws-c61/check_publication.py` fetched
+that branch in an independent GitHub checkout: expected identical12 changed files,
+295 tested code/tool inputs and protected evidence; actual **351 distinct files
+byte/hash equal,PASS1**. Tested digest:
+`686dbb854be7d999fe96c549bae33c87f8d8a5a7458cfee6accdbd08da9d8a57`.
+C52 FAIL/c61 actual UNKNOWN/all false gates retained in fetched evidence. Final
+publication-record-only commit follows this pinned implementation; remote HEAD
+and independent checkout are reverified and final SHA returned in chat (no self-
+reference). No compiled regression repeat needed because all295 tested executable
+inputs are unchanged; final package/mirror/integrity checks repeat after metadata.
+Owner action stays ONE offline c61 JSON only, no updater/game/Overstrike/probe/log.
