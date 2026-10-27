@@ -1,6 +1,36 @@
 # WallSprint project state
 
-## c55 current stage — authenticated direct-CALL entry scanner READY
+## c56 current stage — deterministic sharded metadata sweep READY
+
+**SHARDED_SLOT_PUBLICATION_SCANNER_READY**. New separatev0.1c56/schema1 offline
+orchestrator considers authenticated metadata rows in exact128-row half-open
+intervals, each with unchanged c53 region and c54/c55 summary proof caps. It
+resets bounded c55 state per shard, without merging caches/partitions or claiming
+global unique summary counts. Summary-cap affected rows refuse completely,
+including cached negative cap results; no candidate escapes a refused region.
+
+Atomic private checkpoints bind image SHA, decoder, full metadata order/hash,
+exact tool-source hashes, contracts and caps. Duplicate/missing/overlap/wrong-order/
+stale/malformed evidence poisons aggregation. Fresh and partial/full resumed runs
+produce identical compact aggregates. All rows count as MODELED/REFUSED/EXCLUDED;
+record bounds truncate storage only, with exact full candidate counts retained.
+External c28 is validated once and never seeded into local entry state.
+
+Owned full-table tests achieve runtime_functions_not_considered=0. This means
+metadata row coverage ONLY: executable gaps, deferred producer, refused/unsupported
+regions, indirect/EH/alternate entries and publication/ownership/lifetime gates
+remain open. candidate_sweep_complete and writer_enumeration_complete stayfalse.
+All c38-c55 scanner sources and historical tests/results remain unchanged.
+
+Actual c56 private-image coverage/counts are UNKNOWN/null. After verified push,
+only one owner OFFLINE command runs/resumes every shard and emits compact JSON.
+No Update-WS/game/Overstrike/new runtime log or EXE upload. Production/restore/
+ownership/handler/lease/cleanup/VCH/watch, qword value/pointer chase/producer,
+mitigation and gameplay unchanged. C52 FAIL remains binding; runtimev0.1c38/
+package0.1.56, no game release. Details: V01C56_SHARDED_SWEEP/GATE/STATUS and
+CODEX_RESULT.
+
+## c55 historical accepted stage — real summaries, main coverage still capped
 
 **DIRECT_CALL_ENTRY_SLOT_SCANNER_READY**. Separate schema3/toolv0.1c55 classifies
 requested direct targets by exact/interior/overlapping metadata, metadata-free
@@ -25,12 +55,15 @@ sticky exhaustion, with current-depth cache checks. Diagnostics distinguish
 request/unique/callsite frequencies and are bounded/fail-closed. External c28
 never seeds summaries; candidate completeness/publication/ownership stays false.
 
-C55 real-image counts are UNKNOWN/null: no exact private executable exists here.
-After verified publication only one offline c55 scan/compact JSON is requested;
-no Update-WS/game/Overstrike/watch or runtime log. Production/retirement/ownership/
-handler/lease/cleanup, gameplay and mitigations are unchanged. C52 FAIL remains
-binding; runtimev0.1c38/package0.1.56, no game release. Detailed proof/results:
-V01C55_DIRECT_ENTRY/GATE/STATUS and CODEX_RESULT.
+Accepted owner VERIFIED-STATIC result authenticates the exact pinned image:
+c54 runtime summaries1936 attempted/345 admitted/1591 refused; c55 direct-entry
+947 attempted/512 admitted/435 refused; direct cache22246, cycles57, combined
+work1228774/2000000 with no global exhaustion.3286 CALL edges preserve3539
+facts. CALL-clobber fell324714->301194 (23520/7.24% fewer).0 local candidates
+remains incomplete: main5M instruction cap after174498/527161 rows leaves352663
+unconsidered. Both V01C55_OWNER_OFFLINE_RESULT.md copies remain immutable.
+Old c55 cloud-unavailability status is historical; the later owner result does
+not grant writer/publication/ownership/lifetime or production permission.
 
 ## c54 historical accepted stage — real-image scan, zero admitted summaries
 

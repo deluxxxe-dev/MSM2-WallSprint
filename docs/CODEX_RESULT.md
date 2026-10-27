@@ -1,3 +1,140 @@
+# Codex result — c56 deterministic sharded runtime-metadata sweep
+
+2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
+Task base **c3013eae59803a280f158311758a2cb65ef23fe5**. Implementation commit is pinned after publication.
+Primary: **SHARDED_SLOT_PUBLICATION_SCANNER_READY**; BLOCKED0.
+
+## Result / accepted evidence / scope
+
+Only bounded offline coverage/checkpoint/aggregate tooling. READY is not a real
+full-table scan or writer/publication certificate. No exact private EXE exists in
+the selected workspace: actual c56 coverage/candidate/remaining-row fields stay
+UNKNOWN/null, not synthetic zero. Production restore/ownership/handler/lease/
+cleanup/VCH/watch, slot qword/pointer chase/producer traversal, mitigation/gameplay
+are unchanged. C52 FAIL binding; runtimev0.1c38/package0.1.56, no game release.
+
+Read AGENTS/manual/rules/workspace/state/NEXT/reporting, relevant c38-c55 evidence,
+tools/tests and Wisdoms references. Fetched/fast-forwarded7ab105c->c3013ea on
+intended branch only. No WS main merge/reset/force push. Original five untracked
+ZIP/bundle artifacts, CODEX_NEXT, historical sources/tests/statuses are preserved.
+Current state/result and task evidence are updated for the ongoing owner handoff.
+
+Accepted c55 owner VERIFIED-STATIC: c54 runtime1936 attempts/345 admitted/1591
+refused; direct947/512/435, cache22246, cycles57, work1228774/2M/no exhaustion,
+3286 CALL edges/3539 facts. CALL-clobber324714->301194 (23520/7.24% fewer),
+0 local candidates, main5M instruction cap after174498/527161 rows left352663
+unconsidered. Both supplied owner-result copies remain byte-identical to base.
+Earlier cloud-unknown reports remain historical; no ownership/write permission.
+
+## Implementation / files / limits
+
+New slot_publication_sharded.py is schema1/toolv0.1c56. It authenticates the pinned
+frozen image/decoder and full metadata order, partitions128-row disjoint half-open
+intervals, and considers every row as MODELED/REFUSED/EXCLUDED. Existing c53 CFG
+and c54/c55 entry/never-written semantics/caps are imported without source edits.
+A fresh bounded c55 engine exists per shard; independent caches/partitions are
+not merged and attempt/cache totals are not global unique counts. Any observed
+summary cap (including cached negative cap) refuses the whole affected row and
+drops candidates. Deferred spans stay excluded before code reads. C28 validates
+once, separate from shard/local candidate counts and entry origins.
+
+Atomic private manifest/shard checkpoints bind image/table/source hashes,
+tool/schema/contracts/caps/profile and exact row indices. Wrong/missing/duplicate/
+overlap/order/stale/malformed evidence refuses. Aggregation reauthenticates row
+body hashes/candidate instructions/metadata/counters; error poisons its state.
+Checksums are LOCAL integrity seals, not third-party signatures or reanalysis.
+Full/partial/crash resume never silently replaces rejected final evidence or an
+old successful aggregate. Fresh/resumed output is byte-identical. Per-file8MiB
+JSON cap,128 stored candidates/shard,256/aggregate, exact full candidate counts,
+and sequential one-shard memory bound are explicit. Storage limits do not omit
+later rows. Current validation reads/decoding and anchor work remain separate
+from historical shard-creation work.
+
+Owned complete fixture covers6 rows (5 modeled/1 excluded),10 references/5 readers/
+5 writers,0 unconsidered, while both completeness flags stay false. Even actual
+full metadata consideration leaves gaps/deferred/refused/unsupported/EH/alternate/
+indirect/publication/ownership/lifetime domains open. No single-c55 count comparison
+or production certificate is inferred from independently reset shard contexts.
+
+Changed existing: hooks mandatory c56, package accepted c55+c56 metadata,
+PROJECT_STATE and CODEX_RESULT. New: c56 tool/test, root/source SHARDED_SWEEP/GATE/
+STATUS evidence. Every c38-c55 scanner/test and all production source/header/version
+files remain unchanged. Package-validation output stays
+source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled, complete current
+source/tools/docs/compact evidence with no private image/full native bodies/logs.
+Private owner .shards checkpoints remain local; no native c56 probe or game ZIP.
+
+## Required validation
+
+Existing pinned Capstone5.0.6 environment, from repository root:
+
+```bash
+export PATH=/workspace/toolchains/analysis-python/bin:$PATH
+```
+
+No new dependencies/system Python change. Initial focused test caught an interval
+cursor shadowed by a runtime code end; fixed the implementation variable, without
+relaxing any assertion/cap/refusal. Focused final25 PASS includes complete-row
+coverage, malformed inputs, caps, exact sums, c55 compatibility, private-byte
+exclusions, poisoned state, atomic/resume and CLI failures. All11 Required validation
+commands ran on final executable sources; every final command exited0. Preliminary
+focused repeats are not accumulated. Detailed commands/expected/actual:
+
+| Exact command | Expected | Actual |
+| --- | --- | --- |
+| `python3 source/tools/test_slot_publication.py` | historical c38 semantics unchanged | 20 PASS; exit0 |
+| `python3 source/tools/test_static_access_v2.py` | static access/AVX and refusal rules unchanged; absent private replay SKIP | 1 PASS / 1 SKIP; exit0 |
+| `python3 source/tools/test_slot_publication_cfg.py` | historical c53 CFG/must semantics unchanged | 22 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_callee.py` | historical c54 summaries unchanged | 26 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_direct_entry.py` | historical c55 direct-entry semantics unchanged | 32 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_sharded.py` | deterministic exact coverage/resume, reject malformed/mixed/stale shards, additive counts, unchanged c55 behavior and false completeness gates | 25 PASS; exit0 |
+| `bash source/tools/build_windows.sh` | Windows Werror build | build success (no case count); exit0 |
+| `bash source/tools/test.sh` | portable/ASan/UBSan regressions | 13 PASS; exit0 |
+| `bash source/tools/smoke_windows.sh` | owned Windows smoke | 7 PASS; exit0 |
+| `bash source/tools/test_hooks_windows.sh` | all historical ABI/hook/lifetime/proof/workspace regressions plus c56 | 515 PASS / 5 SKIP / 17 UNAVAILABLE; exit0 |
+| `python3 source/tools/package.py` | disabled c38 package with complete current tools/docs/evidence | 1 PASS; exit0 |
+
+Nonduplicated regression total: **535 PASS /5 SKIP /
+17 UNAVAILABLE /0 BLOCKED** =portable13+smoke7+
+hooks515. Focused25/c55 32/c54 26/c53 22/c38 20/static-access
+checks repeated inside hooks are not added twice. Package1 PASS separate. Logs/
+results in /workspace/scratch/ws-c56; compact counts and285 current
+source/tool hashes are committed in V01C56_STATUS.json.
+
+## Unperformed / reasons / owner next action
+
+- Actual pinned-image c56 full sweep: additional UNAVAILABLE1, no legitimately
+  supplied Spider-Man2.exe in workspace. Actual coverage/counts remain UNKNOWN;
+  owned0-unconsidered success is not a real-image scan.
+- SKIP5 optional private positive replays: original bytes/native/game-body
+  installer/584byte normalization/accepted-build capture inputs not distributed.
+  Owned/independent regressions still execute.
+- Wine UNAVAILABLE17: c40(2)+c49(6)+c50(7)+c51(2) no native VCH dispatch/post-return
+  evidence. Existing accepted Windows results remain separate, not relabeled.
+- Production/game/watch/qword/producer/gameplay work is outside scope and not
+  implemented/run. BLOCKED0; no security-blocked subtask or approval bypass.
+
+After verified commit/push, fetch independent _source intended branch normally
+(git pull --ff-only, NOT Update-WS). One owner OFFLINE command runs/resumes every
+shard, prints stderr progress and emits compact aggregate JSON. Return only that
+JSON/file; keep private local .shards checkpoints (manifest and per-interval JSON)
+for interruption recovery. No game/Overstrike/new runtime log/EXE upload/native probe:
+
+```bash
+/workspace/toolchains/analysis-python/bin/python3 "<game-in-WSL>/Mods Library/Mods-Developing/MSM2-WS/_source/source/tools/slot_publication_sharded.py" "<game-in-WSL>/Spider-Man2.exe" --output "<game-in-WSL>/Mods Library/Mods-Developing/MSM2-WS/logs/MSM2-WS-v0.1c56-slot-publication-sharded.json"
+```
+
+On failed authentication/cache/aggregate validation: exit2/BLOCKED stdout with
+aggregate_published=false and previous output/evidence preserved. Stale final
+evidence is never silently recomputed. The .json output is outside the checkpoint
+directory and never overwrites input. A separately chosen --checkpoint-dir may
+start an intentionally different fresh compatible run without deleting old data.
+Integrity: `python3 /workspace/scratch/ws-c56/verify.py` expected protected baseline/source hashes, complete package/mirrors and c56 READY/c52 FAIL separation; actual1 PASS across1033 protected baseline files and285 source/tool inputs. `git diff --check` passed. Implementation SHA/publication/Wisdoms provenance follow below. Later
+metadata-only edits require package/integrity/publication checks; no full rerun
+when all executable source/tool hashes remain the final tested digest.
+
+---
+
 # Codex result — c55 authenticated direct-CALL entry summaries
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
