@@ -1,6 +1,38 @@
 # WallSprint project state
 
-## c56 current stage — deterministic sharded metadata sweep READY
+## c57 current stage — exact runtime-boundary diagnostic classifier READY
+
+**RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**. Separatev0.1c57/schema1 diagnostic
+layer authenticates the exact image and complete c56 boundary-refusal set. It
+replays unchanged c53 canonical partition/heap/effect/successor/cap order to
+recover the first refusing instruction and every row-external modeled successor.
+Source row/code/instruction identity and replay work must agree with c56 evidence.
+No row boundary is traversed and no target code is read by the classifier.
+
+Six edge kinds and eight exact metadata relations have independent exact totals,
+including exact target row/overlap/adjacency fields. Adjacency is never admission.
+Decoder instruction identity distinguishes unconditional jumps from decorated
+mnemonics; old model-only fallthroughs are explicitly labeled and counted, while
+all original scanner behavior remains unchanged. Source-set identity/order/count,
+stale bytes, wrong tool/image/schema/contracts or malformed records poison/refuse
+aggregation. Small per-kind/relation examples do not truncate counts.
+
+C56 checkpoints can be reused read-only; missing/stale/corrupt input refuses
+without repair. Without that option the unchanged c56 baseline is recomputed
+in memory. All c38-c56 scanner sources/tests/evidence remain unchanged. Candidate
+outputs, c28 separation, deferred exclusion and every false completeness/
+publication/ownership/lifetime gate are preserved. cross_runtime_fact_propagation
+is false. classification_complete covers the162472-row diagnostic domain only.
+
+Actual c57 target distributions/counts are UNKNOWN/null: private EXE absent here.
+After verified publication only one owner offline classification/compact JSON is
+needed, optionally reusing the existing c56 private cache. No Update-WS/game/
+Overstrike/watch/EXE upload/new runtime log. Production/VCH/restoration/ownership/
+handler/lease/cleanup, gameplay and mitigations unchanged. C52 FAIL binding;
+runtimev0.1c38/package0.1.56, no game release. V01C57_RUNTIME_BOUNDARY/GATE/STATUS
+and CODEX_RESULT hold detailed method/results.
+
+## c56 historical accepted stage — full runtime-metadata row coverage
 
 **SHARDED_SLOT_PUBLICATION_SCANNER_READY**. New separatev0.1c56/schema1 offline
 orchestrator considers authenticated metadata rows in exact128-row half-open
@@ -22,13 +54,15 @@ regions, indirect/EH/alternate entries and publication/ownership/lifetime gates
 remain open. candidate_sweep_complete and writer_enumeration_complete stayfalse.
 All c38-c55 scanner sources and historical tests/results remain unchanged.
 
-Actual c56 private-image coverage/counts are UNKNOWN/null. After verified push,
-only one owner OFFLINE command runs/resumes every shard and emits compact JSON.
-No Update-WS/game/Overstrike/new runtime log or EXE upload. Production/restore/
-ownership/handler/lease/cleanup/VCH/watch, qword value/pointer chase/producer,
-mitigation and gameplay unchanged. C52 FAIL remains binding; runtimev0.1c38/
-package0.1.56, no game release. Details: V01C56_SHARDED_SWEEP/GATE/STATUS and
-CODEX_RESULT.
+Accepted owner VERIFIED-STATIC result authenticates the pinned image and covers
+527161/527161 rows,0 unconsidered,4119 shards/no failures.204770 rows modeled,
+322390 refused,1 excluded;16927172 main instructions/69007023 decoded bytes.
+0 local candidates, separate c28 reader, both completeness flags false.
+unsupported_runtime_boundary162472 and indirect_call153992 dominate refusals
+(98.16%). Shard-local CALL-clobber932595 is NOT comparable with c55's301194.
+Both V01C56_OWNER_OFFLINE_RESULT.md copies are immutable. Earlier c56 cloud-
+unavailability evidence remains historical, not relabeled. No writer absence,
+publication/allocation/ownership/lifetime or production permission follows.
 
 ## c55 historical accepted stage — real summaries, main coverage still capped
 
