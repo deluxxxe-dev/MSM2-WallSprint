@@ -1,49 +1,49 @@
-# Codex result — c60 authenticated later-runtime-begin continuation
+# Codex result — c61 first-terminal post-c59 diagnostics
 
-2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**. Task base **cdbf30bc7fc42b26e39634163839c552c5522ae6**.
-Primary **LATER_RUNTIME_BEGIN_STITCH_SCANNER_READY**. Implementation/source commit **f1d9b87827998b8221f6754e44be8e5522b8ca43**
-was pushed and independently verified; final metadata HEAD is reverified and reported in chat. BLOCKED0. Actual c60 private-image scan
-UNAVAILABLE; all new real edge/instance/fact/refusal/candidate metrics UNKNOWN/null.
+2026-10-28 JST. Branch **codex/v01c20-edi-value-provenance**. Task base **26e14730f28131fb7ce757effdd219c66241c046**.
+Primary **POST_C59_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**. Implementation SHA and
+verified publication pinned below after push. BLOCKED0. Actual c61 private-image
+classification UNAVAILABLE; roots/instances/edges/phases/completeness UNKNOWN/null.
 
-## Result, scope and files
+## Changes and proof scope
 
-New separate offline tool reconstructs and independently validates complete
-c56/c57/c58/c59 chain and ordered c59 record stream; compact examples never become
-the certificate pool. Exact original root/current row/incoming state/path/source
-instruction/record identity required. All external successors authenticate exact
-unique runtime entry/current RX file backing/code/metadata/nonoverlap/exclusion
-BEFORE any c59 edge is usable. One bad arm aborts entire root. Historical c57
-proofs remain unchanged on the original pre-c59 path. Boundary proofs do not add
-Fact hops; original c53 must and c54/c55 CALL/RSP rules and limits remain.
+Separate offline diagnostic delegates to original c60 View/Transaction, captures
+only exact first terminal POST source, then rethrows unchanged. Full original c60
+result/counters/candidate bytes must agree. A second independent full ordered
+replay validates every supplied record; root/instance/state/path/source/origin/
+proof/schema/tool/count mistakes poison aggregation. Record exact source hashes,
+current entry seed/stored path and separate c59 origin/local preflight identities.
+No arbitrary instruction if terminal shape has no edge source. Existing6569
+misses=6566 POST+3 pre-LATER excludes that alternative shape in accepted domain.
 
-Different-path dedup cannot lend a stored first path's certificate, including
-through ancestors/descendants/late arrival. Post-c59 reachability survives same-
-state dedup: next unknown boundary refuses POST, including a c57 row proof not
-valid for the new path. Unmatched pre-c59 instances retain original LATER refusal.
-No dynamic certificate generation or further wave inference. Candidates only
-commit on complete roots and depend on incoming carried Facts. Edge/instance/
-factless-admission/useful-crossing counters have distinct explicit scopes.
+Stored first path and actual post-c59 arrival/closure provenance are distinct;
+source-local post-preflight phase is not falsely called a completed crossing.
+Entry seed is not uncomputed source-instruction must-state. Existing c57 source
+proof does not grant c61 admission. All outgoing row-external edge kinds/target
+relations/architectural-vs-model-only/adjacency are diagnostics only. Bound examples
+but count/hash full ordered domain. Root/instance/edge counts remain separate.
+No post-abort exploration; original summary cache/shard ordering/caps preserved.
 
-Accepted c58/c59 owner evidence is historical VERIFIED-STATIC, not cloud execution.
-C59 classified33719 roots/instances and35921 architectural edges;28201 exact,
-1566 interior,6154 free RX,0 other/model-only;33582 EMPTY/original-root entry seeds,
-137 nonempty/nonroot (not source-instruction states). C58 admitted1299 edges/482
-rows/1686 facts/0 candidates; these totals are not automatically c60-comparable.
-Both owner reports and all historical scanner/test/evidence bytes remain unchanged.
+Accepted c60 owner VERIFIED-STATIC:162472 roots,100729 completed/61743 refused,
+18833 c59 instances/20570 exact edges admitted,794 rows/2062 Facts/0 candidates;
+6566 POST domain. Both owner copies immutable and historical cloud UNKNOWN stays
+historical. No new edge/fact/candidate/value/pointer/producer/ABI/EH/mitigation/
+production restore/ownership/handler/lease/cleanup/VCH/watch/gameplay change.
+All completeness/publication/allocation/base/range/lifetime/ownership/CFG/EH gates
+false,C52 FAIL binding. Runtimev0.1c38/package0.1.56 unchanged,no release/probe.
 
-New tools: slot_publication_later_stitched.py/test_slot_publication_later_stitched.py;
-root/source V01C60_LATER_STITCHED/GATE/STATUS; existing hooks/package metadata and
-CODEX_RESULT updated. PROJECT_STATE explicitly updated by c60 NEXT authorization:
-c58/c59 owner results historical,c60 current. NEXT unchanged. No production/
-restore/ownership/handler/lease/cleanup/VCH/watch/mitigation/gameplay/value/pointer/
-producer edit. All completeness/publication/allocation/ownership/lifetime/CFG/EH
-gates false,C52 FAIL binding. Runtimev0.1c38/package0.1.56 unchanged,no new release.
-Original five untracked ZIP/bundle artifacts remain unstaged. Fetched/FF intended
-branch a0ff3a2->cdbf30b only; no WS main merge/reset/force push.
+New tool/test: slot_publication_post_c59_boundary.py/test_slot_publication_post_c59_boundary.py;
+root/source V01C61_POST_C59_RUNTIME_BOUNDARY/GATE/STATUS. Existing hooks/package
+metadata updated, PROJECT_STATE now accepted c60 historical/c61 current per NEXT,
+CODEX_RESULT updated. NEXT/historical code/tests/evidence and five original
+untracked ZIP/bundle artifacts unchanged. Fetched/FF3c20a95->26e1473 only; no WS
+main merge/reset/force push. Reused unchanged manual/rules/workspace reads after
+`git diff --exit-code 3c20a95c84eb51f2213fe21d209eaea82a564885 HEAD -- docs/DEVELOPMENT_MANUAL.md docs/DEV_RULES.md docs/LOCAL_WORKSPACE.md`
+confirmed exit0. Read updated CODEX_REPORTING; detailed table stays here, reply short.
 
-## Exact commands, expected and actual
+## Exact validation commands, expected and actual
 
-From repository root, used existing pinned Capstone5.0.6 environment:
+From repository root, existing pinned Capstone5.0.6 environment:
 
 ```bash
 export PATH=/workspace/toolchains/analysis-python/bin:$PATH
@@ -51,56 +51,50 @@ export PATH=/workspace/toolchains/analysis-python/bin:$PATH
 
 | Exact command | Expected | Actual |
 | --- | --- | --- |
-| `python3 source/tools/test_slot_publication.py` | historical c38 semantics unchanged | 20 PASS; exit0 |
+| `python3 source/tools/test_slot_publication.py` | historical c38 unchanged | 20 PASS; exit0 |
 | `python3 source/tools/test_static_access_v2.py` | static access/refusal unchanged; optional private input SKIP | 1 PASS / 1 SKIP; exit0 |
 | `python3 source/tools/test_slot_publication_cfg.py` | c53 CFG/must unchanged | 22 PASS; exit0 |
 | `python3 source/tools/test_slot_publication_callee.py` | c54 summaries unchanged | 26 PASS; exit0 |
 | `python3 source/tools/test_slot_publication_direct_entry.py` | c55 direct-entry unchanged | 32 PASS; exit0 |
-| `python3 source/tools/test_slot_publication_sharded.py` | c56 checkpoint/shard behavior unchanged | 25 PASS; exit0 |
-| `python3 source/tools/test_slot_publication_boundary.py` | c57 first-boundary classification unchanged | 27 PASS; exit0 |
-| `python3 source/tools/test_slot_publication_stitched.py` | c58 entry-instance/fact/cycle/cap behavior unchanged | 32 PASS; exit0 |
-| `python3 source/tools/test_slot_publication_later_boundary.py` | c59 exact refusal observer/record-set behavior unchanged | 23 PASS; exit0 |
-| `python3 source/tools/test_slot_publication_later_stitched.py` | exact-context c59 all-successor continuation; no certificate borrowing; must/CALL/caps/next-wave/gates stay safe | 28 PASS; exit0 |
-| `bash source/tools/build_windows.sh` | Windows warnings-as-errors build success | build success (no case count emitted); exit0 |
-| `bash source/tools/test.sh` | portable ASan/UBSan success | 13 PASS; exit0 |
-| `bash source/tools/smoke_windows.sh` | owned Windows smoke success | 7 PASS; exit0 |
-| `bash source/tools/test_hooks_windows.sh` | all historical hooks/counterexamples/ABI/lifetime regressions and c60; missing native VCH proof UNAVAILABLE | 625 PASS / 5 SKIP / 17 UNAVAILABLE; exit0 |
-| `python3 source/tools/package.py` | disabled unchanged c38 PE/ZIP CRC and current source/docs/evidence package valid | 1 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_sharded.py` | c56 checkpoint/shard unchanged | 25 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_boundary.py` | c57 classifier unchanged | 27 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_stitched.py` | c58 continuation unchanged | 32 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_later_boundary.py` | c59 diagnostic unchanged | 23 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_later_stitched.py` | c60 instance/path/all-successor continuation unchanged | 28 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_post_c59_boundary.py` | only exact first terminal POST, independent replay/identity/origin/poisoning, unchanged c60 counters/candidates/gates | 23 PASS; exit0 |
+| `bash source/tools/build_windows.sh` | Windows warnings-as-errors build succeeds | build success (no case count emitted); exit0 |
+| `bash source/tools/test.sh` | portable ASan/UBSan succeeds | 13 PASS; exit0 |
+| `bash source/tools/smoke_windows.sh` | owned Windows smoke succeeds | 7 PASS; exit0 |
+| `bash source/tools/test_hooks_windows.sh` | all historical hooks/counterexamples/ABI/lifetime plus mandatory c61; native VCH absence UNAVAILABLE | 648 PASS / 5 SKIP / 17 UNAVAILABLE; exit0 |
+| `python3 source/tools/package.py` | disabled c38 PE/ZIP CRC and full current source/docs/evidence package valid | 1 PASS; exit0 |
 
-Standalone scanners are also run by hooks; do not double count them.
-Unique regression groups: **PASS 645 / SKIP 5 / UNAVAILABLE 17 / BLOCKED0**. Focused c60 28 PASS included; Windows build and package1 PASS separate.
+Standalone scanners repeat in hooks; do not double count them.
+Unique regression groups: **PASS 668 / SKIP 5 / UNAVAILABLE 17 / BLOCKED0**. Focused c61 23 PASS included; Windows build and package1 PASS separate.
 
-SKIP5: absent optional private original-byte positive replay, native replay,
-game-body installer positive,584-byte normalization and accepted-build capture
-inputs. Standalone static-access1 SKIP repeats the hooks optional input. Wine
-UNAVAILABLE17: c40 actual VCH/order2,c49 mixed SEARCH dispatch6,c50 identity7,c51
-post-return2. Callback registration/zero callbacks are not native dispatch proof;
-all historical counterexamples preserved. Additional UNAVAILABLE1: actual pinned-
-image c60 scan, private EXE absent. No required command omitted; no blocked subtask.
-Game/new native probe not run because c60 is OFFLINE-only, not required.
+SKIP5: missing optional private original-byte positive replay, native replay,
+game-body installer positive,584-byte normalization,accepted-build capture replay.
+Standalone static-access1 SKIP repeats the hooks optional input. UNAVAILABLE17
+unchanged Wine cases: c40 actual VCH/order2,c49 mixed SEARCH dispatch6,c50 identity7,
+c51 post-return2. Callback registration/zero callbacks are not native dispatch
+proof; all old counterexamples preserved. Additional UNAVAILABLE1: actual c61
+pinned-image distribution, private EXE unavailable. No required command omitted;
+no blocked subtask. Game/new native probe unrun because task is offline-only and
+requires neither. Focused command also ran during development:23 PASS/exit0;
+final Required validation and hooks repeat it, not added to unique totals.
 
-Focused development command also ran before validation. Fixed new-tool syntax
-typo and two fixture assumptions: independent factless root can structurally
-complete/admit a boundary; independent RIP candidate fixture needs its true c56
-baseline counts. No semantic rule was relaxed. Final28 groups pass. A diagnostic
-review separated unmatched pre-c59 context (original LATER) from true post-c59
-wave (POST); exact command `python3 source/tools/test_slot_publication_later_stitched.py`
-reran after review:28 PASS/exit0; mandatory hooks also validates final code. This
-rerun is recorded separately in STATUS and not added to unique totals.
+## Artifact, final verification and owner action
 
-## Artifact, final verification and owner next action
+Validation-only artifact:
+`source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled` plus full current
+source/tools/docs/compact evidence. No raw private logs, whole native bodies or
+EXE packaging. Final package/mirror/hash and GitHub checkout verification recorded
+below. Metadata-only edits after source validation need hash/package integrity
+rechecks, not recompiling identical executable source/tool bytes.
 
-Validation-only output:
-`source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled` plus complete current
-source/tools/docs/compact evidence. No private EXE/raw logs/function dumps packaged,
-no new native probe or game release. Final integrity/hash/package/mirror and
-GitHub checkout verification follow below. Metadata-only edits after code tests
-need package/integrity recheck, not repeat compilation of identical source bytes.
-
-After verified publication, run this ONE PowerShell block. Existing c56 cache and
-c57/c58/c59 JSON read-only; adjust flags only if those files were renamed/moved.
-Return only compact c60 JSON from logs. No Update-WS/game/Overstrike/EXE upload/
-runtime log/watch/standalone Windows probe requested.
+After verified publication, owner runs ONE offline block, returns compact c61
+JSON under logs. Existing c56 checkpoints+c57/c58/c59/c60 JSON read-only; adjust
+input flags only to renamed/moved existing files. No Update-WS/game/Overstrike/
+EXE upload/runtime log/watch/qword/pointer/native probe action.
 
 ```powershell
 $gameWsl = "/mnt/c/SteamLibrary/steamapps/common/Marvel's Spider-Man 2"
@@ -109,52 +103,27 @@ $wsRoot = "C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2\Mods Library\M
 if ((git -C "$wsRoot\_source" branch --show-current) -ne "codex/v01c20-edi-value-provenance") { throw "Unexpected branch; stop here" }
 git -C "$wsRoot\_source" pull --ff-only origin codex/v01c20-edi-value-provenance
 if ($LASTEXITCODE -ne 0) { throw "WS source update failed; stop here" }
-wsl -d Ubuntu-24.04 --exec /workspace/toolchains/analysis-python/bin/python3 "$wsWsl/_source/source/tools/slot_publication_later_stitched.py" "$gameWsl/Spider-Man2.exe" --c56-cache "$wsWsl/logs/MSM2-WS-v0.1c56-slot-publication-sharded.shards" --c57-json "$wsWsl/logs/MSM2-WS-v0.1c57-runtime-boundary.json" --c58-json "$wsWsl/logs/MSM2-WS-v0.1c58-slot-publication-stitched.json" --c59-json "$wsWsl/logs/MSM2-WS-v0.1c59-later-runtime-boundary.json" --output "$wsWsl/logs/MSM2-WS-v0.1c60-slot-publication-later-stitched.json"
-if ($LASTEXITCODE -ne 0) { throw "c60 offline scan refused; preserve existing evidence" }
+wsl -d Ubuntu-24.04 --exec /workspace/toolchains/analysis-python/bin/python3 "$wsWsl/_source/source/tools/slot_publication_post_c59_boundary.py" "$gameWsl/Spider-Man2.exe" --c56-cache "$wsWsl/logs/MSM2-WS-v0.1c56-slot-publication-sharded.shards" --c57-json "$wsWsl/logs/MSM2-WS-v0.1c57-runtime-boundary.json" --c58-json "$wsWsl/logs/MSM2-WS-v0.1c58-slot-publication-stitched.json" --c59-json "$wsWsl/logs/MSM2-WS-v0.1c59-later-runtime-boundary.json" --c60-json "$wsWsl/logs/MSM2-WS-v0.1c60-slot-publication-later-stitched.json" --output "$wsWsl/logs/MSM2-WS-v0.1c61-post-c59-runtime-boundary.json"
+if ($LASTEXITCODE -ne 0) { throw "c61 offline classification refused; preserve existing evidence" }
 ```
 
 
 ## Final verification procedures
 
-- `python3 /workspace/scratch/ws-c60/verify.py`: expected1073 protected baseline
-  files unchanged;293 tested code/tool hashes agree with current bytes and package;
-  root/source/output evidence and docs agree;C52 FAIL/c60 actual UNKNOWN/all false
-  gates retained. Actual PASS1. Local checker uses committed STATUS hash inventory
-  and baseline Git contents, with no private input. Also verifies post-review
-  focused28 PASS and full Required validation table.
-- `git diff --check`: expected no whitespace errors, actual exit0.
-- `python3 source/tools/package.py` repeated after metadata updates: expected
-  complete current source/docs/evidence in disabled unchanged runtime, actual PASS.
-  No repeat compilation needed after metadata-only changes: tested executable
-  source/tool digest stays identical; package/mirror integrity rechecked instead.
-- Wisdoms guide now records accepted c59 distribution and reusable c60 exact-path/
-  all-successor/late-dedup/next-wave rules. Commit
-  **9a8b5ea4bb84275d2b9baa09b7d09dad0d229724**, pushed main.
+- `python3 /workspace/scratch/ws-c61/verify.py`: expected1083 protected baseline
+  files unchanged;295 tested source/tool hashes equal current/package bytes;
+  root/source/output evidence and docs agree;C52 FAIL/c61 actual UNKNOWN/false
+  gates preserved. Actual PASS1. Local checker consumes committed STATUS inventory
+  and baseline Git contents; no private inputs needed.
+- `git diff --check`: expected no whitespace errors; actual exit0.
+- `python3 source/tools/package.py` repeated after final metadata: expected current
+  complete source/docs/evidence with disabled unchanged runtime;actual PASS.
+  Identical executable source/tool digest means no compiled regression repeat
+  needed for metadata-only changes; final package/mirror integrity repeats.
+- PROJECT_STATE Current action also corrected from stale c54 handoff to current
+  c61 offline JSON step, as explicitly authorized by NEXT's state-update output.
+- Wisdoms guide updated with accepted c60 owner result and newly tested distinction
+  among stored first path/post-arrival origin/source-local preflight phase.
+  Commit **cbbd43f4d9684e13234d68346e85aa5aa2e5adde**, pushed main.
   `git -C /workspace/scratch/msm2-wisdoms-c51 ls-remote origin refs/heads/main`:
-  expected pushed SHA; actual exact match (PASS1).
-- Development repeats of `python3 source/tools/test_slot_publication_later_stitched.py`:
-  first3 runs exit1 (syntax typo before tests; fixture assumption after8 groups;
-  fixture c56-count assumption after16 groups), then exit0/25 groups and exit0/28
-  groups. These corrections are described above and individually recorded in
-  STATUS; final required/post-review/hooks runs pass. No production or historical
-  scanner rule was changed to obtain PASS. Development runs are not added to final
-  nonduplicated regression totals.
-
-
-## Publication accepted
-
-Implementation/source commit **f1d9b87827998b8221f6754e44be8e5522b8ca43** is pushed on
-**codex/v01c20-edi-value-provenance**. `git push origin codex/v01c20-edi-value-provenance`
-succeeded normally; `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance`
-matched local HEAD. `python3 /workspace/scratch/ws-c60/check_publication.py` fetched
-the branch in an independent GitHub checkout: expected identical12 changed files,
-293 tested code/tool inputs and protected evidence; actual **340 distinct files
-byte/hash equal,PASS1**. Tested digest:
-`ec15ca785606d7bc40fdedb17ac21988a8a3017452b8be88b09ec4feb61c2441`.
-C52 FAIL/c60 actual metrics UNKNOWN/all false gates retained in fetched evidence.
-Final publication-record-only commit follows this pinned implementation. Its HEAD
-is reverified against remote and independent checkout and returned in chat (no
-self-referential SHA). No compiled regression repeat required because all293
-tested executable inputs remain byte-identical; final package/mirror/integrity
-checks repeat after metadata updates. Owner action remains ONE offline c60 JSON
-only, no Update-WS/game/Overstrike/EXE upload/new runtime log or native probe.
+  expected pushed SHA,actual exact match(PASS1). No WS main merge/force push.

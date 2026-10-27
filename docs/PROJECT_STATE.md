@@ -1,34 +1,48 @@
 # WallSprint project state
 
-## c60 current stage — c59-authenticated later-runtime-begin TOOL READY
+## c61 current stage — first-terminal post-c59 diagnostic TOOL READY
 
-**LATER_RUNTIME_BEGIN_STITCH_SCANNER_READY**. Separatev0.1c60/schema1 offline mode
-reconstructs the full original c56/c57/c58/c59 chain and c59 ordered record stream,
-validating all supplied read-only JSONs/checkpoints and record-set/proof identities.
-Only exact current root,row,entry seed,path,source instruction matching a validated
-c59 record can authorize its architectural exact-runtime-begin successors. Every
-external successor must pass current row/code/RX backing/nonoverlap/exclusion
-preflight before any edge is usable. Original c57 proofs remain unchanged pre-c59.
+**POST_C59_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**. Separatev0.1c61/schema1 offline
+diagnostic reconstructs full accepted c56→c60 chain, matches entire supplied c60
+JSON/result/proof/counts, then records exact first terminal POST for each of the
+accepted6566 roots without changing original behavior. Second full ordered replay
+validates every record and all original c60 dynamic accounting/candidate bytes.
+Source row/body/instruction, original root/current instance/entry seed/stored path/
+transition/c60 identities bind records. Stored first path is distinct from c59
+arrival/graph-propagation origin; source-local post-preflight is not claimed as a
+completed crossing. Seed is not source-instruction must-state. Pre-LATER preserved.
 
-C53 exact must joins/Fact hops/language, c54/c55 CALL preservation/RSP kill,
-independent EMPTY roots and finite c58 caps remain. Different-path same-state dedup
-cannot lend a c59 proof to another arrival/descendant. Post-c59 reachability is
-preserved even if dedup keeps an earlier path; its next unknown boundary refuses
-uncertified_post_c59_runtime_boundary, including a row-global c57 proof that cannot
-authorize this new path. Unknown pre-c59 context keeps original LATER refusal.
-Whole root must complete before candidates/counts commit. Boundary path proof is
-separate from Fact chain; candidates depend on an incoming carried Fact only.
+Unchanged c57 successor/target vocabulary, architectural/model-only/adjacency
+classification only. No new edge/fact/candidate. Missing/stale/duplicate/wrong
+state/path/source/evidence poisons aggregate. A terminal invalidation without an
+edge source cannot invent a PC; accepted lookup/root identity excludes that shape.
+Root/instance/edge totals separate, full ordered record-set SHA plus bounded examples.
+Original caps/summary shard/cache order and c53/c54/c55/c57/c59/c60 semantics unchanged.
 
-Actual c60 edge/instance/fact/refusal/candidate counts UNKNOWN/null: no private EXE
-here. Available33719 c59 instances/35921 architectural edges/28201 exact edges are
-historical availability, not c60 admission. No writer/absence/publication proof.
-All completeness/publication/allocation/base/range/lifetime/ownership/containment/
-CFG/EH/production/watch/game gates false,C52 FAIL binding. No loaded-pointer/qword/
-producer/indirect/mitigation/production/gameplay broadening. Runtimev0.1c38/
-package0.1.56 unchanged,no game release/native probe. After verified push, one
-offline owner command reuses c56 cache+c57/c58/c59 JSON read-only and returns c60
-compact JSON; no Update-WS/game/Overstrike/EXE upload/runtime log. Details:
-V01C60_LATER_STITCHED/GATE/STATUS and CODEX_RESULT. Old tools/tests/reports unchanged.
+Actual c61 roots/instances/edges/phases/completeness UNKNOWN/null: private EXE absent.
+All completeness/publication/allocation/base/range/lifetime/ownership/destination/
+CFG/EH/production/watch/game gates false,C52 FAIL binding; no value/pointer/producer/
+ABI/mitigation/production/gameplay broadening. Runtimev0.1c38/package0.1.56 unchanged,
+no release/native probe. After verified push, one offline owner command reuses c56
+checkpoints+c57/c58/c59/c60 JSON read-only, returns c61 compact JSON. No Update-WS/
+game/Overstrike/EXE upload/runtime log/watch action. Details V01C61_POST_C59_RUNTIME_BOUNDARY/
+GATE/STATUS and CODEX_RESULT; owner-facing report remains short per CODEX_REPORTING.
+
+## c60 historical accepted owner VERIFIED-STATIC continuation result
+
+162472 roots,100729 completed/61743 refused. C59 instances33719 considered/18833
+admitted/14886 refused;28201 exact edges considered/20570 admitted/7631 refused.
+Continuation8425 created/24 dedup/6757 refused;794 rows,2062 Facts,187 useful c59
+crossings/194 c59 Facts,0 CALL fact crossings,41 caps/0 cycles.0 candidates. Root
+reasons31449 interior/18684 free RX/6566 POST/4720 indirect CALL/244 indirect JMP/
+33 summary caps/31 system/8 instruction cap/5 decode gap/3 pre-LATER.6569 exact
+lookup misses=6566 POST+3 pre-LATER;0 predecessor path conflicts. This bounds the
+next diagnostic wave, not permission to recursively admit it.
+
+Both V01C60_OWNER_OFFLINE_RESULT.md copies immutable. Earlier cloud UNKNOWN evidence
+remains historical. Increased completion/fact coverage relative to c58 on the same
+original-root domain is mechanism progress only; work/candidate/ownership/writer
+completeness remains open. No writer absence/publication/production permission.
 
 ## c59 historical accepted owner VERIFIED-STATIC diagnostic result
 
@@ -776,12 +790,13 @@ The VMOVUPS store is existing game code, not a MOD write and not permission to w
 
 ## Current action
 
-C54 is CALLEE_PRESERVATION_SLOT_SCANNER_READY. After verified publication, fetch
-the intended branch and run only the new c54 offline file scanner once; return
-compact JSON. Actual c54 impact remains unmeasured here; accepted c53 counts are
-historical input. Do not launch game/Update-WS or promote a candidate/smaller
-unresolved count to publication proof. C52's final-context/credit/pool/lifetime
-gaps still prohibit production witness/watch work; all deferred gates remain.
+C61 is POST_C59_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY (owned mechanism only).
+After verified publication, fetch the intended branch and run the one offline c61
+classifier with existing c56 checkpoints and c57/c58/c59/c60 JSON read-only; return
+compact c61 JSON. Actual c61 distribution remains UNKNOWN here. The historical
+6566-root POST domain is input evidence, not an admission or cloud measurement.
+No Update-WS/game/Overstrike/EXE upload/runtime log/native probe. C61 preserves c60
+facts/candidates/output and adds no edge; C52 production FAIL remains binding.
 
 Do not add the exact-slot watch, PAGE_GUARD or broad memory interception merely
 to force progress. Do not merge `main`, do not traverse producer `0x351EB00`, and
