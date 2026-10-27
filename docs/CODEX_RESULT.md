@@ -1,8 +1,8 @@
 # Codex result — c59 later entry-instance runtime-boundary diagnostics
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**. Task base **7689f4889c8b775abd34ce7f707cfc1a7a49f8cd**.
-Primary **LATER_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**. Implementation SHA and
-verified publication are pinned below after push. BLOCKED0. Actual c59 private
+Primary **LATER_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**. Implementation/source commit **f8f2cba8cc43cfa2d40588f19472c31aee9b1b27**
+was pushed and independently verified. Final metadata HEAD is reverified and reported in chat. BLOCKED0. Actual c59 private
 image classification UNAVAILABLE; roots/instances/edges/completeness UNKNOWN/null.
 
 ## Result, scope and files
@@ -125,3 +125,21 @@ if ($LASTEXITCODE -ne 0) { throw "c59 offline classification refused; preserve e
   only), rebased ONLY our unpublished Wisdoms commit onto that update, verified
   `git diff --exit-code origin/main -- docs/CONTEXTUAL_IDLE.md` exit0, then normal
   push succeeded. No force push; WS main was never merged/rebased into WS branch.
+
+
+## Publication accepted
+
+Implementation/source commit **f8f2cba8cc43cfa2d40588f19472c31aee9b1b27** is pushed on
+**codex/v01c20-edi-value-provenance**. `git push origin codex/v01c20-edi-value-provenance`
+succeeded normally. `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance`
+matched local HEAD. `python3 /workspace/scratch/ws-c59/check_publication.py` fetched
+that branch in an independent GitHub checkout: expected identical11 changed files,
+291 tested code/tool inputs and protected evidence; actual **330 distinct files
+byte/hash equal, PASS1**. Tested digest:
+`d07526f33867b0757c714b4d3b7bece453bc6018e26c0e2154b0b7c4b6ad8067`.
+C52 FAIL/c59 actual metrics UNKNOWN/false gates preserved in fetched evidence.
+Final publication-record-only commit follows this pinned implementation, then
+remote HEAD and independent checkout are reverified and final SHA returned in
+chat (avoids self-reference). Code regressions need no repetition:291 tested
+executable inputs are unchanged. Package/mirror/integrity checks repeat after
+final metadata. No Update-WS/game/Overstrike request; one offline JSON action only.
