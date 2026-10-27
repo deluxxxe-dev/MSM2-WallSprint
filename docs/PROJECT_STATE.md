@@ -1,6 +1,45 @@
 # WallSprint project state
 
-## c49 current stage — VCH SEARCH bridge UNAVAILABLE, native boundary question
+## c51 current stage — test-only VCH post-return bridge, native evidence pending
+
+**VCH_POST_RETURN_WITNESS_BRIDGE_UNAVAILABLE**. Accepted owner c50 native
+MIXED_SEARCH_IDENTITY_DIAGNOSTIC_PASS closes the old global-count ambiguity:
+global4 vs one worker-owned lease, sole old global conjunct false, actual VCH1
+ordered after downstream-final context. C49 historical FAIL remains FAIL; its
+VCH boundary and c50 identity PASS do not prove post-return acknowledgment.
+
+New c51 one-debt Position/close candidate retains the exact reviewed c41 stub
+helper bodies and unchanged machine harness. Coordinator preparation/publication
+occurs outside VCH; only final Rip may redirect after exact context/identity/code
+checks. An actual exact token is required before pending0/original final poll.
+Complete3 stable readbacks/foreign configuration/machine state are required.
+No DR repair/mask; full same-event DR6 status is checked independently of old
+raw/c44 and unchanged c47 profile. Marker acknowledgment never frees storage;
+actual retained worker termination is required. This is not production integration.
+
+Wine observes mixed SEARCH/foreign EXECUTION and preserved machine state but
+VCH callback0 in both ordinary/extra-idle controls. Pending1 survives until
+worker exit; no stub publication, token or live final cleanup is claimed there.
+Native bridge execution remains unperformed. Detailed protocol/limits:
+V01C51_VCH_POST_RETURN_WITNESS/GATE/STATUS and CODEX_RESULT.
+
+After publication, the only owner action is the new c51 standalone from
+analysis/native-probes/c51: `.\continuation-witness.exe --position --mixed-search-vch --json`.
+Return compact JSON. No Update-WS/game/Overstrike/scan/log or mitigation change.
+Production/all c39-c50 helpers/tests/native results/counterexamples, exact-slot
+and gameplay gates remain unchanged. Runtime v0.1c38/package0.1.56, no release.
+
+## c50 historical accepted stage — native unique worker identity PASS
+
+Owner native c2cbc4c measured GenuineIntel/Position/close/[0,0,256], actual
+WS SEARCH/foreign EXECUTION/VCH1 with exact downstream-final context, global4
+and unique worker1/owned1/index0/window1/generation149/own3. Only old
+usedLeases==1 failed; every other old conjunct passed. It deliberately left
+pending1 and no bridge/cleanup until actual worker exit. Canonical accepted proof:
+V01C50_NATIVE_WINDOWS_RESULT.md. It authorizes only this separate bounded c51
+feasibility, not production or exact-slot work.
+
+## c49 historical published Wine stage — later native FAIL/VCH1 preserved
 
 **VCH_SEARCH_CONTINUATION_BRIDGE_UNAVAILABLE**. Real owned mixed B0+B2 events
 reach the unchanged WS handler (B0 clear/SEARCH), then a separate foreign owner
@@ -19,8 +58,8 @@ they are not concurrent production accounting or OS dispatch proof. The separate
 unchanged c48 regression retains6 mixed SEARCH resurrection counterexamples and
 2 foreign-only controls; c39/c40 and every c41-c47 test/predicate are unchanged.
 
-Stage3 VCH-to-c41 redirection is not implemented: stage2 native callback/order
-has not been observed. The tested observation-only standalone at
+At the original c49 publication, stage3 was not implemented and native callback/
+order had not yet been observed; later accepted c49/c50 native evidence is above. The tested observation-only standalone at
 analysis/native-probes/c49 asks exactly that boundary question. One native command
 from that folder: `.\continuation-witness.exe --position --mixed-search-vch --json`.
 Return compact output; no Update-WS/game/Overstrike/scan/game log. Even an actual
@@ -502,25 +541,27 @@ The VMOVUPS store is existing game code, not a MOD write and not permission to w
 28. c46 pre-access boundary ✅ native zero-DB pre-access0->1, raw/c44 FAIL
 29. c47 configuration predicate ✅ owner-native fixture PASS, production integration not established
 30. c48 production integration review ✅ historical FAIL; SEARCH coverage and code/data lifetime blockers
-31. c49 mixed SEARCH/VCH boundary ▶ CURRENT UNAVAILABLE; native standalone evidence required
-32. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
-33. bounded publication/source chain ⏸ pending writer-site evidence
-34. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
-35. resume full writer XYZ/W causal proof ⏸ after store containment
-36. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-37. safe writable upstream movement source ⬜ NOT AUTHORIZED
-38. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-39. adhesion/contact refinement ⏸ deferred
-40. animation/camera/later traversal ⬜
+31. c49 mixed SEARCH/VCH boundary ✅ historical native FAIL with actual VCH1
+32. c50 native unique worker identity ✅ PASS; sole global-count conjunct identified
+33. c51 one-debt VCH post-return bridge ▶ CURRENT UNAVAILABLE; new native run required
+34. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
+35. bounded publication/source chain ⏸ pending writer-site evidence
+36. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
+37. resume full writer XYZ/W causal proof ⏸ after store containment
+38. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+39. safe writable upstream movement source ⬜ NOT AUTHORIZED
+40. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+41. adhesion/contact refinement ⏸ deferred
+42. animation/camera/later traversal ⬜
 
 ## Current action
 
-C49 is VCH_SEARCH_CONTINUATION_BRIDGE_UNAVAILABLE. The only owner operation
-is the tested observation-only standalone command documented above/from c49's
-README, returning compact JSON. Do not use successful registration/model tests as
-native dispatch proof or add stage3/production integration without the required
-boundary evidence and subsequent explicit design scope. C48 production review
-FAIL remains authoritative; no game or updater action is required.
+C51 is VCH_POST_RETURN_WITNESS_BRIDGE_UNAVAILABLE. After verified publication,
+run only the new c51 owned native standalone command above and return compact
+JSON. Native feasibility requires actual RIP-only VCH redirection, exact token,
+subsequent configuration cleanup/three readbacks and storage retained until real
+worker exit. Do not infer it from Wine/model PASS or prior c50 boundary/identity.
+C48 production review FAIL and all deferred slot/gameplay gates remain unchanged.
 
 Do not add the exact-slot watch, PAGE_GUARD or broad memory interception merely
 to force progress. Do not merge `main`, do not traverse producer `0x351EB00`, and

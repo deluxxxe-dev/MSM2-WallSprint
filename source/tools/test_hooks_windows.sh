@@ -51,6 +51,8 @@ bash tools/test_vch_search_bridge.sh
 
 bash tools/test_vch_search_identity.sh
 
+bash tools/test_vch_post_return_witness.sh
+
 bash tools/test_continuation_mitigations.sh
 
 bash tools/test_continuation_diagnostics.sh

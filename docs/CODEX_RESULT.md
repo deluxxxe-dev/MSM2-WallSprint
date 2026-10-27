@@ -1,3 +1,210 @@
+# Codex result — c51 test-only one-debt VCH post-return witness bridge
+
+2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
+Task base **820944f2439b9efce07bceed2ac35e3d75dc3909**.
+Implementation/source commit is pinned after publication below.
+Primary: **VCH_POST_RETURN_WITNESS_BRIDGE_UNAVAILABLE**; BLOCKED0.
+
+The bridge is implemented for the bounded owned native Position/close question,
+but actual Wine VCH callback0 prevents exercising it here. Native c51 execution
+is NOT claimed. No production behavior/source/restore/ownership/install/handler/
+lease/cleanup change, exact-slot/gameplay write, mitigation change or game release.
+Runtime remains v0.1c38/package0.1.56. Historical c39-c50 code/tests/artifacts and
+all counterexamples/predicates stay unchanged.
+
+## Accepted input and scope
+
+Read current AGENTS/manual/rules/workspace/state/NEXT/reporting and relevant
+c39-c50 source/proof/native evidence, current production handler, reviewed c41
+stub/machine harness, c48-c50 SEARCH/VCH code and Wisdoms VCH references. Continued
+only intended branch by fast-forward c2cbc4c ->820944f. No main merge/reset/force
+push. Preserved the five original untracked ZIP/bundle artifacts. Current task
+explicitly authorizes PROJECT_STATE update; CODEX_NEXT is preserved unchanged.
+
+Owner native c50 result MIXED_SEARCH_IDENTITY_DIAGNOSTIC_PASS is accepted. Actual
+GenuineIntel/Position/close/[0,0,256] had global4/worker1/owned1/index0/window1/
+generation149/own3; solely old global-count conjunct false. Actual VCH1 observed
+exact downstream-final CONTEXT/order. C49 FAIL remains historical FAIL, while its
+native boundary and c50 identity are confirmed. Both accepted c50 input copies
+retain SHA256 d3ac8b2e19a63c7685a0f644e429b101d5d3a5ac40a37d8dc24834f9ced9149e.
+None of that earlier evidence is a c51 post-return/cleanup or production PASS.
+
+## New test-only implementation
+
+New c41_owned_stub.hpp reuses original c41 helper bodies with only namespace/
+inline adaptation; strict parser proves body identity. All range/overflow,
+bounded near allocation, RX/RW pages/cache flush, decoder/current code/target
+checks and token arithmetic remain. The original assembly .S is linked unchanged,
+with exact exported post-store RIP and GPR/RFLAGS/RSP/stack/YMM/FXSAVE snapshots.
+No new trampoline form or invented game signature. Actual c42 mitigation queries
+and c41 CPU/AVX/OSXSAVE/XCR0/control-context/TF/RF guards apply before bridging.
+
+New vch_post_return_witness.hpp defines the sequential owned one-debt contract
+and a strict same-event native configuration check. New model/probe/script/parser
+implement the real protocol and negative coverage. The new focused command is
+required in hooks. No new code is linked into the production DLL.
+
+Real protocol: WS reserves immutable debt BEFORE SEARCH; a separate foreign
+owner clears only B2/chooses EXECUTION; actual VCH captures exact final context
+and c50 identity then holds. Coordinator requests close while pending1, prepares
+and publishes the reviewed stub OUTSIDE VCH. VCH acquires/rechecks identity,
+metadata, current code/pages/marker0 and exact final CONTEXT, modifies only Rip,
+records all changed bytes and returns. Only the actual exact marker token plus
+all9 identity fields/current code may acknowledge pending0. Then original final
+poll/lease cleanup and three suspended-worker DR readbacks run. No second
+watched access or DR repair. Both callback observation and actual token are
+required; model/registration cannot substitute for either.
+
+Marker acknowledgment is separate from code exit. Stub and marker storage stay
+alive/unreused throughout cleanup/readbacks, machine verification and actual
+retained-handle worker termination. Only afterward may storage be freed. The
+coordinator-only model ledger mirrors real callback publications; it is not a
+concurrent production all-context ledger. Unknown/multiple/capped/unpublished
+identity, range/preparation/current-page/protection failure keeps sticky poison
+and debt. Partial refusal does not perform legacy live final cleanup.
+
+## Configuration comparison — no DR6 ignore mask / no c47 extension
+
+C51's named same-event Intel mixed Position/close contract requires all actual
+native prerequisites, exact bound acknowledged debt0, false original final poll,
+inactive leases, complete stable3 readbacks, saved-exact Dr0-Dr3/foreign Dr2 and
+Dr7 control/global/unknown equality. Only c44's documented fixed representation
+applies to Dr7. Every DR6 bit after return/final poll/readbacks must equal the
+ENTIRE authenticated final-VCH word, with exact mixed trace
+0xFFFF0FF5 ->0xFFFF0FF4 ->0xFFFF0FF0, no RTM control, no pre-existing cause/unknown
+saved state and full pre-cleanup six-register equality to that VCH.
+
+Accepted current Intel SDM253669-090US20.2.3 extraction in c45/c47 distinguishes
+last-event DR6 status from debug address/control configuration; c50 native
+measured the exact mixed words above. This bounded full same-event conservation
+check does not claim equivalence to saved pre-event status or kernel causality.
+Unknown/different status or any additional control/cause change refuses.
+RAW_EXACT/c44 results remain independent and may be false; c47-v1 remains
+byte-identical and explicitly NOT applied to this different shape. Every Dr6/
+Dr7 bit/address and missing/unstable observation receives negative coverage.
+Detailed justification/boundaries: V01C51_VCH_POST_RETURN_WITNESS.md.
+
+## Required commands — expected versus actual
+
+From repository root; all17 final commands exited0 after the environment recovery.
+
+| Exact command | Expected | Actual |
+| --- | --- | --- |
+| `bash source/tools/test_continuation_mitigations.sh` | unchanged c42 known/unknown policy handling |10 PASS|
+| `bash source/tools/test_continuation_diagnostics.sh` | unchanged c43 diagnostics |7 PASS|
+| `bash source/tools/test_debug_register_comparison.sh` | raw/c44 conservative comparison independent |9 PASS|
+| `bash source/tools/test_dr6_lifecycle.sh` | unchanged c45 status timeline |11 PASS|
+| `bash source/tools/test_pre_access_lifecycle.sh` | unchanged c46 pre-access |12 PASS|
+| `bash source/tools/test_retirement_configuration.sh` | c47 exact profile unchanged |13 PASS|
+| `bash source/tools/test_continuation_witness.sh` | old c41 execution/state/cap/lifetime checks |13 PASS|
+| `bash source/tools/test_watch_retirement.sh` | c39/c40 resurrection and honest VCH absence |14 PASS /2 UNAVAILABLE|
+| `bash source/tools/test_production_witness_review.sh` | c48 six mixed resurrections/two foreign controls/parser |9 PASS|
+| `bash source/tools/test_vch_search_bridge.sh` | c49 observation/model plus unchanged c48 controls |22 PASS /6 UNAVAILABLE|
+| `bash source/tools/test_vch_search_identity.sh` | c50 decomposition/identity regressions |13 PASS /7 UNAVAILABLE|
+| `bash source/tools/test_vch_post_return_witness.sh` | one-debt protocol/refusal/helper provenance; real callback or UNAVAILABLE |16 PASS /2 UNAVAILABLE|
+| `bash source/tools/build_windows.sh` | existing Windows Werror DLL build |build success|
+| `bash source/tools/test.sh` | portable/ASan/UBSan |13 PASS|
+| `bash source/tools/smoke_windows.sh` | Windows owned smoke |7 PASS|
+| `bash source/tools/test_hooks_windows.sh` | full previous and c51 hook/ABI/lifecycle/proof/workspace suite |410 PASS /5 SKIP /17 UNAVAILABLE /0 BLOCKED|
+| `python3 source/tools/package.py` | disabled c38 package/full source/evidence, separate native c50/c51 gates |1 package-validation PASS|
+
+C51 focused breakdown:14 ASan/UBSan pure model PASS records,1 actual Wine
+reviewed-c41 allocation/range/page/current-code/decoder contract PASS and1 strict
+JSON/helper-body identity PASS;2 real mixed-machine Wine UNAVAILABLE cases.
+Ordinary/extra-idle runs authenticate worker debt, preserve machine state and
+pending1 but callback0: no prepared/published stub, redirect, token or live poll.
+The helper contract unit never publishes its allocation to a worker. It does not
+prove VCH dispatch or a native bridge. C48 bridge-absent counterexamples run via
+their separate required command and c49's existing mandatory control chain.
+
+Initial new-code compilation had two failed attempts: Werror rejected two compact
+if/statement layouts; then two unqualified admitted references conflicted with
+the included production namespace. Only new code formatting/qualification was
+corrected. No warning flag, old assertion, helper body, wait, deadline or cap was
+relaxed. All final required tests execute the corrected final source; initial
+compile failures are not relabeled PASS/SKIP/UNAVAILABLE/BLOCKED.
+
+Nonduplicated final regression: **430 PASS /5 SKIP /17 UNAVAILABLE /0 BLOCKED**
+=portable13+smoke7+hooks410; focused repeats are included in hooks and not added
+again. Package validation is1 separate PASS. UNAVAILABLE17=c40(2)+c49(6)+c50(7)
++c51(2), all Wine callback0 observations. None is a native bridge PASS.
+
+The execution environment disconnected during the first full-chain attempt,
+and its /tmp records/session disappeared. Workspace changes/build inputs survived.
+The unconfirmed completion of that old attempt is NOT counted. After reconnection,
+all17 required commands were rerun successfully on unchanged source with durable
+results in /workspace/scratch/ws-c51. This is the reason for full revalidation,
+not an assertion/deadline relaxation. Source/native helpers were not rewritten
+to pass in the restarted environment.
+
+## Unperformed / unavailable / skipped / blocked
+
+- New native c51 VCH->stub->token->cleanup/configuration/lifetime flow: not run,
+  no native Windows environment attached. Prior c50 input proves boundary/
+  identity only, not c51. Actual two Wine callbacks remain0.
+- New native positive token/cleanup/readbacks/field-delta proof is therefore
+  unexecuted. Those fields stay null on Wine. Synthetic/model/helper successes
+  are not native PASS; no manual/synthetic VCH callback is injected.
+- Optional private original-byte positive replay, native replay, game-body
+  installer,584byte normalization and accepted-build capture replay:5 existing
+  SKIPs due to absent private inputs. Independent regressions still run.
+- Production integration, exact-slot/gameplay, live-thread storage reuse, forced
+  thread termination and module-unload experiments: not implemented/run; forbidden.
+- BLOCKED0. No requested permitted test was security-blocked or bypassed.
+
+## Handoff / outputs
+
+Update root/source mirrored c51 analysis/gate/status, accepted c50 native input
+packaging, current PROJECT_STATE, this report, test source/helpers/scripts and
+package gates; preserve all historical native artifacts and task input. Update
+Wisdoms to accept native c50 identity closure and keep c51 runtime UNKNOWN.
+Native standalone is only analysis/native-probes/c51/continuation-witness.exe
+plus README/licenses/provenance, copied from the exact tested PE after validation.
+No new game release; validation output remains
+source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled.
+
+After verified publication, request at most this one native command from c51's
+NEW folder, returning compact JSON:
+
+```powershell
+.\continuation-witness.exe --position --mixed-search-vch --json
+```
+
+No Update-WS/game/Overstrike/scan/game log or mitigation change. Even native
+feasibility PASS authorizes only a later explicitly scoped production-shape
+review, not integration or deferred slot work. Exact tested PE6807693bytes, SHA256
+a2eb90e704f852ce968da510598d59164684ea1c342c9478ed8a4cda9b8be44c.
+All273 source/tool input digest:
+4289bc5b81d0c8fa47b653c9f5a8e9c5440cab16c88098db56fe314e1031cf73.
+Source implementation commit/publication are pinned after commit/push below.
+
+Additional checks from repository root:
+
+```bash
+(cd source && python3 tools/check_vch_post_return_witness.py logs/windows_vch_post_return_witness.log logs/vch_post_return_witness_synthetic.json)
+python3 /workspace/scratch/ws-c51/verify.py
+```
+
+The first auxiliary direct parser invocation used repository-root cwd and failed
+with FileNotFoundError before any check ran. Its corrected command above uses
+the required source cwd; no parser code or assertion was changed.
+
+Expected/actual: strict parser/helper-body identity agrees on explicitly synthetic
+inputs vs two real Wine unavailability records;1 repeated parser PASS. Base-tree
+production/historical/probe/task integrity and exact tested PE/mirrored metadata/
+all273 code/tool source-package copies;2 integrity PASS. No code/tool input
+changes follow final full validation, so code-suite rerun after metadata-only
+updates is unnecessary. Package/copy integrity is repeated after final metadata.
+
+The copied owner JSON-only CLI was also executed under Wine, producing1 additional
+UNAVAILABLE observation, never native evidence:
+
+```bash
+WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/analysis/native-probes/c51/continuation-witness.exe" --position --mixed-search-vch --json
+```
+
+---
+
 # Codex result — c50 mixed SEARCH predicate decomposition
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.

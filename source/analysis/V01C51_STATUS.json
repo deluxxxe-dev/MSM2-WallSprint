@@ -1,0 +1,320 @@
+{
+  "task": "c51_native_VCH_to_c41_one_debt_post_return_bridge_feasibility",
+  "date_JST": "2026-10-27",
+  "base_commit": "820944f2439b9efce07bceed2ac35e3d75dc3909",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "primary_result": "VCH_POST_RETURN_WITNESS_BRIDGE_UNAVAILABLE",
+  "accepted_native_c50_result": "MIXED_SEARCH_IDENTITY_DIAGNOSTIC_PASS",
+  "accepted_native_c50_global_slots": 4,
+  "accepted_native_c50_unique_worker_owned_lease": 1,
+  "accepted_native_c50_VCH_callbacks": 1,
+  "accepted_native_c50_evidence_sha256": "d3ac8b2e19a63c7685a0f644e429b101d5d3a5ac40a37d8dc24834f9ced9149e",
+  "bridge_implemented": true,
+  "native_c51_executed": false,
+  "reviewed_c41_helper_bodies_identical": true,
+  "reviewed_c41_machine_harness_unchanged": true,
+  "one_debt_Position_close_only": true,
+  "configuration_contract": "c51_same_event_Intel_mixed_Position_close_v1",
+  "whole_DR6_equals_authenticated_final_VCH": true,
+  "generic_DR6_mask": false,
+  "c47_profile_applied": false,
+  "old_raw_c44_c47_preserved": true,
+  "production_changed": false,
+  "all_c39_c50_counterexamples_sources_artifacts_preserved": true,
+  "exact_slot_watch_enabled": false,
+  "new_gameplay_writes": 0,
+  "new_game_release": false,
+  "runtime_version": "v0.1c38",
+  "package_version": "0.1.56",
+  "Wine_cases": 2,
+  "Wine_VCH_callbacks": 0,
+  "Wine_pending_until_worker_exit": 1,
+  "BLOCKED": 0,
+  "blocked_subtasks": [],
+  "owner_command": ".\\continuation-witness.exe --position --mixed-search-vch --json",
+  "native_probe": "analysis/native-probes/c51/continuation-witness.exe",
+  "owner_action": "new_native_standalone_one_Position_close_bridge_case_return_JSON_no_Update_WS_game_or_logs",
+  "tests": [
+    {
+      "command": "bash source/tools/test_continuation_mitigations.sh",
+      "exit": 0,
+      "seconds": 1.08,
+      "log": "/workspace/scratch/ws-c51/test_continuation_mitigations.log",
+      "PASS": 10,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_continuation_diagnostics.sh",
+      "exit": 0,
+      "seconds": 0.77,
+      "log": "/workspace/scratch/ws-c51/test_continuation_diagnostics.log",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_debug_register_comparison.sh",
+      "exit": 0,
+      "seconds": 0.85,
+      "log": "/workspace/scratch/ws-c51/test_debug_register_comparison.log",
+      "PASS": 9,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_dr6_lifecycle.sh",
+      "exit": 0,
+      "seconds": 0.73,
+      "log": "/workspace/scratch/ws-c51/test_dr6_lifecycle.log",
+      "PASS": 11,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_pre_access_lifecycle.sh",
+      "exit": 0,
+      "seconds": 0.89,
+      "log": "/workspace/scratch/ws-c51/test_pre_access_lifecycle.log",
+      "PASS": 12,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_retirement_configuration.sh",
+      "exit": 0,
+      "seconds": 1.02,
+      "log": "/workspace/scratch/ws-c51/test_retirement_configuration.log",
+      "PASS": 13,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_continuation_witness.sh",
+      "exit": 0,
+      "seconds": 12.38,
+      "log": "/workspace/scratch/ws-c51/test_continuation_witness.log",
+      "PASS": 13,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_watch_retirement.sh",
+      "exit": 0,
+      "seconds": 5.61,
+      "log": "/workspace/scratch/ws-c51/test_watch_retirement.log",
+      "PASS": 14,
+      "SKIP": 0,
+      "UNAVAILABLE": 2,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_production_witness_review.sh",
+      "exit": 0,
+      "seconds": 7.43,
+      "log": "/workspace/scratch/ws-c51/test_production_witness_review.log",
+      "PASS": 9,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_vch_search_bridge.sh",
+      "exit": 0,
+      "seconds": 14.22,
+      "log": "/workspace/scratch/ws-c51/test_vch_search_bridge.log",
+      "PASS": 22,
+      "SKIP": 0,
+      "UNAVAILABLE": 6,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_vch_search_identity.sh",
+      "exit": 0,
+      "seconds": 9.39,
+      "log": "/workspace/scratch/ws-c51/test_vch_search_identity.log",
+      "PASS": 13,
+      "SKIP": 0,
+      "UNAVAILABLE": 7,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_vch_post_return_witness.sh",
+      "exit": 0,
+      "seconds": 9.09,
+      "log": "/workspace/scratch/ws-c51/test_vch_post_return_witness.log",
+      "PASS": 16,
+      "SKIP": 0,
+      "UNAVAILABLE": 2,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/build_windows.sh",
+      "exit": 0,
+      "seconds": 44.49,
+      "log": "/workspace/scratch/ws-c51/build_windows.log",
+      "PASS": 0,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test.sh",
+      "exit": 0,
+      "seconds": 9.12,
+      "log": "/workspace/scratch/ws-c51/test.log",
+      "PASS": 13,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/smoke_windows.sh",
+      "exit": 0,
+      "seconds": 13.4,
+      "log": "/workspace/scratch/ws-c51/smoke_windows.log",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_hooks_windows.sh",
+      "exit": 0,
+      "seconds": 191.94,
+      "log": "/workspace/scratch/ws-c51/test_hooks_windows.log",
+      "PASS": 410,
+      "SKIP": 5,
+      "UNAVAILABLE": 17,
+      "BLOCKED": 0
+    },
+    {
+      "command": "python3 source/tools/package.py",
+      "exit": 0,
+      "seconds": 0.91,
+      "log": "/workspace/scratch/ws-c51/package.log",
+      "PASS": 1,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    }
+  ],
+  "nonduplicated_full_chain": {
+    "PASS": 430,
+    "SKIP": 5,
+    "UNAVAILABLE": 17,
+    "BLOCKED": 0,
+    "scope": "portable13_smoke7_hooks410_focused_repeats_not_added_twice"
+  },
+  "package_validation": {
+    "PASS": 1,
+    "SKIP": 0,
+    "UNAVAILABLE": 0,
+    "BLOCKED": 0
+  },
+  "focused_breakdown": {
+    "synthetic_model_PASS": 14,
+    "actual_reviewed_helper_contract_PASS": 1,
+    "strict_JSON_and_helper_body_PASS": 1,
+    "actual_Wine_UNAVAILABLE": 2,
+    "native_bridge_PASS": 0
+  },
+  "UNAVAILABLE_cases": {
+    "c40_Wine_VCH_callback0": 2,
+    "c49_Wine_callback0": 6,
+    "c50_Wine_callback0": 7,
+    "c51_Wine_callback0": 2
+  },
+  "SKIP_tests": [
+    {
+      "name": "original_byte_positive_replay",
+      "reason": "optional_private_input_not_distributed"
+    },
+    {
+      "name": "private_native_replay",
+      "reason": "optional_private_input_not_distributed"
+    },
+    {
+      "name": "game_body_installer_replay",
+      "reason": "optional_private_input_not_distributed"
+    },
+    {
+      "name": "584byte_normalization_replay",
+      "reason": "optional_private_input_not_distributed"
+    },
+    {
+      "name": "accepted_build_capture_replay",
+      "reason": "optional_private_input_not_distributed"
+    }
+  ],
+  "not_run": [
+    {
+      "name": "native_c51_VCH_RIP_only_redirect_exact_post_return_token",
+      "reason": "no_native_Windows_environment_attached_Wine_callback0"
+    },
+    {
+      "name": "native_c51_post_witness_final_poll_three_readbacks_configuration_and_storage_lifetime",
+      "reason": "no_actual_native_c51_bridge_execution_old_c50_boundary_identity_is_not_substitute"
+    },
+    {
+      "name": "production_exact_slot_gameplay_live_stub_reuse_forced_thread_exit_module_unload",
+      "reason": "expressly_forbidden_not_implemented"
+    }
+  ],
+  "initial_failures": [
+    {
+      "stage": "new_pure_model_compile",
+      "exit": 1,
+      "reason": "Werror_misleading_statement_indentation_corrected_new_code_only"
+    },
+    {
+      "stage": "new_probe_compile",
+      "exit": 1,
+      "reason": "admitted_name_ambiguity_qualified_c51_references_no_flags_or_guards_relaxed"
+    }
+  ],
+  "environment_recovery": {
+    "workspace_changes_preserved": true,
+    "interrupted_exec_session_and_tmp_lost": true,
+    "unconfirmed_old_full_chain_not_counted": true,
+    "all17_required_commands_rerun_and_certified_after_reconnection": true,
+    "durable_results": "/workspace/scratch/ws-c51/results.json"
+  },
+  "native_artifact": {
+    "path": "continuation-witness.exe",
+    "bytes": 6807693,
+    "sha256": "a2eb90e704f852ce968da510598d59164684ea1c342c9478ed8a4cda9b8be44c",
+    "exact_copy_of_tested_binary": true
+  },
+  "additional_copied_owner_CLI_Wine_observation": {
+    "UNAVAILABLE": 1,
+    "PASS": 0,
+    "SKIP": 0,
+    "BLOCKED": 0,
+    "native_evidence": false
+  },
+  "corrected_auxiliary_invocation_error": {
+    "command": "python3 source/tools/check_vch_post_return_witness.py ... from repository root",
+    "exit": 1,
+    "reason": "parser helper proof paths require source cwd",
+    "correction": "cd source then execute existing parser unchanged",
+    "required_script_invocations_already_used_correct_cwd": true
+  },
+  "integrity_verification": {
+    "PASS": 2,
+    "SKIP": 0,
+    "UNAVAILABLE": 0,
+    "BLOCKED": 0,
+    "protected_tracked_files": 971,
+    "source_input_count": 273,
+    "source_input_digest": "4289bc5b81d0c8fa47b653c9f5a8e9c5440cab16c88098db56fe314e1031cf73",
+    "artifact_sha256": "a2eb90e704f852ce968da510598d59164684ea1c342c9478ed8a4cda9b8be44c"
+  }
+}
