@@ -1,8 +1,8 @@
 # Codex result — c60 authenticated later-runtime-begin continuation
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**. Task base **cdbf30bc7fc42b26e39634163839c552c5522ae6**.
-Primary **LATER_RUNTIME_BEGIN_STITCH_SCANNER_READY**. Implementation SHA and verified
-publication are pinned below after push. BLOCKED0. Actual c60 private-image scan
+Primary **LATER_RUNTIME_BEGIN_STITCH_SCANNER_READY**. Implementation/source commit **f1d9b87827998b8221f6754e44be8e5522b8ca43**
+was pushed and independently verified; final metadata HEAD is reverified and reported in chat. BLOCKED0. Actual c60 private-image scan
 UNAVAILABLE; all new real edge/instance/fact/refusal/candidate metrics UNKNOWN/null.
 
 ## Result, scope and files
@@ -139,3 +139,22 @@ if ($LASTEXITCODE -ne 0) { throw "c60 offline scan refused; preserve existing ev
   STATUS; final required/post-review/hooks runs pass. No production or historical
   scanner rule was changed to obtain PASS. Development runs are not added to final
   nonduplicated regression totals.
+
+
+## Publication accepted
+
+Implementation/source commit **f1d9b87827998b8221f6754e44be8e5522b8ca43** is pushed on
+**codex/v01c20-edi-value-provenance**. `git push origin codex/v01c20-edi-value-provenance`
+succeeded normally; `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance`
+matched local HEAD. `python3 /workspace/scratch/ws-c60/check_publication.py` fetched
+the branch in an independent GitHub checkout: expected identical12 changed files,
+293 tested code/tool inputs and protected evidence; actual **340 distinct files
+byte/hash equal,PASS1**. Tested digest:
+`ec15ca785606d7bc40fdedb17ac21988a8a3017452b8be88b09ec4feb61c2441`.
+C52 FAIL/c60 actual metrics UNKNOWN/all false gates retained in fetched evidence.
+Final publication-record-only commit follows this pinned implementation. Its HEAD
+is reverified against remote and independent checkout and returned in chat (no
+self-referential SHA). No compiled regression repeat required because all293
+tested executable inputs remain byte-identical; final package/mirror/integrity
+checks repeat after metadata updates. Owner action remains ONE offline c60 JSON
+only, no Update-WS/game/Overstrike/EXE upload/new runtime log or native probe.
