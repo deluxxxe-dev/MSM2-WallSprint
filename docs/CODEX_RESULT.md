@@ -1,7 +1,7 @@
 # Codex result — c57 exact runtime-boundary diagnostic classifier
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
-Task base **7d177ea7c0aec2405c7d8b7069ebf05be921edba**. Implementation commit is pinned after publication.
+Task base **7d177ea7c0aec2405c7d8b7069ebf05be921edba**. Implementation/source commit: **9b1ecfec62ee807eee7a82507f24cd9e65755ff7**, pushed and independently verified.
 Primary: **RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**; BLOCKED0.
 
 ## Result / immutable evidence / scope
@@ -122,6 +122,29 @@ candidate completeness, cross-row facts and all permission gates remain false.
 Integrity: `python3 /workspace/scratch/ws-c57/verify.py` expected protected baseline/source hashes, complete package/mirrors and c57 READY/c52 FAIL separation; actual1 PASS across1043 protected baseline files and287 source/tool inputs. `git diff --check` passed. Implementation SHA/publication/Wisdoms provenance follow below. Later
 metadata-only edits repeat package/integrity/publication, no full rerun when
 executable input hashes remain the final tested digest.
+
+## Publication / shared handoff
+
+- Implementation/source commit **9b1ecfec62ee807eee7a82507f24cd9e65755ff7**, intended branch
+  **codex/v01c20-edi-value-provenance**, normal push succeeded.
+- `python3 /workspace/scratch/ws-c57/check_publication.py`: expected remote
+  SHA=HEAD and independent GitHub checkout byte agreement; actual1 PASS across
+  12 changed paths /314 compared files /287 source-tool inputs. Checks actual c57
+  fields remain null, cross-row facts/production remain false and c52 FAIL remains.
+- `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance`: remote
+  equals implementation HEAD, repeated after final metadata commit/push.
+- Wisdoms docs/REVERSE_ENGINEERING_GUIDE.md accepted c56/full-row scope and c57
+  first-refusal/decoder/model-only/diagnostic rules: commit
+  **412996c5aa5d344d940986e2c2a733649983507a**, Wisdoms main, push plus
+  `git ls-remote origin refs/heads/main` equality verified; tree clean. Fetched/
+  preserved unrelated prior IDLE knowledge commitda067b6 without editing its file.
+- Final status/report additions are metadata only. Package/integrity/publication
+  repeat; no full test rerun needed because all executable source/tool hashes
+  remain the final tested digest. Package/integrity/publication contribute1 PASS
+  each separately from562 nonduplicated regressions; repeats are not accumulated.
+- Final40-character handoff HEAD is reported in chat after push/remote/checkout
+  verification. Pinned implementation avoids a self-referential commit SHA.
+  No WS main merge/reset/force push, game release or new native probe.
 
 ---
 
