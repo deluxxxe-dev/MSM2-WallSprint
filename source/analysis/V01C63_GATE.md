@@ -1,21 +1,24 @@
-# c63 gate — first terminal post-c61 diagnostic TOOL READY
+# c63 repaired observer gate — TOOL READY, owner rerun pending
 
-**POST_C61_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**. Owned OFFLINE/STATIC mechanism;
-actual private-image c63 roots/edges/rows/phases/completeness UNKNOWN/null. Accepted
-c62 POST2923 is expected input domain, not cloud actual classification.
+**POST_C61_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**,v0.1c63/schema2/new v2 diagnostic
+contract. Earlier owner run BLOCKED due observer provenance gap; immutable
+V01C63_OWNER_OFFLINE_BLOCKED records it. No accepted c63 JSON. Repaired private
+root/subtype/distribution UNKNOWN/null. Expected2923 c62 POST roots unchanged.
 
-Exact image and full unchanged c56→c62 chain/full supplied c62 JSON plus accepted
-counts/identities required. Observe only original first terminal POST edge and
-rethrow unchanged. All c62 dynamic counters/candidate bytes audited. Second ordered
-replay validates every record,then full domain/tail/accounting/seals before output.
-Bind exact root/row/seed/path/source,current prefix and historical c61 phase/origin/
-full-prefix. Source-local preflight is not a crossing. Dedup stored path and actual
-post origin distinct. Any invalidation-only terminal lacking an edge callback
-BLOCKS entire classification; never fabricate a source or claim partial success.
+Exact unchanged c56-c62 chain and original c62 result/candidate bytes remain
+required. Observe one original edge call with exact entry snapshot/mismatch delta;
+distinguish current post reachability,used source later instruction/scan and prior-
+authorization lookup/match conversion. Converted refusal is not current reachability.
+Bind exact root/state/path/source/phase/origin/prefix/reason/provenance. Prior proof
+must equal sealed full pool record at root index; current lookup may be the refusal.
+No broad state acceptance or row-global authorization. Missing/inconsistent reason
+or source BLOCKS; invalidation-only no-edge terminal still has no fabricated PC.
+Independent second ordered replay/full2923-domain/c62 accounting/candidate hash checks
+unchanged. Protocol boundary seams cannot enter the natural aggregate.
 
-No c63 edge/fact/candidate/recursive certificate or target traversal. Original
-Fact/must/CALL/RSP/caps/whole-root semantics unchanged. All completeness/publication/
-allocation/base/range/lifetime/ownership/destination/CFG/EH/production/watch/game
-false;publication_source_kind unproven,live_qword_reads0,pointer_chasefalse,C52 FAIL
-binding. No production/native/gameplay/mitigation/producer changes. Runtimev0.1c38/
-package0.1.56 unchanged. Owner offline c63 JSON only; no game/updater/probe.
+C63 adds0 edges/Facts/candidates. C62 and all earlier code/admission/caps/outcomes/
+evidence unchanged. Every completeness/publication/allocation/base/range/lifetime/
+ownership/destination/CFG/EH/production/watch/game gate false;live_qword_reads0,
+pointer_chasefalse,publication_source_kind unproven,C52 FAIL binding. Runtimev0.1c38/
+package0.1.56 unchanged. One owner offline rerun with existing evidence read-only;
+no Update-WS/game/Overstrike/native probe/evidence editing or regeneration.

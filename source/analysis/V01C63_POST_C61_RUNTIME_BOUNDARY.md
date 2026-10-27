@@ -1,9 +1,81 @@
-# c63 — first terminal post-c61 runtime-boundary diagnostic
+# c63 repair — complete edge-sourced terminal conversion provenance
+
+2026-10-28 JST. **POST_C61_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**, repaired owned
+observer only. Previous owner c63 run BLOCKED at20480/162472 with "terminal POST
+not justified by original c62 state"; both V01C63_OWNER_OFFLINE_BLOCKED copies are
+immutable. No accepted c63 JSON exists. Exact private root/subtype and repaired
+actual distribution remain UNKNOWN,not inferred from an owned reproduction.
+Accepted c56-c62 evidence/c62 source/admission/counts/candidates stay unchanged.
+
+## Observer gap and bounded repair
+
+A prior c61 authorization in a root does not mean every current context is already
+post-c61 reachable or the original c61 source. C62 can convert an underlying c60
+POST after that prior authorization when another current context fails c61 lookup/
+matching. The old c63 observer only admitted the first two state shapes,therefore
+rejected a legitimate edge-sourced refusal. A natural owned full-root fixture now
+reproduces outside BOTH sets with the unchanged original c62 algorithm; a second
+root confirms distinct exact root/state/path/prefix/source records and ordering.
+This is not proof of the exact private owner subtype.
+
+C63 snapshots exact edge-entry root/key/PC/size/SHA,post/source flags,current/prior
+scan tokens,prior record/source PC and original mismatch counters. It delegates
+exactly ONE original c62 edge call. On original POST only,passively record exact
+counter delta and original underlying c61 capture. Revalidate source and unchanged
+c61 record construction; never call edge/admission twice or charge original work.
+Bind snapshot/reason/provenance into source record,root prefix,ordered record-set
+hash and independent second replay. Unknown/inconsistent conversion stays BLOCKED.
+
+Deterministic terminal_reason values:
+
+- current_context_post_c61_reachable;
+- used_c61_source_later_instruction;
+- used_c61_source_later_scan;
+- prior_c61_authorization_converted_unrecorded_root;
+- prior_c61_authorization_converted_context_match_failure.
+
+Guard precedence is exactly c62's: post reachability,then used source on different
+PC/scan,then delegated underlying POST conversion. Direct guards require zero
+mismatch-counter delta. Lookup conversion requires exactly unrecorded_root+1 and
+lookup missing. Match conversion requires exactly context_phase_origin_or_full_prefix_mismatch+1,
+lookup present and at least one false original predicate. Record all conjuncts
+(record ID,scan token,semantic record) plus the first failed conjunct in original
+short-circuit order. These after-refusal diagnostics never change admission.
+
+A converted terminal has its own phase and no invented post_c61_origin. Current
+c60/c59 capture and origin remain separate from prior c61 authorization's exact
+phase/origin/full-prefix/local proof IDs. Entry state is still not instruction
+must-state. Authenticate prior authorization against the sealed full record bytes
+at the original root index,independently of the current lookup which itself may
+be the recorded failure; do not accept an unknown/wrong-root prior proof.
+
+The unrecorded-lookup route after prior authorization is structurally impossible
+under an intact immutable fixed-root index,so its focused test uses a declared
+owned lookup-boundary wrapper. It changes only the lookup response AFTER a real
+prefix,never source/modules/pool records/index. Paired original/repaired calls
+produce identical c62 exception/state/counters. This boundary-seam record is
+explicitly REJECTED by the natural ordered aggregate. Likewise a later-scan
+protocol fixture is separate from natural full-root evidence. Neither seam is
+private-image evidence or a new certificate/candidate. No CLI bypass is added.
+
+Schema2/new v2 diagnostic contract prevents confusing old/new record identities;
+version/output filename remain c63,with no previously accepted c63 JSON to migrate.
+C56-c62 contracts/tool bytes/checkpoints/JSONs remain immutable and reusable.
+Existing first-terminal/complete2923-domain/second ordered replay/dynamic accounting/
+positive candidate hash/invalidation-only no-source refusal remain binding.
+
+Additional8 focused groups supplement26 retained groups: natural conversion/two
+roots,lookup seam,original-state equality,used instruction/later scan,guard priority/
+no-prior-authorization,reason/provenance poisoning and edge-entry/delta revalidation.
+Dedicated34 PASS is owned evidence only. No production/native/gameplay/watch/ABI/
+qword/pointer/producer/mitigation change. C52 FAIL and every false gate retained.
+
+## Retained classifier contract and offline handoff
 
 2026-10-28 JST. **POST_C61_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY** is owned
 OFFLINE/STATIC diagnostic readiness, not actual-image distribution, production
 integration or writer/publication/ownership/lifetime permission. Versionv0.1c63/
-schema1. Runtimev0.1c38/package0.1.56 unchanged; no release or native/game probe.
+schema2. Runtimev0.1c38/package0.1.56 unchanged; no release or native/game probe.
 
 ## Accepted c62 input and new measurement scope
 
@@ -50,9 +122,10 @@ instance cap32 contexts/32 propagation entries per root. An arrival path is dist
 from stored first path and graph propagation is not fabricated executed code.
 Redundant marks retain the first origin; no new reachable state is invented.
 
-Three NEW terminal phases are distinct: same-instance after c61 preflight before
-row fixpoint, post-c61 reachable context, and post-c61 reachable dedup with stored
-earlier path. Separately retain the exact authenticated c61 authorization's three
+Five terminal phases are distinct: same-instance after c61 preflight before
+row fixpoint, post-c61 reachable context, post-c61 reachable dedup with stored
+earlier path, prior-authorization converted c60 POST, and used source on a later
+scan. Converted POST is NOT post-c61 reachability. Separately retain the exact authenticated c61 authorization's three
 HISTORICAL phase labels,post_c59_origin,local c59 IDs,record/classifier/full-prefix
 IDs,entry state/path/transition IDs. Source-local preflight cannot be relabeled as
 a completed c59/c61 crossing. Dedup earlier stored path cannot borrow arrival proof.
@@ -122,7 +195,7 @@ change,slot watch/PAGE_GUARD. Zero candidates/dominant exact class is not no-wri
 
 ## Validation and owner handoff
 
-Focused26 owned groups cover complete domain,earlier refusals,three new terminal
+Focused34 owned groups cover complete domain,earlier refusals,three new terminal
 phases/three historical c61 phases,source/full-prefix/phase/origin/identity binding,
 all successor/relations/model-only distinctions,poisoning,positive candidate hash,
 audit drift,missing source blocker,immutable inputs/aliases/false gates. Historical

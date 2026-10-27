@@ -1,12 +1,12 @@
 {
-  "task": "c63_first_terminal_post_c61_boundary_diagnostic",
+  "task": "c63_owner_blocked_observer_provenance_repair",
   "date_JST": "2026-10-28",
-  "base_commit": "08f12fe7848c3f651b34bf672670dea143c9d06d",
+  "base_commit": "0d927eb1b1d02d636aefda6988103d928229958d",
   "branch": "codex/v01c20-edi-value-provenance",
   "primary_result": "POST_C61_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY",
   "tool_version": "v0.1c63",
-  "schema_version": 1,
-  "contract": "exact_c62_first_terminal_post_c61_boundary_full_prefix_diagnostic_v1",
+  "schema_version": 2,
+  "contract": "exact_c62_first_terminal_post_c61_boundary_conversion_provenance_diagnostic_v2",
   "runtime_version": "v0.1c38",
   "package_version": "0.1.56",
   "real_c63_classification_executed": false,
@@ -116,7 +116,7 @@
   "blocked_subtasks": [],
   "owner_action": "one_offline_c63_classifier_reuse_c56_cache_and_c57_through_c62_JSON_read_only",
   "owner_output": "MSM2-WS-v0.1c63-post-c61-runtime-boundary.json",
-  "new_tool_files": [
+  "modified_tool_files": [
     "source/tools/slot_publication_post_c61_boundary.py",
     "source/tools/test_slot_publication_post_c61_boundary.py"
   ],
@@ -258,8 +258,12 @@
       "sha256": "62e26f7069911e57e2ae0fe42bce8eaec3df49739e5aa2a7661ef79a16f889a4"
     },
     {
+      "path": "analysis/V01C63_OWNER_OFFLINE_BLOCKED.md",
+      "sha256": "1bc93e820d9efcdf5e232eb9a65b958ba9fe0a64ae4bd31651c004edcee03ec3"
+    },
+    {
       "path": "docs/CODEX_NEXT.md",
-      "sha256": "98b4effd3cc2ffbbfdaceec59692d9c37a91c1682600ea07bfc0dfc48edb1459"
+      "sha256": "ed298e67e8f024a635653098c8e3bf2377cce5f1cecc8359056d175693940655"
     },
     {
       "path": "docs/CODEX_REPORTING.md",
@@ -376,6 +380,10 @@
     {
       "path": "source/analysis/V01C62_STATUS.json",
       "sha256": "62e26f7069911e57e2ae0fe42bce8eaec3df49739e5aa2a7661ef79a16f889a4"
+    },
+    {
+      "path": "source/analysis/V01C63_OWNER_OFFLINE_BLOCKED.md",
+      "sha256": "1bc93e820d9efcdf5e232eb9a65b958ba9fe0a64ae4bd31651c004edcee03ec3"
     },
     {
       "path": "source/include/version.hpp",
@@ -1161,7 +1169,7 @@
     },
     {
       "path": "source/tools/package.py",
-      "sha256": "a9518900d94b5fe1018a9fbd551bb443b48d44e19b00b2da96b79d7853dd9e24"
+      "sha256": "47a0cd73e7e5dafe385ddbbad753102722f4affceda8af09c69071f2db290081"
     },
     {
       "path": "source/tools/release.py",
@@ -1265,7 +1273,7 @@
     },
     {
       "path": "source/tools/slot_publication_post_c61_boundary.py",
-      "sha256": "83a33ea3a95431db520859ffd171853b380f9a040e37a563f4cbed2d856348a8"
+      "sha256": "1a43a1053ad37d12f5d14a93d8da08a9b77c9b1485dd89f1f4776856be159e8c"
     },
     {
       "path": "source/tools/slot_publication_sharded.py",
@@ -1461,7 +1469,7 @@
     },
     {
       "path": "source/tools/test_slot_publication_post_c61_boundary.py",
-      "sha256": "3c83b7e208e9ab20542e1fdfbd0d11131ca27bf1c64965bd733a50a447be2a45"
+      "sha256": "3dace65b8b674b7c9b70f263a861d26bd3f1a94734c21ad1120898aeed017695"
     },
     {
       "path": "source/tools/test_slot_publication_sharded.py",
@@ -1685,7 +1693,7 @@
     }
   ],
   "code_tool_input_count": 299,
-  "code_tool_input_digest": "3059e27ec38b63dc6c1848a690372b5b69e9401ea1473fec32503a1643027c28",
+  "code_tool_input_digest": "b4fbdb32abcd0d2b1fb5eaf216734f031237cb315923b4bb50b182327ca919d5",
   "protocol_source_hashes": {
     "slot_publication.py": "fa44814c46cb4010648911e7a298f2b3f0ec937607d786536b11bf7fdfeba83b",
     "slot_publication_cfg.py": "2594a653046d3e403f0b18963931556eb652b8f5b9c5028db9a8f2802ef8cbf8",
@@ -1698,14 +1706,14 @@
     "slot_publication_later_stitched_py": "d0ad778b80dc4f332232c35fc23b33f7dbfd73da9464ae73630eafe85bc082c3",
     "slot_publication_post_c59_boundary_py": "e68492309e00ee7ea74cf452a6536aba7412e5f4b9530ebd8b6c8608a585626c",
     "slot_publication_post_c59_stitched_py": "52dd8cd0213e944887b6aa2bc6446967c8b61b403450d3cbf6d0e963957884ed",
-    "slot_publication_post_c61_boundary_py": "83a33ea3a95431db520859ffd171853b380f9a040e37a563f4cbed2d856348a8"
+    "slot_publication_post_c61_boundary_py": "1a43a1053ad37d12f5d14a93d8da08a9b77c9b1485dd89f1f4776856be159e8c"
   },
   "tests": [
     {
       "command": "python3 source/tools/test_slot_publication.py",
       "exit": 0,
-      "seconds": 0.34,
-      "log": "/workspace/scratch/ws-c63/test_slot_publication.log",
+      "seconds": 0.37,
+      "log": "/workspace/scratch/ws-c63-repair/test_slot_publication.log",
       "PASS": 20,
       "SKIP": 0,
       "UNAVAILABLE": 0,
@@ -1715,7 +1723,7 @@
       "command": "python3 source/tools/test_static_access_v2.py",
       "exit": 0,
       "seconds": 0.1,
-      "log": "/workspace/scratch/ws-c63/test_static_access_v2.log",
+      "log": "/workspace/scratch/ws-c63-repair/test_static_access_v2.log",
       "PASS": 1,
       "SKIP": 1,
       "UNAVAILABLE": 0,
@@ -1724,8 +1732,8 @@
     {
       "command": "python3 source/tools/test_slot_publication_cfg.py",
       "exit": 0,
-      "seconds": 0.31,
-      "log": "/workspace/scratch/ws-c63/test_slot_publication_cfg.log",
+      "seconds": 0.3,
+      "log": "/workspace/scratch/ws-c63-repair/test_slot_publication_cfg.log",
       "PASS": 22,
       "SKIP": 0,
       "UNAVAILABLE": 0,
@@ -1734,8 +1742,8 @@
     {
       "command": "python3 source/tools/test_slot_publication_callee.py",
       "exit": 0,
-      "seconds": 0.31,
-      "log": "/workspace/scratch/ws-c63/test_slot_publication_callee.log",
+      "seconds": 0.32,
+      "log": "/workspace/scratch/ws-c63-repair/test_slot_publication_callee.log",
       "PASS": 26,
       "SKIP": 0,
       "UNAVAILABLE": 0,
@@ -1744,8 +1752,8 @@
     {
       "command": "python3 source/tools/test_slot_publication_direct_entry.py",
       "exit": 0,
-      "seconds": 0.3,
-      "log": "/workspace/scratch/ws-c63/test_slot_publication_direct_entry.log",
+      "seconds": 0.27,
+      "log": "/workspace/scratch/ws-c63-repair/test_slot_publication_direct_entry.log",
       "PASS": 32,
       "SKIP": 0,
       "UNAVAILABLE": 0,
@@ -1754,8 +1762,8 @@
     {
       "command": "python3 source/tools/test_slot_publication_sharded.py",
       "exit": 0,
-      "seconds": 0.41,
-      "log": "/workspace/scratch/ws-c63/test_slot_publication_sharded.log",
+      "seconds": 0.39,
+      "log": "/workspace/scratch/ws-c63-repair/test_slot_publication_sharded.log",
       "PASS": 25,
       "SKIP": 0,
       "UNAVAILABLE": 0,
@@ -1764,8 +1772,8 @@
     {
       "command": "python3 source/tools/test_slot_publication_boundary.py",
       "exit": 0,
-      "seconds": 0.41,
-      "log": "/workspace/scratch/ws-c63/test_slot_publication_boundary.log",
+      "seconds": 0.37,
+      "log": "/workspace/scratch/ws-c63-repair/test_slot_publication_boundary.log",
       "PASS": 27,
       "SKIP": 0,
       "UNAVAILABLE": 0,
@@ -1774,8 +1782,8 @@
     {
       "command": "python3 source/tools/test_slot_publication_stitched.py",
       "exit": 0,
-      "seconds": 0.78,
-      "log": "/workspace/scratch/ws-c63/test_slot_publication_stitched.log",
+      "seconds": 0.93,
+      "log": "/workspace/scratch/ws-c63-repair/test_slot_publication_stitched.log",
       "PASS": 32,
       "SKIP": 0,
       "UNAVAILABLE": 0,
@@ -1784,8 +1792,8 @@
     {
       "command": "python3 source/tools/test_slot_publication_later_boundary.py",
       "exit": 0,
-      "seconds": 1.4,
-      "log": "/workspace/scratch/ws-c63/test_slot_publication_later_boundary.log",
+      "seconds": 1.17,
+      "log": "/workspace/scratch/ws-c63-repair/test_slot_publication_later_boundary.log",
       "PASS": 23,
       "SKIP": 0,
       "UNAVAILABLE": 0,
@@ -1794,8 +1802,8 @@
     {
       "command": "python3 source/tools/test_slot_publication_later_stitched.py",
       "exit": 0,
-      "seconds": 2.11,
-      "log": "/workspace/scratch/ws-c63/test_slot_publication_later_stitched.log",
+      "seconds": 1.94,
+      "log": "/workspace/scratch/ws-c63-repair/test_slot_publication_later_stitched.log",
       "PASS": 28,
       "SKIP": 0,
       "UNAVAILABLE": 0,
@@ -1804,8 +1812,8 @@
     {
       "command": "python3 source/tools/test_slot_publication_post_c59_boundary.py",
       "exit": 0,
-      "seconds": 2.28,
-      "log": "/workspace/scratch/ws-c63/test_slot_publication_post_c59_boundary.log",
+      "seconds": 2.09,
+      "log": "/workspace/scratch/ws-c63-repair/test_slot_publication_post_c59_boundary.log",
       "PASS": 23,
       "SKIP": 0,
       "UNAVAILABLE": 0,
@@ -1814,8 +1822,8 @@
     {
       "command": "python3 source/tools/test_slot_publication_post_c59_stitched.py",
       "exit": 0,
-      "seconds": 3.73,
-      "log": "/workspace/scratch/ws-c63/test_slot_publication_post_c59_stitched.log",
+      "seconds": 3.44,
+      "log": "/workspace/scratch/ws-c63-repair/test_slot_publication_post_c59_stitched.log",
       "PASS": 31,
       "SKIP": 0,
       "UNAVAILABLE": 0,
@@ -1824,9 +1832,9 @@
     {
       "command": "python3 source/tools/test_slot_publication_post_c61_boundary.py",
       "exit": 0,
-      "seconds": 4.36,
-      "log": "/workspace/scratch/ws-c63/test_slot_publication_post_c61_boundary_final.log",
-      "PASS": 26,
+      "seconds": 4.55,
+      "log": "/workspace/scratch/ws-c63-repair/test_slot_publication_post_c61_boundary.log",
+      "PASS": 34,
       "SKIP": 0,
       "UNAVAILABLE": 0,
       "BLOCKED": 0
@@ -1834,8 +1842,8 @@
     {
       "command": "bash source/tools/build_windows.sh",
       "exit": 0,
-      "seconds": 39.74,
-      "log": "/workspace/scratch/ws-c63/build_windows.log",
+      "seconds": 38.15,
+      "log": "/workspace/scratch/ws-c63-repair/build_windows.log",
       "PASS": 0,
       "SKIP": 0,
       "UNAVAILABLE": 0,
@@ -1844,8 +1852,8 @@
     {
       "command": "bash source/tools/test.sh",
       "exit": 0,
-      "seconds": 8.12,
-      "log": "/workspace/scratch/ws-c63/test.log",
+      "seconds": 7.33,
+      "log": "/workspace/scratch/ws-c63-repair/test.log",
       "PASS": 13,
       "SKIP": 0,
       "UNAVAILABLE": 0,
@@ -1854,8 +1862,8 @@
     {
       "command": "bash source/tools/smoke_windows.sh",
       "exit": 0,
-      "seconds": 12.22,
-      "log": "/workspace/scratch/ws-c63/smoke_windows.log",
+      "seconds": 12.15,
+      "log": "/workspace/scratch/ws-c63-repair/smoke_windows.log",
       "PASS": 7,
       "SKIP": 0,
       "UNAVAILABLE": 0,
@@ -1864,9 +1872,9 @@
     {
       "command": "bash source/tools/test_hooks_windows.sh",
       "exit": 0,
-      "seconds": 199.82,
-      "log": "/workspace/scratch/ws-c63/test_hooks_windows_final.log",
-      "PASS": 705,
+      "seconds": 198.05,
+      "log": "/workspace/scratch/ws-c63-repair/test_hooks_windows.log",
+      "PASS": 713,
       "SKIP": 5,
       "UNAVAILABLE": 17,
       "BLOCKED": 0
@@ -1874,8 +1882,8 @@
     {
       "command": "python3 source/tools/package.py",
       "exit": 0,
-      "seconds": 0.79,
-      "log": "/workspace/scratch/ws-c63/package.log",
+      "seconds": 0.91,
+      "log": "/workspace/scratch/ws-c63-repair/package.log",
       "PASS": 1,
       "SKIP": 0,
       "UNAVAILABLE": 0,
@@ -1883,11 +1891,11 @@
     }
   ],
   "nonduplicated_validation": {
-    "PASS": 725,
+    "PASS": 733,
     "SKIP": 5,
     "UNAVAILABLE": 17,
     "BLOCKED": 0,
-    "focused_c63_PASS": 26,
+    "focused_c63_PASS": 34,
     "focused_already_included_in_hooks": true,
     "build_success_separate": true,
     "package_validation_PASS_separate": 1,
@@ -1922,39 +1930,35 @@
   "hardware_watch_enabled": false,
   "pointer_chase": false,
   "game_used": false,
+  "previous_c63_owner_result": "BLOCKED",
+  "previous_c63_owner_progress": "20480/162472",
+  "previous_c63_owner_failure": "terminal POST not justified by original c62 state",
+  "owner_blocker_evidence": "analysis/V01C63_OWNER_OFFLINE_BLOCKED.md",
+  "accepted_c63_owner_JSON_exists": false,
+  "repaired_private_root_and_conversion_subtype": "UNKNOWN",
+  "real_c63_terminal_reason_counts": null,
+  "real_c63_terminal_conversion_first_failed_conjunct_counts": null,
+  "c62_source_and_admission_unchanged": true,
+  "edge_entry_snapshot_and_original_mismatch_delta_bound": true,
+  "prior_authorization_bound_to_sealed_pool_independent_of_current_lookup": true,
+  "converted_POST_not_reachability": true,
+  "terminal_phase_vocabulary_size": 5,
+  "terminal_reason_vocabulary_size": 5,
+  "schema_revision_reason": "bind edge terminal conversion provenance; no prior accepted c63 JSON; c56-c62 inputs unchanged",
+  "owned_unrecorded_lookup_fixture_scope": "protocol_boundary_seam_not_natural_accepted_aggregate",
+  "natural_converted_terminal_two_root_ordered_replay_PASS": true,
   "integrity_validation": {
     "PASS": 1,
     "SKIP": 0,
     "UNAVAILABLE": 0,
     "BLOCKED": 0,
-    "protected_base_files": 1103,
+    "protected_base_files": 1106,
     "code_tool_input_count": 299,
-    "code_tool_input_digest": "3059e27ec38b63dc6c1848a690372b5b69e9401ea1473fec32503a1643027c28"
+    "code_tool_input_digest": "b4fbdb32abcd0d2b1fb5eaf216734f031237cb315923b4bb50b182327ca919d5"
   },
   "verification_commands": [
     "git diff --check",
-    "python3 /workspace/scratch/ws-c63/verify.py",
-    "python3 /workspace/scratch/ws-c63/check_publication.py"
-  ],
-  "implementation_commit": "85dcbaf1d84f82c08553e084395dffb740b4115c",
-  "publication_validation": {
-    "PASS": 1,
-    "SKIP": 0,
-    "UNAVAILABLE": 0,
-    "BLOCKED": 0,
-    "branch": "codex/v01c20-edi-value-provenance",
-    "verified_remote_commit": "85dcbaf1d84f82c08553e084395dffb740b4115c",
-    "changed_files": 12,
-    "compared_files": 371,
-    "code_tool_input_count": 299,
-    "code_tool_input_digest": "3059e27ec38b63dc6c1848a690372b5b69e9401ea1473fec32503a1643027c28"
-  },
-  "wisdoms_sync": {
-    "repository": "deluxxxe-dev/MSM2-Wisdoms",
-    "branch": "main",
-    "commit": "84fa70e1d2cf84ac384cb9bd8875ed49ca475135",
-    "remote_head_verified": true,
-    "file": "docs/REVERSE_ENGINEERING_GUIDE.md"
-  },
-  "final_metadata_note": "implementation_push_independently_verified;metadata_only_commit_follows;final_remote_SHA_reported_in_handoff_to_avoid_self_reference"
+    "python3 /workspace/scratch/ws-c63-repair/verify.py",
+    "python3 /workspace/scratch/ws-c63-repair/check_publication.py"
+  ]
 }

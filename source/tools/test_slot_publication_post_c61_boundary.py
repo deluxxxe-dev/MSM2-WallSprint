@@ -411,3 +411,149 @@ assert help_result.returncode==0 and all('--c'+str(n)+'-json' in help_result.std
 missing=subprocess.run([sys.executable,str(Path(tool.__file__)),'missing-private.exe','--output','unused-c63.json'],capture_output=True,text=True)
 assert missing.returncode==2 and tool.BLOCKED in missing.stderr and not Path('unused-c63.json').exists()
 print('PASS: c63 CLI exposes read-only complete evidence inputs and absent private image is BLOCKED, never native/game PASS')
+
+# Regression for the legitimate c62 conversion omitted by the original observer.
+def conversion_functions(roots=None):
+    f=functions(bytes.fromhex('7505')+jump(0x1109,0x1400)+jump(0x110e,0x1500),roots=roots)
+    f.update({0x1200:b'\xc3',0x1400:jump(0x1400,0x1600),0x1500:b'\xc3',0x1600:b'\xc3'})
+    return f
+
+conversion,_=baseline63(conversion_functions());cv=records63(conversion);cr=result63(conversion)
+assert len(cv)==conversion.result['post_c61_uncertified_boundary_refusals']==1
+record=cv[0];prov=record['terminal_provenance']
+assert record['terminal_reason']=='prior_c61_authorization_converted_context_match_failure'
+assert record['terminal_phase']==tool.PHASES[3] and record['post_c61_origin'] is None
+assert not prov['edge_entry']['post_c61'] and not prov['edge_entry']['used_c61_source']
+assert prov['underlying_refusal']==c60.POST and prov['underlying_post_capture']['pc']==record['source_instruction_rva']==0x1400
+assert prov['mismatch_delta']=={'context_phase_origin_or_full_prefix_mismatch':1}
+assert prov['match_conjuncts']==dict(record_identity_matches_prior=True,scan_token_matches_prior=False,semantic_record_matches_prior=False)
+assert prov['first_failed_conjunct']=='scan_token_matches_prior'
+assert cr['terminal_reason_counts']=={record['terminal_reason']:1}
+assert cr['terminal_conversion_first_failed_conjunct_counts']=={'scan_token_matches_prior':1}
+assert cr['c62_candidate_output_unchanged'] and cr['new_post_c61_boundaries_admitted']==0
+print('PASS: repaired c63 naturally replays converted c60 POST outside both c62 post/source sets with exact reason and no false post-c61 reachability')
+
+conversion2,_=baseline63(conversion_functions(roots={0x1080:lea(0x1080,cfg.SLOT+8)+jump(0x1087,0x1100)}));cvs=records63(conversion2)
+assert len(cvs)==2 and len({r['source_instruction_rva'] for r in cvs})==1
+assert len({r['original_root_runtime_row'] for r in cvs})==len({r['incoming_state_identity'] for r in cvs})==len({r['record_identity'] for r in cvs})==2
+assert len({r['root_replay_identity'] for r in cvs})==2 and records63(conversion2)==cvs
+assert all(r['terminal_phase']==tool.PHASES[3] and r['post_c61_origin'] is None for r in cvs)
+print('PASS: repaired c63 converted terminal stays root/state/path/source/full-prefix specific across two real owned replay roots')
+
+# Boundary-only seams exercise an otherwise invariant-impossible missing lookup
+# and a later-scan guard. No historical class/module/source is mutated. The full
+# natural replay above, not these seams, proves accepted transaction preservation.
+class PrefixPause(Exception):pass
+
+class LookupBoundary:
+    def __init__(self,original):self.original=original;self.mode=None
+    def __getattr__(self,name):return getattr(self.original,name)
+    def lookup(self,root):return None if self.mode=='unrecorded' else self.original.lookup(root)
+
+
+def paused_edge(b,observed,pc):
+    parent=tool.View if observed else c62.View
+    class Paused(parent):
+        def edge(self,*args):
+            if self.c61_record is not None and args[1].address==pc:
+                self.saved_args=args;raise PrefixPause()
+            return super().edge(*args)
+    proxy=LookupBoundary(b.certificates);view=Paused(proxy)
+    e=b.certificates.baseline.pool.baseline.evidence;root=next(iter(e.proofs))
+    tx=(tool.Transaction if observed else c62.Transaction)(view,root,c58.c55.Engine(e.session.domain,e.session.profile.summary),c58.Limits())
+    try:tx.run()
+    except PrefixPause:pass
+    else:raise AssertionError('owned prefix did not pause before terminal callback')
+    return tx,view,proxy
+
+
+def core_state(tx,view):
+    return c56.encoded(dict(root=tx.root,contexts=[(k,c58.state_id(state),path) for k,(state,path) in sorted(tx.contexts.items())],
+        forward=[(k,sorted(v)) for k,v in sorted(tx.forward.items())],reverse=[(k,sorted(v)) for k,v in sorted(tx.reverse.items())],
+        work=tx.work,relations=tx.relations,created=tx.created,deduplicated=tx.deduplicated,cycles=tx.cycles,
+        post_c59=sorted(tx.post_c59),post_c61=sorted(tx.post_c61),path_tainted=sorted(tx.path_tainted),
+        references=tx.references,crossings=tx.crossings,later_crossings=tx.later_crossings,c61_crossings=tx.c61_crossings,
+        capture=view.capture,c61_record=view.c61_record,c61_source_keys=sorted(view.c61_source_keys),
+        considered=sorted(view.c61_considered),eligible=sorted(view.c61_eligible),edges_considered=sorted(view.c61_edges_considered),
+        edges_eligible=sorted(view.c61_edges_eligible),refusals=view.c61_refusals,mismatches=view.c61_mismatches,
+        lookup_misses=view.lookup_misses,original_considered=sorted(tx.considered),original_admitted=sorted(tx.admitted),
+        used_boundary_contexts=sorted(view.used_boundary_contexts),certified_contexts=sorted(view.certified_contexts)))
+
+
+def invoke_boundary(b,observed,pc,mode=None,later_scan=False,prior_authorized=True):
+    tx,view,proxy=paused_edge(b,observed,pc);args=list(view.saved_args);proxy.mode=mode
+    if later_scan:
+        tx.scan_token+=1
+        auth_pc=view.c61_record['source_instruction_rva'];begin,end,code,_=view.row(view.key[0])
+        args[1]=next(cfg.old.decoder().disasm(code[auth_pc-begin:],auth_pc,count=1))
+        edge=c59.classify_edges(view.session,begin,end,args[1])[0]
+        args[2:5]=[edge['edge_kind'],edge['edge_target_rva'],edge['architectural_successor']]
+    if not prior_authorized:view.c61_record=None
+    fn=tool.View.edge if observed else c62.View.edge
+    try:fn(view,*args)
+    except c58.Refusal as error:reason=str(error)
+    else:raise AssertionError('original terminal refusal unexpectedly admitted')
+    return tx,view,reason
+
+orig_tx,orig_view,reason=invoke_boundary(conversion,False,0x1400,mode='unrecorded')
+obs_tx,obs_view,obs_reason=invoke_boundary(conversion,True,0x1400,mode='unrecorded')
+assert reason==obs_reason==c62.POST and core_state(orig_tx,orig_view)==core_state(obs_tx,obs_view)
+missing_record=tool.record_for(conversion,obs_tx,obs_view);mp=missing_record['terminal_provenance']
+assert missing_record['terminal_reason']=='prior_c61_authorization_converted_unrecorded_root'
+assert missing_record['terminal_phase']==tool.PHASES[3] and missing_record['post_c61_origin'] is None
+assert not mp['edge_entry']['post_c61'] and not mp['edge_entry']['used_c61_source']
+assert mp['first_failed_conjunct']=='lookup_record_present' and mp['lookup_record_identity'] is None
+assert mp['mismatch_delta']=={'unrecorded_root':1} and mp['underlying_post_capture']['pc']==0x1400
+assert obs_view.certificates.records==conversion.certificates.records and obs_view.certificates.index==conversion.certificates.index
+# A protocol-boundary seam is not silently added to the natural accepted stream.
+a=tool.Aggregate(conversion);refused(lambda:a.add(missing_record));refused(a.finish,'poisoned')
+print('PASS: repaired c63 missing-lookup conversion boundary seam preserves exact original c62 exception/counters/state and sealed prior proof; never admitted as natural replay')
+
+orig_tx,orig_view,reason=invoke_boundary(conversion,False,0x1400)
+obs_tx,obs_view,obs_reason=invoke_boundary(conversion,True,0x1400)
+assert reason==obs_reason==c62.POST and core_state(orig_tx,orig_view)==core_state(obs_tx,obs_view)
+assert tool.record_for(conversion,obs_tx,obs_view)==cv[0]
+print('PASS: repaired c63 natural match-failure conversion calls original edge once and preserves all c62 state/counters/candidate bytes')
+
+local=functions(bytes.fromhex('7505')+jump(0x1109,0x1400)+bytes.fromhex('7505')+jump(0x1110,0x1500)+jump(0x1115,0x1600))
+local.update({0x1400:b'\xc3',0x1500:b'\xc3',0x1600:b'\xc3'});local_base,_=baseline63(local)
+lr=records63(local_base)[0]
+assert lr['terminal_reason']=='used_c61_source_later_instruction' and lr['terminal_phase']==tool.PHASES[0]
+assert lr['terminal_provenance']['underlying_refusal'] is None and not lr['terminal_provenance']['mismatch_delta']
+orig_tx,orig_view,reason=invoke_boundary(local_base,False,0x1115,later_scan=True)
+obs_tx,obs_view,obs_reason=invoke_boundary(local_base,True,0x1115,later_scan=True)
+assert reason==obs_reason==c62.POST and core_state(orig_tx,orig_view)==core_state(obs_tx,obs_view)
+sr=tool.record_for(local_base,obs_tx,obs_view)
+assert sr['terminal_reason']=='used_c61_source_later_scan' and sr['terminal_phase']==tool.PHASES[4]
+assert sr['source_instruction_rva']==sr['c61_authorization']['source_instruction_rva']
+assert sr['terminal_provenance']['underlying_refusal'] is None and not sr['terminal_provenance']['mismatch_delta']
+print('PASS: repaired c63 distinguishes later instruction and later scan on prior c61 source without relabeling either as post reachability or c60 conversion')
+
+assert v[0]['terminal_reason']=='current_context_post_c61_reachable'
+assert v[0]['terminal_provenance']['edge_entry']['post_c61'] and v[0]['terminal_provenance']['underlying_refusal'] is None
+orig_tx,orig_view,reason=invoke_boundary(conversion,False,0x1400,prior_authorized=False)
+obs_tx,obs_view,obs_reason=invoke_boundary(conversion,True,0x1400,prior_authorized=False)
+assert reason==obs_reason==c60.POST and obs_view.diagnostic_capture is None
+assert core_state(orig_tx,orig_view)==core_state(obs_tx,obs_view)
+print('PASS: repaired c63 preserves guard precedence, existing reachable terminals and pre-c61 refusal when no prior authorization exists')
+
+for field,value in [('terminal_reason','current_context_post_c61_reachable'),('terminal_phase',tool.PHASES[1]),('post_c61_origin',{'invented':True})]:
+    bad=deepcopy(cv[0]);bad[field]=value;a=tool.Aggregate(conversion);refused(lambda:a.add(bad));refused(a.finish,'poisoned')
+for field,value in [('mismatch_delta',{}),('underlying_refusal',c62.POST),('first_failed_conjunct','semantic_record_matches_prior'),
+    ('lookup_record_identity','wrong'),('current_c61_record_identity','wrong'),('match_conjuncts',{'invented':True})]:
+    bad=deepcopy(cv[0]);bad['terminal_provenance'][field]=value;a=tool.Aggregate(conversion)
+    refused(lambda:a.add(bad));refused(a.finish,'poisoned')
+print('PASS: repaired c63 wrong terminal reason/conversion subtype/predicate/source provenance permanently poisons full ordered aggregate')
+
+obs_tx,obs_view,_=invoke_boundary(conversion,True,0x1400)
+original=deepcopy(obs_view.terminal_edge_before)
+for field,value in [('root',99),('pc',0),('post_c61',True),('used_c61_source',True),('authorization_record_identity','wrong'),('mismatch_counts',{})]:
+    obs_view.terminal_edge_before=deepcopy(original);obs_view.terminal_edge_before[field]=value
+    if field=='mismatch_counts':obs_view.terminal_edge_before[field]={'context_phase_origin_or_full_prefix_mismatch':-1}
+    refused(lambda:tool.record_for(conversion,obs_tx,obs_view))
+obs_view.terminal_edge_before=original;assert tool.record_for(conversion,obs_tx,obs_view)==cv[0]
+assert sum(cr['terminal_reason_counts'].values())==cr['post_c61_boundary_instances_total']
+assert sum(cr['terminal_phase_counts'].values())==cr['post_c61_boundary_instances_total']
+assert cr['c52_production_watch_gate']=='PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL'
+assert all(cr[k] is False for k in c56.FALSE_GATES)
+print('PASS: repaired c63 edge-entry snapshot and mismatch delta revalidation bind exact source/root/prior proof; diagnostic repair opens no gate')

@@ -16,13 +16,14 @@ import slot_publication_post_c59_stitched as c62
 
 c61,c60,c59,c58,c57,c56,cfg = c62.c61,c62.c60,c62.c59,c62.c58,c62.c57,c62.c56,c62.cfg
 VERSION = 'v0.1c63'
-SCHEMA = 1
-CONTRACT = 'exact_c62_first_terminal_post_c61_boundary_full_prefix_diagnostic_v1'
+SCHEMA = 2
+CONTRACT = 'exact_c62_first_terminal_post_c61_boundary_conversion_provenance_diagnostic_v2'
 READY = 'POST_C61_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY'
 BLOCKED = 'POST_C61_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_BLOCKED'
 EXPECTED_SHA = c62.EXPECTED_SHA
 PHASES = ('same_instance_after_c61_preflight_before_row_fixpoint','post_c61_reachable_context',
-    'post_c61_reachable_dedup_stored_earlier_path')
+    'post_c61_reachable_dedup_stored_earlier_path','prior_c61_authorization_converted_c60_post',
+    'used_c61_source_on_later_scan')
 ACCEPTED_C62 = dict(repository_result=c62.READY,tool_version=c62.VERSION,schema_version=c62.SCHEMA,
     accepted_c61_classifier_identity='a828ec479e0f3279ddaf117d76ff827652155c357a8415606cbe2924e479d349',
     accepted_c61_record_set_identity='f5bc25085c62e7f9a32eab74ade7af97e076c9b03c99f796cc06d179ad5f724e',
@@ -88,26 +89,89 @@ def path_summary(path):
         c61_full_prefix_identities=[p['c61_full_prefix_identity'] for p in path if p.get('proof_kind')=='c61_post_boundary'])
 
 
+def edge_before(tx,view,index,ins):
+    """Passive entry snapshot, before exactly ONE original c62 edge invocation."""
+    auth = view.c61_record
+    return dict(root=tx.root,key=view.key,index=index,pc=ins.address,size=ins.size,
+        instruction_sha256=c56.sha(bytes(ins.bytes)),post_c61=view.key in tx.post_c61,
+        used_c61_source=view.key in view.c61_source_keys,scan_token=tx.scan_token,
+        authorization_scan_token=view.c61_scan_token,
+        authorization_record_identity=auth['record_identity'] if auth is not None else None,
+        authorization_source_pc=auth['source_instruction_rva'] if auth is not None else None,
+        mismatch_counts=dict(view.c61_mismatches))
+
+
+def terminal_provenance(tx,view,index,ins):
+    before = view.terminal_edge_before
+    if before is None:raise c58.EvidenceError('terminal POST has no original edge-entry snapshot')
+    current = edge_before(tx,view,index,ins)
+    if any(c56.encoded(before[k])!=c56.encoded(current[k]) for k in before if k!='mismatch_counts'):
+        raise c58.EvidenceError('stale/wrong terminal edge-entry source/context/authorization')
+    delta = {k:current['mismatch_counts'].get(k,0)-before['mismatch_counts'].get(k,0)
+        for k in set(current['mismatch_counts'])|set(before['mismatch_counts'])}
+    delta = {k:v for k,v in delta.items() if v}
+    result = dict(edge_entry=deepcopy(before),mismatch_counts_after=current['mismatch_counts'],mismatch_delta=delta,
+        underlying_refusal=None,underlying_post_capture=None,lookup_record_identity=None,
+        current_c61_record_identity=None,match_conjuncts=None,first_failed_conjunct=None)
+    if before['post_c61']:
+        if delta:raise c58.EvidenceError('post-c61 guard unexpectedly changed c61 mismatch counters')
+        result['reason'] = 'current_context_post_c61_reachable'
+    elif before['used_c61_source'] and (before['pc']!=before['authorization_source_pc']
+        or before['scan_token']!=before['authorization_scan_token']):
+        if delta:raise c58.EvidenceError('used-source guard unexpectedly changed c61 mismatch counters')
+        result['reason'] = 'used_c61_source_later_scan' if before['scan_token']!=before['authorization_scan_token'] else 'used_c61_source_later_instruction'
+    else:
+        if before['authorization_record_identity'] is None:
+            raise c58.EvidenceError('converted POST lacks prior c61 authorization')
+        # Original c61 capture comes from the original c60 POST raised inside the
+        # single delegated call. Reconstruct exact current c61 record passively;
+        # this validates source/phase/path/origin, with no admission or work charge.
+        record = c61.record_for(view.certificates.baseline,tx,view)
+        expected = view.certificates.lookup(tx.root)
+        result.update(underlying_refusal=c60.POST,underlying_post_capture=deepcopy(view.capture),
+            current_c61_record_identity=record['record_identity'])
+        if delta=={'unrecorded_root':1} and expected is None:
+            result['reason'] = 'prior_c61_authorization_converted_unrecorded_root'
+            result['first_failed_conjunct'] = 'lookup_record_present'
+        elif delta=={'context_phase_origin_or_full_prefix_mismatch':1} and expected is not None:
+            conjuncts = dict(record_identity_matches_prior=expected['record_identity']==view.c61_record['record_identity'],
+                scan_token_matches_prior=tx.scan_token==view.c61_scan_token,
+                semantic_record_matches_prior=c56.encoded(c62.semantic(record))==c56.encoded(c62.semantic(view.c61_record)))
+            failed = next((k for k,v in conjuncts.items() if not v),None)
+            if failed is None:raise c58.EvidenceError('converted POST has no failed original c62 match conjunct')
+            result.update(reason='prior_c61_authorization_converted_context_match_failure',
+                lookup_record_identity=expected['record_identity'],match_conjuncts=conjuncts,first_failed_conjunct=failed)
+        else:raise c58.EvidenceError('unrecognized original c62 terminal conversion provenance')
+    return result
+
+
 def capture_for(tx,view,index,ins):
     key = view.key
     if key is None or key[0]!=index or key not in tx.contexts:raise c58.EvidenceError('terminal c62 POST lacks current source context')
     state,path = tx.contexts[key]
     if key[1]!=c58.state_id(state):raise c58.EvidenceError('wrong terminal incoming state')
     authorized = view.c61_record
-    if authorized is None or c56.encoded(authorized)!=c56.encoded(view.certificates.lookup(tx.root)):
+    # Authenticate prior authorization against the sealed FULL pool rather than
+    # repeating the CURRENT lookup which is itself allowed to be the refusal.
+    ordinal = view.certificates.index.get(tx.root)
+    if (authorized is None or ordinal is None
+        or c56.encoded(authorized)!=view.certificates.records[ordinal]):
         raise c58.EvidenceError('terminal POST lacks exact authenticated c61 authorization')
-    origin = tx.post61_origins.get(key)
-    if key in tx.post_c61:
+    provenance = terminal_provenance(tx,view,index,ins)
+    reason = provenance['reason'];origin = tx.post61_origins.get(key)
+    if reason=='current_context_post_c61_reachable':
         if origin is None:raise c58.EvidenceError('post-c61 reachability missing diagnostic origin')
         phase = PHASES[1] if any(p.get('proof_kind')=='c61_post_boundary' for p in path) else PHASES[2]
-    elif key in view.c61_source_keys:
-        phase = PHASES[0]
-    else:raise c58.EvidenceError('terminal POST not justified by original c62 state')
+    elif reason=='used_c61_source_later_instruction':phase = PHASES[0]
+    elif reason=='used_c61_source_later_scan':phase = PHASES[4]
+    else:
+        phase = PHASES[3]  # Prior authorization is NOT current post reachability.
+        if key in tx.post_c61 or origin is not None:raise c58.EvidenceError('conversion falsely labeled reachable origin')
     _,_,code,_ = view.row(index)
     return dict(root=tx.root,row=index,state_identity=key[1],path=path_summary(path),
         entry_seed_fact_count=sum(f is not None for f in state),pc=ins.address,size=ins.size,
         instruction_sha256=c56.sha(bytes(ins.bytes)),row_sha256=view.session.row_identity(index),code_sha256=c56.sha(code),
-        phase=phase,post_c61_origin=deepcopy(origin),post_c59_origin=deepcopy(tx.post_origins.get(key)),
+        phase=phase,terminal_provenance=provenance,post_c61_origin=deepcopy(origin),post_c59_origin=deepcopy(tx.post_origins.get(key)),
         c61_authorization={k:deepcopy(authorized[k]) for k in ('record_identity','classifier_identity','root_replay_identity',
             'entry_instance_identity','current_entry_instance_row','incoming_state_identity','boundary_path_identity',
             'boundary_transition_identities','source_instruction_rva','source_instruction_sha256','terminal_phase','post_c59_origin',
@@ -120,12 +184,15 @@ class View(c62.View):
     def __init__(self,certificates):
         super().__init__(certificates)
         self.diagnostic_capture = None  # independent of c61's original .capture
+        self.terminal_edge_before = None
 
     def edge(self,index,ins,kind,target,architectural,relations):
+        before = edge_before(self.tx,self,index,ins) if self.tx is not None else None
         try:return super().edge(index,ins,kind,target,architectural,relations)
         except c58.Refusal as error:
             if str(error)==c62.POST:
                 if self.tx is None:raise c58.EvidenceError('missing terminal transaction')
+                self.terminal_edge_before = before
                 capture = capture_for(self.tx,self,index,ins)
                 if self.diagnostic_capture is not None and c56.encoded(self.diagnostic_capture)!=c56.encoded(capture):
                     raise c58.EvidenceError('multiple distinct terminal c62 source events')
@@ -205,7 +272,8 @@ def record_for(baseline,tx,view):
         **capture['path'],source_runtime_row_sha256=capture['row_sha256'],source_code_sha256=capture['code_sha256'],
         source_begin_rva=begin,source_end_rva=end,source_instruction_rva=pc,source_instruction_size=size,
         source_instruction_sha256=capture['instruction_sha256'],source_mnemonic=ins.mnemonic,first_refusal=c62.POST,
-        terminal_phase=capture['phase'],post_c61_origin=capture['post_c61_origin'],post_c59_origin=capture['post_c59_origin'],
+        terminal_phase=capture['phase'],terminal_reason=capture['terminal_provenance']['reason'],
+        terminal_provenance=capture['terminal_provenance'],post_c61_origin=capture['post_c61_origin'],post_c59_origin=capture['post_c59_origin'],
         c61_authorization=capture['c61_authorization'],c61_terminal_phase=capture['c61_authorization']['terminal_phase'],
         local_c61_edge_identities=capture['local_c61_edge_identities'],root_replay_identity=c56.digest(snapshot),edges=edges,
         state_scope='authenticated_entry_seed_not_source_instruction_must_state',
@@ -294,6 +362,7 @@ class Aggregate:
         self.kinds,self.relations,self.exact,self.interior,self.free,self.adjacent,self.phases,self.c61_phases = (Counter() for _ in range(8))
         self.examples_kind = {k:[] for k in c57.KINDS};self.examples_relation = {k:[] for k in c57.RELATIONS}
         self.records_sha = hashlib.sha256()
+        self.terminal_reasons,self.conversion_failures = Counter(),Counter()
 
     def add(self,record):
         if self.poisoned:raise c58.EvidenceError('POST aggregate already poisoned')
@@ -306,6 +375,9 @@ class Aggregate:
             self.count += 1;self.roots.add(root);self.instances.add(record['record_identity'])
             self.states.add((root,record['current_entry_instance_row'],record['incoming_state_identity'],record['boundary_path_identity']))
             self.rows.add(record['current_entry_instance_row']);self.phases[record['terminal_phase']] += 1;self.c61_phases[record['c61_terminal_phase']] += 1
+            self.terminal_reasons[record['terminal_reason']] += 1
+            failed = record['terminal_provenance']['first_failed_conjunct']
+            if failed is not None:self.conversion_failures[failed] += 1
             self.records_sha.update(c56.encoded(record)+b'\n')
             for edge in record['edges']:
                 kind,relation = edge['edge_kind'],edge['target_metadata_relation']
@@ -337,6 +409,8 @@ class Aggregate:
                 edge_kind_counts={k:self.kinds[k] for k in c57.KINDS},target_metadata_relation_counts={k:self.relations[k] for k in c57.RELATIONS},
                 exact_runtime_begin_edge_kind_counts={k:self.exact[k] for k in c57.KINDS},interior_target_edge_kind_counts={k:self.interior[k] for k in c57.KINDS},
                 metadata_free_RX_edge_kind_counts={k:self.free[k] for k in c57.KINDS},exact_adjacency_counts={k:self.adjacent[k] for k in c57.KINDS},
+                terminal_reason_counts=dict(sorted(self.terminal_reasons.items())),
+                terminal_conversion_first_failed_conjunct_counts=dict(sorted(self.conversion_failures.items())),
                 terminal_phase_counts=dict(sorted(self.phases.items())),c61_authorization_phase_counts=dict(sorted(self.c61_phases.items())),
                 authenticated_record_set_sha256=self.records_sha.hexdigest(),examples_per_class=self.limit,
                 examples_by_edge_kind=self.examples_kind,examples_by_target_relation=self.examples_relation,classification_complete=True,

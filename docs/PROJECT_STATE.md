@@ -1,29 +1,35 @@
 # WallSprint project state
 
-## c63 current stage — first terminal post-c61 diagnostic TOOL READY
+## c63 current stage — repaired observer TOOL READY; owner rerun pending
 
-**POST_C61_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**. Separatev0.1c63/schema1
-OFFLINE/STATIC diagnostic reconstructs/authenticates accepted c56→c62 chain and full
-c62 JSON/counts/identities. Capture only first original terminal post-c61 edge per
-root and rethrow unchanged; audit every dynamic c62 accounting field and complete
-candidate bytes. Second full ordered replay authenticates each record and entire
-expected2923-root domain. Exact original root/row/entry seed/path/transitions/source/
-metadata/prefix plus accepted c61 phase/origin/full-prefix and c62 result IDs bound.
+**POST_C61_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**,v0.1c63/schema2/new diagnostic
+contract. Prior published owner c63 run BLOCKED at20480/162472 with terminal POST
+not justified by original c62 state. Both V01C63_OWNER_OFFLINE_BLOCKED copies
+immutable. No accepted c63 JSON exists. Repaired actual distribution/root/subtype
+UNKNOWN/null; owned fixture is not the private owner root.
 
-New terminal phase distinct from historical c61 authorization phase. Stored first
-path and actual post-arrival/closure origin remain separate. Source-local preflight
-is not a completed crossing. Invalidation-only terminal without source edge callback
-BLOCKS aggregate; do not invent PC or publish partial completeness. Cloud actual
-c63 edge/row/phase/completeness distribution UNKNOWN/null:private EXE/full JSON absent.
+The gap was an observer assumption: prior c61 authorization can cause an underlying
+c60 POST to be converted even when current context is neither post-c61 reachable
+nor a used c61 source. C63 now snapshots edge-entry source/context/guard/tokens and
+original mismatch counters,delegates ONE original edge call,then binds exact
+terminal conversion reason/provenance. Lookup/match conversion stays separate
+from reachability; original predicate conjunction/first failure recorded. Prior
+proof authenticated against sealed full root record independently of failed lookup.
 
-Successors classify only; no edge admission/new Fact/candidate/target traversal.
-Original EMPTY-root/must/GPR Facts/CALL/RSP/c57/c59/c61/c60/c62/caps/root transaction
-rules unchanged. All completeness/publication/allocation/base/range/lifetime/
-ownership/destination/CFG/EH/production/watch/game gates false,C52 FAIL binding.
-Runtimev0.1c38/package0.1.56 unchanged,no release/native probe. After verified push,
-owner runs one offline c63 command with c56 checkpoints+c57-c62 JSONs read-only,
-returns compact c63 JSON. No Update-WS/game/Overstrike/EXE upload/runtime capture.
-Details V01C63_POST_C61_RUNTIME_BOUNDARY/GATE/STATUS and CODEX_RESULT.
+Natural owned two-root replay covers outside-both-sets conversion; paired protocol
+boundary fixtures cover missing lookup/later scan without changing old source or
+pool bytes. Seam records cannot enter the natural aggregate.34 focused groups.
+Full expected2923-root domain,second ordered replay,original c62 accounting and
+positive candidate hash checks unchanged. Invalidation-only no-edge source BLOCKS;
+no invented instruction or post origin,edge,Fact,candidate or recursive certificate.
+
+C56-c62 code/admission/caps/counts/outcomes/evidence byte-identical. All completeness/
+publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/
+watch/game gates false,C52 FAIL binding. Runtimev0.1c38/package0.1.56 unchanged.
+After verified push,one offline c63 rerun uses existing c56 checkpoints+c57-c62 JSON
+read-only and returns same compact c63 output filename. No evidence editing/
+regeneration,Update-WS/game/Overstrike/native probe. Details c63 analysis/gate/status
+and CODEX_RESULT; owner-facing reply stays short.
 
 ## c62 historical accepted owner VERIFIED-STATIC continuation result
 
@@ -811,12 +817,12 @@ The VMOVUPS store is existing game code, not a MOD write and not permission to w
 
 ## Current action
 
-C63 is POST_C61_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY (owned diagnostic mechanism).
-After verified publication, fetch intended branch and run one offline c63 command
-with existing c56 checkpoints+c57-c62 JSONs read-only; return compact c63 JSON.
-Accepted2923-root c62 POST domain is input evidence,not actual cloud classification.
-Actual c63 distribution UNKNOWN. No Update-WS/game/Overstrike/EXE upload/runtime
-capture/native probe. C63 admits no new edge or Fact; C52 FAIL remains binding.
+Rerun repaired c63 schema2 offline classifier after verified publication with the
+same immutable c56 checkpoints+c57-c62 JSONs; return compact
+MSM2-WS-v0.1c63-post-c61-runtime-boundary.json. Prior owner failure is observer-only,
+not c62 regression; private root/subtype and repaired distribution UNKNOWN here.
+Expected2923-root domain and c62 result unchanged. No Update-WS/game/Overstrike/
+native probe/evidence editing or regeneration. All closed gates and C52 FAIL remain.
 
 Do not add the exact-slot watch, PAGE_GUARD or broad memory interception merely
 to force progress. Do not merge `main`, do not traverse producer `0x351EB00`, and
