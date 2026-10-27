@@ -1,33 +1,51 @@
 # WallSprint project state
 
-## c51 current stage — test-only VCH post-return bridge, native evidence pending
+## c52 current stage — production-shape VCH witness review FAIL
 
-**VCH_POST_RETURN_WITNESS_BRIDGE_UNAVAILABLE**. Accepted owner c50 native
-MIXED_SEARCH_IDENTITY_DIAGNOSTIC_PASS closes the old global-count ambiguity:
-global4 vs one worker-owned lease, sole old global conjunct false, actual VCH1
-ordered after downstream-final context. C49 historical FAIL remains FAIL; its
-VCH boundary and c50 identity PASS do not prove post-return acknowledgment.
+**PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL**. Accepted c51 native PASS
+proves one owned Position/close mixed-SEARCH post-return witness, not all-path
+production coverage. The first missing design guarantee is a supported final
+CONTEXT/terminal VCH boundary for every admitted obligation, including later
+callbacks and other saved-context application paths. First=0 is registration
+order, not permanent exclusive terminal ownership. No supported game-process
+admission contract closing that domain is established.
 
-New c51 one-debt Position/close candidate retains the exact reviewed c41 stub
-helper bodies and unchanged machine harness. Coordinator preparation/publication
-occurs outside VCH; only final Rip may redirect after exact context/identity/code
-checks. An actual exact token is required before pending0/original final poll.
-Complete3 stable readbacks/foreign configuration/machine state are required.
-No DR repair/mask; full same-event DR6 status is checked independently of old
-raw/c44 and unchanged c47 profile. Marker acknowledgment never frees storage;
-actual retained worker termination is required. This is not production integration.
+All S0-S3/C0-C8/T0 source return rows and install/cleanup/lifetime paths are
+audited. Necessary fixed-credit, multi-obligation, epoch/sequence, poison,
+publication and reader/PC lifetime rules are specified, but no coherent complete
+concurrent production ledger or no-wait prevalidated target pool is established.
+C51's cooperative callback hold/near allocation cannot become production-safe
+just by moving allocation to a coordinator. Actual game mitigations/full XSTATE
+and module residency remain unproven. Marker acknowledgment is not code exit.
 
-Wine observes mixed SEARCH/foreign EXECUTION and preserved machine state but
-VCH callback0 in both ordinary/extra-idle controls. Pending1 survives until
-worker exit; no stub publication, token or live final cleanup is claimed there.
-Native bridge execution remains unperformed. Detailed protocol/limits:
-V01C51_VCH_POST_RETURN_WITNESS/GATE/STATUS and CODEX_RESULT.
+No positive production-shape executable/model bridge is added: task section6's
+coherent-design prerequisite is not met. The focused static audit checks source/
+proof/inventory integrity, not production or native acceptance. All c39-c51
+code/tests/native artifacts/historical results and CODEX_NEXT are preserved.
+Production behavior/restore/ownership/handler/lease/cleanup, exact-slot and
+gameplay remain unchanged. Runtime v0.1c38/package0.1.56, no new game release.
+Details: V01C52_PRODUCTION_VCH_WITNESS_REVIEW/GATE/STATUS and CODEX_RESULT.
+No owner Update-WS/game/Overstrike/standalone/scan/log operation is required.
 
-After publication, the only owner action is the new c51 standalone from
-analysis/native-probes/c51: `.\continuation-witness.exe --position --mixed-search-vch --json`.
-Return compact JSON. No Update-WS/game/Overstrike/scan/log or mitigation change.
-Production/all c39-c50 helpers/tests/native results/counterexamples, exact-slot
-and gameplay gates remain unchanged. Runtime v0.1c38/package0.1.56, no release.
+## c51 historical accepted stage — native one-debt post-return bridge PASS
+
+Accepted owner-native result at1aad6e4:
+**VCH_POST_RETURN_WITNESS_BRIDGE_FEASIBILITY_PASS**. GenuineIntel/Position/close,
+actual admitted [0,0,256], unique worker obligation despite global4 leases,
+WS SEARCH/foreign EXECUTION/VCH1 with exact final context. Reviewed c41 stub
+prepared/published outside VCH; VCH changed only Rip; exact nine-field-bound
+token acknowledged debt1->0. Cleanup followed token, three readbacks were stable,
+foreign configuration/machine state preserved, no second access or resurrection.
+RAW_EXACT/c44 remained false; the separate c51 same-event configuration passed,
+with no repair/mask and no c47-profile transfer. Stub/marker storage remained
+alive until retained worker exit, then was freed. Canonical proof:
+V01C51_NATIVE_WINDOWS_RESULT.md (both copies byte-identical).
+
+Historical c51 Wine callback0/UNAVAILABLE and pending1-until-exit remain in the
+unchanged c51 report/status/artifact manifest. They are not relabeled native
+PASS. New native proof supersedes the old pending-native summary only; it does
+not establish all-path accounting, permanent VCH order, arbitrary target pools,
+full production XSTATE, module lifetime or safe live-thread stub reuse.
 
 ## c50 historical accepted stage — native unique worker identity PASS
 
@@ -543,25 +561,25 @@ The VMOVUPS store is existing game code, not a MOD write and not permission to w
 30. c48 production integration review ✅ historical FAIL; SEARCH coverage and code/data lifetime blockers
 31. c49 mixed SEARCH/VCH boundary ✅ historical native FAIL with actual VCH1
 32. c50 native unique worker identity ✅ PASS; sole global-count conjunct identified
-33. c51 one-debt VCH post-return bridge ▶ CURRENT UNAVAILABLE; new native run required
-34. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
-35. bounded publication/source chain ⏸ pending writer-site evidence
-36. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
-37. resume full writer XYZ/W causal proof ⏸ after store containment
-38. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-39. safe writable upstream movement source ⬜ NOT AUTHORIZED
-40. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-41. adhesion/contact refinement ⏸ deferred
-42. animation/camera/later traversal ⬜
+33. c51 one-debt VCH post-return bridge ✅ accepted native fixture PASS; terminal-only storage free
+34. c52 production-shape VCH integration review ▶ CURRENT FAIL; terminal-boundary/credits/pool/lifetime unresolved
+35. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
+36. bounded publication/source chain ⏸ pending writer-site evidence
+37. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
+38. resume full writer XYZ/W causal proof ⏸ after store containment
+39. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+40. safe writable upstream movement source ⬜ NOT AUTHORIZED
+41. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+42. adhesion/contact refinement ⏸ deferred
+43. animation/camera/later traversal ⬜
 
 ## Current action
 
-C51 is VCH_POST_RETURN_WITNESS_BRIDGE_UNAVAILABLE. After verified publication,
-run only the new c51 owned native standalone command above and return compact
-JSON. Native feasibility requires actual RIP-only VCH redirection, exact token,
-subsequent configuration cleanup/three readbacks and storage retained until real
-worker exit. Do not infer it from Wine/model PASS or prior c50 boundary/identity.
-C48 production review FAIL and all deferred slot/gameplay gates remain unchanged.
+C52 is PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL. No owner operation is
+needed for this review. A later explicitly scoped design task must close the
+supported final-context boundary and the remaining no-drop credit/pool/lifetime
+guarantees before production integration is authorized. C51 native PASS stays
+bounded; historical c48 review FAIL and all deferred slot/gameplay gates remain.
 
 Do not add the exact-slot watch, PAGE_GUARD or broad memory interception merely
 to force progress. Do not merge `main`, do not traverse producer `0x351EB00`, and

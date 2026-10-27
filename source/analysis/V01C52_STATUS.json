@@ -1,0 +1,1274 @@
+{
+  "task": "c52_production_shape_VCH_witness_integration_review",
+  "date_JST": "2026-10-27",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "base_commit": "e27fbaabafe05995f6f156657a430348cda2875d",
+  "primary_result": "PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL",
+  "accepted_native_c51_result": "VCH_POST_RETURN_WITNESS_BRIDGE_FEASIBILITY_PASS",
+  "accepted_native_c51_sha256": "75b7cb0d9dd922f28c62e23649d27620baaf0d4a9bf8bbfe73491aaf62362f55",
+  "first_missing_guarantee": "supported_complete_final_context_terminal_VCH_boundary",
+  "supported_terminal_VCH_boundary_established": false,
+  "bounded_no_drop_ledger_established": false,
+  "bounded_no_block_prepared_target_coverage_established": false,
+  "actual_game_admission_established": false,
+  "positive_production_shape_harness_implemented": false,
+  "positive_harness_not_implemented_reason": "section6_coherent_design_prerequisite_not_met_no_supported_terminal_domain_credits_pool_lifetime_proof",
+  "focused_check_kind": "static_source_provenance_and_review_integrity_NOT_model_or_native_acceptance",
+  "production_changed": false,
+  "exact_slot_watch_enabled": false,
+  "game_used": false,
+  "new_game_release": false,
+  "broad_DR6_mask": false,
+  "live_thread_stub_reuse": false,
+  "runtime_version": "v0.1c38",
+  "package_version": "0.1.56",
+  "owner_action": "none_review_only",
+  "BLOCKED": 0,
+  "blocked_subtasks": [],
+  "ledger_states": [
+    "FREE",
+    "RESERVED",
+    "PUBLISHED",
+    "FINAL_CONTEXT_BOUND",
+    "RIP_REDIRECTED",
+    "DEBT_ACKNOWLEDGED",
+    "EXECUTION_QUIESCENT_OR_THREAD_EXIT",
+    "RECLAIMABLE",
+    "UNKNOWN_POISON"
+  ],
+  "return_paths": [
+    {
+      "id": "S0",
+      "source": "source/src/msm2/orientation_trace.cpp",
+      "begin_line": 153,
+      "end_line": 153,
+      "span_sha256": "09f7cdc86c8827b8dac2bcf5d2ecbe07d93cd131cda136fdb7f14b1e04c4e130",
+      "disposition": "SEARCH",
+      "mutation": " no mutation, invalid pointers or non-single-step",
+      "identity_obligations": "Null has no usable context; valid other exception can carry owned config. Need domain registration before this guard, or proved exclusion",
+      "reservation": "before mutation/escape and cleanup zero; independent of diagnostic event/ring",
+      "final_VCH_target": "Unknown flags/foreign continuation; cannot assume VCH or prepared target. Retain unknown debt/residency; no invented DR reads",
+      "lifetime": "retain reserved/unknown debt and reachable code/readers; exit requires retained signaled epoch handle"
+    },
+    {
+      "id": "S1",
+      "source": "source/src/msm2/orientation_trace.cpp",
+      "begin_line": 154,
+      "end_line": 154,
+      "span_sha256": "64336525b436b13ee092f0df08d399e1e1f012691f8c8f47db1fe22b9d5a726c",
+      "disposition": "SEARCH",
+      "mutation": " missing debug flags, no mutation",
+      "identity_obligations": "Participation unknown, K/O not inspectable here; pre-admitted thread/domain credit or poison",
+      "reservation": "before mutation/escape and cleanup zero; independent of diagnostic event/ring",
+      "final_VCH_target": "No authenticated final DR snapshot; VCH observation cannot be presumed",
+      "lifetime": "retain reserved/unknown debt and reachable code/readers; exit requires retained signaled epoch handle"
+    },
+    {
+      "id": "S2",
+      "source": "source/src/msm2/orientation_trace.cpp",
+      "begin_line": 154,
+      "end_line": 154,
+      "span_sha256": "64336525b436b13ee092f0df08d399e1e1f012691f8c8f47db1fe22b9d5a726c",
+      "disposition": "SEARCH",
+      "mutation": " no owned cause B0/B1, no mutation",
+      "identity_obligations": "Config may still be owned; candidate O must be independent of cause bits and event emission",
+      "reservation": "before mutation/escape and cleanup zero; independent of diagnostic event/ring",
+      "final_VCH_target": "Two c48 B2-only Wine controls did not resurrect; not universal exclusion or VCH coverage",
+      "lifetime": "retain reserved/unknown debt and reachable code/readers; exit requires retained signaled epoch handle"
+    },
+    {
+      "id": "S3",
+      "source": "source/src/msm2/orientation_trace.cpp",
+      "begin_line": 155,
+      "end_line": 159,
+      "span_sha256": "dfc385238664561d20bcdc1d4b36c2f822125931765798b1977befbaf8938e06",
+      "disposition": "SEARCH",
+      "mutation": " no matching lease, no mutation",
+      "identity_obligations": "Could be genuinely foreign, recycled tid or unknown epoch. No identity guessed from tombstones; unknown-domain poison",
+      "reservation": "before mutation/escape and cleanup zero; independent of diagnostic event/ring",
+      "final_VCH_target": "Foreign path may resume elsewhere; no target/lifetime proof",
+      "lifetime": "retain reserved/unknown debt and reachable code/readers; exit requires retained signaled epoch handle"
+    },
+    {
+      "id": "C0",
+      "source": "source/src/msm2/orientation_trace.cpp",
+      "begin_line": 161,
+      "end_line": 161,
+      "span_sha256": "d09ddb2c53bdd4e3efcd8013c0899701ae9f361f39a8cd3119db517ed75959ce",
+      "disposition": "T0 SEARCH/EXECUTION",
+      "mutation": " restore each owned matching lease and cause bits",
+      "identity_obligations": "Multiple up/lease identities, full O required, not first selected lease. Reserve before first restore",
+      "reservation": "before mutation/escape and cleanup zero; independent of diagnostic event/ring",
+      "final_VCH_target": "C51 one full lease does not cover this set. No general VCH/pool coverage; outstanding debt blocks retirement",
+      "lifetime": "retain reserved/unknown debt and reachable code/readers; exit requires retained signaled epoch handle"
+    },
+    {
+      "id": "C1",
+      "source": "source/src/msm2/orientation_trace.cpp",
+      "begin_line": 162,
+      "end_line": 162,
+      "span_sha256": "78e05a826082846128ef63c03455d85020f93b956877f59e1b22ade82ab71201",
+      "disposition": "T0 both",
+      "mutation": " restore owned subset for partial/kill/closed/clock/deadline",
+      "identity_obligations": "K plus partial O before restore, including stale/tombstone lease; foreign slots preserved",
+      "reservation": "before mutation/escape and cleanup zero; independent of diagnostic event/ring",
+      "final_VCH_target": "Timeout/kill does not acknowledge; missing final boundary retains debt",
+      "lifetime": "retain reserved/unknown debt and reachable code/readers; exit requires retained signaled epoch handle"
+    },
+    {
+      "id": "C2",
+      "source": "source/src/msm2/orientation_trace.cpp",
+      "begin_line": 165,
+      "end_line": 165,
+      "span_sha256": "472f8630e776e3f3668b1774fb64cb120ae1159bcafa27b08cfd45abb66432a5",
+      "disposition": "T0 both",
+      "mutation": " Position cap closes/restores",
+      "identity_obligations": "One or multiple compatible obligations; reserve before branch, event256 is not debt capacity",
+      "reservation": "before mutation/escape and cleanup zero; independent of diagnostic event/ring",
+      "final_VCH_target": "Closed capture does not imply OS return; target/pool unknown",
+      "lifetime": "retain reserved/unknown debt and reachable code/readers; exit requires retained signaled epoch handle"
+    },
+    {
+      "id": "C3",
+      "source": "source/src/msm2/orientation_trace.cpp",
+      "begin_line": 166,
+      "end_line": 168,
+      "span_sha256": "f906d0397ed5f88e10e29d82076b082eab0ca98d2ab27c2ef37414a526859ed3",
+      "disposition": "T0 both",
+      "mutation": " budget multithread drop retains slots, otherwise restore",
+      "identity_obligations": "Reserve even without captured event; not maxEvents credit",
+      "reservation": "before mutation/escape and cleanup zero; independent of diagnostic event/ring",
+      "final_VCH_target": "Continuing armed drops still create possible return debt",
+      "lifetime": "retain reserved/unknown debt and reachable code/readers; exit requires retained signaled epoch handle"
+    },
+    {
+      "id": "C4",
+      "source": "source/src/msm2/orientation_trace.cpp",
+      "begin_line": 169,
+      "end_line": 169,
+      "span_sha256": "9ec02f61cc3a9e5d0a314e14d4be64bcb918aed41f4d35f65011d2233d417f6f",
+      "disposition": "T0 both",
+      "mutation": " eventLock failure closes/restores or drops/retains",
+      "identity_obligations": "Nested/reentrant entry needs independent pre-reserved credit before taking eventLock",
+      "reservation": "before mutation/escape and cleanup zero; independent of diagnostic event/ring",
+      "final_VCH_target": "Lock failure cannot lose debt; no user/event lock for registration",
+      "lifetime": "retain reserved/unknown debt and reachable code/readers; exit requires retained signaled epoch handle"
+    },
+    {
+      "id": "C5",
+      "source": "source/src/msm2/orientation_trace.cpp",
+      "begin_line": 171,
+      "end_line": 172,
+      "span_sha256": "671e316d57f3828495f3a15c8f2f3f93cc228052b12d9ac4097fe78b582abb1a",
+      "disposition": "T0 both",
+      "mutation": " ring-full same restore/drop policy",
+      "identity_obligations": "Ring1024 is diagnostic only; separate K/O/credit",
+      "reservation": "before mutation/escape and cleanup zero; independent of diagnostic event/ring",
+      "final_VCH_target": "Ring drain cannot certify context retirement",
+      "lifetime": "retain reserved/unknown debt and reachable code/readers; exit requires retained signaled epoch handle"
+    },
+    {
+      "id": "C6",
+      "source": "source/src/msm2/orientation_trace.cpp",
+      "begin_line": 196,
+      "end_line": 204,
+      "span_sha256": "e4c1ad85b85a9c70936e82754af39007997e37ad3245c47cc1cf84bdf595a079",
+      "disposition": "T0 both",
+      "mutation": " unchanged dual-Up suppresses event, T0 still clears cause",
+      "identity_obligations": "Same O even when no hit/event; entry reservation still mandatory",
+      "reservation": "before mutation/escape and cleanup zero; independent of diagnostic event/ring",
+      "final_VCH_target": "No event means no evidence about saved-context escape",
+      "lifetime": "retain reserved/unknown debt and reachable code/readers; exit requires retained signaled epoch handle"
+    },
+    {
+      "id": "C7",
+      "source": "source/src/msm2/orientation_trace.cpp",
+      "begin_line": 174,
+      "end_line": 202,
+      "span_sha256": "d486248be20e0e13259ae3b7e3f83ce1d0667fbbe6b3d4205bea98c39f8a818d",
+      "disposition": "T0 both",
+      "mutation": " event capture/unwind/guarded reads, T0 cause clearing",
+      "identity_obligations": "Reserve before processing; guarded/nested faults need separate context sequence",
+      "reservation": "before mutation/escape and cleanup zero; independent of diagnostic event/ring",
+      "final_VCH_target": "Known hit RIP is not final downstream RIP; arbitrary/nested continuation not pre-served",
+      "lifetime": "retain reserved/unknown debt and reachable code/readers; exit requires retained signaled epoch handle"
+    },
+    {
+      "id": "C8",
+      "source": "source/src/msm2/orientation_trace.cpp",
+      "begin_line": 203,
+      "end_line": 203,
+      "span_sha256": "0be7f66adaba13fc063202e2d8ac599be53d30f90f1a375dfaa1d9fe6034c278",
+      "disposition": "T0 both",
+      "mutation": " reset candidate closes/restores",
+      "identity_obligations": "Reserve before saved restore, capture close must not release credit",
+      "reservation": "before mutation/escape and cleanup zero; independent of diagnostic event/ring",
+      "final_VCH_target": "No live cleanup while reserved/published debt exists",
+      "lifetime": "retain reserved/unknown debt and reachable code/readers; exit requires retained signaled epoch handle"
+    },
+    {
+      "id": "T0",
+      "source": "source/src/msm2/orientation_trace.cpp",
+      "begin_line": 208,
+      "end_line": 211,
+      "span_sha256": "57bc7f06a704c17dfffc0521210eb393eb38c9da3768c6620b0126bf3e07b91b",
+      "disposition": "residual B0-B3/BD/BS/BT => SEARCH, otherwise EXECUTION",
+      "mutation": " clears claimed B0/B1",
+      "identity_obligations": "Publish immutable K/O before either return; reserved-unpublished already counts",
+      "reservation": "before mutation/escape and cleanup zero; independent of diagnostic event/ring",
+      "final_VCH_target": "EXECUTION still precedes OS apply; SEARCH may be finalized elsewhere; both need final boundary and stub/readers lifetime",
+      "lifetime": "retain reserved/unknown debt and reachable code/readers; exit requires retained signaled epoch handle"
+    }
+  ],
+  "official_documentation": [
+    {
+      "id": "add-vch",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/errhandlingapi/nf-errhandlingapi-addvectoredcontinuehandler.md",
+      "available": true,
+      "raw_sha256": "51ed60602b7efd27a0b9a97e5cf88dd7d094d210fddc35df9c6828ea68e40c99",
+      "bytes": 3318,
+      "retrieved_UTC_date": "2026-10-27",
+      "contract_excerpt": "### -param First The order in which the handler should be called. If the parameter is nonzero, the handler is the first handler to be called. If the parameter is zero, the handler is the last handler to be called. ### -param Handler A pointer to the handler to be called. For more information, see [VectoredHandler](/windows/desktop/api/winnt/nc-winnt-pvectored_exception_handler). ## -returns If the function succeeds, the return value",
+      "review_limit": "registration order does not promise permanent exclusive terminal position/complete restore-route coverage"
+    },
+    {
+      "id": "callback",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/winnt/nc-winnt-pvectored_exception_handler.md",
+      "available": true,
+      "raw_sha256": "9617c843a48b253ea46e483d4404cd0a041ce7d373868e38103a44e67325f1af",
+      "bytes": 2656,
+      "retrieved_UTC_date": "2026-10-27",
+      "contract_excerpt": "## -returns To return control to the point at which the exception occurred, return EXCEPTION_CONTINUE_EXECUTION (0xffffffff). To continue the handler search, return EXCEPTION_CONTINUE_SEARCH (0x0). ## -remarks The handler should not call functions that acquire synchronization objects or allocate memory, because this can cause problems. Typically, the handler will simply access the exception record and return. ## -see-also <a href=\"/windows/desktop/api/winnt/ns-winnt-exception_pointers\">EXCEPTION_POINTERS</a> <a href=\"/windows/desktop/Debug/vectored-exception-handling\">Vectored Exception Handling</a>",
+      "review_limit": "shared VEH callback return description is not an independently documented universal VCH terminal-mutation boundary"
+    },
+    {
+      "id": "remove-vch",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/errhandlingapi/nf-errhandlingapi-removevectoredcontinuehandler.md",
+      "available": true,
+      "raw_sha256": "d735198fdafff369f23c22c6e9d5ac0e03036ca2d74ad764d232b8cc09e05915",
+      "bytes": 2452,
+      "retrieved_UTC_date": "2026-10-27",
+      "contract_excerpt": "## -returns If the function succeeds, the return value is nonzero. If the function fails, the return value is zero. ## -remarks To compile an application that uses this function, define the _WIN32_WINNT macro as 0x0500 or later. For more information, see [Using the Windows Headers](/windows/desktop/WinProg/using-the-windows-headers). ## -see-also [AddVectoredContinueHandler function](nf-errhandlingapi-addvectoredcontinuehandler.md), [Vectored Exception Handling](/windows/desktop/Debug/vectored-exception-handling)",
+      "review_limit": "success unregistration is not a documented outstanding-callback/debt/readers join"
+    },
+    {
+      "id": "add-veh",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/errhandlingapi/nf-errhandlingapi-addvectoredexceptionhandler.md",
+      "available": true,
+      "raw_sha256": "cab01c8d76d25d7476966d23a3b427961e9fdb184fa7179fd52a39854f288a96",
+      "bytes": 3476,
+      "retrieved_UTC_date": "2026-10-27",
+      "contract_excerpt": "## -remarks If the *First* parameter is nonzero, the handler is the first handler to be called until a subsequent call to **AddVectoredExceptionHandler** is used to specify a different handler as the first handler. If the *VectoredHandler* parameter points to a function in a DLL and that DLL is unloaded, the handler is still registered. This can lead to application errors. To unregister the handler,",
+      "review_limit": "DLL unload does not automatically remove registered callback"
+    },
+    {
+      "id": "vectored",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/win32/docs/desktop-src/Debug/vectored-exception-handling.md",
+      "available": true,
+      "raw_sha256": "6fb36064cf2f72484d0d92a25b0f0b9b3d47d3293aaf29cb25ea9db30d7385d5",
+      "bytes": 1410,
+      "retrieved_UTC_date": "2026-10-27",
+      "contract_excerpt": "Vectored exception handlers are an extension to structured exception handling. ms.assetid: e4cf8a88-1bdf-4666-8653-fe2e86c4d8ef title: Vectored Exception Handling ms.topic: concept-article ms.date: 07/14/2025 --- # Vectored Exception Handling Vectored exception handlers are an extension to structured exception handling. An application can register a function to watch or handle all exceptions for the application. Vectored handlers are not frame-based, therefore, you can add a handler that will be called",
+      "review_limit": "pre-unwind/debugger ordering is not post-OS-return or all-route VCH ownership"
+    },
+    {
+      "id": "mitigation",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/processthreadsapi/nf-processthreadsapi-getprocessmitigationpolicy.md",
+      "available": true,
+      "raw_sha256": "8f27751fca5bfff4d2f547333b0cf5e3324deb3d16e905f916fcaa4cc3977586",
+      "bytes": 12760,
+      "retrieved_UTC_date": "2026-10-27",
+      "contract_excerpt": "| **ProcessDynamicCodePolicy** | The dynamic code policy of the process. When turned on, the process cannot generate dynamic code or modify existing executable code.<br/>The *lpBuffer* parameter points to a <a href=\"/windows/desktop/api/winnt/ns-winnt-process_mitigation_dynamic_code_policy\">PROCESS_MITIGATION_DYNAMIC_CODE_POLICY</a> structure that specifies the dynamic code policy flags. | | **ProcessStrictHandleCheckPolicy** | The process will receive a fatal error if it manipulates a handle that is not valid.<br/>The *lpBuffer* parameter points to a <a",
+      "review_limit": "actual game process required; standalone tuple does not sample game admission"
+    },
+    {
+      "id": "shadow-stack",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/winnt/ns-winnt-process_mitigation_user_shadow_stack_policy.md",
+      "available": true,
+      "raw_sha256": "d322c23932dcd0a438ab0bfaf95f42b4c1cfd0cf255b02a90f7d3ea74685f371",
+      "bytes": 8619,
+      "retrieved_UTC_date": "2026-10-27",
+      "contract_excerpt": "### -field DUMMYUNIONNAME.DUMMYSTRUCTNAME.SetContextIpValidation If TRUE, when calling APIs that modify the execution context of a thread such as [SetThreadContext](/windows/desktop/api/processthreadsapi/nf-processthreadsapi-setthreadcontext) and [RtlRestoreContext](/windows/desktop/api/winnt/nf-winnt-rtlrestorecontext), validation is performed on the Instruction Pointer specified in the new execution context. This field cannot be changed via [SetProcessMitigationPolicy](/windows/desktop/api/processthreadsapi/nf-processthreadsapi-setprocessmitigationpolicy). ### -field DUMMYUNIONNAME.DUMMYSTRUCTNAME.SetContextIpValidationRelaxedMode If TRUE, the process's Instruction Pointer validation is downgraded to relaxed mode, which allows all Instruction Pointers that are in dynamic",
+      "review_limit": "context IP/EH/CET flags require exact supported scope; no policy changes"
+    },
+    {
+      "id": "xstate",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/win32/docs/desktop-src/Debug/working-with-xstate-context.md",
+      "available": true,
+      "raw_sha256": "d9563edf764d7c17141713907e1b53d0f8e8fe7032551cf9db59e98e3fdb78d0",
+      "bytes": 8457,
+      "retrieved_UTC_date": "2026-10-27",
+      "contract_excerpt": "This document contains an example that demonstrates how to use the XState context functions to retrieve and set extended features on a thread. ms.assetid: F7937402-1173-4647-B9FF-856C0925C1C3 title: Working with XState Context ms.topic: concept-article ms.date: 07/14/2025 --- # Working with XState Context This document contains an example that demonstrates how to use the XState context functions to retrieve and set extended features on a thread. The following",
+      "review_limit": "enabled/per-context extended state needs correct mask/layout; fixed CONTEXT/YMM fixture is not all-XSTATE proof"
+    },
+    {
+      "id": "get-context",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/processthreadsapi/nf-processthreadsapi-getthreadcontext.md",
+      "available": true,
+      "raw_sha256": "82be7f41ca82e777e3a731bb9cb5169816bf86d4e6a4fd2bc70b48e3842b9597",
+      "bytes": 4479,
+      "retrieved_UTC_date": "2026-10-27",
+      "contract_excerpt": "## -remarks This function is used to retrieve the thread context of the specified thread. The function retrieves a selective context based on the value of the **ContextFlags** member of the context structure. The thread identified by the *hThread* parameter is typically being debugged, but the function can also operate when the thread is not being debugged. You cannot get a valid context for a",
+      "review_limit": "current suspended snapshot is not saved-context retirement"
+    },
+    {
+      "id": "set-context",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/processthreadsapi/nf-processthreadsapi-setthreadcontext.md",
+      "available": true,
+      "raw_sha256": "af689d9e657208757e6d1c8b74e7b757c711122c321fe6a3a5a6191619fd1618",
+      "bytes": 4383,
+      "retrieved_UTC_date": "2026-10-27",
+      "contract_excerpt": "### -param lpContext [in] A pointer to a <a href=\"/windows/desktop/api/winnt/ns-winnt-arm64_nt_context\">CONTEXT</a> structure that contains the context to be set in the specified thread. The value of the **ContextFlags** member of this structure specifies which portions of a thread's context to set. Some values in the **CONTEXT** structure that cannot be specified are silently set to the correct value. This includes bits in the CPU status register",
+      "review_limit": "OS-controlled fields and running-thread constraints do not authorize saved-context masking"
+    },
+    {
+      "id": "module",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/sdk-api/docs/sdk-api-src/content/libloaderapi/nf-libloaderapi-getmodulehandleexw.md",
+      "available": true,
+      "raw_sha256": "a8653668ccbed3498f0fa8f40f82533d121561e2393649233eeb5a5589c1507f",
+      "bytes": 8984,
+      "retrieved_UTC_date": "2026-10-27",
+      "contract_excerpt": "#### GET_MODULE_HANDLE_EX_FLAG_PIN (0x00000001) The module stays loaded until the process is terminated, no matter how many times [FreeLibrary](nf-libloaderapi-freelibrary.md) is called. This option cannot be used with GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT. #### GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT (0x00000002) The reference count for the module is not incremented. This option is equivalent to the behavior of [GetModuleHandle](nf-libloaderapi-getmodulehandlew.md). Do not pass the retrieved module handle to the [FreeLibrary](nf-libloaderapi-freelibrary.md) function; doing so can cause the DLL",
+      "review_limit": "PIN is possible process-lifetime policy; current FROM_ADDRESS reference is released, not a pin"
+    }
+  ],
+  "documentation_delivery": {
+    "Learn_proxy403_UNAVAILABLE": 11,
+    "official_GitHub_final_PASS": 11,
+    "initial_GitHub_Debug_case_404_corrected": 2,
+    "final_missing_primary_documents": 0
+  },
+  "historical_inputs": [
+    {
+      "path": "analysis/V01C39_GATE.md",
+      "sha256": "9bfe7111d5e57245d4ba7b5cd623660a609098e3a4950afe509241631137a76f"
+    },
+    {
+      "path": "analysis/V01C39_WATCH_RETIREMENT.md",
+      "sha256": "b884b93770ecd03bd9e3c9952a9ec28b0d6b155233dd72a3e2a68112beb3b1cd"
+    },
+    {
+      "path": "analysis/V01C39_WATCH_STATUS.json",
+      "sha256": "31e1ed3775db1cc0c64d7a6c2cee693b7a5e3f89d7ecd9ba68d567339dbe005b"
+    },
+    {
+      "path": "analysis/V01C40_GATE.md",
+      "sha256": "fef2ce2c25a71052d0d3bb16e75d58f2e5b28ca449ced52f51ca01b3713a0e00"
+    },
+    {
+      "path": "analysis/V01C40_RETIREMENT_REVIEW.md",
+      "sha256": "fa3def77cdf3122777519435b66ef060144b2741f70ce80728e4b9cd6bc95d6b"
+    },
+    {
+      "path": "analysis/V01C40_RETIREMENT_STATUS.json",
+      "sha256": "2cea392fc6a16be3738c0d3b40a4fec0a730ea2c1f8b045cf12a1ee49b8fe509"
+    },
+    {
+      "path": "analysis/V01C41_CONTINUATION_WITNESS.md",
+      "sha256": "6048de5ec367610e8aecbdbe84a3badce5789b8b0e9a438e1a5cadeb0e62f240"
+    },
+    {
+      "path": "analysis/V01C41_GATE.md",
+      "sha256": "85f1df75370cc53a45c19ea6537638144b3b8af9f9bf4cf760aa966eb21ee5b8"
+    },
+    {
+      "path": "analysis/V01C41_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "146b9f200f51b5b1e44fdc4ee0c451049a27446cf6521c4e89c36f3219438332"
+    },
+    {
+      "path": "analysis/V01C41_WITNESS_STATUS.json",
+      "sha256": "8fc57f3ae359c8e81398dbeacdd453fa1874ebcc957ddd0ed22e182434f7e92a"
+    },
+    {
+      "path": "analysis/V01C42_GATE.md",
+      "sha256": "751d345154b1a4d08a5e73a6c8f8ddc9ebc6e2807d7dff0565187e73188224f9"
+    },
+    {
+      "path": "analysis/V01C42_MITIGATION_BOUNDARY.md",
+      "sha256": "9311da843b12091a5ca94b73ba084f751ce05a975355743a9d1551e74b3d1212"
+    },
+    {
+      "path": "analysis/V01C42_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "0bd33af7c3ca8d2e89f654cb8726afeda05946225c5ce3de0ea961f5476d918b"
+    },
+    {
+      "path": "analysis/V01C42_STATUS.json",
+      "sha256": "97013f087f727cff1c9866fedea685ccfbb3791f677ad55dacd4ae4dc92d2eb9"
+    },
+    {
+      "path": "analysis/V01C43_GATE.md",
+      "sha256": "7ade0c0b46ac200aa6dad669b951d443f238fea9c7ddfea614fad8d7aabc372c"
+    },
+    {
+      "path": "analysis/V01C43_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "e5561e789c522c0a7740d74833a53d78c996f104a4948769ba113cefd0a1632d"
+    },
+    {
+      "path": "analysis/V01C43_RESTORATION_DIAGNOSTIC.md",
+      "sha256": "82386977138075936c78551c9baef9124e1b9de31fd86f8d7cc36b48a1e98328"
+    },
+    {
+      "path": "analysis/V01C43_STATUS.json",
+      "sha256": "d4e718d23dc2082fbe2efafb7a345d896c64f57973dae01ef89380a2f0ba4170"
+    },
+    {
+      "path": "analysis/V01C44_DR_CANONICALIZATION.md",
+      "sha256": "85c982323289b2121e0bd6aa64bae0af279243c22607dd6d8af8720752dddd00"
+    },
+    {
+      "path": "analysis/V01C44_GATE.md",
+      "sha256": "243153eae7046c1391e49bfe6808cb008f30b02db56c5301828c6da49966089f"
+    },
+    {
+      "path": "analysis/V01C44_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "52ef030b7b73050003c4ddb7d61b6f781efadbd35ae6574c8a3d67ccecbf441d"
+    },
+    {
+      "path": "analysis/V01C44_STATUS.json",
+      "sha256": "374861f9faa30dcdf518f24fb169667f61f6e21f43b842c4daf7b6f66d0d17fe"
+    },
+    {
+      "path": "analysis/V01C45_DR6_LIFECYCLE.md",
+      "sha256": "ef3742ec4a0950a78c816ac98df36abe0837a571454e57b61548af7ac1f7f6a7"
+    },
+    {
+      "path": "analysis/V01C45_GATE.md",
+      "sha256": "78fa8ffbdc2d36b6291ae1337713ef083810618932b90fe5e46b2ff00eb28227"
+    },
+    {
+      "path": "analysis/V01C45_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "324d68a47e1095ee3fc0c6b42b20afed8d38b769d62e63f5d08e858bf2df4ecf"
+    },
+    {
+      "path": "analysis/V01C45_STATUS.json",
+      "sha256": "bd84267658e3801b6ea85adc3524c9ccd74434a585caf92738809d1d3bcedee8"
+    },
+    {
+      "path": "analysis/V01C46_GATE.md",
+      "sha256": "6c739bf3d9d5909037ee2e57522440cbae8587af91244b01837633c7ce42a5c3"
+    },
+    {
+      "path": "analysis/V01C46_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "e09d11148a3f82c5becc484e65c365c036617d7d4ea492243bfd3b10f24e553b"
+    },
+    {
+      "path": "analysis/V01C46_PRE_ACCESS_BOUNDARY.md",
+      "sha256": "19eec00562b5a3d4aab228d3e0a82d3a3fce234d78609b5dd0c896259816ebc0"
+    },
+    {
+      "path": "analysis/V01C46_STATUS.json",
+      "sha256": "2f19f060ea594e501c6401e81ac32dca91fe17742079912b38347165cc83bba9"
+    },
+    {
+      "path": "analysis/V01C47_CONFIGURATION_RETIREMENT.md",
+      "sha256": "6b89150f07b79403a790eeffe727c6ac5946c67dbe29c8ee95cd9eb880d07b67"
+    },
+    {
+      "path": "analysis/V01C47_GATE.md",
+      "sha256": "f2caa454a491c88a07ad0c48f3fd0ca86053edb6ef2c331b6406f23237c7c28f"
+    },
+    {
+      "path": "analysis/V01C47_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "960ea34e5d487bf192cb85ce309e4476de29cd6aed926eb0ea5bd04dfc5e51e9"
+    },
+    {
+      "path": "analysis/V01C47_STATUS.json",
+      "sha256": "543d52b6df2cd81c5f496d6e2319cc725ca8a36f5266f61c2bcb03ba38c2bd20"
+    },
+    {
+      "path": "analysis/V01C48_GATE.md",
+      "sha256": "7029e99879497546358448d617ffc4d3439a508d9af74f881ddffdd30117884c"
+    },
+    {
+      "path": "analysis/V01C48_PRODUCTION_WITNESS_REVIEW.md",
+      "sha256": "9fd263b921c6a9d6b3005525bbc427d8c4101a1e70adb4dc181c0bee3af0fd6a"
+    },
+    {
+      "path": "analysis/V01C48_STATUS.json",
+      "sha256": "bcf36d3db213f7d77f1516db5a0f2d21f7bd02c6427c0d8ea64a416eee8fb691"
+    },
+    {
+      "path": "analysis/V01C49_GATE.md",
+      "sha256": "ea7b53124262e32b4d0b9189778e1e317474d39570cc28bff632a6acabaf6c6b"
+    },
+    {
+      "path": "analysis/V01C49_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "30031c6c243c09e5ef85b2dd603222ccd50da9ad588025d76e97ea96c3ee240b"
+    },
+    {
+      "path": "analysis/V01C49_STATUS.json",
+      "sha256": "79c23b59e955bed7111918ec42c9055aea83c1a4081a2b45b9edf2d03b0a24ae"
+    },
+    {
+      "path": "analysis/V01C49_VCH_SEARCH_BRIDGE.md",
+      "sha256": "3b7acb8d4cb7833ff8838cf7a4bb050a374aab42b4a56a0e0d368fc53546ed52"
+    },
+    {
+      "path": "analysis/V01C50_GATE.md",
+      "sha256": "2903eaa9ee077979c41c5c83c16090cce6fd3dcbeb400200f8a7ec365b5d9fa5"
+    },
+    {
+      "path": "analysis/V01C50_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "d3ac8b2e19a63c7685a0f644e429b101d5d3a5ac40a37d8dc24834f9ced9149e"
+    },
+    {
+      "path": "analysis/V01C50_PREDICATE_DECOMPOSITION.md",
+      "sha256": "2edcc24be535cc0d8882626901479b1f4debb24ba03aeae4fc8206f66e7fb926"
+    },
+    {
+      "path": "analysis/V01C50_STATUS.json",
+      "sha256": "1c166d6e911de52dd77081df61cfaa33fe74cdcc6b81d4343938c1f0dd82bce3"
+    },
+    {
+      "path": "analysis/V01C51_GATE.md",
+      "sha256": "37838b41a8c4c136aa9e6c08e6c461e00cbc98b27d3e19dd46939ae5ec6a9411"
+    },
+    {
+      "path": "analysis/V01C51_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "75b7cb0d9dd922f28c62e23649d27620baaf0d4a9bf8bbfe73491aaf62362f55"
+    },
+    {
+      "path": "analysis/V01C51_STATUS.json",
+      "sha256": "224e07db0776abe73c17e852312bc56f441640ecf24db3e4ab621f5b186d0a7b"
+    },
+    {
+      "path": "analysis/V01C51_VCH_POST_RETURN_WITNESS.md",
+      "sha256": "317274273c648f998449f590ad7d1a4bcc1d4351c069142c912929189f7fdeae"
+    },
+    {
+      "path": "analysis/native-probes/c41/CAPSTONE_LICENSE.txt",
+      "sha256": "65e9ed46a59976eda8f5bd1ea79a680dea38dd299c760bc9a8d87a764ef5029b"
+    },
+    {
+      "path": "analysis/native-probes/c41/CAPSTONE_LLVM_LICENSE.txt",
+      "sha256": "dfdca2d7fdbabfd937f9dc41b7f61647b0e6cb1f9ee767ecb4520f979ebe91da"
+    },
+    {
+      "path": "analysis/native-probes/c41/GPL_LICENSE.txt",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "path": "analysis/native-probes/c41/MINHOOK_LICENSE.txt",
+      "sha256": "d5c2224982b0b95a16b098a561335fa93f3eaf4d0aa964b7843edb986df78dc8"
+    },
+    {
+      "path": "analysis/native-probes/c41/PROBE_MANIFEST.json",
+      "sha256": "57ec8a1914b266ed6efd5266b29d193c38a04ac34ce4041a633e752e28217c77"
+    },
+    {
+      "path": "analysis/native-probes/c41/README.md",
+      "sha256": "472d1556edf0a0cecfcfc609eb9d534261bb98394335f9c0e2e8a8914947b906"
+    },
+    {
+      "path": "analysis/native-probes/c41/THIRD_PARTY_NOTICES.md",
+      "sha256": "557f25d2c406a08ae2741aedf0e153a44a5343f89e93ffe1def2d8b8b244b46b"
+    },
+    {
+      "path": "analysis/native-probes/c41/continuation-witness.exe",
+      "sha256": "83762944821727e488605aff18946366fc8da6bbe36a5bd7cbf04b0d57574702"
+    },
+    {
+      "path": "analysis/native-probes/c42/CAPSTONE_LICENSE.txt",
+      "sha256": "65e9ed46a59976eda8f5bd1ea79a680dea38dd299c760bc9a8d87a764ef5029b"
+    },
+    {
+      "path": "analysis/native-probes/c42/CAPSTONE_LLVM_LICENSE.txt",
+      "sha256": "dfdca2d7fdbabfd937f9dc41b7f61647b0e6cb1f9ee767ecb4520f979ebe91da"
+    },
+    {
+      "path": "analysis/native-probes/c42/GPL_LICENSE.txt",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "path": "analysis/native-probes/c42/MINHOOK_LICENSE.txt",
+      "sha256": "d5c2224982b0b95a16b098a561335fa93f3eaf4d0aa964b7843edb986df78dc8"
+    },
+    {
+      "path": "analysis/native-probes/c42/PROBE_MANIFEST.json",
+      "sha256": "590264984d1879f89278d00651447a6cd2a629d539e3d0166b988400dc8a780c"
+    },
+    {
+      "path": "analysis/native-probes/c42/README.md",
+      "sha256": "bab36f8b4d7fd87fc9e6dc8851bbbea8b4068a821b17f4695e1dac322eb44aad"
+    },
+    {
+      "path": "analysis/native-probes/c42/THIRD_PARTY_NOTICES.md",
+      "sha256": "557f25d2c406a08ae2741aedf0e153a44a5343f89e93ffe1def2d8b8b244b46b"
+    },
+    {
+      "path": "analysis/native-probes/c42/continuation-witness.exe",
+      "sha256": "ae9831d3acda845637ca7bee07992e6f6dfe41de124e496277597b1c8697bbf8"
+    },
+    {
+      "path": "analysis/native-probes/c43/CAPSTONE_LICENSE.txt",
+      "sha256": "65e9ed46a59976eda8f5bd1ea79a680dea38dd299c760bc9a8d87a764ef5029b"
+    },
+    {
+      "path": "analysis/native-probes/c43/CAPSTONE_LLVM_LICENSE.txt",
+      "sha256": "dfdca2d7fdbabfd937f9dc41b7f61647b0e6cb1f9ee767ecb4520f979ebe91da"
+    },
+    {
+      "path": "analysis/native-probes/c43/GPL_LICENSE.txt",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "path": "analysis/native-probes/c43/MINHOOK_LICENSE.txt",
+      "sha256": "d5c2224982b0b95a16b098a561335fa93f3eaf4d0aa964b7843edb986df78dc8"
+    },
+    {
+      "path": "analysis/native-probes/c43/PROBE_MANIFEST.json",
+      "sha256": "d6dfa61191ae5d36fa663ed7df628cb04ddafe281be6d153d5be213af67cfae2"
+    },
+    {
+      "path": "analysis/native-probes/c43/README.md",
+      "sha256": "dc728be7a1285e5af372941c41c337143b3968f03874c7d9c2076f1583d60a4d"
+    },
+    {
+      "path": "analysis/native-probes/c43/THIRD_PARTY_NOTICES.md",
+      "sha256": "557f25d2c406a08ae2741aedf0e153a44a5343f89e93ffe1def2d8b8b244b46b"
+    },
+    {
+      "path": "analysis/native-probes/c43/continuation-witness.exe",
+      "sha256": "f74cdd5ce90218d3dbeb72e257acaee4e4c9010a0cc952ff7109121bab327c79"
+    },
+    {
+      "path": "analysis/native-probes/c44/CAPSTONE_LICENSE.txt",
+      "sha256": "65e9ed46a59976eda8f5bd1ea79a680dea38dd299c760bc9a8d87a764ef5029b"
+    },
+    {
+      "path": "analysis/native-probes/c44/CAPSTONE_LLVM_LICENSE.txt",
+      "sha256": "dfdca2d7fdbabfd937f9dc41b7f61647b0e6cb1f9ee767ecb4520f979ebe91da"
+    },
+    {
+      "path": "analysis/native-probes/c44/GPL_LICENSE.txt",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "path": "analysis/native-probes/c44/MINHOOK_LICENSE.txt",
+      "sha256": "d5c2224982b0b95a16b098a561335fa93f3eaf4d0aa964b7843edb986df78dc8"
+    },
+    {
+      "path": "analysis/native-probes/c44/PROBE_MANIFEST.json",
+      "sha256": "360dfd37466c7a04f8458f5d98349ed030bf546d7cbf687f2f02a56117f0bf24"
+    },
+    {
+      "path": "analysis/native-probes/c44/README.md",
+      "sha256": "3b120d3f37d8937c0e4fd3bfdf09564f9cff3132c9d60302520ca55dd71949f0"
+    },
+    {
+      "path": "analysis/native-probes/c44/THIRD_PARTY_NOTICES.md",
+      "sha256": "557f25d2c406a08ae2741aedf0e153a44a5343f89e93ffe1def2d8b8b244b46b"
+    },
+    {
+      "path": "analysis/native-probes/c44/continuation-witness.exe",
+      "sha256": "87c1a78bd544e6c75417e2c20dc176996ae7b8e7f4f990926ec24066980415ef"
+    },
+    {
+      "path": "analysis/native-probes/c45/CAPSTONE_LICENSE.txt",
+      "sha256": "65e9ed46a59976eda8f5bd1ea79a680dea38dd299c760bc9a8d87a764ef5029b"
+    },
+    {
+      "path": "analysis/native-probes/c45/CAPSTONE_LLVM_LICENSE.txt",
+      "sha256": "dfdca2d7fdbabfd937f9dc41b7f61647b0e6cb1f9ee767ecb4520f979ebe91da"
+    },
+    {
+      "path": "analysis/native-probes/c45/GPL_LICENSE.txt",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "path": "analysis/native-probes/c45/MINHOOK_LICENSE.txt",
+      "sha256": "d5c2224982b0b95a16b098a561335fa93f3eaf4d0aa964b7843edb986df78dc8"
+    },
+    {
+      "path": "analysis/native-probes/c45/PROBE_MANIFEST.json",
+      "sha256": "50d1dbbd97c56cac1c1c3e758f8a0cccb0953feae9fb9e54ea5455c889156383"
+    },
+    {
+      "path": "analysis/native-probes/c45/README.md",
+      "sha256": "c1195d4f542314f7e91b04999ae59dc0d9ea3c32951c1a38860ef6adee5a668f"
+    },
+    {
+      "path": "analysis/native-probes/c45/THIRD_PARTY_NOTICES.md",
+      "sha256": "557f25d2c406a08ae2741aedf0e153a44a5343f89e93ffe1def2d8b8b244b46b"
+    },
+    {
+      "path": "analysis/native-probes/c45/continuation-witness.exe",
+      "sha256": "9894fde01c536bbef0d91ddd493cc8899db172e6ea410f504f1bcc81b2ad838d"
+    },
+    {
+      "path": "analysis/native-probes/c46/CAPSTONE_LICENSE.txt",
+      "sha256": "65e9ed46a59976eda8f5bd1ea79a680dea38dd299c760bc9a8d87a764ef5029b"
+    },
+    {
+      "path": "analysis/native-probes/c46/CAPSTONE_LLVM_LICENSE.txt",
+      "sha256": "dfdca2d7fdbabfd937f9dc41b7f61647b0e6cb1f9ee767ecb4520f979ebe91da"
+    },
+    {
+      "path": "analysis/native-probes/c46/GPL_LICENSE.txt",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "path": "analysis/native-probes/c46/MINHOOK_LICENSE.txt",
+      "sha256": "d5c2224982b0b95a16b098a561335fa93f3eaf4d0aa964b7843edb986df78dc8"
+    },
+    {
+      "path": "analysis/native-probes/c46/PROBE_MANIFEST.json",
+      "sha256": "7bd9891524e822098783984f05613365079d26011bb7c969b91a6c21cb6b30b3"
+    },
+    {
+      "path": "analysis/native-probes/c46/README.md",
+      "sha256": "df1d9d5fc86db4059e84f825e854ec615496f388d1e92c99b86110827280fbde"
+    },
+    {
+      "path": "analysis/native-probes/c46/THIRD_PARTY_NOTICES.md",
+      "sha256": "557f25d2c406a08ae2741aedf0e153a44a5343f89e93ffe1def2d8b8b244b46b"
+    },
+    {
+      "path": "analysis/native-probes/c46/continuation-witness.exe",
+      "sha256": "81c2114c3197355a3933a8235a338b1640b74e707caebe2221ce6606f93326df"
+    },
+    {
+      "path": "analysis/native-probes/c47/CAPSTONE_LICENSE.txt",
+      "sha256": "65e9ed46a59976eda8f5bd1ea79a680dea38dd299c760bc9a8d87a764ef5029b"
+    },
+    {
+      "path": "analysis/native-probes/c47/CAPSTONE_LLVM_LICENSE.txt",
+      "sha256": "dfdca2d7fdbabfd937f9dc41b7f61647b0e6cb1f9ee767ecb4520f979ebe91da"
+    },
+    {
+      "path": "analysis/native-probes/c47/GPL_LICENSE.txt",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "path": "analysis/native-probes/c47/MINHOOK_LICENSE.txt",
+      "sha256": "d5c2224982b0b95a16b098a561335fa93f3eaf4d0aa964b7843edb986df78dc8"
+    },
+    {
+      "path": "analysis/native-probes/c47/PROBE_MANIFEST.json",
+      "sha256": "0ac59a004deaab95e00b2b2122ea1ee30adb3018222221b5e87d33f559104655"
+    },
+    {
+      "path": "analysis/native-probes/c47/README.md",
+      "sha256": "cf2db62718ada151dcefd487210742e5ef1efb30a9d537df567ac5ce14793ee0"
+    },
+    {
+      "path": "analysis/native-probes/c47/THIRD_PARTY_NOTICES.md",
+      "sha256": "557f25d2c406a08ae2741aedf0e153a44a5343f89e93ffe1def2d8b8b244b46b"
+    },
+    {
+      "path": "analysis/native-probes/c47/continuation-witness.exe",
+      "sha256": "a6a4a95712d2f4696b630c84aa89a1012ed81629522bff220ec71091d6567cb8"
+    },
+    {
+      "path": "analysis/native-probes/c49/CAPSTONE_LICENSE.txt",
+      "sha256": "65e9ed46a59976eda8f5bd1ea79a680dea38dd299c760bc9a8d87a764ef5029b"
+    },
+    {
+      "path": "analysis/native-probes/c49/CAPSTONE_LLVM_LICENSE.txt",
+      "sha256": "dfdca2d7fdbabfd937f9dc41b7f61647b0e6cb1f9ee767ecb4520f979ebe91da"
+    },
+    {
+      "path": "analysis/native-probes/c49/GPL_LICENSE.txt",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "path": "analysis/native-probes/c49/MINHOOK_LICENSE.txt",
+      "sha256": "d5c2224982b0b95a16b098a561335fa93f3eaf4d0aa964b7843edb986df78dc8"
+    },
+    {
+      "path": "analysis/native-probes/c49/PROBE_MANIFEST.json",
+      "sha256": "768d5bf3aee7a58d6cfa8448b3ef5452115152245ef84270a285868619602ccb"
+    },
+    {
+      "path": "analysis/native-probes/c49/README.md",
+      "sha256": "c0d42450afbcaf4a14a41210180d5533a973adcfec1d4542768527220d84d422"
+    },
+    {
+      "path": "analysis/native-probes/c49/THIRD_PARTY_NOTICES.md",
+      "sha256": "557f25d2c406a08ae2741aedf0e153a44a5343f89e93ffe1def2d8b8b244b46b"
+    },
+    {
+      "path": "analysis/native-probes/c49/continuation-witness.exe",
+      "sha256": "d8e8333fa65c01eb617dd360019bbb1aa5f88b0fab4990e149f29230ac3af989"
+    },
+    {
+      "path": "analysis/native-probes/c50/CAPSTONE_LICENSE.txt",
+      "sha256": "65e9ed46a59976eda8f5bd1ea79a680dea38dd299c760bc9a8d87a764ef5029b"
+    },
+    {
+      "path": "analysis/native-probes/c50/CAPSTONE_LLVM_LICENSE.txt",
+      "sha256": "dfdca2d7fdbabfd937f9dc41b7f61647b0e6cb1f9ee767ecb4520f979ebe91da"
+    },
+    {
+      "path": "analysis/native-probes/c50/GPL_LICENSE.txt",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "path": "analysis/native-probes/c50/MINHOOK_LICENSE.txt",
+      "sha256": "d5c2224982b0b95a16b098a561335fa93f3eaf4d0aa964b7843edb986df78dc8"
+    },
+    {
+      "path": "analysis/native-probes/c50/PROBE_MANIFEST.json",
+      "sha256": "79a6345dba60b82edae40f879eff07936f70b4f5bea45b427d61b7aede54ff72"
+    },
+    {
+      "path": "analysis/native-probes/c50/README.md",
+      "sha256": "3784ca18dbee38a1bcf766cdce230d28de9fe6e1b88258de0d96aa4e42ce697c"
+    },
+    {
+      "path": "analysis/native-probes/c50/THIRD_PARTY_NOTICES.md",
+      "sha256": "557f25d2c406a08ae2741aedf0e153a44a5343f89e93ffe1def2d8b8b244b46b"
+    },
+    {
+      "path": "analysis/native-probes/c50/continuation-witness.exe",
+      "sha256": "e25d883a20e2a55cc239b6e71a93a84bd3f69a441a0cb2ae00bd327fba6569af"
+    },
+    {
+      "path": "analysis/native-probes/c51/CAPSTONE_LICENSE.txt",
+      "sha256": "65e9ed46a59976eda8f5bd1ea79a680dea38dd299c760bc9a8d87a764ef5029b"
+    },
+    {
+      "path": "analysis/native-probes/c51/CAPSTONE_LLVM_LICENSE.txt",
+      "sha256": "dfdca2d7fdbabfd937f9dc41b7f61647b0e6cb1f9ee767ecb4520f979ebe91da"
+    },
+    {
+      "path": "analysis/native-probes/c51/GPL_LICENSE.txt",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "path": "analysis/native-probes/c51/MINHOOK_LICENSE.txt",
+      "sha256": "d5c2224982b0b95a16b098a561335fa93f3eaf4d0aa964b7843edb986df78dc8"
+    },
+    {
+      "path": "analysis/native-probes/c51/PROBE_MANIFEST.json",
+      "sha256": "62ef43831620452c37ed015da836290856328669bdfe88408a285e592762eb66"
+    },
+    {
+      "path": "analysis/native-probes/c51/README.md",
+      "sha256": "f0b74cf2012e10fe4c5444d507128ced76edcfd8b56ff8ac26e2507900d2d997"
+    },
+    {
+      "path": "analysis/native-probes/c51/THIRD_PARTY_NOTICES.md",
+      "sha256": "557f25d2c406a08ae2741aedf0e153a44a5343f89e93ffe1def2d8b8b244b46b"
+    },
+    {
+      "path": "analysis/native-probes/c51/continuation-witness.exe",
+      "sha256": "a2eb90e704f852ce968da510598d59164684ea1c342c9478ed8a4cda9b8be44c"
+    },
+    {
+      "path": "docs/CODEX_NEXT.md",
+      "sha256": "283aa54b7d9010b2d5d85d252f1c007dd67cb88f2cfd63aacb5c28bc4df15c77"
+    },
+    {
+      "path": "source/analysis/V01C39_GATE.md",
+      "sha256": "9bfe7111d5e57245d4ba7b5cd623660a609098e3a4950afe509241631137a76f"
+    },
+    {
+      "path": "source/analysis/V01C39_WATCH_RETIREMENT.md",
+      "sha256": "b884b93770ecd03bd9e3c9952a9ec28b0d6b155233dd72a3e2a68112beb3b1cd"
+    },
+    {
+      "path": "source/analysis/V01C39_WATCH_STATUS.json",
+      "sha256": "31e1ed3775db1cc0c64d7a6c2cee693b7a5e3f89d7ecd9ba68d567339dbe005b"
+    },
+    {
+      "path": "source/analysis/V01C40_GATE.md",
+      "sha256": "fef2ce2c25a71052d0d3bb16e75d58f2e5b28ca449ced52f51ca01b3713a0e00"
+    },
+    {
+      "path": "source/analysis/V01C40_RETIREMENT_REVIEW.md",
+      "sha256": "fa3def77cdf3122777519435b66ef060144b2741f70ce80728e4b9cd6bc95d6b"
+    },
+    {
+      "path": "source/analysis/V01C40_RETIREMENT_STATUS.json",
+      "sha256": "2cea392fc6a16be3738c0d3b40a4fec0a730ea2c1f8b045cf12a1ee49b8fe509"
+    },
+    {
+      "path": "source/analysis/V01C41_CONTINUATION_WITNESS.md",
+      "sha256": "6048de5ec367610e8aecbdbe84a3badce5789b8b0e9a438e1a5cadeb0e62f240"
+    },
+    {
+      "path": "source/analysis/V01C41_GATE.md",
+      "sha256": "85f1df75370cc53a45c19ea6537638144b3b8af9f9bf4cf760aa966eb21ee5b8"
+    },
+    {
+      "path": "source/analysis/V01C41_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "146b9f200f51b5b1e44fdc4ee0c451049a27446cf6521c4e89c36f3219438332"
+    },
+    {
+      "path": "source/analysis/V01C41_WITNESS_STATUS.json",
+      "sha256": "8fc57f3ae359c8e81398dbeacdd453fa1874ebcc957ddd0ed22e182434f7e92a"
+    },
+    {
+      "path": "source/analysis/V01C42_GATE.md",
+      "sha256": "751d345154b1a4d08a5e73a6c8f8ddc9ebc6e2807d7dff0565187e73188224f9"
+    },
+    {
+      "path": "source/analysis/V01C42_MITIGATION_BOUNDARY.md",
+      "sha256": "9311da843b12091a5ca94b73ba084f751ce05a975355743a9d1551e74b3d1212"
+    },
+    {
+      "path": "source/analysis/V01C42_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "0bd33af7c3ca8d2e89f654cb8726afeda05946225c5ce3de0ea961f5476d918b"
+    },
+    {
+      "path": "source/analysis/V01C42_STATUS.json",
+      "sha256": "97013f087f727cff1c9866fedea685ccfbb3791f677ad55dacd4ae4dc92d2eb9"
+    },
+    {
+      "path": "source/analysis/V01C43_GATE.md",
+      "sha256": "7ade0c0b46ac200aa6dad669b951d443f238fea9c7ddfea614fad8d7aabc372c"
+    },
+    {
+      "path": "source/analysis/V01C43_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "e5561e789c522c0a7740d74833a53d78c996f104a4948769ba113cefd0a1632d"
+    },
+    {
+      "path": "source/analysis/V01C43_RESTORATION_DIAGNOSTIC.md",
+      "sha256": "82386977138075936c78551c9baef9124e1b9de31fd86f8d7cc36b48a1e98328"
+    },
+    {
+      "path": "source/analysis/V01C43_STATUS.json",
+      "sha256": "d4e718d23dc2082fbe2efafb7a345d896c64f57973dae01ef89380a2f0ba4170"
+    },
+    {
+      "path": "source/analysis/V01C44_DR_CANONICALIZATION.md",
+      "sha256": "85c982323289b2121e0bd6aa64bae0af279243c22607dd6d8af8720752dddd00"
+    },
+    {
+      "path": "source/analysis/V01C44_GATE.md",
+      "sha256": "243153eae7046c1391e49bfe6808cb008f30b02db56c5301828c6da49966089f"
+    },
+    {
+      "path": "source/analysis/V01C44_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "10b7b40e6949c63c7de3775f4456700b9a9ff66384fcdf1cb22ebcb2c209e028"
+    },
+    {
+      "path": "source/analysis/V01C44_STATUS.json",
+      "sha256": "374861f9faa30dcdf518f24fb169667f61f6e21f43b842c4daf7b6f66d0d17fe"
+    },
+    {
+      "path": "source/analysis/V01C45_DR6_LIFECYCLE.md",
+      "sha256": "ef3742ec4a0950a78c816ac98df36abe0837a571454e57b61548af7ac1f7f6a7"
+    },
+    {
+      "path": "source/analysis/V01C45_GATE.md",
+      "sha256": "78fa8ffbdc2d36b6291ae1337713ef083810618932b90fe5e46b2ff00eb28227"
+    },
+    {
+      "path": "source/analysis/V01C45_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "b46fd5ee04e1b9dbda67b3175e8b2be68450a29e2cf588ced2ce964ffb88146b"
+    },
+    {
+      "path": "source/analysis/V01C45_STATUS.json",
+      "sha256": "bd84267658e3801b6ea85adc3524c9ccd74434a585caf92738809d1d3bcedee8"
+    },
+    {
+      "path": "source/analysis/V01C46_GATE.md",
+      "sha256": "6c739bf3d9d5909037ee2e57522440cbae8587af91244b01837633c7ce42a5c3"
+    },
+    {
+      "path": "source/analysis/V01C46_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "e09d11148a3f82c5becc484e65c365c036617d7d4ea492243bfd3b10f24e553b"
+    },
+    {
+      "path": "source/analysis/V01C46_PRE_ACCESS_BOUNDARY.md",
+      "sha256": "19eec00562b5a3d4aab228d3e0a82d3a3fce234d78609b5dd0c896259816ebc0"
+    },
+    {
+      "path": "source/analysis/V01C46_STATUS.json",
+      "sha256": "2f19f060ea594e501c6401e81ac32dca91fe17742079912b38347165cc83bba9"
+    },
+    {
+      "path": "source/analysis/V01C47_CONFIGURATION_RETIREMENT.md",
+      "sha256": "6b89150f07b79403a790eeffe727c6ac5946c67dbe29c8ee95cd9eb880d07b67"
+    },
+    {
+      "path": "source/analysis/V01C47_GATE.md",
+      "sha256": "f2caa454a491c88a07ad0c48f3fd0ca86053edb6ef2c331b6406f23237c7c28f"
+    },
+    {
+      "path": "source/analysis/V01C47_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "960ea34e5d487bf192cb85ce309e4476de29cd6aed926eb0ea5bd04dfc5e51e9"
+    },
+    {
+      "path": "source/analysis/V01C47_STATUS.json",
+      "sha256": "543d52b6df2cd81c5f496d6e2319cc725ca8a36f5266f61c2bcb03ba38c2bd20"
+    },
+    {
+      "path": "source/analysis/V01C48_GATE.md",
+      "sha256": "7029e99879497546358448d617ffc4d3439a508d9af74f881ddffdd30117884c"
+    },
+    {
+      "path": "source/analysis/V01C48_PRODUCTION_WITNESS_REVIEW.md",
+      "sha256": "9fd263b921c6a9d6b3005525bbc427d8c4101a1e70adb4dc181c0bee3af0fd6a"
+    },
+    {
+      "path": "source/analysis/V01C48_STATUS.json",
+      "sha256": "bcf36d3db213f7d77f1516db5a0f2d21f7bd02c6427c0d8ea64a416eee8fb691"
+    },
+    {
+      "path": "source/analysis/V01C49_GATE.md",
+      "sha256": "ea7b53124262e32b4d0b9189778e1e317474d39570cc28bff632a6acabaf6c6b"
+    },
+    {
+      "path": "source/analysis/V01C49_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "30031c6c243c09e5ef85b2dd603222ccd50da9ad588025d76e97ea96c3ee240b"
+    },
+    {
+      "path": "source/analysis/V01C49_STATUS.json",
+      "sha256": "79c23b59e955bed7111918ec42c9055aea83c1a4081a2b45b9edf2d03b0a24ae"
+    },
+    {
+      "path": "source/analysis/V01C49_VCH_SEARCH_BRIDGE.md",
+      "sha256": "3b7acb8d4cb7833ff8838cf7a4bb050a374aab42b4a56a0e0d368fc53546ed52"
+    },
+    {
+      "path": "source/analysis/V01C50_GATE.md",
+      "sha256": "2903eaa9ee077979c41c5c83c16090cce6fd3dcbeb400200f8a7ec365b5d9fa5"
+    },
+    {
+      "path": "source/analysis/V01C50_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "d3ac8b2e19a63c7685a0f644e429b101d5d3a5ac40a37d8dc24834f9ced9149e"
+    },
+    {
+      "path": "source/analysis/V01C50_PREDICATE_DECOMPOSITION.md",
+      "sha256": "2edcc24be535cc0d8882626901479b1f4debb24ba03aeae4fc8206f66e7fb926"
+    },
+    {
+      "path": "source/analysis/V01C50_STATUS.json",
+      "sha256": "1c166d6e911de52dd77081df61cfaa33fe74cdcc6b81d4343938c1f0dd82bce3"
+    },
+    {
+      "path": "source/analysis/V01C51_GATE.md",
+      "sha256": "37838b41a8c4c136aa9e6c08e6c461e00cbc98b27d3e19dd46939ae5ec6a9411"
+    },
+    {
+      "path": "source/analysis/V01C51_NATIVE_WINDOWS_RESULT.md",
+      "sha256": "75b7cb0d9dd922f28c62e23649d27620baaf0d4a9bf8bbfe73491aaf62362f55"
+    },
+    {
+      "path": "source/analysis/V01C51_STATUS.json",
+      "sha256": "224e07db0776abe73c17e852312bc56f441640ecf24db3e4ab621f5b186d0a7b"
+    },
+    {
+      "path": "source/analysis/V01C51_VCH_POST_RETURN_WITNESS.md",
+      "sha256": "317274273c648f998449f590ad7d1a4bcc1d4351c069142c912929189f7fdeae"
+    }
+  ],
+  "tests": [
+    {
+      "command": "bash source/tools/test_continuation_mitigations.sh",
+      "exit": 0,
+      "seconds": 0.68,
+      "log": "/workspace/scratch/ws-c52/test_continuation_mitigations.log",
+      "PASS": 10,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_continuation_diagnostics.sh",
+      "exit": 0,
+      "seconds": 0.97,
+      "log": "/workspace/scratch/ws-c52/test_continuation_diagnostics.log",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_debug_register_comparison.sh",
+      "exit": 0,
+      "seconds": 0.62,
+      "log": "/workspace/scratch/ws-c52/test_debug_register_comparison.log",
+      "PASS": 9,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_dr6_lifecycle.sh",
+      "exit": 0,
+      "seconds": 1.03,
+      "log": "/workspace/scratch/ws-c52/test_dr6_lifecycle.log",
+      "PASS": 11,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_pre_access_lifecycle.sh",
+      "exit": 0,
+      "seconds": 0.97,
+      "log": "/workspace/scratch/ws-c52/test_pre_access_lifecycle.log",
+      "PASS": 12,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_retirement_configuration.sh",
+      "exit": 0,
+      "seconds": 1.19,
+      "log": "/workspace/scratch/ws-c52/test_retirement_configuration.log",
+      "PASS": 13,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_continuation_witness.sh",
+      "exit": 0,
+      "seconds": 12.87,
+      "log": "/workspace/scratch/ws-c52/test_continuation_witness.log",
+      "PASS": 13,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_watch_retirement.sh",
+      "exit": 0,
+      "seconds": 7.39,
+      "log": "/workspace/scratch/ws-c52/test_watch_retirement.log",
+      "PASS": 14,
+      "SKIP": 0,
+      "UNAVAILABLE": 2,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_production_witness_review.sh",
+      "exit": 0,
+      "seconds": 5.9,
+      "log": "/workspace/scratch/ws-c52/test_production_witness_review.log",
+      "PASS": 9,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_vch_search_bridge.sh",
+      "exit": 0,
+      "seconds": 16.3,
+      "log": "/workspace/scratch/ws-c52/test_vch_search_bridge.log",
+      "PASS": 22,
+      "SKIP": 0,
+      "UNAVAILABLE": 6,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_vch_search_identity.sh",
+      "exit": 0,
+      "seconds": 8.7,
+      "log": "/workspace/scratch/ws-c52/test_vch_search_identity.log",
+      "PASS": 13,
+      "SKIP": 0,
+      "UNAVAILABLE": 7,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_vch_post_return_witness.sh",
+      "exit": 0,
+      "seconds": 10.18,
+      "log": "/workspace/scratch/ws-c52/test_vch_post_return_witness.log",
+      "PASS": 16,
+      "SKIP": 0,
+      "UNAVAILABLE": 2,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/build_windows.sh",
+      "exit": 0,
+      "seconds": 47.66,
+      "log": "/workspace/scratch/ws-c52/build_windows.log",
+      "PASS": 0,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test.sh",
+      "exit": 0,
+      "seconds": 9.25,
+      "log": "/workspace/scratch/ws-c52/test.log",
+      "PASS": 13,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/smoke_windows.sh",
+      "exit": 0,
+      "seconds": 12.22,
+      "log": "/workspace/scratch/ws-c52/smoke_windows.log",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_hooks_windows.sh",
+      "exit": 0,
+      "seconds": 186.4,
+      "log": "/workspace/scratch/ws-c52/test_hooks_windows.log",
+      "PASS": 410,
+      "SKIP": 5,
+      "UNAVAILABLE": 17,
+      "BLOCKED": 0
+    },
+    {
+      "command": "python3 source/tools/package.py",
+      "exit": 0,
+      "seconds": 0.83,
+      "log": "/workspace/scratch/ws-c52/package.log",
+      "PASS": 1,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    },
+    {
+      "command": "bash source/tools/test_production_vch_witness_review.sh",
+      "exit": 0,
+      "seconds": 0.32,
+      "log": "/workspace/scratch/ws-c52/test_production_vch_witness_review.log",
+      "PASS": 8,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "BLOCKED": 0
+    }
+  ],
+  "not_run": [
+    {
+      "name": "new_positive_production_shape_model_or_concurrent_bridge_harness",
+      "reason": "explicit_section6_condition_not_met_design_incoherent_no_positive_native_or_model_claim"
+    },
+    {
+      "name": "new_later_VCH_native_runtime_or_game_process_mitigation_XSTATE_probe",
+      "reason": "not_needed_to_close_review_FAIL_public_contract_gap_native_game_environment_not_attached"
+    },
+    {
+      "name": "production_integration_exact_slot_gameplay_live_stub_reuse",
+      "reason": "forbidden_scope_not_implemented"
+    }
+  ],
+  "nonduplicated_validation": {
+    "PASS": 438,
+    "regression_PASS": 430,
+    "c52_static_audit_PASS": 8,
+    "SKIP": 5,
+    "UNAVAILABLE": 17,
+    "BLOCKED": 0,
+    "package_validation_PASS_separate": 1,
+    "focused_tests_repeated_in_hooks_not_double_counted": true,
+    "static_audit_not_a_positive_design_or_native_test": true
+  },
+  "skip_reasons": [
+    "optional_private_original_byte_positive_replay",
+    "optional_private_native_replay",
+    "optional_game_body_installer_positive",
+    "optional_584byte_normalization_positive",
+    "optional_accepted_build_capture_replay"
+  ],
+  "skip_input_reason": "private_inputs_not_distributed_in_repository"
+}

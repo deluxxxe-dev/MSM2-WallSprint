@@ -1,3 +1,151 @@
+# Codex result — c52 production-shape VCH witness review
+
+2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
+Task base **e27fbaabafe05995f6f156657a430348cda2875d**.
+Implementation/review commit is pinned after publication below.
+Primary: **PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL**. BLOCKED0.
+
+The review is complete with a valid fail-closed result, not production integration.
+Accepted owner-native c51 VCH_POST_RETURN_WITNESS_BRIDGE_FEASIBILITY_PASS is
+preserved as one owned Position/close mixed debt. No production behavior/restore/
+ownership/install/handler/lease/cleanup, exact-slot or gameplay changes. Runtime
+v0.1c38/package0.1.56; no game release or c52 native executable.
+
+## Read / source scope / actual design result
+
+Read AGENTS/manual/rules/workspace/state/NEXT/reporting/logging, relevant c39-c51
+retirement/witness/native evidence, production orientation_trace.cpp/telemetry,
+c48 return inventory, c49-c51 SEARCH/VCH wrappers and reviewed c41 helper/machine
+form, plus relevant Wisdoms references. Fast-forwarded only intended branch
+1aad6e4->e27fbaa. No WS main merge/reset/force push. Original five untracked
+ZIP/bundle artifacts are preserved and excluded from commits. CODEX_NEXT is
+preserved; this task explicitly authorizes PROJECT_STATE updates.
+
+First exact missing guarantee: supported complete final-context/terminal VCH
+boundary for all admitted production saved contexts. AddVCH First=0 orders a
+registration; it does not establish permanent exclusive terminal ownership or
+universal restore-route coverage. Shared VEH callback return semantics do not
+independently document a VCH chain seal. No supported observable game-host
+admission contract closes that domain. It is not enough to replay one native
+example or copy c51's downstream/VCH hold. This is a design guarantee gap, not
+failure merely because c52 deliberately leaves production unmodified.
+
+The audit covers all14 S0-S3/C0-C8/T0 rows/five textual returns, normal/mixed/
+partial/closed/deadline/kill/budget/lock/ring/suppressed-event/reset/Position/
+nesting/tombstone/multithread paths and installation/cleanup/exit/deinit/residency.
+Necessary bounded ledger states, immutable epoch/context/obligation sets,
+pre-escape reservation, publication/cleanup serialization, independent debts,
+poison, exact token and reader/PC/thread-exit boundaries are specified. No finite
+production nesting/lifetime credits, no-wait ready-target pool coverage, actual
+game mitigation/full-XSTATE or unload contract is established. C51 callback wait
+and coordinator near allocation are test-only, not a production preparation plan.
+
+Per section6's coherent-design prerequisite, no new positive production-shape
+model or executable bridge is implemented. The added focused command checks
+source/proof/inventory integrity only:8 static PASS records are not8 behavioral,
+native or production design successes. Old c39/c40/c48 counterexamples are rerun.
+Marker acknowledgment and code quiescence remain separate; no live-thread reuse.
+
+## Changed files / provenance
+
+New root/source mirrored V01C52_PRODUCTION_VCH_WITNESS_REVIEW.md, GATE and STATUS;
+new tools/check_production_vch_witness_review.py and focused shell wrapper;
+PROJECT_STATE and this report; package.py evidence/manifest metadata only.
+Package now includes accepted c51 native proof and c52 review, and reports native
+c51 PASS separately from production review FAIL. Historical c51 status/manifest
+Wine UNAVAILABLE remains byte-identical, not relabeled.
+
+Focused integrity pins272 old code/tool inputs (all c51 source inputs except the
+authorized package metadata script) and179 historical proof/native/task files.
+No new src/include code is present. Accepted c51 proof SHA256:
+75b7cb0d9dd922f28c62e23649d27620baaf0d4a9bf8bbfe73491aaf62362f55.
+Official MicrosoftDocs provenance/excerpts for11 pages are preserved in c52 status.
+Learn delivery returned11 proxy403 UNAVAILABLE; official GitHub sources all11
+were retrieved successfully. Initial two lowercase Debug paths returned404 and
+were corrected; final missing primary documents0. No API-source unavailability
+is presented as an OS behavior result, and no finite test claims universal order.
+
+## Required validation — exact commands, expected and actual
+
+All17 Required validation commands and the new separate focused command were
+executed from repository root on final code/tool inputs. Full logs/results are
+durable in /workspace/scratch/ws-c52 for this workspace; compact results below
+and c52 status are committed. No raw user/game log is published.
+
+| Exact command | Expected | Actual |
+| --- | --- | --- |
+| `bash source/tools/test_continuation_mitigations.sh` | c42 known/unknown policy handling unchanged | 10 PASS; exit0 |
+| `bash source/tools/test_continuation_diagnostics.sh` | c43 diagnostics unchanged | 7 PASS; exit0 |
+| `bash source/tools/test_debug_register_comparison.sh` | RAW/c44 comparison preserved independently | 9 PASS; exit0 |
+| `bash source/tools/test_dr6_lifecycle.sh` | c45 lifecycle unchanged | 11 PASS; exit0 |
+| `bash source/tools/test_pre_access_lifecycle.sh` | c46 pre-access unchanged | 12 PASS; exit0 |
+| `bash source/tools/test_retirement_configuration.sh` | c47 exact fixture predicate unchanged | 13 PASS; exit0 |
+| `bash source/tools/test_continuation_witness.sh` | c41 witness/state/lifetime guards unchanged | 13 PASS; exit0 |
+| `bash source/tools/test_watch_retirement.sh` | c39/c40 resurrection counterexamples; honest unavailable VCH | 14 PASS / 2 UNAVAILABLE; exit0 |
+| `bash source/tools/test_production_witness_review.sh` | c48 six SEARCH counterexamples and two foreign-only controls | 9 PASS; exit0 |
+| `bash source/tools/test_vch_search_bridge.sh` | c49 observation/model and unchanged c48 control chain | 22 PASS / 6 UNAVAILABLE; exit0 |
+| `bash source/tools/test_vch_search_identity.sh` | c50 decomposed unique worker identity | 13 PASS / 7 UNAVAILABLE; exit0 |
+| `bash source/tools/test_vch_post_return_witness.sh` | c51 bounded model/helper plus honest Wine VCH absence | 16 PASS / 2 UNAVAILABLE; exit0 |
+| `bash source/tools/build_windows.sh` | existing Windows Werror build | build success (no case count); exit0 |
+| `bash source/tools/test.sh` | portable/ASan/UBSan | 13 PASS; exit0 |
+| `bash source/tools/smoke_windows.sh` | owned Windows smoke | 7 PASS; exit0 |
+| `bash source/tools/test_hooks_windows.sh` | all prior hook/ABI/lifecycle/proof/workspace regressions | 410 PASS / 5 SKIP / 17 UNAVAILABLE; exit0 |
+| `python3 source/tools/package.py` | disabled c38 package/source/evidence; native c51 PASS vs c52 FAIL distinct | 1 PASS; exit0 |
+| `bash source/tools/test_production_vch_witness_review.sh` | static protected-source/inventory/evidence integrity only; no positive design claim | 8 PASS; exit0 |
+
+Nonduplicated total: **438 PASS /5 SKIP /
+17 UNAVAILABLE /0 BLOCKED** = regression430
++c52 static8. Focused regressions repeated inside
+hooks are not added twice. Package validation1 PASS and primary-doc retrieval11
+PASS are separate. Wine unavailability17=c40(2)+c49(6)+c50(7)+c51(2); native c51
+accepted PASS remains distinct. No requested permitted test is security-blocked.
+
+## Additional checks / unperformed work / owner action
+
+Exact research/check commands executed:
+
+```bash
+python3 /workspace/scratch/ws-c52/fetch_docs.py
+python3 /workspace/scratch/ws-c52/fetch_docs.py --github-primary
+git diff --check
+```
+
+Expected official API contracts/provenance and clean diff; actual Learn11 route
+UNAVAILABLE, final official GitHub11 retrieved/PASS with excerpts/hash inspection,
+diff clean. A case-sensitive official path correction resolved the two404s.
+Document retrieval is separate from the runtime regression totals.
+
+Unperformed/conditional tests and reasons:
+
+- New production-shape positive ledger/bridge acceptance matrix (nested/out-of-
+  order/multithread/multi-obligation/later VCH/caps/publication/deinit/readers):
+  not implemented/run because section6's complete coherent design prerequisite
+  fails. Necessary refusal conditions and limits are documented; old bounded
+  fixture tests still execute. Static integrity is not substituted for behavior.
+- New native later-VCH/universal dispatch/game-process policy/full-XSTATE/unload
+  experiment: not run, no attached native game environment, and a finite sample
+  would not supply the missing supported universal boundary. Accepted native c51
+  input suffices for its one-debt fact; it is not generalized or rerun here.
+- Five old optional positive replays (private original bytes/native replay/game
+  body installer/584byte normalization/accepted build capture): SKIP because their
+  private inputs are absent. Independent public regressions remain executed.
+- Production integration, exact-slot/gameplay/producer work, live-thread stub
+  reuse and mitigation changes: expressly forbidden, not implemented/run.
+- BLOCKED0; no authorization or review rejection was bypassed.
+
+No owner action: no Update-WS/game/Overstrike/standalone/scan/log request. A later
+explicitly scoped design must close the documented terminal-domain/credit/pool/
+architectural/lifetime gaps before production or exact-slot work can be considered.
+
+Validation output only:
+source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled.
+No root release ZIP/script/native c52 artifact is created or replaced. Package
+and integrity checks are repeated after final provenance/report metadata. Full
+code tests need not be repeated for metadata-only changes; no code/tool input
+changes follow this full run. Final branch/SHA and verified publication follow.
+
+---
+
 # Codex result — c51 test-only one-debt VCH post-return witness bridge
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
