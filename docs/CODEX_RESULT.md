@@ -1,41 +1,47 @@
-# Codex result — c58 exact-runtime-begin continuation
+# Codex result — c59 later entry-instance runtime-boundary diagnostics
 
-2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**. Task base **9c66715e8b3b29a4a0f5d02df0b172b44ab005b2**.
-Primary **EXACT_RUNTIME_BEGIN_STITCH_SCANNER_READY**; implementation/source commit **5897ef8d00ef5d830e242ed4bfb61c65e593b304** was pushed and
-independently verified; final metadata HEAD is reverified and reported in chat. BLOCKED0. Real c58 private
-image scan **UNAVAILABLE**, all new real metrics UNKNOWN/null, not zero.
+2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**. Task base **7689f4889c8b775abd34ce7f707cfc1a7a49f8cd**.
+Primary **LATER_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**. Implementation SHA and
+verified publication are pinned below after push. BLOCKED0. Actual c59 private
+image classification UNAVAILABLE; roots/instances/edges/completeness UNKNOWN/null.
 
-## Result and changes
+## Result, scope and files
 
-New separate bounded offline entry-instance scanner + owned focused tests. Exact
-c56/c57 replay authenticates source rows/code/instruction/architectural edges and
-target row/RX bytes before carrying unchanged c53 Facts. Different root/state
-instances never contaminate independent EMPTY-root scans. Local exact must joins,
-original fact/summary language and RSP kill remain. Separate boundary paths keep
-address-hop semantics unchanged. Same-state cycles dedup; changed-state cycles,
-uncertified later boundaries/targets, unknown semantics or caps abort entire root,
-including earlier provisional candidates. Factless edges do not seed new roots.
-Candidate counts are entry-instance observations only, not global unique sites.
-Read-only existing checkpoint/JSON inputs must exactly match; no silent fallback.
+Separate diagnostic observer records the exact original c58 first terminal later-
+boundary refusal, with root/current row/entry seed/path/source instruction/proof
+identity, then rethrows it unchanged. Original c58 accounting/candidates are fully
+replayed/audited. A second independently ordered replay validates every record;
+wrong/missing/duplicate/stale state/path/source/schema/contract/tool/caps/root
+records poison aggregation. Reuse c57 edge semantics, never its first-boundary
+admission identity. All six edge kinds/eight relations, adjacency and model-only
+successors reported with bounded examples and full exact counts.
 
-Accepted c57 owner distribution is now historical:162472 rows/201788 architectural
-edges/0 model-only,159734 exact beginnings/29560 interiors/12494 free RX,90430
-adjacent+69304 nonadjacent exact. Prior c57 owner and all old scanner/test/evidence
-bytes preserved. No production restoration/ownership/handler/lease/cleanup/VCH/
-mitigation/watch/gameplay edit or new memory/value/pointer/producer semantics.
-All completeness/publication/allocation/base/range/lifetime/ownership/CFG/EH gates
-false; C52 FAIL binding. Runtimev0.1c38/package0.1.56 unchanged, no game release.
+Current c58 stops on FIRST abort per root: root, instance and edge counts are
+separate, with no post-abort exploration. State identity is authenticated ENTRY
+SEED, not the instruction must-state (graph build abort precedes local fixpoint).
+Original EMPTY-root contexts can also encounter later boundaries. This distinction
+is covered by owned tests; actual distribution remains UNKNOWN until owner scan.
+No new later-edge admission/candidate or fact/pointer/value/producer/ABI semantics.
+No production restore/ownership/handler/VCH/lease/cleanup/watch/mitigation/gameplay
+change; all completeness/publication/allocation/ownership/lifetime/CFG/EH gates
+false. C52 FAIL remains binding; runtimev0.1c38/package0.1.56 unchanged, no release.
 
-Files: new tools/slot_publication_stitched.py + test_slot_publication_stitched.py;
-root/source V01C58_STITCHED_CONTINUATION.md, GATE.md, STATUS.json; existing hooks
-adds mandatory focused test, package includes c57 accepted owner+c58 evidence and
-manifest gate; PROJECT_STATE and CODEX_RESULT updated. No CODEX_NEXT overwrite.
-Original five untracked ZIP/bundle artifacts remain unstaged. No WS main merge,
-reset or force push. Detailed proof/count/cap contract is in mirrored analysis.
+Accepted c58 owner VERIFIED-STATIC:159734 available/147338 considered/1299 admitted
+edges;482 rows/1686 facts/0 CALL crossings/0 new candidates;162472 roots,81896
+completed/80576 refused,33719 later uncertified boundary refusals. Both owner
+files and prior historical cloud-UNKNOWN evidence remain immutable.
 
-## Tests, exact commands, expected and actual
+New: slot_publication_later_boundary.py/test_slot_publication_later_boundary.py;
+root/source V01C59_LATER_RUNTIME_BOUNDARY.md/GATE.md/STATUS.json. Existing changes:
+mandatory hooks test, package evidence/manifest gate, CODEX_RESULT. PROJECT_STATE
+and CODEX_NEXT are unchanged per AGENTS (c59 task does not explicitly authorize
+state overwrite); current accepted evidence/task/result are in owner MD/NEXT/RESULT
+and c59 analysis. Five original untracked ZIP/bundle files remain unstaged.
+Fetched intended branch e89d2b5->7689f48 fast-forward only; no main merge/reset/force.
 
-From repository root, existing pinned Capstone5.0.6 environment:
+## Exact required commands, expected and actual
+
+Used existing pinned Capstone5.0.6 environment, from repository root:
 
 ```bash
 export PATH=/workspace/toolchains/analysis-python/bin:$PATH
@@ -44,51 +50,47 @@ export PATH=/workspace/toolchains/analysis-python/bin:$PATH
 | Exact command | Expected | Actual |
 | --- | --- | --- |
 | `python3 source/tools/test_slot_publication.py` | historical c38 semantics unchanged | 20 PASS; exit0 |
-| `python3 source/tools/test_static_access_v2.py` | static access/AVX/refusal unchanged; optional private input SKIP | 1 PASS / 1 SKIP; exit0 |
-| `python3 source/tools/test_slot_publication_cfg.py` | c53 normal CFG/exact must unchanged | 22 PASS; exit0 |
-| `python3 source/tools/test_slot_publication_callee.py` | c54 authenticated summaries unchanged | 26 PASS; exit0 |
-| `python3 source/tools/test_slot_publication_direct_entry.py` | c55 direct-entry rules unchanged | 32 PASS; exit0 |
-| `python3 source/tools/test_slot_publication_sharded.py` | c56 complete shards/cache/counters unchanged | 25 PASS; exit0 |
-| `python3 source/tools/test_slot_publication_boundary.py` | c57 first-refusal classification and readonly evidence unchanged | 27 PASS; exit0 |
-| `python3 source/tools/test_slot_publication_stitched.py` | only exact architectural edges; separate states/must/cycles/caps/auth/refused roots cannot leak candidates | 32 PASS; exit0 |
-| `bash source/tools/build_windows.sh` | Windows warnings-as-errors build succeeds | build success (case count not emitted); exit0 |
+| `python3 source/tools/test_static_access_v2.py` | static access/refusal unchanged; missing optional private input SKIP | 1 PASS / 1 SKIP; exit0 |
+| `python3 source/tools/test_slot_publication_cfg.py` | c53 CFG/must unchanged | 22 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_callee.py` | c54 preservation summaries unchanged | 26 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_direct_entry.py` | c55 direct-entry unchanged | 32 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_sharded.py` | c56 sharded evidence/cache unchanged | 25 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_boundary.py` | c57 first-boundary classifier unchanged | 27 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_stitched.py` | c58 entry-instance/cycle/cap/candidate behavior unchanged | 32 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_later_boundary.py` | authenticate exact later abort/context/state/path; diagnostic classes only; poison malformed evidence; unchanged c58 accounting/candidates | 23 PASS; exit0 |
+| `bash source/tools/build_windows.sh` | Windows warnings-as-errors build succeeds | build success (no case count emitted); exit0 |
 | `bash source/tools/test.sh` | portable ASan/UBSan regressions pass | 13 PASS; exit0 |
 | `bash source/tools/smoke_windows.sh` | owned Windows smoke passes | 7 PASS; exit0 |
-| `bash source/tools/test_hooks_windows.sh` | all historical hooks/ABI/lifetime/counterexamples plus mandatory c58; native VCH absence UNAVAILABLE | 574 PASS / 5 SKIP / 17 UNAVAILABLE; exit0 |
-| `python3 source/tools/package.py` | disabled c38 script/PE/ZIP CRC and current tools/docs/evidence package valid | 1 PASS; exit0 |
+| `bash source/tools/test_hooks_windows.sh` | all hooks/counterexamples/lifetime/ABI regressions plus c59; native VCH absence UNAVAILABLE | 597 PASS / 5 SKIP / 17 UNAVAILABLE; exit0 |
+| `python3 source/tools/package.py` | disabled unchanged c38 PE/ZIP CRC and complete current tools/docs/evidence | 1 PASS; exit0 |
 
-Standalone scanner commands are repeated by hooks; do not double count them.
-Unique regression groups: **PASS 594 / SKIP 5 / UNAVAILABLE 17 / BLOCKED 0**. Focused c58 32 PASS included in hooks; build success and package1 PASS separate.
+Standalone scanner tests are also included in hooks; do not double count them.
+Unique regression groups: **PASS 617 / SKIP 5 / UNAVAILABLE 17 / BLOCKED 0**. Focused c59 23 PASS included; Windows build and package1 PASS separate.
 
-SKIP5: optional private original-byte positive replay, private native replay,
-private game-body installer positive, private584-byte normalization and accepted-
-build capture replay inputs absent. Static-access standalone's1 SKIP is the same
-optional input counted by hooks; not another unique skip. UNAVAILABLE17 in Wine:
-c40 actual-VCH/order2, c49 mixed-dispatch6, c50 identity7, c51 post-return2. Zero
-callbacks/registration success is not native dispatch evidence. All historical
-counterexamples remain. Additional UNAVAILABLE1: actual pinned-image c58 scan,
-private EXE unavailable. No requested validation command omitted; no blocked
-subtask. Native game/new probe unrun because c58 is offline only, not required.
+SKIP5 are absent optional private original-byte positive replay, native replay,
+game-body installer positive,584-byte normalization and accepted-build capture
+inputs. Standalone static-access1 SKIP repeats the hooks optional input, not an
+extra skip. UNAVAILABLE17 are unchanged Wine c40 actual-VCH/order2, c49 mixed
+SEARCH dispatch6, c50 identity7, c51 post-return2. Registered callback0 does not
+prove native dispatch. All old counterexamples are preserved. Additional
+UNAVAILABLE1: actual pinned-image c59 classification, private EXE absent. No
+required command omitted; no blocked subtask. Native/game/new probe unrun because
+c59 is offline-only, not required. Focused command also ran during development:
+23 PASS, then repeated in Required validation and mandatory hooks.
 
-Development focused command also ran before Required validation: first test had
-an incorrect zero-reader expectation for the load that legitimately reads the
-slot before invalidating its loaded base; corrected the fixture to preserve that
-reader and refuse the subsequent loaded-value dereference. Final32 groups pass;
-no value semantic was broadened. No production source changed to obtain PASS.
+## Artifact, final verification and owner next action
 
-## Artifact, integrity, publication and owner next action
+Validation-only output:
+`source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled` plus complete current
+tools/docs/compact evidence. No new game release/native probe/private packaging.
+Final metadata/package mirror integrity and publication checks are recorded below.
+Metadata-only edits after full validation do not change tested code; recheck exact
+source/tool hashes, package and mirrors rather than repeating compiled regressions.
 
-Validation-only artifact:
-`source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled` plus current tools/
-docs/compact evidence. No new runtime release/native probe/private data packaging.
-Final metadata/package mirror checks and GitHub checkout comparison are recorded
-below and in STATUS. Documentation/publication-only edits after code validation
-require package/integrity recheck, not repeating unchanged compiled regressions.
-
-After publication, run ONLY the following PowerShell block, then return the new
-compact c58 JSON from logs. Existing c56 checkpoints and c57 JSON are read-only;
-if moved, point the two flags at their real locations. No Update-WS, game,
-Overstrike, EXE upload, runtime log or standalone Windows probe is requested.
+After verified publication, run only this one PowerShell block; return the new
+compact c59 JSON from logs. Existing c56 cache+c57+c58 JSON are READ ONLY; adjust
+only their paths if renamed. No Update-WS/game/Overstrike/EXE upload/hardware watch/
+runtime log/standalone Windows probe required.
 
 ```powershell
 $gameWsl = "/mnt/c/SteamLibrary/steamapps/common/Marvel's Spider-Man 2"
@@ -97,42 +99,29 @@ $wsRoot = "C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2\Mods Library\M
 if ((git -C "$wsRoot\_source" branch --show-current) -ne "codex/v01c20-edi-value-provenance") { throw "Unexpected branch; stop here" }
 git -C "$wsRoot\_source" pull --ff-only origin codex/v01c20-edi-value-provenance
 if ($LASTEXITCODE -ne 0) { throw "WS source update failed; stop here" }
-wsl -d Ubuntu-24.04 --exec /workspace/toolchains/analysis-python/bin/python3 "$wsWsl/_source/source/tools/slot_publication_stitched.py" "$gameWsl/Spider-Man2.exe" --c56-cache "$wsWsl/logs/MSM2-WS-v0.1c56-slot-publication-sharded.shards" --c57-json "$wsWsl/logs/MSM2-WS-v0.1c57-runtime-boundary.json" --output "$wsWsl/logs/MSM2-WS-v0.1c58-slot-publication-stitched.json"
-if ($LASTEXITCODE -ne 0) { throw "c58 offline scan refused; preserve existing evidence" }
+wsl -d Ubuntu-24.04 --exec /workspace/toolchains/analysis-python/bin/python3 "$wsWsl/_source/source/tools/slot_publication_later_boundary.py" "$gameWsl/Spider-Man2.exe" --c56-cache "$wsWsl/logs/MSM2-WS-v0.1c56-slot-publication-sharded.shards" --c57-json "$wsWsl/logs/MSM2-WS-v0.1c57-runtime-boundary.json" --c58-json "$wsWsl/logs/MSM2-WS-v0.1c58-slot-publication-stitched.json" --output "$wsWsl/logs/MSM2-WS-v0.1c59-later-runtime-boundary.json"
+if ($LASTEXITCODE -ne 0) { throw "c59 offline classification refused; preserve existing evidence" }
 ```
 
 
 ## Final verification procedures
 
-- `python3 /workspace/scratch/ws-c58/verify.py`: expected no changes to1053
-  protected baseline files,289 tested code/tool hashes match current bytes and
-  package mirrors, root/source/out evidence and docs agree, C52 FAIL/c58 actual
-  UNKNOWN/false gates retained. Actual PASS1. This local checker consumes the
-  committed STATUS hash inventory; no proprietary inputs are involved.
-- `git diff --check`: expected no whitespace errors; actual exit0.
-- `python3 source/tools/package.py` repeated after metadata-only edits: expected
-  current complete tools/docs/evidence with disabled unchanged runtime; actual
-  PASS. Compiled tests were not repeated because no executable source changed
-  after the successful full suite; exact289-input digest is checked instead.
-- Wisdoms `docs/REVERSE_ENGINEERING_GUIDE.md` updated with accepted c57 owner
-  distribution and reusable entry-instance/cycle/root-transaction method.
-  Commit **b74c32c2792a1991a61b3da33e55f8ae4185e99b**, pushed main.
-  `git -C /workspace/scratch/msm2-wisdoms-c51 ls-remote origin refs/heads/main`:
-  expected pushed SHA; actual exact match (PASS1).
-
-
-## Publication accepted
-
-Implementation/source commit **5897ef8d00ef5d830e242ed4bfb61c65e593b304** is published on
-**codex/v01c20-edi-value-provenance**. `git push origin codex/v01c20-edi-value-provenance`
-succeeded (normal push). `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance`
-matched local HEAD exactly. `python3 /workspace/scratch/ws-c58/check_publication.py`
-fetched the intended branch in an independent GitHub checkout: expected identical
-12 changed files, all289 tested code/tool inputs and protected evidence; actual
-**320 distinct files byte/hash equal, PASS1**. Tested input digest:
-`91a7f2e66f551a172e88644d4ec79a07ee54edb39985942fd28ed9fb296da770`.
-C58 actual counts UNKNOWN and C52 FAIL retained in fetched evidence. Final
-publication-record-only commit follows this pinned implementation; its HEAD is
-again remote/checkout verified and returned in chat (avoids self-referential SHA).
-No compiled regression rerun needed: all289 executable inputs still match the
-successfully tested digest. Final package/mirror/integrity checks are repeated.
+- `python3 /workspace/scratch/ws-c59/verify.py`: expected1064 protected baseline
+  files unchanged,291 tested code/tool hashes match current bytes and package,
+  root/source/output evidence and docs agree, C52 FAIL/c59 actual UNKNOWN/false
+  gates preserved. Actual PASS1. This local checker consumes committed STATUS
+  hash inventory and compares baseline Git contents; no private input is required.
+- `git diff --check`: expected no whitespace errors, actual exit0.
+- `python3 source/tools/package.py` repeated after final metadata: expected current
+  complete source/docs/evidence in disabled unchanged runtime output; actual PASS.
+  Compiled regressions need no repeat because executable code/tool bytes remain
+  equal to the successful full-validation digest; final hash/mirror check repeats.
+- Wisdoms guide updated with accepted c58 owner result and reusable c59 first-
+  refusal observer/order/seed-state method. Commit
+  **936f3257c410023cd13ba4ec320c601fc9106722**, pushed main.
+  `git -C /workspace/scratch/msm2-wisdoms-c51 ls-remote origin refs/heads/main`
+  expected pushed SHA, actual exact match (PASS1). First normal push was rejected
+  because another project updated main; fetched, inspected (CONTEXTUAL_IDLE docs
+  only), rebased ONLY our unpublished Wisdoms commit onto that update, verified
+  `git diff --exit-code origin/main -- docs/CONTEXTUAL_IDLE.md` exit0, then normal
+  push succeeded. No force push; WS main was never merged/rebased into WS branch.
