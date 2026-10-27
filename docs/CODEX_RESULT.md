@@ -1,3 +1,131 @@
+# Codex result — c53 CFG-aware offline exact-slot scanner
+
+2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
+Task base **7559677b4f440a24180e87582cdf38b4456e32b8**.
+Implementation/source commit is pinned after publication below.
+Primary: **CFG_SLOT_PUBLICATION_SCANNER_READY**. BLOCKED0.
+
+Implemented only owned offline tooling. READY is not a discovered writer or a
+real-image result. No exact private Spider-Man2.exe is present here: actual new
+candidate and coverage counts are null/UNKNOWN, not zero. C52 production VCH
+review FAIL remains binding; no production behavior/restore/ownership/handler/
+lease/cleanup, hardware watch, pointer chase or gameplay write. Runtime remains
+v0.1c38/package0.1.56; no game release or c53 native executable.
+
+## Work and evidence scope
+
+Read AGENTS/manual/rules/workspace/state/NEXT/reporting and relevant c38/c52/
+native evidence, the c38 scanner/tests, static_access_v2/tests and Wisdoms
+static-provenance/VCH rules. Fast-forwarded5882ac4->7559677 on intended branch;
+no WS main merge/reset/force push. Preserved original five untracked ZIP/bundle
+artifacts. CODEX_NEXT is unchanged; PROJECT_STATE update is task-authorized.
+
+New separate slot_publication_cfg.py (schema1/toolv0.1c53) reuses unchanged
+pure c38 decoder/address/PE/anchor guards. Exact file SHA/pinned Capstone required,
+no CLI override or process API. Strict canonical per-runtime partition, normal
+direct CFG and bounded must fixed point precede all operand emission. Joins
+retain only identical exact origin plus derivation from every reachable input;
+unknown/conflict/late predecessor removes facts. Direct CALL fallthrough kills
+ALL origins; no ABI summary or target traversal. RET stops; unresolved/indirect/
+system/middle/gap/runtime/cap uncertainty rejects the affected region, dropping
+provisional candidates. Loops converge under finite state/worklist/hop caps.
+
+Only RIP-LEA/full64 copy/checked affine LEA and exact constant displacements are
+carried; loads/partial/unsupported/index/segment facts remain unknown. Known move
+encodings preserve store WRITE despite bad decoder READ metadata, RMW/address-
+only/read-only are separate, unsupported semantics remain possible writes.
+Records include instruction hash/operands/width/overlap/chain/section/runtime/CFG
+scope; no qword content or full private body. External c28 validation has its own
+metadata and charged work but NEVER seeds local entry state. The deferred producer
+span or unchanged whole-section fallback is excluded before decoding.
+
+Coverage/caps/edge types/merges/discards/loop and state revisits/stops are explicit.
+New edge-unit improvements are not subtracted from c38's historical operand/reset
+totals. EH/alternate entries/no-runtime code/implicit memory/indirect writers are
+not closed, so writer/publication/ownership/base/lifetime/containment/continuation
+certificates remain false for zero/one/multiple candidates.
+
+New focused tests are mandatory in hooks; c38 and static_access_v2 source/tests
+are unchanged. Updated mirrored V01C53 analysis/gate/status, PROJECT_STATE,
+this report and package metadata/source evidence. Shared Wisdoms rule is updated
+without promoting synthetic results to real-image evidence.
+
+## Validation environment and initial correction
+
+The default python3 lacks Capstone. The already configured analysis virtual
+environment has exactly5.0.6; no dependency install/global Python mutation needed.
+Before the exact required commands, set:
+
+```bash
+export PATH=/workspace/toolchains/analysis-python/bin:$PATH
+```
+
+Initial new focused run failed a discard-counter assertion: unknown-first joins
+correctly removed the address fact, but the diagnostics failed to count the later
+disagreeing known input. Corrected the counter for both input orders and extended
+the schedule cases. No proof assertion/old test/guard/cap was relaxed. Subsequent
+focused tests pass. After a first full green chain, completed external-anchor
+metadata and tightened full7byte exclusion overlap, then reran ALL8 required
+commands on final source. Preliminary/repeated cases are not added to totals.
+
+## Required validation — exact commands, expected and actual
+
+All8 final commands below ran from repository root and exited0. Per-command logs
+and machine-readable results are in /workspace/scratch/ws-c53 in this workspace;
+compact results/guards/source hashes are committed in c53 status.
+
+| Exact command | Expected | Actual |
+| --- | --- | --- |
+| `python3 source/tools/test_slot_publication.py` | historical c38 semantics preserved | 20 PASS; exit0 |
+| `python3 source/tools/test_static_access_v2.py` | existing AVX/CFG/alias rules preserved; absent private replay SKIP | 1 PASS / 1 SKIP; exit0 |
+| `python3 source/tools/test_slot_publication_cfg.py` | bounded CFG must-address/merge/loop/cap/provenance/access/guard/anchor/exclusion tests | 22 PASS; exit0 |
+| `bash source/tools/build_windows.sh` | existing Windows Werror DLL build | build success (no case count); exit0 |
+| `bash source/tools/test.sh` | portable/ASan/UBSan | 13 PASS; exit0 |
+| `bash source/tools/smoke_windows.sh` | owned Windows smoke | 7 PASS; exit0 |
+| `bash source/tools/test_hooks_windows.sh` | all historical hook/ABI/lifetime/proof/workspace plus new CFG tests | 432 PASS / 5 SKIP / 17 UNAVAILABLE; exit0 |
+| `python3 source/tools/package.py` | disabled c38 package/source/evidence with c52 FAIL and c53 READY distinct | 1 PASS; exit0 |
+
+Nonduplicated final total: **452 PASS /5 SKIP /
+17 UNAVAILABLE /0 BLOCKED**
+=portable13+smoke7+hooks432.
+The22 new CFG cases,20 c38 cases and existing static-access record are included
+in hooks, not added twice. Package validation1 PASS is separate. Wine unavailable17
+=c40(2)+c49(6)+c50(7)+c51(2); accepted earlier native c51 PASS remains distinct.
+The additional unexecuted real-image scan is separately UNAVAILABLE1 (no EXE),
+not native/Wine evidence or a zero-writer result.
+
+## Unperformed tests / outputs / owner action
+
+- Actual exact-image offline c53 scan: UNAVAILABLE, no legitimately supplied
+  Spider-Man2.exe exists in selected workspace. No actual coverage/candidate
+  number, writer count or numeric improvement is invented. Owned PE fixtures
+  and a one-line compact-JSON CLI with spaced paths were tested separately.
+- Five optional private positive replays (original bytes/native replay/game-body
+  installer/584byte normalization/accepted-build capture) SKIP for absent inputs.
+  Existing synthetic/owned independent regressions still run.
+- Game/native production integration, hardware/slot watch, deferred traversal,
+  slot qword interpretation/pointer chase or gameplay work: forbidden/not run.
+- BLOCKED0; no security-blocked subtask or approval rejection bypassed.
+
+Owner action after verified publication: fetch the intended independent _source
+branch using ordinary git pull --ff-only, then ONE offline scanner command with
+the existing pinned WSL environment. Return only the compact JSON/file, no EXE
+upload/game launch/Overstrike/Update-WS/runtime game log. Generic exact command:
+
+```bash
+/workspace/toolchains/analysis-python/bin/python3 "<game-in-WSL>/Mods Library/Mods-Developing/MSM2-WS/_source/source/tools/slot_publication_cfg.py" "<game-in-WSL>/Spider-Man2.exe" --output "<game-in-WSL>/Mods Library/Mods-Developing/MSM2-WS/logs/MSM2-WS-v0.1c53-slot-publication-cfg.json"
+```
+
+No game release; validation-only output remains
+source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled.
+Root release ZIPs/scripts and native probes are preserved. Full source/evidence
+and current docs are packaged; no private image or whole game body is included.
+Final integrity/publication/source commit provenance follows below. After final
+metadata only, package and integrity are rechecked; full code-suite repetition
+is unnecessary because code/tool inputs remain unchanged.
+
+---
+
 # Codex result — c52 production-shape VCH witness review
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.

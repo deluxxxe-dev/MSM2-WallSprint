@@ -90,3 +90,4 @@ bash tools/test_read_target_identity.sh
 python tools/test-workspace.py
 
 /workspace/toolchains/analysis-python/bin/python tools/test_slot_publication.py
+/workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_cfg.py

@@ -1,6 +1,34 @@
 # WallSprint project state
 
-## c52 current stage — production-shape VCH witness review FAIL
+## c53 current stage — offline CFG address-provenance scanner READY
+
+**CFG_SLOT_PUBLICATION_SCANNER_READY**. Separate schema1/toolv0.1c53 leaves the
+historical c38 scanner/tests/evidence unchanged. It extends only offline exact
+static-image address provenance through bounded single-runtime-entry normal CFGs.
+Strict canonical byte decoding rejects gaps/middle entries; direct conditional
+branches include both edges, JMP target only, CALL fallthrough kills ALL register
+facts. Must joins retain an origin plus derivation only when all reachable inputs
+agree; loop/fact/graph caps refuse incomplete regions before candidates escape.
+No loaded pointer/value propagation, ABI assumption, indexed/segment generality
+or external-anchor entry seeding. Actual access direction is separate from exact
+address proof; unknown access semantics remain possible writes, never assumed READ.
+
+The producer's authenticated runtime span / existing whole-section fallback is
+excluded before decoding. Candidate records carry instruction hash/operands,
+width/access/overlap, proof chain, PE/runtime metadata and CFG provenance.
+Coverage/cap/merge/revisit/control-edge accounting is explicit; the new edge
+metrics are not subtracted from c38's historical operand/reset totals.
+Writer enumeration, publication/allocation/base/lifetime/ownership/containment
+and CFG-continuation certificates remain false even if a writer candidate appears.
+
+No exact Spider-Man2.exe is present here: actual new-image candidates and coverage
+are UNKNOWN, not zero. After verified commit/push, the owner runs ONE offline
+command with the pinned WSL analysis environment and returns compact c53 JSON.
+Details: V01C53_CFG_SLOT_PUBLICATION/GATE/STATUS and CODEX_RESULT. No Update-WS,
+game/Overstrike launch, hardware watch, qword read or new gameplay write.
+C52 production-watch FAIL remains binding. Runtime v0.1c38/package0.1.56, no release.
+
+## c52 historical stage — production-shape VCH witness review FAIL
 
 **PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL**. Accepted c51 native PASS
 proves one owned Position/close mixed-SEARCH post-return witness, not all-path
@@ -562,24 +590,26 @@ The VMOVUPS store is existing game code, not a MOD write and not permission to w
 31. c49 mixed SEARCH/VCH boundary ✅ historical native FAIL with actual VCH1
 32. c50 native unique worker identity ✅ PASS; sole global-count conjunct identified
 33. c51 one-debt VCH post-return bridge ✅ accepted native fixture PASS; terminal-only storage free
-34. c52 production-shape VCH integration review ▶ CURRENT FAIL; terminal-boundary/credits/pool/lifetime unresolved
-35. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
-36. bounded publication/source chain ⏸ pending writer-site evidence
-37. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
-38. resume full writer XYZ/W causal proof ⏸ after store containment
-39. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
-40. safe writable upstream movement source ⬜ NOT AUTHORIZED
-41. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
-42. adhesion/contact refinement ⏸ deferred
-43. animation/camera/later traversal ⬜
+34. c52 production-shape VCH integration review ✅ historical FAIL; terminal-boundary/credits/pool/lifetime unresolved
+35. c53 offline CFG exact-address scanner ▶ CURRENT READY; real-image owner JSON pending
+36. exact-slot non-value runtime access-site capture ⏸ after reviewed production retirement integration
+37. bounded publication/source chain ⏸ pending writer-site evidence
+38. contain `0x2CF7FFB` store destination ⏸ pending base/allocation/lifetime proof
+39. resume full writer XYZ/W causal proof ⏸ after store containment
+40. caller/storage/producer ownership (`0x351EB00`) ⏸ after writer contract
+41. safe writable upstream movement source ⬜ NOT AUTHORIZED
+42. surface-relative movement/input rewrite ⬜ NOT AUTHORIZED
+43. adhesion/contact refinement ⏸ deferred
+44. animation/camera/later traversal ⬜
 
 ## Current action
 
-C52 is PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL. No owner operation is
-needed for this review. A later explicitly scoped design task must close the
-supported final-context boundary and the remaining no-drop credit/pool/lifetime
-guarantees before production integration is authorized. C51 native PASS stays
-bounded; historical c48 review FAIL and all deferred slot/gameplay gates remain.
+C53 is CFG_SLOT_PUBLICATION_SCANNER_READY. After verified publication, fetch the
+intended branch and run only the new offline file scanner once; return its compact
+JSON. Real-image counts are unmeasured here. Do not launch game/Update-WS or treat
+a candidate/smaller unresolved count as publication proof. C52's supported final-
+context/credit/pool/lifetime gaps still prohibit production witness/watch work;
+all historical native fixture results and deferred slot/gameplay gates remain.
 
 Do not add the exact-slot watch, PAGE_GUARD or broad memory interception merely
 to force progress. Do not merge `main`, do not traverse producer `0x351EB00`, and
