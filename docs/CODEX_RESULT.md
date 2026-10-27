@@ -2,7 +2,7 @@
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
 Task base **820944f2439b9efce07bceed2ac35e3d75dc3909**.
-Implementation/source commit is pinned after publication below.
+Implementation/source commit: **42df366ef0503decc8b5cc9eefab5ab25ae56ca2**.
 Primary: **VCH_POST_RETURN_WITNESS_BRIDGE_UNAVAILABLE**; BLOCKED0.
 
 The bridge is implemented for the bounded owned native Position/close question,
@@ -202,6 +202,35 @@ UNAVAILABLE observation, never native evidence:
 ```bash
 WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/analysis/native-probes/c51/continuation-witness.exe" --position --mixed-search-vch --json
 ```
+
+
+## Verified publication
+
+Implementation/source commit **42df366ef0503decc8b5cc9eefab5ab25ae56ca2** was
+normally pushed to codex/v01c20-edi-value-provenance; origin ls-remote matched.
+An independent shallow filtered GitHub clone retrieved the24 changed files,
+all273 source/tool inputs and accepted c50 evidence. All local/published bytes
+and manifest hashes agree, including the exact tested standalone PE. This is
+publication1 PASS, separate from runtime/model test counts.
+
+Exact auxiliary command from repository root:
+
+```bash
+python3 /workspace/scratch/ws-c51/check_publication.py
+```
+
+Expected: remote HEAD matches intended branch commit; changed files, source
+inputs, PE and c50/c51 evidence status agree. Actual:1 PASS,0 SKIP/UNAVAILABLE/
+BLOCKED. Final metadata-only publication is rechecked with the same command;
+the final40-character remote SHA is reported in the handoff (a commit cannot
+contain its own SHA). No273 code/tool input changed after implementation commit.
+Only commit/provenance/report metadata follows, so the full code suite does not
+need another rerun. Package and integrity checks are repeated for final metadata.
+
+Wisdoms docs/VCH_CONTINUATION_BOUNDARY.md was updated and normally pushed as
+**cac30c9bacd449caad2ec7032904e61738f6b16e** on its canonical main; ls-remote
+matched. This is shared knowledge maintenance, not a WallSprint main merge.
+Native c50 identity PASS is now accepted there; native c51 bridge remains UNKNOWN.
 
 ---
 

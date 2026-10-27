@@ -1136,5 +1136,7 @@
     "MINHOOK_LICENSE.txt",
     "GPL_LICENSE.txt",
     "CAPSTONE_LICENSE.txt"
-  ]
+  ],
+  "implementation_commit": "42df366ef0503decc8b5cc9eefab5ab25ae56ca2",
+  "publication_verified_commit": "42df366ef0503decc8b5cc9eefab5ab25ae56ca2"
 }
