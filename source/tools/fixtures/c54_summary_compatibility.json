@@ -1,0 +1,79 @@
+{
+  "evidence": "owned_pre_c55_default_c54_snapshot",
+  "base": "e2a0438",
+  "cases": [
+    {
+      "name": "leaf",
+      "functions": {
+        "8192": "b801000000c3"
+      },
+      "target": 8192,
+      "canonical_result_sha256": "d63e0603d3d29cf0740ae56d458fb73f7bf2b78e740396b09742f59278d72191"
+    },
+    {
+      "name": "branch",
+      "functions": {
+        "8192": "85c07505b901000000c3"
+      },
+      "target": 8192,
+      "canonical_result_sha256": "bc1e03263233759abdca121ca28bbffacf2c08c47bd10668d93370aacd646caa"
+    },
+    {
+      "name": "multiRET",
+      "functions": {
+        "8192": "85c07501c390c3"
+      },
+      "target": 8192,
+      "canonical_result_sha256": "1c892aa2c1f458649cec0d54347d30c06eb26203713d68d4f7b263f8f8d3d1ca"
+    },
+    {
+      "name": "nested",
+      "functions": {
+        "8192": "e8fb0f0000c3",
+        "12288": "c3"
+      },
+      "target": 8192,
+      "canonical_result_sha256": "544538c6142250c4cdaa303d3d64d1ca3570a834133dff39391177652f10a0fd"
+    },
+    {
+      "name": "cycle",
+      "functions": {
+        "8192": "ebfe"
+      },
+      "target": 8192,
+      "canonical_result_sha256": "c43f1b10e0585b6389ecd611bb9ef00836b7475d2340945d2d7d700cf2574180"
+    },
+    {
+      "name": "recursion",
+      "functions": {
+        "8192": "e8fbffffffc3"
+      },
+      "target": 8192,
+      "canonical_result_sha256": "2c5d9dd575c8ac41ab863f17948ac8c3a9907464c3059269c89b63d571b58431"
+    },
+    {
+      "name": "unsupported",
+      "functions": {
+        "8192": "0f05"
+      },
+      "target": 8192,
+      "canonical_result_sha256": "3feffd9771527744281ffc3cd76a6b2beb7a4c2f1d5d4ffb995ec6e3d5cf249b"
+    },
+    {
+      "name": "write_restore",
+      "functions": {
+        "8192": "51b90100000059c3"
+      },
+      "target": 8192,
+      "canonical_result_sha256": "c502779578227d4bc9d2ca170a0ec2059ae83a3c4d4ea745ee040783a0142187"
+    },
+    {
+      "name": "gap",
+      "functions": {
+        "8192": "0f"
+      },
+      "target": 8192,
+      "canonical_result_sha256": "61055b9d8f0d75da483a5c76a50c3b24cb98f732c3cdde60c43a9f04ea993772"
+    }
+  ]
+}

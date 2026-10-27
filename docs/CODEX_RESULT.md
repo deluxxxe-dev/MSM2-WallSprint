@@ -1,3 +1,126 @@
+# Codex result — c55 authenticated direct-CALL entry summaries
+
+2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
+Task base **e2a0438a48aaa66a46a5824193000f601b0c6b04**. Implementation commit is pinned after publication.
+Primary: **DIRECT_CALL_ENTRY_SLOT_SCANNER_READY**; BLOCKED0.
+
+## Result / accepted evidence / boundaries
+
+Only bounded offline tooling/tests/diagnostics. READY is not real-image summary
+admission, a discovered writer or publication/ownership proof. Current c55 actual
+summary/candidate counts are UNKNOWN/null: no legitimately supplied exact EXE is
+in the selected workspace. No production behavior/restoration/ownership/handler/
+lease/cleanup/VCH/watch, qword value, pointer chase, producer traversal, mitigation
+or gameplay change. Runtime staysv0.1c38/package0.1.56; C52 review FAIL remains.
+
+Read AGENTS/manual/rules/workspace/state/NEXT/reporting/logging, c38/c53/c54
+tools/tests/evidence, static_access_v2, c52 gate and relevant Wisdoms references.
+Fetched/fast-forwardedca16e8a->e2a0438 on intended branch only. No WS main merge,
+reset, force push or original untracked artifact mutation. CODEX_NEXT unchanged.
+
+Accepted c54 owner VERIFIED-STATIC result:24411 attempts/0 admitted/24411 refused,
+22538 exact-entry refusals (23141 including nested chains),44483 requests/20072
+cache hits/1872 loaded bodies/74061 instructions/602704 work/157 cycles/no summary
+exhaustion. CALL-clobber remains324714 and0 local candidates. Main5M instruction
+cap/352663 functions unconsidered/560919 unresolved operands remain incomplete,
+not no-writer proof. Both upstream root/source owner-evidence versions are
+independently preserved; the package uses the existing refined source copy.
+Earlier c54 cloud-unavailability results and all historical tests remain intact.
+
+## Implementation / source scope
+
+New slot_publication_direct_entry.py, schema3/toolv0.1c55, classifies all requested
+direct targets before fallback/cache. Only an authenticated immediate CALL into
+unique metadata-free RX/file-backed code gets a separately named reachable-normal-
+CFG never-written proof. No nearest-entry/function-end inference or subentry/ABI
+permission. Every path must be finite and end at bare RET; unknown/indirect/system/
+overlap/gap/boundary/stale-byte/cycle/cap cases refuse. Local and global direct-entry
+partitions prevent conflicting decodes. Deferred spans are excluded even from
+lookahead. Nested exact-runtime/direct-entry proofs are independently admitted;
+only already-existing exact non-RSP caller facts survive. RSP always dies, no
+callee-local/return/stack/loaded value origins; caller must merges/access stay shared.
+
+Reachable address+bytes/CFG/child identities bind the cache. Current-depth checks,
+finite separate runtime/direct and explicit combined budgets, shared sticky global
+exhaustion and bounded fail-closed diagnostics are explicit. Request/unique/site
+frequencies are separate and describe lazy address-carrying requests, not all CALLs.
+Exact c54 entry/span/canonical/effect rules are retained. A tiny child resolver
+seam keeps default c54 behavior identical; the separate c55 runtime instance can
+request independently anchored children. Nine PRE-change owned default c54 result
+snapshots and old14 c53 snapshots verify compatibility. Old tests were not edited.
+
+Changed tracked sources: cfg optional site callback; c54 default-equivalent child
+resolver; hooks mandatory c55; package accepted c54/c55 READY metadata; state/result.
+New: direct-entry tool/test/owned golden JSON, root/source V01C55_DIRECT_ENTRY/GATE/
+STATUS. No production C++/headers/version, game release ZIP/script or native probe.
+All source/tools/evidence/docs are present in package-validation output; proprietary
+image/full native bodies/raw user logs are absent. Output remains
+source/output/MSM2-WS-v0.1c38/MSM2-WS-v0.1c38.script.disabled.
+
+## Required validation
+
+From repository root used the existing pinned Capstone5.0.6 environment:
+
+```bash
+export PATH=/workspace/toolchains/analysis-python/bin:$PATH
+```
+
+No dependency install/system Python change. Initial focused fixture erroneously
+stayed within the SEPARATE entry budgets; corrected it to request a SECOND direct
+entry and assert the earlier runtime/direct proofs both exist. No refusal assertion
+or cap weakened. Focused final32 PASS; all10 Required validation commands then ran
+on final executable source and exited0. Initial repeats are not accumulated.
+
+| Exact command | Expected | Actual |
+| --- | --- | --- |
+| `python3 source/tools/test_slot_publication.py` | historical c38 scanner unchanged | 20 PASS; exit0 |
+| `python3 source/tools/test_static_access_v2.py` | static access/AVX semantics; absent optional private replay SKIP | 1 PASS / 1 SKIP; exit0 |
+| `python3 source/tools/test_slot_publication_cfg.py` | historical c53 CFG/must semantics unchanged | 22 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_callee.py` | historical c54 preservation/default output unchanged | 26 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_direct_entry.py` | exact edge/metadata-free graph/register proof and conservative refusal/identity/bounds; nine prior c54 snapshots | 32 PASS; exit0 |
+| `bash source/tools/build_windows.sh` | Windows Werror build | build success (no case count); exit0 |
+| `bash source/tools/test.sh` | portable/ASan/UBSan regressions | 13 PASS; exit0 |
+| `bash source/tools/smoke_windows.sh` | owned Windows smoke | 7 PASS; exit0 |
+| `bash source/tools/test_hooks_windows.sh` | complete historical hook/lifetime/ABI/workspace/proof regressions plus c55 | 490 PASS / 5 SKIP / 17 UNAVAILABLE; exit0 |
+| `python3 source/tools/package.py` | disabled c38 package plus complete current tool/docs/evidence/manifest | 1 PASS; exit0 |
+
+Nonduplicated regression total: **510 PASS /5 SKIP /
+17 UNAVAILABLE /0 BLOCKED** =portable13+smoke7+
+hooks490. Focused32/c54 26/c53 22/c38 20/static-access
+checks repeated inside hooks are not added twice. Package1 PASS separate. Logs/
+results locally in /workspace/scratch/ws-c55; committed compact test/count/hash
+proof is V01C55_STATUS.json, including283 current code/tool inputs.
+
+## Unperformed tests / reasons / owner action
+
+- Actual exact-image c55 OFFLINE scan: additional UNAVAILABLE1 (unexecuted),
+  private Spider-Man2.exe not supplied in workspace; real summary/candidate/coverage
+  effects stay UNKNOWN. Synthetic results are not real-image measurements.
+- SKIP5 optional private positive replays: original bytes, native replay, game-body
+  installer,584byte normalization and accepted-build capture inputs absent. Owned
+  synthetic/independent regressions still execute.
+- Wine UNAVAILABLE17: historical c40(2)+c49(6)+c50(7)+c51(2) paths with no actual
+  VCH dispatch/post-return evidence. Do not relabel them native PASS. Prior accepted
+  Windows evidence remains separate; no new Windows operation is requested.
+- Production/game/watch/qword/producer/gameplay work is outside authorized scope,
+  not implemented/run. BLOCKED0: no blocked security subtask/approval bypass.
+
+After verified commit/push, fetch the independent _source intended branch normally
+(git pull --ff-only, not Update-WS). Run ONE owner offline command and return only
+compact JSON/file, no EXE upload or runtime log:
+
+```bash
+/workspace/toolchains/analysis-python/bin/python3 "<game-in-WSL>/Mods Library/Mods-Developing/MSM2-WS/_source/source/tools/slot_publication_direct_entry.py" "<game-in-WSL>/Spider-Man2.exe" --output "<game-in-WSL>/Mods Library/Mods-Developing/MSM2-WS/logs/MSM2-WS-v0.1c55-slot-publication-direct-entry.json"
+```
+
+No Update-WS/game/Overstrike launch or standalone native probe. Owner action only
+measures c55 offline impact, preserving all false completeness/publication gates.
+Integrity check: `python3 /workspace/scratch/ws-c55/verify.py` expected protected baseline/source hashes, complete packaged code/evidence and c55 READY/c52 FAIL separation; actual1 PASS across1020 protected baseline files and283 current source/tool inputs. `git diff --check` passed. Publication/source commit/Wisdoms synchronization follow below. After
+metadata-only changes package/integrity are repeated; full tests need no further
+rerun when tested executable source hashes remain identical.
+
+---
+
 # Codex result — c54 authenticated direct-callee preservation summaries
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.

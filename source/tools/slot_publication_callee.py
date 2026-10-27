@@ -318,7 +318,7 @@ class SummaryEngine:
             writes.update(written_banks(ins))
             if kinds[pc] == 'return': returns += 1
             if kinds[pc] == 'call':
-                child = self.get(ins.operands[0].imm,depth+1)
+                child = self.child(ins, begin, end, depth)
                 if child.identity is not None:
                     self.dependencies.setdefault(begin,set()).add(child.identity)
                 if child.status != 'ADMITTED':
@@ -333,6 +333,11 @@ class SummaryEngine:
 
     def for_call(self, target):
         return self.get(target).certificate()
+
+    def child(self, ins, begin, end, depth):
+        # Default c54 contract unchanged. A separate c55 router may supply an
+        # independently authenticated direct-edge child proof, never an ABI rule.
+        return self.get(ins.operands[0].imm, depth+1)
 
     def observe_region(self, region):
         for row in region.get('call_preservation_evidence', ()):

@@ -1,6 +1,38 @@
 # WallSprint project state
 
-## c54 current stage — offline direct-callee preservation scanner READY
+## c55 current stage — authenticated direct-CALL entry scanner READY
+
+**DIRECT_CALL_ENTRY_SLOT_SCANNER_READY**. Separate schema3/toolv0.1c55 classifies
+requested direct targets by exact/interior/overlapping metadata, metadata-free
+RX backing, unsupported sections/outside/deferred domains. Only an authenticated
+immediate CALL into metadata-free RX code can use the separate reachable-normal-
+CFG never-written contract. It infers no function end and uses no nearest-entry
+or ABI rule. Runtime interior/subentry and all ambiguous domains remain refused.
+
+Each reached instruction must be immutable/file-backed, nonoverlapping with local
+and global direct-entry partitions, and outside runtime/deferred spans. Complete
+finite all-normal-RET paths, known GPR write supersets and independently admitted
+nested proofs are mandatory. Unknown/indirect/system/middle/boundary/cycle/cap/
+stale-byte failures close the proof. Exact c54 entry/span/canonical/effect rules
+are retained; only the c55 runtime instance routes children through separately
+authenticated proofs. Default c54 outputs match nine pre-c55 owned snapshots.
+All old c38/c53/c54 tests remain unchanged. RSP always dies; no return/local/load/
+stack value or callee address becomes a caller fact; ordinary must joins remain.
+
+Identity binds image/entry/contract/reachable address+bytes/CFG/child hashes.
+Finite separate direct/runtime budgets have explicit combined caps and shared
+sticky exhaustion, with current-depth cache checks. Diagnostics distinguish
+request/unique/callsite frequencies and are bounded/fail-closed. External c28
+never seeds summaries; candidate completeness/publication/ownership stays false.
+
+C55 real-image counts are UNKNOWN/null: no exact private executable exists here.
+After verified publication only one offline c55 scan/compact JSON is requested;
+no Update-WS/game/Overstrike/watch or runtime log. Production/retirement/ownership/
+handler/lease/cleanup, gameplay and mitigations are unchanged. C52 FAIL remains
+binding; runtimev0.1c38/package0.1.56, no game release. Detailed proof/results:
+V01C55_DIRECT_ENTRY/GATE/STATUS and CODEX_RESULT.
+
+## c54 historical accepted stage — real-image scan, zero admitted summaries
 
 **CALLEE_PRESERVATION_SLOT_SCANNER_READY**. Separate schema2/toolv0.1c54 adds
 only per-register never-written preservation across authenticated direct CALLs.
@@ -19,12 +51,17 @@ verify compatibility. C53's owner result is accepted below without relabeling it
 Main scan and summary caps/work totals are separate; no smaller unresolved count
 can grant writer/publication/ownership/allocation/lifetime/containment proof.
 
-The exact private executable is unavailable here, so actual c54 candidate/summary
-counts are UNKNOWN, not zero. After verified publication the only owner action
-is one offline c54 command and compact JSON. No Update-WS/game/Overstrike/hardware
-watch or new runtime log. C52 FAIL remains binding; production/gameplay unchanged.
-Runtime v0.1c38/package0.1.56, no game release. Details:
-V01C54_CALLEE_PRESERVATION/GATE/STATUS and CODEX_RESULT.
+The owner subsequently authenticated the pinned image (VERIFIED-STATIC):24411
+attempts/0 admitted/24411 refused,22538 exact-runtime-entry refusals (23141 with
+nested chains),44483 requests/20072 cache hits,1872 functions/74061 instructions/
+602704 work,157 cycles/no global summary exhaustion. CALL-clobber remains324714,
+0 origins survive and0 local candidates. Main scan still hits5M instructions,
+with352663 functions unconsidered and560919 unresolved memory operands. This is
+incomplete zero-observation, not no-writer or publication proof. Both supplied
+V01C54_OWNER_OFFLINE_RESULT.md versions remain immutable; the source-package
+copy includes upstream percentage/wording refinements and is not byte-identical
+to the root copy. Earlier cloud-unavailability status remains historical.
+C52 FAIL and production/gameplay gates remain binding. Runtime unchanged.
 
 ## c53 historical accepted stage — real-image offline scan, incomplete zero local candidates
 

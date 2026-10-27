@@ -218,7 +218,7 @@ def successors(ins, low, high, image_size, call_target_allowed=None):
 
 
 def scan_region(code, rva, slot=SLOT, image_base=0x140000000, image_size=0xD000000,
-                caps=Caps(), excluded=(), call_target_allowed=None, call_preservation=None):
+                caps=Caps(), excluded=(), call_target_allowed=None, call_preservation=None, call_site_preservation=None):
     """One entry, complete reachable normal CFG, then must fixpoint, THEN emit.
 
     Any unresolved reachable edge/decoding/graph or convergence cap rejects this
@@ -281,7 +281,7 @@ def scan_region(code, rva, slot=SLOT, image_base=0x140000000, image_size=0xD0000
             nodes[pc] = ins
             stats['states_discovered'] += 1
             following, kinds[pc] = successors(ins, rva, rva + len(code), image_size, call_target_allowed)
-            if call_preservation is not None and kinds[pc] == 'call':
+            if (call_preservation is not None or call_site_preservation is not None) and kinds[pc] == 'call':
                 call_targets[pc] = ins.operands[0].imm
                 following = [(target, 'call_fallthrough_summary_candidate') for target, _ in following]
             edges[pc] = following
@@ -320,7 +320,15 @@ def scan_region(code, rva, slot=SLOT, image_base=0x140000000, image_size=0xD0000
         # origin. Must states only lose facts after first reach; a later merge
         # cannot create a previously absent incoming origin at this same PC.
         if pc in call_targets and pc not in preserved_at and any(f is not None for i, f in enumerate(state) if i != 4):
-            proof = call_preservation(call_targets[pc])
+            if call_site_preservation is None:
+                proof = call_preservation(call_targets[pc])
+            else:
+                proof = call_site_preservation(call_targets[pc], dict(
+                    site_rva=pc, instruction_size=nodes[pc].size,
+                    instruction_sha256=hashlib.sha256(bytes(nodes[pc].bytes)).hexdigest(),
+                    caller_entry_rva=rva, caller_end_rva=rva+len(code),
+                    caller_code_sha256=hashlib.sha256(code).hexdigest(),
+                    caller_contract='authenticated_runtime_caller_normal_CFG'))
             allowed = proof.get('preserved_banks', ()) if proof.get('status') == 'ADMITTED' else ()
             preserved_at[pc] = frozenset(i for i in allowed if isinstance(i, int) and 0 <= i < 16 and i != 4)
             call_proofs[pc] = dict(proof, site_rva=pc, target_rva=call_targets[pc])
@@ -362,7 +370,7 @@ def scan_region(code, rva, slot=SLOT, image_base=0x140000000, image_size=0xD0000
     stats['unique_joins'] = sum(len(p) > 1 for p in predecessors.values())
     stats['loop_back_edges'] = sum(t <= pc for pc, e in edges.items() for t, _ in e)
     graph_hash = hashlib.sha256(json.dumps([(pc, edges[pc]) for pc in sorted(edges)], separators=(',', ':')).encode()).hexdigest()
-    if call_preservation is not None:
+    if call_preservation is not None or call_site_preservation is not None:
         proof_hash = hashlib.sha256(json.dumps(call_proofs, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
         result['call_preservation_evidence'] = [call_proofs[pc] for pc in sorted(call_proofs)]
 
@@ -373,7 +381,7 @@ def scan_region(code, rva, slot=SLOT, image_base=0x140000000, image_size=0xD0000
         if kinds[pc] == 'call':
             survived = sum(f is not None for f in nxt)
             stats['direct_calls_all_facts_invalidated'] += not survived
-            if call_preservation is not None:
+            if call_preservation is not None or call_site_preservation is not None:
                 stats['call_edges_with_any_preserved_origin'] += bool(survived)
                 stats['preserved_origin_register_facts_across_calls'] += survived
         for target, kind in edges[pc]:
@@ -416,7 +424,7 @@ def scan_region(code, rva, slot=SLOT, image_base=0x140000000, image_size=0xD0000
                          fixpoint_complete=True, address_fact_agrees_on_all_reachable_incoming_states=True,
                          scope='conditional_normal_CFG_from_single_runtime_entry_not_all_instruction_entries'),
                 runtime_function=dict(begin_rva=rva, end_rva=rva+len(code)), section=None))
-            if call_preservation is not None:
+            if call_preservation is not None or call_site_preservation is not None:
                 result['references'][-1]['cfg'].update(call_preservation_graph_sha256=proof_hash,
                     callsite_summary_count=len(call_proofs), preservation_scope='per_register_never_written_no_ABI_or_return_value_origin')
     result['status'] = 'MODELED_NORMAL_CFG'
@@ -534,7 +542,8 @@ def analyze_image(data, caps=Caps(), *, call_context_factory=None):
                              call_target_allowed=lambda pc: any(b <= pc < min(e, b+raw_size) and
                                  flags & 0x60000000 == 0x60000000 and not flags & 0x80000000
                                  for b, e, _, raw_size, flags in sections),
-                             call_preservation=call_context.for_call if call_context is not None else None)
+                             call_preservation=call_context.for_call if call_context is not None and not hasattr(call_context, 'for_site') else None,
+                             call_site_preservation=getattr(call_context, 'for_site', None))
         if call_context is not None:
             call_context.observe_region(region)
         stats.update({k:v for k, v in region['stats'].items() if k != 'regions_considered'})
