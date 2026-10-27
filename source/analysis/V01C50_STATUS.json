@@ -430,5 +430,17 @@
     "source_input_count": 267,
     "source_input_digest": "c5ae6c2f6ff08ba50915a68fecb505441c7ff067389dd18f36cd5c23b5bb0ee7",
     "artifact_sha256": "e25d883a20e2a55cc239b6e71a93a84bd3f69a441a0cb2ae00bd327fba6569af"
-  }
+  },
+  "source_implementation_commit": "2d657b6f7dedb2c2e76d33120df96919652842fa",
+  "implementation_publication_verified": {
+    "PASS": 1,
+    "branch": "codex/v01c20-edi-value-provenance",
+    "commit": "2d657b6f7dedb2c2e76d33120df96919652842fa",
+    "fresh_GitHub_snapshot_equal": true,
+    "changed_files_compared": 22,
+    "primary_result": "MIXED_SEARCH_IDENTITY_DIAGNOSTIC_UNAVAILABLE",
+    "source_input_count": 267,
+    "no_c48_native_probe": true
+  },
+  "Wisdoms_commit": "909c3bc1d40463eefe60b7ac09da03c9a41905f1"
 }

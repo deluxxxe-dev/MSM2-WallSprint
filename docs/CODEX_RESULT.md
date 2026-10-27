@@ -2,7 +2,7 @@
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
 Task base **9a24784b71fb3438446d9632f35402ac90b27c02**.
-Implementation/source SHA is recorded in final provenance below.
+Implementation/source commit: **2d657b6f7dedb2c2e76d33120df96919652842fa**.
 Primary: **MIXED_SEARCH_IDENTITY_DIAGNOSTIC_UNAVAILABLE**.
 
 Repository test-only diagnostics/model/owned Wine work is complete. The accepted
@@ -207,6 +207,24 @@ The published owner CLI also ran on Wine with the exact JSON-only arguments,
 ```bash
 WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/analysis/native-probes/c50/continuation-witness.exe" --position --mixed-search-vch --json
 ```
+
+## Publication verification
+
+Implementation/source commit **2d657b6f7dedb2c2e76d33120df96919652842fa** was pushed to the intended
+branch. Remote HEAD matched. `python3 /tmp/ws-c50-check-publication.py` returned
+1 PASS: a fresh filtered GitHub snapshot and all22 changed files match byte-for-
+byte, including the exact tested PE and c50 UNAVAILABLE/c49 native FAIL evidence.
+Wisdoms documentation was committed/pushed as
+909c3bc1d40463eefe60b7ac09da03c9a41905f1; remote equality confirmed. It records only
+the static count semantics and owned Wine contrast, leaving native cause UNKNOWN.
+
+This follow-up metadata commit pins the implementation SHA in the manifest and
+both mirrored status files. All267 source/tool inputs and the tested PE remain
+unchanged, so the full code suite need not repeat. Package/copy/integrity are
+rechecked after metadata; the final push/remote equality and fresh snapshot are
+verified again before the completion response reports the final branch/HEAD.
+PROJECT_STATE/NEXT and every pre-existing production/historical source/artifact
+remain unchanged; the five original untracked ZIP/bundle files are preserved.
 
 ---
 
