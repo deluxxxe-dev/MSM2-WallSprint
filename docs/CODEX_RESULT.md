@@ -2,7 +2,7 @@
 
 2026-10-27 JST. Branch **codex/v01c20-edi-value-provenance**.
 Task base **e27fbaabafe05995f6f156657a430348cda2875d**.
-Implementation/review commit is pinned after publication below.
+Implementation/review commit: **1e15d13e92a47a5783cbd7c7705e3ed959f385d6**.
 Primary: **PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL**. BLOCKED0.
 
 The review is complete with a valid fail-closed result, not production integration.
@@ -143,6 +143,39 @@ No root release ZIP/script/native c52 artifact is created or replaced. Package
 and integrity checks are repeated after final provenance/report metadata. Full
 code tests need not be repeated for metadata-only changes; no code/tool input
 changes follow this full run. Final branch/SHA and verified publication follow.
+
+
+## Verified persistence / final metadata
+
+Implementation/review commit **1e15d13e92a47a5783cbd7c7705e3ed959f385d6** was
+normally pushed to codex/v01c20-edi-value-provenance. Origin ls-remote matched.
+An independent GitHub checkout retrieved/compared all11 changed files, all273
+prior source/tool inputs (including current package metadata), accepted native
+c51 evidence, manifest and the unchanged c51 PE:287 compared files,1 publication
+PASS. The final metadata-only commit is verified with the same procedure and its
+full SHA is reported to the owner. A commit cannot contain its own SHA.
+
+Exact additional checks from repository root:
+
+```bash
+python3 /workspace/scratch/ws-c52/verify.py
+python3 /workspace/scratch/ws-c52/check_publication.py
+git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance
+```
+
+Expected/actual:1 integrity PASS for all994 other base-tracked files unchanged,
+current source/evidence/report package copies, native c51 PASS versus c52 FAIL
+metadata and no c52 native artifact;1 publication PASS for remote SHA/byte
+agreement. These are separate from438 regression/static PASS,5 SKIP and17 Wine
+UNAVAILABLE. Repeated focused/package/integrity checks after metadata do not add
+new case counts. No code/tool input changes follow full validation; only report/
+provenance metadata, so full runtime-suite rerun is unnecessary.
+
+Wisdoms docs/VCH_CONTINUATION_BOUNDARY.md accepted c51 native proof and c52
+terminal-boundary/credit/pool/lifetime limits. Commit
+**746e6f336f84d7529bb812f797fcabc72c8daa49** was normally pushed to its canonical
+main; ls-remote matched. No WS main merge or source rewrite occurred. No owner
+operation or new private input is needed for the completed review FAIL.
 
 ---
 
