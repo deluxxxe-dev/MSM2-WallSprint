@@ -151,3 +151,29 @@ Root/source/output mirrors match,actual c63 counts remain null. This integrity P
 is separate from725 regression groups. Final hook repeat705 PASS/5 SKIP/17
 UNAVAILABLE/exit0 on final source bytes; no newly blocked subtask. Metadata-only
 updates repeat package/verify without recompiling unchanged executable sources.
+
+## Publication and shared knowledge
+
+Implementation commit **85dcbaf1d84f82c08553e084395dffb740b4115c** on
+**codex/v01c20-edi-value-provenance** pushed successfully (08f12fe→85dcbaf).
+`python3 /workspace/scratch/ws-c63/check_publication.py`: expected intended GitHub
+remote head and independent fetched-checkout bytes equality; actual exit0/PASS1,
+12 changed files/371 compared files/299 current code-tool files,matching recorded
+digest. Remote branch head independently confirmed via
+`git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance` and separately
+fetched checkout. Publication PASS is separate from725 regression groups.
+
+Wisdoms `docs/REVERSE_ENGINEERING_GUIDE.md` corrects pending c62 distribution with
+accepted owner counts and records the reusable distinction between terminal root
+count and uniquely sourced edge callback,layered phase/origin/full-prefix binding,
+accounting/candidate preservation and second-replay tail validation. Pushed Wisdoms
+main commit **84fa70e1d2cf84ac384cb9bd8875ed49ca475135**; `git ls-remote origin refs/heads/main`
+matched local HEAD. No private bytes/logs/personal paths added.
+
+Final metadata-only commit records implementation SHA and verified publication/
+Wisdoms evidence. After it,repeat package/integrity/diff and independent GitHub
+head/checkout checks. Final SHA is reported in owner handoff rather than a
+self-referential in-tree field (`git rev-parse HEAD` on this intended branch).
+Executable source/tool bytes identical to final focused+hooks tests; no need to
+repeat compiled suite after documentation-only edits. Actual c63 remains UNKNOWN;
+only next owner operation is the offline block above returning compact c63 JSON.
