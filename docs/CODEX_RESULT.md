@@ -1,94 +1,121 @@
-# Codex result — c68 owner OFFLINE result accepted
+# Codex result — c69 tool ready; owner OFFLINE run next
 
 2026-10-28 JST. Branch **codex/v01c20-edi-value-provenance**.
 
 ## Status
 
-C68 owner OFFLINE result is accepted as **VERIFIED-STATIC**.
+C68 owner OFFLINE result remains accepted as **VERIFIED-STATIC**.
+
+C69 boundary-classifier/checkpoint implementation is **TOOL READY**. The c69 owner artifact is not yet accepted, and c70 continuation behavior is not defined.
 
 Canonical detail:
 
-- `analysis/V01C68_TOOL_READY.md`
 - `analysis/V01C68_OWNER_OFFLINE_RESULT.md`
+- `analysis/V01C69_TOOL_READY.md`
 
-Accepted artifact:
+## C69 implementation
 
-```text
-MSM2-WS-v0.1c68-post-c65-stitched.json
-physical SHA256 47fee13729d1b2d30b1c3cffc9f4bc19837fc18f580d0c0daac909ea7056a246
-size 13862 bytes
-repository_result POST_C65_RUNTIME_BEGIN_STITCH_SCANNER_READY
-tool v0.1c68 / schema 1
-contract exact_c67_full_prefix_terminal_reason_provenance_all_successor_continuation_v1
-semantic result identity dbfcdefeccbc7bcaba048829336d945707f0fc4fc76b2c17780f33413b48255a
-```
+C69 implements the bounded diagnostic-only classification required by `docs/CODEX_NEXT.md` for the exact 191 first `uncertified_post_c67_runtime_boundary` terminals exposed by accepted c68.
 
-The owner log completed with both `POST_C65_RUNTIME_BEGIN_STITCH_SCANNER_READY` and `C68_OWNER_OFFLINE_PASS`.
+Primary implementation:
 
-## Result
+- `source/tools/slot_publication_post_c67_boundary.py`
+- `source/tools/slot_publication_post_c67_boundary_fix.py`
 
-C68 authenticated the exact accepted c67 stream and measured actual all-successor completion rather than inferring roots from edge totals:
+Focused tests:
 
-```text
-c67 instances considered/admitted/refused = 458 / 180 / 278
-c67 exact edges considered/admitted/refused = 432 / 221 / 211
-```
+- `source/tools/test_slot_publication_post_c67_boundary.py`
+- `source/tools/test_slot_publication_post_c67_boundary_fix.py`
 
-Known non-exact c67 successors remained refused:
+The correction layer changes checkpoint creation/validation only. The c69 classifier semantics remain unchanged.
+
+C69 remains diagnostic-only:
 
 ```text
-inside_unique_runtime_span_nonentry = 74
-executable_file_backed_outside_runtime_metadata = 1
+no target traversal
+no new admission
+no new Fact propagation
+no new candidate creation
+all safety gates false
 ```
 
-No c67 certificate mismatch was observed.
+## Authenticated-prefix checkpoint
 
-Root/continuation totals:
+C69 can emit a deterministic local authenticated-prefix checkpoint alongside its owner result.
+
+The checkpoint binds, among other fields:
+
+- executable identity;
+- accepted c68 physical/result/authentication identities;
+- c69 classifier/result identities;
+- record count and authenticated record stream;
+- limits;
+- tool-source identities.
+
+Mutation/staleness/corruption is fail-closed. A future consumer must still compare the checkpoint identities against its current executable/artifact/tool inputs before reuse.
+
+This is a performance optimization only. It is not a writer/completeness/ownership certificate and does not weaken c56-c68 provenance semantics.
+
+## Validation
+
+Corrected c69 focused suite passed all required groups, ending with:
 
 ```text
-attempted = 162472
-completed = 105721
-refused = 56751
-rows reached = 1750
-address facts crossing rows = 3161
+PASS: c69 focused boundary/checkpoint groups complete
+PASS: c69 checkpoint correction preserves the complete focused c69 contract
 ```
 
-The newly exposed bounded unknown wave is:
+Aggregate owner-machine validation on unchanged c69 semantics passed:
 
 ```text
-uncertified_post_c67_runtime_boundary = 191
+build_windows.sh
+test.sh
+smoke_windows.sh
+test_continuation_witness.sh
+remaining movement/writer/read regressions
+test-workspace.py
+scanner regressions through post-c65 stitched
+corrected c69 focused suite
+package.py
+C69_FULL_VALIDATION_PASS
 ```
 
-## Candidate/safety result
+The first hooks attempt encountered a pre-existing Wine c41/c47 timeout assertion. No c69 source semantics were changed for that event. The isolated continuation-witness rerun then passed reset/Position timeout and the remaining scenarios, and all later required regressions/package passed. This is an aggregate full validation rather than a claim of one uninterrupted shell invocation.
 
-```text
-reference_candidate_count = 0
-new_cross_row_candidate_count = 0
-reader_candidates = 0
-writer_candidates = 0
-rmw_candidates = 0
-address_only_candidates = 0
-live_qword_reads = 0
-c56_through_c67_evidence_read_only = true
-```
+## Safety
 
-All completeness/publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/watch/pointer/game gates remain false. C52 remains binding:
+C52 remains binding:
 
 `PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
 
-Zero candidates never proves writer absence.
+The following remain false/unproven:
 
-## Performance finding
+```text
+candidate_sweep_complete
+writer_enumeration_complete
+allocation_proven
+base_proven
+range_proven
+lifetime_proven
+ownership_exclusive
+destination_contained
+CFG_continuation
+alternate_entries_EH_indirect_writers_closed
+production_integrated
+hardware_watch_enabled
+pointer_chase
+game_used
+```
 
-The owner run replayed the whole c56-c68 prefix over 162472 roots. This preserved exact provenance but is unnecessarily expensive when the executable, accepted artifacts, tool sources, schemas/contracts and limits are byte/identity unchanged.
-
-Future tooling should support authenticated-prefix checkpoint reuse. Any mismatch must fail closed or require full replay; the optimization must not weaken evidence semantics.
+No slot qword read, pointer chase, producer assumption, native/game probe, gameplay write, production integration, or SocialFeed modification was added.
 
 ## Next
 
-`docs/CODEX_NEXT.md` defines c69 as:
+Run the exact owner OFFLINE c69 classifier against accepted c56-c68 evidence and emit both:
 
-1. diagnostic-only classification of the exact 191 first `uncertified_post_c67_runtime_boundary` terminals; and
-2. a deterministic authenticated-prefix checkpoint/cache mechanism for unchanged accepted c56-c68 inputs.
+```text
+logs/MSM2-WS-v0.1c69-post-c67-runtime-boundary.json
+logs/MSM2-WS-v0.1c69-authenticated-prefix-checkpoint.json
+```
 
-Do not define c70 continuation behavior until the c69 owner artifact is analyzed.
+ChatGPT must analyze the c69 result/checkpoint before defining c70.
