@@ -1,6 +1,6 @@
 # WallSprint project state
 
-## Current stage — c67 owner OFFLINE blocked; c67-only correction pending validation
+## Current stage — corrected c67 owner READY observed; exact artifact validation pending
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
@@ -49,7 +49,7 @@ candidates = 0
 
 ## C67 owner run
 
-The initial c67 implementation passed synthetic/regression/build/hooks/package validation, but the first real owner/private-image run failed closed with:
+The initial c67 owner run failed closed with:
 
 ```text
 POST_C65_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_BLOCKED: converted c64 POST lacks exact original c65 lower capture
@@ -59,19 +59,32 @@ Canonical blocker analysis:
 
 - `analysis/V01C67_OWNER_BLOCKED_RESULT.md`
 
-Therefore the previous c67 TOOL READY status is **superseded**. No c67 owner artifact has been accepted or produced.
+The root cause was a c67 assumption: accepted c66 converts an actual lower `c64.POST` into c66 `uncertified_post_c65_runtime_boundary` before c66 stores its diagnostic-only lower c65 capture. Accepted c66 evidence remains valid and read-only.
 
-**VERIFIED-STATIC root cause:** accepted c66 converts an actual lower `c64.POST` into c66 `uncertified_post_c65_runtime_boundary` before c66's diagnostic-only lower c65 capture assignment. C67 incorrectly assumed that lower capture would already exist. This does not invalidate c66.
-
-Current correction:
+A c67-only correction was added:
 
 ```text
 source/tools/slot_publication_post_c65_boundary_fix.py
+source/tools/test_slot_publication_post_c65_boundary_fix.py
 ```
 
-The correction is c67-only. It snapshots the exact lower c65 edge-entry state before the unchanged c66 callback and reconstructs the omitted lower diagnostic capture only after the actual callback proves `c66.POST` caused by `c64.POST`. The unchanged c65 capture/provenance validator must accept that exact current context. C66 and accepted c56-c66 evidence remain read-only.
+The correction snapshots the exact lower c65 edge-entry state before the unchanged c66 callback and reconstructs the omitted diagnostic capture only after the actual callback proves `c66.POST` caused by `c64.POST`, then reuses unchanged c65 provenance validation.
 
-No target traversal, edge admission, Fact propagation, candidate creation, qword read, pointer chase, native/game probe or gameplay/production write is authorized.
+The owner reran the correction regression and corrected owner classifier. Observed console result:
+
+```text
+c67 unchanged c66 terminal observer replay: 162472/162472
+POST_C65_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY: .../logs/MSM2-WS-v0.1c67-post-c65-runtime-boundary.json
+C67_CORRECTED_OWNER_PASS
+```
+
+Canonical run record:
+
+- `analysis/V01C67_CORRECTED_OWNER_RUN.md`
+
+This confirms the prior blocker is resolved. However, the exact c67 JSON bytes/content have not yet been ingested by ChatGPT, so classification totals, record-set identity, target-relation distribution and any c68 behavior remain unaccepted.
+
+Current bounded unknown remains the c66 458-root post-c65 wave until the exact c67 artifact is validated.
 
 ## Safety
 
@@ -106,4 +119,10 @@ Runtime remains `v0.1c38`; C53-c67 are OFFLINE/STATIC analysis tooling only. The
 
 ## Current action
 
-Validate the c67 correction under focused regression, then rerun the same owner OFFLINE classification of the exact accepted 458-root wave. If it produces a complete c67 JSON, ChatGPT analyzes it before any c68 task is defined.
+Ingest and validate the exact owner artifact:
+
+```text
+logs/MSM2-WS-v0.1c67-post-c65-runtime-boundary.json
+```
+
+Only after the exact c67 result is accepted may c68 be defined.
