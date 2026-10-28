@@ -1,37 +1,25 @@
-# Next task — c70 full-replay post-c69 continuation
+# Next task — c71 diagnostic classification of c70 post-c69 boundary
 
 ## Status
 
-Corrected c69 owner OFFLINE result is accepted as **VERIFIED-STATIC**.
+Corrected c70 owner OFFLINE result is accepted as **VERIFIED-STATIC**.
 
-Canonical results:
+Canonical result:
 
-- `analysis/V01C69_OWNER_OFFLINE_RESULT.md`
-- `analysis/V01C70_CHECKPOINT_SUFFICIENCY_BLOCKED.md`
+- `analysis/V01C70_OWNER_OFFLINE_RESULT.md`
 
 Continue only on `codex/v01c20-edi-value-provenance`; do not merge `main`.
 
-Accepted c69 result:
+Accepted c70 result:
 
 ```text
-MSM2-WS-v0.1c69-post-c67-runtime-boundary.json
-physical SHA256 e57b7f39ea476e356397f944d8aadb14841b27874736a60c1a82b982eb86537f
-repository_result POST_C67_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY
-tool v0.1c69 / schema 1
-contract exact_c68_first_terminal_post_c67_boundary_full_prefix_provenance_diagnostic_v1
-classifier identity 4f42b0d04346eb5c7b10c8fe0592edd3a3f19fcb463d66a0adf40be01fd25049
-semantic result identity 08002e4c3aef2c7cfa037040b6f09f7d1b6e247d0b446daea1ffdb2569aa01fb
-record-set SHA256 20a123c1e83dd6e777b47cb07e86a6a7203acb25e0cede2e86ff956efcfae8ed
-```
-
-Accepted c69 checkpoint:
-
-```text
-MSM2-WS-v0.1c69-authenticated-prefix-checkpoint.json
-physical SHA256 d7b8dae21e9e0478e8ea5d8136c7f19156cd5afca2ff80f167dce48a2e61b6b5
-checkpoint identity b734f8ab2f0a24e002c8b5c2ed1dbbfe75c9411cc773ec1394a1cf330c9b3a28
-record count 191
-record-stream SHA256 20a123c1e83dd6e777b47cb07e86a6a7203acb25e0cede2e86ff956efcfae8ed
+MSM2-WS-v0.1c70-post-c69-stitched.json
+physical SHA256 2780ca89a98ad22d12e2252f53cd202830bc8228edd67d0b0c7fb8eccf7f15ac
+size 15044 bytes
+semantic result identity 9b213db28b05f9d1fc8baefa37f981aa521cd7ee45110a7cfe6b122567f0b9e1
+repository_result POST_C69_RUNTIME_BEGIN_STITCH_SCANNER_READY
+tool v0.1c70 / schema 1
+contract exact_c69_full_replay_all_successor_continuation_v1
 ```
 
 Exact executable:
@@ -41,241 +29,230 @@ Spider-Man2.exe 2.810.0.0
 SHA256 c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9
 ```
 
-## Why c70 must full-replay
+Accepted c69 identities remain pinned by c70 and must remain exact.
 
-The accepted c69 checkpoint authenticates the exact diagnostic record stream, but it does not serialize the complete mutable per-root continuation prefix required by the existing transaction engine.
+## Measured c70 domain
 
-Missing exact-resume state includes historical contexts/path proofs, forward/reverse graph, already-consumed work/cap counters, provisional root candidates, continuation queue/processed state and mutable authorization state.
+```text
+c69 boundary instances available/considered = 191 / 191
+all-successor-exact c69 instances = 177
+c69 instances admitted = 70
+c69 instances refused = 121
+c69 exact edges admitted = 84
+c69 exact edges refused = 107
+c69 record mismatch counts = {}
 
-Do **not** reset these at c69 and call that equivalent continuation.
+post_c69_uncertified_boundary_refusals = 102
+```
 
-C70 therefore performs one explicit c56→c68 historical replay and uses the accepted c69 result/checkpoint only as the exact authorization source at the first post-c67 c68 terminal.
+The exact next diagnostic domain is **102**, not 107. Five other preflight-eligible roots were refused by existing fail-closed conditions after c69 preflight and are not c71 boundary records.
 
-C70 output must state:
+## Purpose
+
+Implement c71 as the smallest OFFLINE/STATIC diagnostic stage that observes exactly the accepted c70 first terminal `uncertified_post_c69_runtime_boundary` event for each of those 102 roots, records exact full-prefix provenance, classifies any architectural successors, and rethrows/refuses the same terminal.
+
+C71 is diagnostic only. It must not traverse or admit a c71 target.
+
+Recommended identity:
+
+```text
+repository_result POST_C69_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY
+tool v0.1c71 / schema 1
+contract exact_c70_first_terminal_post_c69_boundary_full_prefix_provenance_diagnostic_v1
+```
+
+## Required replay model
+
+C71 must use the same full historical replay semantics as accepted c70.
+
+Do not claim checkpoint acceleration. If a new diagnostic checkpoint is emitted, it is evidence serialization only unless a later task separately proves exact mutable resume sufficiency.
+
+Require:
 
 ```text
 full_historical_replay_used = true
 checkpoint_accelerated_resume_used = false
 ```
 
-Do not silently claim checkpoint acceleration.
+## C70 artifact authentication
 
-## Accepted c69 continuation domain
-
-```text
-c69 terminal instances total = 191
-edge-backed instances = 190
-transaction-only instances = 1
-architectural edges = 209
-exact_unique_runtime_begin edges = 196
-inside_unique_runtime_span_nonentry edges = 13
-```
-
-Per-terminal grouping:
-
-```text
-177 instances: every architectural successor is exact_unique_runtime_begin
-191 exact edges: belong to those 177 complete instances
-13 instances: at least one interior successor
-1 instance: transaction-only, no source instruction/edge
-```
-
-The 13 non-exact edge-backed instances are:
-
-```text
-8 instances: one interior successor only
-5 instances: one exact successor + one interior successor
-```
-
-The five mixed cases must remain wholly fail-closed. Never partially admit the exact arm.
-
-The transaction-only terminal is root `164519`, current row `164524`, event `instance`, reason `transaction_instance_converted_uncertified_post_c65_runtime_boundary`. It must remain fail-closed and must not receive a synthetic instruction/edge.
-
-## Purpose
-
-Implement c70 as the smallest OFFLINE/STATIC full-root continuation stage that:
-
-1. reconstructs the accepted c56-c68 historical transaction semantics unchanged;
-2. authenticates the accepted c69 result/checkpoint exactly;
-3. uses each c69 record as the only authorization for its first c68 `uncertified_post_c67_runtime_boundary` event;
-4. continues only complete all-successor-exact c69 edge-backed terminals;
-5. stops at the first new post-c69 unknown boundary.
-
-Do not define behavior beyond that first new boundary.
-
-## C69 artifact authentication
-
-Before c69 authorization, require exact:
+Before observing c71 terminals, require exact:
 
 - executable SHA256;
-- accepted c69 result physical SHA256;
-- accepted c69 result semantic identity;
-- c69 classifier identity/header;
-- checkpoint physical SHA256;
-- checkpoint identity/version/contract;
-- checkpoint embedded c69 result identity;
-- checkpoint record count and record-stream SHA256;
-- accepted c68 identities embedded in the c69 evidence;
-- c69 tool/schema/contract/source identities;
-- existing limits/profile identities.
+- accepted c70 physical SHA256;
+- accepted c70 semantic result identity;
+- c70 repository result/tool/schema/contract;
+- c70 authentication header and limits;
+- accepted c69 result/checkpoint identities embedded in c70;
+- c70 tool-source identities;
+- all c70 safety gates still closed.
 
-Any mismatch/corruption/staleness/missing/duplicate/out-of-order record must fail closed.
+Any mismatch, mutation, stale file, wrong schema/contract/limits, or changed accepted c69 identity fails closed.
 
-The c69 JSON and checkpoint must both be explicit owner inputs. Do not trust only the checkpoint's embedded result.
+## Exact c71 terminal domain
 
-## First c69 terminal matching
-
-On the replayed root's first c68 `uncertified_post_c67_runtime_boundary` event:
-
-- locate the exact c69 record for that original root;
-- reproduce the corrected c69 terminal record from the live replayed transaction;
-- require byte/semantic equality with the accepted checkpoint record before considering continuation;
-- preserve the corrected distinction between edge-backed and transaction-level terminal origin.
-
-For a transaction-only c69 record:
-
-- validate the current transaction terminal exactly;
-- count it as considered/refused;
-- do not synthesize an instruction or successor;
-- abort that root with an explicit c69 transaction-terminal refusal.
-
-## Edge-backed all-successor preflight
-
-For an edge-backed c69 record, classify/preflight the complete stored architectural successor set before returning any c69 continuation proof.
-
-A terminal is eligible only if every successor is:
-
-- architectural;
-- `exact_unique_runtime_begin`;
-- non-overlapping source/target span;
-- current exact runtime row begin/bounds;
-- current exact target row/code under the authenticated executable.
-
-Expected accepted c69 preflight domain:
+The c70 owner result measured exactly:
 
 ```text
-all-successor-exact terminal instances = 177
-continuable exact edges = 191
-interior-containing terminal instances refused = 13
-transaction-only terminal instances refused = 1
+uncertified_post_c69_runtime_boundary = 102 roots
 ```
 
-If these accepted source-domain counts do not match, block.
+C71 must reproduce exactly 102 terminal records under unchanged replay.
 
-All successors of one c69 terminal are atomic. Preflight the entire set before marking that terminal eligible. A mixed exact+interior record refuses the whole terminal and commits no exact arm.
+Do not create records for:
 
-## C69 continuation proof
+- the 13 c69 non-exact preflight refusals;
+- the one c69 transaction-only refusal;
+- the five other post-c69-preflight roots that later refused for a reason other than `uncertified_post_c69_runtime_boundary`;
+- any historical c68/c69 boundary that was already authorized or refused at an earlier phase.
 
-For each admitted exact c69 successor, create a bounded proof that binds at least:
+Missing, extra, duplicated, stale, reordered, or borrowed provenance fails closed.
+
+## Terminal-origin distinction
+
+Do not assume all 102 terminals are instruction-edge callbacks.
+
+C70 can produce `uncertified_post_c69_runtime_boundary` through edge-backed and transaction-level continuation paths. C71 must preserve the exact origin class.
+
+For an edge-backed terminal:
+
+- capture exact current root/state/path/source row/source instruction;
+- bind the accepted c69 authorization record(s) on the path;
+- bind current c70 post-c69 origin/proof context;
+- classify the complete architectural successor set using the existing relation vocabulary;
+- do not traverse any successor.
+
+For a transaction-level terminal:
+
+- capture the exact transaction event kind and current root/state/path/context;
+- capture the underlying refusal/conversion cause;
+- bind the exact accepted c69/c70 provenance available at that event;
+- do not invent a source instruction or successor edge;
+- emit an empty edge list.
+
+Report edge-backed and transaction-level terminal counts separately.
+
+## Provenance requirements
+
+Each c71 record must bind enough information to prevent another root/state/path/source from borrowing the authorization. At minimum include or identity-bind:
 
 - exact image identity;
-- accepted c69 result/checkpoint identities;
-- c69 record identity;
-- c69 classifier/result/record-set identity;
+- accepted c70 physical/semantic identity;
+- c70 tool/schema/contract/limits/source identities;
 - original root identity;
-- current entry-instance state identity;
-- c69 source row/code/instruction identity;
-- c69 boundary path/full-prefix identity;
-- c69 terminal phase/reason/provenance;
-- nested accepted c67 authorization/provenance;
-- edge kind/target/runtime-row identity;
-- current target row/code identity.
+- current entry-instance row/state identity;
+- exact boundary path/full-prefix identity;
+- current post-c69 provenance;
+- accepted c69 result/checkpoint/classifier/record-set identities;
+- c69 record identity/identities present on the current path;
+- nested accepted c67 provenance where already carried;
+- terminal phase/reason/origin kind;
+- source row/code/instruction identity when edge-backed;
+- transaction event/context/cause when transaction-level;
+- complete successor relation classification when edge-backed.
 
-Use a distinct `proof_kind`, e.g. `c69_post_boundary`.
+Do not relabel historical c69 authorization as current c71 reachability.
 
-Do not relabel historical c67/c69 authorization as current reachability.
+## Classification vocabulary
 
-## Post-c69 continuation
-
-Once a c69 proof creates an exact target entry instance:
-
-- preserve the existing transaction graph/caps/cycles/dedup/candidate semantics from the full replay;
-- mark the resulting context as post-c69;
-- propagate that mark only through the existing transaction continuation operations;
-- any later row-external boundary not authorized by that same first c69 record is the next unknown and must abort the root.
-
-Recommended next fail-closed label:
+For edge-backed terminals, reuse the existing relation labels, including at least:
 
 ```text
-uncertified_post_c69_runtime_boundary
+exact_unique_runtime_begin
+inside_unique_runtime_span_nonentry
+executable_file_backed_outside_runtime_metadata
+executable_not_fully_file_backed
+non_executable_or_writable_section
+outside_image
+overlapping_multiple_runtime_spans
+deferred_producer_excluded
 ```
 
-Do not classify/traverse that next boundary in c70.
+Record architectural edge kind and target identity. No edge is authorization to continue in c71.
 
-## C70 output
+## Diagnostic-only contract
 
-Recommended identity:
+C71 must add:
 
 ```text
-repository_result POST_C69_RUNTIME_BEGIN_STITCH_SCANNER_READY
-tool v0.1c70 / schema 1
-contract exact_c69_full_replay_all_successor_continuation_v1
+new_post_c69_boundaries_admitted = 0
+new_cross_row_candidate_count = 0
+live_qword_reads = 0
 ```
 
-Report separately at least:
+Historical c70 candidate output must remain byte/semantic equivalent for candidate accounting.
 
-- accepted c69 result/checkpoint identities;
-- `full_historical_replay_used=true`;
-- `checkpoint_accelerated_resume_used=false`;
-- c69 terminal instances available/considered/preflight-eligible/admitted/refused;
-- transaction-terminal refusal count;
-- interior-containing terminal refusal count;
-- c69 continuable exact edges available/considered/admitted/refused;
-- next `uncertified_post_c69_runtime_boundary` refusal count;
-- root transactions completed/refused;
-- continuation instances/rows/facts/caps;
-- candidate counts/records;
-- all safety gates.
+No new Fact, candidate, target entry instance, pointer/value read, native probe, or game interaction may be introduced by c71.
 
-Any candidates remain OFFLINE static candidates only. Zero candidates never proves writer absence.
+All safety gates remain false.
+
+Zero candidates does not prove writer absence.
+
+## Output
+
+Report at least:
+
+- accepted c70 physical and semantic identities;
+- expected/classified c71 terminal count = 102/102;
+- unique root/state/terminal-context counts;
+- edge-backed terminal count;
+- transaction terminal count;
+- terminal event-kind counts;
+- terminal phase/reason counts;
+- architectural/model-only edge counts;
+- relation counts;
+- complete per-terminal successor grouping where edge-backed;
+- authenticated record-set identity;
+- historical c70 candidate counts unchanged;
+- read-only/live-qword/safety gates.
+
+A deterministic diagnostic checkpoint may be produced for the exact 102 record stream, with its own digest and accepted c70 identity. Do not claim it is a mutable transaction resume snapshot.
 
 ## Focused tests
 
 Cover at least:
 
-- exact accepted c69 result/checkpoint owner identities pinned;
-- c69 JSON/checkpoint physical/semantic/stream mutation fails closed;
-- full replay reconstructs the same c69 first-terminal record on fixtures;
-- exact one-successor c69 terminal continues;
-- exact two-successor c69 terminal continues only after both arms preflight;
-- one exact + one interior terminal refuses both arms atomically;
-- interior-only terminal refuses;
-- transaction-only terminal validates then refuses without synthetic edge;
-- c69 root/state/path/source/phase/reason/provenance mutation refuses;
-- duplicate/missing/out-of-order c69 record stream refuses;
-- later boundary after c69 continuation becomes `uncertified_post_c69_runtime_boundary`;
-- no post-abort provisional candidate/admission commits;
-- existing full-root caps/cycles remain active across the c69 continuation;
+- accepted c70 physical/semantic identity pinned;
+- exact 102 production-domain constant pinned;
+- exact edge-backed terminal reproduction;
+- direct/conditional/CALL-fallthrough successor classification without traversal;
+- multi-successor classification without partial admission;
+- interior and metadata-free RX remain diagnostic only;
+- transaction-origin terminal is represented without synthetic instruction/edge;
+- c70 root/state/path/c69-record/source/phase/reason/origin mutation fails closed;
+- duplicate/missing/out-of-order record evidence fails closed;
+- historical c70 accounting/candidate bytes remain unchanged;
+- no c71 admission/Fact/candidate;
 - no slot qword read/pointer chase/native/game probe;
 - all safety gates remain false.
 
-Then run the relevant scanner regression set and normal build/test/smoke/hooks/package validation.
+Use small fixtures first. Do not force a production full replay merely to debug fixture/test mistakes.
+
+After focused tests pass, run the owner OFFLINE classifier once against the exact accepted c56-c70 evidence.
 
 ## Change scope
 
 Allowed:
 
-- new c70 OFFLINE tool/test files;
-- minimal c69 helper exposure if strictly required without changing accepted c69 semantics;
+- new c71 OFFLINE diagnostic tool/test files;
+- minimal c70 helper exposure/correction layer if strictly required without changing accepted c70 semantics;
 - test registration;
-- c70 analysis/result docs.
+- c71 analysis/result docs.
 
-Do not change accepted c56-c69 evidence semantics to make c70 pass.
+Do not change accepted c56-c70 evidence semantics to make c71 pass.
 
 ## Do not
 
-- Do not use the current c69 checkpoint as an exact transaction-resume snapshot.
-- Do not reset historical caps/graph/candidate state at c69.
-- Do not continue the 13 interior-containing c69 terminals.
-- Do not continue the transaction-only c69 terminal.
-- Do not partially admit mixed successors.
-- Do not invent transaction-terminal instructions/edges.
+- Do not traverse a c71 target.
+- Do not define c72 continuation behavior before c71 owner classification is analyzed.
+- Do not turn the 102 diagnostic records into admission proof in c71.
+- Do not infer 107 records from c69 exact-edge refusal accounting.
+- Do not invent transaction-terminal instructions or successors.
 - Do not infer writer absence from zero candidates.
 - Do not read slot qwords or chase pointers.
 - Do not traverse the deferred producer by assumption.
 - Do not add native/game probes or gameplay/production writes.
 - Do not modify SocialFeed or any other MOD repository.
-- Do not define c71 continuation behavior before the c70 owner artifact is analyzed.
 
 ## Binding safety
 
