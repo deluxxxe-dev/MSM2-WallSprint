@@ -1,14 +1,20 @@
-"""Correction layer for c70 post-c69 entry/connection provenance and c69 candidate projection.
+"""Correction layer for c70 post-c69 provenance, observer lifetime, and c69 candidate projection.
 
 C70 deliberately calls c68's full-replay instance/connect semantics for a newly
-authorized c69 edge.  c69's observer layer also tracks the exact post-c67 arrival
-or connection that led to a context.  Preserve those transient observer fields
+authorized c69 edge. c69's observer layer also tracks the exact post-c67 arrival
+or connection that led to a context. Preserve those transient observer fields
 while using c68's methods so c69 provenance remains exact instead of being
 silently dropped.
 
+After c70 has authenticated the first accepted c69 terminal, c69's inherited
+first-terminal observer must no longer see later distinct edges in that root.
+Those are the next post-c69 unknown and fail closed as c70 POST. Exact sibling
+callbacks for the same accepted c69 source instruction still use the original
+sibling-proof matcher so unknown extra siblings remain evidence failures.
+
 C69 is diagnostic-only, so its candidate totals are preserved under
 ``historical_c68_candidate_counts`` instead of duplicated as c69 top-level
-candidate keys.  Present those historical counts through a non-serializing dict
+candidate keys. Present those historical counts through a non-serializing dict
 view so c70 can report the unchanged inherited candidate totals without mutating
 the accepted c69 result bytes or identity.
 """
@@ -16,6 +22,7 @@ from pathlib import Path
 
 import slot_publication_post_c69_stitched as base
 
+_OriginalView = base.View
 _OriginalTransaction = base.Transaction
 _OriginalProofPool = base.ProofPool
 _original_sources = base.sources
@@ -44,6 +51,26 @@ class ProofPool(_OriginalProofPool):
         super().__init__(*args,**kwargs)
         self.result = _C69ResultView(self.result)
         self.index_record_ids = frozenset(record['record_identity'] for record in self.records)
+
+
+class View(_OriginalView):
+    def edge(self,index,ins,kind,target,architectural,relations):
+        # Before the first accepted c69 terminal, retain the exact original c69
+        # first-terminal observer. Once c69_record is set, only callbacks for the
+        # same authenticated source instruction/scan belong to that terminal's
+        # sibling set. Every other later edge is the next c70 unknown and must not
+        # be compared against c69's retained first-terminal capture.
+        if self.c69_record is not None:
+            tx,key = self.tx,self.key
+            if tx is None or key is None:
+                raise base.c58.EvidenceError('missing c70 post-c69 source context')
+            same_authenticated_source = (
+                key==self.c69_key
+                and tx.scan_token==self.c69_scan_token
+                and ins.address==self.c69_record['source_instruction_rva'])
+            if not same_authenticated_source:
+                return self._post69_boundary(index,ins,kind,target,architectural,relations)
+        return super().edge(index,ins,kind,target,architectural,relations)
 
 
 class Transaction(_OriginalTransaction):
@@ -91,6 +118,7 @@ class Transaction(_OriginalTransaction):
 
 base.sources = sources
 base.ProofPool = ProofPool
+base.View = View
 base.Transaction = Transaction
 
 
