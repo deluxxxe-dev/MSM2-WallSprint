@@ -39,7 +39,7 @@ def pool70(f,extra=()):
 
 assert tool.EXPECTED_RECORDS==191 and tool.EXPECTED_ALL_EXACT==177
 assert tool.EXPECTED_CONTINUABLE_EXACT_EDGES==191 and tool.EXPECTED_INTERIOR_INSTANCES==13
-assert tool.ProofPool is fix.ProofPool and tool.Transaction is fix.Transaction
+assert tool.ProofPool is fix.ProofPool and tool.View is fix.View and tool.Transaction is fix.Transaction
 print('PASS: c70 production contract pins accepted c69 continuation-domain counts')
 
 p,_,_,_=pool70(fixture70())
@@ -63,6 +63,20 @@ assert r['c69_boundary_instances_preflight_eligible']==r['c69_boundary_instances
 assert r['c69_continuable_exact_edges_available']==r['c69_continuable_exact_edges_admitted']==2
 print('PASS: c70 exact two-successor c69 terminal preflights both arms before admission')
 
+# Owner-discovered lifecycle regression: after an accepted c69 continuation, a
+# second distinct row-external event belongs to c70. It must become c70 POST and
+# must not be sent back through c69's one-first-terminal observer.
+f=fixture70(b'\x90',b'\x90');f[0x110e]=b'\xc3'
+p,_,_,_=pool70(f)
+r=tool.scan(p)
+assert r['root_refusal_reasons'][tool.POST]==r['post_c69_uncertified_boundary_refusals']==1
+assert r['c69_boundary_instances_considered']==r['c69_boundary_instances_preflight_eligible']==1
+assert r['c69_boundary_instances_admitted']==0
+assert r['c69_continuable_exact_edges_considered']==r['c69_continuable_exact_edges_preflight_eligible']==1
+assert r['c69_continuable_exact_edges_admitted']==0
+assert r['new_cross_row_candidate_count']==0
+print('PASS: c70 later distinct edge bypasses retired c69 first-terminal observer and stops as post-c69 unknown')
+
 jump=prior.jump(0x110c,0x1401)
 p,_,_,_=pool70(fixture70(jump,None,{0x1400:b'\x90\xc3'}))
 r=tool.scan(p)
@@ -77,7 +91,7 @@ bad=deepcopy(cp);bad['records'][0]['terminal_reason']='wrong'
 refused(lambda:tool.ProofPool(p.baseline,r69,bad,production=False),'record')
 print('PASS: c70 rejects mutated c69 checkpoint record evidence')
 
-# Reproduce the owner-discovered transaction-origin class.  The forced c68 POST
+# Reproduce the owner-discovered transaction-origin class. The forced c68 POST
 # is active while both the fixture baseline and the c69/c70 replays are built, so
 # the observer comparison remains exact instead of comparing different c68 runs.
 f=fixture70();p68,raw=prior68.certificates68(f)
