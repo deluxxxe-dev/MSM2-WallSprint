@@ -82,11 +82,16 @@ b,_=prior.baseline65(prior.after_functions());good=prior.result65(b);bad=deepcop
 refused(lambda:tool.ProofPool(b,accepted=good,owner_result=bad),'stale/wrong')
 print('PASS: c66 stale/mismatched c65 phase/reason owner evidence fails closed')
 
+# The first c65 boundary can preflight successfully, but if the continued path then
+# reaches a new uncertified boundary the whole root transaction is rolled back. The
+# preflight remains "considered"; it is not counted as an admitted completed root.
 f=prior.after_functions(body=b'\x90',following=b'\x90');f[0x110c]=b'\xc3'
 rr=scan66(f)
-assert rr['c65_boundary_instances_admitted']==1 and rr['post_c65_uncertified_boundary_refusals']==1
-assert rr['root_refusal_reasons'][tool.POST]==1 and rr['new_cross_row_candidate_count']==0
-print('PASS: c66 next unknown boundary stops as uncertified_post_c65_runtime_boundary with no recursive certificate')
+assert rr['root_refusal_reasons'][tool.POST]==rr['post_c65_uncertified_boundary_refusals']==1
+assert rr['c65_boundary_instances_considered']==1 and rr['c65_boundary_instances_admitted']==0
+assert rr['c65_exact_edges_considered']==1 and rr['c65_exact_edges_admitted']==0
+assert rr['new_cross_row_candidate_count']==0
+print('PASS: c66 next unknown boundary stops as uncertified_post_c65_runtime_boundary and rolls back provisional admission')
 
 f=prior.after_functions(roots={0x1080:prior.lea(0x1080,cfg.SLOT+8)+prior.jump(0x1087,0x1100)})
 pp,_=certificates66(f);records=list(c65.replay_records(pp.baseline));assert len(records)==2
