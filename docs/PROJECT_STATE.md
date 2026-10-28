@@ -1,11 +1,13 @@
 # WallSprint project state
 
-## Current stage — corrected c69 owner OFFLINE result accepted; c70 full-replay continuation next
+## Current stage — corrected c69 owner accepted; c70 first owner blocked, correction focused PASS; corrected owner rerun next
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
 
 Accepted c66, corrected c67, c68, and corrected c69 owner OFFLINE results are **VERIFIED-STATIC**.
+
+C70 is not yet accepted. Its first owner OFFLINE run was **BLOCKED** by a c70 observer-retirement bug; the correction is implemented and focused regression has passed. A corrected owner rerun is required before any c71 behavior is defined.
 
 Canonical detail:
 
@@ -14,6 +16,8 @@ Canonical detail:
 - `analysis/V01C68_OWNER_OFFLINE_RESULT.md`
 - `analysis/V01C69_OWNER_OFFLINE_RESULT.md`
 - `analysis/V01C70_CHECKPOINT_SUFFICIENCY_BLOCKED.md`
+- `analysis/V01C70_TOOL_READY.md`
+- `analysis/V01C70_OWNER_BLOCKED_RESULT.md`
 
 ## Accepted c69 artifacts
 
@@ -90,9 +94,37 @@ checkpoint acceleration claimed: false
 
 Canonical detail: `analysis/V01C70_CHECKPOINT_SUFFICIENCY_BLOCKED.md`.
 
+## C70 first owner BLOCKED result and correction
+
+The first owner run reached real c70 continuation and then stopped at:
+
+```text
+c70 full-replay c69 continuation: 26624/162472
+POST_C69_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: multiple distinct first terminal c68 source events
+```
+
+Static review proved this was a c70 observer-lifetime problem, not accepted c68/c69 evidence corruption. After the accepted first c69 boundary was authenticated and deliberately continued, the inherited c69 first-terminal diagnostic observer remained active and interpreted a later post-c69 edge as another candidate for the original first c68 terminal.
+
+The c70-only correction now:
+
+- leaves c69 first-terminal authentication unchanged before authorization;
+- retires that diagnostic role only after the accepted c69 record has been authenticated for the root;
+- refuses any later distinct row-external edge as `uncertified_post_c69_runtime_boundary`;
+- does not classify or traverse the later edge as c69 evidence.
+
+Focused regression PASS includes:
+
+```text
+PASS: c70 later distinct edge bypasses retired c69 first-terminal observer and stops as post-c69 unknown
+PASS: c70 transaction-origin c69 terminal validates then refuses without synthetic successor
+PASS: c70 focused full-replay c69 continuation groups complete
+```
+
+No c70 owner JSON from the blocked attempt is accepted.
+
 ## Current bounded action
 
-C70 must do one explicit full historical replay and use the accepted c69 result/checkpoint only as the exact c69 boundary authorization source.
+Rerun corrected C70 with one explicit full historical replay and the accepted c69 result/checkpoint as the exact c69 boundary authorization source.
 
 C70 may:
 
@@ -105,7 +137,7 @@ C70 may:
 
 C70 must keep the 13 interior-containing records and the one transaction-only record fail-closed.
 
-Do not define behavior beyond the first new post-c69 boundary until the c70 owner result is analyzed.
+Do not define behavior beyond the first new post-c69 boundary until the corrected c70 owner result is analyzed.
 
 ## Candidates and safety
 
