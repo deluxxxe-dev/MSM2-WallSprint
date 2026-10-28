@@ -1,27 +1,32 @@
 # WallSprint project state
 
-## Current stage — corrected c67 owner READY observed; exact artifact validation pending
+## Current stage — c67 owner OFFLINE result accepted; c68 bounded continuation next
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
 
-Accepted c66 owner OFFLINE result remains **VERIFIED-STATIC**.
+Accepted c66 and corrected c67 owner OFFLINE results are **VERIFIED-STATIC**.
+
 Canonical detail:
 
 - `analysis/V01C66_OWNER_OFFLINE_RESULT.md`
-- `analysis/V01C66_TOOL_READY.md`
+- `analysis/V01C67_OWNER_BLOCKED_RESULT.md`
+- `analysis/V01C67_CORRECTED_OWNER_RUN.md`
+- `analysis/V01C67_OWNER_OFFLINE_RESULT.md`
 
-C66 repository result:
-
-```text
-POST_C63_RUNTIME_BEGIN_STITCH_SCANNER_READY
-Tool v0.1c66 / schema 1
-```
-
-Exact accepted c66 owner artifact SHA256:
+## Accepted c67 artifact
 
 ```text
-eb4e44fddb67dafd64700e19e846173e60cbaddce95860686e24e543e650cc1c
+file: MSM2-WS-v0.1c67-post-c65-runtime-boundary.json
+SHA256: 277cb83c3fbe36715876133079c99a1d5151634442ed842960a917b140ab8aee
+size: 600196 bytes
+repository_result: POST_C65_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY
+tool: v0.1c67
+schema: 1
+contract: exact_c66_first_terminal_post_c65_boundary_full_prefix_provenance_diagnostic_v1
+classifier_identity: a130b082512449cd008a912b94e2e3a2bcabf15140906c4780983bac07b99f20
+authenticated_record_set_sha256: f0b2ce8c91868e572a83d59fc425c4e40d3fe4fe9faa7957e26a252b65e85ed6
+compact_result_identity: ac043225b8b4464e8fe7e52a2c44a9a81c72bf0c2fad6e30df173fdab83b113d
 ```
 
 Exact image remains authenticated:
@@ -31,68 +36,80 @@ Spider-Man2.exe 2.810.0.0
 SHA256 c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9
 ```
 
-Accepted c66 totals:
+C67 exact domain/classification:
 
 ```text
-root attempts = 162472
-completed/refused = 105541 / 56931
-c65 boundary instances available/considered = 998 / 998
-c65 instances admitted/refused = 458 / 540
-c65 exact edges available/considered = 1021 / 1021
-c65 exact edges admitted/refused = 513 / 508
-rows reached = 1683
-address Facts crossing runtime rows = 3044
-useful c65 crossings/Facts = 8 / 11
-next post-c65 unknown wave = 458
-candidates = 0
+expected/classified roots = 458 / 458
+instances = 458
+unique states = 458
+unique source rows = 445
+boundary edges = 507
+architectural edges = 507
+model-only edges = 0
 ```
 
-## C67 owner run
-
-The initial c67 owner run failed closed with:
+Target relations:
 
 ```text
-POST_C65_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_BLOCKED: converted c64 POST lacks exact original c65 lower capture
+exact_unique_runtime_begin                      = 432
+inside_unique_runtime_span_nonentry             = 74
+executable_file_backed_outside_runtime_metadata = 1
+all other relations                             = 0
 ```
 
-Canonical blocker analysis:
+These are edge counts, not safe-root counts. C68 must retain all-successor fail-closed behavior and must measure its actual completed/refused roots instead of inferring them from 432/74/1.
 
-- `analysis/V01C67_OWNER_BLOCKED_RESULT.md`
-
-The root cause was a c67 assumption: accepted c66 converts an actual lower `c64.POST` into c66 `uncertified_post_c65_runtime_boundary` before c66 stores its diagnostic-only lower c65 capture. Accepted c66 evidence remains valid and read-only.
-
-A c67-only correction was added:
+C67 terminal provenance:
 
 ```text
-source/tools/slot_publication_post_c65_boundary_fix.py
-source/tools/test_slot_publication_post_c65_boundary_fix.py
+phase:
+  same_instance_after_c65_preflight_before_row_fixpoint = 348
+  post_c65_reachable_context                            = 34
+  post_c65_reachable_dedup_stored_earlier_path          = 3
+  prior_c65_authorization_converted_earlier_refusal     = 73
+reason:
+  used_c65_source_later_instruction          = 348
+  current_context_post_c65_reachable          = 37
+  prior_c65_authorization_converted_c64_post = 73
+underlying:
+  uncertified_post_c63_runtime_boundary = 73
 ```
 
-The correction snapshots the exact lower c65 edge-entry state before the unchanged c66 callback and reconstructs the omitted diagnostic capture only after the actual callback proves `c66.POST` caused by `c64.POST`, then reuses unchanged c65 provenance validation.
-
-The owner reran the correction regression and corrected owner classifier. Observed console result:
+C67 is diagnostic only:
 
 ```text
-c67 unchanged c66 terminal observer replay: 162472/162472
-POST_C65_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY: .../logs/MSM2-WS-v0.1c67-post-c65-runtime-boundary.json
-C67_CORRECTED_OWNER_PASS
+new_post_c65_boundaries_admitted = 0
+new_cross_row_candidate_count = 0
+cross_runtime_fact_propagation_unchanged = true
+c66_candidate_output_unchanged = true
+live_qword_reads = 0
+c56_through_c66_evidence_read_only = true
 ```
 
-Canonical run record:
+Historical candidate output remains zero with SHA256:
 
-- `analysis/V01C67_CORRECTED_OWNER_RUN.md`
+`4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945`
 
-This confirms the prior blocker is resolved. However, the exact c67 JSON bytes/content have not yet been ingested by ChatGPT, so classification totals, record-set identity, target-relation distribution and any c68 behavior remain unaccepted.
+The c67 correction fixed only observation of a converted c64 POST lower capture. It did not alter c66 or accepted c56-c66 evidence.
 
-Current bounded unknown remains the c66 458-root post-c65 wave until the exact c67 artifact is validated.
+## Current bounded action
+
+Implement c68 as the smallest continuation of the accepted c67 records:
+
+- authenticate/replay the exact accepted c67 classifier result;
+- authorize only exact `exact_unique_runtime_begin` architectural successors;
+- require every architectural sibling of an instance to pass before any root can commit;
+- preserve exact c67 source/root/state/path/phase/reason/provenance including the 73 converted-c64 class;
+- roll back the whole root on any non-exact sibling or later unknown boundary;
+- measure the next unknown wave and candidate/Facts result; do not infer it from aggregate edge counts.
+
+No broad scan, native/game probe or production/gameplay write is authorized.
 
 ## Safety
 
 C52 remains binding:
 
-```text
-PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL
-```
+`PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
 
 The following remain false/unproven:
 
@@ -115,14 +132,4 @@ game_used
 
 Zero candidates never proves writer absence.
 
-Runtime remains `v0.1c38`; C53-c67 are OFFLINE/STATIC analysis tooling only. The shared workspace remains `<game>\Mods Library\Mods-Developing\MSM2-WS`. Do not modify SocialFeed or other MOD repositories.
-
-## Current action
-
-Ingest and validate the exact owner artifact:
-
-```text
-logs/MSM2-WS-v0.1c67-post-c65-runtime-boundary.json
-```
-
-Only after the exact c67 result is accepted may c68 be defined.
+Runtime remains `v0.1c38`; c53-c68 work is OFFLINE/STATIC analysis tooling unless separately stated. The shared workspace remains `<game>\Mods Library\Mods-Developing\MSM2-WS`. Do not modify SocialFeed or other MOD repositories.
