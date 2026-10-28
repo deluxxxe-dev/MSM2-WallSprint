@@ -18,7 +18,7 @@ python tools/test_four_face_analysis.py
 /workspace/toolchains/analysis-python/bin/python tools/test_static_access_v2.py | tee logs/static_access_v2_tests.log
 python tools/test_static_field_review.py | tee logs/static_field_review_tests.log
 python tools/test_surface_pair_review.py | tee logs/surface_pair_review_tests.log
-"$gpp" -std=c++17 -O2 -g -Wall -Wextra -Werror -DNOMINMAX -Iinclude -Ivendor/minhook/include -static src/msm2/actor_writer_smoke.cpp build/windows/hook_capture.o build/windows/hook_thunks.o build/windows/update_bridge.o build/windows/guard.o build/windows/minhook_buffer.o build/windows/minhook_hook.o build/windows/minhook_trampoline.o build/windows/minhook_hde64.o -luser32 -o build/windows/actor_writer_smoke.exe
+"$gpp" -std=c++17 -O2 -g -Wall -Wextra -Werror -DNOMINMAX -Iinclude -static src/msm2/actor_writer_smoke.cpp build/windows/hook_capture.o build/windows/hook_thunks.o build/windows/update_bridge.o build/windows/guard.o build/windows/minhook_buffer.o build/windows/minhook_hook.o build/windows/minhook_trampoline.o build/windows/minhook_hde64.o -luser32 -o build/windows/actor_writer_smoke.exe
 WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$PWD/build/windows/actor_writer_smoke.exe" | tee logs/windows_actor_writer_smoke.log
 
 "$gpp" -std=c++17 -O2 -g -Wall -Wextra -Werror -DNOMINMAX -Iinclude -static src/msm2/orientation_trace_smoke.cpp build/windows/guard.o build/windows/path_a_position_proof.o build/windows/movement_lineage.o build/windows/rdx_source_contract.o build/windows/writer_entry_snapshot.o build/windows/writer_entry_thunk.o build/deps/capstone-5.0.6/capstone.lib build/windows/minhook_buffer.o build/windows/minhook_hook.o build/windows/minhook_trampoline.o build/windows/minhook_hde64.o -lbcrypt -o build/windows/orientation_trace_smoke.exe
@@ -105,3 +105,5 @@ python tools/test-workspace.py
 /workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_post_c63_boundary.py
 /workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_post_c63_stitched.py
 /workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_post_c65_boundary.py
+/workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_post_c65_boundary_fix.py
+/workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_post_c65_stitched.py
