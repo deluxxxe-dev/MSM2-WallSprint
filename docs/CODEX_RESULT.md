@@ -1,101 +1,94 @@
-# Codex result — c68 TOOL READY
+# Codex result — c68 owner OFFLINE result accepted
 
 2026-10-28 JST. Branch **codex/v01c20-edi-value-provenance**.
 
 ## Status
 
-Corrected c67 owner result remains accepted as **VERIFIED-STATIC**.
-C68 implementation and automated validation are **TOOL READY**.
+C68 owner OFFLINE result is accepted as **VERIFIED-STATIC**.
 
 Canonical detail:
 
-- `analysis/V01C67_OWNER_OFFLINE_RESULT.md`
 - `analysis/V01C68_TOOL_READY.md`
+- `analysis/V01C68_OWNER_OFFLINE_RESULT.md`
 
-## Implementation
-
-Created:
-
-```text
-source/tools/slot_publication_post_c65_stitched.py
-source/tools/test_slot_publication_post_c65_stitched.py
-```
-
-Registered c68 in:
+Accepted artifact:
 
 ```text
-source/tools/test_hooks_windows.sh
-```
-
-C68 contract:
-
-```text
+MSM2-WS-v0.1c68-post-c65-stitched.json
+physical SHA256 47fee13729d1b2d30b1c3cffc9f4bc19837fc18f580d0c0daac909ea7056a246
+size 13862 bytes
 repository_result POST_C65_RUNTIME_BEGIN_STITCH_SCANNER_READY
 tool v0.1c68 / schema 1
 contract exact_c67_full_prefix_terminal_reason_provenance_all_successor_continuation_v1
-next unknown uncertified_post_c67_runtime_boundary
+semantic result identity dbfcdefeccbc7bcaba048829336d945707f0fc4fc76b2c17780f33413b48255a
 ```
 
-It authenticates the accepted corrected-c67 record stream and continues only complete architectural sibling sets whose targets remain exact unique runtime-row begins. One non-exact sibling or later unknown boundary aborts the whole root, so provisional admission/candidates/Facts do not survive.
+The owner log completed with both `POST_C65_RUNTIME_BEGIN_STITCH_SCANNER_READY` and `C68_OWNER_OFFLINE_PASS`.
 
-## Focused validation
+## Result
 
-The first c68 focused run found a c68-only sibling-prefix self-reference bug. The validation hash included its own derived `c67_prefix`, so the second callback of a multi-successor instruction mismatched even when all underlying context was unchanged.
-
-C68 was corrected by excluding that derived field from the sibling-prefix hash. Accepted c56-c67 evidence was not changed.
-
-After correction, all focused c68 groups passed:
+C68 authenticated the exact accepted c67 stream and measured actual all-successor completion rather than inferring roots from edge totals:
 
 ```text
-ordinary exact continuation PASS
-direct/conditional/CALL-fallthrough PASS
-multi-successor all-arms PASS
-interior-arm whole-root rollback PASS
-metadata-free RX refusal PASS
-natural post-c65 provenance PASS
-stored-path provenance separation PASS
-converted authorization provenance PASS
-stale/mismatched c67 refusal PASS
-next post-c67 unknown rollback PASS
-different-root/path separation PASS
-all safety gates closed PASS
+c67 instances considered/admitted/refused = 458 / 180 / 278
+c67 exact edges considered/admitted/refused = 432 / 221 / 211
 ```
 
-## Full validation
-
-Owner Windows/WSL validation passed:
+Known non-exact c67 successors remained refused:
 
 ```text
-build_windows.sh PASS
-test.sh PASS
-smoke_windows.sh PASS
-test_hooks_windows.sh PASS
-package.py PASS
-C68_FULL_VALIDATION_PASS
+inside_unique_runtime_span_nonentry = 74
+executable_file_backed_outside_runtime_metadata = 1
 ```
 
-No real game was run or required.
+No c67 certificate mismatch was observed.
 
-## Safety
-
-C68 remains OFFLINE/STATIC only.
-
-No slot qword read, pointer chase, native/game probe, gameplay write, production write or other-MOD change is authorized.
-
-C52 remains binding:
+Root/continuation totals:
 
 ```text
-PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL
+attempted = 162472
+completed = 105721
+refused = 56751
+rows reached = 1750
+address facts crossing rows = 3161
 ```
+
+The newly exposed bounded unknown wave is:
+
+```text
+uncertified_post_c67_runtime_boundary = 191
+```
+
+## Candidate/safety result
+
+```text
+reference_candidate_count = 0
+new_cross_row_candidate_count = 0
+reader_candidates = 0
+writer_candidates = 0
+rmw_candidates = 0
+address_only_candidates = 0
+live_qword_reads = 0
+c56_through_c67_evidence_read_only = true
+```
+
+All completeness/publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/watch/pointer/game gates remain false. C52 remains binding:
+
+`PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
 
 Zero candidates never proves writer absence.
 
+## Performance finding
+
+The owner run replayed the whole c56-c68 prefix over 162472 roots. This preserved exact provenance but is unnecessarily expensive when the executable, accepted artifacts, tool sources, schemas/contracts and limits are byte/identity unchanged.
+
+Future tooling should support authenticated-prefix checkpoint reuse. Any mismatch must fail closed or require full replay; the optimization must not weaken evidence semantics.
+
 ## Next
 
-Run one owner OFFLINE c68 scan using the exact accepted c56-c67 evidence and output:
+`docs/CODEX_NEXT.md` defines c69 as:
 
-```text
-logs/MSM2-WS-v0.1c68-post-c65-stitched.json
-```
+1. diagnostic-only classification of the exact 191 first `uncertified_post_c67_runtime_boundary` terminals; and
+2. a deterministic authenticated-prefix checkpoint/cache mechanism for unchanged accepted c56-c68 inputs.
 
-ChatGPT must analyze that exact artifact before defining c69.
+Do not define c70 continuation behavior until the c69 owner artifact is analyzed.
