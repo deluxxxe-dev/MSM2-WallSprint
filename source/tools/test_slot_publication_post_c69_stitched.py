@@ -50,8 +50,11 @@ assert r['c69_boundary_instances_available']==r['c69_boundary_instances_consider
 assert r['c69_boundary_instances_preflight_eligible']==r['c69_boundary_instances_admitted']==1
 assert r['c69_continuable_exact_edges_available']==r['c69_continuable_exact_edges_admitted']==1
 assert r['c69_transaction_terminal_refusals']==0
+assert r['historical_c69_candidate_counts']==p.result['historical_c68_candidate_counts']
+assert c56.digest(p.result)==p.header['accepted_c69_result_identity']
 assert all(r[k] is False for k in c56.FALSE_GATES)
 print('PASS: c70 exact single-successor c69 terminal continues under unchanged full-root replay')
+print('PASS: c70 reports inherited c69 candidate totals without mutating accepted c69 result identity')
 
 cond=prior.jump(0x110c,0x1400,True)
 p,_,_,_=pool70(fixture70(cond,b'\xc3',{0x1400:b'\xc3'}))
