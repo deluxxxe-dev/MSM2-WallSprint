@@ -1,32 +1,42 @@
 # WallSprint project state
 
-## c64 current stage — exact c63-authenticated continuation TOOL READY
+## c65 current stage — first terminal post-c63 diagnostic TOOL READY
 
-**POST_C61_RUNTIME_BEGIN_STITCH_SCANNER_READY**,v0.1c64/schema1. Separate offline
-scanner reconstructs/authenticates full accepted c56→c63 chain and entire ordered
-c63 record stream,not compact examples. First use requires ENTIRE original terminal
-record/prefix and exact root/row/state/path/source/phase/reason/provenance identity.
-Every required successor architectural exact unique nonoverlap/nondeferred/current
-immutable executable file-backed target before any return. Converted context gains
-permission only from current c63 proof,never a borrowed prior c61 authorization.
+**POST_C63_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**,v0.1c65/schema1. Separate offline
+diagnostic reconstructs/authenticates full accepted c56→c64 chain and full c64
+JSON/totals/identities. Capture only first original post-c63 terminal edge per root,
+record actual guard/explicit chained conversion cause and rethrow same refusal.
+Exact root/row/entry state/path/source/current c64 prefix and carried c63 phase/
+reason/provenance remain bound. Current post-origin is distinct from stored path
+and previous authorization. Source-local preflight is not crossing;converted refusal
+is not reachability. Ambient exception context/stale cached capture are not current
+source evidence. Invalidation-only terminal without edge source BLOCKS aggregate.
 
-All accepted phases/reasons remain distinct. Same-instruction sealed sibling cache
-requires identical complete passive capture/counters/provenance and original prefix
-apart from bounded known considered sibling keys. No repeat-and-mask conversion.
-Late dedup/path/origin/post-reachability changes invalidate used proof/descendants
-and whole root. Next unknown wave refuses uncertified_post_c63_runtime_boundary;
-no recursive certificates. Original EMPTY-root/must/Facts/CALL/RSP/caps/root-atomic
-incoming-dependent candidate rules unchanged. Historical positive owned unextended
-candidate bytes preserved; old accepted baseline/evidence immutable.
+Second full ordered replay validates every record and complete expected998-root
+domain,all original dynamic c64 accounting and positive extended+legacy candidate
+bytes/hash. Classify successors only,no new edge/Fact/candidate/target traversal.
+All original Fact/must/CALL/RSP/caps/provenance/root-atomic semantics unchanged.
+Historical c38-c64 tools/tests/evidence immutable. Actual c65 root/source/edge/phase/
+reason/completeness metrics UNKNOWN/null:private EXE/full JSONs absent here.30 owned
+focused groups;all Required command evidence in CODEX_RESULT/STATUS.
 
-Actual c64 admission/continuation/fact/refusal/candidate metrics UNKNOWN/null:
-private EXE/full JSONs absent here. Owned33 focused groups; full validation in
-CODEX_RESULT. All completeness/publication/allocation/base/range/lifetime/ownership/
-destination/CFG/EH/production/watch/game gates false,C52 FAIL binding. Runtimev0.1c38/
-package0.1.56 unchanged,no native production/gameplay/mitigation/producer change.
-After verified push,one offline c64 command reuses existing c56 checkpoints and
-accepted c57-c63 JSONs read-only,returns compact c64 JSON. No Update-WS/game/
-Overstrike/runtime capture/native probe/evidence editing or regeneration.
+Every completeness/publication/allocation/base/range/lifetime/ownership/destination/
+CFG/EH/production/watch/game gate false,C52 FAIL binding. Runtimev0.1c38/package0.1.56
+unchanged,no production/native/gameplay/mitigation/producer changes. After verified
+push,one offline c65 command reuses existing c56 checkpoints+accepted c57-c64 JSONs
+read-only,returns compact c65 JSON. No Update-WS/game/Overstrike/runtime capture/
+native probe/evidence editing or regeneration. Details c65 analysis/gate/status.
+
+## c64 historical accepted owner VERIFIED-STATIC continuation result
+
+162472 roots,105083 completed/57389 refused. C63 instances2923 considered/1150
+admitted/1773 refused;3049 exact edges considered/1346 admitted/1703 refused.
+1549 reached rows/2881 crossing Facts,3 useful c63 crossings/4 c63 Facts,0 candidates.
+Next terminal post-c63 wave998 roots. Both V01C64_OWNER_OFFLINE_RESULT copies
+immutable;accepted owner evidence supersedes pending c64 distribution only,not
+historical cloud UNKNOWN or older BLOCKED history/safety gates. Exact-edge count
+is not instance/root permission. Progress relative to c62 demonstrates mechanism
+coverage only,not writer/publication/ownership/lifetime/CFG/EH/production proof.
 
 ## c63 historical accepted owner VERIFIED-STATIC diagnostic result
 
@@ -827,12 +837,12 @@ The VMOVUPS store is existing game code, not a MOD write and not permission to w
 
 ## Current action
 
-C64 is POST_C61_RUNTIME_BEGIN_STITCH_SCANNER_READY (owned mechanism only). After
-verified publication,fetch intended branch and run one offline c64 command with
-existing c56 checkpoints+accepted c57-c63 JSONs read-only;return compact c64 JSON.
-Historical2923/3167/3049 availability is not c64 admission/cloud measurement.
-Actual c64 metrics UNKNOWN. No Update-WS/game/Overstrike/runtime log/native probe/
-evidence editing or regeneration. C52 FAIL and every closed safety gate remain.
+C65 is POST_C63_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY (owned diagnostic only).
+After verified publication,fetch intended branch and run one offline c65 classifier
+with existing c56 checkpoints+accepted c57-c64 JSONs read-only;return compact c65
+JSON. Expected998-root domain is accepted input,not cloud actual distribution.
+Actual c65 metrics UNKNOWN. No updater/game/Overstrike/runtime capture/native probe/
+evidence editing or regeneration. No new edge/Fact/candidate;C52 FAIL remains binding.
 
 Do not add the exact-slot watch, PAGE_GUARD or broad memory interception merely
 to force progress. Do not merge `main`, do not traverse producer `0x351EB00`, and

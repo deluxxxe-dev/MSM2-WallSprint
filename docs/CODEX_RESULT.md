@@ -1,58 +1,53 @@
-# Codex result — c64 exact c63-authenticated post-c61 continuation
+# Codex result — c65 first terminal post-c63 boundary diagnostics
 
-2026-10-28 JST. Branch **codex/v01c20-edi-value-provenance**. Task base **98bb6d740ffa18623166ac9fe80b4e74054cb635**.
-Primary **POST_C61_RUNTIME_BEGIN_STITCH_SCANNER_READY**,owned offline mechanism.
-Actual private-image c64 scan UNAVAILABLE;new admission/fact/refusal/candidate
-metrics UNKNOWN/null. BLOCKED0. Implementation SHA/publication recorded below.
-Runtimev0.1c38/package0.1.56 unchanged,no new runtime release or native/game probe.
+2026-10-28 JST. Branch **codex/v01c20-edi-value-provenance**. Task base **2928544da619f8b28818ad889bfc0bdfb5df5f55**.
+Primary **POST_C63_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY**,owned offline mechanism.
+Actual private-image c65 classification UNAVAILABLE/UNKNOWN/null. BLOCKED0.
+Implementation SHA/publication evidence below after push. Runtimev0.1c38/package
+0.1.56 unchanged,no new runtime release,production integration,native probe or game.
 
-## Change and proof scope
+## Changes and proof scope
 
-Separate tool authenticates full accepted c56→c63 chain,rebuilds ALL ordered original
-c63 records and independently validates original aggregate/record-set/source/counts/
-phases/reasons/c62 output and full supplied c63 JSON. Bounded examples are not proofs.
-First admission matches ENTIRE current original c63 terminal record and prefix:
-root/row/entry state/path/source/metadata/phase/reason/provenance/origins/prior c61
-identity/accepted c62+c63 IDs. All required successors exact architectural unique
-immutable executable file-backed nonoverlap/nondeferred targets before ANY return.
-One bad arm aborts whole root. Edge availability3049 is not instance/root admission.
+Separate diagnostic reconstructs full unchanged c56→c64 chain,checks accepted counts/
+identities and ENTIRE supplied canonical c64 JSON. Delegate every original edge/
+transaction once unchanged,capture only exact first terminal POST and rethrow SAME
+refusal. Record actual direct guard or explicit original chained conversion cause;
+ambient __context__ is not __cause__. Current source/root/state/path/full-prefix and
+carried c63 phase/reason/terminal_provenance/prior identities remain exact. Preserve
+source-local preflight/reachable/dedup/converted distinctions. Source-local preflight
+is not crossing;stored path is not arrival origin;converted refusal is not reachability
+or prior c61 authorization. Stale lower capture is never current source evidence.
 
-Converted-context proof comes only from c63,never the prior c61 certificate or an
-invented post-c61 origin. Source-local preflight is not completed crossing;dedup
-stored path and arrival origin separate. After first full match,only SAME instruction/
-key/scan siblings use sealed proofs. ENTIRE passive capture/counter/provenance and
-original graph/work/control prefix must remain unchanged,except bounded known
-considered sibling edge keys. No repeat of original converted refusal then masking
-absolute counters. Duplicate/unmatched callbacks refuse. Late path/origin/post-
-reachability changes invalidate used proof/descendants/complete root. Next wave
-refuses uncertified_post_c63_runtime_boundary,no recursive certificates.
+Shadow original post-c63 closure after original metering only,no new work/state/cap
+mutation. Original c64 sibling cache/capture lifecycle stays intact via separate c65
+attributes. Invalidation-only terminal with no edge callback BLOCKS whole aggregate,
+never invents PC. Full original c64 accounting and positive extended+legacy candidate
+bytes/hash audited. Second independent complete ordered replay validates each record,
+full998-root domain and validator tail/seals. Missing/duplicate/stale/wrong source/
+prefix/provenance poisons aggregation. Classify successors only,no c65 edge/Fact/
+candidate,target code exploration or recursive certificates. Protocol MRO/later-scan
+fixtures preserve original state and their artificial records are explicitly REJECTED
+by the natural aggregate;not private/native/998-domain evidence.
 
-Original c53 must/GPR Facts,c54/c55 CALL/RSP,c57/c59/c61/c63 domains,c60/c62 full-prefix
-admission,finite caps/independent EMPTY roots/whole-root commit/incoming dependence
-unchanged. Original c62 baseline/evidence immutable;positive owned unextended roots
-retain complete old candidate bytes. C64 shard workload/counters are new domain,
-not assumed equal or monotonically better than c62. Global retained bound truncates
-records only,never totals;per-root reference cap aborts complete transaction.
+Accepted c64 owner VERIFIED-STATIC:162472 roots/105083 completed/57389 refused,
+1150 c63 instances/1346 exact edges admitted,1549 rows/2881 Facts,3 useful c63
+crossings/4 c63 Facts,0 candidates,998 next terminal POST roots. These are historical
+INPUT,not cloud c65 measurements. Accepted owner reports and old evidence immutable;
+accepted result supersedes pending c64 distribution only. Reported physical JSON SHA/
+size not locally reverified private file. Every completeness/publication/allocation/
+base/range/lifetime/ownership/destination/CFG/EH/production/watch/game gate false,
+C52 FAIL binding. No production restore/ownership/handler/lease/cleanup/VCH/mitigation/
+RIP/DR repair/masking,slot-watch/PAGE_GUARD,gameplay write,live qword/pointer/ABI/EH/
+producer/native/game broadening. Zero candidate never proves writer absence.
 
-Accepted owner c63 VERIFIED-STATIC closes old pending distribution:2923 instances/
-3167 architectural/3049 exact,phases2679/226/3/15,reasons2679/229/15. This is INPUT,
-not c64 admission/cloud measurement. Accepted owner reports and old c63 BLOCKED
-reports immutable;historical cloud UNKNOWN remains historical. Physical JSON hash/
-size are reported metadata,not locally verified private file. All completeness/
-publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/
-watch/game gates false,C52 FAIL binding. No production restore/ownership/handler/
-lease/cleanup/VCH/mitigation/RIP/DR masking,slot watch/PAGE_GUARD,gameplay write,
-qword/pointer/ABI/EH/producer traversal/native probe/game change. Zero candidates
-never prove no writer.
+New c65 tool/test+root/source V01C65_POST_C63_RUNTIME_BOUNDARY/GATE/STATUS;required
+hooks/package metadata,PROJECT_STATE and CODEX_RESULT. All historical c38-c64
+source/tests/evidence and CODEX_NEXT unchanged. Five original untracked ZIP/bundle
+artifacts untouched and excluded. Fetched/FF86a862a→2928544 only;no WS main merge/
+reset/force push. AGENTS/manual/rules/layout unchanged (diff exit0);current task/
+state/reporting/accepted owner result/relevant source and shared Wisdoms references read.
 
-New c64 tool/test+root/source V01C64_POST_C61_STITCHED/GATE/STATUS. Required hooks/
-package metadata,PROJECT_STATE and CODEX_RESULT updated. All historical c38-c63
-source/tests/evidence and CODEX_NEXT byte-identical. Five original untracked ZIP/
-bundle artifacts preserved and excluded. Fetched/FF11a23d6→98bb6d7 only;no WS main
-merge/reset/force push. AGENTS/manual/rules/layout unchanged (diff exit0);current
-state/task/reporting/owner result/relevant source and Wisdoms references read.
-
-## Exact validation, expected and actual
+## Exact validation commands, expected and actual
 
 Repository root with pinned Capstone5.0.6:
 
@@ -74,67 +69,67 @@ export PATH=/workspace/toolchains/analysis-python/bin:$PATH
 | `python3 source/tools/test_slot_publication_later_stitched.py` | c60 instance/path/all-successor unchanged | 28 PASS; exit0 |
 | `python3 source/tools/test_slot_publication_post_c59_boundary.py` | c61 phase/origin/full replay unchanged | 23 PASS; exit0 |
 | `python3 source/tools/test_slot_publication_post_c59_stitched.py` | c62 full-prefix/phase/all-successor/next wave unchanged | 31 PASS; exit0 |
-| `python3 source/tools/test_slot_publication_post_c61_boundary.py` | c63 repaired reason/provenance observer unchanged | 34 PASS; exit0 |
-| `python3 source/tools/test_slot_publication_post_c61_stitched.py` | c64 exact c63 prefix/provenance/all-successor continuation,passive sealed siblings,lifetimes/next wave/historical candidates/gates | 33 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_post_c61_boundary.py` | c63 repaired observer unchanged | 34 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_post_c61_stitched.py` | c64 exact c63 continuation/sibling/lifetime rules unchanged | 33 PASS; exit0 |
+| `python3 source/tools/test_slot_publication_post_c63_boundary.py` | c65 first-terminal context/prefix/cause/provenance/successor diagnostics; exact c64 accounting/candidate hash/gates | 30 PASS; exit0 |
 | `bash source/tools/build_windows.sh` | Windows warnings-as-errors build succeeds | build success (no case count emitted); exit0 |
 | `bash source/tools/test.sh` | portable ASan/UBSan succeeds | 13 PASS; exit0 |
 | `bash source/tools/smoke_windows.sh` | owned Windows smoke succeeds | 7 PASS; exit0 |
-| `bash source/tools/test_hooks_windows.sh` | all historical counterexamples/ABI/lifetime plus mandatory c64; native VCH absence UNAVAILABLE | 746 PASS / 5 SKIP / 17 UNAVAILABLE; exit0 |
+| `bash source/tools/test_hooks_windows.sh` | all historical counterexamples/ABI/lifetime plus mandatory c65;native VCH absence UNAVAILABLE | 776 PASS / 5 SKIP / 17 UNAVAILABLE; exit0 |
 | `python3 source/tools/package.py` | disabled c38 PE/ZIP CRC/full current source/docs/compact evidence valid | 1 PASS; exit0 |
 
-Standalone scanners repeat in mandatory hooks:count once only. Nonduplicated
-regression **PASS 766 / SKIP 5 / UNAVAILABLE 17 / BLOCKED0**,
-including c64 focused33 PASS. Build success and package1 PASS separate. Additional
-UNAVAILABLE1:actual private c64 scan (total18). No required command omitted and
-no blocked subtask.
+Standalone scanners repeat in mandatory hooks;count once only. Nonduplicated
+regression **PASS 796 / SKIP 5 / UNAVAILABLE 17 / BLOCKED0**,
+including focused c65 30 PASS. Build success and package1 PASS separate. Additional
+UNAVAILABLE1:actual private-image c65 classification (total18). No required command
+omitted and no blocked subtask.
 
-SKIP5:missing optional private original-byte positive replay,native replay,game-body
+SKIP5:absent optional private original-byte positive replay,native replay,game-body
 installer positive,584-byte normalization,accepted-build capture replay. Standalone
 static-access1 SKIP duplicates hooks optional input. Wine UNAVAILABLE17:c40 actual
-VCH/order2,c49 mixed SEARCH dispatch6,c50 identity7,c51 post-return2. Callback
-registration/zero callbacks never called native dispatch proof. Historical
-counterexamples unchanged. Actual c64 scan unrun:private EXE/full owner JSONs absent;
-compact accepted reports cannot replace actual inputs. Game/new native probe unrun
-because explicitly offline-only/excluded. No unexecuted native/game item called PASS.
+VCH/order2,c49 mixed SEARCH dispatch6,c50 identity7,c51 post-return2. Registration/
+zero callbacks never called native dispatch proof. Historical counterexamples intact.
+Actual c65 scan unrun because private EXE/full owner JSONs absent;compact reports
+cannot replace actual inputs. Game/new native probe unrun because task explicitly
+excludes them. No unexecuted native/game item called PASS.
 
-Focused development runs:initial exit1 after13 PASS used direct mark_post_c61 without
-required diagnostic arrival;fixed owned fixture to supply its real prior arrival.
-Second exit1 after17 PASS incorrectly expected zero candidates for a legitimate
-slot-source read before a load killed provenance;test now preserves that read and
-rejects only the unsupported dependent read. Next28 PASS/exit0. Expanded run exit1
-after30 PASS compared target row index to runtime span tuple;fixture corrected to
-actual row start RVA. Final33 PASS/exit0,then Required standalone+hooks repeat final
-bytes. No admission/production/historical implementation relaxation for test fixes;
-repetitions excluded from unique totals. Required final suite not repeated after
-metadata-only edits;package/hash/mirror/diff/publication checks repeated instead.
+Focused development:initial exit1 after7 PASS created overlapping owned runtime
+rows by adding a new metadata row inside source;fixed fixture by replacing bytes
+within its existing row. Next25 PASS/exit0. Expanded run exit1 after25 PASS serialized
+original tuple-key provenance maps directly in test state-comparison helper;fixed
+owned serialization to sorted item arrays. Final30 PASS/exit0,then Required standalone
+and hooks repeat same final bytes. No historical/production code or admission relaxed
+for fixture fixes;repeats excluded from totals. Final metadata-only edits require
+package/hash/mirror/diff/publication rechecks,not repeating identical compiled suite.
 
-## Artifact, final checks and owner next action
+## Final artifact, verification and owner next action
 
 Validation artifact `source/output/MSM2-WS-v0.1c38/` contains disabled
-`MSM2-WS-v0.1c38.script.disabled`,complete current source/tools/docs/compact evidence,
-no private EXE/raw logs/native bodies. Package repeats after docs check CRC/manifest/
-mirrors. Full current source/protected SHA inventory in STATUS.
+`MSM2-WS-v0.1c38.script.disabled`,complete current source/tools/docs/compact evidence.
+No raw private EXE/logs/native functions. Final package repeats after docs verify
+CRC/manifest/mirrors. Full current source/protected SHA inventory in STATUS.
 
 Additional exact check commands,expected clean/success,actual evidence below:
 
 ```bash
 git diff --check
-python3 /workspace/scratch/ws-c64/verify.py
+python3 /workspace/scratch/ws-c65/verify.py
 git push origin codex/v01c20-edi-value-provenance
-python3 /workspace/scratch/ws-c64/check_publication.py
+python3 /workspace/scratch/ws-c65/check_publication.py
 ```
 
 verify.py protects baseline tracked files except4 allowed integration/docs files,
-checks all301 current code/tool hashes/packaged bytes,root/source/output evidence/
-docs mirrors,false gates/null actuals,C52 FAIL and all19 commands/counts. Publication
-independently fetches GitHub into a separate checkout and compares12 changed/current
-code/protected bytes and actual remote head. Local verification aids are not new
-runtime programs.
+checks all303 current source/tool hashes/packaged bytes,root/source/output evidence/
+docs mirrors,null actuals,false gates,C52 FAIL and all20 Required commands/counts.
+Publication independently fetches GitHub into a separate checkout and compares12
+changed/current code/protected bytes and actual remote head. Local verification aids
+are not runtime executables. Assertions/counts/digest recorded in STATUS.
 
-After verified push owner runs this ONE offline block,returns only
-`logs/MSM2-WS-v0.1c64-post-c61-stitched.json`. Existing c56 checkpoints+accepted c57-c63
-JSONs read-only. No editing,truncating,regenerating evidence,Update-WS/game/Overstrike/
-runtime log/native probe/raw EXE upload action.
+After verified push owner runs ONE offline block below,returns only
+`logs/MSM2-WS-v0.1c65-post-c63-runtime-boundary.json`. Existing c56 checkpoints+accepted
+c57-c64 JSONs read-only. Adjust flags only to moved/renamed existing files;no evidence
+editing/truncation/regeneration,Update-WS/game/Overstrike/runtime capture/native probe/
+raw EXE upload operation.
 
 ```powershell
 $gameWsl = "/mnt/c/SteamLibrary/steamapps/common/Marvel's Spider-Man 2"
@@ -143,45 +138,20 @@ $wsRoot = "C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2\Mods Library\M
 if ((git -C "$wsRoot\_source" branch --show-current) -ne "codex/v01c20-edi-value-provenance") { throw "Unexpected branch; stop here" }
 git -C "$wsRoot\_source" pull --ff-only origin codex/v01c20-edi-value-provenance
 if ($LASTEXITCODE -ne 0) { throw "WS source update failed; stop here" }
-wsl -d Ubuntu-24.04 --exec /workspace/toolchains/analysis-python/bin/python3 "$wsWsl/_source/source/tools/slot_publication_post_c61_stitched.py" "$gameWsl/Spider-Man2.exe" --c56-cache "$wsWsl/logs/MSM2-WS-v0.1c56-slot-publication-sharded.shards" --c57-json "$wsWsl/logs/MSM2-WS-v0.1c57-runtime-boundary.json" --c58-json "$wsWsl/logs/MSM2-WS-v0.1c58-slot-publication-stitched.json" --c59-json "$wsWsl/logs/MSM2-WS-v0.1c59-later-runtime-boundary.json" --c60-json "$wsWsl/logs/MSM2-WS-v0.1c60-slot-publication-later-stitched.json" --c61-json "$wsWsl/logs/MSM2-WS-v0.1c61-post-c59-runtime-boundary.json" --c62-json "$wsWsl/logs/MSM2-WS-v0.1c62-post-c59-stitched.json" --c63-json "$wsWsl/logs/MSM2-WS-v0.1c63-post-c61-runtime-boundary.json" --output "$wsWsl/logs/MSM2-WS-v0.1c64-post-c61-stitched.json"
-if ($LASTEXITCODE -ne 0) { throw "c64 offline scanner refused; preserve existing evidence" }
+wsl -d Ubuntu-24.04 --exec /workspace/toolchains/analysis-python/bin/python3 "$wsWsl/_source/source/tools/slot_publication_post_c63_boundary.py" "$gameWsl/Spider-Man2.exe" --c56-cache "$wsWsl/logs/MSM2-WS-v0.1c56-slot-publication-sharded.shards" --c57-json "$wsWsl/logs/MSM2-WS-v0.1c57-runtime-boundary.json" --c58-json "$wsWsl/logs/MSM2-WS-v0.1c58-slot-publication-stitched.json" --c59-json "$wsWsl/logs/MSM2-WS-v0.1c59-later-runtime-boundary.json" --c60-json "$wsWsl/logs/MSM2-WS-v0.1c60-slot-publication-later-stitched.json" --c61-json "$wsWsl/logs/MSM2-WS-v0.1c61-post-c59-runtime-boundary.json" --c62-json "$wsWsl/logs/MSM2-WS-v0.1c62-post-c59-stitched.json" --c63-json "$wsWsl/logs/MSM2-WS-v0.1c63-post-c61-runtime-boundary.json" --c64-json "$wsWsl/logs/MSM2-WS-v0.1c64-post-c61-stitched.json" --output "$wsWsl/logs/MSM2-WS-v0.1c65-post-c63-runtime-boundary.json"
+if ($LASTEXITCODE -ne 0) { throw "c65 offline classifier refused; preserve existing evidence" }
 ```
 
 ## Recorded integrity before implementation commit
 
-`git diff --check`:expected clean,actual exit0. `python3 /workspace/scratch/ws-c64/verify.py`:
-expected old source/evidence preserved/current package exact/all gates closed,
-actual exit0/PASS1.1115 protected baseline tracked files unchanged;301 current
-source/tool input files match SHA inventory and packaged bytes. Input digest
-`c3cddc05281441565c17675d30cbf8e53b89da57551fdfa4827ba11af910d9a3`.
-Root/source/output mirrors match,all actual c64 metrics remain null. Integrity PASS
-is separate from766 regression groups. Package repeated after docs/status updates;
-final metadata-only edits repeat package/integrity without recompiling identical
-executable source/tool bytes. Original five untracked ZIP/bundle artifacts untouched.
-
-## Publication and shared knowledge
-
-Implementation commit **326b75a7563940ea3910749566dd9531b70e04f9** on
-**codex/v01c20-edi-value-provenance** pushed successfully (98bb6d7→326b75a).
-`python3 /workspace/scratch/ws-c64/check_publication.py`:expected intended remote
-GitHub head and independent fetched-checkout bytes equality,actual exit0/PASS1,
-12 changed files/383 compared files/301 current code-tool files,matching recorded
-digest. `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance` matched
-local HEAD,and independent fetched checkout confirmed actual publication. This
-publication PASS is separate from766 regression groups.
-
-Wisdoms REVERSE_ENGINEERING_GUIDE corrects pending c63 distribution with accepted
-owner2923/3167/3049 and distinct converted contexts,retains old BLOCKED history,
-and records passive sealed same-instruction sibling reuse without re-triggering
-or masking refusal counters. It preserves exact provenance/lifetime/count-scope/
-source-read-versus-loaded-value distinctions. Pushed Wisdoms main commit
-**b13684fe73cbce9fc1cc19998dccdbd532662ed1**; `git ls-remote origin refs/heads/main`
-matched local HEAD. No raw private bytes/logs/personal paths added.
-
-Final metadata-only commit records implementation SHA and verified publication/
-Wisdoms results. Repeat package/hash/mirror/diff and independent GitHub head/checkout
-checks after it. Its own final SHA is reported in owner handoff rather than a self-
-referential in-tree field (`git rev-parse HEAD` on intended branch). Final source/
-tool bytes identical to Required focused+hooks tests;no compiled rerun after docs-
-only edits. Actual c64 metrics remain UNKNOWN. Owner next action only the offline
-block above with accepted evidence read-only;no runtime/game/native probe action.
+`git diff --check`:expected clean,actual exit0. `python3 /workspace/scratch/ws-c65/verify.py`:
+expected historical bytes preserved/current source/package/mirrors exact/all gates
+closed,actual exit0/PASS1.1125 protected baseline tracked files unchanged,including
+all c38-c64 source/tests/evidence and accepted owner reports.303 current source/tool
+input files match SHA inventory and packaged bytes. Input digest
+`f3bbd41688d2146776e4f1e93c2bc6c7e24392503ac1ef3a6976e3867e76f475`.
+Root/source/output mirrors match,actual c65 distribution fields remain null. This
+integrity PASS is separate from796 regression groups. Package repeated after docs/
+status updates;final metadata-only records repeat package/integrity rather than
+recompiling identical executable source/tool bytes. Original five untracked ZIP/
+bundle artifacts untouched and excluded from commits.
