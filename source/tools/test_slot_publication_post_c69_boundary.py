@@ -1,10 +1,9 @@
 """Focused c71 post-c69 terminal diagnostic fixtures; no private EXE."""
-from contextlib import redirect_stderr,redirect_stdout
 from copy import deepcopy
-import io
 
-with redirect_stdout(io.StringIO()),redirect_stderr(io.StringIO()):
-    import test_slot_publication_post_c69_stitched as prior70
+print('C71_FOCUSED_PREREQUISITE_C70_START',flush=True)
+import test_slot_publication_post_c69_stitched as prior70
+print('C71_FOCUSED_PREREQUISITE_C70_PASS',flush=True)
 
 import slot_publication_post_c69_boundary as tool
 
