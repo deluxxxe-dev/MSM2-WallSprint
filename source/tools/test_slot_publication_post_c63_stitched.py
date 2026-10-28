@@ -1,9 +1,17 @@
 """Owned c66 c65-authenticated continuation tests; no private EXE."""
+from contextlib import redirect_stderr, redirect_stdout
 from copy import deepcopy
+import io
 import struct
 
 import slot_publication_post_c63_stitched as tool
-import test_slot_publication_post_c63_boundary as prior
+
+# c65's historical test module exposes the owned fixture helpers c66 reuses, but it
+# also executes its own top-level regression suite on import. Keep that historical
+# suite unchanged while preventing its PASS chatter from being mistaken for c66
+# output. Import failures still propagate normally after the redirect is restored.
+with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+    import test_slot_publication_post_c63_boundary as prior
 
 c65,c64,c63,c62,c61,c60,c59,c58,c57,c56,cfg = tool.c65,tool.c64,tool.c63,tool.c62,tool.c61,tool.c60,tool.c59,tool.c58,tool.c57,tool.c56,tool.cfg
 
