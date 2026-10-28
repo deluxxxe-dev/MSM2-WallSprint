@@ -1,117 +1,101 @@
-# Codex result — corrected c67 owner OFFLINE result accepted
+# Codex result — c68 TOOL READY
 
 2026-10-28 JST. Branch **codex/v01c20-edi-value-provenance**.
 
 ## Status
 
-Corrected c67 owner OFFLINE result is accepted as **VERIFIED-STATIC**.
+Corrected c67 owner result remains accepted as **VERIFIED-STATIC**.
+C68 implementation and automated validation are **TOOL READY**.
 
 Canonical detail:
 
-- `analysis/V01C67_OWNER_BLOCKED_RESULT.md`
-- `analysis/V01C67_CORRECTED_OWNER_RUN.md`
 - `analysis/V01C67_OWNER_OFFLINE_RESULT.md`
+- `analysis/V01C68_TOOL_READY.md`
 
-Accepted artifact:
+## Implementation
 
-```text
-MSM2-WS-v0.1c67-post-c65-runtime-boundary.json
-SHA256 277cb83c3fbe36715876133079c99a1d5151634442ed842960a917b140ab8aee
-size 600196 bytes
-repository_result POST_C65_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY
-tool v0.1c67 / schema 1
-contract exact_c66_first_terminal_post_c65_boundary_full_prefix_provenance_diagnostic_v1
-classifier_identity a130b082512449cd008a912b94e2e3a2bcabf15140906c4780983bac07b99f20
-authenticated_record_set_sha256 f0b2ce8c91868e572a83d59fc425c4e40d3fe4fe9faa7957e26a252b65e85ed6
-compact result identity ac043225b8b4464e8fe7e52a2c44a9a81c72bf0c2fad6e30df173fdab83b113d
-```
-
-Classifier identity was independently recomputed from the artifact `classifier_header` and matched.
-
-## Result
-
-The exact c66 post-c65 terminal wave was completely classified:
+Created:
 
 ```text
-expected/classified roots = 458 / 458
-instances = 458
-unique source rows = 445
-boundary edges = 507
-architectural/model-only = 507 / 0
+source/tools/slot_publication_post_c65_stitched.py
+source/tools/test_slot_publication_post_c65_stitched.py
 ```
 
-Target relations:
+Registered c68 in:
 
 ```text
-exact_unique_runtime_begin                      = 432
-inside_unique_runtime_span_nonentry             = 74
-executable_file_backed_outside_runtime_metadata = 1
+source/tools/test_hooks_windows.sh
 ```
 
-Edge kinds:
+C68 contract:
 
 ```text
-ordinary fallthrough = 141
-conditional fallthrough = 51
-direct conditional taken = 211
-direct unconditional branch = 102
-call fallthrough = 2
+repository_result POST_C65_RUNTIME_BEGIN_STITCH_SCANNER_READY
+tool v0.1c68 / schema 1
+contract exact_c67_full_prefix_terminal_reason_provenance_all_successor_continuation_v1
+next unknown uncertified_post_c67_runtime_boundary
 ```
 
-Exact edge kinds:
+It authenticates the accepted corrected-c67 record stream and continues only complete architectural sibling sets whose targets remain exact unique runtime-row begins. One non-exact sibling or later unknown boundary aborts the whole root, so provisional admission/candidates/Facts do not survive.
+
+## Focused validation
+
+The first c68 focused run found a c68-only sibling-prefix self-reference bug. The validation hash included its own derived `c67_prefix`, so the second callback of a multi-successor instruction mismatched even when all underlying context was unchanged.
+
+C68 was corrected by excluding that derived field from the sibling-prefix hash. Accepted c56-c67 evidence was not changed.
+
+After correction, all focused c68 groups passed:
 
 ```text
-ordinary fallthrough = 141
-conditional fallthrough = 51
-direct conditional taken = 197
-direct unconditional branch = 41
-call fallthrough = 2
+ordinary exact continuation PASS
+direct/conditional/CALL-fallthrough PASS
+multi-successor all-arms PASS
+interior-arm whole-root rollback PASS
+metadata-free RX refusal PASS
+natural post-c65 provenance PASS
+stored-path provenance separation PASS
+converted authorization provenance PASS
+stale/mismatched c67 refusal PASS
+next post-c67 unknown rollback PASS
+different-root/path separation PASS
+all safety gates closed PASS
 ```
 
-The 432/74/1 values are edge counts, not unique-root counts. No c68 admission total is inferred from them.
+## Full validation
 
-## Provenance
-
-C67 phase counts:
+Owner Windows/WSL validation passed:
 
 ```text
-same_instance_after_c65_preflight_before_row_fixpoint = 348
-post_c65_reachable_context = 34
-post_c65_reachable_dedup_stored_earlier_path = 3
-prior_c65_authorization_converted_earlier_refusal = 73
+build_windows.sh PASS
+test.sh PASS
+smoke_windows.sh PASS
+test_hooks_windows.sh PASS
+package.py PASS
+C68_FULL_VALIDATION_PASS
 ```
 
-Reason counts:
+No real game was run or required.
+
+## Safety
+
+C68 remains OFFLINE/STATIC only.
+
+No slot qword read, pointer chase, native/game probe, gameplay write, production write or other-MOD change is authorized.
+
+C52 remains binding:
 
 ```text
-used_c65_source_later_instruction = 348
-current_context_post_c65_reachable = 37
-prior_c65_authorization_converted_c64_post = 73
+PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL
 ```
-
-The 73 converted cases retain underlying `uncertified_post_c63_runtime_boundary` provenance. They are not natural post-c65 reachability.
-
-## Candidate/safety result
-
-```text
-new_post_c65_boundaries_admitted = 0
-new_cross_row_candidate_count = 0
-cross_runtime_fact_propagation_unchanged = true
-c66_candidate_output_unchanged = true
-live_qword_reads = 0
-c56_through_c66_evidence_read_only = true
-```
-
-Historical c66 candidate counts remain zero and the candidate output SHA256 remains:
-
-`4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945`
-
-All completeness/publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/watch/game gates remain false. C52 remains binding:
-
-`PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
 
 Zero candidates never proves writer absence.
 
 ## Next
 
-`docs/CODEX_NEXT.md` now defines c68: exact corrected-c67 record replay plus all-successor continuation only through current `exact_unique_runtime_begin` targets. The 74 interior and 1 metadata-free-RX edges remain refused. Actual completed roots, next unknown wave, Facts and candidates must be measured by c68; do not infer them from aggregate c67 edge counts.
+Run one owner OFFLINE c68 scan using the exact accepted c56-c67 evidence and output:
+
+```text
+logs/MSM2-WS-v0.1c68-post-c65-stitched.json
+```
+
+ChatGPT must analyze that exact artifact before defining c69.
