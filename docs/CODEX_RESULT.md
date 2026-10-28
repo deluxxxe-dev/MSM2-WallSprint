@@ -158,3 +158,30 @@ Root/source/output mirrors match,all actual c64 metrics remain null. Integrity P
 is separate from766 regression groups. Package repeated after docs/status updates;
 final metadata-only edits repeat package/integrity without recompiling identical
 executable source/tool bytes. Original five untracked ZIP/bundle artifacts untouched.
+
+## Publication and shared knowledge
+
+Implementation commit **326b75a7563940ea3910749566dd9531b70e04f9** on
+**codex/v01c20-edi-value-provenance** pushed successfully (98bb6d7→326b75a).
+`python3 /workspace/scratch/ws-c64/check_publication.py`:expected intended remote
+GitHub head and independent fetched-checkout bytes equality,actual exit0/PASS1,
+12 changed files/383 compared files/301 current code-tool files,matching recorded
+digest. `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance` matched
+local HEAD,and independent fetched checkout confirmed actual publication. This
+publication PASS is separate from766 regression groups.
+
+Wisdoms REVERSE_ENGINEERING_GUIDE corrects pending c63 distribution with accepted
+owner2923/3167/3049 and distinct converted contexts,retains old BLOCKED history,
+and records passive sealed same-instruction sibling reuse without re-triggering
+or masking refusal counters. It preserves exact provenance/lifetime/count-scope/
+source-read-versus-loaded-value distinctions. Pushed Wisdoms main commit
+**b13684fe73cbce9fc1cc19998dccdbd532662ed1**; `git ls-remote origin refs/heads/main`
+matched local HEAD. No raw private bytes/logs/personal paths added.
+
+Final metadata-only commit records implementation SHA and verified publication/
+Wisdoms results. Repeat package/hash/mirror/diff and independent GitHub head/checkout
+checks after it. Its own final SHA is reported in owner handoff rather than a self-
+referential in-tree field (`git rev-parse HEAD` on intended branch). Final source/
+tool bytes identical to Required focused+hooks tests;no compiled rerun after docs-
+only edits. Actual c64 metrics remain UNKNOWN. Owner next action only the offline
+block above with accepted evidence read-only;no runtime/game/native probe action.
