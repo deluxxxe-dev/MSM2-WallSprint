@@ -77,10 +77,10 @@ bad=deepcopy(cp);bad['records'][0]['terminal_reason']='wrong'
 refused(lambda:tool.ProofPool(p.baseline,r69,bad,production=False),'record')
 print('PASS: c70 rejects mutated c69 checkpoint record evidence')
 
-# Reproduce the owner-discovered transaction-origin class. Both c69 creation and
-# c70 replay see the same forced transaction-level c68 POST; c70 must validate it
-# and refuse without inventing an edge.
-f=fixture70();p68,raw=prior68.certificates68(f);r68=c68.scan(p68);b69=c69.Baseline(p68,accepted=r68,owner_result=r68)
+# Reproduce the owner-discovered transaction-origin class.  The forced c68 POST
+# is active while both the fixture baseline and the c69/c70 replays are built, so
+# the observer comparison remains exact instead of comparing different c68 runs.
+f=fixture70();p68,raw=prior68.certificates68(f)
 original=c68.Transaction.mark_post_c67
 
 def forced_transaction_terminal(self,key):
@@ -88,7 +88,10 @@ def forced_transaction_terminal(self,key):
 
 c68.Transaction.mark_post_c67=forced_transaction_terminal
 try:
-    r69,records=c69.classify(b69);cp=c69.validate_checkpoint(c69.make_checkpoint(b69,r69,records))
+    r68=c68.scan(p68)
+    b69=c69.Baseline(p68,accepted=r68,owner_result=r68)
+    r69,records=c69.classify(b69)
+    cp=c69.validate_checkpoint(c69.make_checkpoint(b69,r69,records))
     pool=tool.ProofPool(b69,r69,cp,production=False)
     rr=tool.scan(pool)
 finally:
