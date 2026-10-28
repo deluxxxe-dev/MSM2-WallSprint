@@ -104,16 +104,20 @@ class ProofPool:
 
 
 def sibling_prefix(tx,view):
-    return c56.digest(dict(original_c66_prefix=c66.sibling_prefix(tx,view),post_c67=sorted(tx.post_c67),
-        c67_source_keys=sorted(view.c67_source_keys),c67_record=c56.digest(view.c67_record),c67_key=view.c67_key,
-        c67_scan_token=view.c67_scan_token,c67_prefix=view.c67_prefix,c67_cache_identity=view.c67_cache_identity,
-        c67_proofs=c56.digest(sorted(view.c67_proofs.items())),c67_siblings_used=sorted(view.c67_siblings_used),
-        c67_considered_before=sorted(view.c67_considered_before),c67_considered_allowed=sorted(view.c67_considered_allowed),
-        c67_considered=sorted(view.c67_considered),c67_eligible=sorted(view.c67_eligible),
-        c67_edges_considered=sorted(view.c67_edges_considered),c67_edges_eligible=sorted(view.c67_edges_eligible),
-        c67_refusals=dict(view.c67_refusals),c67_mismatches=dict(view.c67_mismatches),
-        post65_capture=c56.digest(view.post65_capture),crossings=tx.crossings,c61_crossings=tx.c61_crossings,
-        c63_crossings=tx.c63_crossings,c65_crossings=tx.c65_crossings,c67_crossings=tx.c67_crossings))
+    # Freeze the lower c67 replay state, not c68's own mutable sibling cache.
+    # In particular never include view.c67_prefix in its own digest.
+    return c56.digest(dict(original_c66_prefix=c66.sibling_prefix(tx,view),post_c65=sorted(tx.post_c65),
+        post65_origins=[(k,c56.digest(v)) for k,v in sorted(tx.post65_origins.items())],
+        c65_source_keys=sorted(view.c65_source_keys),c65_record=c56.digest(view.c65_record),c65_key=view.c65_key,
+        c65_scan_token=view.c65_scan_token,c65_prefix=view.c65_prefix,c65_cache_identity=view.c65_cache_identity,
+        c65_proofs=c56.digest(sorted(view.c65_proofs.items())),c65_siblings_used=sorted(view.c65_siblings_used),
+        c65_considered_before=sorted(view.c65_considered_before),c65_considered_allowed=sorted(view.c65_considered_allowed),
+        c65_considered=sorted(view.c65_considered),c65_eligible=sorted(view.c65_eligible),
+        c65_edges_considered=sorted(view.c65_edges_considered),c65_edges_eligible=sorted(view.c65_edges_eligible),
+        c65_refusals=dict(view.c65_refusals),c65_mismatches=dict(view.c65_mismatches),
+        post65_capture=c56.digest(view.post65_capture),post65_edge_before=c56.digest(view.post65_edge_before),
+        post65_underlying_refusal=view.post65_underlying_refusal,post_c67=sorted(tx.post_c67),
+        crossings=tx.crossings,c61_crossings=tx.c61_crossings,c63_crossings=tx.c63_crossings,c65_crossings=tx.c65_crossings))
 
 
 class View(c67.View):
