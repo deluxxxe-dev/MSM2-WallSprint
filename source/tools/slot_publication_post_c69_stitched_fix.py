@@ -1,10 +1,16 @@
-"""Correction layer for c70 post-c69 entry/connection provenance.
+"""Correction layer for c70 post-c69 entry/connection provenance and c69 candidate projection.
 
 C70 deliberately calls c68's full-replay instance/connect semantics for a newly
 authorized c69 edge.  c69's observer layer also tracks the exact post-c67 arrival
 or connection that led to a context.  Preserve those transient observer fields
 while using c68's methods so c69 provenance remains exact instead of being
 silently dropped.
+
+C69 is diagnostic-only, so its candidate totals are preserved under
+``historical_c68_candidate_counts`` instead of duplicated as c69 top-level
+candidate keys.  Present those historical counts through a non-serializing dict
+view so c70 can report the unchanged inherited candidate totals without mutating
+the accepted c69 result bytes or identity.
 """
 from pathlib import Path
 
@@ -14,14 +20,29 @@ _OriginalTransaction = base.Transaction
 _OriginalProofPool = base.ProofPool
 _original_sources = base.sources
 
+_CANDIDATE_KEYS = (
+    'reference_candidate_count','new_cross_row_candidate_count','reader_candidates',
+    'writer_candidates','rmw_candidates','address_only_candidates')
+
 
 def sources():
     return dict(_original_sources(),slot_publication_post_c69_stitched_fix_py=base.c56.sha(Path(__file__).read_bytes()))
 
 
+class _C69ResultView(dict):
+    """Read-only-compatible projection without changing serialized c69 bytes."""
+    def __missing__(self,key):
+        if key in _CANDIDATE_KEYS:
+            historical = dict.get(self,'historical_c68_candidate_counts')
+            if type(historical)==dict and key in historical:
+                return historical[key]
+        raise KeyError(key)
+
+
 class ProofPool(_OriginalProofPool):
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
+        self.result = _C69ResultView(self.result)
         self.index_record_ids = frozenset(record['record_identity'] for record in self.records)
 
 
