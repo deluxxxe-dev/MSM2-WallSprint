@@ -2038,5 +2038,26 @@
     "git diff --check",
     "python3 /workspace/scratch/ws-c65/verify.py",
     "python3 /workspace/scratch/ws-c65/check_publication.py"
-  ]
+  ],
+  "implementation_commit": "a69d39238acc79b7c2f8d1d0d64c55b2ab3c760d",
+  "publication_validation": {
+    "PASS": 1,
+    "SKIP": 0,
+    "UNAVAILABLE": 0,
+    "BLOCKED": 0,
+    "branch": "codex/v01c20-edi-value-provenance",
+    "verified_remote_commit": "a69d39238acc79b7c2f8d1d0d64c55b2ab3c760d",
+    "changed_files": 12,
+    "compared_files": 393,
+    "code_tool_input_count": 303,
+    "code_tool_input_digest": "f3bbd41688d2146776e4f1e93c2bc6c7e24392503ac1ef3a6976e3867e76f475"
+  },
+  "wisdoms_sync": {
+    "repository": "deluxxxe-dev/MSM2-Wisdoms",
+    "branch": "main",
+    "commit": "4944a61dc362dfb96df0c6635cfe35b2df6acb80",
+    "remote_head_verified": true,
+    "file": "docs/REVERSE_ENGINEERING_GUIDE.md"
+  },
+  "final_metadata_note": "implementation_push_independently_verified;metadata_only_commit_follows;final_remote_SHA_in_handoff_avoids_self_reference"
 }

@@ -155,3 +155,28 @@ integrity PASS is separate from796 regression groups. Package repeated after doc
 status updates;final metadata-only records repeat package/integrity rather than
 recompiling identical executable source/tool bytes. Original five untracked ZIP/
 bundle artifacts untouched and excluded from commits.
+
+## Publication and shared knowledge
+
+Implementation commit **a69d39238acc79b7c2f8d1d0d64c55b2ab3c760d** on
+**codex/v01c20-edi-value-provenance** pushed successfully (2928544→a69d392).
+`python3 /workspace/scratch/ws-c65/check_publication.py`:expected intended GitHub
+remote head and independent fetched-checkout bytes equality,actual exit0/PASS1,
+12 changed files/393 compared files/303 current code-tool files,matching recorded
+digest. `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance` matched
+local HEAD;independent fetched checkout/byte comparison confirmed actual publication.
+This publication PASS is separate from796 regression groups.
+
+Wisdoms REVERSE_ENGINEERING_GUIDE corrects pending c64 distribution with accepted
+owner totals and records the reusable layered-capture/explicit-cause-versus-context/
+stale-lower-capture/dual-candidate-format audit distinctions. Pushed Wisdoms main
+commit **4944a61dc362dfb96df0c6635cfe35b2df6acb80**; `git ls-remote origin refs/heads/main`
+matched local HEAD. No raw private bytes/logs/personal paths added.
+
+Final metadata-only commit records implementation SHA and verified publication/
+Wisdoms results. Repeat package/hash/mirror/diff and independent GitHub head/checkout
+checks after it. Its own final SHA is reported in owner handoff rather than a self-
+referential in-tree field (`git rev-parse HEAD` on intended branch). Final code/tool
+bytes identical to Required focused+hooks tests;no compiled rerun after docs-only
+edits. Actual c65 distribution remains UNKNOWN. Owner next action only the one
+same-input offline command above;no updater/game/runtime/native probe/evidence edit.
