@@ -1,66 +1,44 @@
-# Next task — c67 converted-c64 lower-capture correction validation
+# Next task — ingest and validate corrected c67 owner artifact
 
 ## Status
 
 Accepted owner c66 result remains **VERIFIED-STATIC**.
 
-The first owner c67 OFFLINE run failed closed with:
+The first owner c67 run failed closed on a c67-only lower-capture assumption. That blocker was corrected without changing c66 or accepted c56-c66 evidence.
+
+The corrected owner OFFLINE run now completes with:
 
 ```text
-POST_C65_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_BLOCKED: converted c64 POST lacks exact original c65 lower capture
+c67 unchanged c66 terminal observer replay: 162472/162472
+POST_C65_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY: .../logs/MSM2-WS-v0.1c67-post-c65-runtime-boundary.json
+C67_CORRECTED_OWNER_PASS
 ```
 
-Canonical blocker record:
+Canonical records:
 
 - `analysis/V01C67_OWNER_BLOCKED_RESULT.md`
+- `analysis/V01C67_CORRECTED_OWNER_RUN.md`
+- `docs/CODEX_RESULT.md`
 
 Continue only on `codex/v01c20-edi-value-provenance`; do not merge `main`.
 
-## Verified root cause
+## Current bounded action
 
-C66 converts an actual lower `c64.POST` into c66 `uncertified_post_c65_runtime_boundary` before c66 stores the diagnostic-only lower c65 capture. C67 incorrectly assumed that lower capture would already be present.
+Do not implement c68 yet.
 
-Accepted c66 code/evidence is not wrong and must remain read-only.
-
-## Current bounded task
-
-Validate the c67-only correction:
-
-```text
-source/tools/slot_publication_post_c65_boundary_fix.py
-```
-
-The fix may only reconstruct the omitted lower diagnostic capture from the exact same c66 edge invocation:
-
-1. snapshot the exact c65 lower edge-entry state before the unchanged c66 edge callback;
-2. call the unchanged c66 implementation;
-3. only if it actually returns `c66.POST` caused by `c64.POST`, bind that exact lower snapshot to the current source;
-4. run the unchanged c65 `capture_for`/provenance validation;
-5. continue c67 diagnostic capture and rethrow the original refusal.
-
-It must not modify c66, accepted c56-c66 artifacts, traversal/admission semantics, Facts, candidates or safety gates.
-
-## Required validation
-
-Run the c67 focused regression under the correction layer, then rerun the exact owner OFFLINE classifier against accepted c56-c66 evidence.
-
-Success requires:
-
-```text
-POST_C65_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY
-```
-
-and output:
+ChatGPT must ingest and validate the exact corrected owner artifact:
 
 ```text
 logs/MSM2-WS-v0.1c67-post-c65-runtime-boundary.json
 ```
 
-If a new blocker appears, stop and preserve evidence. Do not weaken provenance checks.
+Validation must confirm the exact c67 repository result, image/tool/schema/contract identities, accepted c56-c66 chain identities, 458-root classification completeness, record-set identity, edge/relation distributions, terminal provenance distributions, zero new admission/Facts/candidates, unchanged c66 candidate output and all safety gates false.
 
-## After owner result
+If the artifact validates, persist the accepted c67 result as **VERIFIED-STATIC** and only then define the smallest next task from the observed c67 distribution.
 
-ChatGPT must analyze the exact c67 JSON first, persist the VERIFIED-STATIC result if valid, and only then define c68.
+Do not infer a continuation policy from expected examples before reading the exact artifact. Zero candidates never proves writer absence.
+
+## Binding safety
 
 C52 remains binding:
 
@@ -68,4 +46,6 @@ C52 remains binding:
 PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL
 ```
 
-All publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/watch/game gates remain closed. Zero candidates never proves writer absence. Do not modify other MSM2 MOD repositories.
+All publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/watch/game gates remain closed unless separately proven by later evidence.
+
+Do not modify other MSM2 MOD repositories, especially SocialFeed.
