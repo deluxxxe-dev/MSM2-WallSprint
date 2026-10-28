@@ -107,3 +107,4 @@ python tools/test-workspace.py
 /workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_post_c65_boundary.py
 /workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_post_c65_boundary_fix.py
 /workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_post_c65_stitched.py
+/workspace/toolchains/analysis-python/bin/python tools/test_slot_publication_post_c67_boundary.py
