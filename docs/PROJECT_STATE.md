@@ -1,6 +1,6 @@
 # WallSprint project state
 
-## Current stage — c66 owner result accepted; c67 boundary diagnostic next
+## Current stage — c67 TOOL READY; owner OFFLINE classification pending
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
@@ -11,6 +11,20 @@ Canonical detail:
 - `analysis/V01C66_OWNER_OFFLINE_RESULT.md`
 - `analysis/V01C66_TOOL_READY.md`
 
+C67 implementation/automated validation is **TOOL READY**.
+Canonical detail:
+
+- `analysis/V01C67_TOOL_READY.md`
+
+C67 repository result:
+
+```text
+POST_C65_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY
+Tool v0.1c67 / schema 1
+```
+
+The c67 owner/private-image artifact has not been produced or accepted yet. Do not define c68 behavior until that exact result is analyzed.
+
 C66 repository result:
 
 ```text
@@ -18,7 +32,7 @@ POST_C63_RUNTIME_BEGIN_STITCH_SCANNER_READY
 Tool v0.1c66 / schema 1
 ```
 
-Exact owner artifact SHA256:
+Exact accepted c66 owner artifact SHA256:
 
 ```text
 eb4e44fddb67dafd64700e19e846173e60cbaddce95860686e24e543e650cc1c
@@ -75,13 +89,25 @@ prior_c63_authorization_converted_earlier_refusal: 83 / 13 / 70
 
 Converted-earlier-refusal records are not natural post-c63 reachability and may not borrow earlier c61/c63 authorization.
 
-The exact next bounded unknown is:
+The exact c67 diagnostic domain is:
 
 ```text
 uncertified_post_c65_runtime_boundary = 458 roots
 ```
 
-C67 is therefore limited to classifying the first such terminal boundary for those exact 458 refused roots. C67 must not admit new edges, propagate new Facts or create candidates.
+C67 classifies only the first such terminal boundary for those exact 458 refused roots. It must not admit new edges, propagate new Facts or create candidates.
+
+### C67 automated validation
+
+Expanded focused c67 suite:
+
+```text
+13 PASS groups / exit 0
+```
+
+The historical/static scanner regression set through c67 passed before the final focused-test expansion. Build/test/smoke/hooks/package all passed. After the final focused-test expansion, mandatory hooks and package validation were rerun and passed again. C67 source logic itself was unchanged by that final test expansion.
+
+No game, Overstrike, native probe, slot qword read, pointer chase, producer traversal or gameplay/production write was used for c67 validation.
 
 ## Accepted c65 owner VERIFIED-STATIC diagnostic result
 
@@ -224,9 +250,9 @@ C52 remains binding:
 PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL
 ```
 
-C53-c66 OFFLINE/STATIC analysis does not supersede that production failure.
+C53-c67 OFFLINE/STATIC analysis does not supersede that production failure.
 
-Current c66 result still reports:
+Current safety state remains:
 
 ```text
 candidate_sweep_complete = false
@@ -265,4 +291,10 @@ WS work must not modify SocialFeed or other MOD repositories.
 
 ## Current action
 
-Implement c67 as a separate OFFLINE/STATIC diagnostic that authenticates accepted c56→c66 evidence and classifies only the first terminal `uncertified_post_c65_runtime_boundary` for the exact 458-root wave. No new boundary admission, target traversal, Fact propagation, candidate creation, game use or native probe.
+Run the c67 owner OFFLINE classifier against the exact accepted c56→c66 evidence and produce only:
+
+```text
+logs/MSM2-WS-v0.1c67-post-c65-runtime-boundary.json
+```
+
+Then analyze that result before deciding c68. No game/Overstrike/native follow-up is authorized by this step.
