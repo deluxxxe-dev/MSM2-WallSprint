@@ -44,7 +44,16 @@ for kind,body,following,targets in [
     ('direct_conditional_taken',prior.jump(0x110b,0x1400,True),b'\xc3',{0x1400:b'\xc3'}),
     ('call_fallthrough',b'\xe8'+struct.pack('<i',0x1200-0x1110),b'\xc3',{})]:
     rr=scan68(prior67.fixture(body,following,targets))
-    assert rr['c67_boundary_instances_admitted']==1 and rr['c67_exact_edges_admitted']>=1
+    if not (rr['c67_boundary_instances_admitted']==1 and rr['c67_exact_edges_admitted']>=1):
+        raise AssertionError(dict(case=kind,
+            c67_boundary_instances_considered=rr['c67_boundary_instances_considered'],
+            c67_boundary_instances_admitted=rr['c67_boundary_instances_admitted'],
+            c67_exact_edges_considered=rr['c67_exact_edges_considered'],
+            c67_exact_edges_admitted=rr['c67_exact_edges_admitted'],
+            post_c67_uncertified_boundary_refusals=rr['post_c67_uncertified_boundary_refusals'],
+            root_refusal_reasons=rr['root_refusal_reasons'],
+            c67_preflight=rr['c67_all_successor_preflight_refusal_relation_counts'],
+            c67_mismatches=rr['c67_certificate_mismatch_counts']))
 print('PASS: c68 direct/conditional/CALL-fallthrough exact successors use the same bounded all-successor contract')
 
 rr=scan68(prior67.fixture(prior.jump(0x110b,0x1400,True),b'\xc3',{0x1400:b'\xc3'}))
