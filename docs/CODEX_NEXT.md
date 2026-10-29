@@ -1,10 +1,12 @@
-# Next task — validate c72 c71-only arrival provenance correction
+# Next task — run corrected c72 owner OFFLINE continuation once
 
 ## Status
 
 Corrected c71 owner OFFLINE result remains accepted as **VERIFIED-STATIC**.
 
-Both c72 owner OFFLINE attempts are **BLOCKED** historical evidence only. Neither is accepted c72 evidence.
+Both prior c72 owner OFFLINE attempts are **BLOCKED** historical evidence only. Neither is accepted c72 evidence.
+
+The first retired-observer correction and the second c71-only provenance correction have both passed focused owner regressions.
 
 Canonical detail:
 
@@ -13,6 +15,7 @@ Canonical detail:
 - `analysis/V01C72_OWNER_BLOCKED_RESULT.md`
 - `analysis/V01C72_LIFECYCLE_CORRECTION_VALIDATED.md`
 - `analysis/V01C72_OWNER_BLOCKED_RESULT_2.md`
+- `analysis/V01C72_PROVENANCE_CORRECTION_VALIDATED.md`
 
 Continue only on `codex/v01c20-edi-value-provenance`; do not merge `main`.
 
@@ -38,65 +41,47 @@ executable_file_backed_outside_runtime_metadata records = 1
 
 Only the 95 all-successor-exact records / 99 exact edges may be provisionally continued.
 
-## First owner blocker
+## Historical blockers
+
+Attempt 1:
 
 ```text
-c72 full-replay c71 continuation: 30720/162472
+30720/162472
 POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: duplicate live c71 terminal root
 ```
 
-The inherited c71 first-terminal observer was not retired after successful first authorization. This was corrected in:
+Attempt 2, after the first correction:
 
 ```text
-source/tools/slot_publication_post_c71_stitched_fix.py
-```
-
-Accepted focused proof:
-
-```text
-PASS: c72 retired c71 first-terminal observer sends later distinct c70 POST to next unknown without relabeling reachability
-PASS: c72 retired observer still permits exact sibling callbacks from the authenticated c71 source
-```
-
-## Second owner blocker
-
-The corrected owner replay passed the first blocker point and reached:
-
-```text
-c72 full-replay c71 continuation: 31744/162472
+31744/162472
 POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: post-c69 arrival lacks c69 proof
 ```
 
-The blocker is not a reason to weaken c70. Historical c70 is correct to require actual `c69_post_boundary` proof before marking current post-c69 reachability.
+The first blocker was an inherited first-terminal observer lifecycle bug. The second was a proof-layering bug where a valid c71-only arrival was still sent to historical `mark_post_c69()`.
 
-The c72 bug was calling historical `mark_post_c69()` after a valid c71-authorized arrival whose current path had `c71_post_boundary` proof but no actual c69 proof. That would incorrectly project later c71 authorization backward into c69 reachability.
+## Corrected implementation
 
-## Second correction
-
-Continue to use:
+Run through:
 
 ```text
 source/tools/slot_publication_post_c71_stitched_fix.py
 ```
 
-The wrapper must enforce:
+The wrapper must preserve all of the following:
 
+- authenticate each accepted first c71 terminal only once per root;
+- retire the inherited c71 first-terminal observer after successful authorization;
+- preserve exact sibling callbacks from the authenticated source instruction;
+- later distinct c70 POST events become `uncertified_post_c71_runtime_boundary` without being relabeled as current `tx.post_c71` reachability;
 - c71 proof alone does not imply current post-c69 reachability;
-- when the live path contains `c71_post_boundary` and no `c69_post_boundary`, skip historical `mark_post_c69()` and proceed only through c72's actual `mark_post_c71()` authorization;
-- when the live path contains an actual `c69_post_boundary`, preserve historical `mark_post_c69()` unchanged;
-- do not alter accepted c56-c71 evidence semantics or identities;
-- do not alter the exact c72 `102 / 95 / 99` domain;
-- keep the first lifecycle correction and duplicate-root guard intact.
+- c71-only paths skip historical `mark_post_c69()` and proceed only through actual c71 authorization;
+- paths containing a real `c69_post_boundary` proof preserve historical `mark_post_c69()` unchanged;
+- duplicate-root authentication remains fail-closed;
+- accepted c56-c71 semantics and the `102 / 95 / 99` domain remain unchanged.
 
-## Current task
+## Focused validation accepted
 
-Run only the updated quick regression:
-
-```text
-source/tools/test_slot_publication_post_c71_stitched_fix_quick.py
-```
-
-Required PASS lines are all four:
+The owner ran the updated quick regression and observed all four required PASS lines:
 
 ```text
 PASS: c72 retired c71 first-terminal observer sends later distinct c70 POST to next unknown without relabeling reachability
@@ -105,13 +90,46 @@ PASS: c72 c71-only arrival does not invent post-c69 reachability
 PASS: c72 paths with actual c69 proof preserve historical mark_post_c69 behavior
 ```
 
-If all four pass, ChatGPT may record the second correction as validated and authorize exactly one further corrected c72 owner run using `slot_publication_post_c71_stitched_fix.py`.
+## Current task
 
-If any fails, stop. Do not run the long owner replay.
+Run exactly one further corrected c72 owner OFFLINE scan using the fix wrapper against the exact accepted c56-c71 evidence.
 
-## If a later owner run is BLOCKED
+Expected successful repository result remains:
 
-Stop and analyze only the exact observed blocker. Do not rerun or widen semantics by assumption.
+```text
+POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_READY
+tool v0.1c72 / schema 1
+contract exact_c71_full_replay_all_successor_continuation_v1
+```
+
+Require:
+
+```text
+full_historical_replay_used = true
+checkpoint_accelerated_resume_used = false
+```
+
+## Required owner-result checks
+
+Before defining c73, verify:
+
+- c71 records available/considered = 102/102;
+- all-successor-exact available/preflight = 95/95;
+- exact edges available/considered/preflight = 99/99/99;
+- c71 record mismatch counts are empty;
+- admitted/refused c71 instance and edge counts;
+- next `uncertified_post_c71_runtime_boundary` count;
+- root completed/refused counts;
+- rows reached and address Facts crossing rows;
+- READ/WRITE/RMW/ADDRESS_ONLY candidate counts;
+- `live_qword_reads = 0`;
+- all safety gates remain false.
+
+Zero candidates does not prove writer absence.
+
+## If blocked
+
+If this owner run emits `POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED`, stop and analyze only that exact observed fact. Do not rerun or widen semantics by assumption.
 
 ## Do not
 
