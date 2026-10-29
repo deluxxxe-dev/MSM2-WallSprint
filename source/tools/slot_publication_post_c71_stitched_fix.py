@@ -1,4 +1,4 @@
-"""Lifecycle corrections for c72's c71 continuation.
+"""Lifecycle/provenance/order corrections for c72's c71 continuation.
 
 Accepted c71 records exactly one first c70 POST terminal per root. During c72,
 a successful all-successor exact c71 authorization retires that first-terminal
@@ -13,6 +13,15 @@ the historical c70 ``mark_post_c69`` behavior is preserved. If it contains a
 ``c71_post_boundary`` proof but no c69 proof, c72 must not invent c69
 reachability merely to satisfy the older c70 bookkeeping layer; c71
 ``mark_post_c71`` remains the binding later-stage authorization.
+
+The accepted c71 checkpoint also binds an order-sensitive serialized record
+stream. Full c72 replay can encounter the same unique per-root records in a
+different incidental traversal order. Each live record is already authenticated
+byte-for-byte against the accepted record for its original root, duplicate roots
+are refused, and the complete 102-record domain is checked before final result
+reproduction. Therefore final c71-result reproduction must use the accepted
+checkpoint root order rather than treating live discovery order as a semantic
+identity. The observed discovery order is retained only as diagnostic metadata.
 """
 from pathlib import Path
 
@@ -23,11 +32,69 @@ c56,c58 = base.c56,base.c58
 _original_sources = base.sources
 _OriginalView = base.View
 _OriginalTransaction = base.Transaction
+_OriginalProofPool = base.ProofPool
+_original_scan = base.scan
 
 
 def sources():
     return dict(_original_sources(),
         slot_publication_post_c71_stitched_fix_py=c56.sha(Path(__file__).read_bytes()))
+
+
+class _CheckpointOrderedLiveRecords:
+    """Store live arrival order, iterate in accepted checkpoint root order.
+
+    Base ``authenticate_live`` has already proved each appended record is exactly
+    the accepted record for that root and rejects duplicate roots. This adapter
+    does not weaken record authentication; it only separates incidental replay
+    discovery order from the accepted checkpoint serialization order used to
+    reproduce c71's order-sensitive record-stream hash/result bytes.
+    """
+    def __init__(self,accepted_records):
+        self._accepted = tuple(accepted_records)
+        self._by_root = {}
+        self.arrival_roots = []
+        self.checkpoint_roots = tuple(
+            record['original_root_runtime_row'] for record in self._accepted)
+
+    def append(self,record):
+        root = record.get('original_root_runtime_row')
+        if root in self._by_root:
+            raise c58.EvidenceError('duplicate live c71 terminal root in order adapter')
+        self._by_root[root] = record
+        self.arrival_roots.append(root)
+
+    def __len__(self):
+        return len(self._by_root)
+
+    def __iter__(self):
+        for expected in self._accepted:
+            root = expected['original_root_runtime_row']
+            if root in self._by_root:
+                yield self._by_root[root]
+
+    def __getitem__(self,item):
+        return list(self)[item]
+
+    def __eq__(self,other):
+        try:
+            return list(self)==list(other)
+        except TypeError:
+            return False
+
+    def discovery_order_matches_checkpoint(self):
+        return tuple(self.arrival_roots)==self.checkpoint_roots
+
+    def discovery_order_mismatch_positions(self):
+        if len(self.arrival_roots)!=len(self.checkpoint_roots):
+            return None
+        return sum(a!=b for a,b in zip(self.arrival_roots,self.checkpoint_roots))
+
+
+class ProofPool(_OriginalProofPool):
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        self.live_records = _CheckpointOrderedLiveRecords(self.records)
 
 
 class View(_OriginalView):
@@ -72,10 +139,22 @@ class Transaction(_OriginalTransaction):
         return super().mark_post_c69(key,path)
 
 
-# base.scan/main resolve these globals at call time.
+def scan(certificates,limits=base.c58.Limits(),progress=None):
+    result = _original_scan(certificates,limits=limits,progress=progress)
+    live = certificates.live_records
+    if isinstance(live,_CheckpointOrderedLiveRecords):
+        result['c71_live_discovery_order_matches_checkpoint'] = live.discovery_order_matches_checkpoint()
+        result['c71_live_discovery_order_mismatch_positions'] = live.discovery_order_mismatch_positions()
+        result['c71_checkpoint_order_normalized_for_result_reproduction'] = True
+    return result
+
+
+# base.analyze/main resolve these globals at call time.
 base.sources = sources
+base.ProofPool = ProofPool
 base.View = View
 base.Transaction = Transaction
+base.scan = scan
 
 
 def main():
