@@ -12,6 +12,7 @@ success
 - `source/tools/build_wallrun_steering_slow_probe.py`
 - `source/tools/test_build_wallrun_steering_slow_probe.py`
 - `environment/Start-Overstrike.cmd`
+- `environment/test_start_overstrike_preflight.py`
 - `docs/PROJECT_STATE.md`
 - `docs/CODEX_NEXT.md`
 - `docs/CODEX_RESULT.md`
@@ -49,21 +50,39 @@ Stopping rule: if the Slow probe also produces no visible ordinary-WallRun headi
 
 ## OVERSTRIKE RECURRENCE
 
-The shared environment repeatedly observed a misplaced:
+Two recurring shared-environment failures have been observed:
 
 ```text
-<game>\Overstrike\winmm.dll
+<game>\Overstrike\winmm.dll       # misplaced loader
+<game>\winmm.dll                  # Install mods cannot delete: UnauthorizedAccessException
 ```
+
+Current public Overstrike code deletes game-root `winmm.dll` during script setup and recreates it by copying game-root `scripts_proxy.dll`. A ReadOnly source can therefore recreate a ReadOnly destination, matching the observed pattern where one manual repair succeeds and a later Install mods fails again.
 
 The installed `MSM2 - Overstrike` launcher source now runs a bounded preflight before the Python environment checker:
 
-- if that misplaced file exists, preserve it under `Mod-Tools\_quarantine` keyed by SHA256;
+- if misplaced `Overstrike\winmm.dll` exists, preserve it under `Mod-Tools\_quarantine` keyed by SHA256;
 - if the same quarantined bytes already exist, remove only the duplicate misplaced copy;
-- leave the game-root `winmm.dll` and `scripts_proxy.dll` untouched;
+- if game-root `scripts_proxy.dll` or `winmm.dll` is ReadOnly, clear only that attribute and verify it cleared;
 - remove `.MSM2-Mod-Tools.lock` only when its recorded PID is demonstrably not running;
-- fail rather than widening cleanup if the repair itself fails.
+- fail rather than widening cleanup if any repair itself fails.
 
-The installed launcher must be refreshed once from the updated repository after the current occurrence is repaired.
+This preflight does not change loader bytes, Profiles, MOD assets, SocialFeed, ordinary MODs, or WS runtime content.
+
+A focused static regression test pins the repair scope to only these loader/stale-environment cases.
+
+If `UnauthorizedAccessException` recurs after the updated launcher has normalized both root loader attributes, the next diagnosis is an active file lock or Windows ACL; do not repeat Install mods unchanged.
+
+## VALIDATION
+
+The Slow package was regenerated from the authenticated current-build Standard asset and verified as exactly one byte different at offset `0x219` (`75 -> 5`). The prepared package identity is:
+
+```text
+MSM2-WS-SteeringProbe-TurnSpeedSlow5.zip
+SHA256 f9d10c6e3988f464a287c362d9d7312620cfa46f6af01a124671728519d8af79
+```
+
+Existing Fast builder/test remain single-purpose. Slow uses its separate repository-owned builder/test.
 
 ## SAFETY
 
