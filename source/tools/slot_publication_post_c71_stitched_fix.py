@@ -1,14 +1,18 @@
-"""Lifecycle correction for c72's retired c71 first-terminal observer.
+"""Lifecycle corrections for c72's c71 continuation.
 
-Accepted c71 records exactly one first c70 POST terminal per root.  During c72,
+Accepted c71 records exactly one first c70 POST terminal per root. During c72,
 a successful all-successor exact c71 authorization retires that first-terminal
-observer for the root.  Exact sibling callbacks from the same authenticated
+observer for the root. Exact sibling callbacks from the same authenticated
 source instruction still use the accepted sibling set, but any later distinct
 c70 POST must be the next post-c71 unknown instead of being captured again as a
 second c71 first terminal.
 
-This correction does not claim that the later distinct edge is itself reachable
-through tx.post_c71; it only preserves the already-retired observer lifecycle.
+A c71-authorized arrival is also not automatically a current post-c69 arrival.
+If the live continuation path contains an actual ``c69_post_boundary`` proof,
+the historical c70 ``mark_post_c69`` behavior is preserved. If it contains a
+``c71_post_boundary`` proof but no c69 proof, c72 must not invent c69
+reachability merely to satisfy the older c70 bookkeeping layer; c71
+``mark_post_c71`` remains the binding later-stage authorization.
 """
 from pathlib import Path
 
@@ -18,6 +22,7 @@ from slot_publication_post_c71_stitched import *  # re-export c72 surface
 c56,c58 = base.c56,base.c58
 _original_sources = base.sources
 _OriginalView = base.View
+_OriginalTransaction = base.Transaction
 
 
 def sources():
@@ -42,10 +47,10 @@ class View(_OriginalView):
             and ins.address==self.c71_record.get('source_instruction_rva'))
 
         # Once the accepted first c71 terminal has been authenticated and its
-        # continuation started, c71's first-terminal observer is retired.  Keep
+        # continuation started, c71's first-terminal observer is retired. Keep
         # exact sibling callbacks on that same source, but a later distinct c70
         # POST is the next c72 unknown even if its current key is not in
-        # tx.post_c71.  Do not relabel current reachability.
+        # tx.post_c71. Do not relabel current reachability.
         if self.c71_first_terminal_observer_retired and not same_authenticated_source:
             return self._post71_boundary(index,ins,kind,target,architectural,relations)
 
@@ -55,9 +60,22 @@ class View(_OriginalView):
         return result
 
 
+class Transaction(_OriginalTransaction):
+    def mark_post_c69(self,key,path=None):
+        """Do not promote c71-only arrival proof into current c69 reachability."""
+        if path is None:
+            path = self.contexts.get(key,(None,()))[1]
+        has_c71 = any(p.get('proof_kind')=='c71_post_boundary' for p in path)
+        has_c69 = any(p.get('proof_kind')=='c69_post_boundary' for p in path)
+        if has_c71 and not has_c69:
+            return
+        return super().mark_post_c69(key,path)
+
+
 # base.scan/main resolve these globals at call time.
 base.sources = sources
 base.View = View
+base.Transaction = Transaction
 
 
 def main():
