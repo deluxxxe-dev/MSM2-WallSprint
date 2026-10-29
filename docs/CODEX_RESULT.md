@@ -1,43 +1,23 @@
-# Codex result — corrected c71 owner OFFLINE classification accepted
+# Codex result — corrected c71 owner accepted; c72 TOOL READY
 
 2026-10-29 JST. Branch **codex/v01c20-edi-value-provenance**.
 
 ## Status
 
-Corrected c71 owner OFFLINE result is accepted as **VERIFIED-STATIC**.
+Corrected c71 owner OFFLINE result remains accepted as **VERIFIED-STATIC**.
+
+C72 implementation and focused validation are complete. C72 is **TOOL READY** for one owner OFFLINE run, but is not yet an accepted owner result.
 
 Canonical detail:
 
-- `analysis/V01C70_OWNER_OFFLINE_RESULT.md`
-- `analysis/V01C71_OWNER_BLOCKED_RESULT.md`
-- `analysis/V01C71_PROVENANCE_CORRECTION_VALIDATED.md`
 - `analysis/V01C71_OWNER_OFFLINE_RESULT.md`
+- `analysis/V01C72_TOOL_PREPARED.md`
+- `analysis/V01C72_TOOL_READY.md`
 
-The first c71 owner attempt remains blocked historical evidence only. The corrected owner run completed successfully.
-
-## Corrected owner completion
-
-Observed log end:
-
-```text
-c70 full-replay c69 continuation: 162472/162472
-POST_C69_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY
-C71_AUTHENTICATED_PREFIX_CHECKPOINT_READY
-```
-
-Corrected owner log:
-
-```text
-c71_owner_corrected.log
-size 198812 bytes
-SHA256 b583c1d01883f0f08fd0011d7e2219473a7d17dc37501c5544e096d1f3ed918c
-```
-
-Accepted uploaded c71 checkpoint:
+## Accepted c71 basis
 
 ```text
 MSM2-WS-v0.1c71-authenticated-prefix-checkpoint.json
-size 1324640 bytes
 physical SHA256 25b4edccb0430bc2119c6ff5aa4aa408b92c806875c4a520ddd36c0ce69ee926
 checkpoint identity 4769ecb7664e556f8771158218a7526134620c2774bfc19200f0e9b56ab54a9e
 record count 102
@@ -54,74 +34,70 @@ semantic result identity 18d61be59032514a4c74c9b015f422c379e2c05050e2d5819c10250
 classifier identity 18cba768c4261886b70496e7f73abe3fe5276b44aecadb0d929802ae3dae9fd5
 ```
 
-The standalone result file was emitted but not separately uploaded. Deterministic `atomic_json` serialization of the exact result embedded in the checkpoint yields expected size 424663 bytes and expected SHA256 `db524d81d101da4173bbdda802a6bbe65a0d1801192b37b6261ecf4ce3c37ada`.
+## C72 implementation
 
-## C71 result
-
-Exact domain:
+Files:
 
 ```text
-expected/classified roots 102 / 102
-boundary instances 102
-unique entry-instance states 102
-unique terminal-context rows 99
-edge-backed 102
-transaction 0
-architectural edges 109
-model-only edges 0
+source/tools/slot_publication_post_c71_stitched.py
+source/tools/test_slot_publication_post_c71_stitched.py
 ```
 
-Observed terminal provenance:
+C72 uses full historical replay, authenticates the accepted c71 checkpoint/result/record stream, reproduces the live c71 terminal record, and continues only after complete all-successor exact preflight.
+
+Production bounded domain:
 
 ```text
-used_c69_source_on_later_scan 90
-post_c69_reachable_context 3
-retired_c69_first_terminal_observer_distinct_edge 9
+c71 terminal records = 102
+all-successor-exact records = 95
+continuable exact edges = 99
+interior-containing records = 6
+metadata-outside-runtime records = 1
 ```
 
-Thus the correction made after the first blocked owner run was required by real owner data and is now validated in the full replay.
+The seven non-exact records remain wholly fail-closed.
 
-Successor relations:
+## Focused test result
+
+The owner ran:
 
 ```text
-exact_unique_runtime_begin 102
-inside_unique_runtime_span_nonentry 6
-executable_file_backed_outside_runtime_metadata 1
+source/tools/test_slot_publication_post_c71_stitched.py
 ```
 
-Complete terminal grouping:
+All prerequisite c68/c70/c71 checks passed, followed by:
 
 ```text
-all_successors_exact_runtime_begin 95
-contains_interior_successor 6
-other_relation_set 1
+PASS: c72 production contract pins accepted c71 identities and 95/99 continuation domain
+PASS: c72 exact c71 terminal continues only after exact live record/all-successor authentication
+PASS: c72 later distinct edge stops as uncertified_post_c71_runtime_boundary and rolls back provisional admission
+PASS: c72 interior c71 terminal remains diagnostic/refused and is never promoted to an entry
+PASS: c72 rejects mutated c71 checkpoint record evidence
+PASS: c72 focused full-replay c71 continuation groups complete
 ```
 
-The 95 all-successor-exact records contain exactly 99 exact architectural successor edges.
+Focused validation therefore covers exact accepted-evidence pinning, live-record matching, all-successor preflight, rollback, interior refusal and checkpoint mutation fail-closed behavior.
 
-## Safety / candidates
+## Safety
 
-C71 remained diagnostic-only:
-
-```text
-new_post_c69_boundaries_admitted 0
-new_cross_row_candidate_count 0
-live_qword_reads 0
-full_historical_replay_used true
-checkpoint_accelerated_resume_used false
-c56_through_c70_evidence_read_only true
-```
-
-Historical candidate counts remain zero. All publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/watch/game gates remain false.
+No slot qword read, pointer chase, game/native probe, gameplay write or production integration was added.
 
 C52 remains binding:
 
 `PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
 
-Zero candidates does not prove writer absence.
+All publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/watch/game gates remain closed.
+
+Zero candidates must not be interpreted as writer absence.
 
 ## Next
 
-C72 is now authorized only as a minimum full-historical-replay continuation through the 95 accepted c71 records whose complete architectural successor set is exact-runtime-begin, covering 99 exact edges.
+Run exactly one c72 owner OFFLINE continuation against accepted c56-c71 evidence.
 
-The six interior-containing records and one executable-file-backed-outside-runtime-metadata record remain wholly fail-closed. Do not define c73 before c72 owner evidence is analyzed.
+Expected successful repository result:
+
+```text
+POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_READY
+```
+
+If BLOCKED, analyze the exact blocker before rerunning or widening anything. Do not define c73 before the c72 owner artifact is analyzed.
