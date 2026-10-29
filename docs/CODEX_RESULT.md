@@ -1,4 +1,4 @@
-# Codex result — corrected c71 owner accepted; c72 TOOL READY
+# Codex result — c72 first owner BLOCKED; lifecycle correction quick PASS
 
 2026-10-29 JST. Branch **codex/v01c20-edi-value-provenance**.
 
@@ -6,13 +6,15 @@
 
 Corrected c71 owner OFFLINE result remains accepted as **VERIFIED-STATIC**.
 
-C72 implementation and focused validation are complete. C72 is **TOOL READY** for one owner OFFLINE run, but is not yet an accepted owner result.
+The first c72 owner OFFLINE run is **BLOCKED** and is not accepted c72 evidence. Its observed lifecycle implementation gap has been corrected, and the dedicated owner-blocker quick regression passed.
 
 Canonical detail:
 
 - `analysis/V01C71_OWNER_OFFLINE_RESULT.md`
 - `analysis/V01C72_TOOL_PREPARED.md`
 - `analysis/V01C72_TOOL_READY.md`
+- `analysis/V01C72_OWNER_BLOCKED_RESULT.md`
+- `analysis/V01C72_LIFECYCLE_CORRECTION_VALIDATED.md`
 
 ## Accepted c71 basis
 
@@ -24,28 +26,7 @@ record count 102
 record stream SHA256 6289d892477caa279ac9da0559ec9a3640ea501bb9850d0113538ccbb099c1b8
 ```
 
-Embedded result identity:
-
-```text
-repository_result POST_C69_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY
-tool v0.1c71 / schema 1
-contract exact_c70_first_terminal_post_c69_boundary_full_prefix_provenance_diagnostic_v1
-semantic result identity 18d61be59032514a4c74c9b015f422c379e2c05050e2d5819c1025048a2276d7
-classifier identity 18cba768c4261886b70496e7f73abe3fe5276b44aecadb0d929802ae3dae9fd5
-```
-
-## C72 implementation
-
-Files:
-
-```text
-source/tools/slot_publication_post_c71_stitched.py
-source/tools/test_slot_publication_post_c71_stitched.py
-```
-
-C72 uses full historical replay, authenticates the accepted c71 checkpoint/result/record stream, reproduces the live c71 terminal record, and continues only after complete all-successor exact preflight.
-
-Production bounded domain:
+Exact c72 bounded domain remains:
 
 ```text
 c71 terminal records = 102
@@ -55,28 +36,47 @@ interior-containing records = 6
 metadata-outside-runtime records = 1
 ```
 
-The seven non-exact records remain wholly fail-closed.
+## First c72 owner attempt
 
-## Focused test result
+Observed owner progress:
+
+```text
+c72 full-replay c71 continuation: 30720/162472
+POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: duplicate live c71 terminal root
+```
+
+This does not indicate duplicate accepted c71 records. Accepted c71 still contains one first terminal for each of 102 unique roots.
+
+The failure was an observer-lifecycle bug: after c72 authenticated a root's accepted first c71 terminal and began continuation, the inherited c71 first-terminal observer could be reset. A later distinct c70 POST in that same root could then be offered to the accepted-c71 authenticator again. The duplicate-root guard correctly stopped the scan.
+
+## Correction
+
+Corrected wrapper:
+
+```text
+source/tools/slot_publication_post_c71_stitched_fix.py
+```
+
+The correction retires the inherited first-terminal observer after successful first authorization while preserving exact sibling callbacks from the authenticated source. Any later distinct c70 POST becomes the next `uncertified_post_c71_runtime_boundary` without being relabeled as current `tx.post_c71` reachability.
+
+Duplicate-root authentication remains fail-closed. Accepted c56-c71 semantics and the 102 / 95 / 99 domain are unchanged.
+
+## Quick validation
 
 The owner ran:
 
 ```text
-source/tools/test_slot_publication_post_c71_stitched.py
+source/tools/test_slot_publication_post_c71_stitched_fix_quick.py
 ```
 
-All prerequisite c68/c70/c71 checks passed, followed by:
+Observed:
 
 ```text
-PASS: c72 production contract pins accepted c71 identities and 95/99 continuation domain
-PASS: c72 exact c71 terminal continues only after exact live record/all-successor authentication
-PASS: c72 later distinct edge stops as uncertified_post_c71_runtime_boundary and rolls back provisional admission
-PASS: c72 interior c71 terminal remains diagnostic/refused and is never promoted to an entry
-PASS: c72 rejects mutated c71 checkpoint record evidence
-PASS: c72 focused full-replay c71 continuation groups complete
+PASS: c72 retired c71 first-terminal observer sends later distinct c70 POST to next unknown without relabeling reachability
+PASS: c72 retired observer still permits exact sibling callbacks from the authenticated c71 source
 ```
 
-Focused validation therefore covers exact accepted-evidence pinning, live-record matching, all-successor preflight, rollback, interior refusal and checkpoint mutation fail-closed behavior.
+The exact first-owner blocker is therefore covered by focused validation. C72 is still not accepted until one corrected owner replay completes and its artifact is analyzed.
 
 ## Safety
 
@@ -86,18 +86,14 @@ C52 remains binding:
 
 `PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
 
-All publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/watch/game gates remain closed.
-
-Zero candidates must not be interpreted as writer absence.
+All publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/watch/game gates remain closed. Zero candidates must not be interpreted as writer absence.
 
 ## Next
 
-Run exactly one c72 owner OFFLINE continuation against accepted c56-c71 evidence.
-
-Expected successful repository result:
+Run exactly one corrected c72 owner OFFLINE continuation through:
 
 ```text
-POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_READY
+source/tools/slot_publication_post_c71_stitched_fix.py
 ```
 
-If BLOCKED, analyze the exact blocker before rerunning or widening anything. Do not define c73 before the c72 owner artifact is analyzed.
+If READY, analyze the owner artifact before defining c73. If BLOCKED, analyze the exact blocker before rerunning or widening anything.
