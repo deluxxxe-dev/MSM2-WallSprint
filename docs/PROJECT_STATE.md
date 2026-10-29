@@ -1,6 +1,6 @@
 # WallSprint project state
 
-## Current stage — corrected c70 accepted; first c71 owner attempt blocked; c71 provenance correction pending quick validation
+## Current stage — corrected c70 accepted; first c71 owner attempt blocked; provenance correction quick PASS; owner rerun next
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
@@ -19,6 +19,7 @@ Canonical detail:
 - `analysis/V01C70_OWNER_OFFLINE_RESULT.md`
 - `analysis/V01C71_TOOL_READY.md`
 - `analysis/V01C71_OWNER_BLOCKED_RESULT.md`
+- `analysis/V01C71_PROVENANCE_CORRECTION_VALIDATED.md`
 
 ## Accepted c70 artifact
 
@@ -111,9 +112,13 @@ post_c69 = false
 used_c69_source = false
 ```
 
-`source/tools/test_slot_publication_post_c69_boundary_fix_quick.py` is the required next check. Do not rerun the expensive owner replay until that quick regression passes.
+The owner ran the dedicated quick regression and it passed:
 
-This does not alter accepted c70 semantics and does not authorize c72.
+```text
+PASS: c71 owner-observed retired c69 observer distinct edge is recorded without relabeling current reachability
+```
+
+The correction is therefore validated for the exact first-owner blocker. This is not an accepted c71 owner result yet.
 
 ## Replay deltas versus accepted c68
 
@@ -172,8 +177,10 @@ Runtime remains `v0.1c38`; c53-c71 work is OFFLINE/STATIC unless separately stat
 
 ## Current bounded action
 
-Run only the c71 quick retired-observer provenance regression. If it passes, rerun one corrected c71 owner OFFLINE diagnostic classification against accepted c56-c70 evidence.
+Rerun exactly one corrected c71 owner OFFLINE diagnostic classification against accepted c56-c70 evidence.
 
 C71 may reproduce and classify the exact 102 terminal source/successor relationships under unchanged full historical replay. It must not traverse a c71 target, admit a new continuation, create a new Fact/candidate, read the slot qword, chase pointers, use the game, or widen any safety gate.
+
+If another unknown provenance form or evidence mismatch appears, stop fail-closed and analyze that observed fact before widening anything.
 
 After a c71 artifact is returned, ChatGPT must analyze its edge/transaction split and successor relation counts before defining any c72 continuation behavior.
