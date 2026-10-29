@@ -1,6 +1,6 @@
 # WallSprint project state
 
-## Current stage — corrected c71 accepted; c72 owner attempt 3 reached 162472/162472 then BLOCKED on final record order; order correction prepared
+## Current stage — corrected c71 accepted; c72 owner attempt 3 completed 162472/162472 then BLOCKED only on final record order; order correction focused PASS; owner rerun next
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
@@ -19,6 +19,7 @@ Canonical recent detail:
 - `analysis/V01C72_OWNER_BLOCKED_RESULT_2.md`
 - `analysis/V01C72_PROVENANCE_CORRECTION_VALIDATED.md`
 - `analysis/V01C72_OWNER_BLOCKED_RESULT_3.md`
+- `analysis/V01C72_ORDER_CORRECTION_VALIDATED.md`
 - `analysis/REFERENCE_MOD_WALLRUN_REVIEW_20261029.md`
 
 ## Accepted c71 basis
@@ -88,17 +89,29 @@ Before this final check, c72 had already required:
 
 Therefore the observed blocker is an **order-only permutation of the same unique exact per-root c71 records**, not a changed record body/domain. The accepted checkpoint serializes an order-sensitive stream; live c72 replay discovery order is incidental and need not equal that serialization order.
 
-Correction prepared in `source/tools/slot_publication_post_c71_stitched_fix.py`:
+## Third correction — focused validated
 
-- preserve live arrival order as diagnostic metadata;
-- store each already-authenticated live record by original root;
-- retain duplicate-root fail-closed behavior;
-- iterate exact live records in accepted checkpoint root order only for final c71 record-stream/result reproduction;
-- do not change accepted c71 record content or the `102 / 95 / 99` domain.
+`source/tools/slot_publication_post_c71_stitched_fix.py` now:
 
-Focused regression now has five checks; the new fifth check covers intentionally permuted live arrival order plus duplicate-root refusal.
+- preserves every existing per-root byte-for-byte authentication;
+- preserves duplicate-root fail-closed behavior;
+- preserves the prior retired-observer correction;
+- preserves the prior c71-only/c69 proof-layer correction;
+- records live arrival order separately as diagnostic metadata;
+- iterates only the already-authenticated exact records in accepted checkpoint root order for final c71 stream/result reproduction;
+- does not change accepted c71 record contents or the `102 / 95 / 99` domain.
 
-C72 is still not an accepted owner result.
+Owner focused regression passed all five checks:
+
+```text
+PASS: c72 retired c71 first-terminal observer sends later distinct c70 POST to next unknown without relabeling reachability
+PASS: c72 retired observer still permits exact sibling callbacks from the authenticated c71 source
+PASS: c72 c71-only arrival does not invent post-c69 reachability
+PASS: c72 paths with actual c69 proof preserve historical mark_post_c69 behavior
+PASS: c72 exact per-root live records are normalized to accepted checkpoint order without weakening duplicate-root authentication
+```
+
+C72 is still not an accepted owner result until one further corrected full owner replay reaches READY and its artifact is analyzed.
 
 ## Reference-MOD review
 
@@ -123,12 +136,8 @@ All publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/prod
 
 ## Current bounded action
 
-Run only the focused c72 correction regression:
+Run exactly one further corrected c72 owner OFFLINE continuation through `source/tools/slot_publication_post_c71_stitched_fix.py` against the accepted c56-c71 evidence.
 
-```text
-source/tools/test_slot_publication_post_c71_stitched_fix_quick.py
-```
+If READY, analyze the c72 artifact before defining c73 or changing exploration strategy.
 
-Expected: five PASS lines, including the new checkpoint-order normalization check.
-
-If all five PASS, record focused validation and authorize exactly one further corrected c72 owner OFFLINE replay. Do not rerun the full owner scan before the focused check passes.
+If BLOCKED, stop and analyze that exact observed fact before changing anything or rerunning.
