@@ -1,19 +1,16 @@
-# Next task — run corrected c72 owner OFFLINE continuation once after order-fix validation
+# Next task — validate c72 canonical record comparison with focused regression
 
 ## Status
 
 Corrected c71 owner OFFLINE result remains accepted as **VERIFIED-STATIC**.
 
-Three c72 owner OFFLINE attempts are **BLOCKED** historical evidence only. None is accepted c72 evidence.
+Four c72 owner OFFLINE attempts are **BLOCKED** historical evidence only. None is accepted c72 evidence.
 
-Attempt 3 completed the entire historical replay and blocked only on final accepted-c71 record stream/order reproduction:
+Attempts 3 and 4 both reached the final accepted-c71 reproduction guard after the complete historical replay/domain checks. Attempt 4 still blocked after checkpoint-order normalization:
 
 ```text
-c72 full-replay c71 continuation: 162472/162472
 POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: c72 live c71 record stream/order differs from accepted checkpoint
 ```
-
-The checkpoint-order correction is now focused-test validated with all five required PASS lines.
 
 Canonical detail:
 
@@ -25,6 +22,7 @@ Canonical detail:
 - `analysis/V01C72_PROVENANCE_CORRECTION_VALIDATED.md`
 - `analysis/V01C72_OWNER_BLOCKED_RESULT_3.md`
 - `analysis/V01C72_ORDER_CORRECTION_VALIDATED.md`
+- `analysis/V01C72_OWNER_BLOCKED_RESULT_4.md`
 
 Continue only on `codex/v01c20-edi-value-provenance`; do not merge `main`.
 
@@ -48,33 +46,43 @@ inside_unique_runtime_span_nonentry records = 6
 executable_file_backed_outside_runtime_metadata records = 1
 ```
 
-Only the 95 all-successor-exact records / 99 exact edges may be provisionally continued.
+## Attempt 4 diagnosis
 
-## Validated correction set
-
-Run through:
+The base per-root binding relation is already canonical:
 
 ```text
-source/tools/slot_publication_post_c71_stitched_fix.py
+c56.encoded(live_record) == c56.encoded(accepted_record)
 ```
 
-The wrapper must preserve all of the following:
+`c56.encoded()` is canonical JSON serialization. Equivalent Python tuple/list containers serialize identically.
 
-- authenticate each accepted first c71 terminal exactly by `original_root_runtime_row` and record bytes;
-- retain duplicate-root authentication fail-closed;
-- retire the inherited c71 first-terminal observer after successful authorization;
-- preserve exact sibling callbacks from the authenticated source instruction;
-- later distinct c70 POST events become `uncertified_post_c71_runtime_boundary` without being relabeled as current `tx.post_c71` reachability;
-- c71 proof alone does not imply current post-c69 reachability;
-- c71-only paths skip historical `mark_post_c69()` and proceed only through actual c71 authorization;
-- paths containing a real `c69_post_boundary` proof preserve historical `mark_post_c69()` unchanged;
-- live c71 record arrival order is diagnostic only after the full exact per-root domain has been authenticated;
-- final c71 stream/result reproduction uses the accepted checkpoint root order over those already-authenticated records;
-- accepted c56-c71 semantics and the `102 / 95 / 99` domain remain unchanged.
+The order adapter fixed checkpoint ordering, but its final `__eq__` still used raw Python object equality. That can reject an already-authenticated canonical record solely because live in-memory data contains a tuple where checkpoint JSON contains a list.
 
-## Focused validation accepted
+## Prepared correction
 
-Owner observed:
+`source/tools/slot_publication_post_c71_stitched_fix.py` now keeps all prior proof/authentication behavior and changes only the final ordered-record equality to compare canonical `c56.encoded()` bytes record-by-record.
+
+Preserve all of the following:
+
+- exact per-root accepted c71 authentication;
+- duplicate-root fail-closed behavior;
+- accepted checkpoint root order for final reproduction;
+- first-terminal observer retirement;
+- exact sibling handling;
+- c71-only paths do not invent c69 proof;
+- real c69 proof preserves historical behavior;
+- accepted `102 / 95 / 99` domain unchanged;
+- no value read, pointer chase, native/game probe or gameplay write.
+
+## Current task
+
+Run only:
+
+```text
+source/tools/test_slot_publication_post_c71_stitched_fix_quick.py
+```
+
+Expected six PASS lines:
 
 ```text
 PASS: c72 retired c71 first-terminal observer sends later distinct c70 POST to next unknown without relabeling reachability
@@ -82,59 +90,24 @@ PASS: c72 retired observer still permits exact sibling callbacks from the authen
 PASS: c72 c71-only arrival does not invent post-c69 reachability
 PASS: c72 paths with actual c69 proof preserve historical mark_post_c69 behavior
 PASS: c72 exact per-root live records are normalized to accepted checkpoint order without weakening duplicate-root authentication
+PASS: c72 final stream comparison uses canonical encoded record identity rather than raw Python list/tuple representation
 ```
 
-## Current task
+## If focused regression passes
 
-Run exactly one further corrected c72 owner OFFLINE scan using the fix wrapper against the exact accepted c56-c71 evidence.
+Stop after the six PASS lines and return them to ChatGPT. Record focused validation before authorizing exactly one further full c72 owner replay.
 
-Expected successful repository result:
+## If focused regression fails
 
-```text
-POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_READY
-tool v0.1c72 / schema 1
-contract exact_c71_full_replay_all_successor_continuation_v1
-```
-
-Require:
-
-```text
-full_historical_replay_used = true
-checkpoint_accelerated_resume_used = false
-```
-
-## Required owner-result checks
-
-Before defining c73 or changing exploration strategy, verify:
-
-- c71 records available/considered = 102/102;
-- all-successor-exact available/preflight = 95/95;
-- exact edges available/considered/preflight = 99/99/99;
-- c71 record mismatch counts are empty;
-- live-order diagnostic reports the observed permutation without changing accepted-record identity;
-- admitted/refused c71 instance and edge counts;
-- next `uncertified_post_c71_runtime_boundary` count;
-- root completed/refused counts;
-- rows reached and address Facts crossing rows;
-- READ/WRITE/RMW/ADDRESS_ONLY candidate counts;
-- `live_qword_reads = 0`;
-- all safety gates remain false.
-
-Zero candidates does not prove writer absence.
-
-## If blocked
-
-If this owner run emits `POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED`, stop and analyze only that exact observed fact. Do not rerun or widen semantics by assumption.
+Stop. Do not rerun the full owner scan. Return the exact assertion/error.
 
 ## Do not
 
 - Do not weaken per-root c71 record authentication.
 - Do not remove duplicate-root refusal.
-- Do not weaken historical c69 proof requirements.
-- Do not relabel c71-only paths as post-c69.
-- Do not alter the accepted `102 / 95 / 99` c71 domain.
+- Do not alter accepted c71 checkpoint contents or identities.
+- Do not alter `102 / 95 / 99`.
 - Do not continue the six interior records or one metadata-outside-runtime record.
-- Do not define c73 before c72 owner evidence is accepted and analyzed.
 - Do not infer writer absence from zero candidates.
 - Do not read slot qwords or chase pointers.
 - Do not add native/game probes or gameplay/production writes.
