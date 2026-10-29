@@ -1,6 +1,6 @@
 # WallSprint project state
 
-## Current stage — corrected c70 owner OFFLINE result accepted; c71 TOOL READY; owner classification next
+## Current stage — corrected c70 accepted; first c71 owner attempt blocked; c71 provenance correction pending quick validation
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
@@ -18,6 +18,7 @@ Canonical detail:
 - `analysis/V01C70_OWNER_BLOCKED_RESULT.md`
 - `analysis/V01C70_OWNER_OFFLINE_RESULT.md`
 - `analysis/V01C71_TOOL_READY.md`
+- `analysis/V01C71_OWNER_BLOCKED_RESULT.md`
 
 ## Accepted c70 artifact
 
@@ -85,23 +86,34 @@ Do not infer 107 next-boundary records from the 107 refused exact edges: five pr
 
 C71 must classify exactly the 102 c70 post-c69 boundary events and must not traverse them.
 
-## C71 tool status
+## C71 tool / owner status
 
-C71 focused validation passed on the owner machine, including the c70 prerequisite focused suite and the c71 diagnostic contract:
+The initial c71 focused suite passed, but the first real owner run exposed an additional c70 provenance form not covered by those fixtures.
+
+The run reached:
 
 ```text
-C71_FOCUSED_PREREQUISITE_C70_PASS
-PASS: c71 production contract pins accepted c70 identity and exact 102-terminal domain
-PASS: c71 exact edge-backed post-c69 terminal is classified without target traversal
-PASS: c71 diagnostic checkpoint is deterministic and record mutation fails closed
-PASS: c71 transaction-origin post-c69 terminal is recorded without synthetic instruction or successor
-PASS: c71 rejects stale c70 authentication evidence
-PASS: c71 focused diagnostic groups complete
+c67 unchanged c66 terminal observer replay: 162472/162472
+c70 full-replay c69 continuation: 26624/162472
+POST_C69_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_BLOCKED: unrecognized c70 edge terminal provenance
 ```
 
-C71 is therefore **TOOL READY** for one owner OFFLINE classification run. The c71 focused suite is registered in `source/tools/test_hooks_windows.sh`.
+No c71 result JSON or c71 checkpoint was produced.
 
-This is not an accepted c71 owner result yet. Do not define c72 continuation behavior until the owner classification is analyzed.
+Static diagnosis: corrected c70 can retire c69's first-terminal observer and treat a later distinct edge as the next c70 POST even when the current key is neither `tx.post_c69` nor `view.c69_source_keys`. Initial c71 `_capture_edge` recognized only those two older buckets.
+
+The c71 correction records this third form explicitly as a retired-c69-observer distinct edge without relabeling it as current post-c69 reachability:
+
+```text
+phase  = retired_c69_first_terminal_observer_distinct_edge
+reason = c70_retired_c69_first_terminal_observer_later_distinct_edge
+post_c69 = false
+used_c69_source = false
+```
+
+`source/tools/test_slot_publication_post_c69_boundary_fix_quick.py` is the required next check. Do not rerun the expensive owner replay until that quick regression passes.
+
+This does not alter accepted c70 semantics and does not authorize c72.
 
 ## Replay deltas versus accepted c68
 
@@ -160,8 +172,8 @@ Runtime remains `v0.1c38`; c53-c71 work is OFFLINE/STATIC unless separately stat
 
 ## Current bounded action
 
-Run exactly one c71 owner OFFLINE diagnostic classification against the accepted c56-c70 evidence.
+Run only the c71 quick retired-observer provenance regression. If it passes, rerun one corrected c71 owner OFFLINE diagnostic classification against accepted c56-c70 evidence.
 
 C71 may reproduce and classify the exact 102 terminal source/successor relationships under unchanged full historical replay. It must not traverse a c71 target, admit a new continuation, create a new Fact/candidate, read the slot qword, chase pointers, use the game, or widen any safety gate.
 
-After the c71 artifact is returned, ChatGPT must analyze its edge/transaction split and successor relation counts before defining any c72 continuation behavior.
+After a c71 artifact is returned, ChatGPT must analyze its edge/transaction split and successor relation counts before defining any c72 continuation behavior.
