@@ -1,10 +1,11 @@
-"""Quick regression for the c72 owner-observed duplicate-live-root lifecycle."""
+"""Quick regressions for the c72 owner-observed lifecycle blockers."""
 from types import SimpleNamespace
 
 import slot_publication_post_c71_stitched_fix as tool
 
 base = tool.base
 OriginalView = tool._OriginalView
+OriginalTransaction = tool._OriginalTransaction
 
 
 def make_view(*,retired,record=None,key=(2,'later'),scan_token=20):
@@ -48,8 +49,8 @@ try:
     assert result=='old-result'
     assert calls==[('old',1,0x1111,'conditional_fallthrough',0x1200,True)]
 
-    # The owner blocker: a later distinct c70 POST in the same root is not a
-    # second c71 first terminal.  It must bypass recapture and become the next
+    # The first owner blocker: a later distinct c70 POST in the same root is not
+    # a second c71 first terminal. It must bypass recapture and become the next
     # post-c71 unknown without claiming tx.post_c71 reachability.
     calls.clear()
     later = make_view(retired=True,record=record,key=(2,'later'),scan_token=20)
@@ -72,3 +73,38 @@ finally:
 
 print('PASS: c72 retired c71 first-terminal observer sends later distinct c70 POST to next unknown without relabeling reachability')
 print('PASS: c72 retired observer still permits exact sibling callbacks from the authenticated c71 source')
+
+# The second owner blocker: a valid c71 proof can represent a later-stage arrival
+# whose current path does not itself contain c69_post_boundary proof. Do not call
+# historical mark_post_c69 in that case; doing so would invent c69 reachability
+# and raises "post-c69 arrival lacks c69 proof". Historical c69 proof paths must
+# still use the original behavior unchanged.
+original_mark69 = OriginalTransaction.mark_post_c69
+mark_calls = []
+
+
+def fake_mark69(self,key,path=None):
+    mark_calls.append((key,tuple(p.get('proof_kind') for p in path or ())))
+    return 'marked-c69'
+
+try:
+    OriginalTransaction.mark_post_c69 = fake_mark69
+    tx = object.__new__(tool.Transaction)
+
+    c71_only = ({'proof_kind':'c71_post_boundary'},)
+    assert tx.mark_post_c69((4,'c71-only'),c71_only) is None
+    assert mark_calls==[]
+
+    c69_and_c71 = ({'proof_kind':'c69_post_boundary'},{'proof_kind':'c71_post_boundary'})
+    assert tx.mark_post_c69((5,'historical-c69'),c69_and_c71)=='marked-c69'
+    assert mark_calls==[((5,'historical-c69'),('c69_post_boundary','c71_post_boundary'))]
+
+    mark_calls.clear()
+    c69_only = ({'proof_kind':'c69_post_boundary'},)
+    assert tx.mark_post_c69((6,'c69-only'),c69_only)=='marked-c69'
+    assert mark_calls==[((6,'c69-only'),('c69_post_boundary',))]
+finally:
+    OriginalTransaction.mark_post_c69 = original_mark69
+
+print('PASS: c72 c71-only arrival does not invent post-c69 reachability')
+print('PASS: c72 paths with actual c69 proof preserve historical mark_post_c69 behavior')
