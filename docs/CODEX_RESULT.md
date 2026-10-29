@@ -1,4 +1,4 @@
-# Codex result — c72 owner OFFLINE READY and accepted VERIFIED-STATIC
+# Codex result — current-build vanilla WallRun steering configs verified
 
 2026-10-29 JST. Branch **codex/v01c20-edi-value-provenance**.
 
@@ -6,112 +6,101 @@
 
 success
 
-Corrected c72 owner OFFLINE full replay completed and is accepted as **VERIFIED-STATIC**.
-
-## RESULT
-
-Owner observed:
-
-```text
-c72 full-replay c71 continuation: 162472/162472
-POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_READY
-C72_REPRFIX_OWNER_PASS
-```
-
-Artifact:
-
-```text
-MSM2-WS-v0.1c72-post-c71-stitched.json
-size 17148 bytes
-SHA256 077955562f1cdd9ba966fd1104ecd2b3b258f3aa25384418032fa5099149d32d
-```
-
-Contract/authentication:
-
-```text
-repository_result = POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_READY
-tool_version = v0.1c72
-schema_version = 1
-contract = exact_c71_full_replay_all_successor_continuation_v1
-full_historical_replay_used = true
-checkpoint_accelerated_resume_used = false
-c71 records available/considered = 102/102
-all-successor-exact available/preflight = 95/95
-exact edges available/considered/preflight = 99/99/99
-c71_record_mismatch_counts = {}
-```
-
-Continuation result:
-
-```text
-c71 boundary instances admitted/refused = 38/64
-c71 exact edges admitted/refused = 42/57
-post_c71_uncertified_boundary_refusals = 54
-roots attempted/completed/refused = 162472/105829/56643
-rows reached = 1815
-address facts crossing rows = 3251
-```
-
-Candidate result:
-
-```text
-reference_candidate_count = 0
-reader_candidates = 0
-writer_candidates = 0
-rmw_candidates = 0
-address_only_candidates = 0
-new_cross_row_candidate_count = 0
-publication_source_kind = unproven
-```
-
-No writer absence inference is authorized from the zero-candidate result.
-
-Notable refusal-event/root counts include:
-
-```text
-indirect_call = 5569
-indirect_jump = 258
-uncertified_post_c71_runtime_boundary = 54
-```
-
-These counts are not unique function counts or writer evidence; they show unresolved route classes remain outside the current direct-CFG model.
-
-## SAFETY
-
-```text
-live_qword_reads = 0
-game_used = false
-hardware_watch_enabled = false
-CFG_continuation = false
-candidate_sweep_complete = false
-writer_enumeration_complete = false
-```
-
-C52 remains binding:
-
-`PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
-
-No qword read, pointer chase, game/native probe, gameplay write or production integration was performed.
+The owner supplied the two current-build vanilla WallRun steering assets requested by `docs/CODEX_NEXT.md`. Both were decoded and authenticated as **VERIFIED-STATIC (current-build vanilla asset)**.
 
 ## CHANGED
 
-- `analysis/V01C72_OWNER_OFFLINE_RESULT.md`
-- `docs/PROJECT_STATE.md`
-- `docs/CODEX_NEXT.md`
+- `analysis/VANILLA_WALLRUN_STEERING_CONFIG_20261029.md`
 - `docs/CODEX_RESULT.md`
+- shared Wisdoms: `docs/WALLSPRINT_REFERENCE_MODS.md`
 
-## NEXT
+`docs/PROJECT_STATE.md` and `docs/CODEX_NEXT.md` were not modified by this result write.
 
-Do **not** open c73 as another automatic direct-CFG continuation.
+## RESULT
 
-The current bounded task is to obtain/authenticate and decode the current-build vanilla WallRun steering configs, starting with:
+Extraction context:
+
+```text
+MSM2 vanilla backup TOC SHA1 = D18940B7DED9CF83B6E7AB57BBD0FA43F5FD5290
+Overstrike mapping = v2.810.0.0
+Modding Tool used = v1.4.5
+```
+
+Assets:
 
 ```text
 configs/hero/hero_WallRunSteeringSetup_Standard.config
 asset id 948FA063808F7E18
+size 544 bytes
+SHA256 32418c218d2feb62fb9227caec321c00278e4500bc75db6c4015888359537b7b
 
 configs/hero/hero_WallRunSteeringSetup_Indoor.config
 asset id 83DF4507531061B1
+size 428 bytes
+SHA256 921a3b95b522f7bbebadf53c003d5569a0ae9f6cc740d1935d682fb9e3fe9c05
 ```
 
-If those assets are unavailable in the execution environment, stop and request exactly those owner-supplied vanilla files. Do not substitute reference-MOD assets.
+Both decode as:
+
+```text
+WallRunSteeringSetupConfig
+```
+
+Standard:
+
+```text
+InTimeMax              0.35
+InTimeMin              0.15
+MoveSpeedFast          16
+TurnDampFast           -40
+TurnDampSlow           -20
+TurnGainFast           -3.5
+TurnGainSlow           -2.25
+TurnMaxDown            12
+TurnSpeedDecelScaleMax 2.5
+TurnSpeedFast          100
+TurnSpeedSlow          75
+TurnSpeedSpeedScaleMax 0.72
+```
+
+Indoor:
+
+```text
+InTimeMax              0
+InTimeMin              0
+MoveSpeedFast          5
+MoveSpeedSlow          1
+TurnSpeedDecelScaleMax 3
+TurnSpeedFast          180
+TurnSpeedSlow          80
+TurnSpeedSpeedScaleMax 0.8
+```
+
+Standard additionally has explicit damping/gain and `TurnMaxDown` fields. Standard and Indoor are not identical serialized layouts with only value changes.
+
+## INTERPRETATION
+
+Current-build vanilla evidence now independently confirms that WallRun steering is at least partly data-driven through separate Standard/Indoor config assets.
+
+This does **not** establish field units or runtime causality, and it does not prove config-only control can implement arbitrary surface-relative WallSprint orientation/motion.
+
+A minimal one-variable asset-only experiment is worth attempting before reopening another direct-CFG continuation. The best first candidate is:
+
+```text
+Standard.TurnSpeedFast
+vanilla = 100
+```
+
+Only one field should change in the first experiment; restore vanilla immediately afterward and compare wall-run turning response.
+
+## SAFETY
+
+No asset was edited/deployed in this task. No runtime/game/native probe, hook, qword read, pointer chase or gameplay write was performed. Runtime remains `v0.1c38`. C52 remains binding:
+
+`PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
+
+No SocialFeed or other MOD repository was modified.
+
+## NEXT
+
+Before any c73 direct-CFG continuation, decide whether to authorize the single-field Standard steering asset experiment. If config control is insufficient, compare the higher-level motion/gravity/orientation route already documented from the Scripted Flight reference evidence.
