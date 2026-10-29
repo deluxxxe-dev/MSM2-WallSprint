@@ -10,40 +10,45 @@ Standard.TurnSpeedFast: 100 -> 10
 
 The active WallSprint runtime script remained the existing runtime build; the probe itself only replaced the authenticated Standard WallRun steering config asset.
 
-The owner also supplied a gameplay video. Raw video is not committed to the repository. The evidence recorded here is the owner's direct runtime observation and the already-authenticated probe/package identity.
+The owner also supplied gameplay video. Raw video is not committed to the repository. Evidence below is the owner's direct runtime observation plus the already-authenticated probe/package identity.
 
-## Owner-observed result
+## Completed owner A/B result
 
 **VERIFIED-RUNTIME (owner-observed visible behavior), narrowly scoped:**
 
 ```text
-- No visible movement-speed change was observed in the tested WS state.
-- In the MOD WallSprint (WS) state, reversing movement direction caused displacement to reverse while the visible character/body facing remained in the prior direction, producing a moonwalk-like appearance.
+A — probe ON, WS ON
+ordinary outdoor WallRun steering: no visible change
+WS direction reversal: moonwalk-like visible facing mismatch YES
+
+B — probe OFF, WS ON
+ordinary outdoor WallRun steering: no visible change
+WS direction reversal: moonwalk-like visible facing mismatch YES
+
+Additional isolation
+WS OFF, probe ON
+ordinary outdoor WallRun steering: no visible change
 ```
 
-This is a visible gameplay fact only.
+No visible movement-speed change was observed during the earlier WS observation either.
 
-Do **not** promote it to any of the following without further evidence:
+## What this proves
 
-- actor transform orientation remained numerically unchanged;
-- animation root/facing is the sole cause;
-- `TurnSpeedFast` caused the mismatch;
-- `TurnSpeedFast` is unused;
-- vanilla WallRun steering ignores the Standard asset.
+The visible WS moonwalk-like symptom is **not caused by the TurnSpeedFast probe**. It reproduces with the probe disabled.
 
-The visual body direction may come from actor transform, animation/root motion, a mover-facing layer, or another presentation/control layer. The current result does not distinguish them.
+The tested `Standard.TurnSpeedFast: 100 -> 10` change produced **no owner-visible steering response change** in ordinary outdoor WallRun under the tested conditions, including a run with WS disabled.
 
-## Important test-scope correction
+This is enough to close the first probe as **NO VISIBLE EFFECT UNDER TESTED CONDITIONS**.
 
-The original probe question was:
+It does **not** prove that:
 
-> Does current-build `Standard.TurnSpeedFast` causally change observable ordinary outdoor/Standard WallRun steering response?
+- `TurnSpeedFast` is unused globally;
+- the Standard steering asset is never selected;
+- the field has no effect in another speed/state branch;
+- the field unit or semantics are known;
+- actor transform orientation numerically stayed unchanged during WS reversal.
 
-The reported observation was made in the MOD WS state rather than an ordinary vanilla WallRun state. Therefore the original causal question is still **UNKNOWN**.
-
-The lack of speed change in WS does not answer the steering-field question because `TurnSpeedFast` was not selected as a speed-field probe and WS may not use the same steering path/state.
-
-## New high-value symptom
+## WS movement/facing symptom
 
 The WS state currently permits a visible separation between:
 
@@ -57,62 +62,61 @@ and
 visible character/body facing direction
 ```
 
-when the owner reverses direction.
+when direction is reversed.
 
-This is directly relevant to WallSprint because a finished wall-sprint should not visually travel backward while the body remains pointed the opposite way unless that behavior is explicitly intended.
-
-At present the responsible layer is **UNKNOWN**.
-
-Plausible classes to discriminate later, not established facts:
+This is directly relevant to WallSprint. The responsible layer is still **UNKNOWN**. Plausible classes to distinguish later include:
 
 - movement vector changes while actor/mover facing is not updated;
-- actor orientation changes but animation presentation does not follow;
+- actor orientation changes but animation/root presentation does not follow;
 - WS custom motion bypasses vanilla WallRun steering/facing logic;
-- the steering probe affects one layer while WS motion overrides another.
+- another higher-level facing/orientation controller owns the visible result.
 
-## Next minimal discriminating runtime test
+Do not promote the visible symptom into a claim about exact actor-transform state without numeric/runtime evidence.
 
-No new asset or code change is required yet.
+## Package-format verification
 
-Perform an A/B comparison with exactly the same existing probe package:
-
-### A — probe enabled
-
-1. Keep `WS Steering Probe - TurnSpeedFast 10` enabled and install mods.
-2. Test an **ordinary outdoor vanilla WallRun**, not WS, with strong left/right steering input.
-3. Record only whether ordinary WallRun heading response is clearly slower / subtly different / unchanged.
-4. Reproduce the WS direction-reversal maneuver and record whether the moonwalk-like visual mismatch occurs.
-
-### B — probe disabled
-
-1. Exit the game.
-2. Disable/remove only the steering probe.
-3. Run `Install mods` again to restore vanilla Standard steering asset selection.
-4. Repeat the same ordinary outdoor WallRun steering test.
-5. Repeat the same WS direction-reversal maneuver.
-
-Interpretation:
+The first probe's `.stage` layout matches current Overstrike MSM2 format-v2 handling:
 
 ```text
-ordinary WallRun differs A vs B
-  -> TurnSpeedFast has runtime causal influence on ordinary Standard WallRun steering.
-
-WS moonwalk occurs in both A and B
-  -> moonwalk is baseline WS behavior, not caused by this probe.
-
-WS moonwalk occurs only in A
-  -> the probe participates in the visible direction/facing mismatch; investigate config interaction before moving higher-level.
-
-ordinary WallRun unchanged A vs B
-  -> do not call the field unused yet; next discriminate Standard selection / Fast branch / override/conflict.
+0/configs/hero/hero_WallRunSteeringSetup_Standard.config
+info.json (game=MSM2, format_version=2)
 ```
 
-## Strategy implication
+Overstrike's StageInstaller hashes the asset path after the numeric span directory and overwrites that asset. Therefore the lack of visible effect is not presently explained by an obviously invalid stage layout.
 
-The new WS symptom increases the value of the previously documented higher-level motion/facing/orientation investigation (e.g. movement request + gravity/up + facing/orientation) **if** A/B confirms that the mismatch is baseline WS behavior rather than a probe artifact.
+## Next single-field discrimination
 
-Do not reopen c73 direct-CFG continuation for this symptom. First finish the A/B discrimination above.
+The smallest config-first follow-up is:
+
+```text
+Standard.TurnSpeedSlow: 75 -> 5
+file offset 0x219: 0x4B -> 0x05
+```
+
+Purpose: distinguish the hypothesis that the tested ordinary WallRun did not enter the `Fast` steering branch. Keep the test isolated to ordinary outdoor WallRun first, with WS disabled if practical. Do not stack Fast and Slow changes in one package.
+
+If the Slow probe also has no visible effect, do not continue enumerating steering fields indefinitely. Reassess Standard asset selection/runtime override and prioritize the higher-level motion/facing/orientation route suggested by current WS behavior and the Scripted Flight reference evidence.
+
+## Environment incident discovered during testing
+
+Repeated Overstrike `Install mods` attempts have failed at:
+
+```text
+Deleting 'winmm.dll'...
+System.UnauthorizedAccessException
+```
+
+Static cause chain:
+
+1. Overstrike deletes existing game-root `winmm.dll` without first clearing its ReadOnly attribute.
+2. It then recreates `winmm.dll` with `File.Copy("scripts_proxy.dll", scriptsProxyPath)`.
+3. .NET `File.Copy` preserves source file attributes.
+4. Therefore a ReadOnly `scripts_proxy.dll` can recreate a ReadOnly `winmm.dll`, causing the next Install run to fail at deletion.
+
+WallSprint Mod-Tools now normalizes only the ReadOnly attribute on game-root `scripts_proxy.dll` and `winmm.dll` immediately before opening/reusing shared Overstrike. It does not modify loader bytes or other mods.
+
+If the same UnauthorizedAccessException occurs after this normalization is installed and observed, stop repeating Install and investigate an active file lock or Windows ACL instead.
 
 ## Safety
 
-No new native hook, runtime memory write, pointer chase, qword read, config modification, or second probe is authorized by this result. Existing C52 safety gates remain binding. No other MOD repository is modified.
+No new native hook, runtime memory write, pointer chase, qword read or direct-CFG continuation is authorized by this result. C52 remains binding. No SocialFeed or other MOD repository is modified.
