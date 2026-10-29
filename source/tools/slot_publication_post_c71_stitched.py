@@ -396,6 +396,8 @@ class Transaction(c71.Transaction):
         try:
             return super().instance(row,state,path)
         except c58.Refusal as error:
+            if str(error)==c70.POST and self.e.c71_record is not None:
+                raise c58.Refusal(POST) from error
             if str(error)==c70.POST and self.e.c71_capture is not None:
                 return self._authenticate_transaction_terminal(error)
             raise
@@ -429,6 +431,8 @@ class Transaction(c71.Transaction):
         try:
             return super().connect(source,target)
         except c58.Refusal as error:
+            if str(error)==c70.POST and self.e.c71_record is not None:
+                raise c58.Refusal(POST) from error
             if str(error)==c70.POST and self.e.c71_capture is not None:
                 return self._authenticate_transaction_terminal(error)
             raise
@@ -437,7 +441,7 @@ class Transaction(c71.Transaction):
         try:
             outgoing=super().scan_row(key)
         except c58.Refusal as error:
-            if str(error)==c70.POST and key in self.post_c71:
+            if str(error)==c70.POST and (key in self.post_c71 or self.e.c71_record is not None):
                 raise c58.Refusal(POST) from error
             if str(error)==c70.POST and self.e.c71_capture is not None:
                 return self._authenticate_transaction_terminal(error)
