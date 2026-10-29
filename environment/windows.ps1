@@ -18,6 +18,23 @@ function Set-ModShortcuts($Desktop, $GameRoot, $Shell) {
     }
     foreach ($link in $links) { $link.Save() }
 }
+function Repair-LoaderReadOnly($GameRoot) {
+    foreach ($name in @('scripts_proxy.dll', 'winmm.dll')) {
+        $path = Join-Path $GameRoot $name
+        if (-not (Test-Path -LiteralPath $path)) { continue }
+        $item = Get-Item -LiteralPath $path -Force
+        if ($item.PSIsContainer) { throw "$name is not a regular file." }
+        if (($item.Attributes -band [IO.FileAttributes]::ReadOnly) -ne 0) {
+            $newAttributes = $item.Attributes -band (-bnot [IO.FileAttributes]::ReadOnly)
+            [IO.File]::SetAttributes($path, $newAttributes)
+            $after = Get-Item -LiteralPath $path -Force
+            if (($after.Attributes -band [IO.FileAttributes]::ReadOnly) -ne 0) {
+                throw "Failed to clear ReadOnly from $name."
+            }
+            Write-Output "AUTO-REPAIRED ReadOnly loader: $name"
+        }
+    }
+}
 $r = [IO.File]::ReadAllText($Request, [Text.Encoding]::UTF8) | ConvertFrom-Json
 $game = [IO.Path]::GetFullPath([string]$r.game)
 $exe = Join-Path $game 'Spider-Man2.exe'
@@ -46,6 +63,13 @@ if ($r.action -eq 'check') {
     Set-ModShortcuts -Desktop $desktop -GameRoot $game -Shell $shell
 } elseif ($r.action -eq 'play' -or $r.action -eq 'manager') {
     $name = if ($r.action -eq 'play') { 'Spider-Man2' } else { 'Overstrike' }
+    if ($name -eq 'Overstrike') {
+        # Overstrike's script installer deletes winmm.dll, then copies scripts_proxy.dll to
+        # recreate it. .NET File.Copy preserves source attributes, so a ReadOnly
+        # scripts_proxy.dll can make every newly created winmm.dll ReadOnly and cause the
+        # next Install mods run to fail at File.Delete. Normalize only that attribute.
+        Repair-LoaderReadOnly $game
+    }
     if ($running[$name].Count) {
         $shell = New-Object -ComObject WScript.Shell
         if (-not $shell.AppActivate($running[$name][0].Id)) { throw "Existing $name has no focusable window; close it manually." }
