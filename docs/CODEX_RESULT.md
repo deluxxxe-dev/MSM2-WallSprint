@@ -1,94 +1,70 @@
-# Codex result — first steering-probe runtime observation recorded; A/B discrimination next
+# Codex result — Fast steering A/B negative; Slow probe prepared; Overstrike launcher hardened
 
-2026-10-29 JST. Branch **codex/v01c20-edi-value-provenance**.
+2026-10-29 JST. Branch `codex/v01c20-edi-value-provenance`.
 
 ## STATUS
 
-partial
-
-The first current-build WallRun steering probe was installed and a runtime observation was obtained, but the owner tested behavior in the MOD WS state rather than isolating an ordinary vanilla WallRun state. Therefore the original `Standard.TurnSpeedFast` causal question is not yet complete.
+success
 
 ## CHANGED
 
-- `analysis/WALLRUN_STEERING_PROBE_RUNTIME_RESULT_20261029.md`
+- `analysis/WALLRUN_STEERING_PROBE_AB_RESULT_20261029.md`
+- `source/tools/build_wallrun_steering_slow_probe.py`
+- `source/tools/test_build_wallrun_steering_slow_probe.py`
+- `environment/Start-Overstrike.cmd`
 - `docs/PROJECT_STATE.md`
 - `docs/CODEX_NEXT.md`
 - `docs/CODEX_RESULT.md`
 
-No source/runtime implementation change was made in this result step.
+## RESULT
 
-## PROBE IDENTITY
-
-Existing authenticated one-field probe:
+Completed owner A/B for:
 
 ```text
 Standard.TurnSpeedFast: 100 -> 10
-file offset 0x218: 0x64 -> 0x0A
 ```
 
-Repository-owned generator/test remain:
+Observed:
 
 ```text
-source/tools/build_wallrun_steering_probe.py
-source/tools/test_build_wallrun_steering_probe.py
+ordinary WallRun probe ON: unchanged
+ordinary WallRun probe OFF: unchanged
+WS reversal probe ON: moonwalk YES
+WS reversal probe OFF: moonwalk YES
+WS disabled + probe ON ordinary WallRun: unchanged
 ```
 
-## OWNER RUNTIME OBSERVATION
+Therefore the visible WS moonwalk mismatch is not caused by the Fast probe. The Fast probe produced no visible ordinary-WallRun heading-response change in the tested maneuvers; this is not proof the field is unused.
 
-Narrow visible behavior:
+One further one-field discrimination is prepared:
 
 ```text
-- no visible movement-speed change in the tested WS state;
-- reversing movement direction in WS reverses displacement while visible body facing remains in the prior direction, producing a moonwalk-like appearance.
+Standard.TurnSpeedSlow: 75 -> 5
+offset 0x219: 0x4B -> 0x05
 ```
 
-This is recorded as an owner-observed runtime gameplay fact only.
+The owner-facing package is not committed because it contains a modified proprietary game asset. The repository contains a fail-closed reproducible builder and focused contract test.
 
-Do not infer from it that actor transform orientation numerically remained unchanged. Animation/root-facing, mover-facing and actor transform remain distinct possible layers.
+Stopping rule: if the Slow probe also produces no visible ordinary-WallRun heading change, stop serial Fast/Slow steering probes and move to the higher-level WS movement/facing/orientation investigation.
 
-The observation also does not establish whether `TurnSpeedFast` caused the mismatch because the probe has not yet been compared against probe-disabled WS behavior.
+## OVERSTRIKE RECURRENCE
 
-## ORIGINAL PROBE QUESTION
-
-Still **UNKNOWN**:
-
-> Does current-build `Standard.TurnSpeedFast` causally change ordinary outdoor/Standard WallRun steering response?
-
-The test must isolate ordinary vanilla WallRun rather than WS before that question can be closed.
-
-## NEXT
-
-No new package or code is required. Perform one A/B runtime comparison with the existing probe:
+The shared environment repeatedly observed a misplaced:
 
 ```text
-A probe ON:
-- ordinary outdoor vanilla WallRun steering
-- WS direction reversal / moonwalk yes-no
-
-B probe OFF after Install mods:
-- ordinary outdoor vanilla WallRun baseline
-- WS direction reversal / moonwalk yes-no
+<game>\Overstrike\winmm.dll
 ```
 
-Interpretation:
+The installed `MSM2 - Overstrike` launcher source now runs a bounded preflight before the Python environment checker:
 
-```text
-ordinary WallRun differs A vs B
-  -> narrow runtime causality for TurnSpeedFast established.
+- if that misplaced file exists, preserve it under `Mod-Tools\_quarantine` keyed by SHA256;
+- if the same quarantined bytes already exist, remove only the duplicate misplaced copy;
+- leave the game-root `winmm.dll` and `scripts_proxy.dll` untouched;
+- remove `.MSM2-Mod-Tools.lock` only when its recorded PID is demonstrably not running;
+- fail rather than widening cleanup if the repair itself fails.
 
-WS moonwalk in both A and B
-  -> baseline WS movement/facing mismatch, not probe artifact; prioritize higher-level motion/facing/orientation investigation.
-
-WS moonwalk only in A
-  -> investigate config interaction/state selection first.
-```
-
-Do not create c73 or add a second config field before this A/B result.
+The installed launcher must be refreshed once from the updated repository after the current occurrence is repaired.
 
 ## SAFETY
 
-Runtime script remains `v0.1c38`. C52 remains binding:
-
-`PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
-
-No new native hook, runtime memory write, qword read, pointer chase, direct-CFG continuation or other MOD modification was performed.
+Runtime script remains `v0.1c38`. C52 remains binding. Direct-CFG c73 remains paused. No SocialFeed or other MOD repository was modified.
