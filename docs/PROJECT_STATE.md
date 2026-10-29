@@ -105,15 +105,23 @@ Stopping rule: if this also has no visible effect, stop serial TurnSpeedFast/Slo
 
 ## Shared Overstrike recurrence mitigation
 
-A recurrent misplaced file has been observed:
+Two separate loader failure modes are now handled by the owner-operated `MSM2 - Overstrike` launcher preflight:
 
 ```text
-<game>\Overstrike\winmm.dll
+1. <game>\Overstrike\winmm.dll exists even though loaders belong at game root.
+2. <game>\scripts_proxy.dll or <game>\winmm.dll is marked ReadOnly.
 ```
 
-This file must not exist; game-wide `winmm.dll` belongs at the game root. `environment/Start-Overstrike.cmd` now performs installed-launch preflight repair: a misplaced Overstrike `winmm.dll` is moved to `Mod-Tools\_quarantine` (or removed only when an identical quarantined copy is already preserved) before the environment checker runs. The same preflight removes `.MSM2-Mod-Tools.lock` only when its recorded PID is demonstrably not running.
+The second mode explains the observed recurrence pattern if `scripts_proxy.dll` is ReadOnly: Overstrike deletes/recreates game-root `winmm.dll` during Install mods by copying `scripts_proxy.dll`, so a ReadOnly source can recreate a ReadOnly destination and make the next install fail at `File.Delete(winmm.dll)` with `UnauthorizedAccessException`.
 
-This repair is scoped to the shared owner-operated Mod-Tools launcher and does not modify SocialFeed or other MOD repositories.
+`environment/Start-Overstrike.cmd` now performs a bounded installed-launch preflight before the Python environment checker:
+
+- misplaced `Overstrike\winmm.dll` is preserved under `Mod-Tools\_quarantine` (or only the duplicate copy is removed when identical bytes are already preserved);
+- game-root `scripts_proxy.dll` and `winmm.dll` have only their ReadOnly attribute cleared when present; no bytes are changed;
+- `.MSM2-Mod-Tools.lock` is removed only when its recorded PID is demonstrably not running;
+- any unexpected repair failure stops launch rather than widening cleanup.
+
+This repair does not modify SocialFeed, ordinary MODs, WS runtime code, Profiles, or asset data.
 
 ## Safety
 
