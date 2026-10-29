@@ -1,10 +1,10 @@
-# Codex result — corrected c70 owner OFFLINE result accepted; c71 focused tool ready
+# Codex result — corrected c70 accepted; first c71 owner attempt blocked; provenance correction prepared
 
 2026-10-29 JST. Branch **codex/v01c20-edi-value-provenance**.
 
 ## Status
 
-Corrected c70 owner OFFLINE result is accepted as **VERIFIED-STATIC**.
+Corrected c70 owner OFFLINE result remains accepted as **VERIFIED-STATIC**.
 
 Canonical detail:
 
@@ -14,8 +14,7 @@ Canonical detail:
 - `analysis/V01C70_OWNER_BLOCKED_RESULT.md`
 - `analysis/V01C70_OWNER_OFFLINE_RESULT.md`
 - `analysis/V01C71_TOOL_READY.md`
-
-The first c70 owner attempt remains a blocked implementation attempt only; no artifact from it is accepted.
+- `analysis/V01C71_OWNER_BLOCKED_RESULT.md`
 
 ## Accepted c70 result
 
@@ -31,120 +30,66 @@ contract exact_c69_full_replay_all_successor_continuation_v1
 
 Exact executable remains SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`.
 
-The owner log completed `c70 full-replay c69 continuation: 162472/162472` and emitted READY.
-
-## C69 authentication and continuation
-
-C70 exactly pins the accepted c69 result/checkpoint identities and record stream.
-
-```text
-full_historical_replay_used = true
-checkpoint_accelerated_resume_used = false
-
-c69 boundary instances available = 191
-c69 boundary instances considered = 191
-all-successor-exact available = 177
-preflight eligible = 177
-admitted = 70
-refused = 121
-
-continuable exact edges available = 191
-considered = 191
-preflight eligible = 191
-admitted = 84
-refused = 107
-```
-
-Preflight refusal counts are exactly:
-
-```text
-inside_unique_runtime_span_nonentry = 13
-transaction_terminal = 1
-```
-
-`c69_record_mismatch_counts` is empty. The transaction-only terminal remains refused without a synthetic edge.
-
-C70 admission remains transactional: preflight eligibility is provisional and is committed only if the whole root completes.
-
-## New boundary result
-
-The next unknown boundary is now measured:
+C70 measured the exact next c71 diagnostic domain as:
 
 ```text
 post_c69_uncertified_boundary_refusals = 102
 ```
 
-This is the exact c71 diagnostic domain. It is not 107: five other preflight-eligible roots were refused by existing fail-closed conditions after c69 preflight.
+No candidate was emitted and all safety gates remain closed.
 
-## Replay deltas versus accepted c68
+## First c71 owner attempt
 
-```text
-root transactions completed 105721 -> 105791 (+70)
-root transactions refused   56751  -> 56681  (-70)
-rows reached                1750   -> 1797   (+47)
-address facts across rows   3161   -> 3223   (+62)
-```
-
-C70-specific fact-carrying crossings:
+The owner run completed the c67 replay and then stopped during the c70 replay:
 
 ```text
-c69_certified_crossings_with_facts = 6
-c69_address_facts_crossing_rows = 6
+c67 unchanged c66 terminal observer replay: 162472/162472
+c70 full-replay c69 continuation: 26624/162472
+POST_C69_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_BLOCKED: unrecognized c70 edge terminal provenance
 ```
 
-## Candidate/safety result
+No c71 result JSON or c71 checkpoint was produced. This attempt is **BLOCKED**, not accepted.
+
+## Diagnosis
+
+This is a c71 diagnostic implementation gap, not a contradiction in accepted c70.
+
+Corrected c70 deliberately retires the c69 first-terminal observer after the authenticated c69 terminal. A later distinct edge can therefore become the next c70 `uncertified_post_c69_runtime_boundary` even when its current key is neither:
 
 ```text
-reference_candidate_count = 0
-new_cross_row_candidate_count = 0
-reader_candidates = 0
-writer_candidates = 0
-rmw_candidates = 0
-address_only_candidates = 0
-reference_candidates = []
-live_qword_reads = 0
+key in tx.post_c69
+key in view.c69_source_keys
 ```
 
-All completeness/publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/watch/game gates remain false.
+The initial c71 edge capture recognized only those two forms and failed closed on the real owner-observed third form.
+
+## Correction
+
+`source/tools/slot_publication_post_c69_boundary_fix.py` now records that third form explicitly as:
+
+```text
+phase  = retired_c69_first_terminal_observer_distinct_edge
+reason = c70_retired_c69_first_terminal_observer_later_distinct_edge
+post_c69 = false
+used_c69_source = false
+```
+
+The record binds the active accepted c69 record, current root/state/path/source instruction and complete successor classification. It does **not** relabel historical c69 authorization as current reachability and still does not traverse the target.
+
+A small regression was added:
+
+`source/tools/test_slot_publication_post_c69_boundary_fix_quick.py`
+
+Run this quick test before another expensive owner replay.
+
+## Safety
+
+Accepted c56-c70 evidence semantics were not changed. The correction adds no continuation, Fact, candidate, slot-qword read, pointer chase, native/game probe, gameplay write or production integration.
 
 C52 remains binding:
 
 `PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
 
-Zero candidates does not prove writer absence. No pointer chase, deferred-producer assumption, native/game probe, gameplay write, production integration, or other-MOD change was added.
-
-## C70 regression status
-
-The corrected focused c70 suite passed, including:
-
-```text
-PASS: c70 later distinct edge bypasses retired c69 first-terminal observer and stops as post-c69 unknown
-PASS: c70 transaction-origin c69 terminal validates then refuses without synthetic successor
-PASS: c70 focused full-replay c69 continuation groups complete
-```
-
-## C71 focused validation
-
-The owner reran the c71 focused diagnostic suite after the progress-output correction. The c70 prerequisite suite completed first, followed by all c71 checks:
-
-```text
-C71_FOCUSED_PREREQUISITE_C70_PASS
-PASS: c71 production contract pins accepted c70 identity and exact 102-terminal domain
-PASS: c71 exact edge-backed post-c69 terminal is classified without target traversal
-PASS: c71 diagnostic checkpoint is deterministic and record mutation fails closed
-PASS: c71 transaction-origin post-c69 terminal is recorded without synthetic instruction or successor
-PASS: c71 rejects stale c70 authentication evidence
-PASS: c71 focused diagnostic groups complete
-```
-
-C71 is now **TOOL READY** for one owner OFFLINE classification run against the exact accepted c56-c70 evidence.
-
-The c69 fix2 quick smoke, c70 focused suite, and c71 focused diagnostic suite are registered in `source/tools/test_hooks_windows.sh`.
-
-Aggregate build/test/smoke/hooks/package validation remains separate from owner OFFLINE classification acceptance and can be consolidated after the diagnostic artifact is analyzed.
-
 ## Next
 
-Run exactly one c71 owner OFFLINE classifier against the accepted c56-c70 evidence. C71 must classify exactly the 102 accepted c70 `uncertified_post_c69_runtime_boundary` terminal events, remain diagnostic-only, and emit no continuation/Facts/candidates.
-
-Do not define c72 continuation behavior before the c71 owner result is analyzed.
+Run only the c71 quick retired-observer provenance regression. If it passes, rerun one corrected c71 owner OFFLINE classifier against the exact accepted c56-c70 evidence. Do not define c72 before the c71 owner artifact is analyzed.
