@@ -1,4 +1,4 @@
-# Codex result — c72 first owner BLOCKED; lifecycle correction quick PASS
+# Codex result — c72 owner attempts BLOCKED; second provenance correction prepared
 
 2026-10-29 JST. Branch **codex/v01c20-edi-value-provenance**.
 
@@ -6,7 +6,7 @@
 
 Corrected c71 owner OFFLINE result remains accepted as **VERIFIED-STATIC**.
 
-The first c72 owner OFFLINE run is **BLOCKED** and is not accepted c72 evidence. Its observed lifecycle implementation gap has been corrected, and the dedicated owner-blocker quick regression passed.
+Both c72 owner OFFLINE attempts are **BLOCKED** and are not accepted c72 evidence.
 
 Canonical detail:
 
@@ -15,6 +15,7 @@ Canonical detail:
 - `analysis/V01C72_TOOL_READY.md`
 - `analysis/V01C72_OWNER_BLOCKED_RESULT.md`
 - `analysis/V01C72_LIFECYCLE_CORRECTION_VALIDATED.md`
+- `analysis/V01C72_OWNER_BLOCKED_RESULT_2.md`
 
 ## Accepted c71 basis
 
@@ -38,45 +39,60 @@ metadata-outside-runtime records = 1
 
 ## First c72 owner attempt
 
-Observed owner progress:
+Observed:
 
 ```text
 c72 full-replay c71 continuation: 30720/162472
 POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: duplicate live c71 terminal root
 ```
 
-This does not indicate duplicate accepted c71 records. Accepted c71 still contains one first terminal for each of 102 unique roots.
+This was an observer-lifecycle bug. The duplicate-root guard correctly stopped the run. The fix retires the inherited first-c71-terminal observer after successful first authorization while preserving exact sibling callbacks.
 
-The failure was an observer-lifecycle bug: after c72 authenticated a root's accepted first c71 terminal and began continuation, the inherited c71 first-terminal observer could be reset. A later distinct c70 POST in that same root could then be offered to the accepted-c71 authenticator again. The duplicate-root guard correctly stopped the scan.
-
-## Correction
-
-Corrected wrapper:
-
-```text
-source/tools/slot_publication_post_c71_stitched_fix.py
-```
-
-The correction retires the inherited first-terminal observer after successful first authorization while preserving exact sibling callbacks from the authenticated source. Any later distinct c70 POST becomes the next `uncertified_post_c71_runtime_boundary` without being relabeled as current `tx.post_c71` reachability.
-
-Duplicate-root authentication remains fail-closed. Accepted c56-c71 semantics and the 102 / 95 / 99 domain are unchanged.
-
-## Quick validation
-
-The owner ran:
-
-```text
-source/tools/test_slot_publication_post_c71_stitched_fix_quick.py
-```
-
-Observed:
+Owner quick validation passed:
 
 ```text
 PASS: c72 retired c71 first-terminal observer sends later distinct c70 POST to next unknown without relabeling reachability
 PASS: c72 retired observer still permits exact sibling callbacks from the authenticated c71 source
 ```
 
-The exact first-owner blocker is therefore covered by focused validation. C72 is still not accepted until one corrected owner replay completes and its artifact is analyzed.
+## Second corrected c72 owner attempt
+
+The corrected run passed the first blocker point and reached:
+
+```text
+c72 full-replay c71 continuation: 31744/162472
+POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: post-c69 arrival lacks c69 proof
+```
+
+This is a separate c72 layering/provenance bug, not evidence that accepted c69 or c71 artifacts are corrupt.
+
+A valid c71 continuation can arrive with an authenticated `c71_post_boundary` proof while the current path does not itself carry a `c69_post_boundary` proof. Initial c72 still called historical c70 `mark_post_c69()` for that arrival. Historical c70 correctly refused because direct post-c69 reachability was not present on the path.
+
+## Second correction
+
+Updated:
+
+```text
+source/tools/slot_publication_post_c71_stitched_fix.py
+source/tools/test_slot_publication_post_c71_stitched_fix_quick.py
+```
+
+Correction rule:
+
+- a path with actual `c69_post_boundary` proof keeps historical `mark_post_c69()` unchanged;
+- a path with `c71_post_boundary` but no c69 proof is not relabeled as current post-c69 reachability;
+- c72 still requires the real c71 authorization through `mark_post_c71()`;
+- accepted c56-c71 semantics and the `102 / 95 / 99` production domain remain unchanged;
+- the first retired-observer correction and duplicate-root guard remain intact.
+
+New focused checks added:
+
+```text
+PASS: c72 c71-only arrival does not invent post-c69 reachability
+PASS: c72 paths with actual c69 proof preserve historical mark_post_c69 behavior
+```
+
+These new lines are prepared but not yet owner-run/accepted. The previous two quick lines must also remain PASS.
 
 ## Safety
 
@@ -90,10 +106,4 @@ All publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/prod
 
 ## Next
 
-Run exactly one corrected c72 owner OFFLINE continuation through:
-
-```text
-source/tools/slot_publication_post_c71_stitched_fix.py
-```
-
-If READY, analyze the owner artifact before defining c73. If BLOCKED, analyze the exact blocker before rerunning or widening anything.
+Run only the updated c72 quick regression. Do not run the long owner replay unless all four quick checks pass.
