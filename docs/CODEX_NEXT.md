@@ -1,23 +1,20 @@
-# Next task — owner runtime test of single-field WallRun steering probe; no c73 yet
+# Next task — owner A/B runtime discrimination of WallRun steering probe and WS facing mismatch; no c73 yet
 
 ## Status
 
 Corrected c72 owner OFFLINE result is accepted as **VERIFIED-STATIC** and the direct-CFG route is paused.
 
-Current-build vanilla steering configs have now been independently obtained and decoded:
+Current-build vanilla steering configs are independently authenticated and decoded. The first asset-only probe changes only:
 
 ```text
-configs/hero/hero_WallRunSteeringSetup_Standard.config
-asset id 948FA063808F7E18
-size 544
-SHA256 32418c218d2feb62fb9227caec321c00278e4500bc75db6c4015888359537b7b
-Type WallRunSteeringSetupConfig
+Standard.TurnSpeedFast: 100 -> 10
+```
 
-configs/hero/hero_WallRunSteeringSetup_Indoor.config
-asset id 83DF4507531061B1
-size 428
-SHA256 921a3b95b522f7bbebadf53c003d5569a0ae9f6cc740d1935d682fb9e3fe9c05
-Type WallRunSteeringSetupConfig
+The owner has now reported a first runtime observation while the probe was active, but the observation was made in the MOD WS state rather than an ordinary vanilla WallRun state:
+
+```text
+- no visible movement-speed change in the tested WS state;
+- when reversing movement direction in WS, displacement reverses while visible body facing remains in the prior direction, producing a moonwalk-like appearance.
 ```
 
 Canonical detail:
@@ -25,108 +22,91 @@ Canonical detail:
 - `analysis/V01C72_OWNER_OFFLINE_RESULT.md`
 - `analysis/VANILLA_WALLRUN_STEERING_CONFIG_20261029.md`
 - `analysis/VANILLA_WALLRUN_STEERING_PROBE_PREPARED_20261029.md`
+- `analysis/WALLRUN_STEERING_PROBE_RUNTIME_RESULT_20261029.md`
 - `docs/PROJECT_STATE.md`
 
 Continue only on `codex/v01c20-edi-value-provenance`; do not merge `main`.
 
-## Current decision
+## Evidence boundary
 
-The owner explicitly authorized proceeding directly to the next minimal test without waiting for another approval.
+The visible WS mismatch is a runtime gameplay fact, but it does **not** yet prove:
 
-The first asset-only runtime probe is therefore prepared:
+- actor transform orientation numerically stayed unchanged;
+- animation/root facing is the cause;
+- `TurnSpeedFast` caused the mismatch;
+- `TurnSpeedFast` is unused;
+- vanilla WallRun ignores the Standard steering asset.
 
-```text
-Standard.TurnSpeedFast: 100 -> 10
-```
+The original probe question remains unresolved because ordinary outdoor/Standard WallRun was not isolated.
 
-Authenticated file-level delta:
-
-```text
-file offset 0x218
-0x64 -> 0x0A
-```
-
-This is an asset-file offset only, not a game-memory/runtime offset.
-
-The generated owner-facing package is intentionally not committed because it contains a modified proprietary game asset:
-
-```text
-MSM2-WS-SteeringProbe-TurnSpeedFast10.zip
-SHA256 a61362d305f2d9fff90f941e1e518657e685b91ae94793ee68e8d316209bdd9b
-```
-
-Repository-owned reproducible builder/test:
-
-```text
-source/tools/build_wallrun_steering_probe.py
-source/tools/test_build_wallrun_steering_probe.py
-```
-
-Focused local validation passed six checks, including reproduction from the authenticated owner-supplied current-build vanilla asset.
-
-## Task ownership
+## Current task ownership
 
 ### Codex
 
-No further implementation task is authorized now.
+No implementation task is authorized now.
 
 Do not:
 
 - create c73;
-- add more config changes;
+- add another config field or another probe;
+- change the current probe value;
+- touch Indoor;
 - add native hooks, runtime reads, pointer chasing or gameplay writes;
-- change the probe value or touch Indoor;
+- infer actor/mover/animation ownership from the visible moonwalk symptom;
 - modify SocialFeed or another MOD repository.
-
-If invoked before the owner runtime result exists, only verify the current repository state/tests if specifically requested; otherwise stop and report that the owner runtime probe is the next evidence dependency.
 
 ### ChatGPT / owner runtime test
 
-Test only this question:
+Perform one A/B comparison using the existing probe package. No new package or build is required.
 
-> Does current-build `Standard.TurnSpeedFast` causally change observable WallRun steering response?
+#### A — probe enabled
 
-Procedure:
+1. Keep `WS Steering Probe - TurnSpeedFast 10` enabled and run `Install mods`.
+2. Launch the game.
+3. Test an **ordinary outdoor vanilla WallRun**, not WS, with strong left/right steering input.
+4. Record whether ordinary WallRun heading response is clearly slower / subtly different / unchanged.
+5. Enter the MOD WS state and reverse movement direction.
+6. Record whether the moonwalk-like visible body-facing mismatch occurs.
 
-1. Add/install `MSM2-WS-SteeringProbe-TurnSpeedFast10.zip` through the shared Overstrike environment.
-2. Ensure no other active mod overrides `hero_WallRunSteeringSetup_Standard.config`; temporarily disable a conflicting traversal mod if necessary.
-3. Launch the modded game.
-4. Use a repeatable ordinary outdoor/Standard WallRun situation.
-5. Apply strong steering input comparable to vanilla behavior and observe turning/heading response.
-6. Exit the game.
-7. Disable/remove the steering probe and run `Install mods` again to restore vanilla asset selection before unrelated tests.
+#### B — probe disabled
 
-Return only the relevant behavior result:
+1. Exit the game.
+2. Disable/remove only `WS Steering Probe - TurnSpeedFast 10`.
+3. Run `Install mods` again.
+4. Launch the game.
+5. Repeat the same ordinary outdoor vanilla WallRun steering test.
+6. Repeat the same WS direction-reversal maneuver.
 
-- changed clearly / changed subtly / no visible change;
-- slower / faster / unstable / other qualitative change;
-- any crash/load failure or inability to enter WallRun;
-- whether behavior returned to normal after removing the probe.
+Return four compact observations:
 
-No runtime log is required unless an unexpected loader/crash problem produces one.
+```text
+A ordinary WallRun: slower / subtle / unchanged / other
+A WS reversal: moonwalk yes / no
+B ordinary WallRun: baseline behavior description
+B WS reversal: moonwalk yes / no
+```
 
-## Decision after runtime result
+No log is required unless a crash/load/install failure occurs.
 
-### Clear steering change
+## Decision after A/B
 
-Record a narrow **VERIFIED-RUNTIME** causal fact that `Standard.TurnSpeedFast` influences observed WallRun steering response. Do not assign units from the name/value alone.
+### Ordinary WallRun differs A vs B
 
-Then choose the next single config quantity only if it answers a concrete WallSprint direction-control question. Continue config-first before reopening long native exploration.
+Record a narrow **VERIFIED-RUNTIME** causal fact that `Standard.TurnSpeedFast` influences ordinary Standard WallRun steering response. Do not infer units.
 
-### No visible change
+Then choose the next single config quantity only if it answers a concrete WallSprint direction/facing question.
 
-Do not declare the field unused. First distinguish:
+### WS moonwalk occurs in both A and B
 
-- Standard vs Indoor asset selection;
-- whether the tested situation reaches the "Fast" steering branch;
-- runtime overrides/thresholds;
-- another active mod overriding the same asset.
+Treat the moonwalk as baseline WS behavior rather than a probe artifact. This materially strengthens the case for investigating the WS movement/facing/orientation split. The next investigation should distinguish actor/mover facing from animation presentation and compare the higher-level motion/gravity/orientation route already suggested by Scripted Flight evidence. Do not reopen c73 merely for this symptom.
 
-Choose the smallest discriminating follow-up; do not stack multiple changed fields.
+### WS moonwalk occurs only in A
 
-### Crash/load failure
+The asset probe participates in the visible mismatch. Investigate config interaction/state selection before moving to a higher-level native path.
 
-Restore vanilla selection and stop. Diagnose package/asset compatibility before any second config experiment.
+### Ordinary WallRun unchanged A vs B
+
+Do not declare `TurnSpeedFast` unused. First distinguish Standard-vs-Indoor selection, whether the tested situation reaches the Fast steering branch, runtime override/thresholds, and conflicting asset replacement. Pick the smallest discriminating follow-up; do not stack fields.
 
 ## Binding safety
 
@@ -134,4 +114,4 @@ Runtime script remains `v0.1c38`. C52 remains binding:
 
 `PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
 
-All native publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/watch gates remain closed. This asset-only probe does not authorize native gameplay writes.
+All native publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/watch gates remain closed. This A/B asset test does not authorize native gameplay writes.
