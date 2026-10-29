@@ -1,6 +1,6 @@
 # WallSprint project state
 
-## Current stage — corrected c71 accepted; c72 owner attempt 4 BLOCKED at final canonical record reproduction; representation correction prepared
+## Current stage — corrected c71 accepted; c72 owner attempt 4 BLOCKED at final canonical record reproduction; representation correction focused PASS; owner replay next
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
@@ -21,6 +21,7 @@ Canonical recent detail:
 - `analysis/V01C72_OWNER_BLOCKED_RESULT_3.md`
 - `analysis/V01C72_ORDER_CORRECTION_VALIDATED.md`
 - `analysis/V01C72_OWNER_BLOCKED_RESULT_4.md`
+- `analysis/V01C72_REPRESENTATION_CORRECTION_VALIDATED.md`
 - `analysis/REFERENCE_MOD_WALLRUN_REVIEW_20261029.md`
 
 ## Accepted c71 basis
@@ -45,70 +46,32 @@ executable_file_backed_outside_runtime_metadata records = 1
 
 Only the 95 records / 99 exact edges are eligible for provisional c72 continuation. The seven non-exact records remain wholly fail-closed.
 
-## C72 owner attempt 1 — BLOCKED at 30720/162472
+## C72 owner history
+
+Attempt 1 blocked at `30720 / 162472` on duplicate live c71 terminal root. The first-terminal observer retirement correction is focused-test validated and later owner attempts passed this point.
+
+Attempt 2 blocked at `31744 / 162472` on `post-c69 arrival lacks c69 proof`. The proof-layer correction is focused-test validated and later owner attempts passed this point.
+
+Attempt 3 completed `162472 / 162472` and blocked only on final accepted-c71 stream/order reproduction. Checkpoint-order normalization was added and focused-test validated.
+
+Attempt 4 again completed the traversal/domain work and blocked at the same final reproduction guard. Static diagnosis showed that per-root authentication used canonical `c56.encoded()` equality while the final ordered adapter still used raw Python object equality, allowing canonically identical tuple/list representations to fail only at the last check.
+
+## Fourth correction — owner focused validation PASS
+
+`source/tools/slot_publication_post_c71_stitched_fix.py` now preserves all previous corrections and changes only the final ordered-record equality to compare canonical `c56.encoded()` bytes record-by-record.
+
+Owner observed all six focused PASS lines:
 
 ```text
-POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: duplicate live c71 terminal root
-```
-
-Cause: inherited first-c71-terminal observer was not retired after first authorization. Correction retires it while retaining exact sibling callbacks. Focused regression passed, and later owner runs passed this point.
-
-## C72 owner attempt 2 — BLOCKED at 31744/162472
-
-```text
-POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: post-c69 arrival lacks c69 proof
-```
-
-Cause: a valid c71-only arrival was still sent through historical `mark_post_c69()`. Correction keeps proof layers separate: c71 does not imply current c69; real c69 proof still preserves historical behavior. Focused regression passed, and later owner runs passed this point.
-
-## C72 owner attempt 3 — full replay completed; final stream guard BLOCKED
-
-Observed:
-
-```text
-c72 full-replay c71 continuation: 162472/162472
-POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: c72 live c71 record stream/order differs from accepted checkpoint
-```
-
-Before this final guard, c72 had already required the complete c71 terminal domain, canonical per-root record equality, duplicate-root exclusion, the 95-record all-exact domain, the 99-edge domain and empty mismatch counters.
-
-A first correction separated incidental live discovery order from accepted checkpoint serialization order. Owner focused regression passed five checks, including checkpoint-order normalization.
-
-## C72 owner attempt 4 — same final guard after order normalization
-
-After the five-check order correction was owner-validated, the authorized full replay again ended at:
-
-```text
-POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: c72 live c71 record stream/order differs from accepted checkpoint
-```
-
-This guard is after the full historical root loop and the same domain/authentication checks. Therefore attempt 4 does not reopen the direct traversal, the 102/95/99 domain, or per-root accepted record content.
-
-It does prove that the attempt-3 diagnosis was too narrow: ordering alone was not the whole final-comparison issue.
-
-Static diagnosis: per-root authentication uses canonical `c56.encoded()` JSON bytes, while the order adapter's final equality still used raw Python object equality. A live tuple and a checkpoint JSON list can be canonically identical but raw-Python-unequal.
-
-## Fourth correction — prepared, not yet owner-validated
-
-`source/tools/slot_publication_post_c71_stitched_fix.py` now:
-
-- preserves exact per-root `c56.encoded()` authentication;
-- preserves duplicate-root fail-closed behavior;
-- preserves checkpoint-root-order normalization;
-- preserves first-terminal observer retirement;
-- preserves c71-only/c69 proof separation;
-- changes only the final adapter equality to compare each record through `c56.encoded()` as well;
-- keeps accepted c71 record contents and the `102 / 95 / 99` domain unchanged.
-
-The focused regression now has six checks. The new sixth check intentionally uses list-form accepted data and canonically equivalent tuple-form live data; raw Python equality must differ while canonical encoded identity must match.
-
-Expected new PASS:
-
-```text
+PASS: c72 retired c71 first-terminal observer sends later distinct c70 POST to next unknown without relabeling reachability
+PASS: c72 retired observer still permits exact sibling callbacks from the authenticated c71 source
+PASS: c72 c71-only arrival does not invent post-c69 reachability
+PASS: c72 paths with actual c69 proof preserve historical mark_post_c69 behavior
+PASS: c72 exact per-root live records are normalized to accepted checkpoint order without weakening duplicate-root authentication
 PASS: c72 final stream comparison uses canonical encoded record identity rather than raw Python list/tuple representation
 ```
 
-Do not run another full owner replay until all six focused checks pass on the owner machine.
+This validates the representation correction only at focused-test level. C72 remains unaccepted until one corrected full owner replay reaches READY and its output artifact is analyzed.
 
 ## Reference-MOD review
 
@@ -133,10 +96,14 @@ All publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/prod
 
 ## Current bounded action
 
-Run only:
+Run exactly one further corrected c72 owner OFFLINE continuation through:
 
 ```text
-source/tools/test_slot_publication_post_c71_stitched_fix_quick.py
+source/tools/slot_publication_post_c71_stitched_fix.py
 ```
 
-Require all six PASS lines. If the sixth fails, stop and analyze it. If all six pass, record focused validation before authorizing one further corrected c72 owner replay.
+against the accepted c56-c71 evidence.
+
+If READY, analyze the generated c72 artifact before defining c73 or changing exploration strategy.
+
+If BLOCKED, stop and analyze that exact observed fact before changing anything or rerunning.
