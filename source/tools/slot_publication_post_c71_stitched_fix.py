@@ -1,4 +1,4 @@
-"""Lifecycle/provenance/order corrections for c72's c71 continuation.
+"""Lifecycle/provenance/order/representation corrections for c72's c71 continuation.
 
 Accepted c71 records exactly one first c70 POST terminal per root. During c72,
 a successful all-successor exact c71 authorization retires that first-terminal
@@ -17,11 +17,13 @@ reachability merely to satisfy the older c70 bookkeeping layer; c71
 The accepted c71 checkpoint also binds an order-sensitive serialized record
 stream. Full c72 replay can encounter the same unique per-root records in a
 different incidental traversal order. Each live record is already authenticated
-byte-for-byte against the accepted record for its original root, duplicate roots
-are refused, and the complete 102-record domain is checked before final result
-reproduction. Therefore final c71-result reproduction must use the accepted
-checkpoint root order rather than treating live discovery order as a semantic
-identity. The observed discovery order is retained only as diagnostic metadata.
+byte-for-byte through ``c56.encoded`` against the accepted record for its
+original root, duplicate roots are refused, and the complete 102-record domain
+is checked before final result reproduction. Therefore final c71-result
+reproduction uses accepted checkpoint root order and the final stream equality
+uses the same canonical encoded-record identity as per-root authentication.
+This avoids treating incidental Python tuple/list representation differences as
+semantic record differences. Observed discovery order remains diagnostic only.
 """
 from pathlib import Path
 
@@ -44,11 +46,11 @@ def sources():
 class _CheckpointOrderedLiveRecords:
     """Store live arrival order, iterate in accepted checkpoint root order.
 
-    Base ``authenticate_live`` has already proved each appended record is exactly
-    the accepted record for that root and rejects duplicate roots. This adapter
-    does not weaken record authentication; it only separates incidental replay
-    discovery order from the accepted checkpoint serialization order used to
-    reproduce c71's order-sensitive record-stream hash/result bytes.
+    Base ``authenticate_live`` has already proved each appended record has the
+    same canonical encoded bytes as the accepted record for that root and rejects
+    duplicate roots. This adapter does not weaken record authentication; it only
+    separates incidental replay discovery/Python container representation from
+    the accepted checkpoint serialization used to reproduce c71's result bytes.
     """
     def __init__(self,accepted_records):
         self._accepted = tuple(accepted_records)
@@ -78,9 +80,11 @@ class _CheckpointOrderedLiveRecords:
 
     def __eq__(self,other):
         try:
-            return list(self)==list(other)
+            other_records = list(other)
         except TypeError:
             return False
+        return ([c56.encoded(record) for record in self]
+            == [c56.encoded(record) for record in other_records])
 
     def discovery_order_matches_checkpoint(self):
         return tuple(self.arrival_roots)==self.checkpoint_roots
@@ -146,6 +150,7 @@ def scan(certificates,limits=base.c58.Limits(),progress=None):
         result['c71_live_discovery_order_matches_checkpoint'] = live.discovery_order_matches_checkpoint()
         result['c71_live_discovery_order_mismatch_positions'] = live.discovery_order_mismatch_positions()
         result['c71_checkpoint_order_normalized_for_result_reproduction'] = True
+        result['c71_final_stream_comparison_uses_canonical_encoding'] = True
     return result
 
 
