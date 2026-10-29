@@ -1,59 +1,42 @@
 # WallSprint project state
 
-## Current stage — corrected c71 owner OFFLINE result accepted; c72 continuation design next
+## Current stage — corrected c71 owner accepted; c72 TOOL READY; owner OFFLINE run next
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
 
 Accepted c66, corrected c67, c68, corrected c69, corrected c70, and corrected c71 owner OFFLINE results are **VERIFIED-STATIC**.
 
-Canonical detail:
+Canonical recent detail:
 
-- `analysis/V01C66_OWNER_OFFLINE_RESULT.md`
-- `analysis/V01C67_OWNER_OFFLINE_RESULT.md`
-- `analysis/V01C68_OWNER_OFFLINE_RESULT.md`
 - `analysis/V01C69_OWNER_OFFLINE_RESULT.md`
-- `analysis/V01C70_CHECKPOINT_SUFFICIENCY_BLOCKED.md`
-- `analysis/V01C70_OWNER_BLOCKED_RESULT.md`
 - `analysis/V01C70_OWNER_OFFLINE_RESULT.md`
 - `analysis/V01C71_OWNER_BLOCKED_RESULT.md`
 - `analysis/V01C71_PROVENANCE_CORRECTION_VALIDATED.md`
 - `analysis/V01C71_OWNER_OFFLINE_RESULT.md`
+- `analysis/V01C72_TOOL_PREPARED.md`
+- `analysis/V01C72_TOOL_READY.md`
 
 ## Accepted c71 evidence
 
-Corrected owner replay completed:
-
 ```text
-c70 full-replay c69 continuation: 162472/162472
-POST_C69_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY
-C71_AUTHENTICATED_PREFIX_CHECKPOINT_READY
+MSM2-WS-v0.1c71-authenticated-prefix-checkpoint.json
+physical SHA256 25b4edccb0430bc2119c6ff5aa4aa408b92c806875c4a520ddd36c0ce69ee926
+checkpoint identity 4769ecb7664e556f8771158218a7526134620c2774bfc19200f0e9b56ab54a9e
+record stream SHA256 6289d892477caa279ac9da0559ec9a3640ea501bb9850d0113538ccbb099c1b8
+record count 102
 ```
 
-Uploaded accepted checkpoint:
+Embedded result:
 
 ```text
-file: MSM2-WS-v0.1c71-authenticated-prefix-checkpoint.json
-physical SHA256: 25b4edccb0430bc2119c6ff5aa4aa408b92c806875c4a520ddd36c0ce69ee926
-size: 1324640 bytes
-checkpoint identity: 4769ecb7664e556f8771158218a7526134620c2774bfc19200f0e9b56ab54a9e
-record stream SHA256: 6289d892477caa279ac9da0559ec9a3640ea501bb9850d0113538ccbb099c1b8
-record count: 102
+repository_result POST_C69_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY
+tool v0.1c71 / schema 1
+semantic result identity 18d61be59032514a4c74c9b015f422c379e2c05050e2d5819c1025048a2276d7
+classifier identity 18cba768c4261886b70496e7f73abe3fe5276b44aecadb0d929802ae3dae9fd5
 ```
 
-Embedded exact c71 result:
-
-```text
-repository_result: POST_C69_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_READY
-tool: v0.1c71 / schema 1
-contract: exact_c70_first_terminal_post_c69_boundary_full_prefix_provenance_diagnostic_v1
-semantic result identity: 18d61be59032514a4c74c9b015f422c379e2c05050e2d5819c1025048a2276d7
-classifier identity: 18cba768c4261886b70496e7f73abe3fe5276b44aecadb0d929802ae3dae9fd5
-```
-
-The standalone c71 result bytes were not separately uploaded. From the exact checkpoint-embedded result and deterministic `c56.atomic_json()` serialization, its expected standalone representation is 424663 bytes with SHA256 `db524d81d101da4173bbdda802a6bbe65a0d1801192b37b6261ecf4ce3c37ada`. C72 should authenticate the accepted checkpoint physical identity and embedded result/record identities.
-
-Exact executable remains:
+Exact image remains:
 
 ```text
 Spider-Man2.exe 2.810.0.0
@@ -62,20 +45,15 @@ SHA256 c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9
 
 ## C71 measured domain
 
-C71 classified the exact c70 domain:
-
 ```text
-expected/classified roots = 102 / 102
-boundary instances = 102
-unique entry-instance states = 102
-unique terminal-context rows = 99
-edge-backed terminals = 102
-transaction terminals = 0
+expected/classified terminal roots = 102 / 102
+edge-backed = 102
+transaction = 0
 architectural edges = 109
 model-only edges = 0
 ```
 
-Observed provenance forms:
+Provenance forms:
 
 ```text
 used_c69_source_on_later_scan = 90
@@ -83,9 +61,7 @@ post_c69_reachable_context = 3
 retired_c69_first_terminal_observer_distinct_edge = 9
 ```
 
-The nine retired-observer records prove the owner-discovered c71 correction was required in real data. They remain explicitly distinct from current post-c69 reachability.
-
-Successor relation counts:
+Successor relations:
 
 ```text
 exact_unique_runtime_begin = 102
@@ -93,7 +69,7 @@ inside_unique_runtime_span_nonentry = 6
 executable_file_backed_outside_runtime_metadata = 1
 ```
 
-Complete per-terminal groups:
+Complete terminal groups:
 
 ```text
 all_successors_exact_runtime_begin = 95
@@ -101,40 +77,57 @@ contains_interior_successor = 6
 other_relation_set = 1
 ```
 
-The 95 all-successor-exact terminal instances contain exactly 99 architectural exact-runtime-begin edges.
+The 95 all-successor-exact records contain exactly 99 exact architectural successor edges.
 
-## Next continuation domain
+## C72 status
 
-The exact bounded c72 preflight domain is therefore:
+C72 implementation exists:
 
 ```text
-95 c71 terminal instances
-99 exact architectural successor edges
+source/tools/slot_publication_post_c71_stitched.py
+source/tools/test_slot_publication_post_c71_stitched.py
 ```
 
-The following seven c71 terminal instances remain wholly fail-closed:
+The owner ran the focused suite and all c72 checks passed, including:
 
 ```text
-6 containing inside_unique_runtime_span_nonentry
-1 containing executable_file_backed_outside_runtime_metadata
+production contract pins accepted c71 identities and 95/99 domain
+exact live-record/all-successor authentication before continuation
+later distinct edge -> uncertified_post_c71_runtime_boundary with rollback
+interior c71 terminal remains refused
+mutated c71 checkpoint record fails closed
+focused full-replay c71 continuation groups complete
 ```
 
-Do not treat 95 as committed admission. Any later refusal still rolls back provisional continuation for that root.
+Therefore c72 is **TOOL READY**, not yet an accepted owner result.
 
-## Candidates and safety
-
-C71 remained diagnostic-only:
+## C72 bounded continuation domain
 
 ```text
-new_post_c69_boundaries_admitted = 0
-new_cross_row_candidate_count = 0
+c71 terminal records total = 102
+all-successor-exact records = 95
+continuable exact architectural edges = 99
+non-continuable records = 7
+```
+
+The seven non-continuable records remain fail-closed:
+
+```text
+inside_unique_runtime_span_nonentry = 6
+executable_file_backed_outside_runtime_metadata = 1
+```
+
+Preflight eligibility is provisional. Any later refusal rolls back c71 admission for that root.
+
+## Safety
+
+C71 emitted no new candidate and c72 focused validation adds no game interaction.
+
+```text
 live_qword_reads = 0
-c56_through_c70_evidence_read_only = true
 full_historical_replay_used = true
 checkpoint_accelerated_resume_used = false
 ```
-
-Historical c70 candidate counts remain zero. Zero candidates does not prove writer absence.
 
 C52 remains binding:
 
@@ -159,12 +152,14 @@ pointer_chase
 game_used
 ```
 
+Zero candidates does not prove writer absence.
+
 Runtime remains `v0.1c38`; c53-c72 work is OFFLINE/STATIC unless separately stated. Do not modify SocialFeed or other MOD repositories.
 
 ## Current bounded action
 
-Implement and focused-test c72 as the smallest full-historical-replay continuation through only the accepted 95 all-successor-exact c71 terminal records / 99 exact edges.
+Run exactly one c72 owner OFFLINE continuation against accepted c56-c71 evidence.
 
-C72 must authenticate the accepted c71 checkpoint physical SHA, checkpoint identity, embedded c71 result identity, classifier identity, record-stream identity, exact 102-record domain, and c70 ancestry. It must preserve all existing transaction/cap/cycle/candidate semantics and stop at the first later unknown boundary.
+If READY, analyze the resulting admission counts, next-boundary count, candidates and safety before defining c73.
 
-Do not define any wider continuation or runtime/game behavior until the c72 owner result is analyzed.
+If BLOCKED, stop and analyze that exact observed fact before changing anything.
