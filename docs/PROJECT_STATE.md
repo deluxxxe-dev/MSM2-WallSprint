@@ -1,6 +1,6 @@
 # WallSprint project state
 
-## Current stage — corrected c71 accepted; first c72 owner BLOCKED; lifecycle correction quick PASS; corrected owner rerun next
+## Current stage — corrected c71 accepted; c72 owner attempts BLOCKED; second focused correction next
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
@@ -16,6 +16,7 @@ Canonical recent detail:
 - `analysis/V01C72_TOOL_READY.md`
 - `analysis/V01C72_OWNER_BLOCKED_RESULT.md`
 - `analysis/V01C72_LIFECYCLE_CORRECTION_VALIDATED.md`
+- `analysis/V01C72_OWNER_BLOCKED_RESULT_2.md`
 
 ## Accepted c71 basis
 
@@ -55,7 +56,7 @@ executable_file_backed_outside_runtime_metadata records = 1
 
 Only the 95 records / 99 exact edges are eligible for provisional c72 continuation. The seven non-exact records remain wholly fail-closed.
 
-## First c72 owner attempt
+## First c72 owner attempt — BLOCKED
 
 Observed:
 
@@ -64,35 +65,54 @@ c72 full-replay c71 continuation: 30720/162472
 POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: duplicate live c71 terminal root
 ```
 
-This run is **BLOCKED**, not accepted c72 evidence.
+Accepted c71 still contains exactly 102 unique original roots. Initial c72 failed to retire the inherited first-c71-terminal observer after authorization. The duplicate-root guard correctly stopped a later distinct c70 POST from being accepted as a second first terminal.
 
-Static diagnosis: accepted c71 still contains exactly 102 unique original roots. Initial c72 authenticated the accepted first c71 terminal, then later reset the inherited c71 capture. A later distinct c70 POST in the same root could therefore be presented as another first c71 terminal. The duplicate-root guard correctly stopped the scan.
-
-## Lifecycle correction
-
-Use:
+Correction wrapper:
 
 ```text
 source/tools/slot_publication_post_c71_stitched_fix.py
 ```
 
-The correction:
-
-- retires c71's inherited first-terminal observer after the accepted first terminal is authenticated;
-- preserves exact sibling callbacks from the same authenticated c71 source instruction;
-- routes any later distinct c70 POST to `uncertified_post_c71_runtime_boundary`;
-- does not relabel the later event as current `tx.post_c71` reachability;
-- preserves duplicate-root authentication and accepted c56-c71 semantics;
-- does not change the 102 / 95 / 99 domain.
-
-Dedicated owner quick regression passed:
+Dedicated quick regression passed:
 
 ```text
 PASS: c72 retired c71 first-terminal observer sends later distinct c70 POST to next unknown without relabeling reachability
 PASS: c72 retired observer still permits exact sibling callbacks from the authenticated c71 source
 ```
 
-The exact first-owner blocker is therefore covered. C72 is still not an accepted owner result until the corrected owner scan completes and its artifact is analyzed.
+## Corrected c72 owner attempt — second BLOCKED
+
+The corrected replay passed the first blocker point and reached:
+
+```text
+c72 full-replay c71 continuation: 30720/162472
+c72 full-replay c71 continuation: 31744/162472
+POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: post-c69 arrival lacks c69 proof
+```
+
+This second run is also **BLOCKED**, not accepted c72 evidence.
+
+Static diagnosis: c72 can have an authenticated `c71_post_boundary` arrival whose current path does not itself contain a `c69_post_boundary` proof. Initial c72 still called historical c70 `mark_post_c69()` after such an arrival. C70 correctly refused because direct post-c69 reachability had not been proven on that path.
+
+This is not evidence that accepted c69/c71 artifacts are corrupt. It is a c72 layering/provenance bug: a later c71 authorization was being projected backward into the older c69 reachability layer.
+
+## Second c72 correction
+
+The same fix wrapper now preserves historical c69 semantics exactly:
+
+- if a c72 live path contains an actual `c69_post_boundary` proof, historical `mark_post_c69()` runs unchanged;
+- if it contains a `c71_post_boundary` proof but no c69 proof, c72 does not invent current post-c69 reachability;
+- c72 still requires and records the actual c71 proof through `mark_post_c71()`;
+- the accepted c56-c71 evidence and the `102 / 95 / 99` c72 domain are unchanged.
+
+Dedicated quick coverage has been added but is not yet owner-run/accepted:
+
+```text
+PASS: c72 c71-only arrival does not invent post-c69 reachability
+PASS: c72 paths with actual c69 proof preserve historical mark_post_c69 behavior
+```
+
+The previous two retired-observer quick checks must remain PASS as well.
 
 ## Safety
 
@@ -111,8 +131,8 @@ All publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/prod
 
 ## Current bounded action
 
-Run exactly one corrected c72 owner OFFLINE continuation using `source/tools/slot_publication_post_c71_stitched_fix.py` against the accepted c56-c71 evidence.
+Run only the updated dedicated c72 correction quick regression.
 
-If READY, analyze the resulting c71 admission/refusal counts, next-boundary count, candidates and safety before defining c73.
+If all four quick lines pass, record the second correction as validated and authorize exactly one further corrected c72 owner OFFLINE run through `source/tools/slot_publication_post_c71_stitched_fix.py`.
 
-If BLOCKED, stop and analyze that exact observed fact before changing anything or rerunning.
+If any quick check fails, stop and analyze that focused failure. Do not run the long owner scan and do not define c73.
