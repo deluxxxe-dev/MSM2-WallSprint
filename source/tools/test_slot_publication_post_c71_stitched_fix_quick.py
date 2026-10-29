@@ -1,4 +1,5 @@
-"""Quick regressions for the c72 owner-observed lifecycle blockers."""
+"""Quick regressions for the c72 owner-observed lifecycle/provenance/order blockers."""
+from copy import deepcopy
 from types import SimpleNamespace
 
 import slot_publication_post_c71_stitched_fix as tool
@@ -108,3 +109,34 @@ finally:
 
 print('PASS: c72 c71-only arrival does not invent post-c69 reachability')
 print('PASS: c72 paths with actual c69 proof preserve historical mark_post_c69 behavior')
+
+# The third owner blocker occurred only after all 162472 roots completed. Each
+# live record had already been authenticated exactly against the accepted record
+# for its root and the full 102-record/95-record/99-edge domains had matched. The
+# remaining failure was incidental live discovery order versus the checkpoint's
+# serialized record order. Preserve arrival order as diagnostic metadata, but
+# iterate the authenticated records in accepted checkpoint root order for the
+# order-sensitive c71 result/record-stream reproduction.
+accepted = [
+    {'original_root_runtime_row':20,'record_identity':'accepted-20','payload':'b'},
+    {'original_root_runtime_row':10,'record_identity':'accepted-10','payload':'a'},
+    {'original_root_runtime_row':30,'record_identity':'accepted-30','payload':'c'},
+]
+live = tool._CheckpointOrderedLiveRecords(accepted)
+live.append(deepcopy(accepted[1]))
+live.append(deepcopy(accepted[0]))
+live.append(deepcopy(accepted[2]))
+assert live.arrival_roots==[10,20,30]
+assert live.checkpoint_roots==(20,10,30)
+assert live.discovery_order_matches_checkpoint() is False
+assert live.discovery_order_mismatch_positions()==2
+assert list(live)==accepted
+assert live==accepted
+
+try:
+    live.append(deepcopy(accepted[1]))
+    raise AssertionError('duplicate root was not refused')
+except base.c58.EvidenceError as error:
+    assert str(error)=='duplicate live c71 terminal root in order adapter'
+
+print('PASS: c72 exact per-root live records are normalized to accepted checkpoint order without weakening duplicate-root authentication')
