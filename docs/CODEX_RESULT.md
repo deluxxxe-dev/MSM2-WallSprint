@@ -1,4 +1,4 @@
-# Codex result — corrected c70 owner OFFLINE result accepted
+# Codex result — corrected c70 owner OFFLINE result accepted; c71 focused tool ready
 
 2026-10-29 JST. Branch **codex/v01c20-edi-value-provenance**.
 
@@ -13,6 +13,7 @@ Canonical detail:
 - `analysis/V01C70_TOOL_READY.md`
 - `analysis/V01C70_OWNER_BLOCKED_RESULT.md`
 - `analysis/V01C70_OWNER_OFFLINE_RESULT.md`
+- `analysis/V01C71_TOOL_READY.md`
 
 The first c70 owner attempt remains a blocked implementation attempt only; no artifact from it is accepted.
 
@@ -73,7 +74,7 @@ The next unknown boundary is now measured:
 post_c69_uncertified_boundary_refusals = 102
 ```
 
-This is the exact next diagnostic domain. It is not 107: five other preflight-eligible roots were refused by existing fail-closed conditions after c69 preflight.
+This is the exact c71 diagnostic domain. It is not 107: five other preflight-eligible roots were refused by existing fail-closed conditions after c69 preflight.
 
 ## Replay deltas versus accepted c68
 
@@ -112,7 +113,7 @@ C52 remains binding:
 
 Zero candidates does not prove writer absence. No pointer chase, deferred-producer assumption, native/game probe, gameplay write, production integration, or other-MOD change was added.
 
-## Regression status
+## C70 regression status
 
 The corrected focused c70 suite passed, including:
 
@@ -122,10 +123,28 @@ PASS: c70 transaction-origin c69 terminal validates then refuses without synthet
 PASS: c70 focused full-replay c69 continuation groups complete
 ```
 
-The c69 fix2 quick smoke and c70 focused suite are registered in `source/tools/test_hooks_windows.sh`.
+## C71 focused validation
 
-Aggregate build/test/smoke/hooks/package validation for the c70 handoff remains to be run; it is separate from acceptance of this owner OFFLINE artifact.
+The owner reran the c71 focused diagnostic suite after the progress-output correction. The c70 prerequisite suite completed first, followed by all c71 checks:
+
+```text
+C71_FOCUSED_PREREQUISITE_C70_PASS
+PASS: c71 production contract pins accepted c70 identity and exact 102-terminal domain
+PASS: c71 exact edge-backed post-c69 terminal is classified without target traversal
+PASS: c71 diagnostic checkpoint is deterministic and record mutation fails closed
+PASS: c71 transaction-origin post-c69 terminal is recorded without synthetic instruction or successor
+PASS: c71 rejects stale c70 authentication evidence
+PASS: c71 focused diagnostic groups complete
+```
+
+C71 is now **TOOL READY** for one owner OFFLINE classification run against the exact accepted c56-c70 evidence.
+
+The c69 fix2 quick smoke, c70 focused suite, and c71 focused diagnostic suite are registered in `source/tools/test_hooks_windows.sh`.
+
+Aggregate build/test/smoke/hooks/package validation remains separate from owner OFFLINE classification acceptance and can be consolidated after the diagnostic artifact is analyzed.
 
 ## Next
 
-Implement only the c71 task in `docs/CODEX_NEXT.md`: diagnostic-only classification of the exact 102 accepted c70 `uncertified_post_c69_runtime_boundary` terminal events. Do not traverse them or define c72 continuation behavior before the c71 owner result is analyzed.
+Run exactly one c71 owner OFFLINE classifier against the accepted c56-c70 evidence. C71 must classify exactly the 102 accepted c70 `uncertified_post_c69_runtime_boundary` terminal events, remain diagnostic-only, and emit no continuation/Facts/candidates.
+
+Do not define c72 continuation behavior before the c71 owner result is analyzed.
