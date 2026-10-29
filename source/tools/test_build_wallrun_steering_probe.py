@@ -102,12 +102,34 @@ def test_outer_zip_layout() -> None:
 def test_production_contract_constants() -> None:
     assert probe.EXPECTED_SIZE == 544
     assert probe.EXPECTED_SHA256 == "32418c218d2feb62fb9227caec321c00278e4500bc75db6c4015888359537b7b"
-    assert probe.FIELD_NAME == "TurnSpeedFast"
-    assert probe.FIELD_OFFSET == 0x218
-    assert probe.VANILLA_VALUE == 100
-    assert probe.PROBE_VALUE == 10
-    assert probe.ASSET_PATH == "configs/hero/hero_WallRunSteeringSetup_Standard.config"
-    print("PASS: production contract pins current-build vanilla identity and TurnSpeedFast 100->10")
+    assert probe.PROBES["fast10"] == {
+        "field": "TurnSpeedFast",
+        "offset": 0x218,
+        "from": 100,
+        "to": 10,
+        "mod_name": "WS Steering Probe - TurnSpeedFast 10",
+        "stage_name": "MSM2-WS-SteeringProbe-TurnSpeedFast10.stage",
+    }
+    assert probe.PROBES["slow5"] == {
+        "field": "TurnSpeedSlow",
+        "offset": 0x219,
+        "from": 75,
+        "to": 5,
+        "mod_name": "WS Steering Probe - TurnSpeedSlow 5",
+        "stage_name": "MSM2-WS-SteeringProbe-TurnSpeedSlow5.stage",
+    }
+    print("PASS: production contracts pin current-build Fast 100->10 and Slow 75->5 probes")
+
+
+def test_distinct_probe_offsets() -> None:
+    fast = probe.PROBES["fast10"]
+    slow = probe.PROBES["slow5"]
+    assert fast["offset"] == 0x218
+    assert slow["offset"] == 0x219
+    assert fast["offset"] != slow["offset"]
+    assert fast["from"] == 100 and fast["to"] == 10
+    assert slow["from"] == 75 and slow["to"] == 5
+    print("PASS: Fast and Slow probes target distinct authenticated one-byte fields")
 
 
 def main() -> int:
@@ -116,6 +138,7 @@ def main() -> int:
     test_stage_layout()
     test_outer_zip_layout()
     test_production_contract_constants()
+    test_distinct_probe_offsets()
     return 0
 
 
