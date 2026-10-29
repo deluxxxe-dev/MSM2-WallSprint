@@ -112,11 +112,9 @@ print('PASS: c72 paths with actual c69 proof preserve historical mark_post_c69 b
 
 # The third owner blocker occurred only after all 162472 roots completed. Each
 # live record had already been authenticated exactly against the accepted record
-# for its root and the full 102-record/95-record/99-edge domains had matched. The
-# remaining failure was incidental live discovery order versus the checkpoint's
-# serialized record order. Preserve arrival order as diagnostic metadata, but
-# iterate the authenticated records in accepted checkpoint root order for the
-# order-sensitive c71 result/record-stream reproduction.
+# for its root and the full 102-record/95-record/99-edge domains had matched. Live
+# discovery order is incidental, so iterate already-authenticated records in the
+# accepted checkpoint root order for order-sensitive c71 result reproduction.
 accepted = [
     {'original_root_runtime_row':20,'record_identity':'accepted-20','payload':'b'},
     {'original_root_runtime_row':10,'record_identity':'accepted-10','payload':'a'},
@@ -140,3 +138,26 @@ except base.c58.EvidenceError as error:
     assert str(error)=='duplicate live c71 terminal root in order adapter'
 
 print('PASS: c72 exact per-root live records are normalized to accepted checkpoint order without weakening duplicate-root authentication')
+
+# Owner attempt 4 still reached the same final stream guard after checkpoint-order
+# normalization. Per-root authentication already uses c56.encoded(), whose JSON
+# canonicalization treats tuple/list containers identically. The final stream
+# guard must use that same identity relation instead of raw Python object equality.
+accepted_repr = [{
+    'original_root_runtime_row':40,
+    'record_identity':'accepted-40',
+    'terminal_provenance':{'key':[40,1234], 'path':[[1,2],[3,4]]},
+}]
+live_repr_record = {
+    'original_root_runtime_row':40,
+    'record_identity':'accepted-40',
+    'terminal_provenance':{'key':(40,1234), 'path':[(1,2),(3,4)]},
+}
+assert live_repr_record != accepted_repr[0]
+assert base.c56.encoded(live_repr_record)==base.c56.encoded(accepted_repr[0])
+canonical = tool._CheckpointOrderedLiveRecords(accepted_repr)
+canonical.append(live_repr_record)
+assert list(canonical) != accepted_repr
+assert canonical == accepted_repr
+
+print('PASS: c72 final stream comparison uses canonical encoded record identity rather than raw Python list/tuple representation')
