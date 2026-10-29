@@ -1,134 +1,128 @@
-# Next task — run corrected c72 owner OFFLINE continuation once
+# Next task — inspect current-build vanilla WallRun steering configs before any c73 direct-CFG continuation
 
 ## Status
 
-Corrected c71 owner OFFLINE result remains accepted as **VERIFIED-STATIC**.
+Corrected c72 owner OFFLINE result is accepted as **VERIFIED-STATIC**.
 
-Four c72 owner OFFLINE attempts are **BLOCKED** historical evidence only. None is accepted c72 evidence.
+Accepted c72 artifact:
 
-The latest canonical representation correction is now owner focused-test validated with all six required PASS lines. Continue only on `codex/v01c20-edi-value-provenance`; do not merge `main`.
+```text
+MSM2-WS-v0.1c72-post-c71-stitched.json
+SHA256 077955562f1cdd9ba966fd1104ecd2b3b258f3aa25384418032fa5099149d32d
+repository_result POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_READY
+```
+
+Key result:
+
+```text
+c71 records = 102/102
+all-successor-exact = 95/95
+exact edges = 99/99/99
+post_c71_uncertified_boundary_refusals = 54
+reader_candidates = 0
+writer_candidates = 0
+rmw_candidates = 0
+address_only_candidates = 0
+live_qword_reads = 0
+```
+
+Do **not** automatically define c73 as another direct-CFG continuation. The direct route is paused pending a materially different investigation.
 
 Canonical detail:
 
-- `analysis/V01C71_OWNER_OFFLINE_RESULT.md`
-- `analysis/V01C72_TOOL_READY.md`
-- `analysis/V01C72_OWNER_BLOCKED_RESULT.md`
-- `analysis/V01C72_LIFECYCLE_CORRECTION_VALIDATED.md`
-- `analysis/V01C72_OWNER_BLOCKED_RESULT_2.md`
-- `analysis/V01C72_PROVENANCE_CORRECTION_VALIDATED.md`
-- `analysis/V01C72_OWNER_BLOCKED_RESULT_3.md`
-- `analysis/V01C72_ORDER_CORRECTION_VALIDATED.md`
-- `analysis/V01C72_OWNER_BLOCKED_RESULT_4.md`
-- `analysis/V01C72_REPRESENTATION_CORRECTION_VALIDATED.md`
+- `analysis/V01C72_OWNER_OFFLINE_RESULT.md`
+- `analysis/REFERENCE_MOD_WALLRUN_REVIEW_20261029.md`
+- `docs/PROJECT_STATE.md`
 
-## Accepted c71 basis
+Continue only on `codex/v01c20-edi-value-provenance`; do not merge `main`.
 
-```text
-MSM2-WS-v0.1c71-authenticated-prefix-checkpoint.json
-physical SHA256 25b4edccb0430bc2119c6ff5aa4aa408b92c806875c4a520ddd36c0ce69ee926
-checkpoint identity 4769ecb7664e556f8771158218a7526134620c2774bfc19200f0e9b56ab54a9e
-record stream SHA256 6289d892477caa279ac9da0559ec9a3640ea501bb9850d0113538ccbb099c1b8
-record count 102
-```
+## Purpose
 
-Exact c72 continuation domain remains unchanged:
+Determine whether the authenticated current game build exposes useful WallRun steering behavior through vanilla config assets before spending another version on the remaining 54 direct-CFG frontier observations.
+
+This is a **read-only/static asset investigation first**.
+
+## Primary current-build assets
+
+Obtain or extract these exact vanilla resources from the current game build:
 
 ```text
-c71 terminal records = 102
-all-successor-exact records = 95
-continuable exact architectural edges = 99
-inside_unique_runtime_span_nonentry records = 6
-executable_file_backed_outside_runtime_metadata records = 1
+configs/hero/hero_WallRunSteeringSetup_Standard.config
+  asset id 948FA063808F7E18
+
+configs/hero/hero_WallRunSteeringSetup_Indoor.config
+  asset id 83DF4507531061B1
 ```
 
-Only the 95 all-successor-exact records / 99 exact edges may be provisionally continued.
-
-## Validated correction set
-
-Run through:
+Secondary comparison assets, only after the steering assets are available:
 
 ```text
-source/tools/slot_publication_post_c71_stitched_fix.py
+configs/hero/hero_WallRunConfig.config
+  asset id 86DF98B17F4D766D
+
+configs/hero/hero_WallRunSpeedSetup_Standard.config
+  asset id 80D25C57AC09BE31
+
+configs/hero/hero_WallRunJumpSetup_Standard.config
+  asset id B78A8FA3857CFB17
 ```
 
-The wrapper must preserve all of the following:
+The asset IDs are locator aids derived from public DAT1 path hashing and reference-MOD resource names. Current-build asset presence/content must be independently established.
 
-- exact per-root c71 authentication using canonical `c56.encoded()` identity;
-- duplicate-root fail-closed behavior;
-- retirement of the inherited c71 first-terminal observer after successful authorization;
-- exact sibling callbacks from the authenticated source instruction;
-- later distinct c70 POST events become `uncertified_post_c71_runtime_boundary` without relabeling current reachability;
-- c71 proof alone does not imply current post-c69 reachability;
-- real c69 proof preserves historical `mark_post_c69()` behavior;
-- checkpoint root order is used for final c71 stream/result reproduction over already-authenticated records;
-- final ordered-record equality also uses canonical `c56.encoded()` identity rather than raw Python container equality;
-- accepted c56-c71 semantics and the `102 / 95 / 99` domain remain unchanged.
+## Task
 
-Owner focused validation observed all six PASS lines, including:
+1. Locate/extract the current-build vanilla Standard and Indoor WallRun steering configs.
+2. Record their exact file SHA256 identities and extraction source/build context.
+3. Decode them using the already documented DAT1 config format or an equivalent independently verifiable decoder.
+4. Record the decoded config type and a compact inventory of field/group names and values relevant to direction, steering, surface-relative movement, momentum, turn rates, thresholds or wall orientation.
+5. Compare Standard vs Indoor structurally. Do not assign semantics beyond names/data without evidence.
+6. Only if useful, decode the current-build WallRunConfig/SpeedSetup/JumpSetup resources to establish references/defaults and vanilla-vs-reference differences.
+7. Decide whether one **minimal asset-only experiment** could test a single steering quantity. Do not perform that experiment unless separately authorized after review.
+8. Preserve reusable engine/config facts in `MSM2-Wisdoms` when independently established from current-build vanilla evidence.
 
-```text
-PASS: c72 final stream comparison uses canonical encoded record identity rather than raw Python list/tuple representation
-```
+## Allowed changes
 
-## Current task
-
-Run exactly one further corrected c72 owner OFFLINE full replay against the exact accepted c56-c71 evidence.
-
-Expected successful repository result:
-
-```text
-POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_READY
-tool v0.1c72 / schema 1
-contract exact_c71_full_replay_all_successor_continuation_v1
-```
-
-Require:
-
-```text
-full_historical_replay_used = true
-checkpoint_accelerated_resume_used = false
-```
-
-## Required owner-result checks
-
-Before defining c73 or changing exploration strategy, verify:
-
-- c71 records available/considered = 102/102;
-- all-successor-exact available/preflight = 95/95;
-- exact edges available/considered/preflight = 99/99/99;
-- c71 record mismatch counts are empty;
-- live-order diagnostic reports any observed permutation without changing accepted-record identity;
-- admitted/refused c71 instance and edge counts;
-- next `uncertified_post_c71_runtime_boundary` count;
-- root completed/refused counts;
-- rows reached and address Facts crossing rows;
-- READ/WRITE/RMW/ADDRESS_ONLY candidate counts;
-- `live_qword_reads = 0`;
-- all safety gates remain false.
-
-Zero candidates does not prove writer absence.
-
-## If blocked
-
-If this owner run emits `POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED`, stop and analyze only that exact observed fact. Do not rerun or widen semantics by assumption.
+- WallSprint analysis/documentation.
+- Small WallSprint-owned read-only extraction/decoding helper if genuinely required.
+- Static tests for such a helper.
+- Wisdoms documentation for reusable facts after current-build verification.
 
 ## Do not
 
-- Do not weaken per-root c71 record authentication.
-- Do not remove duplicate-root refusal.
-- Do not alter accepted c71 checkpoint contents or identities.
-- Do not weaken historical c69 proof requirements.
-- Do not alter the accepted `102 / 95 / 99` c71 domain.
-- Do not continue the six interior records or one metadata-outside-runtime record.
-- Do not define c73 before c72 owner evidence is accepted and analyzed.
-- Do not infer writer absence from zero candidates.
-- Do not read slot qwords or chase pointers.
-- Do not add native/game probes or gameplay/production writes.
+- Do not define or implement c73 direct-CFG continuation yet.
+- Do not edit/deploy vanilla config assets in this task.
+- Do not copy third-party MOD config values into production as truth.
+- Do not import third-party binary code, offsets, signatures or ABI declarations.
+- Do not add native hooks, qword reads, pointer chase, game probes or gameplay writes.
+- Do not weaken C52 or any existing safety/admission gate.
 - Do not modify SocialFeed or any other MOD repository.
+
+## Completion conditions
+
+Report only after establishing one of the following:
+
+### Success
+
+- current-build Standard steering config obtained and SHA256 recorded;
+- preferably Indoor steering config also obtained and SHA256 recorded;
+- decoded type/fields recorded with evidence distinction;
+- a clear conclusion whether a minimal asset-only steering experiment is worth attempting next;
+- detailed evidence persisted in WallSprint and reusable current-build facts synchronized to Wisdoms when applicable.
+
+### Blocked
+
+If the environment cannot access the current-build game assets, stop without substituting third-party files. Report the exact owner-supplied files needed:
+
+```text
+hero_WallRunSteeringSetup_Standard.config
+hero_WallRunSteeringSetup_Indoor.config
+```
+
+Optionally request the three secondary vanilla configs only after steering inspection requires them.
 
 ## Binding safety
 
-C52 remains binding:
+Runtime remains `v0.1c38`. C52 remains binding:
 
 `PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
 
