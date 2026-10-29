@@ -1,4 +1,4 @@
-# Codex result — corrected c70 accepted; first c71 owner attempt blocked; provenance correction prepared
+# Codex result — corrected c70 accepted; first c71 owner attempt blocked; provenance correction quick PASS
 
 2026-10-29 JST. Branch **codex/v01c20-edi-value-provenance**.
 
@@ -15,6 +15,7 @@ Canonical detail:
 - `analysis/V01C70_OWNER_OFFLINE_RESULT.md`
 - `analysis/V01C71_TOOL_READY.md`
 - `analysis/V01C71_OWNER_BLOCKED_RESULT.md`
+- `analysis/V01C71_PROVENANCE_CORRECTION_VALIDATED.md`
 
 ## Accepted c70 result
 
@@ -50,22 +51,13 @@ POST_C69_RUNTIME_BOUNDARY_EDGE_CLASSIFIER_BLOCKED: unrecognized c70 edge termina
 
 No c71 result JSON or c71 checkpoint was produced. This attempt is **BLOCKED**, not accepted.
 
-## Diagnosis
+## Diagnosis and correction
 
-This is a c71 diagnostic implementation gap, not a contradiction in accepted c70.
+This was a c71 diagnostic implementation gap, not a contradiction in accepted c70.
 
-Corrected c70 deliberately retires the c69 first-terminal observer after the authenticated c69 terminal. A later distinct edge can therefore become the next c70 `uncertified_post_c69_runtime_boundary` even when its current key is neither:
+Corrected c70 deliberately retires the c69 first-terminal observer after the authenticated c69 terminal. A later distinct edge can therefore become the next c70 `uncertified_post_c69_runtime_boundary` even when its current key is neither `tx.post_c69` nor `view.c69_source_keys`.
 
-```text
-key in tx.post_c69
-key in view.c69_source_keys
-```
-
-The initial c71 edge capture recognized only those two forms and failed closed on the real owner-observed third form.
-
-## Correction
-
-`source/tools/slot_publication_post_c69_boundary_fix.py` now records that third form explicitly as:
+The c71 correction records that third form explicitly as:
 
 ```text
 phase  = retired_c69_first_terminal_observer_distinct_edge
@@ -74,13 +66,17 @@ post_c69 = false
 used_c69_source = false
 ```
 
-The record binds the active accepted c69 record, current root/state/path/source instruction and complete successor classification. It does **not** relabel historical c69 authorization as current reachability and still does not traverse the target.
+It binds the active accepted c69 record and current root/state/path/source instruction without relabeling current reachability and without traversing the target.
 
-A small regression was added:
+## Quick validation
 
-`source/tools/test_slot_publication_post_c69_boundary_fix_quick.py`
+The owner ran the dedicated correction regression. Observed:
 
-Run this quick test before another expensive owner replay.
+```text
+PASS: c71 owner-observed retired c69 observer distinct edge is recorded without relabeling current reachability
+```
+
+The exact first-owner blocker is therefore covered by the correction. This is a focused tooling validation only, not an accepted c71 owner result.
 
 ## Safety
 
@@ -92,4 +88,4 @@ C52 remains binding:
 
 ## Next
 
-Run only the c71 quick retired-observer provenance regression. If it passes, rerun one corrected c71 owner OFFLINE classifier against the exact accepted c56-c70 evidence. Do not define c72 before the c71 owner artifact is analyzed.
+Rerun exactly one corrected c71 owner OFFLINE classifier against the exact accepted c56-c70 evidence. If another unknown provenance form or evidence mismatch appears, stop fail-closed and analyze that observed fact. Do not define c72 before the c71 owner artifact is analyzed.
