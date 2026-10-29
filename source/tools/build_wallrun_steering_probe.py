@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
 import hashlib
 import io
 import json
@@ -12,48 +11,13 @@ from pathlib import Path
 ASSET_PATH = "configs/hero/hero_WallRunSteeringSetup_Standard.config"
 EXPECTED_SIZE = 544
 EXPECTED_SHA256 = "32418c218d2feb62fb9227caec321c00278e4500bc75db6c4015888359537b7b"
+FIELD_NAME = "TurnSpeedFast"
+FIELD_OFFSET = 0x218
+VANILLA_VALUE = 100
+PROBE_VALUE = 10
+MOD_NAME = "WS Steering Probe - TurnSpeedFast 10"
 AUTHOR = "deluxxxe-dev / WallSprint"
 FIXED_ZIP_TIMESTAMP = (2026, 10, 29, 20, 30, 0)
-
-
-@dataclass(frozen=True)
-class ProbeSpec:
-    key: str
-    field: str
-    offset: int
-    vanilla: int
-    probe: int
-    mod_name: str
-    stage_name: str
-
-
-PROBES = {
-    "fast10": ProbeSpec(
-        key="fast10",
-        field="TurnSpeedFast",
-        offset=0x218,
-        vanilla=100,
-        probe=10,
-        mod_name="WS Steering Probe - TurnSpeedFast 10",
-        stage_name="MSM2-WS-SteeringProbe-TurnSpeedFast10.stage",
-    ),
-    "slow5": ProbeSpec(
-        key="slow5",
-        field="TurnSpeedSlow",
-        offset=0x219,
-        vanilla=75,
-        probe=5,
-        mod_name="WS Steering Probe - TurnSpeedSlow 5",
-        stage_name="MSM2-WS-SteeringProbe-TurnSpeedSlow5.stage",
-    ),
-}
-
-# Backward-compatible constants used by older focused checks/importers.
-FIELD_NAME = PROBES["fast10"].field
-FIELD_OFFSET = PROBES["fast10"].offset
-VANILLA_VALUE = PROBES["fast10"].vanilla
-PROBE_VALUE = PROBES["fast10"].probe
-MOD_NAME = PROBES["fast10"].mod_name
 
 
 def sha256_hex(data: bytes) -> str:
@@ -98,11 +62,10 @@ def _zipinfo(name: str) -> zipfile.ZipInfo:
     return zi
 
 
-def make_stage(asset_bytes: bytes, spec: ProbeSpec | None = None) -> bytes:
-    spec = spec or PROBES["fast10"]
+def make_stage(asset_bytes: bytes) -> bytes:
     info = {
         "game": "MSM2",
-        "name": spec.mod_name,
+        "name": MOD_NAME,
         "author": AUTHOR,
         "format_version": 2,
     }
@@ -121,28 +84,28 @@ def make_outer_zip(stage_bytes: bytes, stage_name: str) -> bytes:
     return buffer.getvalue()
 
 
-def build_probe(input_path: Path, output_zip: Path, spec: ProbeSpec | None = None) -> dict[str, object]:
-    spec = spec or PROBES["fast10"]
+def build_probe(input_path: Path, output_zip: Path) -> dict[str, object]:
     vanilla = input_path.read_bytes()
     patched = patch_one_byte(
         vanilla,
         expected_sha256=EXPECTED_SHA256,
         expected_size=EXPECTED_SIZE,
-        offset=spec.offset,
-        expected_old=spec.vanilla,
-        new_value=spec.probe,
+        offset=FIELD_OFFSET,
+        expected_old=VANILLA_VALUE,
+        new_value=PROBE_VALUE,
     )
 
-    stage_bytes = make_stage(patched, spec)
-    outer_bytes = make_outer_zip(stage_bytes, spec.stage_name)
+    stage_name = "MSM2-WS-SteeringProbe-TurnSpeedFast10.stage"
+    stage_bytes = make_stage(patched)
+    outer_bytes = make_outer_zip(stage_bytes, stage_name)
     output_zip.parent.mkdir(parents=True, exist_ok=True)
     output_zip.write_bytes(outer_bytes)
 
     # Verify the written package before reporting success.
     with zipfile.ZipFile(io.BytesIO(outer_bytes), "r") as outer:
-        if outer.namelist() != [spec.stage_name]:
+        if outer.namelist() != [stage_name]:
             raise ValueError(f"unexpected outer archive layout: {outer.namelist()}")
-        recovered_stage = outer.read(spec.stage_name)
+        recovered_stage = outer.read(stage_name)
 
     with zipfile.ZipFile(io.BytesIO(recovered_stage), "r") as stage:
         expected_member = f"0/{ASSET_PATH}"
@@ -151,9 +114,9 @@ def build_probe(input_path: Path, output_zip: Path, spec: ProbeSpec | None = Non
         recovered_asset = stage.read(expected_member)
 
     changed = [i for i, (a, b) in enumerate(zip(vanilla, recovered_asset)) if a != b]
-    if changed != [spec.offset]:
+    if changed != [FIELD_OFFSET]:
         raise ValueError(f"packaged asset changed unexpected offsets: {changed}")
-    if recovered_asset[spec.offset] != spec.probe:
+    if recovered_asset[FIELD_OFFSET] != PROBE_VALUE:
         raise ValueError("packaged asset does not contain requested probe value")
 
     return {
@@ -161,25 +124,23 @@ def build_probe(input_path: Path, output_zip: Path, spec: ProbeSpec | None = Non
         "modified_asset_sha256": sha256_hex(patched),
         "stage_sha256": sha256_hex(recovered_stage),
         "package_sha256": sha256_hex(outer_bytes),
-        "probe": spec.key,
-        "field": spec.field,
-        "offset": spec.offset,
-        "from": spec.vanilla,
-        "to": spec.probe,
+        "field": FIELD_NAME,
+        "offset": FIELD_OFFSET,
+        "from": VANILLA_VALUE,
+        "to": PROBE_VALUE,
         "output": str(output_zip),
     }
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Build an authenticated MSM2 WallRun steering one-field probe package."
+        description="Build the authenticated MSM2 WallRun steering TurnSpeedFast probe package."
     )
     parser.add_argument("input", type=Path, help="extracted vanilla Standard steering config")
     parser.add_argument("output", type=Path, help="output .zip path")
-    parser.add_argument("--probe", choices=sorted(PROBES), default="fast10")
     args = parser.parse_args()
 
-    result = build_probe(args.input, args.output, PROBES[args.probe])
+    result = build_probe(args.input, args.output)
     print("WALLRUN_STEERING_PROBE_READY")
     for key, value in result.items():
         if key == "offset":
