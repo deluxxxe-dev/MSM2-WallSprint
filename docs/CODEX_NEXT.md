@@ -1,117 +1,89 @@
-# Next task — owner A/B runtime discrimination of WallRun steering probe and WS facing mismatch; no c73 yet
+# Next task — owner runtime test of TurnSpeedSlow steering probe; no c73 yet
 
 ## Status
 
-Corrected c72 owner OFFLINE result is accepted as **VERIFIED-STATIC** and the direct-CFG route is paused.
+Corrected c72 remains accepted **VERIFIED-STATIC**; direct-CFG continuation is paused.
 
-Current-build vanilla steering configs are independently authenticated and decoded. The first asset-only probe changes only:
+The first Standard steering probe is complete:
 
 ```text
-Standard.TurnSpeedFast: 100 -> 10
+TurnSpeedFast: 100 -> 10
 ```
 
-The owner has now reported a first runtime observation while the probe was active, but the observation was made in the MOD WS state rather than an ordinary vanilla WallRun state:
+Owner A/B result:
 
 ```text
-- no visible movement-speed change in the tested WS state;
-- when reversing movement direction in WS, displacement reverses while visible body facing remains in the prior direction, producing a moonwalk-like appearance.
+probe ON ordinary WallRun: unchanged
+probe OFF ordinary WallRun: unchanged
+WS reversal probe ON: moonwalk YES
+WS reversal probe OFF: moonwalk YES
+WS disabled + probe ON ordinary WallRun: unchanged
 ```
 
 Canonical detail:
 
 - `analysis/V01C72_OWNER_OFFLINE_RESULT.md`
 - `analysis/VANILLA_WALLRUN_STEERING_CONFIG_20261029.md`
-- `analysis/VANILLA_WALLRUN_STEERING_PROBE_PREPARED_20261029.md`
-- `analysis/WALLRUN_STEERING_PROBE_RUNTIME_RESULT_20261029.md`
+- `analysis/WALLRUN_STEERING_PROBE_AB_RESULT_20261029.md`
 - `docs/PROJECT_STATE.md`
 
-Continue only on `codex/v01c20-edi-value-provenance`; do not merge `main`.
+## Current interpretation
 
-## Evidence boundary
+Narrow **VERIFIED-RUNTIME** facts:
 
-The visible WS mismatch is a runtime gameplay fact, but it does **not** yet prove:
+- the moonwalk-like WS facing mismatch is baseline WS behavior, not caused by the Fast steering probe;
+- `TurnSpeedFast 100 -> 10` produced no visible ordinary-WallRun heading-response change in the tested maneuvers, including a run with WS disabled.
 
-- actor transform orientation numerically stayed unchanged;
-- animation/root facing is the cause;
-- `TurnSpeedFast` caused the mismatch;
-- `TurnSpeedFast` is unused;
-- vanilla WallRun ignores the Standard steering asset.
+Do not call `TurnSpeedFast` unused. The Fast branch may simply not have been selected, or runtime logic may override/scale the value.
 
-The original probe question remains unresolved because ordinary outdoor/Standard WallRun was not isolated.
+Current Overstrike source independently confirms the MSM2 `format_version=2` stage layout/path mechanism used by the probe, so package-layout failure is not the leading explanation.
 
-## Current task ownership
+## Next owner runtime test
 
-### Codex
-
-No implementation task is authorized now.
-
-Do not:
-
-- create c73;
-- add another config field or another probe;
-- change the current probe value;
-- touch Indoor;
-- add native hooks, runtime reads, pointer chasing or gameplay writes;
-- infer actor/mover/animation ownership from the visible moonwalk symptom;
-- modify SocialFeed or another MOD repository.
-
-### ChatGPT / owner runtime test
-
-Perform one A/B comparison using the existing probe package. No new package or build is required.
-
-#### A — probe enabled
-
-1. Keep `WS Steering Probe - TurnSpeedFast 10` enabled and run `Install mods`.
-2. Launch the game.
-3. Test an **ordinary outdoor vanilla WallRun**, not WS, with strong left/right steering input.
-4. Record whether ordinary WallRun heading response is clearly slower / subtly different / unchanged.
-5. Enter the MOD WS state and reverse movement direction.
-6. Record whether the moonwalk-like visible body-facing mismatch occurs.
-
-#### B — probe disabled
-
-1. Exit the game.
-2. Disable/remove only `WS Steering Probe - TurnSpeedFast 10`.
-3. Run `Install mods` again.
-4. Launch the game.
-5. Repeat the same ordinary outdoor vanilla WallRun steering test.
-6. Repeat the same WS direction-reversal maneuver.
-
-Return four compact observations:
+Test exactly one further field:
 
 ```text
-A ordinary WallRun: slower / subtle / unchanged / other
-A WS reversal: moonwalk yes / no
-B ordinary WallRun: baseline behavior description
-B WS reversal: moonwalk yes / no
+Standard.TurnSpeedSlow: 75 -> 5
+file offset 0x219: 0x4B -> 0x05
 ```
 
-No log is required unless a crash/load/install failure occurs.
+Repository builder/test:
 
-## Decision after A/B
+```text
+source/tools/build_wallrun_steering_slow_probe.py
+source/tools/test_build_wallrun_steering_slow_probe.py
+```
 
-### Ordinary WallRun differs A vs B
+Procedure:
 
-Record a narrow **VERIFIED-RUNTIME** causal fact that `Standard.TurnSpeedFast` influences ordinary Standard WallRun steering response. Do not infer units.
+1. Disable/remove the previous `TurnSpeedFast 10` probe.
+2. Disable WallSprint for this isolation test.
+3. Enable only `WS Steering Probe - TurnSpeedSlow 5` among WS steering probes.
+4. Run `Install mods`.
+5. Launch the modded game.
+6. Perform an ordinary outdoor WallRun and make strong left/right heading changes.
+7. Report `clearly slower / subtle / unchanged / unstable / other`.
+8. Disable/remove the Slow probe and run `Install mods` again before unrelated testing.
 
-Then choose the next single config quantity only if it answers a concrete WallSprint direction/facing question.
+No runtime log is required unless load/install/crash failure occurs.
 
-### WS moonwalk occurs in both A and B
+## Stopping rule
 
-Treat the moonwalk as baseline WS behavior rather than a probe artifact. This materially strengthens the case for investigating the WS movement/facing/orientation split. The next investigation should distinguish actor/mover facing from animation presentation and compare the higher-level motion/gravity/orientation route already suggested by Scripted Flight evidence. Do not reopen c73 merely for this symptom.
+If `TurnSpeedSlow 75 -> 5` also yields no visible ordinary-WallRun steering change, stop serial Fast/Slow config probing. Do not stack more steering fields. Move next to the higher-level WS movement/facing/orientation investigation suggested by:
 
-### WS moonwalk occurs only in A
+- the baseline moonwalk symptom;
+- the existing Scripted Flight reference evidence around motion request, actor/mover facing and gravity/up orientation.
 
-The asset probe participates in the visible mismatch. Investigate config interaction/state selection before moving to a higher-level native path.
+Do not reopen c73 merely because this config discrimination is negative.
 
-### Ordinary WallRun unchanged A vs B
+## Shared Overstrike recurrence mitigation
 
-Do not declare `TurnSpeedFast` unused. First distinguish Standard-vs-Indoor selection, whether the tested situation reaches the Fast steering branch, runtime override/thresholds, and conflicting asset replacement. Pick the smallest discriminating follow-up; do not stack fields.
+`environment/Start-Overstrike.cmd` now self-heals the known misplaced `<game>\Overstrike\winmm.dll` case on installed shortcut launch by preserving it under `Mod-Tools\_quarantine` before normal validation. It also removes the Mod-Tools lock only when the recorded PID is demonstrably not running.
 
 ## Binding safety
 
-Runtime script remains `v0.1c38`. C52 remains binding:
+Runtime remains `v0.1c38`; C52 remains binding:
 
 `PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
 
-All native publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/watch gates remain closed. This A/B asset test does not authorize native gameplay writes.
+No native gameplay-write gate is opened by this asset-only test.
