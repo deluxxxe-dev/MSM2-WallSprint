@@ -1,6 +1,6 @@
 # WallSprint project state
 
-## Current stage — corrected c71 accepted; first c72 owner run BLOCKED; lifecycle correction quick-test next
+## Current stage — corrected c71 accepted; first c72 owner BLOCKED; lifecycle correction quick PASS; corrected owner rerun next
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
@@ -15,6 +15,7 @@ Canonical recent detail:
 - `analysis/V01C72_TOOL_PREPARED.md`
 - `analysis/V01C72_TOOL_READY.md`
 - `analysis/V01C72_OWNER_BLOCKED_RESULT.md`
+- `analysis/V01C72_LIFECYCLE_CORRECTION_VALIDATED.md`
 
 ## Accepted c71 basis
 
@@ -42,21 +43,21 @@ Spider-Man2.exe 2.810.0.0
 SHA256 c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9
 ```
 
-## C71 measured continuation domain
+## Exact c72 continuation domain
 
 ```text
-terminal records = 102
+c71 terminal records = 102
 all-successor-exact records = 95
 continuable exact architectural edges = 99
 inside_unique_runtime_span_nonentry records = 6
 executable_file_backed_outside_runtime_metadata records = 1
 ```
 
-Only the 95/99 exact domain is eligible for c72 continuation. The seven non-exact records remain fail-closed.
+Only the 95 records / 99 exact edges are eligible for provisional c72 continuation. The seven non-exact records remain wholly fail-closed.
 
 ## First c72 owner attempt
 
-The owner ran the TOOL READY c72 full historical replay. It reached:
+Observed:
 
 ```text
 c72 full-replay c71 continuation: 30720/162472
@@ -65,26 +66,33 @@ POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: duplicate live c71 terminal root
 
 This run is **BLOCKED**, not accepted c72 evidence.
 
-Static diagnosis: accepted c71 records one first c70 POST per root. After c72 authenticated that first terminal and started continuation, the same root could later expose a distinct c70 POST that was not already represented by the current `tx.post_c71` set. Initial c72 reset the inherited c71 capture and incorrectly attempted to authenticate that later distinct event as a second c71 first terminal for the same root. The duplicate guard correctly stopped the run.
+Static diagnosis: accepted c71 still contains exactly 102 unique original roots. Initial c72 authenticated the accepted first c71 terminal, then later reset the inherited c71 capture. A later distinct c70 POST in the same root could therefore be presented as another first c71 terminal. The duplicate-root guard correctly stopped the scan.
 
-This does not imply duplicate roots in the accepted c71 checkpoint. It is an observer-lifecycle implementation gap.
+## Lifecycle correction
 
-## C72 lifecycle correction
-
-Added:
+Use:
 
 ```text
 source/tools/slot_publication_post_c71_stitched_fix.py
-source/tools/test_slot_publication_post_c71_stitched_fix_quick.py
 ```
 
-Correction rule:
+The correction:
 
-- after successful authentication of the accepted first c71 terminal, retire the inherited c71 first-terminal observer for that root;
-- exact sibling callbacks from the same authenticated source instruction remain eligible for the already-preflighted sibling set;
-- any later distinct c70 POST becomes the next `uncertified_post_c71_runtime_boundary`;
-- do not relabel that later event as current `tx.post_c71` reachability;
-- do not change accepted c56-c71 evidence semantics or the 102 / 95 / 99 domain.
+- retires c71's inherited first-terminal observer after the accepted first terminal is authenticated;
+- preserves exact sibling callbacks from the same authenticated c71 source instruction;
+- routes any later distinct c70 POST to `uncertified_post_c71_runtime_boundary`;
+- does not relabel the later event as current `tx.post_c71` reachability;
+- preserves duplicate-root authentication and accepted c56-c71 semantics;
+- does not change the 102 / 95 / 99 domain.
+
+Dedicated owner quick regression passed:
+
+```text
+PASS: c72 retired c71 first-terminal observer sends later distinct c70 POST to next unknown without relabeling reachability
+PASS: c72 retired observer still permits exact sibling callbacks from the authenticated c71 source
+```
+
+The exact first-owner blocker is therefore covered. C72 is still not an accepted owner result until the corrected owner scan completes and its artifact is analyzed.
 
 ## Safety
 
@@ -103,8 +111,8 @@ All publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/prod
 
 ## Current bounded action
 
-Run only the dedicated c72 lifecycle quick regression.
+Run exactly one corrected c72 owner OFFLINE continuation using `source/tools/slot_publication_post_c71_stitched_fix.py` against the accepted c56-c71 evidence.
 
-If it passes, record the correction as validated and rerun exactly one corrected c72 owner OFFLINE continuation using the fix wrapper.
+If READY, analyze the resulting c71 admission/refusal counts, next-boundary count, candidates and safety before defining c73.
 
-If it fails, stop and analyze the focused failure. Do not rerun the long owner scan and do not define c73.
+If BLOCKED, stop and analyze that exact observed fact before changing anything or rerunning.
