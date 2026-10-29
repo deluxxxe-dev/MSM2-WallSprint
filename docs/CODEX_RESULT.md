@@ -1,4 +1,4 @@
-# Codex result — c72 third owner attempt completed full replay; final order check BLOCKED; correction prepared
+# Codex result — c72 checkpoint-order correction focused validation PASS
 
 2026-10-29 JST. Branch **codex/v01c20-edi-value-provenance**.
 
@@ -8,15 +8,13 @@ Corrected c71 owner OFFLINE result remains accepted as **VERIFIED-STATIC**.
 
 Three c72 owner OFFLINE attempts remain **BLOCKED** historical evidence only. No c72 result is accepted yet.
 
-Third owner observation:
+Attempt 3 completed all `162472 / 162472` historical roots and blocked only at the final record stream/order comparison:
 
 ```text
-c72 full-replay c71 continuation: 161792/162472
-c72 full-replay c71 continuation: 162472/162472
 POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: c72 live c71 record stream/order differs from accepted checkpoint
 ```
 
-Unlike the prior blockers at 30720 and 31744, this attempt completed all 162472 historical roots and failed only during final accepted-c71 reproduction checks.
+The resulting checkpoint-order correction is now **focused-test validated**.
 
 Canonical detail:
 
@@ -25,10 +23,11 @@ Canonical detail:
 - `analysis/V01C72_OWNER_BLOCKED_RESULT_2.md`
 - `analysis/V01C72_PROVENANCE_CORRECTION_VALIDATED.md`
 - `analysis/V01C72_OWNER_BLOCKED_RESULT_3.md`
+- `analysis/V01C72_ORDER_CORRECTION_VALIDATED.md`
 
-## What passed before the third blocker
+## What attempt 3 already established
 
-The original c72 finalization reaches the failing order check only after proving:
+The original c72 finalization reached the failing order check only after proving:
 
 ```text
 complete accepted c71 terminal record domain
@@ -39,44 +38,39 @@ the accepted 99 exact continuation-edge domain
 empty c71 mismatch counters
 ```
 
-Therefore the observed failure is order-only: the same unique accepted records arrived in a different live replay order than the checkpoint serialization order.
+Therefore the third blocker is limited to ordering of the same unique exact records, not record content/domain.
 
-This attempt also exercises both earlier corrections through the complete replay, so the previous 30720 lifecycle blocker and 31744 proof-layer blocker are passed by real owner data.
+## Correction behavior
 
-## Prepared correction
+Changed correction logic preserves:
 
-Changed:
+- exact per-root c71 record authentication;
+- duplicate-root fail-closed behavior;
+- first-terminal observer retirement;
+- c71-only/c69 proof-layer separation;
+- accepted c71 checkpoint contents and identities;
+- accepted `102 / 95 / 99` continuation domain.
 
-- `source/tools/slot_publication_post_c71_stitched_fix.py`
-- `source/tools/test_slot_publication_post_c71_stitched_fix_quick.py`
-- `analysis/V01C72_OWNER_BLOCKED_RESULT_3.md`
-- `docs/PROJECT_STATE.md`
-- `docs/CODEX_NEXT.md`
-- `docs/CODEX_RESULT.md`
+It adds only:
 
-Correction behavior:
+- separate diagnostic capture of live c71 arrival order;
+- checkpoint-root-order iteration over the already-authenticated exact live records for final order-sensitive c71 stream/result reproduction.
 
-- retain exact per-root c71 record authentication;
-- retain duplicate-root fail-closed guard;
-- retain the first-terminal observer retirement rule;
-- retain the c71-only/c69 proof-layer rule;
-- preserve live discovery order as diagnostic metadata only;
-- reorder already-authenticated live records by accepted checkpoint root order solely for order-sensitive c71 record-stream/result reproduction;
-- do not synthesize or modify any accepted c71 record.
+No accepted c71 record is synthesized or modified.
 
-A new focused regression intentionally presents the exact accepted records in a different live order, requires checkpoint-order iteration, and verifies that duplicate roots still refuse.
+## Owner focused validation
 
-## Test status
-
-The updated focused regression is prepared but has **not yet been observed on the owner machine** after this correction.
-
-Expected fifth PASS:
+Observed:
 
 ```text
+PASS: c72 retired c71 first-terminal observer sends later distinct c70 POST to next unknown without relabeling reachability
+PASS: c72 retired observer still permits exact sibling callbacks from the authenticated c71 source
+PASS: c72 c71-only arrival does not invent post-c69 reachability
+PASS: c72 paths with actual c69 proof preserve historical mark_post_c69 behavior
 PASS: c72 exact per-root live records are normalized to accepted checkpoint order without weakening duplicate-root authentication
 ```
 
-Do not authorize another full c72 owner replay until all five focused checks pass.
+All five focused checks passed.
 
 ## Safety
 
@@ -99,4 +93,10 @@ All publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/prod
 
 ## Next
 
-Run only the focused quick regression. If all five PASS, return the output to ChatGPT for validation and authorization of one further full c72 owner replay.
+Exactly one further corrected c72 owner OFFLINE continuation is authorized through:
+
+```text
+source/tools/slot_publication_post_c71_stitched_fix.py
+```
+
+If READY, analyze the generated c72 artifact before defining c73 or changing exploration strategy. If BLOCKED, stop on the exact observed blocker and do not rerun unchanged.
