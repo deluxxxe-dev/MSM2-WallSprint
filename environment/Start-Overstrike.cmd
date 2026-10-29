@@ -3,7 +3,7 @@ setlocal DisableDelayedExpansion
 set "MOD_ENGINE=%~dp0mod_environment.py"
 set "MOD_GAME=%~dp0.."
 
-rem Installed steady-state launcher only: safely repair two known stale-environment cases
+rem Installed steady-state launcher only: safely repair known stale-environment cases
 rem before the Python environment checker runs. Source/bootstrap copies fall through.
 if exist "%MOD_GAME%\Spider-Man2.exe" (
   powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command ^
@@ -18,6 +18,13 @@ if exist "%MOD_GAME%\Spider-Man2.exe" (
         "$dh=(Get-FileHash -LiteralPath $dst -Algorithm SHA256).Hash.ToLowerInvariant(); if($dh -ne $h){throw 'Quarantine hash collision'}; Remove-Item -LiteralPath $bad -Force;" ^
       "}else{Move-Item -LiteralPath $bad -Destination $dst};" ^
       "Write-Host ('AUTO-REPAIRED misplaced Overstrike\winmm.dll -> '+$dst)" ^
+    "};" ^
+    "foreach($name in @('scripts_proxy.dll','winmm.dll')){" ^
+      "$p=Join-Path $game $name;" ^
+      "if(Test-Path -LiteralPath $p){" ^
+        "$item=Get-Item -LiteralPath $p -Force; if($item.PSIsContainer){throw ($name+' is not a regular file')};" ^
+        "if($item.IsReadOnly){$item.IsReadOnly=$false; $item=Get-Item -LiteralPath $p -Force; if($item.IsReadOnly){throw ('Could not clear ReadOnly on '+$name)}; Write-Host ('AUTO-REPAIRED ReadOnly loader: '+$name)}" ^
+      "}" ^
     "};" ^
     "$lock=Join-Path $game '.MSM2-Mod-Tools.lock';" ^
     "if(Test-Path -LiteralPath $lock){" ^
