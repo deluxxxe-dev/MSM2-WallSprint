@@ -1,6 +1,6 @@
 # WallSprint project state
 
-## Current stage — corrected c71 accepted; c72 owner attempt 3 completed 162472/162472 then BLOCKED only on final record order; order correction focused PASS; owner rerun next
+## Current stage — corrected c71 accepted; c72 owner attempt 4 BLOCKED at final canonical record reproduction; representation correction prepared
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
@@ -20,6 +20,7 @@ Canonical recent detail:
 - `analysis/V01C72_PROVENANCE_CORRECTION_VALIDATED.md`
 - `analysis/V01C72_OWNER_BLOCKED_RESULT_3.md`
 - `analysis/V01C72_ORDER_CORRECTION_VALIDATED.md`
+- `analysis/V01C72_OWNER_BLOCKED_RESULT_4.md`
 - `analysis/REFERENCE_MOD_WALLRUN_REVIEW_20261029.md`
 
 ## Accepted c71 basis
@@ -44,80 +45,76 @@ executable_file_backed_outside_runtime_metadata records = 1
 
 Only the 95 records / 99 exact edges are eligible for provisional c72 continuation. The seven non-exact records remain wholly fail-closed.
 
-## C72 owner attempt 1 — BLOCKED
+## C72 owner attempt 1 — BLOCKED at 30720/162472
 
 ```text
-c72 full-replay c71 continuation: 30720/162472
 POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: duplicate live c71 terminal root
 ```
 
-Diagnosis: initial c72 failed to retire the inherited first-c71-terminal observer after successful first authorization. A later distinct c70 POST could then be offered as another first c71 terminal. The duplicate-root guard correctly stopped the run.
+Cause: inherited first-c71-terminal observer was not retired after first authorization. Correction retires it while retaining exact sibling callbacks. Focused regression passed, and later owner runs passed this point.
 
-Correction: retire the first-terminal observer after authorization while preserving exact siblings from the authenticated source. Dedicated quick regression passed.
-
-## C72 owner attempt 2 — BLOCKED
+## C72 owner attempt 2 — BLOCKED at 31744/162472
 
 ```text
-c72 full-replay c71 continuation: 31744/162472
 POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: post-c69 arrival lacks c69 proof
 ```
 
-Diagnosis: c72 can have a valid `c71_post_boundary` arrival whose current path does not contain an actual `c69_post_boundary` proof. The implementation still called historical `mark_post_c69()` in that case. Historical c70 correctly refused; c71 authorization must not be projected backward into post-c69 reachability.
+Cause: a valid c71-only arrival was still sent through historical `mark_post_c69()`. Correction keeps proof layers separate: c71 does not imply current c69; real c69 proof still preserves historical behavior. Focused regression passed, and later owner runs passed this point.
 
-Second correction focused validation passed all four checks. C71 proof alone no longer invents current c69 reachability; real c69 proof still preserves historical behavior.
+## C72 owner attempt 3 — full replay completed; final stream guard BLOCKED
 
-## C72 owner attempt 3 — full replay completed, final order check BLOCKED
-
-Owner observation:
+Observed:
 
 ```text
-c72 full-replay c71 continuation: 161792/162472
 c72 full-replay c71 continuation: 162472/162472
 POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: c72 live c71 record stream/order differs from accepted checkpoint
 ```
 
-This is materially later than both prior blockers. The traversal itself reached `162472 / 162472`.
+Before this final guard, c72 had already required the complete c71 terminal domain, canonical per-root record equality, duplicate-root exclusion, the 95-record all-exact domain, the 99-edge domain and empty mismatch counters.
 
-Before this final check, c72 had already required:
+A first correction separated incidental live discovery order from accepted checkpoint serialization order. Owner focused regression passed five checks, including checkpoint-order normalization.
 
-- complete accepted c71 terminal domain encountered;
-- byte-for-byte live record authentication per `original_root_runtime_row`;
-- duplicate-root refusal unchanged;
-- accepted 95-record all-successor-exact preflight domain matched;
-- accepted 99 exact-edge domain matched;
-- c71 mismatch counters empty.
+## C72 owner attempt 4 — same final guard after order normalization
 
-Therefore the observed blocker is an **order-only permutation of the same unique exact per-root c71 records**, not a changed record body/domain. The accepted checkpoint serializes an order-sensitive stream; live c72 replay discovery order is incidental and need not equal that serialization order.
+After the five-check order correction was owner-validated, the authorized full replay again ended at:
 
-## Third correction — focused validated
+```text
+POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_BLOCKED: c72 live c71 record stream/order differs from accepted checkpoint
+```
+
+This guard is after the full historical root loop and the same domain/authentication checks. Therefore attempt 4 does not reopen the direct traversal, the 102/95/99 domain, or per-root accepted record content.
+
+It does prove that the attempt-3 diagnosis was too narrow: ordering alone was not the whole final-comparison issue.
+
+Static diagnosis: per-root authentication uses canonical `c56.encoded()` JSON bytes, while the order adapter's final equality still used raw Python object equality. A live tuple and a checkpoint JSON list can be canonically identical but raw-Python-unequal.
+
+## Fourth correction — prepared, not yet owner-validated
 
 `source/tools/slot_publication_post_c71_stitched_fix.py` now:
 
-- preserves every existing per-root byte-for-byte authentication;
+- preserves exact per-root `c56.encoded()` authentication;
 - preserves duplicate-root fail-closed behavior;
-- preserves the prior retired-observer correction;
-- preserves the prior c71-only/c69 proof-layer correction;
-- records live arrival order separately as diagnostic metadata;
-- iterates only the already-authenticated exact records in accepted checkpoint root order for final c71 stream/result reproduction;
-- does not change accepted c71 record contents or the `102 / 95 / 99` domain.
+- preserves checkpoint-root-order normalization;
+- preserves first-terminal observer retirement;
+- preserves c71-only/c69 proof separation;
+- changes only the final adapter equality to compare each record through `c56.encoded()` as well;
+- keeps accepted c71 record contents and the `102 / 95 / 99` domain unchanged.
 
-Owner focused regression passed all five checks:
+The focused regression now has six checks. The new sixth check intentionally uses list-form accepted data and canonically equivalent tuple-form live data; raw Python equality must differ while canonical encoded identity must match.
+
+Expected new PASS:
 
 ```text
-PASS: c72 retired c71 first-terminal observer sends later distinct c70 POST to next unknown without relabeling reachability
-PASS: c72 retired observer still permits exact sibling callbacks from the authenticated c71 source
-PASS: c72 c71-only arrival does not invent post-c69 reachability
-PASS: c72 paths with actual c69 proof preserve historical mark_post_c69 behavior
-PASS: c72 exact per-root live records are normalized to accepted checkpoint order without weakening duplicate-root authentication
+PASS: c72 final stream comparison uses canonical encoded record identity rather than raw Python list/tuple representation
 ```
 
-C72 is still not an accepted owner result until one further corrected full owner replay reaches READY and its artifact is analyzed.
+Do not run another full owner replay until all six focused checks pass on the owner machine.
 
 ## Reference-MOD review
 
-Owner-supplied reference MOD archives were statically reviewed separately while c72 remained the bounded task. Durable findings are recorded in `analysis/REFERENCE_MOD_WALLRUN_REVIEW_20261029.md` and reusable material was copied to `MSM2-Wisdoms`.
+Owner-supplied reference MOD archives were statically reviewed separately. Durable detail is in `analysis/REFERENCE_MOD_WALLRUN_REVIEW_20261029.md`; reusable findings were synchronized to `MSM2-Wisdoms`.
 
-Most important hint: WallRun has separate config asset families for speed, jump and steering, including `hero_WallRunSteeringSetup_Standard.config`. This is research guidance only and does not replace the current c72 proof task or authorize third-party code/assets.
+Most important hint: WallRun has separate config asset families for speed, jump and steering, including `hero_WallRunSteeringSetup_Standard.config`. This remains research guidance only and does not replace current c72 proof work.
 
 ## Safety
 
@@ -136,8 +133,10 @@ All publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/prod
 
 ## Current bounded action
 
-Run exactly one further corrected c72 owner OFFLINE continuation through `source/tools/slot_publication_post_c71_stitched_fix.py` against the accepted c56-c71 evidence.
+Run only:
 
-If READY, analyze the c72 artifact before defining c73 or changing exploration strategy.
+```text
+source/tools/test_slot_publication_post_c71_stitched_fix_quick.py
+```
 
-If BLOCKED, stop and analyze that exact observed fact before changing anything or rerunning.
+Require all six PASS lines. If the sixth fails, stop and analyze it. If all six pass, record focused validation before authorizing one further corrected c72 owner replay.
