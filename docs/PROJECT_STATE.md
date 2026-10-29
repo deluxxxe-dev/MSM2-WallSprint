@@ -1,6 +1,6 @@
 # WallSprint project state
 
-## Current stage — corrected c70 owner OFFLINE result accepted; c71 post-c69 boundary diagnostic next
+## Current stage — corrected c70 owner OFFLINE result accepted; c71 TOOL READY; owner classification next
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
@@ -17,6 +17,7 @@ Canonical detail:
 - `analysis/V01C70_TOOL_READY.md`
 - `analysis/V01C70_OWNER_BLOCKED_RESULT.md`
 - `analysis/V01C70_OWNER_OFFLINE_RESULT.md`
+- `analysis/V01C71_TOOL_READY.md`
 
 ## Accepted c70 artifact
 
@@ -78,11 +79,29 @@ C70 measured:
 uncertified_post_c69_runtime_boundary = 102 roots
 ```
 
-This is the exact next diagnostic domain.
+This is the exact c71 diagnostic domain.
 
 Do not infer 107 next-boundary records from the 107 refused exact edges: five preflight-eligible roots failed through other existing fail-closed conditions after c69 preflight.
 
 C71 must classify exactly the 102 c70 post-c69 boundary events and must not traverse them.
+
+## C71 tool status
+
+C71 focused validation passed on the owner machine, including the c70 prerequisite focused suite and the c71 diagnostic contract:
+
+```text
+C71_FOCUSED_PREREQUISITE_C70_PASS
+PASS: c71 production contract pins accepted c70 identity and exact 102-terminal domain
+PASS: c71 exact edge-backed post-c69 terminal is classified without target traversal
+PASS: c71 diagnostic checkpoint is deterministic and record mutation fails closed
+PASS: c71 transaction-origin post-c69 terminal is recorded without synthetic instruction or successor
+PASS: c71 rejects stale c70 authentication evidence
+PASS: c71 focused diagnostic groups complete
+```
+
+C71 is therefore **TOOL READY** for one owner OFFLINE classification run. The c71 focused suite is registered in `source/tools/test_hooks_windows.sh`.
+
+This is not an accepted c71 owner result yet. Do not define c72 continuation behavior until the owner classification is analyzed.
 
 ## Replay deltas versus accepted c68
 
@@ -141,8 +160,8 @@ Runtime remains `v0.1c38`; c53-c71 work is OFFLINE/STATIC unless separately stat
 
 ## Current bounded action
 
-Implement c71 as a diagnostic-only classifier for exactly the 102 accepted c70 `uncertified_post_c69_runtime_boundary` terminal events.
+Run exactly one c71 owner OFFLINE diagnostic classification against the accepted c56-c70 evidence.
 
-C71 may reproduce and classify the terminal source/successor relationship under unchanged full historical replay. It must not traverse the c71 target, admit a new continuation, create a new Fact/candidate, read the slot qword, chase pointers, use the game, or widen any safety gate.
+C71 may reproduce and classify the exact 102 terminal source/successor relationships under unchanged full historical replay. It must not traverse a c71 target, admit a new continuation, create a new Fact/candidate, read the slot qword, chase pointers, use the game, or widen any safety gate.
 
-Do not define c72 continuation behavior until the c71 owner result is analyzed.
+After the c71 artifact is returned, ChatGPT must analyze its edge/transaction split and successor relation counts before defining any c72 continuation behavior.
