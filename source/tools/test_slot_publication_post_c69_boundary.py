@@ -5,7 +5,7 @@ print('C71_FOCUSED_PREREQUISITE_C70_START',flush=True)
 import test_slot_publication_post_c69_stitched as prior70
 print('C71_FOCUSED_PREREQUISITE_C70_PASS',flush=True)
 
-import slot_publication_post_c69_boundary as tool
+import slot_publication_post_c69_boundary_fix as tool
 
 c70,c58,c56 = tool.c70,tool.c58,tool.c56
 
