@@ -1,4 +1,4 @@
-# Next task — owner runtime test of TurnSpeedSlow steering probe; no c73 yet
+# Next task — owner runtime test of TurnSpeedSlow steering probe after shared-Overstrike preflight refresh; no c73 yet
 
 ## Status
 
@@ -38,6 +38,20 @@ Do not call `TurnSpeedFast` unused. The Fast branch may simply not have been sel
 
 Current Overstrike source independently confirms the MSM2 `format_version=2` stage layout/path mechanism used by the probe, so package-layout failure is not the leading explanation.
 
+## Shared Overstrike prerequisite
+
+Before the next Install mods, refresh the owner-operated Mod-Tools launcher from the current repository once.
+
+The launcher preflight now handles three bounded stale-environment conditions:
+
+- misplaced `<game>\Overstrike\winmm.dll` -> preserve under `Mod-Tools\_quarantine`;
+- ReadOnly on game-root `scripts_proxy.dll` and/or `winmm.dll` -> clear only that attribute;
+- stale `.MSM2-Mod-Tools.lock` -> remove only when its recorded PID is not running.
+
+The ReadOnly normalization is specifically intended to prevent the observed recurring Overstrike failure at `File.Delete(<game>\winmm.dll)`. It changes no loader bytes and touches no MOD/project content.
+
+If Install mods still reports `UnauthorizedAccessException` for game-root `winmm.dll` after this refresh, stop and diagnose an active file lock/ACL rather than repeating installs.
+
 ## Next owner runtime test
 
 Test exactly one further field:
@@ -75,10 +89,6 @@ If `TurnSpeedSlow 75 -> 5` also yields no visible ordinary-WallRun steering chan
 - the existing Scripted Flight reference evidence around motion request, actor/mover facing and gravity/up orientation.
 
 Do not reopen c73 merely because this config discrimination is negative.
-
-## Shared Overstrike recurrence mitigation
-
-`environment/Start-Overstrike.cmd` now self-heals the known misplaced `<game>\Overstrike\winmm.dll` case on installed shortcut launch by preserving it under `Mod-Tools\_quarantine` before normal validation. It also removes the Mod-Tools lock only when the recorded PID is demonstrably not running.
 
 ## Binding safety
 
