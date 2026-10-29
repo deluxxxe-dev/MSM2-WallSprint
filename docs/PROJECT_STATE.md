@@ -1,11 +1,11 @@
 # WallSprint project state
 
-## Current stage — corrected c71 accepted; c72 owner attempt 4 BLOCKED at final canonical record reproduction; representation correction focused PASS; owner replay next
+## Current stage — c72 accepted VERIFIED-STATIC; direct-CFG continuation paused; vanilla WallRun steering config investigation next
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
 
-Accepted c66, corrected c67, c68, corrected c69, corrected c70, and corrected c71 owner OFFLINE results are **VERIFIED-STATIC**.
+Accepted c66, corrected c67, c68, corrected c69, corrected c70, corrected c71, and corrected c72 owner OFFLINE results are **VERIFIED-STATIC**.
 
 Canonical recent detail:
 
@@ -22,62 +22,114 @@ Canonical recent detail:
 - `analysis/V01C72_ORDER_CORRECTION_VALIDATED.md`
 - `analysis/V01C72_OWNER_BLOCKED_RESULT_4.md`
 - `analysis/V01C72_REPRESENTATION_CORRECTION_VALIDATED.md`
+- `analysis/V01C72_OWNER_OFFLINE_RESULT.md`
 - `analysis/REFERENCE_MOD_WALLRUN_REVIEW_20261029.md`
 
-## Accepted c71 basis
+## Accepted c72 owner artifact
+
+Owner replay completed:
 
 ```text
-MSM2-WS-v0.1c71-authenticated-prefix-checkpoint.json
-physical SHA256 25b4edccb0430bc2119c6ff5aa4aa408b92c806875c4a520ddd36c0ce69ee926
-checkpoint identity 4769ecb7664e556f8771158218a7526134620c2774bfc19200f0e9b56ab54a9e
-record stream SHA256 6289d892477caa279ac9da0559ec9a3640ea501bb9850d0113538ccbb099c1b8
-record count 102
+c72 full-replay c71 continuation: 162472/162472
+POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_READY
+C72_REPRFIX_OWNER_PASS
 ```
 
-Exact c72 continuation domain remains unchanged:
+Artifact:
 
 ```text
-c71 terminal records = 102
-all-successor-exact records = 95
-continuable exact architectural edges = 99
-inside_unique_runtime_span_nonentry records = 6
-executable_file_backed_outside_runtime_metadata records = 1
+MSM2-WS-v0.1c72-post-c71-stitched.json
+size = 17148 bytes
+SHA256 = 077955562f1cdd9ba966fd1104ecd2b3b258f3aa25384418032fa5099149d32d
+repository_result = POST_C71_RUNTIME_BEGIN_STITCH_SCANNER_READY
+tool_version = v0.1c72
+schema_version = 1
+contract = exact_c71_full_replay_all_successor_continuation_v1
+full_historical_replay_used = true
+checkpoint_accelerated_resume_used = false
 ```
 
-Only the 95 records / 99 exact edges are eligible for provisional c72 continuation. The seven non-exact records remain wholly fail-closed.
-
-## C72 owner history
-
-Attempt 1 blocked at `30720 / 162472` on duplicate live c71 terminal root. The first-terminal observer retirement correction is focused-test validated and later owner attempts passed this point.
-
-Attempt 2 blocked at `31744 / 162472` on `post-c69 arrival lacks c69 proof`. The proof-layer correction is focused-test validated and later owner attempts passed this point.
-
-Attempt 3 completed `162472 / 162472` and blocked only on final accepted-c71 stream/order reproduction. Checkpoint-order normalization was added and focused-test validated.
-
-Attempt 4 again completed the traversal/domain work and blocked at the same final reproduction guard. Static diagnosis showed that per-root authentication used canonical `c56.encoded()` equality while the final ordered adapter still used raw Python object equality, allowing canonically identical tuple/list representations to fail only at the last check.
-
-## Fourth correction — owner focused validation PASS
-
-`source/tools/slot_publication_post_c71_stitched_fix.py` now preserves all previous corrections and changes only the final ordered-record equality to compare canonical `c56.encoded()` bytes record-by-record.
-
-Owner observed all six focused PASS lines:
+Accepted c71 reproduction checks remained exact:
 
 ```text
-PASS: c72 retired c71 first-terminal observer sends later distinct c70 POST to next unknown without relabeling reachability
-PASS: c72 retired observer still permits exact sibling callbacks from the authenticated c71 source
-PASS: c72 c71-only arrival does not invent post-c69 reachability
-PASS: c72 paths with actual c69 proof preserve historical mark_post_c69 behavior
-PASS: c72 exact per-root live records are normalized to accepted checkpoint order without weakening duplicate-root authentication
-PASS: c72 final stream comparison uses canonical encoded record identity rather than raw Python list/tuple representation
+records available/considered = 102/102
+all-successor-exact available/preflight = 95/95
+exact edges available/considered/preflight = 99/99/99
+c71_record_mismatch_counts = {}
 ```
 
-This validates the representation correction only at focused-test level. C72 remains unaccepted until one corrected full owner replay reaches READY and its output artifact is analyzed.
+Final order/representation diagnostics:
 
-## Reference-MOD review
+```text
+c71_live_discovery_order_matches_checkpoint = true
+c71_live_discovery_order_mismatch_positions = 0
+c71_checkpoint_order_normalized_for_result_reproduction = true
+c71_final_stream_comparison_uses_canonical_encoding = true
+```
 
-Owner-supplied reference MOD archives were statically reviewed separately. Durable detail is in `analysis/REFERENCE_MOD_WALLRUN_REVIEW_20261029.md`; reusable findings were synchronized to `MSM2-Wisdoms`.
+## C72 continuation outcome
 
-Most important hint: WallRun has separate config asset families for speed, jump and steering, including `hero_WallRunSteeringSetup_Standard.config`. This remains research guidance only and does not replace current c72 proof work.
+```text
+c71 boundary instances admitted/refused = 38/64
+c71 exact edges admitted/refused = 42/57
+post_c71_uncertified_boundary_refusals = 54
+root_transactions_attempted/completed/refused = 162472/105829/56643
+rows_reached_by_continuation = 1815
+address_facts_crossing_runtime_rows = 3251
+```
+
+No candidate was produced:
+
+```text
+reference_candidate_count = 0
+reader_candidates = 0
+writer_candidates = 0
+rmw_candidates = 0
+address_only_candidates = 0
+new_cross_row_candidate_count = 0
+publication_source_kind = unproven
+```
+
+Zero candidates does not prove writer absence. It means the bounded c72 direct-CFG continuation did not produce a usable candidate.
+
+Notable full-replay refusal counts include:
+
+```text
+indirect_call = 5569
+indirect_jump = 258
+uncertified_post_c71_runtime_boundary = 54
+inside_unique_runtime_span_nonentry = 31932
+executable_file_backed_outside_runtime_metadata = 18718
+```
+
+These are refusal-event/root counts, not unique function counts or writer evidence.
+
+## Strategy decision after c72
+
+Do **not** automatically create c73 as another direct-CFG boundary-continuation cycle.
+
+The c71 frontier narrowed from 95 eligible records to 54 next post-c71 unknown boundary observations, but all candidate classes remain zero after a long direct-CFG sequence. The replay also retains material indirect-transfer refusal evidence. Therefore the cost/value of continuing the same direct route is now poor enough to pause it.
+
+The next investigation is the independently motivated current-build vanilla WallRun config route established by `analysis/REFERENCE_MOD_WALLRUN_REVIEW_20261029.md`.
+
+Priority assets:
+
+```text
+configs/hero/hero_WallRunSteeringSetup_Standard.config
+  asset id 948FA063808F7E18
+configs/hero/hero_WallRunSteeringSetup_Indoor.config
+  asset id 83DF4507531061B1
+configs/hero/hero_WallRunConfig.config
+  asset id 86DF98B17F4D766D
+configs/hero/hero_WallRunSpeedSetup_Standard.config
+  asset id 80D25C57AC09BE31
+configs/hero/hero_WallRunJumpSetup_Standard.config
+  asset id B78A8FA3857CFB17
+```
+
+First inspect/decode the current-build vanilla Standard/Indoor steering configs without editing them. If config control is insufficient, compare the higher-level motion/gravity/orientation route suggested by the Scripted Flight reference artifact. Reference MOD offsets/assets remain hints only and are never production authority.
+
+Reopen direct-CFG c73 only if a concrete later question specifically requires the remaining 54 frontier observations.
 
 ## Safety
 
@@ -85,25 +137,19 @@ Runtime remains `v0.1c38`; c53-c72 work is OFFLINE/STATIC.
 
 ```text
 live_qword_reads = 0
-checkpoint_accelerated_resume_used = false
+game_used = false
+hardware_watch_enabled = false
+CFG_continuation = false
+candidate_sweep_complete = false
+writer_enumeration_complete = false
 ```
 
 C52 remains binding:
 
 `PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
 
-All publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/watch/game gates remain closed. Zero candidates does not prove writer absence. Do not modify SocialFeed or other MOD repositories.
+All publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/watch/game gates remain closed. Do not modify SocialFeed or other MOD repositories.
 
 ## Current bounded action
 
-Run exactly one further corrected c72 owner OFFLINE continuation through:
-
-```text
-source/tools/slot_publication_post_c71_stitched_fix.py
-```
-
-against the accepted c56-c71 evidence.
-
-If READY, analyze the generated c72 artifact before defining c73 or changing exploration strategy.
-
-If BLOCKED, stop and analyze that exact observed fact before changing anything or rerunning.
+Follow `docs/CODEX_NEXT.md`: obtain/authenticate and decode the current-build vanilla WallRun steering assets before opening any c73 direct-CFG continuation.
