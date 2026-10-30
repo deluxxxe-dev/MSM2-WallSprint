@@ -1,0 +1,28 @@
+{
+  "version": "v0.1c38r5",
+  "package_version": "0.1.61",
+  "artifacts": [
+    {
+      "artifact": "MSM2-WS-v0.1c38r5.zip",
+      "bytes": 5614892,
+      "sha256": "c243c340044271eff7c8a10fe4b55f53cde9258eab2d0af5840f3eb79afa95a8"
+    },
+    {
+      "artifact": "MSM2-WS-v0.1c38r5-source.zip",
+      "bytes": 2040324,
+      "sha256": "d3718188b003c5d6decc377d9f67d25cb49f2f55ec1baedec30b084d6c06ca11"
+    },
+    {
+      "artifact": "MSM2-WS-v0.1c38r5.script.disabled",
+      "bytes": 2560016,
+      "sha256": "ceda055721caad9a4fe67dda72b7f6a03397e2cb34a5827b6eadef396c95c0e1"
+    },
+    {
+      "artifact": "BUILD_MANIFEST.json",
+      "bytes": 73270,
+      "sha256": "703f5705eee7be2b7022c90e3d7ea58456ff3752b2f98e3d7e57661b1e85f629"
+    }
+  ],
+  "CRC_source_DLL_metadata_audit": "PASS",
+  "owner_visual_acceptance": "pending"
+}

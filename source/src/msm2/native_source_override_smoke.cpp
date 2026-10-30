@@ -461,16 +461,31 @@ int main(){
  assert(!std::memcmp(ws_test_source_received+12,vanilla.v+12,16));
  ws::native_source::event(3,owner);context.wallRunActive=false;workerTick(false);
  puts("PASS: r3 real-time confirmed reversal publishes one coherent midpoint/final basis through real A/B stores, preserves Position/W and compact metadata, freezes turn and clears displacement across stale resume, closes on Deinit");
+ // Full plane targets through the unchanged production publication / real A/B writers.
+ for(ws::Vec3 direction:{ws::Vec3{0,1,0},ws::Vec3{0,-1,0},ws::Vec3{.70710677f,.70710677f,0},ws::Vec3{-.70710677f,-.70710677f,0}}){
+  prepare({0,0,1});auto planeSession=state.session;auto planeEntry=state.transition.entryMs;
+  for(unsigned sample=0;sample<2;++sample){waitMs(34);fakeHero.position[0]+=.5f*direction.x;fakeHero.position[1]+=.5f*direction.y;workerTick();}
+  assert(state.heading.turning);
+  while(state.heading.turning&&!killed.load()){waitMs(16);workerTick();}
+  Published plane{};assert(publication.read(plane)&&plane.active);assert(ws::dot(plane.basis.forward,direction)>.99999f&&ws::dot(plane.basis.up,ws::Vec3{0,0,1})>.99999f);
+  assert(state.session==planeSession&&state.transition.entryMs==planeEntry);callA();callB();
+  for(unsigned i=0;i<3;++i){auto v=i==0?plane.basis.right:i==1?plane.basis.up:plane.basis.forward;
+   assert(std::abs(ws_test_source_received[4*i]-v.x)<.0001f&&std::abs(ws_test_source_received[4*i+1]-v.y)<.0001f&&std::abs(ws_test_source_received[4*i+2]-v.z)<.0001f);
+   assert(std::abs(ws_test_copy_received[3*i]-v.x)<.0001f&&std::abs(ws_test_copy_received[3*i+1]-v.y)<.0001f&&std::abs(ws_test_copy_received[3*i+2]-v.z)<.0001f);}
+  assert(!std::memcmp(ws_test_source_received+12,vanilla.v+12,16));
+ }
+ puts("PASS: r5 vertical and diagonal travel targets publish coherently through real A/B stores without session/entry/Position/W changes");
  // Actual wall-clock lifecycle regression, no backdated source entry or timer reset.
  prepare({0,0,1});auto longSession=state.session;auto longGeneration=state.generation;auto longEntry=state.transition.entryMs;
  auto longStart=GetTickCount64();unsigned completed=0;bool straightChecked=false;
  while(GetTickCount64()-longStart<31100){
   waitMs(16);auto age=GetTickCount64()-longStart;bool wasTurning=state.heading.turning;
-  auto direction=age<6000?1:(state.heading.turning?state.heading.sign:-state.heading.sign);
+  auto sign=ws::dot(state.heading.forward,state.heading.f0)>0?1:-1;
+  auto direction=age<6000?1:(state.heading.turning?sign:-sign);
   fakeHero.position[0]+=.08f*float(direction);workerTick();callA();callB();msm2::native_source::drainLogs();
   assert(state.session==longSession&&state.generation==longGeneration&&state.transition.entryMs==longEntry);
   assert(state.transition.active&&!killed.load()&&state.ownership!=Ownership::HardClosed);
-  if(age>=5500&&!straightChecked){assert(state.heading.sign==1&&!state.heading.turning&&pathAWrites>0&&pathBWrites>0);straightChecked=true;}
+  if(age>=5500&&!straightChecked){assert(ws::dot(state.heading.forward,state.heading.f0)>.99999f&&!state.heading.turning&&pathAWrites>0&&pathBWrites>0);straightChecked=true;}
   if(wasTurning&&!state.heading.turning)++completed;
  }
  assert(straightChecked&&completed>=20&&double(GetTickCount64())-longEntry>30000);
@@ -479,7 +494,7 @@ int main(){
  ws::native_source::event(3,owner);context.wallRunActive=false;workerTick(false);auto longA=pathAWrites.load(),longB=pathBWrites.load();callA();callB();
  assert(!state.transition.active&&state.summaryEmitted&&pathAWrites==longA&&pathBWrites==longB);
  context.wallRunActive=true;workerTick(false);assert(!state.transition.active); // Closed generation cannot re-enter.
- prepare({0,0,1});assert(state.session!=longSession&&state.heading.sign==1&&state.headingLogs==0&&state.actorLogs==0);
+ prepare({0,0,1});assert(state.session!=longSession&&ws::dot(state.heading.forward,state.heading.f0)>.99999f&&state.headingLogs==0&&state.actorLogs==0);
  msm2::native_source::kill("long_session_disable","shutdown");workerTick(false);callA();callB();assert(!state.transition.active&&pathAWrites==0&&pathBWrites==0);
  puts("PASS: r4 real31s same-session A/B continuation, straight beyond5s and >=20 completed reversals without entry/generation reset; bounded diagnostic caps do not close source; Deinit/closed-generation/new-session/disable gates preserved");
  assert(MH_DisableHook(reinterpret_cast<void*>(&ws_test_copy_writer))==MH_OK);assert(MH_RemoveHook(reinterpret_cast<void*>(&ws_test_copy_writer))==MH_OK);assert(MH_DisableHook(reinterpret_cast<void*>(&ws_test_native_source_writer))==MH_OK);assert(MH_RemoveHook(reinterpret_cast<void*>(&ws_test_native_source_writer))==MH_OK);assert(MH_Uninitialize()==MH_OK);assert(VirtualFree(mem,0,MEM_RELEASE));

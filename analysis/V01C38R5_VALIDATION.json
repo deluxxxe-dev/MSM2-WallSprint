@@ -1,0 +1,63 @@
+{
+  "baseline": "e1ad781caaabc1933a5fbe422e0b1c0343f6503a",
+  "checks": [
+    {
+      "command": "bash source/tools/test_reversal_heading.sh",
+      "expected": "original transport/timing/retention plus full-plane17 groups",
+      "exit": 0,
+      "PASS": 17,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    },
+    {
+      "command": "bash source/tools/build_windows.sh",
+      "expected": "Windows warnings-as-errors build with v0.1c38r5/0.1.61",
+      "exit": 0,
+      "PASS": 0,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    },
+    {
+      "command": "bash source/tools/test.sh",
+      "expected": "ASan/UBSan portable and focused math",
+      "exit": 0,
+      "PASS": 30,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    },
+    {
+      "command": "bash source/tools/smoke_windows.sh",
+      "expected": "Windows/Wine lifecycle/log/build-gate smoke",
+      "exit": 0,
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    },
+    {
+      "command": "bash source/tools/test_native_source.sh",
+      "expected": "owned actual-clock vertical/diagonal coherent A/B and31s/reversal/lifecycle regression",
+      "exit": 0,
+      "PASS": 12,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    },
+    {
+      "command": "bash source/tools/test_hooks_windows.sh",
+      "expected": "complete canonical hooks/accounting/cleanup/counterexample/offline/workspace chain",
+      "exit": 0,
+      "PASS": 904,
+      "SKIP": 5,
+      "UNAVAILABLE": 17
+    },
+    {
+      "command": "python3 source/tools/package.py",
+      "expected": "script DLL/version/INI/source/licence/CRC/import checks",
+      "exit": 0,
+      "PASS": 1,
+      "SKIP": 0,
+      "UNAVAILABLE": 0
+    }
+  ],
+  "counts_are_groups_not_unique_assertions": true,
+  "owner_game_acceptance": "UNAVAILABLE"
+}

@@ -1,3 +1,16 @@
+# v0.1c38r5 / package0.1.61 — wall-plane displacement-facing experiment
+
+Orientation only: current authenticated positions projected onto the authenticated
+fixed wall normal define continuous travel targets, including vertical/diagonal.
+12deg heading deadband /8deg candidate stability are experimental, not engine
+facts. Two33ms observations, speed>=2, gap<=250ms, entry0.25s and turn120ms remain.
+Below-speed descent holds last valid facing; no speed/animation/input/idle patch.
+Existing source A/B ownership/native freshness/stale/session and4096 budgets
+remain. WALL_PLANE_HEADING schema2 vectors/angles supersedes binary signs,
+64 records/session, at most8 hold records. Owner visual acceptance pending;
+proper source basis is not animation/body proof. Chat supplies owner test steps.
+Older notes below are historical; r4 native-session lifetime still applies.
+
 # v0.1c38r4 / package0.1.60 — session-bound normal source lifetime
 
 Normal5s experimental expiry removed; fresh authenticated same-session native

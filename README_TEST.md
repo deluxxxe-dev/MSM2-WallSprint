@@ -1,3 +1,24 @@
+# Current r5 orientation-only proof — 2026-10-31 JST
+
+Runtime **v0.1c38r5**, package **0.1.61**. Existing up/down/diagonal translation
+is not changed. Facing follows authenticated world-space wall-tangent displacement
+instead of +/-entry axis. Experimental12deg heading deadband /8deg candidate
+stability, two33ms observations, unchanged speed>=2 and250ms gap. Turn120ms,
+entry0.25s and native/stale/identity/4096 write gates remain. Below-speed descent
+holds last heading and logs low_speed_hold; this does not fix descent speed,
+animation playback, earlier INPUT START or stick-release wall-cling lifecycle.
+
+Update using installed `MSM2-WS/Update-WS.cmd`. Owner test procedure is supplied by
+Chat; no new offline analysis command or extra capture is required. Return the
+new `MSM2-WS-v0.1c38r5-YYYYMMDD-HHMMSS.log` from `MSM2-WS/logs` when requested.
+`WALL_PLANE_HEADING schema=2` replaces binary `REVERSAL_HEADING`: candidate/target/
+published world vectors, signed angles, speed, session/native update/wall/virtual
+clocks and rejection categories, bounded64/session. Proper source basis is not
+proof of visual body/animation acceptance; camera roll is not a world-wall axis.
+
+---
+Historical c38 instructions below are not the current r5 acceptance procedure.
+
 # WallSprint v0.1c38 — 正確なレジスタ由来アドレスの静的候補調査
 
 Package **0.1.56**。c37の実EXE調査では直接参照0件・未解決1279672件でした。今回はLEAで作った正確な画像内アドレスと64bitコピー、符号付き変位だけを限定追跡します。ロードした値・部分書込み・未対応演算・制御境界を越えたアドレス推定はしません。新しい候補もwriter完全性・割当・寿命・所有権の証明ではなく、既存の解析停止を保持します。

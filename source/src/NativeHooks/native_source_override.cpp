@@ -61,7 +61,7 @@ struct Shared {
  std::uint64_t permissionEpoch{},acceptedEpoch{},staleStart{},staleUpdate{},staleAge{},maxStaleMs{},handledStaleUpdate{};
  double pausedTransitionMs{},frozenTransitionMs{};
  bool positionRequested{};unsigned movementSamples{},movementEmitted{};std::uint64_t movementMs{},movementUpdate{};Vec3 movementPosition{};
- ws::heading::Reversal heading;double headingClock{};std::uint64_t headingWallMs{};unsigned headingLogs{},actorLogs{},countLogs{};
+ ws::heading::Reversal heading;double headingClock{};std::uint64_t headingWallMs{};unsigned headingLogs{},headingHoldLogs{},actorLogs{},countLogs{};
  Adhesion adhesion{};
 } state;
 struct Record {
@@ -471,7 +471,8 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
    auto heading=state.heading.sample({s.position[0],s.position[1],s.position[2]},token.updates,double(now),state.headingClock);
    if(!heading.basis.valid){end("invalid_reversal_heading",now);p.active=false;}
    else {p.basis=heading.basis;
-    if(state.headingLogs<64&&std::strcmp(heading.event,"hold")!=0){++state.headingLogs;writeLog("REVERSAL_HEADING session=%llu native_update=%u ms=%llu clock_ms=%.3f event=%s delta_estimate=(%.9g,%.9g,%.9g) tangent_speed_estimate=%.9g candidate_sign=%d accepted_sign=%d target_forward=(%.9g,%.9g,%.9g) published_forward=(%.9g,%.9g,%.9g) reason=bounded_displacement_following_not_input_intent Position_writes=0",(unsigned long long)p.session,token.updates,(unsigned long long)now,state.headingClock,heading.event,heading.delta.x,heading.delta.y,heading.delta.z,heading.speed,heading.candidate,heading.accepted,heading.target.x,heading.target.y,heading.target.z,p.basis.forward.x,p.basis.forward.y,p.basis.forward.z);}
+    const bool held=std::strcmp(heading.event,"low_speed_hold")==0||std::strcmp(heading.event,"deadband_hold")==0;
+    if(state.headingLogs<64&&std::strcmp(heading.event,"hold")!=0&&(!held||state.headingHoldLogs<8)){++state.headingLogs;if(held)++state.headingHoldLogs;writeLog("WALL_PLANE_HEADING schema=2 session=%llu native_update=%u ms=%llu clock_ms=%.3f event=%s delta_estimate=(%.9g,%.9g,%.9g) tangent_speed_estimate=%.9g candidate_forward=(%.9g,%.9g,%.9g) candidate_angle_rad=%.9g turn_angle_rad=%.9g target_forward=(%.9g,%.9g,%.9g) published_forward=(%.9g,%.9g,%.9g) reason=bounded_displacement_following_not_input_intent Position_writes=0",(unsigned long long)p.session,token.updates,(unsigned long long)now,state.headingClock,heading.event,heading.delta.x,heading.delta.y,heading.delta.z,heading.speed,heading.candidate.x,heading.candidate.y,heading.candidate.z,heading.candidateAngle,heading.turnAngle,heading.target.x,heading.target.y,heading.target.z,p.basis.forward.x,p.basis.forward.y,p.basis.forward.z);}
    }
   }
  }

@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c38r4",
-  "package_version": "0.1.60",
-  "artifact": "MSM2-WS-v0.1c38r4.script.disabled",
-  "sha256": "a471cc11de2f63e3c5eb659311db0c1b1f72fd0a0b14d583aac17ddd4bd5df83",
-  "dll_sha256": "2d4ee5d16d0eb4b5ee8e68e6cbc9a187ba93fb2970cdc2f3e7106d9fdd6c8e53",
+  "version": "v0.1c38r5",
+  "package_version": "0.1.61",
+  "artifact": "MSM2-WS-v0.1c38r5.script.disabled",
+  "sha256": "ceda055721caad9a4fe67dda72b7f6a03397e2cb34a5827b6eadef396c95c0e1",
+  "dll_sha256": "eb1e2efb5fec2a6dabe2f9ce2595a56a7e464c1284bd8a3d6577a4eddd885ecb",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -662,7 +662,7 @@
   },
   "isolated_logging": {
     "directory": "game-root/Mods Library/Mods-Developing/MSM2-WS/logs",
-    "filename": "MSM2-WS-v0.1c38r4-YYYYMMDD-HHMMSS.log",
+    "filename": "MSM2-WS-v0.1c38r5-YYYYMMDD-HHMMSS.log",
     "filename_clock": "host_local_GetLocalTime",
     "line_clock": "UTC_unchanged",
     "collision_creation": "CREATE_NEW_atomic",
@@ -738,8 +738,8 @@
     "source": "_source_independent_clone",
     "archive": "_archive_disabled_only",
     "runtime_logs": "logs",
-    "active_script": "MSM2-WS-v0.1c38r4.script",
-    "artifact": "MSM2-WS-v0.1c38r4.script.disabled",
+    "active_script": "MSM2-WS-v0.1c38r5.script",
+    "artifact": "MSM2-WS-v0.1c38r5.script.disabled",
     "update_helper": "Update-WS.cmd",
     "migration_helper": "Migrate-WS.cmd",
     "overstrike": "game-root/Overstrike/Overstrike.exe",
@@ -1727,5 +1727,25 @@
     "new_hooks": 0,
     "effect_certificate": false,
     "Position_source_input_movement_writes": 0
+  },
+  "wall_plane_heading": {
+    "revision": "r5",
+    "source": "authenticated_position_delta_projected_on_current_wall",
+    "target": "continuous_world_wall_tangent",
+    "observation_ms": 33,
+    "consecutive_samples": 2,
+    "minimum_tangent_speed": 2,
+    "maximum_gap_ms": 250,
+    "heading_deadband_degrees": 12,
+    "candidate_stability_degrees": 8,
+    "candidate_anchor": "first_sample_no_mixed_directions",
+    "turn_ms": 120,
+    "antipode": "positive_pi_tie_only",
+    "mid_turn_retarget": false,
+    "entry_seconds": 0.25,
+    "low_speed": "hold_last_valid_heading",
+    "log": "WALL_PLANE_HEADING_schema2_vectors_angles_not_binary_signs",
+    "translation_input_animation_writes": false,
+    "owner_visual_acceptance": "pending"
   }
 }

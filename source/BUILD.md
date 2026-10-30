@@ -261,3 +261,29 @@ selected-byte coverage vs always-false candidate/all-writer completeness. No
 publication chain is followed automatically. Allocation/range/lifetime/base/
 ownership/critical disjointness/containment/CFG remain unproven/false. Even new
 candidates do not change native c37 range/c36 escape barrier or gameplay gates.
+
+
+## r5 wall-plane facing (orientation-only)
+
+Version v0.1c38r5/package0.1.61. Named12deg deadband/8deg candidate stability
+are experiment choices. Existing33ms/two observations/speed2/gap250ms,
+entry0.25s/turn120ms and native-session/4096-write/freshness gates remain.
+Read analysis/V01C38R5_WALL_PLANE_HEADING.md for evidence and limits.
+Required root commands (configured existing analysis-python PATH):
+
+```bash
+export PATH=/workspace/toolchains/analysis-python/bin:$PATH
+bash source/tools/test_reversal_heading.sh
+bash source/tools/build_windows.sh
+bash source/tools/test.sh
+bash source/tools/smoke_windows.sh
+bash source/tools/test_native_source.sh
+bash source/tools/test_hooks_windows.sh
+python3 source/tools/release.py
+```
+
+Release invokes `python3 source/tools/package.py` via configured `python` and
+checks current script/DLL/source/version/INI contracts. Source/installer ZIPs
+include current shared toolkit dependencies. Do not run build inside Mods Library;
+Update-WS stages outside it. Synthetic/Wine basis acceptance is not real-game
+body-facing, animation speed or earlier-input proof. Chat supplies owner test.

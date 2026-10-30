@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.60",
-  "description": "WallSprint v0.1c38r4: authenticated native-session lifetime replaces normal5s experiment expiry. Existing100ms freshness, identity/code/Deinit/disable gates and independent write budgets remain. Displacement reversal33ms/two samples and120ms duration unchanged; no new movement/input/animation writes.",
+  "version": "0.1.61",
+  "description": "WallSprint v0.1c38r5: wall-plane displacement-facing orientation only, with angular confirmation/deadband. Existing33ms/two observations, speed2, gap250ms, turn120ms, entry0.25s and native-session/freshness/write-budget safety remain. No translation/input/animation changes.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

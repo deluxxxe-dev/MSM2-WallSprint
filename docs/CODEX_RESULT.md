@@ -1,276 +1,101 @@
-# Codex result — durable update ownership / stale KIT repair
+# Codex result — r5 wall-plane displacement-facing orientation proof
 
-2026-10-31 JST. STATUS: published — implementation and toolkit verified on GitHub; owner Windows acceptance pending.
-Branch `codex/v01c20-edi-value-provenance`; baseline `6eeef17`.
-No main merge. Toolkit `MSM2-Mod-Tools-v1.2.0.zip` only; runtime/package r4 unchanged.
-Implementation commit and independent publication readback recorded below after push.
+2026-10-31 JST. STATUS: implementation validated; game/body acceptance pending.
+Branch `codex/v01c20-edi-value-provenance`, baseline
+`e1ad781caaabc1933a5fbe422e0b1c0343f6503a`; no main merge.
+Runtime **v0.1c38r5 / package0.1.61**. Publication recorded after commit/push.
 
-## Changes and result
+## Result / changes / safety
 
-OS-backed shared gate replaces empty presence-only ownership. Explicit inherited
-handles protect surviving build children; PID creation identity/token/workspace
-metadata, strict inactivity evidence and reversible legacy preservation fail closed
-on ambiguity. Update commits/releases ownership before checked launch; launch
-failure cannot roll back validated deployment. No process killing, DLL relocation,
-attribute normalization, index.lock deletion or SF/ordinary-mod cleanup.
+Existing game translation already supports up/down/diagonal. Replaced only binary
++/-entry Forward heading target with measured world wall-tangent direction;
+proper basis with Up=authenticated wall normal, coherent A/B writer path retained.
+Named experimental12deg heading deadband and8deg first-candidate stability;
+33ms/two samples/speed>=2/gap<=250ms, entry0.25s and turn120ms unchanged.
+Shortest signed rotation, positive numerical180 tie, no mid-turn retarget,
+low-speed hold, nonmixing candidate evidence and no incremental-matrix drift.
+See `analysis/V01C38R5_WALL_PLANE_HEADING.md` for exact definitions and limits.
 
-Fresh fetch/bootstrap repairs old installed KIT without executing old checker or
-building/deploying runtime. Current successful updater refreshes owned KIT; backup
-settings/profile/shortcuts and previous toolkit are retained. Source/distributed
-bootstrap dependencies updated for future packaging; r4 package not regenerated.
-Actual previous launcher was raw Popen, NOT checked launcher; do not infer previous
-self-lock checker failure. Exact chain and constraints:
-`analysis/UPDATE_LOCK_TOOLKIT_RECOVERY.md`.
+Minimal runtime changes are heading calculation, diagnostic schema2 and bounded
+hold logs; no new memory/API/hook/writer. WALL_PLANE_HEADING reports candidate /
+accepted target / published vectors, radians, speed, session/native-update/wall /
+pause-aware clock; binary sign fields are removed. Existing64 total heading logs,
+at most8 hold logs; source permission never depends on log budget.
+Source transition/compact math/ownership/lifecycle/INI/shared tooling are unchanged.
+Existing100ms freshness/native/identity/stale/Deinit/disable and independent4096
+write budgets remain. C52 FAIL/watch disabled unchanged. No Position/input/
+translation/speed/animation/idle/adhesion/corner patch. Earlier INPUT START remains
+deferred. Proper source basis is NOT proof of body/animation playback acceptance.
 
-Changed files: environment ownership/repair/launcher/distribution/tests; workspace
-engine and Windows updater/launch/process helpers; future package/bootstrap tool
-dependencies; individual+combined manuals; PROJECT_STATE; analysis/release record.
-No native code or INI/runtime/package change. Original five untracked historical
-archives/bundle retained unstaged.
+Files: pure heading header/tests; minimal native adapter/logging; owned MinHook
+fixture; version/info/readmes/BUILD; package metadata and selected analysis copy;
+PROJECT_STATE/result/new analysis and versioned distribution/manifests.
+Original five untracked historical ZIP/bundle files retained unstaged.
 
-## Validation
+## Exact validation / expected / actual
 
+Repository root, configured toolchains. Canonical hooks environment:
+`export PATH=/workspace/toolchains/analysis-python/bin:$PATH`.
+PASS counts are emitted label/groups, not summed unique assertions; focused and
+native cases repeat within canonical chains. All table commands exited0.
 
-2026-10-31 JST. Owned temporary fixtures only. Expected all admitted operations
-pass, unsafe/concurrent/unknown cases refuse without losing runtime/user bytes.
-Actual final results:
+| Exact command | Expected | Actual PASS / SKIP / UNAVAILABLE |
+|---|---|---|
+| `bash source/tools/test_reversal_heading.sh` | original transport/timing/retention plus full-plane17 groups | 17 / 0 / 0 |
+| `bash source/tools/build_windows.sh` | Windows warnings-as-errors build with v0.1c38r5/0.1.61 | 0 / 0 / 0 (build success, no PASS banner) |
+| `bash source/tools/test.sh` | ASan/UBSan portable and focused math | 30 / 0 / 0 |
+| `bash source/tools/smoke_windows.sh` | Windows/Wine lifecycle/log/build-gate smoke | 7 / 0 / 0 |
+| `bash source/tools/test_native_source.sh` | owned actual-clock vertical/diagonal coherent A/B and31s/reversal/lifecycle regression | 12 / 0 / 0 |
+| `bash source/tools/test_hooks_windows.sh` | complete canonical hooks/accounting/cleanup/counterexample/offline/workspace chain | 904 / 5 / 17 |
+| `python3 source/tools/package.py` | script DLL/version/INI/source/licence/CRC/import checks | 1 / 0 / 0 |
 
-| Exact command | Expected / actual | PASS | SKIP | UNAVAILABLE |
-|---|---|---:|---:|---:|
-| `python3 environment/test_operation_lock.py` | cross-process lifetime, legacy/identity/race/replacement refusal; matches | 14 | 1 | 0 |
-| `python3 source/tools/test-workspace.py` | update failure preserves old runtime; launch failure retains committed new runtime; concurrent update denied; matches | 20 groups | 0 | 0 |
-| `python3 environment/test_mod_environment.py` | backup/restore, refresh/settings/data safety; matches | 28 | 0 | 0 |
-| `python3 environment/test_tooling_repair.py` | real owned Git ff/old checker repair/idempotence/dirty/divergent/live blocks; matches | 3 | 0 | 0 |
-| `python3 environment/test_start_overstrike_preflight.py` | installer proxy accepted, misplaced loader refused unchanged; matches | 1 group | 0 | 0 |
-| `bash environment/test_operation_lock_windows.sh` | Win32 sharing/crash/child lifetime under Wine; matches | 4 groups | 0 | 1 |
-| PowerShell command below | mocked Windows launch contract; matches | 16 checks | 0 | 0 |
+Focused cases cover +/-vertical, all four/shallow diagonals on three world-wall
+orientations, no alternating binary heading for noisy dominant ascent/descent,
+genuine full reversal preserved, incompatible candidates cannot accumulate,
+shortest +/-pi seam and deterministic180 tie,120 quarter-turn loops/no drift,
+WAIT/stale/reset/gap/low-speed and A/B Position/W/scale/metadata preservation.
+Actual native fixture verifies vertical/diagonal source publications/real owned
+MinHook A/B stores, plus original31s/>20-reversal/session/Deinit safety case.
+Final canonical hooks recompiles/reruns native fixtures including final diagnostic
+cap; first standalone run is supplementary. Final build/portable/smoke were repeated
+when diagnostics/tests were finalized. No later runtime-code changes.
 
-```
-XDG_CACHE_HOME=/tmp/ws-lock-xdg-cache XDG_CONFIG_HOME=/tmp/ws-lock-xdg-config XDG_DATA_HOME=/tmp/ws-lock-xdg-data DOTNET_CLI_HOME=/tmp/ws-lock-dotnet /tmp/ws-proxy-pwsh/pwsh -NoLogo -NoProfile -File environment/test_windows_contract.ps1
-```
+SKIP5: optional private original-body/native/game-writer584byte/accepted-build
+capture replays not available/distributed. Independent synthetic negative/proof
+cases still execute. No private logs redistributed or fabricated replay PASS.
+UNAVAILABLE17 (canonical): c40 VCH not dispatched2; c49 native bridge certificate6;
+c50 native conjunct7; c51 no VCH bridge2. These retain fail-closed classifications.
+Actual owner game/body/descending-speed/input/animation acceptance is additionally
+UNAVAILABLE here, not part of the17 fixture labels and not PASS. No BLOCKED code
+subtask; no safety/certificate/watch weakening to make a case pass.
 
-SKIP: full sandbox /proc environment inventory cannot inspect process1; actual
-probe refused. Isolated real owned process token inventory passed, not WSL proof.
-UNAVAILABLE: Wine reparse API did not materialize a reparse node; Linux symlink
-refusal passed. Actual owner Windows CPython/CIM/WSL/shortcuts/deployment are
-separately UNAVAILABLE (one acceptance group); no actual-PC PASS claim.
-PowerShell Core on Linux uses owned mocks, not actual COM shortcuts. Native API
-fixture is Win32 C++ under Wine, not the Python ctypes integration on Windows.
+Additional commands:
+- `python3 -m py_compile source/tools/package.py source/tools/release.py`: PASS.
+- `git diff --check`: PASS.
+- `git diff --exit-code e1ad781 -- source/include/Math/source_orientation.hpp source/include/Math/compact_basis.hpp source/include/NativeHooks/ownership_guards.hpp source/src/NativeHooks/source_lifecycle.cpp source/mod/WallSprint.ini environment source/tools/workspace.py`: PASS, no changes.
+- `python3 source/tools/release.py`: final source/install ZIP generation, CRC and
+  versioned disabled script/root manifest; packaging checks above rerun. Results
+  and hashes recorded in analysis/V01C38R5_RELEASE.json after final generation.
+- `python3 /tmp/ws-r5-audit.py`: verifies protected source/INI/toolkit equality,
+  unchanged session/freshness/write metadata, r5 manifest, current script/DLL SHA,
+  both ZIP CRC/source equality/shared KIT dependencies and honest schema2.
 
-Initial diagnostic runs encountered read-only default PowerShell cache (fixed by
-private XDG dirs), Wine reparse nonmaterialization (reported UNAVAILABLE), and an
-aborted fixture path collision (unique tick suffix fixes fixture). Official Windows
-embeddable Python download returned403; no Windows Python integration claimed.
+## Handoff
 
-`python3 environment/build_distribution.py`: toolkit-only ZIP CRC/member bytes/
-SHA checks; no game, external binary, user backup or r4 rebuild. Existing r4 runtime
-and packages must match baseline6eeef17. Native/game suites intentionally NOT RUN:
-CODEX_NEXT forbids native suite rerun for tooling-only work. No gameplay changes.
+Outputs: MSM2-WS-v0.1c38r5.zip, MSM2-WS-v0.1c38r5-source.zip,
+MSM2-WS-v0.1c38r5.script.disabled, BUILD_MANIFEST.json. Existing r4 outputs retained.
+No private raw logs/game function bodies/research stages or foreign binaries added.
+No new reusable engine ABI/ownership fact established; this is a project-local
+experimental direction model. Wisdoms references consulted; no engine fact promoted.
+After verified publication, owner updates via installed Update-WS.cmd. Chat supplies
+the game test procedure. New log: MSM2-WS/logs/MSM2-WS-v0.1c38r5-YYYYMMDD-HHMMSS.log.
+Below2-speed descent can hold old facing; assess logged actual speed before future
+threshold discussion. Do not claim descending-speed/animation or earlier-input fix.
 
-Additional verification, expected/actual all PASS:
-
-- `python3 -m py_compile environment/operation_lock.py environment/repair_tools.py environment/mod_environment.py source/tools/workspace.py source/tools/package.py`
-- `bash -n source/tools/windows/workspace-build.sh environment/test_operation_lock_windows.sh`
-- `git diff --check`
-- `git diff --exit-code 6eeef17 -- source/src source/include source/mod BUILD_MANIFEST.json 'MSM2-WS-v0.1c38r4*'` (no differences)
-- PowerShell Parser.ParseFile on five changed .ps1 files: Repair-Mod-Tools,
-  launch-overstrike, stop-processes, stop-overstrike-updater, windows.ps1; zero errors.
-  Run with the same private XDG variables above and `-File /tmp/ws-lock-parse.ps1`.
-  Parser body: for each file, call `[System.Management.Automation.Language.Parser]::ParseFile`
-  with token/error refs and throw if errors.Count; no script operations executed.
-- `python3 environment/build_distribution.py` verifies ZIP CRC and exact member
-  bytes. Artifact58258bytes / SHA256
-  `beb58b90e172eb456cada2169dd92751e5bc0818398d082ab4e28575cd93ea08`.
-
-No BLOCKED implementation subtask. Actual-PC group UNAVAILABLE, not PASS.
-Wisdoms read access confirmed; synchronization deferred to connected shared-manual
-handoff; reusable detailed proof retained in project analysis. No shared claim
-of owner deployment or actual Windows Python/WSL acceptance.
-
-## ONE owner repair action
-
-Close game/Overstrike/updater normally, then paste the single bootstrap block in
-`docs/mod-tools/README.md` into Windows PowerShell. It fetches exact canonical
-branch, then runs freshly staged repair under OS ownership, refuses dirty/divergent
-Git or ambiguous/live legacy state. Expected marker:
-`TOOLING_REPAIR_COMPLETE runtime_unchanged=1 no_build=1 no_game_launch=1`.
-No Update-WS rebuild or game test requested for this toolkit repair. Return exact
-refusal/output if inactivity cannot be proved. Never manually delete a lock.
-
----
-Previous lateral-route result (historical):
-
-# Codex result — one flat-wall lateral movement route research
-
-2026-10-31 JST. STATUS: partial — bounded investigation completed, movement route
-not admitted; exact missing original continuation identified. No runtime change.
-Branch codex/v01c20-edi-value-provenance; baseline
- d7cb968297478aa751633abda75d56d6ff359a95 (latest fetched/fast-forwarded).
-No main merge. Changed only analysis/FLAT_WALL_LATERAL_ROUTE_REVIEW.md,
-PROJECT_STATE current handoff and this result. Publication recorded below.
-
-## Result / evidence / precise next target
-
-Accepted supplied r4 runtime: session3 eleven completed turns,27.031s source
-through native Deinit,1819 A/1822 B writes, no hard kill; one40ms stale recovery.
-This accepts normal5s-stop removal in that test, not unlimited lifetime. Facing
-START remains explicitly deferred, not solved; no repeat of input inventory.
-Current runtime remains v0.1c38r4/package0.1.60 and existing output/log convention.
-
-Selected ONE original route: verified WallRun_Update0x1424530 -> shared direct
-conditional-branch continuation0x14248f9 -> unknown original steering/motion
-consumer. Reference RequestSimpleMotion/UpdateMotion names remain hints. Four
-actual helper CALL targets are untyped; no guessed input/coordinate/contact ABI.
-State/owner identity is supported by existing lifecycle; requested vector/frame,
-contact handling and motion submission/restoration contract are not proven.
-A/B orientation overrides all orientation rows but preserves Position/W/compact
-metadata/scales; possible coupling to a future motion consumer's frame remains
-UNKNOWN. No whole-engine ownership proof imposed, no API admitted by name alone.
-
-Previously available c20 attached log authenticates current intended EXE build/
-SHA and captures ORIGINAL pre-MinHook Update422bytes. SHA matches compiled static
-plan. Offline decoder confirms422/422bytes,89 instructions. Four branches leave
-the runtime-function span for0x14248f9; terminal fallthrough also missing, no RET.
-Thus entire captured runtime-function RANGE is not entire logical CFG/function.
-This concrete first blocker was found in existing data, not a speculative input
-API search. No recursive callee scan or reference-offset transplant.
-
-ONE next acquisition: up to128 original file-backed executable bytes starting
-RVA0x14248f9, plus current-build/file/block SHA and available section/runtime/
-unwind metadata. Stop at relevant control boundary/cap. Existing offline
-slot_publication.parse_pe() supplies checked file_range; use its metadata/range
-primitive ONLY, not analyze_image/CLI scans. Authenticated on-disk EXE not available
-in selected evidence, so successor extraction not executed. Current runtime
-analyzeNative only captures four lifecycle STARTS' single lookup spans; repeating
-the same normal startup would not acquire this successor. No invented successor
-capture command/new hook/helper or full EXE upload/full-log request. Chat supplies
-any owner acquisition procedure; this handoff contains no new game test.
-
-## Exact executed inspection / expected / actual
-
-Read AGENTS required manuals, current state/result/NEXT, owner runtime analysis,
-AFTER_TURN_PLAN, input inventory and historical movement/facing source review.
-Read-only Wisdoms ENGINE_INTERNALS lifecycle and WALLSPRINT_REFERENCE_MODS movement
-sections: authenticated Update RVA matches; labelled motion APIs unverified.
-Targeted source reads: wallrun_hooks.cpp, sdk_bridge.cpp, surface_source.hpp,
-static_observation_plan.hpp, existing static_access_v2.py/review_surface_source.py
-and slot_publication.py::parse_pe. Historical pre-r1 facing review is not treated
-as current “no reversal branch” behavior. No broad repository/binary code sweep.
-
-Update-only private capture extraction actually executed:
-
-```bash
-python3 - <<'PY'
-from pathlib import Path
-p=Path('/workspace/attachments/e22e1300-b10a-4907-b0c7-d10c37f6dcfb/MSM2-WS-v0.1c20-20261024-180229.log')
-lines=[x for x in p.read_text().splitlines() if 'native_function_capture function=Update ' in x or 'native_function_code function=Update ' in x]
-assert len(lines)>1
-Path('/tmp/ws-lateral-update-only.log').write_text('\n'.join(lines)+'\n')
-PY
-python3 source/tools/review_surface_source.py /tmp/ws-lateral-update-only.log --output-dir /tmp/ws-lateral-update-review
-```
-
-Expected/actual:15 selected lines (metadata+14 chunks), no other bodies; one complete
-checksum-verified capture, no overlapping/missing chunk; exit0/PASS. Existing tool
-reports gate BLOCKED,0 access/face candidates (those schemas deliberately omitted);
-this is code integrity, NOT motion/layout/ownership admission. Hash:
-e5c08bcdbc98e28f2b07aebb6a141b317ca740ee1a6a8f6da70752f98b98e40f.
-
-Exact focused decoder validation executed with pinned offline Python:
-
-```bash
-/workspace/toolchains/analysis-python/bin/python - <<'PY'
-from pathlib import Path
-import sys,capstone
-sys.path.insert(0,'source/tools')
-import static_access_v2
-raw=Path('/tmp/ws-lateral-update-review/Update.bin').read_bytes()
-r=static_access_v2.analyze(raw,0x1424530,'Update')
-xs=list(capstone.Cs(capstone.CS_ARCH_X86,capstone.CS_MODE_64).disasm(raw,0x1424530))
-assert r['sha256']=='e5c08bcdbc98e28f2b07aebb6a141b317ca740ee1a6a8f6da70752f98b98e40f'
-assert r['decoded_bytes']==422 and r['decoded_instructions']==89
-assert r['outside_span_branches']==[0x14248f9]
-assert xs[-1].address+xs[-1].size==0x14246d6 and xs[-1].mnemonic=='xor'
-assert not any(x.mnemonic.startswith('ret') for x in xs)
-PY
-```
-
-Equivalent assertion checks and summary emission ran in the focused command;
-expected/actual exit0,89 decoded/reachable instructions, outside target0x14248f9,
-nonterminal exact-end fallthrough verified. No byte skip or whole-CFG claim. No
-raw game bytes/full disassembly committed; private files/summary are /tmp only.
-
-`git diff --check`:expected/actual exit0/PASS.
-`git diff --exit-code d7cb968 -- source environment BUILD_MANIFEST.json
-MSM2-WS-v0.1c38r4.zip MSM2-WS-v0.1c38r4-source.zip MSM2-WS-v0.1c38r4.script.disabled`:
-expected/actual empty diff/exit0/PASS (no runtime/helper/config/package change).
-
-Read-only analysis/doc checks4 PASS; SKIP7 unchanged binary pipeline commands
-(focused reversal, portable, Windows build/smoke/native/hooks/release), not required
-for docs-only research with unchanged tools. No old901 PASS run represented as
-current tests. UNAVAILABLE1: missing authenticated successor code/metadata;
-BLOCKED1: lateral route admission pending that concrete continuation and consumer
-contract. No motion adapter implemented, so no fabricated lateral experiment test.
-No tool/source change requiring new offline regression suite.
-
-## Safety / persistence / owner
-
-All C52/4096/stale/build/identity/cleanup gates unchanged. No new hooks, pointer
-chase, input/Position/velocity/gravity/native/gameplay mutation or c73. No SF/shared
-environment or other-repository edits. Reusable single-span/CFG distinction kept
-in local analysis; Wisdoms synchronization deferred under local-docs-only scope.
-No new runtime version/log/artifact; existing r4 files stay byte-identical, older
-packaged documentation stays historical. Owner next: no movement experiment yet;
-one offline successor-window acquisition to be arranged by Chat, no command
-invented here. Normal commit/push and independent readback recorded below.
-
-## Verified publication
-
-Research commit c57f44399db043d23bc0c328bba7a8f84b3cdc2e, normal push
-d7cb968->c57f443. `python3 /tmp/ws-lateral-publication.py` exit0: independent
-GitHub fetch into /tmp/ws-steering-docs-publication; FETCH_HEAD/ls-remote/local
-head equal; all3 changed blobs against d7cb968 equal local files. The script
-fetches the named branch and compares `git show FETCH_HEAD:<path>` bytes for
-all `git diff --name-only d7cb968 HEAD` paths. Same check repeated after this
-record-only commit; final full SHA reported in chat, no self-reference.
-No binary rebuild/repackage, no raw body/log or legacy untracked artifacts staged.
-
-Publication: implementation commit `551515d` plus whitespace/package-metadata follow-up.
-Trailing blank line caught by cached diff check after initial source checks; corrected.
-No behavioral changes after final suite run, so full suites were not repeated.
-
-## Publication attempt — BLOCKED (not published)
-
-Implementation commit `551515d`; final code/artifact commit
-`5d85cf8e8df9e835431fd7d4a17f036684d51fad`.
-`git push origin codex/v01c20-edi-value-provenance` failed:
-`could not read Username for https://github.com: No such device or address`.
-`gh auth status` reports existing GH_TOKEN invalid. No credentials printed.
-Subsequent `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance`
-failed with the same authentication error, so remote-head/blob readback is
-UNAVAILABLE, not PASS. No force/reset/credential workaround attempted.
-
-Final `git diff 6eeef17 HEAD --check` passed after whitespace correction;
-`git diff --exit-code 6eeef17 HEAD -- source/src source/include source/mod BUILD_MANIFEST.json 'MSM2-WS-v0.1c38r4*'`
-passed (r4 unchanged). Worktree contains only the five preexisting untracked files.
-A final documentation-only commit records this blockage. All code/artifacts are
-committed locally. Git bundle outside the repository preserves these commits.
-
-Owner next action NOW: reconnect GitHub authentication for this cloud environment,
-then ask to resume push/readback. Do not run repair bootstrap until publication
-succeeds. The single documented bootstrap remains the post-publication action;
-no Update-WS/game operation required now.
-
-## Publication resumed — 2026-10-31 JST
-
-Authentication restored. `git push origin codex/v01c20-edi-value-provenance`
-succeeded (6eeef17 -> d2e2f39). Published implementation/handoff SHA:
-`d2e2f39d329c20ddbac3de0f4926e348fc2cd424`.
-`python3 /tmp/ws-lock-publication.py` independently fetched the same branch in
-another clone, compared FETCH_HEAD and ls-remote with local HEAD and checked all
-34 changed tracked file blobs against local bytes: PASS. This supersedes the
-historical authentication blocker above. Final record-only commit is pushed and
-verified the same way; no behavioral/artifact changes, so regression rerun is
-unnecessary. Original test results/Windows UNAVAILABLE distinctions remain.
-Owner next action: close game/Overstrike/updater normally and run the ONE bootstrap
-block in docs/mod-tools/README.md. No full Update-WS rebuild or game test required.
+Final release and protected-code/source/ZIP/hash/schema audit: PASS (exit0).
+Release emits1 PASS/0 SKIP/0 UNAVAILABLE; audit1 PASS.
+Initial release attempt found the new analysis only at repository root while the
+existing packager reads source/analysis; added the identical source-archive copy
+and reran release/audit successfully. No runtime-code change; native suites were
+not repeated for this packaging/documentation-only correction.
+Versioned artifact hashes: analysis/V01C38R5_RELEASE.json.

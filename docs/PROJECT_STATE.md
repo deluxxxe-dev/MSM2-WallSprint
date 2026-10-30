@@ -1,11 +1,23 @@
 # WallSprint project state
 
-## Current task — existing multidirectional movement / wall-plane facing
+## Current task — r5 wall-plane facing implementation
 
 Owner baseline confirms up/down/diagonal translation already exists; do not treat lateral motion as absent. Sideways body/animation persists, descent slower/alternating facing, stick release returns vanilla cling. See analysis/R4_DIRECTIONAL_BASELINE_20261031.md. Compressed follow-up シーケンス 01.mp4 (36.416667s) successfully inspected: visible wall-travel/sideways-facing mismatch and later cling posture. Camera roll prevents screen-space direction inference; exact input/log alignment and quantitative descent speed remain unverified. Current heading targets only+/-entry Forward; next CODEX_NEXT authorizes minimum full-wall-plane displacement-facing orientation proof only. Speed/animation/idle and earlier INPUT START deferred, not solved. Owner bootstrap succeeded; later game run confirms basic launch recovery, not every tooling case.
 
 
-## Current handoff — update ownership / Mod-Tools 1.2.0
+## r5 implementation / acceptance pending
+
+v0.1c38r5/package0.1.61 replaces binary +/-entry targets with authenticated
+world-space wall-tangent displacement facing. Experimental12deg heading deadband,
+8deg first-candidate stability; existing33ms/two samples/speed>=2/gap250ms,
+entry0.25s and turn120ms retained. Proper A/B basis, stale/native/identity/4096
+budgets unchanged. WALL_PLANE_HEADING schema2 vectors/angles replaces binary
+sign logs;64 total events and at most8 hold events/session. See
+analysis/V01C38R5_WALL_PLANE_HEADING.md; exact validation/publication CODEX_RESULT.
+No translation/input/animation/idle/corner change; visual body acceptance pending.
+Owner test procedure supplied by Chat, not invented from camera screen axes.
+
+## Previous handoff — update ownership / Mod-Tools 1.2.0
 
 Implemented tooling-only OS-held shared ownership, commit-before-checked-launch,
 and a fresh Git-authenticated bootstrap that repairs installed KIT before old
@@ -13,11 +25,10 @@ checkers can reject it. Audit records persist intentionally; do not delete them.
 Unknown/active/malformed/reparse locks refuse; empty legacy recovery requires
 Windows process and all running WSL distributions to be proved inactive.
 See analysis/UPDATE_LOCK_TOOLKIT_RECOVERY.md and docs/CODEX_RESULT.md.
-Cloud regressions passed; actual owner Windows/CIM/WSL/shortcut acceptance is
-UNAVAILABLE here. Runtime/package r4 bytes unchanged; movement remains paused.
-Publication restored and independently verified on GitHub (d2e2f39).
-Next owner action is the single bootstrap block in docs/mod-tools/README.md,
-with game/Overstrike/updater closed. No full WS rebuild/game test requested.
+Cloud regressions passed; supplied owner repair marker and subsequent game run
+now confirm basic launch usability, not all Windows/CIM/WSL/concurrency cases.
+Tooling-only handoff kept r4 bytes unchanged; current r5 task above supersedes
+its movement pause/repair-next-action wording. Publication was independently verified.
 
 ## Active handoff — lateral movement route investigation
 
