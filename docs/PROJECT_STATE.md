@@ -14,6 +14,9 @@ entry0.25s and turn120ms retained. Proper A/B basis, stale/native/identity/4096
 budgets unchanged. WALL_PLANE_HEADING schema2 vectors/angles replaces binary
 sign logs;64 total events and at most8 hold events/session. See
 analysis/V01C38R5_WALL_PLANE_HEADING.md; exact validation/publication CODEX_RESULT.
+Implementation/artifacts ee0308512f627371bb715a49d8f8bbd27e192bff pushed;
+independent21-file GitHub readback passed. Focused17/portable30/smoke7/native12
+and canonical904 PASS /5 SKIP /17 UNAVAILABLE; detailed commands/reasons in result.
 No translation/input/animation/idle/corner change; visual body acceptance pending.
 Owner test procedure supplied by Chat, not invented from camera screen axes.
 

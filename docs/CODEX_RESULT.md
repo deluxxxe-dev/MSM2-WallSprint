@@ -1,6 +1,6 @@
 # Codex result — r5 wall-plane displacement-facing orientation proof
 
-2026-10-31 JST. STATUS: implementation validated; game/body acceptance pending.
+2026-10-31 JST. STATUS: implementation validated and published; game/body acceptance pending.
 Branch `codex/v01c20-edi-value-provenance`, baseline
 `e1ad781caaabc1933a5fbe422e0b1c0343f6503a`; no main merge.
 Runtime **v0.1c38r5 / package0.1.61**. Publication recorded after commit/push.
@@ -99,3 +99,16 @@ existing packager reads source/analysis; added the identical source-archive copy
 and reran release/audit successfully. No runtime-code change; native suites were
 not repeated for this packaging/documentation-only correction.
 Versioned artifact hashes: analysis/V01C38R5_RELEASE.json.
+
+## Publication confirmed — 2026-10-31 JST
+
+Implementation/artifacts commit:
+`ee0308512f627371bb715a49d8f8bbd27e192bff`.
+`git push origin codex/v01c20-edi-value-provenance`: PASS.
+`python3 /tmp/ws-r5-publication.py`: PASS, independent clone fetch/FETCH_HEAD and
+ls-remote equal local implementation HEAD, all21 changed file blobs match exact
+local bytes (including script/source/install ZIPs). `git diff e1ad781 HEAD --check`
+PASS. Final documentation-only publication record is pushed and verified with the
+same script; no code/artifact edits, no regression rebuild necessary.
+Owner update now uses installed Update-WS.cmd; no download links. Chat supplies
+human procedure. Cloud results do not certify actual body/animation acceptance.
