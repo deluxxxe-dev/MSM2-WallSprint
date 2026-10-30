@@ -1,6 +1,6 @@
 # Codex result — durable update ownership / stale KIT repair
 
-2026-10-31 JST. STATUS: partial — implementation committed; publication BLOCKED by expired GitHub authentication; owner Windows acceptance pending.
+2026-10-31 JST. STATUS: published — implementation and toolkit verified on GitHub; owner Windows acceptance pending.
 Branch `codex/v01c20-edi-value-provenance`; baseline `6eeef17`.
 No main merge. Toolkit `MSM2-Mod-Tools-v1.2.0.zip` only; runtime/package r4 unchanged.
 Implementation commit and independent publication readback recorded below after push.
@@ -260,3 +260,17 @@ Owner next action NOW: reconnect GitHub authentication for this cloud environmen
 then ask to resume push/readback. Do not run repair bootstrap until publication
 succeeds. The single documented bootstrap remains the post-publication action;
 no Update-WS/game operation required now.
+
+## Publication resumed — 2026-10-31 JST
+
+Authentication restored. `git push origin codex/v01c20-edi-value-provenance`
+succeeded (6eeef17 -> d2e2f39). Published implementation/handoff SHA:
+`d2e2f39d329c20ddbac3de0f4926e348fc2cd424`.
+`python3 /tmp/ws-lock-publication.py` independently fetched the same branch in
+another clone, compared FETCH_HEAD and ls-remote with local HEAD and checked all
+34 changed tracked file blobs against local bytes: PASS. This supersedes the
+historical authentication blocker above. Final record-only commit is pushed and
+verified the same way; no behavioral/artifact changes, so regression rerun is
+unnecessary. Original test results/Windows UNAVAILABLE distinctions remain.
+Owner next action: close game/Overstrike/updater normally and run the ONE bootstrap
+block in docs/mod-tools/README.md. No full Update-WS rebuild or game test required.

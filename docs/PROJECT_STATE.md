@@ -10,8 +10,8 @@ Windows process and all running WSL distributions to be proved inactive.
 See analysis/UPDATE_LOCK_TOOLKIT_RECOVERY.md and docs/CODEX_RESULT.md.
 Cloud regressions passed; actual owner Windows/CIM/WSL/shortcut acceptance is
 UNAVAILABLE here. Runtime/package r4 bytes unchanged; movement remains paused.
-Publication is BLOCKED by invalid cloud GH_TOKEN; reconnect GitHub before push/readback.
-After confirmed publication, next owner action is the single bootstrap block in docs/mod-tools/README.md,
+Publication restored and independently verified on GitHub (d2e2f39).
+Next owner action is the single bootstrap block in docs/mod-tools/README.md,
 with game/Overstrike/updater closed. No full WS rebuild/game test requested.
 
 ## Active handoff — lateral movement route investigation
