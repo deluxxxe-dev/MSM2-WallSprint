@@ -184,9 +184,23 @@ Branch `codex/v01c20-edi-value-provenance`.
 Initial implementation commit `31a464402c93f4efc9df17688f443eb68e19ad4d` was
 normally pushed and independently fetched into `/tmp/ws-steering-docs-publication`.
 All16 changed source/docs/manifest/artifact blobs were byte-identical to GitHub
-readback (SHA256 comparison recorded in cloud scratch). The final strict-endpoint
-follow-up and its artifacts will also be verified before handoff; final code
-commit SHA is recorded in the subsequent publication record.
+readback (SHA256 comparison recorded in cloud scratch). Final strict-endpoint code commit:
+`985c4bccf8aa4a7c21df66fe19c63f3367366059`.
+It was normally pushed, independently fetched from GitHub, and all16 changed
+source/docs/manifest/artifact blobs again matched local bytes. Verification used:
+
+```bash
+git -C /tmp/ws-steering-docs-publication fetch origin codex/v01c20-edi-value-provenance
+git -C /tmp/ws-steering-docs-publication rev-parse FETCH_HEAD
+git diff --name-only 97a1129 HEAD
+```
+
+For every listed path, `git -C /tmp/ws-steering-docs-publication show FETCH_HEAD:<path>`
+was compared byte-for-byte with the local file. Expected remote SHA/content
+match; actual all16 matched, exit0. The final record-only follow-up regenerates
+ZIP documentation, keeps the tested DLL/code unchanged, and receives the same
+remote-content verification. Final record commit SHA is reported in handoff
+rather than embedding a self-referential hash here.
 
 ## NEED
 
