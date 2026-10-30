@@ -1,31 +1,26 @@
-# Next task — keep WS active across repeated reversals
-Branch codex/v01c20-edi-value-provenance; no main merge.
-Read AGENTS required docs and analysis/V01C38R3_REPEATED_REVERSAL_RUNTIME.md plus analysis/REVERSAL_START_TIMING_REVIEW.md.
-Prior START review is complete; do not repeat it or CODEX_TURN_SPEED.
+# Next task — one flat-wall lateral movement route
+Branch codex/v01c20-edi-value-provenance; do not merge main.
+Read AGENTS required docs, analysis/V01C38R4_OWNER_RUNTIME_20261031.md, docs/AFTER_TURN_PLAN.md, analysis/INPUT_START_ADAPTER_INVENTORY.md and analysis/WALLRUN_MOVEMENT_FACING_SOURCE_REVIEW_20261030.md. Consult relevant Wisdoms movement references.
 
-## Purpose
-Owner explicitly requests WS remain active across any number of reversals while valid wallrun continues.
-Supplied session2 completes3 reversals; session4 completes2; both close on fixed5second budget without stale episode.
-Change ONLY normal WS lifetime, not reversal timing, duration, movement or animation.
+## Purpose / product decision
+Owner accepts r4 repeated-reversal persistence in supplied runtime and explicitly permits deferring earlier facing START. Do NOT repeat completed lifetime or input inventory tasks.
+Prepare the first flat-wall ONE-direction lateral motion proof. This task is targeted route research only, not gameplay implementation.
+Earlier facing START remains unresolved backlog; no turn duration/detection/input patch in this task.
 
-## Bounded implementation
-Inspect source/include/Math/source_orientation.hpp and source/src/NativeHooks/native_source_override.cpp (especially Transition.enter, tick fixed5000ms expiry, HardClosed reset), their actual consumers and relevant config/tests.
-Replace mandatory experimental5second stop with session-bound continuation for normal WS: continuing authenticated valid native WallRun updates may retain the existing orientation override regardless of elapsed total time or reversal count.
-Explicitly authorize this specific expiry-policy change; earlier preserve-five-second instructions are superseded ONLY for normal duration expiry.
-Do NOT renew/reset lifecycle by reversal, invent new generations, re-enter HardClosed session, or bypass invalidation. Preserve native Deinit/owner/generation loss, missing or stale updates, invalid surface/basis, disable/emergency stop, exact-build/current code and all A/B destination/ownership guards and cleanup.
-Separate total experimental runtime cap from freshness/watchdog deadlines: never remove the latter.
-If some certification/publication lifetime is actually proven only within5s and cannot be revalidated by existing per-update path, stop with the exact code dependency; do not remove the guard blindly.
-Keep bounded diagnostics bounded on long sessions (no unbounded memory/logging); exhausted diagnostic event quota must not be confused with gameplay lifetime. Preserve independent safety budgets and never expand hooks/watch permissions.
-No new API/hook, Position/velocity/input/animation writes, C52 relaxation or c73.
-Earlier facing START remains unresolved: no rotation acceleration, threshold/count/interval tuning, speculative1.1second offset, or new directional-input work in this task.
+## Narrow investigation
+Using existing reference analyses, source definitions/callers and already available authenticated current-build captures, identify ONE best route by which original verified WallRun receives requested movement and submits wall-tangent motion.
+Start at known WallRun_Update and existing indexed steering/motion references, not a new repository-wide/binary-wide search.
+Labels UpdateInput/UpdateSteering/RequestSimpleMotion/GravityOrientationOwner are search hints, not authenticated APIs.
+Provide actual available evidence for input type/coordinate meaning, caller/build identity, state/owner/lifetime, contact handling, and ordinary exit/restoration. Explain interaction with existing A/B orientation override.
+A verified high-level game API can be preferable to low-level Position writes; do not demand unrelated whole-engine ownership proof, but names or copied offsets/ABI alone are insufficient.
+Existing pure planar/controller helpers have fixture-only input producers; do not present them as runtime movement.
+No action-mapped input reader exists in last inventory. Do not repeat inventory just to rediscover this. Investigate the one original movement consumer/route that could supply the missing link.
+If exact function bytes/current-build data needed are absent, specify ONE precise missing capture/function/field and the smallest existing read-only acquisition method. Do not invent commands or start large automated RE.
 
-## Scope and completion
-Allowed: minimum lifetime implementation/config needed, corresponding focused tests and docs, version/package bump per repository conventions, PROJECT_STATE/CODEX_RESULT and affected manual only.
-Forbidden: SF/other mods, shared loader/environment/updater/profile changes, unrelated cleanup.
-Use existing required build/portable/native/hooks/smoke/release commands from repo.
-Meaningful regression cases: same valid session beyond5s/30s and many alternating completed reversals; valid straight session beyond5s; actual Deinit and disable immediately close; stale/gap/invalid owner/surface/code retain existing refusal/recovery semantics; closed generation cannot re-enter; subsequent genuine session starts cleanly; log caps stay bounded.
-Record tests as synthetic/static, not in-game acceptance. Commit/push and verify. Report exact runtime version/log name and any failure.
-Reply STATUS / CHANGED / RESULT / NEED only; Chat provides human update/test instructions.
-
-## Follow-on explicitly authorized by owner
-After completing and committing/pushing the lifetime patch above, continue with docs/CODEX_INPUT_START.md in a separate commit. Earlier line prohibiting new directional-input work applies only to the lifetime change, not this subsequent bounded input task. Owner prioritizes earlier INPUT-triggered facing start; do not stop after repeating the completed displacement-only blocker. Preserve independent validation/results for the two changes.
+## Output / limits
+One compact analysis: verified runtime facts / static evidence / candidate / exact blocker; source paths and existing evidence references; recommendation for ONE next admitted experiment or ONE next bounded read-only acquisition.
+No native/gameplay writes, new hooks, pointer chase, arbitrary offset probes, input/Position/velocity/gravity mutation, c73 or broad framework.
+No camera/animation/adhesion/corner/swing/combat, other MOD/shared environment changes.
+Do not remove independent4096 store/attempt budgets or stale/ownership/build gates.
+Allowed: analysis and relevant PROJECT_STATE/CODEX_RESULT updates only unless a necessary existing offline inspection helper is narrowly justified; no new runtime version/build for docs-only change.
+Validate docs/diff and existing relevant offline tooling only if changed. Commit/push and verify. Reply STATUS/CHANGED/RESULT/NEED only. Chat supplies owner test commands when an actual experiment is ready.
