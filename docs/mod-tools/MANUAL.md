@@ -23,14 +23,14 @@
 
 | ショートカット | 目的 | 仕様書 |
 |---|---|---|
-| MSM2 - Overstrike | 配置確認・初回セットアップ後に共有Overstrikeを開く | [OVERSTRIKE.md](#overstrike) |
-| MSM2 - Play Modded | インストール済みMODでゲームを直接起動する | [PLAY_MODDED.md](#play) |
-| MSM2 - Backup Mods | 共有MOD環境を保存し、完成前に全ファイルを検証する | [BACKUP_MODS.md](#backup) |
+| MSM2 - Overstrike | 配置確認・初回セットアップ後に共有Overstrikeを開く | [OVERSTRIKE.md](OVERSTRIKE.md) |
+| MSM2 - Play Modded | インストール済みMODでゲームを直接起動する | [PLAY_MODDED.md](PLAY_MODDED.md) |
+| MSM2 - Backup Mods | 共有MOD環境を保存し、完成前に全ファイルを検証する | [BACKUP_MODS.md](BACKUP_MODS.md) |
 
-日常操作は [利用ガイド](https://github.com/deluxxxe-dev/MSM2-WallSprint/blob/845e33cafecae352e5194d790358500bb0066081/environment/README.md)、既存の検証記録は
-[TEST_REPORT.md](https://github.com/deluxxxe-dev/MSM2-WallSprint/blob/845e33cafecae352e5194d790358500bb0066081/environment/TEST_REPORT.md) を参照してください。
+日常操作は [利用ガイド](../../environment/README.md)、既存の検証記録は
+[TEST_REPORT.md](../../environment/TEST_REPORT.md) を参照してください。
 各仕様書の「改変箇所」と「確認項目」を、次回の変更依頼・実装レビューの出発点にします。
-GitHubでまとめて読む場合は、全仕様を含む [一冊版 MANUAL.md](#common) を使用できます。
+GitHubでまとめて読む場合は、全仕様を含む [一冊版 MANUAL.md](MANUAL.md) を使用できます。
 一冊版はこの索引/共通仕様と3つの仕様書を統合したスナップショットです。改訂時は両方を更新します。
 
 ### いつ何を使うか
@@ -144,7 +144,7 @@ PythonからPowerShellへは一時JSONでaction/gameを渡し、`powershell.exe`
 
 処理対象はゲームルートの実在EXEから判定し、リンク・ジャンクション等を検査します。
 共有Overstrikeは `<game>/Overstrike/Overstrike.exe` の1つで、起動CWDは常に `<game>`。
-`winmm.dll` と `scripts_proxy.dll` はゲームルートに置き、Overstrike配下の重複を拒否します。
+ゲームルートの `winmm.dll` と `scripts_proxy.dll` は保持します。`Overstrike/winmm.dll` は誤配置として拒否しますが、`Overstrike/scripts_proxy.dll` はinstallerのコピー元として通常ファイル・非reparseなら許容します。両者のbytes一致を新しく要求したり、自動コピー・削除したりしません。
 存在するSF/WSの `_source/.git` は独立保存であることを調べ、外部Git依存を拒否します。
 
 Install/Start/Play/Open/Backup/Restore適用は `<game>/.MSM2-Mod-Tools.lock` の
@@ -155,8 +155,8 @@ PowerShellはゲームとOverstrikeのプロセス実行パスを照合し、同
 
 ### 改変・保存の運用
 
-実装は [mod_environment.py](https://github.com/deluxxxe-dev/MSM2-WallSprint/blob/845e33cafecae352e5194d790358500bb0066081/environment/mod_environment.py)、Windows部分は
-[windows.ps1](https://github.com/deluxxxe-dev/MSM2-WallSprint/blob/845e33cafecae352e5194d790358500bb0066081/environment/windows.ps1)、入口は各CMDです。
+実装は [mod_environment.py](../../environment/mod_environment.py)、Windows部分は
+[windows.ps1](../../environment/windows.ps1)、入口は各CMDです。
 コードの正本はOrganizationの `codex/v01c20-edi-value-provenance` ブランチ。
 `main` は取り込みません。SF本体や通常MODの変更は、このツールの通常起動の範囲外です。
 
@@ -177,8 +177,8 @@ PowerShellはゲームとOverstrikeのプロセス実行パスを照合し、同
 
 ## MSM2 - Overstrike 仕様書
 
-対象: Mod-Tools v1.1.0 / 2026-10-24。配置・設定の共通仕様は
-[仕様書ライブラリ](#common)を参照。
+対象: Mod-Tools v1.1.0 / 2026-10-29。配置・設定の共通仕様は
+[仕様書ライブラリ](README.md)を参照。
 
 ### 目的・入出力
 
@@ -209,22 +209,35 @@ MODインストール完了まで監視する仕様ではありません。
 そのため現在の `_source/environment/Start-Overstrike.cmd` からも自動判定できます。
 外へ展開したZIPからの初回は入力が必要です。個人用C:/D:パスは組み込みません。
 
+### 起動前の限定自己修復
+
+インストール済み `Start-Overstrike.cmd` はPythonの環境検査より前に、共有環境で実際に確認された次の3ケースだけを限定的に処理します。
+
+1. `<game>/Overstrike/winmm.dll` が誤配置されている場合、SHA256で識別して `<game>/Mod-Tools/_quarantine` へ退避する。同一bytesが既に退避済みなら誤配置側だけを削除する。
+2. ゲームルートの `scripts_proxy.dll` または `winmm.dll` がReadOnlyの場合、その属性だけを解除して再確認する。ファイルbytesは変更しない。
+3. `<game>/.MSM2-Mod-Tools.lock` が残っていて、その中のPIDが現在存在しない場合だけstale lockとして削除する。PIDが生きている場合は保持する。
+
+このReadOnly正規化はrootの2ファイルに限定した属性修復です。Overstrike1.8.1.0のコピー元 `scripts_proxy.dll` はprocess CWD相対なので、実際のコピー元がOverstrike配下ならそのReadOnly属性はこのroot修復では変わりません。コピー元がReadOnlyなら再作成されたwinmmへ属性が引き継がれ得ますが、root正規化だけでInstall成功や再発防止を保証しません。
+
+自己修復は上記ローダー/lockだけに限定し、Profiles、Mods Library、SF、WS runtime、通常MOD、asset dataを変更しません。予期しない状態ではcleanup範囲を広げず失敗します。
+
 ### 処理順序
 
-1. ゲームルートとEXEを検証し、共通操作ロックを取得。
-2. 共有Overstrike、ルートの2つのローダー、Mods Library、独立Git保存を確認。
-3. このゲームを対象にしたMSM2プロファイルを選択・確認する。設定は書き換えない。
-4. `ws_launch_ready()` でWSの次の条件を確認する。
+1. インストール済みCMDなら上記の限定自己修復を実行する。
+2. ゲームルートとEXEを検証し、共通操作ロックを取得。
+3. 共有Overstrike、ルートの2つのローダー、Mods Library、独立Git保存を確認。
+4. このゲームを対象にしたMSM2プロファイルを選択・確認する。設定は書き換えない。
+5. `ws_launch_ready()` でWSの次の条件を確認する。
    - `MSM2-WS/_source/.git` がディレクトリとして存在する。
    - Gitの `index.lock` と `_archive/Update-WS.lock` がない。
    - WS配下にリンク・ジャンクション等、走査不能の場所がない。
    - 有効 `.script` はルートに1個だけで、名前は `MSM2-WS-v<version>.script`。
    - WS配下に可視 `.zip/.rar/.7z` がない（大文字拡張子も対象）。
    - `_source/.git` の内部オブジェクトは、このscript/アーカイブ走査から除外する。
-5. `Mod-Tools` が未知の他用途フォルダーなら停止する。
-6. バージョン不一致・ファイル不足・元ツールとの差分があれば `_install()` を実行。
-7. Windows helperの `manager` actionへ進み、共有Overstrikeを起動/再利用。
-8. 成功/失敗を問わず通常の例外処理ではロックを解放する。
+6. `Mod-Tools` が未知の他用途フォルダーなら停止する。
+7. バージョン不一致・ファイル不足・元ツールとの差分があれば `_install()` を実行。
+8. Windows helperの `manager` actionへ進み、共有Overstrikeを起動/再利用。
+9. 成功/失敗を問わず通常の例外処理ではロックを解放する。
 
 `.script` の確認は名前・配置の確認です。内部DLLのハッシュ検証、ゲームビルドの
 ネイティブ互換性判定やGitブランチ/dirty状態の検証を行う代替アップデーターではありません。
@@ -253,20 +266,28 @@ manager action自体はそれを強制終了しません。初回/更新の導�
 旧 `Open-Overstrike.cmd` は `manager` actionの簡易入口であり、`start` の初回セットアップや
 追加のWS一意性検査を行わないことを区別してください。
 
+`Install mods` が、更新済みlauncherで両root loaderのReadOnlyを解除した後にも `winmm.dll` の `UnauthorizedAccessException` で失敗する場合は、同じInstallを繰り返さず、active file lockまたはWindows ACLを次に調査します。
+
 ### 改変箇所と確認項目
 
 | 変更したい内容 | 主な実装箇所 |
 |---|---|
-| 起動前検査/初回導入 | `start_manager()`、`ws_launch_ready()`、`_install()` |
+| 起動前検査/初回導入 | `Start-Overstrike.cmd`、`start_manager()`、`ws_launch_ready()`、`_install()` |
 | パス自動判定/CLI | `main()` の `start` 分岐 |
 | 起動・既存ウィンドウ | `Windows.launch()`、windows.ps1の `manager` |
 | 名前・アイコン・リンク先 | `Set-ModShortcuts()` と `Start-Overstrike.cmd` |
 
 変更後は新規/旧版からの導入、設定と未コミット作業の保持、通常2回目の非再導入、
-重複script/大文字ZIP/各ロック/リンク/ローダー欠落/異なるプロファイルの拒否を確認します。
+誤配置loader/ReadOnly root loader/stale lockの限定修復、重複script/大文字ZIP/active lock/リンク/ローダー欠落/異なるプロファイルの拒否を確認します。
 PowerShell側は正しいEXE/CWD、同一プロセス再利用、別パス拒否、3つの `.lnk` と
 同名別アプリ保全を検証します。自動テストは共通READMEから参照してください。
-Windows実機では、移動した `.lnk` を含め、既存の普通MOD+SF+WSが同じUIに現れることも確認します。
+Windows実機では、移動した `.lnk` を含め、既存の普通MOD+SF+WSが同じUIに現れること、ReadOnly正規化後に連続した `Install mods` が再び `winmm.dll` 削除エラーを起こさないことも確認します。
+
+### scripts_proxy installer依存の訂正 — 2026-10-31
+
+Overstrike1.8.1.0公開tagのSetupScriptsは `File.Copy("scripts_proxy.dll", <game>/winmm.dll)` を使用します。コピー元はprocess CWD相対で、exe隣へ絶対固定したコードではありません。この実機の例外は `<game>/Overstrike/scripts_proxy.dll` を要求していました。通常ファイル・非reparseのそのコピー元を許容し、rootの2ファイルも維持します。`Overstrike/winmm.dll` の既存拒否・限定退避は維持します。sourceとloaderの新規hash一致条件、DLLの自動取得・コピー・削除は追加しません。
+
+共通 `environment_ready()` の同じ混同も訂正したのでStart/Open/Playに適用されます。Start CMD自体はwinmmだけを退避し、scripts_proxyを削除しないため変更しません。既存ReadOnly正規化はrootファイルだけです。実際のコピー元がexe隣なら、その属性も別に影響し得るため、root正規化だけでInstall成功を保証する説明はしません。Profile/script-support設定は変更しません。
 
 ---
 
@@ -275,7 +296,7 @@ Windows実機では、移動した `.lnk` を含め、既存の普通MOD+SF+WS�
 ## MSM2 - Play Modded 仕様書
 
 対象: Mod-Tools v1.1.0 / 2026-10-24。配置・設定の共通仕様は
-[仕様書ライブラリ](#common)を参照。
+[仕様書ライブラリ](README.md)を参照。
 
 ### 目的・入出力
 
@@ -303,7 +324,7 @@ Steamを別途インストール/起動/ログインさせる処理もありま�
    それ以外の場所からの実行は入力を求める（`start` 専用の祖先探索は行わない）。
 2. 復元確認フラグがあり、明示オプションがなければ `INSTALLED` の入力を求める。
 3. `play()` がゲームルートを検証し、共通操作ロックを取得する。
-4. 共有Overstrike、2つのローダーとその配置、Mods Library、独立Git保存を確認する。
+4. 共有Overstrike、rootの2つの依存ファイル、Mods Library、独立Git保存を確認する。通常ファイル・非reparseの `Overstrike/scripts_proxy.dll` は許容し、誤配置 `Overstrike/winmm.dll` は拒否する。
 5. 保存された名前、または現在選択中/唯一の候補からMSM2プロファイルを選ぶ。
    このゲームルートを指し、`settings.scripts.enabled` がtrueであることを要求する。
 6. `scripts.txt` と `scripts/` の実在、非空のDLL一覧を確認する。
@@ -362,7 +383,7 @@ Windows実機では通常のSteam環境でゲームが開き、導入済みMOD�
 ## MSM2 - Backup Mods 仕様書
 
 対象: Mod-Tools v1.1.0 / 2026-10-24。配置・設定の共通仕様は
-[仕様書ライブラリ](#common)を参照。
+[仕様書ライブラリ](README.md)を参照。
 
 ### 目的・入出力
 

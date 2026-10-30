@@ -121,13 +121,19 @@ with fixture() as f:
  print('PASS: failed stop/build/test/package/hash/launch retain or roll back the exact previous active WS bytes and helpers; no partial new deployment or sibling mutations')
 with fixture() as f:
  ws=migrate(f);game=f[1];manager=f[5];old=(ws/'MSM2-WS-v0.1c20.script').read_bytes()
- for name in ['winmm.dll','scripts_proxy.dll']:
+ for name in ['winmm.dll']:
   p=game/'Overstrike'/name;p.write_bytes(b'forbidden shared duplicate')
   expect_failure(lambda:manager.update(ws));assert p.read_bytes()==b'forbidden shared duplicate';p.unlink()
+ p=game/'Overstrike/scripts_proxy.dll';p.write_bytes(b'owned installer source');w.game_preflight(game);assert p.read_bytes()==b'owned installer source';p.unlink()
+ p.mkdir();expect_failure(lambda:w.game_preflight(game));p.rmdir()
+ p.symlink_to(game/'scripts_proxy.dll');expect_failure(lambda:w.game_preflight(game));p.unlink()
+ p.symlink_to(game/'missing-proxy');expect_failure(lambda:w.game_preflight(game));p.unlink()
+ for name in ['Spider-Man2.exe','scripts_proxy.dll','winmm.dll']:
+  required=game/name;saved=required.read_bytes();required.unlink();expect_failure(lambda:w.game_preflight(game));required.mkdir();expect_failure(lambda:w.game_preflight(game));required.rmdir();required.write_bytes(saved)
  p=game/'scripts_proxy.dll';data=p.read_bytes();p.unlink();expect_failure(lambda:manager.update(ws));p.write_bytes(data)
  p=ws/'foreign.script';p.write_bytes(b'not positively WS owned');expect_failure(lambda:manager.update(ws));assert p.read_bytes()==b'not positively WS owned';p.unlink()
  assert (ws/'MSM2-WS-v0.1c20.script').read_bytes()==old
- print('PASS: shared Overstrike duplicate DLL/missing game dependency and foreign active script fail closed without cleaning shared infrastructure or touching the old WS build')
+ print('PASS: misplaced winmm/unsafe installer source/missing game dependency and foreign active script fail closed without cleaning shared infrastructure or touching the old WS build')
 with fixture() as f:
  ws=migrate(f);source=ws/'_source';manager=f[5]
  cmd('git','-C',source,'checkout','--detach');expect_failure(lambda:manager.update(ws));cmd('git','-C',source,'checkout',BRANCH)

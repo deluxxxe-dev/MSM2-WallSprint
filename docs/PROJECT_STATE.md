@@ -1,9 +1,23 @@
 # WallSprint project state
 
-## Current stage — v0.1c38r1 orientation-only reversal implemented; canonical checks passed after bounded runner repair; real-game proof pending
+## Current stage — installer-source checker corrected; r1 runtime unchanged; owner checker refresh pending
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
+
+## Shared checker correction — 2026-10-31
+
+`Overstrike/scripts_proxy.dll` is permitted as a regular non-reparse installer
+source; it is distinct from forbidden misplaced `Overstrike/winmm.dll`. Existing
+root files remain intact/required. No automatic DLL relocation, new equality
+requirement or profile change. Current source contract and owner-evidence limits:
+`analysis/SCRIPTS_PROXY_INSTALLER_DEPENDENCY_20261031.md`.
+
+Owner's later supplied log loaded v0.1c38, not proof of r1/Update-WS success.
+The old updater checker executes before fetch, so a guarded one-time Git
+fast-forward is required to obtain this correction (exact block in CODEX_RESULT).
+Runtime/reversal v0.1c38r1/package0.1.57 bytes remain unchanged. Real-PC updater
+and game acceptance remain unverified.
 
 ## Orientation-only reversal proof — v0.1c38r1 / package0.1.57
 
@@ -184,7 +198,7 @@ Two separate loader failure modes are now handled by the owner-operated `MSM2 - 
 2. <game>\scripts_proxy.dll or <game>\winmm.dll is marked ReadOnly.
 ```
 
-The second mode explains the observed recurrence pattern if `scripts_proxy.dll` is ReadOnly: Overstrike deletes/recreates game-root `winmm.dll` during Install mods by copying `scripts_proxy.dll`, so a ReadOnly source can recreate a ReadOnly destination and make the next install fail at `File.Delete(winmm.dll)` with `UnauthorizedAccessException`.
+The second mode can explain recurrence when the actual installer source is ReadOnly (the public source uses process-CWD-relative scripts_proxy.dll; owner exception pointed beside Overstrike.exe): Overstrike deletes/recreates game-root `winmm.dll` during Install mods by copying `scripts_proxy.dll`, so a ReadOnly source can recreate a ReadOnly destination and make the next install fail at `File.Delete(winmm.dll)` with `UnauthorizedAccessException`.
 
 `environment/Start-Overstrike.cmd` now performs a bounded installed-launch preflight before the Python environment checker:
 

@@ -29,7 +29,7 @@ Steamを別途インストール/起動/ログインさせる処理もありま�
    それ以外の場所からの実行は入力を求める（`start` 専用の祖先探索は行わない）。
 2. 復元確認フラグがあり、明示オプションがなければ `INSTALLED` の入力を求める。
 3. `play()` がゲームルートを検証し、共通操作ロックを取得する。
-4. 共有Overstrike、2つのローダーとその配置、Mods Library、独立Git保存を確認する。
+4. 共有Overstrike、rootの2つの依存ファイル、Mods Library、独立Git保存を確認する。通常ファイル・非reparseの `Overstrike/scripts_proxy.dll` は許容し、誤配置 `Overstrike/winmm.dll` は拒否する。
 5. 保存された名前、または現在選択中/唯一の候補からMSM2プロファイルを選ぶ。
    このゲームルートを指し、`settings.scripts.enabled` がtrueであることを要求する。
 6. `scripts.txt` と `scripts/` の実在、非空のDLL一覧を確認する。

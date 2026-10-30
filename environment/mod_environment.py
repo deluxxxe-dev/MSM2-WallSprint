@@ -164,8 +164,11 @@ def environment_ready(game):
         require((game / name).is_file(), f'Missing environment file: {name}')
         ancestors_safe(game / name)
     require((game / 'Mods Library').is_dir(), 'Mods Library is missing')
-    for name in ('winmm.dll', 'scripts_proxy.dll'):
-        require(not (game / 'Overstrike' / name).exists(), f'Remove the misplaced Overstrike/{name} manually')
+    misplaced = game / 'Overstrike' / 'winmm.dll'
+    require(not os.path.lexists(misplaced), 'Remove the misplaced Overstrike/winmm.dll manually')
+    proxy = game / 'Overstrike' / 'scripts_proxy.dll'
+    ancestors_safe(proxy)
+    require(not os.path.lexists(proxy) or (not linked(proxy) and proxy.is_file()), 'Overstrike/scripts_proxy.dll must be a regular non-reparse installer source')
     project_storage(game)
 
 

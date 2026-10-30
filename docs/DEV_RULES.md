@@ -73,7 +73,7 @@ WorkingDirectory: <game>
 
 Do not create project-specific Overstrike copies, AppData development copies, project-specific Mods Libraries/profiles, or `MSM2-WS\_tools\Overstrike`.
 
-`<game>\Overstrike\winmm.dll` must not exist. Game-wide `winmm.dll` and `scripts_proxy.dll` stay in the game root and must not be duplicated into the Overstrike directory.
+`<game>\Overstrike\winmm.dll` must not exist. Keep game-root `winmm.dll` and `scripts_proxy.dll` intact. A regular non-reparse `Overstrike/scripts_proxy.dll` is permitted as an installer source; it is distinct from the forbidden `Overstrike/winmm.dll`.
 
 WallSprint update/migration tooling may validate shared infrastructure but must not treat it as WS-owned cleanup state.
 

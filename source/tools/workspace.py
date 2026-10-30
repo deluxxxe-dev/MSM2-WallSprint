@@ -57,8 +57,9 @@ def game_preflight(game):
  shared=game/'Overstrike'
  require(shared.is_dir() and not linked(shared),'Shared game-root Overstrike directory is required')
  require((shared/'Overstrike.exe').is_file() and not linked(shared/'Overstrike.exe'),'Shared Overstrike.exe must be an existing regular file')
- for name in ['winmm.dll','scripts_proxy.dll']:
-  require(not (shared/name).exists(),'Shared Overstrike must not contain '+name+'; fix shared installation manually')
+ require(not os.path.lexists(shared/'winmm.dll'),'Shared Overstrike must not contain winmm.dll; fix shared installation manually')
+ proxy=shared/'scripts_proxy.dll'
+ require(not os.path.lexists(proxy) or (not linked(proxy) and proxy.is_file()),'Overstrike scripts_proxy.dll must be a regular non-reparse installer source')
  return game.resolve()
 def workspace_paths(workspace):
  p=Path(os.path.abspath(workspace))

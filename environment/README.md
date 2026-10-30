@@ -157,3 +157,5 @@ SHA256は破損検出用で、バックアップの作者を認証する署名�
 通常起動の仕様はTkachov/Overstrikeの `MainWindow.LaunchGame`、プロファイル形式は
 `Profile`/`AppSettings` を参照（commit `ab61de27a4ba76d92780178f600f73f15bcddd81`）。
 外部の実装・バイナリはこのツールにコピーしていません。
+
+Shared dependency clarification (2026-10-31): preserve root scripts_proxy.dll/winmm.dll; allow regular non-reparse Overstrike/scripts_proxy.dll as installer source. Overstrike/winmm.dll remains refused/quarantined. No automatic DLL copying/downloading/deletion or new source/loader hash-equality requirement. See docs/mod-tools/OVERSTRIKE.md.

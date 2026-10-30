@@ -128,7 +128,7 @@ PythonからPowerShellへは一時JSONでaction/gameを渡し、`powershell.exe`
 
 処理対象はゲームルートの実在EXEから判定し、リンク・ジャンクション等を検査します。
 共有Overstrikeは `<game>/Overstrike/Overstrike.exe` の1つで、起動CWDは常に `<game>`。
-`winmm.dll` と `scripts_proxy.dll` はゲームルートに置き、Overstrike配下の重複を拒否します。
+ゲームルートの `winmm.dll` と `scripts_proxy.dll` は保持します。`Overstrike/winmm.dll` は誤配置として拒否しますが、`Overstrike/scripts_proxy.dll` はinstallerのコピー元として通常ファイル・非reparseなら許容します。両者のbytes一致を新しく要求したり、自動コピー・削除したりしません。
 存在するSF/WSの `_source/.git` は独立保存であることを調べ、外部Git依存を拒否します。
 
 Install/Start/Play/Open/Backup/Restore適用は `<game>/.MSM2-Mod-Tools.lock` の

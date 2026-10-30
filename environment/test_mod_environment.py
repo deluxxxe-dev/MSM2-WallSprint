@@ -149,6 +149,36 @@ class EnvironmentTests(unittest.TestCase):
         self.assertEqual(m.load_settings(self.game)['backup_directory'], str(Path.home() / 'MSM2-Mod-Backups'))
         self.assertEqual(self.system.events[-1], ('launch', self.game, True))
 
+    def test_installer_proxy_is_allowed_but_unsafe_inputs_and_winmm_refuse(self):
+        proxy = self.game / 'Overstrike/scripts_proxy.dll'
+        proxy.write_bytes(b'owned distinct installer source')
+        before = tree(self.game)
+        m.start_manager(self.game, self.system)
+        m.play(self.game, system=self.system)
+        self.assertEqual(tree(self.game), before)
+        proxy.unlink()
+        proxy.mkdir()
+        with self.assertRaises(m.EnvironmentError): m.environment_ready(self.game)
+        proxy.rmdir()
+        for target in [self.game / 'scripts_proxy.dll', self.game / 'missing']:
+            proxy.symlink_to(target)
+            with self.assertRaises(m.EnvironmentError): m.environment_ready(self.game)
+            proxy.unlink()
+        for name in ['Overstrike/Overstrike.exe', 'scripts_proxy.dll', 'winmm.dll']:
+            required = self.game / name
+            saved = required.read_bytes()
+            required.unlink()
+            with self.assertRaises(m.EnvironmentError): m.environment_ready(self.game)
+            required.mkdir()
+            with self.assertRaises(m.EnvironmentError): m.environment_ready(self.game)
+            required.rmdir()
+            required.write_bytes(saved)
+        misplaced = self.game / 'Overstrike/winmm.dll'
+        misplaced.write_bytes(b'preserve misplaced loader')
+        with self.assertRaises(m.EnvironmentError): m.environment_ready(self.game)
+        self.assertEqual(misplaced.read_bytes(), b'preserve misplaced loader')
+        misplaced.unlink()
+
     def test_daily_start_only_checks_and_launches_without_install_snapshot_or_git(self):
         before = tree(self.game)
         self.system.events.clear()

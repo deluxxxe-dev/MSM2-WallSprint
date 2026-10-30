@@ -1,150 +1,107 @@
-# Codex result — canonical c67 runner path repair
+# Codex result — scripts_proxy installer dependency validation
 
-2026-10-30 JST. Branch `codex/v01c20-edi-value-provenance`.
-Baseline: c51aa453ad8b6c53f5911d8820bc1904cbeab175.
+2026-10-31 JST. Branch `codex/v01c20-edi-value-provenance`.
+Baseline 1a1bce2415f7349092623822553970d80f3d2e11.
 
-## STATUS
+## STATUS / changed
 
-**success** — bounded path repair verified from three working directories;
-unchanged canonical hooks command completes. No runtime/reversal/version change.
-Actual owner Windows updater/game validation remains unperformed.
+success — scoped checker correction; real-PC Update-WS success unverified.
 
-## CHANGED
+Changed: source/tools/workspace.py and test-workspace.py;
+environment/mod_environment.py and test_mod_environment.py;
+docs/DEV_RULES.md, LOCAL_WORKSPACE.md, mod-tools README/OVERSTRIKE/PLAY_MODDED and
+combined MANUAL.md, environment/README.md, PROJECT_STATE and this result;
+analysis/SCRIPTS_PROXY_INSTALLER_DEPENDENCY_20261031.md; generated distribution/
+release metadata and ZIPs. AGENTS contains no equivalent blanket ban to change.
 
-- `source/tools/test_slot_publication_post_c67_boundary_fix.py`: import Path;
-  derive child path using `Path(__file__).resolve().with_name(...)`.
-- `docs/CODEX_RESULT.md`, `docs/PROJECT_STATE.md`.
-- Necessary package documentation/source refresh: r1 install/source ZIPs (install/source ZIPs only; manifest unchanged). Runtime stays v0.1c38r1 / package0.1.57; script/DLL
-  content remains byte-identical. No new package version or gameplay change.
+## Confirmed behavior and limits
 
-## RESULT / narrow scope
+Public Overstrike OS/v1.8.1 tag (5829f3b045397ed19a1c3f282de504ba57197b7b),
+project Assembly/FileVersion1.8.1.0, MetaInstallerBase.SetupScripts: source
+File.Copy("scripts_proxy.dll", Path.Combine(_gamePath,"winmm.dll")) is process-CWD
+relative, not a universal absolute exe-adjacent contract. Owner exception located
+that source beside Overstrike.exe. Public source was read with
+`git -C /tmp/ws-steering-overstrike-review show OS/v1.8.1:Overstrike/MetaInstallers/MetaInstallerBase.cs`
+and project version inspected. No owner EXE binary hash authenticated here.
+Owner later log loaded v0.1c38, not proof of r1 or a separate Install-success log.
 
-Original command `(cd source && python3 tools/test_slot_publication_post_c67_boundary_fix.py)`
-reproduced exit1/FileNotFoundError at `source/source/tools/test_slot_publication_post_c67_boundary.py`.
-Only this wrapper's child path changes. All assertions, patch relationships,
-runpy globals/defaults and `run_name='__main__'` are preserved. No chdir, failure
-masking, omission, gate relaxation or updater bypass.
+Both WS updater and shared environment checker had the same blanket scripts_proxy
+ban. They now allow an OPTIONAL existing installer source beside shared manager,
+requiring regular file/non-reparse. Missing optional source remains compatible
+with pre-existing modes. Existing required root proxy/winmm inputs and all unrelated
+checks remain. Misplaced manager-side winmm is still refused, including dangling
+links; existing Start CMD quarantine/ReadOnly policy is unchanged. No new DLL
+copy/download/delete, profile/settings write or source/root hash equality gate.
+Source vs game-loader distinction supersedes older duplicate-DLL guidance.
+Detailed durable evidence is in the new WS analysis. Wisdoms shared-environment
+rules read only; synchronization remains pending to keep this patch bounded.
 
-The directly related full `test_slot_publication_post_c67_boundary_fix2.py` also
-contains a cwd-relative runpy path, but is NOT on the canonical command list.
-Canonical uses `test_slot_publication_post_c67_boundary_fix2_quick.py`, which
-contains no such runpy path. No unrelated/non-required wrapper was changed;
-do not claim every optional wrapper was made cwd-independent.
+## Validation: exact commands, expected and actual
 
-## Exact execution / expected and actual outcomes
+| Command | Expected | Actual |
+| --- | --- | --- |
+| `python3 source/tools/test-workspace.py` | owned Git/Unicode/space fixtures; valid installer proxy accepted; misplaced winmm, missing/wrong-type required files, proxy directory/live/dangling symlink refuse; old WS/SF/unrelated data preserved | exit0; 13 PASS groups |
+| `python3 environment/test_mod_environment.py` | shared Start/Play accept distinct regular proxy without mutation; unsafe proxy/missing/type/root-loader/winmm negatives; existing backup/restore/SF isolation | exit0; 28 unittest tests, OK |
+| `python3 environment/test_start_overstrike_preflight.py` | existing winmm-only quarantine/root ReadOnly/lock boundaries unchanged | exit0; PASS |
+| `XDG_CONFIG_HOME=/tmp/ws-proxy-pwsh/settings XDG_CACHE_HOME=/tmp/ws-proxy-pwsh/cache XDG_DATA_HOME=/tmp/ws-proxy-pwsh/data DOTNET_CLI_HOME=/tmp/ws-proxy-pwsh /tmp/ws-proxy-pwsh/pwsh -NoProfile -File environment/test_windows_contract.ps1` | existing Windows helper syntax and owned fake process/shortcut behavior | exit0; 16 checks, PowerShell7.4.6/Linux; not actual Windows COM/processes |
+| `python3 environment/build_distribution.py` | toolkit-only ZIP/hash/allowlist valid | exit0 |
+| `python source/tools/release.py` | existing r1 package/CRC/version consistency; no DLL change | exit0; existing r1 package/CRC checks pass |
+| Bootstrap block parser: PowerShell Language.Parser.ParseFile on `/tmp/ws-proxy-bootstrap.ps1` (same XDG environment) | valid syntax; do not execute owner Git commands | exit0; PASS |
+| `git diff --check`; `git diff --cached --check` | clean diff | exit0 |
 
-Environment: `export PATH=/workspace/toolchains/analysis-python/bin:$PATH`.
-Counts are emitted PASS records per invocation, not unique summed cases.
-The same14 wrapper groups run repeatedly to check cwd independence.
+During implementation the first draft called existing linked()/lstat on absent
+optional files, yielding FileNotFoundError (workspace and environment tests).
+Corrected to presence-aware lexists logic; all final suites above re-run and pass.
+PowerShell initially failed initializing read-only host-home cache/data paths;
+portable official7.4.6 runtime was unpacked under /tmp and XDG config/cache/data
+redirected there. Final helper check passed without modifying product code or
+host-home permissions. No unsafe workaround or suppressed test failure.
 
-| Command | cwd | Expected | Actual |
-| --- | --- | --- | --- |
-| `python3 source/tools/test_slot_publication_post_c67_boundary_fix.py` | `/workspace/WallSprint` | exit0; complete existing assertions | exit0; PASS 14, SKIP 0, UNAVAILABLE 0 |
-| `python3 tools/test_slot_publication_post_c67_boundary_fix.py` | `/workspace/WallSprint/source` | exit0; complete existing assertions | exit0; PASS 14, SKIP 0, UNAVAILABLE 0 |
-| `python3 /workspace/WallSprint/source/tools/test_slot_publication_post_c67_boundary_fix.py` | `/tmp` | exit0; complete existing assertions | exit0; PASS 14, SKIP 0, UNAVAILABLE 0 |
-| `bash source/tools/test_hooks_windows.sh` | `/workspace/WallSprint` | exit0; complete existing assertions | exit0; PASS 895, SKIP 5, UNAVAILABLE 17 |
+SKIP: unrelated native/reversal research/build chain not rerun for checker-only
+changes; runtime/C++/version/DLL and root loader bytes unchanged, C52 binding.
+UNAVAILABLE: real Windows Update-WS/Overstrike Install and owner game outcome;
+Linux fake-launch PowerShell checks do not establish those. No user DLLs,
+profiles, SF or ordinary mods were modified in cloud tests.
 
-Original failure reproduction: exit1 (before repair), retained in cloud scratch;
-corrected root/source/temp invocations and canonical chain exit0. No runtime
-code was changed to obtain these results.
+## Updater order / exact one-time owner bootstrap
 
-## Existing updater command list / reused valid checks
+workspace.update -> workspace_paths -> game_preflight occurs BEFORE its git pull.
+Thus the old checker can stop without fetching this correction. Following is a
+manual Git code refresh, not a validation bypass. It refuses dirty/detached/wrong
+branch and uses ff-only (divergence refuses); no reset/clean/main merge/DLL change.
+The existing normal updater subsequently retains all checks. ChatGPT presents
+owner steps; no local deployment was executed here.
 
-Read-only inspection of `source/tools/workspace.py` and
-`source/tools/windows/workspace-build.sh:31-35` confirms the required serial list:
-
-```bash
-bash source/tools/build_windows.sh
-bash source/tools/test.sh
-bash source/tools/smoke_windows.sh
-bash source/tools/test_hooks_windows.sh
-python source/tools/release.py
+```powershell
+& {
+    $ErrorActionPreference = 'Stop'
+    $wsSource = "C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2\Mods Library\Mods-Developing\MSM2-WS\_source"
+    $wsBranch = 'codex/v01c20-edi-value-provenance'
+    $current = git -C $wsSource branch --show-current
+    if ($LASTEXITCODE -ne 0 -or $current -ne $wsBranch) { throw 'Unexpected or detached branch; preserve current checkout.' }
+    $pending = git -C $wsSource status --porcelain
+    if ($LASTEXITCODE -ne 0 -or $pending) { throw 'Preserve local changes before updating; nothing was reset.' }
+    git -C $wsSource fetch origin $wsBranch
+    if ($LASTEXITCODE -ne 0) { throw 'Fetch failed; stop.' }
+    git -C $wsSource merge --ff-only FETCH_HEAD
+    if ($LASTEXITCODE -ne 0) { throw 'Fast-forward refused; preserve divergence and stop.' }
+}
 ```
 
-The first three were already valid for the unchanged final r1 code commit
-`985c4bccf8aa4a7c21df66fe19c63f3367366059`, recorded in previous CODEX_RESULT:
-Windows build exit0; portable23 PASS (including focused10); smoke7 PASS. Existing
-native source command `bash source/tools/test_native_source.sh` also passed10.
-These are **reused prior results, not newly executed tests in this task**.
-No C++/headers/version/config/build/updater/canonical script diff exists from
-this task baseline; DLL, disabled script and version-header hashes were recorded
-before execution and checked unchanged. Rebuilding/repeating unaffected checks
-would add no new evidence. Canonical hooks is newly executed in full; release/
-package is newly executed for changed source/docs, with CRC/content validation.
-No actual Windows Update-WS, WSL staging entrypoint or local deployment claimed.
+The Git arguments and order were reviewed against existing fixture-proven Git
+operations; the owner-specific command was not run against their C: drive.
+Installed Mod-Tools may also contain the old environment checker: its existing
+supported refresh entry is `_source/environment/Start-Overstrike.cmd` (KIT byte
+comparison already refreshes changed engine bytes at the same tool version).
+That copies only toolkit files, never DLLs. Do not remove manager scripts_proxy
+or rename the game loaders to get past validation.
 
-## Remaining evidence / counts
+## Publication / runtime
 
-Five optional private replay SKIPs are retained: original-byte positive/native
-body/installer/writer-normalization/accepted-build capture. Owned negatives and
-synthetic/native fixtures still run. The17 Wine UNAVAILABLE outcomes remain:
-c40 VCH2, c49 bridge6, c50 identity7, c51 post-return2. They are not native PASS.
-Owner Windows updater and r1 gameplay/facing outcome remain unverified, and no
-new game test/capture or human instructions are supplied by this task.
-BLOCKED0 for this bounded repair; no other canonical blocker observed.
-C52 and all existing proof/write gates remain binding.
-
-## Package / scope validation
-
-`python source/tools/release.py`: expected exit0, unchanged r1 runtime version/
-script/DLL content, changed wrapper packaged correctly, ZIP/script CRC pass.
-Actual: exit0, CRC/content checks pass; packaged wrapper equals the corrected
-checkout; DLL, disabled script and header SHA256 exactly match task-start values. `git diff --check` and
-`git diff --cached --check`: expected exit0, actual exit0. Diff restricted to
-wrapper path, task/state report and necessary generated package documentation.
-Five pre-existing untracked archives/bundle excluded and preserved.
-No runtime/design/watch/VEH/VCH/producer/c73/shared launcher/loader/config/SF or
-other repository changes. No main merge, reset or force push.
-
-Runtime byte hashes (unchanged from task start):
-- `source/build/windows/WallSprint.dll` SHA256 `88272f32adcfab0afde51f8949faed0cef8fb190a18becfb59befa2f9fa12ece`
-- `MSM2-WS-v0.1c38r1.script.disabled` SHA256 `eaaf55b9017680bb47c3e4c07249964424c84723edf5c068072548f6b77f68db`
-- `source/include/version.hpp` SHA256 `febfcbb198c98f52a02e3ddaedfaa69b366206078133cb91f803d0863189cea5`
-
-## Branch / publication
-
-Branch `codex/v01c20-edi-value-provenance`.
-Implementation commit `3079fd02af6572e5e9512d379f370420a1fefd83` was normally
-pushed. Independent GitHub checkout fetched the branch and compared all5 changed
-wrapper/docs/ZIP blobs byte-for-byte: head and contents matched (exit0).
-
-```bash
-git -C /tmp/ws-steering-docs-publication fetch origin codex/v01c20-edi-value-provenance
-git -C /tmp/ws-steering-docs-publication rev-parse FETCH_HEAD
-git diff --name-only c51aa45 HEAD
-```
-
-For each changed path, `git -C /tmp/ws-steering-docs-publication show FETCH_HEAD:<path>`
-was read from the separate GitHub object store and compared with the local file.
-Final record-only follow-up refreshes packaged documentation; the same check is
-performed again after its normal push. Final record SHA is reported in handoff
-rather than embedding this file's own hash.
-
-## NEED
-
-No remaining canonical blocker. Only owner Windows/updater/game evidence remains
-unverified; ChatGPT supplies subsequent instructions, not this task.
-
-## Reproducible final package/runtime consistency check
-
-Executed after final package regeneration; expected all assertions pass, actual
-exit0. No production build or test semantics are changed by this check.
-
-```bash
-python3 - <<'PY_PACKAGE'
-from pathlib import Path
-import io, subprocess, zipfile
-baseline = subprocess.check_output(['git','show','c51aa45:MSM2-WS-v0.1c38r1.script.disabled'])
-assert Path('MSM2-WS-v0.1c38r1.script.disabled').read_bytes() == baseline
-with zipfile.ZipFile(io.BytesIO(baseline)) as old:
-    assert old.read('WallSprint.dll') == Path('source/build/windows/WallSprint.dll').read_bytes()
-for name in ['MSM2-WS-v0.1c38r1.zip','MSM2-WS-v0.1c38r1-source.zip']:
-    with zipfile.ZipFile(name) as z:
-        assert z.testzip() is None
-        if name.endswith('-source.zip'):
-            suffix = 'tools/test_slot_publication_post_c67_boundary_fix.py'
-            member = next(n for n in z.namelist() if n.endswith(suffix))
-            assert z.read(member) == (Path('source') / suffix).read_bytes()
-assert not subprocess.check_output(['git','diff','c51aa45','--','source/include','source/src','source/mod','BUILD_MANIFEST.json','source/tools/test_hooks_windows.sh'])
-PY_PACKAGE
-```
+Runtime v0.1c38r1/package0.1.57 unchanged. Runtime DLL and disabled script were
+compared byte-for-byte with the baseline Git script payload, with source/include/
+mod and native hooks/launcher helper diff checked empty. All three distribution
+ZIP CRC checks pass. Normal branch commit/push and independent GitHub readback
+are finalized after checks. No claim of real-PC
+updater/game success. Bootstrap above is the only required one-time checker
+refresh; no new gameplay design or repeated-install loop.

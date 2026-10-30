@@ -40,7 +40,7 @@ MODインストール完了まで監視する仕様ではありません。
 2. ゲームルートの `scripts_proxy.dll` または `winmm.dll` がReadOnlyの場合、その属性だけを解除して再確認する。ファイルbytesは変更しない。
 3. `<game>/.MSM2-Mod-Tools.lock` が残っていて、その中のPIDが現在存在しない場合だけstale lockとして削除する。PIDが生きている場合は保持する。
 
-このReadOnly正規化は、Overstrikeが `Install mods` 時に既存 `winmm.dll` を削除し、`scripts_proxy.dll` をコピーして新しい `winmm.dll` を作る実装に合わせた再発防止です。`scripts_proxy.dll` がReadOnlyのままだと新しい `winmm.dll` へ属性が引き継がれ、次回Install時の削除で `UnauthorizedAccessException` が再発し得ます。
+このReadOnly正規化はrootの2ファイルに限定した属性修復です。Overstrike1.8.1.0のコピー元 `scripts_proxy.dll` はprocess CWD相対なので、実際のコピー元がOverstrike配下ならそのReadOnly属性はこのroot修復では変わりません。コピー元がReadOnlyなら再作成されたwinmmへ属性が引き継がれ得ますが、root正規化だけでInstall成功や再発防止を保証しません。
 
 自己修復は上記ローダー/lockだけに限定し、Profiles、Mods Library、SF、WS runtime、通常MOD、asset dataを変更しません。予期しない状態ではcleanup範囲を広げず失敗します。
 
@@ -105,3 +105,9 @@ manager action自体はそれを強制終了しません。初回/更新の導�
 PowerShell側は正しいEXE/CWD、同一プロセス再利用、別パス拒否、3つの `.lnk` と
 同名別アプリ保全を検証します。自動テストは共通READMEから参照してください。
 Windows実機では、移動した `.lnk` を含め、既存の普通MOD+SF+WSが同じUIに現れること、ReadOnly正規化後に連続した `Install mods` が再び `winmm.dll` 削除エラーを起こさないことも確認します。
+
+## scripts_proxy installer依存の訂正 — 2026-10-31
+
+Overstrike1.8.1.0公開tagのSetupScriptsは `File.Copy("scripts_proxy.dll", <game>/winmm.dll)` を使用します。コピー元はprocess CWD相対で、exe隣へ絶対固定したコードではありません。この実機の例外は `<game>/Overstrike/scripts_proxy.dll` を要求していました。通常ファイル・非reparseのそのコピー元を許容し、rootの2ファイルも維持します。`Overstrike/winmm.dll` の既存拒否・限定退避は維持します。sourceとloaderの新規hash一致条件、DLLの自動取得・コピー・削除は追加しません。
+
+共通 `environment_ready()` の同じ混同も訂正したのでStart/Open/Playに適用されます。Start CMD自体はwinmmだけを退避し、scripts_proxyを削除しないため変更しません。既存ReadOnly正規化はrootファイルだけです。実際のコピー元がexe隣なら、その属性も別に影響し得るため、root正規化だけでInstall成功を保証する説明はしません。Profile/script-support設定は変更しません。
