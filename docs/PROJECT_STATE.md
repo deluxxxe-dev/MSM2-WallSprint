@@ -11,6 +11,9 @@ Legacy UIDnull remains unknown; all-UID token absence is separate recovery scope
 ONE owner action: fresh normal Repair-Mod-Tools.ps1 bootstrap (no DiagnoseWSL),
 from common manual; old records preserved before clean/ff KIT repair. Owner root
 availability and r5 deployment remain unverified. Normal later retry rebuilds.
+Implementation b24348f published and independently verified (13 changed blobs).
+Root focused21, prior probe21, lock14+1SKIP, workspace20, environment28, repair6,
+launcher1, PowerShell mock16/syntax1 pass; actual owner root/repair unverified.
 See analysis/WSL_TOKEN_ROOT_RECOVERY.md and current CODEX_RESULT.
 
 ## Latest owner cause evidence — confirmed environ permission denial

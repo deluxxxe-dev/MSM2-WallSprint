@@ -1,6 +1,6 @@
 # Codex result — confirmed WSL environ EACCES / narrow root token recovery
 
-2026-10-31 JST. STATUS: tooling implementation validated; owner recovery pending.
+2026-10-31 JST. STATUS: tooling implementation validated and published; owner recovery pending.
 Branch `codex/v01c20-edi-value-provenance`; baseline
 `053f6a5c1c7a73a0cccd7d18144c74ab99099040`. No WallSprint main merge.
 R5 native/source/INI/binary/package/manifests byte-identical; no native rebuild.
@@ -111,3 +111,22 @@ independent readback recorded after commit/push.
 Final review additionally binds saved build_token to its recorded operation token when present; mismatched identity refuses before inspection. Authentic owned fixtures now use their actual operation token; focused20/lock/repair suites rerun.
 
 Root live-inventory closure excludes kernel-confirmed zombie/exited states consistently; a focused regression prevents an already-exited protected process from being mislabeled perpetual inventory churn. Final root suite21 PASS; affected lock/repair suites repeated.
+
+## Publication confirmed
+
+Final implementation commit `b24348f642b376fc653ef3f123c1958bc418d07f`
+(including preceding bab2580/6a26249) pushed to the intended WS branch.
+`python3 /tmp/ws-root-publication.py` PASS: independent clone fetch/FETCH_HEAD,
+ls-remote and local HEAD match; all13 changed tracked blobs match exact local
+bytes. Final record-only commit is pushed/read back with the same script; no
+code/package edits or test rerun necessary for that record. Original five
+untracked historical archive/bundle files remain unstaged.
+
+Reusable protected-environ/read-only-root/token-authority distinction synchronized
+to separate MSM2-Wisdoms development manual, commit
+`d058365187923a90eba61cbbedc3e36afc4f07e7`; push, remote head/FETCH_HEAD and document
+blob readback PASS. That separate documentation main is not a WallSprint main
+merge. Owner root availability, actual recovery and r5 deployment remain pending.
+
+ONE next action is normal fresh Repair-Mod-Tools.ps1, no DiagnoseWSL/full build/
+game test. Return its output. No deployment claim from token absence alone.
