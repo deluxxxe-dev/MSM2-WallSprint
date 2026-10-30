@@ -1,47 +1,53 @@
-# Next task — determine steering extraction source; read-only investigation
+# Next task — bounded read-only review of existing WS movement/facing separation
 
 Branch: `codex/v01c20-edi-value-provenance`. Do not merge main.
-This task supersedes the previous request to run the Slow5 game test.
+This supersedes the extraction investigation and prior Slow5 test request.
 
-## Purpose
-Determine whether the supplied extraction represents the installed Slow5 asset or vanilla data. Do not infer runtime config usage from extraction alone.
+## Accepted new evidence — 2026-10-30 JST
+ChatGPT directly inspected the owner's second export, supplied after the requested fresh live-toc/archive copy procedure:
+- filename hero_wallrunsteeringsetup_standard(1).config
+- size 544 bytes
+- SHA256 d83095b5e68cc6fa20c95bc044345f7f46fd6c0a35a682df25374b140dfcec2d
+- comparison against authenticated vanilla SHA256 32418c218d2feb62fb9227caec321c00278e4500bc75db6c4015888359537b7b: exactly one byte differs, file offset 0x219, 75 -> 5; Fast at 0x218 remains 100.
 
-## Supplied evidence — 2026-10-30 JST
-- Owner reports Slow5 produced no visible behavior change. Actual adoption of the changed value remains unproven; do not assume all isolation steps were independently verified.
-- Modding Tool displayed `hero_wallrunsteeringsetup_standard.config` with Archive `mods\mod7` and size 512 B.
-- Extract from the test copy of toc failed: Save left the dialog open.
-- Extract from the game installation's toc succeeded.
-- ChatGPT inspected that supplied file: STG-wrapped, 544 bytes, SHA256 `32418c218d2feb62fb9227caec321c00278e4500bc75db6c4015888359537b7b`.
-- It exactly matches the previously authenticated vanilla file: TurnSpeedFast=100 at file offset 0x218, TurnSpeedSlow=75 at 0x219, not Slow5.
-- These observations do not prove installation failure, winning-mod identity, toc.BAK fallback, or runtime use. The selected entry and exported bytes differ in apparent size; inspect wrapper/export behavior before drawing a conclusion.
+VERIFIED-STATIC (supplied export): exact intended Slow5 payload is present.
+Owner-workflow evidence supports installed replacement at extraction time; source/copy hashes and full GUI trace were not supplied. Do not retroactively certify the earlier game session's installed state.
+Owner-observed runtime: Slow5 test had no visible change. Runtime selection/consumption of Standard/Slow remains UNKNOWN.
+Earlier vanilla export does not prove installation failure. Extraction issue is sufficiently resolved to stop repeating it.
 
-## Bounded investigation
-Read AGENTS.md and required operational documents, docs/PROJECT_STATE.md, analysis/VANILLA_WALLRUN_STEERING_CONFIG_20261029.md, and analysis/WALLRUN_STEERING_PROBE_AB_RESULT_20261029.md.
-Inspect only existing relevant tools and the applicable Modding Tool/Overstrike source as available:
-1. Establish toc vs toc.BAK selection, archive path resolution relative to a copied toc, and selected-entry vs exported-byte behavior.
-2. Identify an existing read-only extraction/check method for the live installed Standard asset (asset ID 948FA063808F7E18). Account for STG wrapper offsets vs raw payload offsets.
-3. If the local game data is available, verify actual inputs and extract/check without changing them. Otherwise prepare one exact minimal local command or state the precise missing tool/input. Do not claim local verification from cloud.
-4. Distinguish installed replacement, extraction source, and actual runtime consumption.
+## Purpose / scope
+Apply the existing stopping rule: no serial steering-field changes, no c73.
+Read only the current WS implementation that selects movement direction and orientation in WallRun, to locate the smallest existing separation relevant to reversal with old visible facing.
+ChatGPT retains design and runtime-test decisions; do not invent a new movement design.
 
-Do not rescan the whole repository or historical logs. Do not build a new extractor/framework if existing tools cannot establish the answer; report the exact blocker.
+## Read / inspect
+Follow AGENTS required operational reading, docs/PROJECT_STATE.md, analysis/WALLRUN_STEERING_PROBE_AB_RESULT_20261029.md and analysis/WALLRUN_STEERING_EXTRACTION_SOURCE_REVIEW_20261030.md.
+Use the existing WS source and targeted symbol searches only. Inspect functions implementing current WallRun orientation/reversal, their immediate callers, and existing diagnostics.
+Return:
+1. exact file/function locations for current direction selection and orientation writes;
+2. what existing code does when direction reverses, including which orientation axes it preserves;
+3. whether existing logs already distinguish movement direction, actor/Transform forward and visible animation facing. If absent, state that, without implementing instrumentation.
+Separate static code behavior from runtime facts and hypotheses. Labels from Scripted Flight are hints only; no third-party offsets/API assumptions.
 
 ## Allowed / forbidden
-Allowed: read-only inspection; temporary extraction outside Mods Library; concise WS analysis and docs/CODEX_RESULT.md updates.
-Forbidden: game/toc/toc.BAK/archive/loader/profile/MOD changes, renames or deletions; SF/other-repository changes; new steering values; native hooks/watches; gameplay writes; c73 or broad movement investigation.
-Runtime stays v0.1c38. C52 remains binding: PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL. All existing proof/write gates remain closed.
+Allowed: targeted read-only source inspection, compact analysis documenting the new evidence and source findings, docs/CODEX_RESULT.md and docs/PROJECT_STATE.md updates to remove the stale Slow5-pending state.
+Do not overwrite this task file.
+Forbidden: runtime/source/tool changes, new hooks/watches, config changes, build/deploy/reinstall requests, game/toc/loader/profile changes, SF/other-repository changes, broad binary/CFG scans, c73, producer traversal, native gameplay writes or new framework/design work.
+If the question requires new engine evidence, stop at the exact missing fact.
+Runtime remains v0.1c38. C52 PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL and all existing proof/write gates remain closed.
 
-## Completion and checks
-Record confirmed source behavior and remaining uncertainty in a compact WS analysis file and docs/CODEX_RESULT.md; commit/publish documentation on the current branch.
-If no code changes occur, no runtime rebuild/game test is needed. For any read-only command proposed, verify its arguments and input/output paths against actual tool source/help; use relevant existing tests only if tool code is changed under a separately authorized task.
-Do not require Update-WS, reinstall, or another identical game run for this investigation.
+## Completion / validation
+Record the compact evidence and exact source references in a WS analysis document; update CODEX_RESULT and the relevant PROJECT_STATE sections. Commit/publish on the current branch and verify remote contents.
+Documentation only: verify statements against cited source and review diff; no build or game test required.
+Do not claim that installed Slow5 proves runtime use or that static orientation code alone explains animation.
 
-## Reply
+## Short reply
 STATUS: success / partial / blocked
 CHANGED:
-- changed documentation paths
+- documentation paths
 RESULT:
-- confirmed extraction source behavior and local check result, or exact minimal command
+- direction/facing source locations and narrow findings
 NEED:
-- only a precise missing input or Chat-side decision
+- exact unresolved fact requiring Chat-side judgment, if any
 
-Keep the reply short. ChatGPT supplies any user-facing test explanation.
+No user-facing runtime-test prose or long alternative designs.
