@@ -121,3 +121,14 @@ No new runtime version/log/artifact; existing r4 files stay byte-identical, olde
 packaged documentation stays historical. Owner next: no movement experiment yet;
 one offline successor-window acquisition to be arranged by Chat, no command
 invented here. Normal commit/push and independent readback recorded below.
+
+## Verified publication
+
+Research commit c57f44399db043d23bc0c328bba7a8f84b3cdc2e, normal push
+d7cb968->c57f443. `python3 /tmp/ws-lateral-publication.py` exit0: independent
+GitHub fetch into /tmp/ws-steering-docs-publication; FETCH_HEAD/ls-remote/local
+head equal; all3 changed blobs against d7cb968 equal local files. The script
+fetches the named branch and compares `git show FETCH_HEAD:<path>` bytes for
+all `git diff --name-only d7cb968 HEAD` paths. Same check repeated after this
+record-only commit; final full SHA reported in chat, no self-reference.
+No binary rebuild/repackage, no raw body/log or legacy untracked artifacts staged.
