@@ -24,14 +24,14 @@ class Proc:
  def readlink(self,path):
   if self.cwd_error:raise PermissionError(errno.EACCES,'owned')
   return '/unrelated'
- def run(self,token='token',legacy=False,distro='Owned',expected_uid=None):
+ def run(self,token='token',legacy=False,distro='Owned',expected_uid=None,elevated=False):
   ns={'__name__':'owned_probe'};exec(o.WSL_PROBE,ns)
   me=self
   class Poll:
    def register(self,*a):pass
    def poll(self,t):return [(42,select.POLLIN)] if me.exited else []
   with patch.dict(os.environ,{'WSL_DISTRO_NAME':'Owned'}),patch('os.listdir',return_value=[str(self.pid),str(self.selfpid)]),patch('os.getpid',return_value=self.selfpid),patch('os.stat',side_effect=self.stat),patch('builtins.open',side_effect=self.open),patch('os.pidfd_open',return_value=42),patch('os.close',side_effect=self.closed.append),patch('os.kill',side_effect=self.kill),patch('select.poll',Poll),patch('os.readlink',side_effect=self.readlink):
-   return ns['probe'](token,legacy,distro,expected_uid)
+   return ns['probe'](token,legacy,distro,expected_uid,elevated)
 class ProbeTests(unittest.TestCase):
  def test_unrelated_reads_only_environment_not_cwd_or_cmd(self):
   p=Proc();r=p.run();self.assertEqual(r['result'],'QUIET');self.assertNotIn('cmdline',p.reads);self.assertEqual(p.closed,[42]);self.assertNotIn('private',json.dumps(r))
@@ -88,7 +88,7 @@ class ProbeTests(unittest.TestCase):
  def test_bound_quiet_output_reports_successful_exit(self):
   data=Proc().run()
   with patch.object(o.subprocess,'run',return_value=subprocess.CompletedProcess([],0,json.dumps(data),'')):
-   self.assertEqual(o.wsl_quiet({'build_token':'token','distro':'Owned'})['exit_status'],0)
+   self.assertEqual(o._wsl_query({'build_token':'token','distro':'Owned'},False,False)['exit_status'],0)
  def test_output_schema_incomplete_or_noise_refused(self):
   for output in ['QUIET\n','{}',json.dumps({'schema':1,'result':'QUIET','events':[]})]:
    with patch.object(o.subprocess,'run',return_value=subprocess.CompletedProcess([],0,output,'secret stderr')):

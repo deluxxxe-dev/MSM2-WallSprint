@@ -1,5 +1,18 @@
 # WallSprint project state
 
+## Current handoff — bounded root token inspection / tooling recovery
+
+Confirmed user environ EACCES no longer forces broad same-user-env readability:
+selected-distro root inspects exact token across ALL UIDs, even after user QUIET.
+Root role/identity and bounded stable inventory required; denied/remaining token/
+reuse/malformed/unknown still refuse. No new process framework, root build,
+security settings, process termination or gameplay/runtime/artifact change.
+Legacy UIDnull remains unknown; all-UID token absence is separate recovery scope.
+ONE owner action: fresh normal Repair-Mod-Tools.ps1 bootstrap (no DiagnoseWSL),
+from common manual; old records preserved before clean/ff KIT repair. Owner root
+availability and r5 deployment remain unverified. Normal later retry rebuilds.
+See analysis/WSL_TOKEN_ROOT_RECOVERY.md and current CODEX_RESULT.
+
 ## Latest owner cause evidence — confirmed environ permission denial
 
 Fresh23525e8 read-only DiagnoseWSL returns exit2/UNKNOWN: Ubuntu-24.04 matches; uid_observed1000/uid_expectednull; PIDs346,347 environ read EACCES(errno13). This supersedes unknown error-stage wording below, not process relevance/identity. No deploy/repair performed by diagnostic. Current CODEX_NEXT targets permission-independent owned-build proof plus safe legacy recovery, not identical diagnostic repetition. r5 game testing still waits for deployment.

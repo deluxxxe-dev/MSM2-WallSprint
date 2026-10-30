@@ -154,5 +154,6 @@ Untracked/unknown files are not deleted by the refresh. The current updater stil
 checks them before preparation/build; this is not a validation bypass. No install,
 loader repair or real-PC acceptance is performed by this cloud task.
 
-WSL post-build失敗時は共通READMEの「r5更新後のWSL確認失敗」診断を先に実行します。
-診断は現在のlockを解放したりmanagerを起動したりしません。実機原因は未確定です。
+WSL environ EACCESの前回診断は受理済みです。今回の回復は共通READMEの
+「現在のEACCES回復」にある通常修復を使用します。rootはtokenの読み取り確認だけを行い、
+build/配置/manager起動をしません。実機でのroot利用可否とr5配置はまだ未確認です。

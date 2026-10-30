@@ -93,7 +93,7 @@ class Locks(unittest.TestCase):
   seen=[]
   def run(args,**kw):
    if '--list' in args:return subprocess.CompletedProcess(args,0,'First\nSecond\n'.encode('utf-16-le'),b'')
-   seen.append(args[args.index('--distribution')+1]);return subprocess.CompletedProcess(args,0,json.dumps(dict(schema=1,result='QUIET',distro_expected=seen[-1],distro_observed=seen[-1],uid_expected=None,uid_observed=os.getuid(),events=[],counts={})), '')
+   seen.append(args[args.index('--distribution')+1]);return subprocess.CompletedProcess(args,0,json.dumps(dict(schema=1,result='QUIET',distro_expected=seen[-1],distro_observed=seen[-1],uid_expected=None,uid_observed=os.getuid(),inspection='user',events=[],counts={})), '')
   with patch.object(o.subprocess,'run',run):o.wsl_quiet({},legacy=True)
   self.assertEqual(seen,['First','Second'])
  def test_exact_wsl_token_probe_runs_on_owned_linux_process(self):
@@ -123,7 +123,11 @@ class Locks(unittest.TestCase):
   try:
    with patch.object(o.subprocess,'run',run):
     with self.assertRaisesRegex(o.OperationError,'active_build'):o.wsl_quiet({'build_token':token,'distro':'owned'})
-    p.terminate();p.wait(timeout=5);o.wsl_quiet({'build_token':token,'distro':'owned'})
+    p.terminate();p.wait(timeout=5);record={'build_token':token,'distro':'owned'}
+    self.assertEqual(o._wsl_query(record,False,False)['result'],'QUIET')
+    if os.getuid()==0:o.wsl_quiet(record)
+    else:
+     with self.assertRaisesRegex(o.OperationError,'inspection=root'):o.wsl_quiet(record)
   finally:
    if p.poll() is None:p.kill();p.wait()
 if __name__=='__main__':unittest.main()

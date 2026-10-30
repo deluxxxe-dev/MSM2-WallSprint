@@ -51,6 +51,26 @@ class Repair(unittest.TestCase):
   self.assertEqual(self.script.read_bytes(),runtime)
   for p,data in dlls:self.assertEqual(p.read_bytes(),data)
   self.assertTrue((self.ws/'Update-WS.cmd').is_file())
+ def test_protected_unrelated_root_absence_repairs_legacy_without_build(self):
+  from unittest.mock import patch
+  with o.hold(self.game,'update'):o.phase('building',build_token='old-owned-token',distro='Owned')
+  calls=[]
+  def query(record,legacy,root):
+   calls.append(root)
+   return dict(result='QUIET' if root else 'UNKNOWN',counts={} if root else {'access_denied':2},uid_observed=0 if root else 1000,exit_status=0 if root else 2)
+  before=self.script.read_bytes()
+  with patch.object(o,'_wsl_query',side_effect=query):r.repair(self.source,self.game,self.head,self.system)
+  self.assertIn(True,calls);self.assertEqual(self.script.read_bytes(),before);self.assertEqual(git(self.source,'rev-parse','HEAD'),self.head)
+  record=json.loads((self.game/'.MSM2-Operations.guard').read_text());self.assertEqual(record['state'],'released');self.assertNotIn('build_token',record)
+  self.assertFalse(any(x[0]=='launch' for x in self.system.events))
+ def test_root_denial_keeps_legacy_and_previous_environment(self):
+  from unittest.mock import patch
+  with o.hold(self.game,'update'):o.phase('building',build_token='old-owned-token',distro='Owned')
+  lock=self.game/'.MSM2-Operations.guard';before=lock.read_bytes();head=git(self.source,'rev-parse','HEAD');runtime=self.script.read_bytes();kit=(self.game/'Mod-Tools/mod_environment.py').read_bytes()
+  def query(record,legacy,root):return dict(result='UNKNOWN',counts={'access_denied':1},uid_observed=0 if root else 1000,exit_status=2)
+  with patch.object(o,'_wsl_query',side_effect=query):
+   with self.assertRaisesRegex(o.OperationError,'NOT proved'):r.repair(self.source,self.game,self.head,self.system)
+  self.assertEqual((lock.read_bytes(),git(self.source,'rev-parse','HEAD'),self.script.read_bytes(),(self.game/'Mod-Tools/mod_environment.py').read_bytes()),(before,head,runtime,kit))
  def test_readonly_diagnostic_does_not_claim_refresh_or_deploy(self):
   from unittest.mock import patch
   import contextlib,io

@@ -309,3 +309,13 @@ errno/exitとdistro/UIDの診断はdocs/mod-tools/README.mdの一括ブロック
 古いcheckerを通る前に最新コードをstageするDiagnoseWSLモードです。lock/KIT/runtime/
 worktreeは変更せず、process/WSLを終了しません。bootstrap fetchのみGit refs/objects更新。
 実機PID339の原因は未確定。retryはフルビルド、既存stagingの手動配置はしません。
+
+
+### 確認済みEACCESからの現在の回復
+
+前回DiagnoseWSLでenviron EACCESが確定したため、同じ診断を繰り返しません。
+共通mod-tools README「現在のEACCES回復」の通常修復が次操作です。
+正確なtokenの不存在を選択distro/root/全UIDで読み取り確認し、既存OS所有権とGit保護の下で
+KITだけを修復します。user QUIETでもescaped UIDの子をrootで確認。権限不明/root失敗は
+拒否、旧UIDnullは未記録のままです。root build/配置や設定変更は行いません。
+TOKEN_ABSENTは配置完了ではなく、後のUpdate-WSは再ビルドします。実機受入れ待ちです。

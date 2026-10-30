@@ -215,7 +215,7 @@ finally { Remove-Item -LiteralPath $temp -Force }
 拒否時は表示されたPID/phase/WSL/パスを保全し、lockを手で削除しないでください。
 
 
-## r5更新後のWSL確認失敗 — 一度だけの読み取り診断
+## 前回の切り分け手順（今回の再実行は不要）
 
 ビルド成功と配置成功は別です。`Cannot verify same-user Linux process339` だけでは
 消滅競合・権限・残存buildのどれか分かりません。現在のcheckerはdistro/UID/PID/
@@ -250,6 +250,42 @@ finally { Remove-Item -LiteralPath $temp -Force }
 payload/manifestが残っていてもexact source-HEAD/session/inactivity receiptがないため
 自動再利用・手動配置は許可しません。旧pending記録のUIDは未記録なのでnullと明示します。
 新buildではUIDを記録し、不一致を拒否します。WSL/PIDの一括終了やlock削除はしません。
+
+
+## 現在のEACCES回復 — root読み取り確認付きtooling修復
+
+前回の診断は受理済みです。今回は同じDiagnoseWSLを繰り返さず、以下の通常修復を
+一括実行します。WSLの選択済みdistro内でrootが**正確な操作tokenだけを読み取り確認**
+します。全UIDを対象にし、元UID未記録のnullを1000と推測しません。rootでビルドや配置を
+実行せず、権限/セキュリティ設定やWSLを変更・停止しません。
+rootでも読めない・tokenが残る・identity不一致・inventoryが安定しない場合は拒否します。
+
+ゲーム/Overstrike/updaterを通常終了後、Windows PowerShellで一括実行し出力を返してください。
+fetchはrefs/objectsを更新し、修復はclean/ff確認後だけsource/KITを更新します。
+r5 runtime/packageは変更せず、コンパイル・ゲーム起動をしません。
+
+```powershell
+$game = "C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2"
+$repo = Join-Path $game 'Mods Library\Mods-Developing\MSM2-WS\_source'
+$branch = 'codex/v01c20-edi-value-provenance'
+if ((git -C $repo branch --show-current) -ne $branch) { throw 'Wrong WS branch' }
+if ((git -C $repo remote get-url origin) -ne 'https://github.com/deluxxxe-dev/MSM2-WallSprint.git') { throw 'Wrong WS origin' }
+git -C $repo fetch origin $branch
+if ($LASTEXITCODE -ne 0) { throw 'Fetch failed' }
+$commit = git -C $repo rev-parse "origin/$branch"
+if ($LASTEXITCODE -ne 0) { throw 'Head unavailable' }
+$body = @(git -C $repo show ($commit + ':environment/Repair-Mod-Tools.ps1'))
+if ($LASTEXITCODE -ne 0) { throw 'Repair bootstrap unavailable' }
+$temp = Join-Path $env:TEMP ('MSM2-repair-' + [guid]::NewGuid().ToString('N') + '.ps1')
+[IO.File]::WriteAllText($temp, ($body -join "`n"), (New-Object Text.UTF8Encoding($false)))
+try { & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $temp -GameRoot $game }
+finally { Remove-Item -LiteralPath $temp -Force }
+```
+
+`WSL_TOKEN_CHECK ... TOKEN_ABSENT` はtoken回収の証拠だけで、配置成功ではありません。
+その後の `TOOLING_REPAIR_COMPLETE runtime_unchanged=1 no_build=1 no_game_launch=1`
+がtooling修復完了です。root利用不能/拒否でもlock削除等で回避せず、その出力を返します。
+現在はr5配置・実ゲーム確認は未完了です。後で通常Update-WSを行う際は再ビルドします。
 
 
 <a id="overstrike"></a>
@@ -410,8 +446,9 @@ Untracked/unknown files are not deleted by the refresh. The current updater stil
 checks them before preparation/build; this is not a validation bypass. No install,
 loader repair or real-PC acceptance is performed by this cloud task.
 
-WSL post-build失敗時は共通READMEの「r5更新後のWSL確認失敗」診断を先に実行します。
-診断は現在のlockを解放したりmanagerを起動したりしません。実機原因は未確定です。
+WSL environ EACCESの前回診断は受理済みです。今回の回復は共通READMEの
+「現在のEACCES回復」にある通常修復を使用します。rootはtokenの読み取り確認だけを行い、
+build/配置/manager起動をしません。実機でのroot利用可否とr5配置はまだ未確認です。
 
 
 <a id="play"></a>
