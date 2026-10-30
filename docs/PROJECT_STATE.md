@@ -1,6 +1,6 @@
 # WallSprint project state
 
-## Current stage — v0.1c38r1 orientation-only reversal implemented; functional tests passed; existing hooks-runner cwd blocker; real-game proof pending
+## Current stage — v0.1c38r1 orientation-only reversal implemented; canonical checks passed after bounded runner repair; real-game proof pending
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
@@ -26,14 +26,16 @@ Position/W/metadata/scales, all admission and stale/cleanup/timeout guards and
 five-second budget remain. No movement/input/velocity/animation writes, c73,
 new hooks/watches, steering assets or shared infrastructure changes.
 
-Focused math (10 groups), portable (23), Windows build/smoke and real A/B
-fixture checks passed under Wine. The canonical hooks command reaches830 PASS
-then stops at an unchanged c67 runpy relative-path defect (`source/source/tools`).
-Its remaining tests pass when invoked from repository root. This is a separate
-existing runner blocker, not permission to bypass Update-WS validation.
-Automated results/publication are recorded in CODEX_RESULT. Actual r1 game
-response remains UNKNOWN. After the separate canonical-runner blocker is resolved, existing Update-WS.cmd
-remains the owner deployment path; no cloud deployment or new human test prose here.
+Focused math (10 groups), portable (23), Windows build/smoke and owned A/B
+fixture checks passed under Wine for the unchanged r1 runtime. The c67 wrapper
+now resolves its child script beside its resolved __file__, preserving all
+assertions and run_name. Root/source/unrelated-cwd verification all pass14 groups.
+The unchanged canonical hooks command now completes successfully; exact counts
+are recorded in CODEX_RESULT. No cwd workaround, skipped test or updater bypass.
+
+Runtime/source/version/DLL bytes are unchanged by this runner repair. Actual
+owner Windows Update-WS execution and r1 game response remain unverified; existing
+Update-WS.cmd remains the deployment path. No local deployment performed.
 
 ## Accepted c72 outcome
 

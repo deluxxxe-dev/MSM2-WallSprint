@@ -1,210 +1,113 @@
-# Codex result — v0.1c38r1 orientation-only reversal proof
+# Codex result — canonical c67 runner path repair
 
 2026-10-30 JST. Branch `codex/v01c20-edi-value-provenance`.
-Baseline: 97a11291ca847ba4f28ce2553c03ae8983328dcb.
+Baseline: c51aa453ad8b6c53f5911d8820bc1904cbeab175.
 
 ## STATUS
 
-**partial** — fixed orientation-only design implemented and functional checks
-passed. Canonical full hooks command is blocked by an unchanged pre-existing
-c67 test-runner working-directory defect. No scope expansion to fix that defect;
-no recommendation to deploy through a failing Update-WS pipeline.
+**success** — bounded path repair verified from three working directories;
+unchanged canonical hooks command completes. No runtime/reversal/version change.
+Actual owner Windows updater/game validation remains unperformed.
 
 ## CHANGED
 
-- `source/include/Math/reversal_heading.hpp`: isolated pure post-entry heading state/math.
-- `source/src/NativeHooks/native_source_override.cpp`: private heading state/tick,
-  observation reset at existing stale/end boundaries, <=64 heading events/session.
-- `source/src/reversal_heading_tests.cpp`, `source/tools/test_reversal_heading.sh`,
-  `source/tools/test.sh`: 10 focused sanitizer groups in the portable chain.
-- `source/src/msm2/native_source_override_smoke.cpp`: owned-clock/displacement
-  A/B publication/store/stale/Deinit case in existing standalone MinHook fixture.
-- `source/include/version.hpp`, `source/mod/info.json`, `source/README_TEST.md`:
-  runtime **v0.1c38r1**, package **0.1.57**, accurate bounded-experiment metadata.
-- `analysis/V01C38R1_REVERSAL_HEADING.md`, `docs/PROJECT_STATE.md`, this result.
-- Generated `BUILD_MANIFEST.json`, `MSM2-WS-v0.1c38r1.script.disabled`,
-  `MSM2-WS-v0.1c38r1.zip`, `MSM2-WS-v0.1c38r1-source.zip`:
-  mechanically validated experimental outputs, not full-pipeline acceptance.
+- `source/tools/test_slot_publication_post_c67_boundary_fix.py`: import Path;
+  derive child path using `Path(__file__).resolve().with_name(...)`.
+- `docs/CODEX_RESULT.md`, `docs/PROJECT_STATE.md`.
+- Necessary package documentation/source refresh: r1 install/source ZIPs and any
+  generated manifest metadata. Runtime stays v0.1c38r1 / package0.1.57; script/DLL
+  content remains byte-identical. No new package version or gameplay change.
 
-## RESULT
+## RESULT / narrow scope
 
-Entry Transition is byte-unchanged. After entry reaches t=1, separate bounded
-observation uses distinct fresh native updates and validated Hero position:
->=100ms, dt<=250ms, wall-tangent speed>=2, dot(normalized tangent,f0)>=0.8 or
-<=-0.8, and two consecutive NEW-sign observations spanning>=100ms. Thresholds
-are experimental. Slow/ambiguous/same-sign samples clear pending confirmation;
-invalid/gap/stale/end/session history cannot bridge evidence. No use of incoming
-source Forward as vanilla intent.
+Original command `(cd source && python3 tools/test_slot_publication_post_c67_boundary_fix.py)`
+reproduced exit1/FileNotFoundError at `source/source/tools/test_slot_publication_post_c67_boundary.py`.
+Only this wrapper's child path changes. All assertions, patch relationships,
+runpy globals/defaults and `run_name='__main__'` are preserved. No chdir, failure
+masking, omission, gate relaxation or updater bypass.
 
-An accepted reversal completes a deterministic positive 180-degree turn about
-the SAME stored normal in0.25 active seconds, with no mid-turn retargeting.
-Right/Forward are rebuilt and proper rotation validated; Up remains the normal.
-Final Forward is component-exact saved f0/-f0, avoiding cumulative drift.
-A private post-entry active clock freezes at existing stale boundaries rather
-than reusing the entry clock's clamped t=1 rebasing. It does not extend the
-five-second real source budget or renew permission. Completion rebases motion.
+The directly related full `test_slot_publication_post_c67_boundary_fix2.py` also
+contains a cwd-relative runpy path, but is NOT on the canonical command list.
+Canonical uses `test_slot_publication_post_c67_boundary_fix2_quick.py`, which
+contains no such runpy path. No unrelated/non-required wrapper was changed;
+do not claim every optional wrapper was made cwd-independent.
 
-Only the existing Published basis changes. A/B readers, source stores and their
-coherent-publication, ownership/current-code/thread/lifecycle/freshness gates
-are unchanged. Position/W, compact scales/metadata preserved. Existing F8,
-normal/identity failures, synchronous close and five-second end remain binding.
-C52 `PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL` unchanged. No Position,
-input/velocity, animation/camera, adhesion, config-asset, new hook/watch/VEH/VCH,
-producer, c73, shared launcher/loader/SF/other-repository changes.
+## Exact execution / expected and actual outcomes
 
-## Validation — exact commands, expectation, actual outcome
+Environment: `export PATH=/workspace/toolchains/analysis-python/bin:$PATH`.
+Counts are emitted PASS records per invocation, not unique summed cases.
+The same14 wrapper groups run repeatedly to check cwd independence.
 
-All commands run from `/workspace/WallSprint` with
-`export PATH=/workspace/toolchains/analysis-python/bin:$PATH`, except the explicit
-cwd reproduction. Wine execution is not native Windows/game verification.
-PASS counts below are emitted per-command records, not unique summed test cases;
-the focused10 groups are deliberately also included in portable23.
+| Command | cwd | Expected | Actual |
+| --- | --- | --- | --- |
+| `python3 source/tools/test_slot_publication_post_c67_boundary_fix.py` | `/workspace/WallSprint` | exit0; complete existing assertions | exit0; PASS 14, SKIP 0, UNAVAILABLE 0 |
+| `python3 tools/test_slot_publication_post_c67_boundary_fix.py` | `/workspace/WallSprint/source` | exit0; complete existing assertions | exit0; PASS 14, SKIP 0, UNAVAILABLE 0 |
+| `python3 /workspace/WallSprint/source/tools/test_slot_publication_post_c67_boundary_fix.py` | `/tmp` | exit0; complete existing assertions | exit0; PASS 14, SKIP 0, UNAVAILABLE 0 |
+| `bash source/tools/test_hooks_windows.sh` | `/workspace/WallSprint` | exit0; complete existing assertions | exit0; PASS 895, SKIP 5, UNAVAILABLE 17 |
 
-| Exact command | Expected | Actual |
-| --- | --- | --- |
-| `bash source/tools/test_reversal_heading.sh` | exit0; owned fixture groups pass | exit0; PASS 10, SKIP 0, UNAVAILABLE 0 |
-| `bash source/tools/build_windows.sh` | exit0; MinGW/Clang Windows DLL builds with warnings as errors | exit0; PASS 0, SKIP 0, UNAVAILABLE 0 |
-| `bash source/tools/test.sh` | exit0; owned fixture groups pass | exit0; PASS 23, SKIP 0, UNAVAILABLE 0 |
-| `bash source/tools/smoke_windows.sh` | exit0; owned fixture groups pass | exit0; PASS 7, SKIP 0, UNAVAILABLE 0 |
-| `bash source/tools/test_hooks_windows.sh` | exit0; owned fixture groups pass | exit1; PASS 830, SKIP 5, UNAVAILABLE 17; FAIL: unchanged c67 cwd defect, described below |
-| `python3 source/tools/test_slot_publication_post_c67_boundary_fix.py` | exit0; owned fixture groups pass | exit0; PASS 14, SKIP 0, UNAVAILABLE 0 |
-| `python3 source/tools/test_slot_publication_post_c67_boundary_fix2_quick.py` | exit0; owned fixture groups pass | exit0; PASS 1, SKIP 0, UNAVAILABLE 0 |
-| `python3 source/tools/test_slot_publication_post_c69_stitched.py` | exit0; owned fixture groups pass | exit0; PASS 22, SKIP 0, UNAVAILABLE 0 |
-| `python3 source/tools/test_slot_publication_post_c69_boundary.py` | exit0; owned fixture groups pass | exit0; PASS 28, SKIP 0, UNAVAILABLE 0 |
-| `python source/tools/release.py` | exit0; package/import/export/version/CRC checks; distinct r1 artifacts | exit0; PASS 1, SKIP 0, UNAVAILABLE 0 |
+Original failure reproduction: exit1 (before repair), retained in cloud scratch;
+corrected root/source/temp invocations and canonical chain exit0. No runtime
+code was changed to obtain these results.
 
-### Final exact-endpoint follow-up
+## Existing updater command list / reused valid checks
 
-Review tightened final Forward from a re-normalized endpoint to component-exact
-saved f0/-f0 while retaining rebuilt Right/proper-frame validation. Added a
-strict diagonal endpoint assertion. This prevents floating-point endpoint
-renormalization from alternating by an ulp; it changes no input threshold,
-clock, guard or source store. After this helper change, reran all affected
-math/portable/Windows build/smoke/native source checks:
-
-| Exact command | Expected | Final actual |
-| --- | --- | --- |
-| `bash source/tools/test_reversal_heading.sh` | exit0; relevant groups/build/package pass | exit0; PASS 10, SKIP 0, UNAVAILABLE 0 |
-| `bash source/tools/build_windows.sh` | exit0; relevant groups/build/package pass | exit0; PASS 0, SKIP 0, UNAVAILABLE 0 |
-| `bash source/tools/test.sh` | exit0; relevant groups/build/package pass | exit0; PASS 23, SKIP 0, UNAVAILABLE 0 |
-| `bash source/tools/smoke_windows.sh` | exit0; relevant groups/build/package pass | exit0; PASS 7, SKIP 0, UNAVAILABLE 0 |
-| `bash source/tools/test_native_source.sh` | exit0; relevant groups/build/package pass | exit0; PASS 10, SKIP 0, UNAVAILABLE 0 |
-| `python source/tools/release.py` | exit0; relevant groups/build/package pass | exit0; PASS 1, SKIP 0, UNAVAILABLE 0 |
-
-The native command includes both corrected standalone r1 A/B reversal case and
-retained real-position-watch integration. No unrelated all-hooks rerun after
-this precision-only follow-up: its unchanged cwd defect is independently
-reproduced, and the affected helper consumers were explicitly revalidated.
-The earlier830-PASS canonical attempt is recorded as that earlier attempt,
-not as a final all-hooks PASS. Packaging was regenerated after final docs.
-
-### Two distinct failures, retained and explained
-
-1. Initial hooks attempt: exit5 after16 PASS/3 optional SKIP. The new owned
-   reversal fixture case was initially placed **after** fixture hook/memory
-   teardown, causing a Wine access violation in prepare. Moved that new case
-   before teardown; no production change was needed. Re-ran the full hooks
-   command because the fixture changed and the remaining chain had not run.
-   The corrected r1 case passes real owned MinHook A/B stores, coherent midpoint/
-   final basis, Position/W/metadata preservation and stale freeze/resume/Deinit.
-2. Corrected canonical hooks run: **830 PASS / 5 SKIP / 17 UNAVAILABLE, then exit1**.
-   `test_hooks_windows.sh` changes cwd to `source`; unchanged
-   `tools/test_slot_publication_post_c67_boundary_fix.py:11` uses
-   `runpy.run_path('source/tools/test_slot_publication_post_c67_boundary.py', ...)`.
-   It therefore opens nonexistent `source/source/tools/...`. These two files
-   have no diff from task baseline. Exact independent reproduction:
-
-   ```bash
-   (cd source && python3 tools/test_slot_publication_post_c67_boundary_fix.py)
-   ```
-
-   Actual: exit1, FileNotFoundError at that path. Root invocation passes14 groups;
-   all remaining tail commands in the table pass separately. This does **not**
-   change the canonical command to PASS or bypass the updater gate. Per current
-   task, the unrelated existing runner is not modified.
-
-### Coverage / unavailable / unrun
-
-Focused10 groups: unchanged entry/Position/W, straight hold, confirmed reversal,
-finite proper-rotation midpoint/Up and final sign, slow/oblique/normal-only hold,
-distinct updates and cleared ambiguity, >250ms gap, stale pause and completion
-rebase, repeated turns/no retarget or drift, invalid data and fresh-session reset,
-compact scale/metadata contract. Full native fixture retains prior identity,
-normal, collision, lifecycle, stale/cleanup/timeout/F8 and dual-source regressions.
-New reversal case is the standalone fixture only; the existing real-position-watch
-integration regression also passes, but does not itself exercise a turn.
-
-- SKIP5: existing optional private original-byte/native-body/installer/writer-
-  normalization/accepted-build capture replays absent; owned negatives and
-  synthetic decoder/native fixtures ran. No required r1 test was silently skipped.
-- UNAVAILABLE17: retained Wine VCH evidence (c40 reset/Position2, c49 bridge6,
-  c50 identity7, c51 post-return2). Never promoted to native PASS.
-- UNAVAILABLE1 additional evidence group: actual native Windows/game r1 behavior,
-  visual facing response and engine/animation ownership. Cloud has no owner game.
-- BLOCKED1 integration gate: canonical full hooks cwd defect above. No code/design
-  subtask was substituted. Tail checks and package commands were run explicitly.
-
-No further test reruns are needed after publication-record-only documentation
-changes; release/package is regenerated for final documentation and CRC checked.
-No game, local deployment, reinstall, new native probe or human test requested.
-
-## Scope/package checks
-
-`git diff --check` and `git diff --cached --check`: exit0. Scope/package
-audit: unchanged entry math and A/B store/capture bodies confirmed, all three
-artifact CRCs pass; source ZIP helper/tests equal checkout bytes; script internal
-version is0.1.57. Exact additional package check:
+Read-only inspection of `source/tools/workspace.py` and
+`source/tools/windows/workspace-build.sh:31-35` confirms the required serial list:
 
 ```bash
-python3 - <<'PY_PACKAGE'
-from pathlib import Path
-import zipfile, json
-for name in ['MSM2-WS-v0.1c38r1.zip','MSM2-WS-v0.1c38r1-source.zip','MSM2-WS-v0.1c38r1.script.disabled']:
-    with zipfile.ZipFile(name) as z:
-        assert z.testzip() is None
-        if name.endswith('-source.zip'):
-            for suffix in ['include/Math/reversal_heading.hpp','src/reversal_heading_tests.cpp','tools/test_reversal_heading.sh']:
-                member = next(x for x in z.namelist() if x.endswith(suffix))
-                assert z.read(member) == (Path('source') / suffix).read_bytes()
-        if name.endswith('.script.disabled'):
-            assert json.loads(z.read('info.json'))['version'] == '0.1.57'
-PY_PACKAGE
+bash source/tools/build_windows.sh
+bash source/tools/test.sh
+bash source/tools/smoke_windows.sh
+bash source/tools/test_hooks_windows.sh
+python source/tools/release.py
 ```
- Review confirms shared
-`Math/source_orientation.hpp`, all A/B capture/store bodies, reset_trace/hardware/
-VEH/VCH code and existing canonical hooks/c67 wrapper are unchanged. Version
-parser in workspace.py accepts alphanumeric suffix r1. ZIP/script CRC, internal
-version0.1.57, r1 DLL strings, and inclusion of helper/tests checked; source/archive
-bytes are compared again with independent GitHub readback after publication.
-Package validation proves mechanics, not full updater acceptance or real-game effect.
+
+The first three were already valid for the unchanged final r1 code commit
+`985c4bccf8aa4a7c21df66fe19c63f3367366059`, recorded in previous CODEX_RESULT:
+Windows build exit0; portable23 PASS (including focused10); smoke7 PASS. Existing
+native source command `bash source/tools/test_native_source.sh` also passed10.
+These are **reused prior results, not newly executed tests in this task**.
+No C++/headers/version/config/build/updater/canonical script diff exists from
+this task baseline; DLL, disabled script and version-header hashes were recorded
+before execution and checked unchanged. Rebuilding/repeating unaffected checks
+would add no new evidence. Canonical hooks is newly executed in full; release/
+package is newly executed for changed source/docs, with CRC/content validation.
+No actual Windows Update-WS, WSL staging entrypoint or local deployment claimed.
+
+## Remaining evidence / counts
+
+Five optional private replay SKIPs are retained: original-byte positive/native
+body/installer/writer-normalization/accepted-build capture. Owned negatives and
+synthetic/native fixtures still run. The17 Wine UNAVAILABLE outcomes remain:
+c40 VCH2, c49 bridge6, c50 identity7, c51 post-return2. They are not native PASS.
+Owner Windows updater and r1 gameplay/facing outcome remain unverified, and no
+new game test/capture or human instructions are supplied by this task.
+BLOCKED0 for this bounded repair; no other canonical blocker observed.
+C52 and all existing proof/write gates remain binding.
+
+## Package / scope validation
+
+`python source/tools/release.py`: expected exit0, unchanged r1 runtime version/
+script/DLL content, changed wrapper packaged correctly, ZIP/script CRC pass.
+Actual: exit0, CRC/content checks pass; packaged wrapper equals the corrected
+checkout; DLL, disabled script and header SHA256 exactly match task-start values. `git diff --check` and
+`git diff --cached --check`: expected exit0, actual exit0. Diff restricted to
+wrapper path, task/state report and necessary generated package documentation.
+Five pre-existing untracked archives/bundle excluded and preserved.
+No runtime/design/watch/VEH/VCH/producer/c73/shared launcher/loader/config/SF or
+other repository changes. No main merge, reset or force push.
+
+Runtime byte hashes (unchanged from task start):
+- `source/build/windows/WallSprint.dll` SHA256 `88272f32adcfab0afde51f8949faed0cef8fb190a18becfb59befa2f9fa12ece`
+- `MSM2-WS-v0.1c38r1.script.disabled` SHA256 `eaaf55b9017680bb47c3e4c07249964424c84723edf5c068072548f6b77f68db`
+- `source/include/version.hpp` SHA256 `febfcbb198c98f52a02e3ddaedfaa69b366206078133cb91f803d0863189cea5`
 
 ## Branch / publication
 
-Branch `codex/v01c20-edi-value-provenance`.
-Initial implementation commit `31a464402c93f4efc9df17688f443eb68e19ad4d` was
-normally pushed and independently fetched into `/tmp/ws-steering-docs-publication`.
-All16 changed source/docs/manifest/artifact blobs were byte-identical to GitHub
-readback (SHA256 comparison recorded in cloud scratch). Final strict-endpoint code commit:
-`985c4bccf8aa4a7c21df66fe19c63f3367366059`.
-It was normally pushed, independently fetched from GitHub, and all16 changed
-source/docs/manifest/artifact blobs again matched local bytes. Verification used:
-
-```bash
-git -C /tmp/ws-steering-docs-publication fetch origin codex/v01c20-edi-value-provenance
-git -C /tmp/ws-steering-docs-publication rev-parse FETCH_HEAD
-git diff --name-only 97a1129 HEAD
-```
-
-For every listed path, `git -C /tmp/ws-steering-docs-publication show FETCH_HEAD:<path>`
-was compared byte-for-byte with the local file. Expected remote SHA/content
-match; actual all16 matched, exit0. The final record-only follow-up regenerates
-ZIP documentation, keeps the tested DLL/code unchanged, and receives the same
-remote-content verification. Final record commit SHA is reported in handoff
-rather than embedding a self-referential hash here.
+Branch `codex/v01c20-edi-value-provenance`. Implementation SHA and independent
+GitHub readback will be finalized after normal commit/push, before owner handoff.
 
 ## NEED
 
-Chat-side decision only: authorize a separate bounded repair of the pre-existing
-c67 test-runner cwd defect before declaring the canonical Update-WS pipeline ready.
-No alternate movement design is needed; no owner deployment is requested while
-that required command fails. Actual r1 gameplay proof remains pending thereafter.
+No remaining canonical blocker. Only owner Windows/updater/game evidence remains
+unverified; ChatGPT supplies subsequent instructions, not this task.
