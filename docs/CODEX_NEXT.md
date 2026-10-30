@@ -26,3 +26,6 @@ Use existing required build/portable/native/hooks/smoke/release commands from re
 Meaningful regression cases: same valid session beyond5s/30s and many alternating completed reversals; valid straight session beyond5s; actual Deinit and disable immediately close; stale/gap/invalid owner/surface/code retain existing refusal/recovery semantics; closed generation cannot re-enter; subsequent genuine session starts cleanly; log caps stay bounded.
 Record tests as synthetic/static, not in-game acceptance. Commit/push and verify. Report exact runtime version/log name and any failure.
 Reply STATUS / CHANGED / RESULT / NEED only; Chat provides human update/test instructions.
+
+## Follow-on explicitly authorized by owner
+After completing and committing/pushing the lifetime patch above, continue with docs/CODEX_INPUT_START.md in a separate commit. Earlier line prohibiting new directional-input work applies only to the lifetime change, not this subsequent bounded input task. Owner prioritizes earlier INPUT-triggered facing start; do not stop after repeating the completed displacement-only blocker. Preserve independent validation/results for the two changes.
