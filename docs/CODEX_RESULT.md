@@ -26,7 +26,9 @@ remain untouched and are not part of this commit. No main merge/reset/force push
   `toc.BAK` over `toc`, even if the file picker selected `toc`.
 - MSM2 live toc is at game root. Archives are read relative to the loaded toc;
   copying only toc is insufficient. The list suppresses a leading `d\` in I29
-  archive names: displayed `mods\mod7` means actual `d\mods\mod7`.
+  archive names. The inspected MSM2 stage installer uses `d\mods\mod7`;
+  that is the expected copy path, not proof of the private toc string from the
+  displayed name alone.
 - Export uses the currently loaded toc's `(span, asset ID)` mapping, not the UI
   archive text, and has no export-time vanilla fallback.
 - List size is raw payload size; exported STG can add a header/extras/padding.
@@ -67,8 +69,8 @@ groups, not native/GUI tests or real installation verification.
 | `git diff --name-only afa7654549380b45b58fabadcdfc333adaa7c2d3`; `git status --short` | Only the two intended documentation paths plus original untracked artifacts | Scope checked before staging and after commit. PASS |
 | `git diff --check`; `git diff --cached --check` | No whitespace errors | Exit0. PASS |
 
-Before publication: **PASS 8 audit groups / SKIP 1 suite group / UNAVAILABLE 2
-owner-execution groups / BLOCKED 0**. No unit/regression/native/game PASS claimed.
+**PASS 9 audit groups (8 source/scope/whitespace + 1 publication) / SKIP 1
+suite group / UNAVAILABLE 2 owner-execution groups / BLOCKED 0**. No unit/regression/native/game PASS claimed.
 
 ### Unrun tests and reasons
 
@@ -93,9 +95,33 @@ because current task forbids other-repository changes.
 ## Branch / publication
 
 Branch: `codex/v01c20-edi-value-provenance`.
-Documentation commit and independent GitHub publication verification pending
-until the implementation commit has been pushed; finalize this section before
-owner handoff.
+Initial documentation commit: `0a3a3c723536aa33fea6e29b47ff81102a446ab1`.
+Normal `git push origin HEAD:refs/heads/codex/v01c20-edi-value-provenance`
+succeeded. `git ls-remote --heads origin refs/heads/codex/v01c20-edi-value-provenance`
+returned that exact SHA. Independent GitHub-only readback:
+
+```bash
+git clone --depth 1 --filter=blob:none --no-checkout --single-branch --branch codex/v01c20-edi-value-provenance https://github.com/deluxxxe-dev/MSM2-WallSprint.git /tmp/ws-steering-docs-publication
+git -C /tmp/ws-steering-docs-publication rev-parse HEAD
+git -C /tmp/ws-steering-docs-publication show HEAD:analysis/WALLRUN_STEERING_EXTRACTION_SOURCE_REVIEW_20261030.md
+git -C /tmp/ws-steering-docs-publication show HEAD:docs/CODEX_RESULT.md
+```
+
+Expected: independent head equals the pushed local commit; both remote blobs
+byte-identical to the intended local documents. Actual: all matched (exit0).
+Initial remote document SHA256s, in that order:
+`00c1ffb333977feda3518cefb126c5365c20ac441243fdedbd8765c1004d0729`,
+`00ba86428cd546e9f7ba63bb014523ecfd71c0038b6cf18eb7804e5bea78e55d`.
+These identify the first pushed revision, not the later publication record.
+
+This final documentation follow-up records the completed verification and
+clarifies that the UI-suppressed archive path is expected from public installer
+source, not authenticated from the private toc. After its normal push, refresh
+only the independent temporary checkout with
+`git -C /tmp/ws-steering-docs-publication fetch origin codex/v01c20-edi-value-provenance`
+and compare `FETCH_HEAD`/both document blobs against the final local HEAD/files.
+The final metadata commit SHA is reported in the owner handoff to avoid a
+self-referential hash in this file.
 
 ## NEED
 
