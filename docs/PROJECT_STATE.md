@@ -1,9 +1,39 @@
 # WallSprint project state
 
-## Current stage — c72 accepted; Fast/Slow no visible effect; Slow5 export accepted; bounded WS facing source review complete
+## Current stage — v0.1c38r1 orientation-only reversal implemented; functional tests passed; existing hooks-runner cwd blocker; real-game proof pending
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
+
+## Orientation-only reversal proof — v0.1c38r1 / package0.1.57
+
+Canonical implementation: `analysis/V01C38R1_REVERSAL_HEADING.md`.
+Accepted evidence: `analysis/WALLRUN_REVERSAL_RUNTIME_RESULT_20261030.md`.
+The source-active reversal numerically retained Transform Forward while
+position-difference motion reversed; later source-inactive comparison changed
+Forward. No independent animation/input ownership follows.
+
+The unchanged initial orientation transition is followed by a bounded
+forward/back-only displacement observer: >=100ms/dt<=250ms, tangent speed>=2,
+dot(entry Forward)>=0.8 or <=-0.8, two consecutive new-sign observations >=100ms
+apart. The accepted turn rotates positively about the same wall normal through
+180 degrees over0.25 active seconds, without mid-turn retarget or cumulative
+heading drift. Invalid/gap/stale/session history does not bridge confirmation.
+The thresholds are experimental, not engine constants.
+
+Only the existing coherent A/B orientation basis is published differently;
+Position/W/metadata/scales, all admission and stale/cleanup/timeout guards and
+five-second budget remain. No movement/input/velocity/animation writes, c73,
+new hooks/watches, steering assets or shared infrastructure changes.
+
+Focused math (10 groups), portable (23), Windows build/smoke and real A/B
+fixture checks passed under Wine. The canonical hooks command reaches830 PASS
+then stops at an unchanged c67 runpy relative-path defect (`source/source/tools`).
+Its remaining tests pass when invoked from repository root. This is a separate
+existing runner blocker, not permission to bypass Update-WS validation.
+Automated results/publication are recorded in CODEX_RESULT. Actual r1 game
+response remains UNKNOWN. After the separate canonical-runner blocker is resolved, existing Update-WS.cmd
+remains the owner deployment path; no cloud deployment or new human test prose here.
 
 ## Accepted c72 outcome
 
@@ -112,12 +142,12 @@ is sufficiently resolved; do not repeat it by default.
 The Fast/Slow serial-probe stopping rule now applies. No further steering values,
 c73, reinstall or repeated game test is requested.
 
-## Bounded WS movement/facing source review — 2026-10-30
+## Historical c38 movement/facing source review — 2026-10-30
 
 Canonical source locations and evidence limits:
 `analysis/WALLRUN_MOVEMENT_FACING_SOURCE_REVIEW_20261030.md`.
 
-**VERIFIED-STATIC (current WS source):**
+**VERIFIED-STATIC (c38 source at 28c5fa6, before r1):**
 
 - The reachable orientation path is telemetry `run` -> native-source `tick` ->
   `source_math::Transition`, then existing A/B caller-local source replacements.
@@ -137,12 +167,11 @@ Canonical source locations and evidence limits:
 may separate from displacement handled elsewhere. It does not prove the final
 Transform stayed fixed or explain the visible body/animation.
 
-**Current action:** ChatGPT decides the next evidence question. The exact missing
-fact is whether, during the same active-source reversal, Transform Forward stays
-entry-derived as displacement reverses, or turns while only the visible animation
-keeps its old facing. Override admission/activity at that event is also unproven.
-No runtime/source/tool change, new design, capture request or broad engine scan
-is authorized by this documentation-only review.
+The subsequent `WALLRUN_REVERSAL_RUNTIME_RESULT_20261030.md` resolves the
+numerical Transform-vs-displacement question for the supplied source-active
+reversal. It does not certify animation ownership. The fixed r1 task now
+supersedes this historical no-change handoff; runtime outcome for r1 remains
+pending, with no serial steering changes or c73 authorized.
 
 ## Shared Overstrike recurrence mitigation
 
@@ -166,7 +195,8 @@ This repair does not modify SocialFeed, ordinary MODs, WS runtime code, Profiles
 
 ## Safety
 
-Runtime script remains `v0.1c38`. C52 remains binding:
+Runtime script is `v0.1c38r1` (package0.1.57); only the authorized post-entry
+orientation-source reversal behavior changes. C52 remains binding:
 
 `PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
 

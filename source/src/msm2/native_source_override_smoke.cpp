@@ -444,6 +444,23 @@ int main(){
  prepare({0,0,1});
  auto closed=token;closed.phase=0;msm2::native_source::lifecycleClosed(closed);callA();callB();assert(pathAWrites==0&&pathBWrites==0);
  msm2::native_source::kill("fixture_kill","shutdown");callA();callB();assert(!ws_native_source_enabled&&pathAWrites==0&&pathBWrites==0);
+ // Owned clock/observation seams exercise the real publication and MinHook A/B stores.
+ prepare({0,0,1});assert(state.heading.ready);state.heading.observationMs=double(GetTickCount64())-110;
+ fakeHero.position[0]-=.5f;workerTick();assert(state.heading.pendingCount==1&&!state.heading.turning);
+ state.heading.observationMs=double(GetTickCount64())-110;state.heading.pendingMs=double(GetTickCount64())-110;
+ fakeHero.position[0]-=.5f;workerTick();assert(state.heading.turning);
+ state.headingClock=state.heading.turnStart+125;state.headingWallMs=0;workerTick();
+ Published headingMid{};assert(publication.read(headingMid)&&headingMid.active);assert(ws::dot(headingMid.basis.up,ws::Vec3{0,0,1})>.9999f);
+ callA();callB();for(unsigned i=0;i<3;++i){ws::Vec3 v=i==0?headingMid.basis.right:i==1?headingMid.basis.up:headingMid.basis.forward;
+  assert(std::abs(ws_test_source_received[4*i]-v.x)<.0001f&&std::abs(ws_test_source_received[4*i+1]-v.y)<.0001f&&std::abs(ws_test_source_received[4*i+2]-v.z)<.0001f);
+  assert(std::abs(ws_test_copy_received[3*i]-v.x)<.0001f&&std::abs(ws_test_copy_received[3*i+1]-v.y)<.0001f&&std::abs(ws_test_copy_received[3*i+2]-v.z)<.0001f);}
+ auto frozenClock=state.headingClock;waitMs(120);workerTick(false);assert(state.headingWallMs==0);fakeHero.position[0]+=100;workerTick();
+ assert(state.headingClock==frozenClock&&!state.heading.havePosition&&state.heading.turning);
+ state.headingClock=state.heading.turnStart+250;state.headingWallMs=0;workerTick();Published headingEnd{};assert(publication.read(headingEnd));
+ assert(ws::dot(headingEnd.basis.forward,state.heading.f0)<-.99999f&&!state.heading.turning);callA();callB();
+ assert(!std::memcmp(ws_test_source_received+12,vanilla.v+12,16));
+ ws::native_source::event(3,owner);context.wallRunActive=false;workerTick(false);
+ puts("PASS: r1 confirmed reversal publishes one coherent midpoint/final basis through real A/B stores, preserves Position/W and compact metadata, freezes turn and clears displacement across stale resume, closes on Deinit");
  assert(MH_DisableHook(reinterpret_cast<void*>(&ws_test_copy_writer))==MH_OK);assert(MH_RemoveHook(reinterpret_cast<void*>(&ws_test_copy_writer))==MH_OK);assert(MH_DisableHook(reinterpret_cast<void*>(&ws_test_native_source_writer))==MH_OK);assert(MH_RemoveHook(reinterpret_cast<void*>(&ws_test_native_source_writer))==MH_OK);assert(MH_Uninitialize()==MH_OK);assert(VirtualFree(mem,0,MEM_RELEASE));
  auto f=std::fopen("logs/windows_native_source_synthetic.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);
  puts("PASS: lock-free coherent A/B shared basis, A exact stack source, B compact36-only scale/metadata preservation, contended worker lock cannot reject hooks, A/E retention, identity/thread/lifecycle/auth/kill/degenerate gates; independent MinHook fixtures only");

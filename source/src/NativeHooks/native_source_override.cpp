@@ -17,6 +17,7 @@
 #include "NativeHooks/path_a_position_proof.hpp"
 #include "Math/planar_standoff.hpp"
 #include "Math/movement_delta.hpp"
+#include "Math/reversal_heading.hpp"
 namespace {
 using ws::Vec3;using ws::source_math::Matrix;using ws::native_source::Token;using msm2::writeLog;
 constexpr std::uintptr_t callReturn=0x2cfc8f3,callBegin=0x2cfc850;constexpr unsigned callSize=168,capacity=1024;
@@ -60,6 +61,7 @@ struct Shared {
  std::uint64_t permissionEpoch{},acceptedEpoch{},staleStart{},staleUpdate{},staleAge{},maxStaleMs{},handledStaleUpdate{};
  double pausedTransitionMs{},frozenTransitionMs{};
  bool positionRequested{};unsigned movementSamples{},movementEmitted{};std::uint64_t movementMs{},movementUpdate{};Vec3 movementPosition{};
+ ws::heading::Reversal heading;double headingClock{};std::uint64_t headingWallMs{};unsigned headingLogs{};
  Adhesion adhesion{};
 } state;
 struct Record {
@@ -136,6 +138,7 @@ void adhesionSummary(const char* reason){
 }
 void latchCause(const char*,const char*,const ws::observed::VerifiedWallContext* =nullptr) noexcept;
 void end(const char* reason,std::uint64_t now){
+ state.heading.clearObservation();state.headingWallMs=0;
  if(state.entered&&state.transition.active&&std::strcmp(reason,"verified_native_Deinit")&&std::strcmp(reason,"new_native_session"))latchCause(reason,"worker");
  if(state.ownership==Ownership::StaleSuspended&&now>=state.staleStart)state.maxStaleMs=std::max(state.maxStaleMs,now-state.staleStart);
  if(state.transition.active)adhesionSummary(reason);
@@ -254,6 +257,7 @@ bool suspendStale(const Token& t,std::uint64_t detected){
  state.staleAge=detected>=t.updateMs?detected-t.updateMs:0;
  state.frozenTransitionMs=state.transition.entryMs+double(state.lastT)*config.rotateTime*1000.;
  state.movementMs=0; // Diagnostic finite differences never bridge a stale lease.
+ state.heading.clearObservation();state.headingWallMs=0; // Freeze at the last published heading clock.
  state.firstHeld=0;state.heldUpdates=0;state.lastObserveMs=0;
  if(state.staleSuspends<=16)writeLog("NATIVE_SOURCE_STALE_SUSPEND session=%llu elapsed=%.6f update_age_ms=%llu last_native_update=%u last_native_update_ms=%llu owner=0x%llx generation=%llu thread=%u actor_up_dot_surface=%.9g actor_observation_valid=%u t=%.6f episode=%u",
   (unsigned long long)state.session,state.elapsed,(unsigned long long)state.staleAge,t.updates,(unsigned long long)t.updateMs,(unsigned long long)state.owner,(unsigned long long)state.generation,state.expectedThread,state.lastActorDot,unsigned(state.lastActorValid),state.lastT,state.staleSuspends);
@@ -459,6 +463,19 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
   else if(state.transition.sample(incoming,n,double(now)-state.pausedTransitionMs,config.rotateTime,sampled,t)){p.active=true;p.t=t;p.surface=state.transition.surface;p.basis=ws::diag::actorAxes(sampled.v);state.currentBasis=sampled;state.lastT=t;lifecycleOpen=true;}
   else {end("invalid_owned_surface_or_transition",now);}
  }
+ if(p.active&&p.t>=1){
+  if(!state.heading.ready&&!state.heading.enter(state.transition.target)){end("invalid_reversal_entry_basis",now);p.active=false;}
+  if(p.active){
+   if(state.headingWallMs&&now>=state.headingWallMs)state.headingClock+=double(now-state.headingWallMs);
+   state.headingWallMs=now;
+   auto heading=state.heading.sample({s.position[0],s.position[1],s.position[2]},token.updates,double(now),state.headingClock);
+   if(!heading.basis.valid){end("invalid_reversal_heading",now);p.active=false;}
+   else {p.basis=heading.basis;
+    if(state.headingLogs<64&&std::strcmp(heading.event,"hold")!=0){++state.headingLogs;writeLog("REVERSAL_HEADING session=%llu native_update=%u ms=%llu clock_ms=%.3f event=%s delta_estimate=(%.9g,%.9g,%.9g) tangent_speed_estimate=%.9g candidate_sign=%d accepted_sign=%d target_forward=(%.9g,%.9g,%.9g) published_forward=(%.9g,%.9g,%.9g) reason=bounded_displacement_following_not_input_intent Position_writes=0",(unsigned long long)p.session,token.updates,(unsigned long long)now,state.headingClock,heading.event,heading.delta.x,heading.delta.y,heading.delta.z,heading.speed,heading.candidate,heading.accepted,heading.target.x,heading.target.y,heading.target.z,p.basis.forward.x,p.basis.forward.y,p.basis.forward.z);}
+   }
+  }
+ }
+
  // A synchronous native close racing this worker must win. Its epoch cannot
  // be adopted for a token acquired before the close, even on first entry.
  if(killed.load()||lifecycleEpoch.load()!=epoch){publishInactive();isActive=false;stateLock.clear(std::memory_order_release);return;}

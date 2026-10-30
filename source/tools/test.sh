@@ -31,3 +31,5 @@ g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -
 ./build/planar_standoff_smoke | tee logs/planar_standoff_tests.log
 g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -Iinclude src/movement_delta_tests.cpp -o build/movement_delta_tests
 ./build/movement_delta_tests | tee logs/movement_delta_tests.log
+
+bash tools/test_reversal_heading.sh

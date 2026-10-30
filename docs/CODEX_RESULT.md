@@ -1,152 +1,166 @@
-# Codex result — bounded WS movement/facing source review
+# Codex result — v0.1c38r1 orientation-only reversal proof
 
 2026-10-30 JST. Branch `codex/v01c20-edi-value-provenance`.
-Task/source baseline: `28c5fa6721818e3c5c8e3bdc7c190db7de7c85b3`.
+Baseline: 97a11291ca847ba4f28ce2553c03ae8983328dcb.
 
 ## STATUS
 
-**success** — completed the requested read-only source review and stale-state
-correction. This is not a runtime explanation/certification of visible facing.
+**partial** — fixed orientation-only design implemented and functional checks
+passed. Canonical full hooks command is blocked by an unchanged pre-existing
+c67 test-runner working-directory defect. No scope expansion to fix that defect;
+no recommendation to deploy through a failing Update-WS pipeline.
 
 ## CHANGED
 
-- `analysis/WALLRUN_MOVEMENT_FACING_SOURCE_REVIEW_20261030.md`
-- `docs/PROJECT_STATE.md`
-- `docs/CODEX_RESULT.md`
-
-CODEX_NEXT, all source/tools/configs and historical evidence remain unchanged.
-No other repository modified. Five pre-existing untracked archives/bundle remain
-untouched and excluded. No main merge, reset or force push.
+- `source/include/Math/reversal_heading.hpp`: isolated pure post-entry heading state/math.
+- `source/src/NativeHooks/native_source_override.cpp`: private heading state/tick,
+  observation reset at existing stale/end boundaries, <=64 heading events/session.
+- `source/src/reversal_heading_tests.cpp`, `source/tools/test_reversal_heading.sh`,
+  `source/tools/test.sh`: 10 focused sanitizer groups in the portable chain.
+- `source/src/msm2/native_source_override_smoke.cpp`: owned-clock/displacement
+  A/B publication/store/stale/Deinit case in existing standalone MinHook fixture.
+- `source/include/version.hpp`, `source/mod/info.json`, `source/README_TEST.md`:
+  runtime **v0.1c38r1**, package **0.1.57**, accurate bounded-experiment metadata.
+- `analysis/V01C38R1_REVERSAL_HEADING.md`, `docs/PROJECT_STATE.md`, this result.
+- Generated `BUILD_MANIFEST.json`, `MSM2-WS-v0.1c38r1.script.disabled`,
+  `MSM2-WS-v0.1c38r1.zip`, `MSM2-WS-v0.1c38r1-source.zip`:
+  mechanically validated experimental outputs, not full-pipeline acceptance.
 
 ## RESULT
 
-Accepted the task's ChatGPT-inspected second export as **VERIFIED-STATIC
-(supplied export)**: 544 bytes, SHA256
-`d83095b5e68cc6fa20c95bc044345f7f46fd6c0a35a682df25374b140dfcec2d`, exactly
-one vanilla byte changed (0x219,75->5); Fast remains100. No new cloud hash of the
-private file is claimed. Workflow evidence supports later installed replacement
-but does not certify the earlier game session. Slow5's owner-observed no visible
-change remains narrow; runtime Standard/Slow consumption and isolation remain
-unproven. Do not repeat extraction or serial steering probes by default.
+Entry Transition is byte-unchanged. After entry reaches t=1, separate bounded
+observation uses distinct fresh native updates and validated Hero position:
+>=100ms, dt<=250ms, wall-tangent speed>=2, dot(normalized tangent,f0)>=0.8 or
+<=-0.8, and two consecutive NEW-sign observations spanning>=100ms. Thresholds
+are experimental. Slow/ambiguous/same-sign samples clear pending confirmation;
+invalid/gap/stale/end/session history cannot bridge evidence. No use of incoming
+source Forward as vanilla intent.
 
-The current reachable orientation path is `telemetry.cpp:run` ->
-`native_source_override.cpp:tick` -> `Math/source_orientation.hpp:Transition`.
-Entry Transform Forward projected onto the wall determines a saved target;
-Up is the surface normal, Right is rebuilt, Forward re-orthogonalized. Sampling
-interpolates entry-to-target, then keeps this entry-derived basis during the
-same active transition. Displacement reversal supplies no argument/branch to
-this calculation and does not negate Forward/Right or rebuild the target.
+An accepted reversal completes a deterministic positive 180-degree turn about
+the SAME stored normal in0.25 active seconds, with no mid-turn retargeting.
+Right/Forward are rebuilt and proper rotation validated; Up remains the normal.
+Final input to the basis rebuild is exact f0/-f0, avoiding cumulative drift.
+A private post-entry active clock freezes at existing stale boundaries rather
+than reusing the entry clock's clamped t=1 rebasing. It does not extend the
+five-second real source budget or renew permission. Completion rebases motion.
 
-Existing Path A `capturePath`/`writeStackOrientation` and Path B
-`captureCopy`/`compactReplacement`/`writeStackCompact` substitute all orientation
-axes from that published basis, not just Up. Path A preserves the Position/W
-row; B preserves row scales/metadata. They do not select movement direction.
-The legacy Actor writer is hard disabled. Direction-aware `ws::Controller`
-and `ws::planar::Controller` exist as helpers instantiated in tests, not this
-runtime call path. No input/movement rewrite or new ownership is inferred.
+Only the existing Published basis changes. A/B readers, source stores and their
+coherent-publication, ownership/current-code/thread/lifecycle/freshness gates
+are unchanged. Position/W, compact scales/metadata preserved. Existing F8,
+normal/identity failures, synchronous close and five-second end remain binding.
+C52 `PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL` unchanged. No Position,
+input/velocity, animation/camera, adhesion, config-asset, new hook/watch/VEH/VCH,
+producer, c73, shared launcher/loader/SF/other-repository changes.
 
-Existing logs separate read-only displacement/finite-difference velocity from
-sampled Transform Forward when corresponding valid records exist. Path A source
-Forward is not actual final-Actor readback. Retention checks Up only. Sampling
-is bounded/conditional, not an atomic reversal measurement. No independent
-visible-animation facing channel or numeric three-way comparison was found in
-the inspected paths. Thus entry-heading retention is a **hypothesis relevant
-to the symptom**, not a proven cause of the visible animation mismatch.
+## Validation — exact commands, expectation, actual outcome
 
-PROJECT_STATE now closes Slow5-pending/serial steering testing, records accepted
-export limits, and makes the bounded source result and remaining fact explicit.
-Full source file/function/line references and diagnostic limits are in analysis.
+All commands run from `/workspace/WallSprint` with
+`export PATH=/workspace/toolchains/analysis-python/bin:$PATH`, except the explicit
+cwd reproduction. Wine execution is not native Windows/game verification.
+PASS counts below are emitted per-command records, not unique summed test cases;
+the focused10 groups are deliberately also included in portable23.
 
-## Validation — exact procedures and expected/actual results
-
-Commands ran in `/workspace/WallSprint`, except the explicit read-only Wisdoms
-reference. These are source/documentation checks, not executed gameplay tests.
-
-| Procedure / exact command | Expected | Actual |
+| Exact command | Expected | Actual |
 | --- | --- | --- |
-| `git branch --show-current`; `git fetch origin codex/v01c20-edi-value-provenance`; `git merge --ff-only origin/codex/v01c20-edi-value-provenance`; `git rev-parse HEAD` | Correct branch/current bounded task; no main merge | Expected branch; ff-only to `28c5fa6721818e3c5c8e3bdc7c190db7de7c85b3`. AGENTS, operational manual/rules/layout/state/task, Fast A/B and extraction review read. Relevant Wisdoms reference read only. PASS |
-| `nl -ba source/src/msm2/telemetry.cpp \| sed -n '66,172p'`; `nl -ba source/src/NativeHooks/native_source_override.cpp \| sed -n '395,535p'`; `nl -ba source/include/Math/source_orientation.hpp` | Identify reachable direction/orientation data flow and reversal dependency | Worker native-source tick publishes saved-entry-derived interpolated basis, without movement direction/input in target calculation. Admission and active-window limits preserved. PASS |
-| `nl -ba source/src/NativeHooks/native_source_override.cpp \| sed -n '550,607p'`; `nl -ba source/include/Math/compact_basis.hpp`; `nl -ba source/src/GameInterop/stack_source.cpp \| sed -n '1,110p'`; `nl -ba source/src/msm2/orientation_source.cpp \| sed -n '84,98p'`; `nl -ba source/src/NativeHooks/reset_copy_source.cpp \| sed -n '55,76p'` | Verify immediate source-write callers and preserved bytes/axes | A/B source-only stores use shared basis; Position/W or compact scales/metadata preserved; no reversal selector. PASS |
-| `rg -n 'ws::Controller\|planar::Controller\|ws::Host' source --glob '*.{cpp,hpp,c,h}' --glob '!vendor/**'`; `nl -ba source/include/planar_mvp.hpp \| sed -n '25,84p'`; `nl -ba source/include/wallsprint.hpp \| sed -n '44,58p'`; `cat source/src/msm2/actor_writer.cpp`; `rg -n 'telemetry\|planar\|actor_writer\|native_source_override\|cpp\|src/' source/tools/build_windows.sh` | Distinguish helper direction-selection code from current runtime | Instantiations found only in core/planar tests; runtime link/call path agrees; Actor writer disabled. Presence of legacy INI parsing does not activate it. PASS |
-| `nl -ba source/src/NativeHooks/native_source_override.cpp \| sed -n '620,695p'`; same file `sed -n '250,335p'`; `nl -ba source/src/msm2/orientation_log.cpp \| sed -n '1,145p'`; `nl -ba source/src/msm2/sdk_bridge.cpp \| sed -n '18,49p'`; `nl -ba source/include/diagnostics.hpp \| sed -n '33,60p'`; `nl -ba source/include/Math/movement_delta.hpp \| sed -n '1,75p'` | Determine actual log quantities, origins and gaps | Displacement versus Transform Forward available conditionally; source basis != final readback; Up-only retention; no independent animation-facing channel in inspected paths. PASS |
-| Source-reference/documentation scope audit (Python below); `git diff --name-only 28c5fa6721818e3c5c8e3bdc7c190db7de7c85b3`; `git status --short` | Existing line references valid; exactly three allowed documentation paths; stale Slow5-pending text gone | Verified against unchanged source and scope before staging/commit. PASS |
-| `git diff --check`; `git diff --cached --check` | Whitespace clean | Exit0. PASS |
-| Publication verification below | Pushed branch SHA and independently fetched documentation equal local | Pushed `b774b76`; independent remote head and all three document blobs match. PASS |
+| `bash source/tools/test_reversal_heading.sh` | exit0; owned fixture groups pass | exit0; PASS 10, SKIP 0, UNAVAILABLE 0 |
+| `bash source/tools/build_windows.sh` | exit0; MinGW/Clang Windows DLL builds with warnings as errors | exit0; PASS 0, SKIP 0, UNAVAILABLE 0 |
+| `bash source/tools/test.sh` | exit0; owned fixture groups pass | exit0; PASS 23, SKIP 0, UNAVAILABLE 0 |
+| `bash source/tools/smoke_windows.sh` | exit0; owned fixture groups pass | exit0; PASS 7, SKIP 0, UNAVAILABLE 0 |
+| `bash source/tools/test_hooks_windows.sh` | exit0; owned fixture groups pass | exit1; PASS 830, SKIP 5, UNAVAILABLE 17; FAIL: unchanged c67 cwd defect, described below |
+| `python3 source/tools/test_slot_publication_post_c67_boundary_fix.py` | exit0; owned fixture groups pass | exit0; PASS 14, SKIP 0, UNAVAILABLE 0 |
+| `python3 source/tools/test_slot_publication_post_c67_boundary_fix2_quick.py` | exit0; owned fixture groups pass | exit0; PASS 1, SKIP 0, UNAVAILABLE 0 |
+| `python3 source/tools/test_slot_publication_post_c69_stitched.py` | exit0; owned fixture groups pass | exit0; PASS 22, SKIP 0, UNAVAILABLE 0 |
+| `python3 source/tools/test_slot_publication_post_c69_boundary.py` | exit0; owned fixture groups pass | exit0; PASS 28, SKIP 0, UNAVAILABLE 0 |
+| `python source/tools/release.py` | exit0; package/import/export/version/CRC checks; distinct r1 artifacts | exit0; PASS 1, SKIP 0, UNAVAILABLE 0 |
 
-**PASS 8 audit groups / SKIP 1 suite group / UNAVAILABLE 1 evidence group / BLOCKED 0.**
-No unit/native/game test executions. The exact function-start references were
-also checked with `nl -ba source/src/NativeHooks/native_source_override.cpp | sed -n '386,399p'`
-and `nl -ba source/include/Math/source_orientation.hpp | sed -n '16,36p'`: `tick` starts at392, `sample` at27.
-Exact source-reference audit command executed before commit:
+### Two distinct failures, retained and explained
+
+1. Initial hooks attempt: exit5 after16 PASS/3 optional SKIP. The new owned
+   reversal fixture case was initially placed **after** fixture hook/memory
+   teardown, causing a Wine access violation in prepare. Moved that new case
+   before teardown; no production change was needed. Re-ran the full hooks
+   command because the fixture changed and the remaining chain had not run.
+   The corrected r1 case passes real owned MinHook A/B stores, coherent midpoint/
+   final basis, Position/W/metadata preservation and stale freeze/resume/Deinit.
+2. Corrected canonical hooks run: **830 PASS / 5 SKIP / 17 UNAVAILABLE, then exit1**.
+   `test_hooks_windows.sh` changes cwd to `source`; unchanged
+   `tools/test_slot_publication_post_c67_boundary_fix.py:11` uses
+   `runpy.run_path('source/tools/test_slot_publication_post_c67_boundary.py', ...)`.
+   It therefore opens nonexistent `source/source/tools/...`. These two files
+   have no diff from task baseline. Exact independent reproduction:
+
+   ```bash
+   (cd source && python3 tools/test_slot_publication_post_c67_boundary_fix.py)
+   ```
+
+   Actual: exit1, FileNotFoundError at that path. Root invocation passes14 groups;
+   all remaining tail commands in the table pass separately. This does **not**
+   change the canonical command to PASS or bypass the updater gate. Per current
+   task, the unrelated existing runner is not modified.
+
+### Coverage / unavailable / unrun
+
+Focused10 groups: unchanged entry/Position/W, straight hold, confirmed reversal,
+finite proper-rotation midpoint/Up and final sign, slow/oblique/normal-only hold,
+distinct updates and cleared ambiguity, >250ms gap, stale pause and completion
+rebase, repeated turns/no retarget or drift, invalid data and fresh-session reset,
+compact scale/metadata contract. Full native fixture retains prior identity,
+normal, collision, lifecycle, stale/cleanup/timeout/F8 and dual-source regressions.
+New reversal case is the standalone fixture only; the existing real-position-watch
+integration regression also passes, but does not itself exercise a turn.
+
+- SKIP5: existing optional private original-byte/native-body/installer/writer-
+  normalization/accepted-build capture replays absent; owned negatives and
+  synthetic decoder/native fixtures ran. No required r1 test was silently skipped.
+- UNAVAILABLE17: retained Wine VCH evidence (c40 reset/Position2, c49 bridge6,
+  c50 identity7, c51 post-return2). Never promoted to native PASS.
+- UNAVAILABLE1 additional evidence group: actual native Windows/game r1 behavior,
+  visual facing response and engine/animation ownership. Cloud has no owner game.
+- BLOCKED1 integration gate: canonical full hooks cwd defect above. No code/design
+  subtask was substituted. Tail checks and package commands were run explicitly.
+
+No further test reruns are needed after publication-record-only documentation
+changes; release/package is regenerated for final documentation and CRC checked.
+No game, local deployment, reinstall, new native probe or human test requested.
+
+## Scope/package checks
+
+`git diff --check` and `git diff --cached --check`: exit0. Scope/package
+audit: unchanged entry math and A/B store/capture bodies confirmed, all three
+artifact CRCs pass; source ZIP helper/tests equal checkout bytes; script internal
+version is0.1.57. Exact additional package check:
 
 ```bash
-python3 - <<'PY_AUDIT'
+python3 - <<'PY_PACKAGE'
 from pathlib import Path
-import re, subprocess
-base = '28c5fa6721818e3c5c8e3bdc7c190db7de7c85b3'
-report = Path('analysis/WALLRUN_MOVEMENT_FACING_SOURCE_REVIEW_20261030.md')
-refs = re.findall(r'(source/[A-Za-z0-9_./-]+):(\d+)', report.read_text())
-assert refs
-for name, line in refs:
-    assert 1 <= int(line) <= len(Path(name).read_text().splitlines()), (name, line)
-assert not subprocess.check_output(['git','diff',base,'--','source','environment','AGENTS.md','docs/CODEX_NEXT.md'])
-state = Path('docs/PROJECT_STATE.md').read_text()
-assert '## Next minimal steering discrimination' not in state
-assert 'd83095b5e68cc6fa20c95bc044345f7f46fd6c0a35a682df25374b140dfcec2d' in state
-print('PASS: source references, unchanged code/task and closed Slow5-pending state')
-PY_AUDIT
+import zipfile, json
+for name in ['MSM2-WS-v0.1c38r1.zip','MSM2-WS-v0.1c38r1-source.zip','MSM2-WS-v0.1c38r1.script.disabled']:
+    with zipfile.ZipFile(name) as z:
+        assert z.testzip() is None
+        if name.endswith('-source.zip'):
+            for suffix in ['include/Math/reversal_heading.hpp','src/reversal_heading_tests.cpp','tools/test_reversal_heading.sh']:
+                member = next(x for x in z.namelist() if x.endswith(suffix))
+                assert z.read(member) == (Path('source') / suffix).read_bytes()
+        if name.endswith('.script.disabled'):
+            assert json.loads(z.read('info.json'))['version'] == '0.1.57'
+PY_PACKAGE
 ```
-
-### Not executed / unavailable
-
-- **SKIP (one suite group):** no build, portable/smoke/hooks tests, steering
-  builder tests or packaging. Current task explicitly requires source/diff
-  review only, and no code is changed. No runtime rebuild/artifact generated.
-- **UNAVAILABLE (one evidence group):** event-aligned displacement, final Hero
-  Transform Forward and independent visible-facing relation for the observed
-  active-source reversal. No new private runtime record/animation measurement
-  was supplied. Schema/source availability is not event evidence. No new capture
-  or game run is requested to fill it in this task.
-- **BLOCKED 0:** no authorized subtask left unimplemented; the missing runtime
-  fact is reported as the bounded handoff, not replaced with guessed semantics.
-
-## Safety / next action
-
-Runtime v0.1c38 unchanged. Existing C52
-`PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL` and all proof/write gates remain
-binding. No config changes, hooks/watches, instrumentation, new design,
-engine/binary/CFG scan, c73, build/deploy/reinstall, game/toc/loader/profile changes,
-SF work or other-repository changes. No new package or private asset/log committed.
-
-ChatGPT decides how to resolve only this exact fact: in the same observed
-reversal, was the existing override admitted/active, and did Transform Forward
-stay entry-derived as displacement reversed, or turn while visible animation
-kept its old facing? This review does not explain the engine/animation layer.
-No owner runtime operation is requested.
+ Review confirms shared
+`Math/source_orientation.hpp`, all A/B capture/store bodies, reset_trace/hardware/
+VEH/VCH code and existing canonical hooks/c67 wrapper are unchanged. Version
+parser in workspace.py accepts alphanumeric suffix r1. ZIP/script CRC, internal
+version0.1.57, r1 DLL strings, and inclusion of helper/tests checked; source/archive
+bytes are compared again with independent GitHub readback after publication.
+Package validation proves mechanics, not full updater acceptance or real-game effect.
 
 ## Branch / publication
 
-Branch `codex/v01c20-edi-value-provenance`.
-Initial source-review documentation commit:
-`b774b76aeb3135bc2ff92c9b280c27396a4fd0f2`.
-Normal `git push origin HEAD:refs/heads/codex/v01c20-edi-value-provenance`
-succeeded. `git ls-remote --heads origin refs/heads/codex/v01c20-edi-value-provenance`
-returned exactly that SHA. In the independent GitHub clone from the prior task:
+Branch `codex/v01c20-edi-value-provenance`. Implementation SHA/push verification
+will be filled after the implementation commit and independent GitHub readback.
 
-```bash
-git -C /tmp/ws-steering-docs-publication fetch origin codex/v01c20-edi-value-provenance
-git -C /tmp/ws-steering-docs-publication rev-parse FETCH_HEAD
-git -C /tmp/ws-steering-docs-publication show FETCH_HEAD:analysis/WALLRUN_MOVEMENT_FACING_SOURCE_REVIEW_20261030.md
-git -C /tmp/ws-steering-docs-publication show FETCH_HEAD:docs/PROJECT_STATE.md
-git -C /tmp/ws-steering-docs-publication show FETCH_HEAD:docs/CODEX_RESULT.md
-```
+## NEED
 
-Expected: independently fetched GitHub head equals the pushed local commit;
-all three document blobs equal intended local bytes. Actual: all equal, exit0.
-No local working-tree contents were used as the remote blob source.
-
-This documentation follow-up records the verified publication and corrects two
-function-start line references (`tick`:392, `sample`:27); no code changes.
-After normal push, repeat the same remote-content comparison against final
-local HEAD/files. Final record commit SHA is in the owner handoff (this file
-cannot contain its own hash).
+Chat-side decision only: authorize a separate bounded repair of the pre-existing
+c67 test-runner cwd defect before declaring the canonical Update-WS pipeline ready.
+No alternate movement design is needed; no owner deployment is requested while
+that required command fails. Actual r1 gameplay proof remains pending thereafter.

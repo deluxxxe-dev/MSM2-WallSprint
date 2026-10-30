@@ -1,3 +1,11 @@
+# WallSprint v0.1c38r1 — orientation-only reversal proof
+
+Package **0.1.57**. After entry interpolation, two consecutive eligible position-difference observations confirm a forward/back reversal along the entry wall-tangent heading. Orientation turns by a positive 180 degrees about the existing wall normal over 0.25 pause-aware seconds. Existing A/B source publication, Position/W preservation, compact scales/metadata, admission, F8 and five-second budget remain unchanged. This is a displacement-following experiment, not input intent, physics velocity, movement ownership or animation control. Real-game reversal outcome remains unverified for r1.
+
+Focused validation: `bash source/tools/test_reversal_heading.sh` from the full repository root. Existing native source fixtures verify coherent A/B midpoint/final basis and stale recovery.
+
+The following c38 offline-scanner notes are historical, not a new owner action for r1.
+
 # WallSprint v0.1c38 — 正確なレジスタ由来アドレスの静的候補調査
 
 Package **0.1.56**。c37の実EXE調査では直接参照0件・未解決1279672件でした。今回はLEAで作った正確な画像内アドレスと64bitコピー、符号付き変位だけを限定追跡します。ロードした値・部分書込み・未対応演算・制御境界を越えたアドレス推定はしません。新しい候補もwriter完全性・割当・寿命・所有権の証明ではなく、既存の解析停止を保持します。
