@@ -1,5 +1,11 @@
 # WallSprint project state
 
+## Current owner correction — 2026-10-31 JST
+
+Supersedes duration-only acceptance/task wording below: owner requests earlier reversal START, not faster turn/animation. Approx1.1s is requested adjustment, not measured latency. r3 video/log supplied; visible lag remains owner-reported. No further duration tuning is authorized. Current CODEX_NEXT requests bounded source review and only necessary existing-value diagnostics; no behavior/timer change.
+Supplied r3 log session1 exits override at17:10:57.972Z with bounded_test_window_5seconds, native Deinit at17:11:00.241Z. Source override and native WallRun persistence differ; matching video release to those events remains UNKNOWN. Preserve5s bound until separately reviewed.
+
+
 ## Roadmap / current handoff — 2026-10-31 JST
 
 Overall scope and order are reconciled in `docs/FEATURE_ROADMAP.md`.
