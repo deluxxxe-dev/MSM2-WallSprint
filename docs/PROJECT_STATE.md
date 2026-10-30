@@ -1,5 +1,15 @@
 # WallSprint project state
 
+## Roadmap / current handoff — 2026-10-31 JST
+
+Overall scope and order are reconciled in `docs/FEATURE_ROADMAP.md`.
+Current tooling task: retire probes (`docs/CODEX_NEXT.md`).
+Queued runtime task: r3 turn-duration-only120ms experiment (`docs/CODEX_TURN_SPEED.md`), not yet accepted in game.
+R2 supplied runtime now confirms reversals with remaining visible lag; six completed logged candidate-to-completion intervals approximately302–322ms. This supersedes earlier r2-runtime-UNKNOWN notes below; it is not input/animation latency.
+After facing acceptance: flat-wall sideways movement proof, then four-way/diagonal movement and stop/contact/lifecycle foundation; camera only afterward. See `docs/AFTER_TURN_PLAN.md` for the staged handoff and proof boundaries. This is planning, not movement-write authorization.
+Current five-second bound, C52 and every existing native safety gate remain.
+
+
 ## Current stage — r2 equal-timestamp correction and33ms observation implemented; canonical validation passed (895 PASS /5 SKIP /17 UNAVAILABLE)
 
 Branch: `codex/v01c20-edi-value-provenance`.
