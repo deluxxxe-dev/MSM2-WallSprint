@@ -101,7 +101,21 @@ or rename the game loaders to get past validation.
 Runtime v0.1c38r1/package0.1.57 unchanged. Runtime DLL and disabled script were
 compared byte-for-byte with the baseline Git script payload, with source/include/
 mod and native hooks/launcher helper diff checked empty. All three distribution
-ZIP CRC checks pass. Normal branch commit/push and independent GitHub readback
-are finalized after checks. No claim of real-PC
+ZIP CRC checks pass. Implementation commit `68a0e10f89a1fac94f81067a68610a4d4a2f18e2` was normally
+pushed. Independent GitHub fetch into `/tmp/ws-steering-docs-publication` verified
+the remote head and all18 changed source/docs/metadata/ZIP blobs byte-identical.
+Packaged environment checker and workspace checker were additionally compared
+with the checkout. Exact publication procedure:
+
+```bash
+git -C /tmp/ws-steering-docs-publication fetch origin codex/v01c20-edi-value-provenance
+git -C /tmp/ws-steering-docs-publication rev-parse FETCH_HEAD
+git diff --name-only 1a1bce2 HEAD
+```
+
+For every changed path, read `git -C /tmp/ws-steering-docs-publication show FETCH_HEAD:<path>`
+and compare local bytes. Actual all18 matched, exit0. This final record-only
+follow-up refreshes packaged documentation and receives the same verification.
+Final record SHA is in handoff to avoid a self-referential hash here. No claim of real-PC
 updater/game success. Bootstrap above is the only required one-time checker
 refresh; no new gameplay design or repeated-install loop.
