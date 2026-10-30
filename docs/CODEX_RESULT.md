@@ -97,3 +97,11 @@ Git; prior ZIP documentation is historical and intentionally not regenerated.
 
 Normal commit/push, then independent remote fetch/head and changed-blob comparison;
 actual commit recorded below. No legacy untracked archive/bundle staged or removed.
+
+Review commit `0aeb9f6f9945ee8d4dbed5a04bf49da230722df1` pushed normally:
+08028ff->0aeb9f6. `python3 /tmp/ws-start-publication.py` exit0: independent
+GitHub fetch in /tmp/ws-steering-docs-publication, FETCH_HEAD/ls-remote/local HEAD
+match; all3 changed blobs from08028ff equal local files. The script fetches the
+named development branch and compares `git show FETCH_HEAD:<path>` bytes for each
+`git diff --name-only 08028ff HEAD` path. Same verification repeated after this
+record-only commit. Final SHA in chat avoids self-reference. No rebuild/repackage.
