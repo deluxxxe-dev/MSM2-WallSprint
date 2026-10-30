@@ -1,11 +1,13 @@
 """Fail-closed WS-only Windows migration/update; platform-neutral core is fixture-tested."""
 from pathlib import Path
+import retired_probes
 import argparse,hashlib,json,os,re,shutil,stat,subprocess,sys,zipfile
 REMOTE='https://github.com/deluxxxe-dev/MSM2-WallSprint.git'
 WS_NAME='MSM2-WS'
 ACTIVE=re.compile(r'MSM2-WS-v[0-9A-Za-z.]+\.script\Z')
 ARCHIVE_SUFFIXES={'.zip','.rar','.7z'}
-SOURCE_PATTERNS=('/*','!*.[zZ][iI][pP]','!*.[rR][aA][rR]','!*.7[zZ]')
+LEGACY_SOURCE_PATTERNS=('/*','!*.[zZ][iI][pP]','!*.[rR][aA][rR]','!*.7[zZ]')
+SOURCE_PATTERNS=LEGACY_SOURCE_PATTERNS+('!*.[sS][tT][aA][gG][eE]',)
 class WorkspaceError(RuntimeError):pass
 
 def require(condition,message):
@@ -41,7 +43,7 @@ def prepare_source_checkout(source):
  # Git owns these clean tracked files; keep their bytes/history in Git and
  # exclude archives from the scanned working tree, without legacy links.
  require(not git(source,'status','--porcelain'),'Preserve local work before configuring the source checkout')
- require(source_patterns(source) in (None,SOURCE_PATTERNS),'Custom sparse checkout refused; preserve its configuration before migrating')
+ require(source_patterns(source) in (None,LEGACY_SOURCE_PATTERNS,SOURCE_PATTERNS),'Custom sparse checkout refused; preserve its configuration before migrating')
  git(source,'sparse-checkout','set','--no-cone',*SOURCE_PATTERNS)
  require(source_patterns(source)==SOURCE_PATTERNS,'Archive-excluding source checkout configuration failed')
 def branch_name(value):
@@ -86,11 +88,16 @@ def independent_clone(source,remote=REMOTE,allow_legacy_archives=False):
  require(git(source,'remote','get-url','origin').rstrip('/').removesuffix('.git').casefold()==remote.rstrip('/').removesuffix('.git').casefold(),'Origin is not the intended WallSprint remote')
  require(not git(source,'ls-files','*.script'),'Checkout tracks a live .script; use the migration-ready branch')
  require(not live_scripts(source),'_source contains active .script files; do not unpack install bundles there')
- require(not git(source,'status','--porcelain'),'_source has local changes; preserve/commit them before updating')
+ if allow_legacy_archives:
+  require(not git(source,'status','--porcelain','--untracked-files=no'),'_source has tracked changes; preserve/commit them before updating')
+  untracked=[source/p for p in git(source,'ls-files','--others','--exclude-standard','-z').split('\0') if p]
+  require(all(retired_probes.recognized(p) for p in untracked),'_source has untracked work; preserve it before updating')
+ else:
+  require(not git(source,'status','--porcelain'),'_source has local changes; preserve/commit them before updating')
  archives=live_archives(source)
  if allow_legacy_archives:
   tracked=set(git(source,'ls-files','-z').split('\0'))
-  require(all(p.relative_to(source).as_posix() in tracked for p in archives),'Untracked archive in _source refused; preserve it outside Mods Library')
+  require(all(p.relative_to(source).as_posix() in tracked or retired_probes.recognized(p) for p in archives),'Untracked archive in _source refused; preserve it outside Mods Library')
  else:
   require(not archives,'_source contains Overstrike-visible archives, including nested scripts')
   require(source_patterns(source)==SOURCE_PATTERNS,'_source must exclude archives using the managed Git sparse checkout')
@@ -178,6 +185,7 @@ def assert_layout(workspace,expected=None,allow_legacy_archives=False):
  for folder in [source,workspace/'logs',workspace/'_archive']:
   require(folder.is_dir() and not linked(folder),'Missing/reparse internal folder: '+folder.name)
   require(not live_scripts(folder),'Active .script is forbidden in '+folder.name)
+ require(not any(p.is_file() and p.suffix.lower()=='.stage' for p in workspace.rglob('*')),'Scanner-visible stage refused in WS workspace; unrelated stages must be preserved manually outside Mods Library')
  scripts=live_scripts(workspace)
  tracked=set(git(source,'ls-files','-z').split('\0')) if allow_legacy_archives else set()
  for archive in live_archives(workspace):
@@ -253,7 +261,7 @@ class Manager:
   for name in ['logs','_archive']:
    p=workspace/name
    if not p.exists():p.mkdir()
-  assert_layout(workspace,allow_legacy_archives=True)
+  no_links(workspace)
   source=independent_clone(workspace/'_source',self.remote,allow_legacy_archives=True)
   branch=expected_branch(source,expected)
   self.system.stop(game)
@@ -262,6 +270,8 @@ class Manager:
   except FileExistsError:raise WorkspaceError('Another update or stale Update-WS.lock exists; no deployment started')
   os.close(fd)
   try:
+   tracked=set(git(source,'ls-files','-z').split('\0'))
+   retired_probes.retire(workspace,game,tracked)
    prepare_source_checkout(source)
    git(source,'pull','--ff-only')
    independent_clone(source,self.remote);expected_branch(source,branch)

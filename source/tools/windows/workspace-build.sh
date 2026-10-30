@@ -13,7 +13,7 @@ from pathlib import Path
 import sys
 source=Path(sys.argv[1]).resolve()
 if any(p.name.casefold()=='mods library' for p in [source,*source.parents]):
- if any(p.is_file() and p.suffix.lower() in {'.script','.zip','.rar','.7z'} for p in source.rglob('*')):
+ if any(p.is_file() and p.suffix.lower() in {'.script','.stage','.zip','.rar','.7z'} for p in source.rglob('*')):
   raise SystemExit('WS ERROR: source tree contains scanner-visible scripts/archives; update the preparation checkout and rerun its latest Migrate-WS.cmd before building')
 PY
 for tool in bash python g++ make objdump tar curl sha256sum; do

@@ -5,6 +5,16 @@
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
 
+## Steering Probe retirement completed (tooling only)
+
+Known WS Fast10/Slow5 probe stages/ZIPs are identity-checked and reversibly
+archived outside Mods Library. Managed sparse policy excludes stages; source
+builders/history retained. Unknown/foreign files refuse, unrelated library and
+profile choices/order untouched. See analysis/STEERING_PROBE_RETIREMENT.md and
+LOCAL_WORKSPACE. Workspace18 groups/environment28 tests/preflight/distribution
+checks passed. r2 runtime bytes unchanged. Owner duplicate paths/UI acceptance
+remain unverified. Publication recorded in CODEX_RESULT before queued r3 begins.
+
 ## v0.1c38r2 / package0.1.58 — correctness and tuning separated
 
 Canonical evidence: `analysis/V01C38R1_REVERSAL_RUNTIME_RESULT_20261031.md`.

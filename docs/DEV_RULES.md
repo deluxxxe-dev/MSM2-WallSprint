@@ -174,3 +174,7 @@ permit SF code development, third-party code reuse, game-file archival or upload
 of private snapshots. Toolkit installation and fast launch do not update/build
 projects. Recovery excludes game data and preserves previous roots; see
 `docs/MOD_ENVIRONMENT_BACKUP.md` for supported paths and actual validation limits.
+
+Managed source sparse policy also excludes `.stage` inputs. See LOCAL_WORKSPACE
+Retired WS Steering Probes for identity-checked, reversible, WS-only retirement
+outside Mods Library. Unknown/foreign inputs still refuse; never edit profiles.

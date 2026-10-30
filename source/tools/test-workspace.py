@@ -248,3 +248,63 @@ with fixture() as f:
  f[4].build=bad_build;expect_failure(lambda:f[5].update(ws))
  assert (ws/'MSM2-WS-v0.1c20.script').read_bytes()==old
  print('PASS: independent extension/recursive-ZIP model detects unextracted nested scripts, ignores disabled containers, and a build that reintroduces a visible ZIP cannot deploy or launch')
+
+# Owned, non-game synthetic probe assets. Production SHA remains pinned; this
+# fixture substitutes only its local expected identity, never package builders.
+def probe_fixture_bytes(stem,outer=False):
+ r=w.retired_probes;name,offset,value,original=r.PROBES[stem]
+ vanilla=bytearray(544);vanilla[0x218]=100;vanilla[0x219]=75
+ r.VANILLA_SHA=hashlib.sha256(vanilla).hexdigest();vanilla[offset]=value
+ b=io.BytesIO()
+ with zipfile.ZipFile(b,'w') as z:
+  z.writestr(r.ASSET,vanilla);z.writestr('info.json',json.dumps({'game':'MSM2','name':name,'author':'deluxxxe-dev / WallSprint','format_version':2}))
+ if not outer:return b.getvalue()
+ out=io.BytesIO()
+ with zipfile.ZipFile(out,'w') as z:z.writestr(stem+'.stage',b.getvalue())
+ return out.getvalue()
+original_probe_sha=w.retired_probes.VANILLA_SHA
+assert original_probe_sha=='32418c218d2feb62fb9227caec321c00278e4500bc75db6c4015888359537b7b'
+try:
+ with fixture() as f:
+  ws=migrate(f);game=f[1];source=ws/'_source';stem='MSM2-WS-SteeringProbe-TurnSpeedSlow5'
+  profile=game/'Overstrike/Profile.json';profile.write_text('{"mods":[{"name":"other","enabled":false,"order":7}]}');before=profile.read_bytes()
+  p=source/(stem+'.stage');p.write_bytes(probe_fixture_bytes(stem));q=ws/'_archive'/(stem+'.zip');q.write_bytes(probe_fixture_bytes(stem,True))
+  sibling=game/'Mods Library/Manual Probe Copies'/(stem+'.stage');sibling.parent.mkdir();sibling.write_bytes(p.read_bytes())
+  old={x:x.read_bytes() for x in [p,q,sibling]}
+  f[5].update(ws);assert not p.exists() and not q.exists() and sibling.read_bytes()==old[sibling]
+  backups=list((game/'MSM2-WS-Retired-Probes').glob('retired-*'));assert len(backups)==1
+  records=json.loads((backups[0]/'manifest.json').read_text());assert len(records)==2
+  for row in records:assert (backups[0]/row['backup']).read_bytes()==old[ws/row['source']]
+  f[5].update(ws);assert len(list((game/'MSM2-WS-Retired-Probes').glob('retired-*')))==1
+  assert profile.read_bytes()==before and not list(ws.rglob('*.stage')) and not w.live_archives(ws)
+  # Reintroduced copy cannot overwrite previous backup.
+  p.write_bytes(old[p]);f[5].update(ws);assert len(list((game/'MSM2-WS-Retired-Probes').glob('retired-*')))==2
+  print('PASS: verified duplicate probes retire reversibly outside library; Unicode paths, collision preservation, repeated update idempotence and sibling/profile byte isolation')
+ with fixture() as f:
+  ws=migrate(f);stem='MSM2-WS-SteeringProbe-TurnSpeedFast10';p=ws/(stem+'.stage');p.write_bytes(probe_fixture_bytes(stem))
+  # Same name and valid ZIP with wrong payload does not confer ownership.
+  with zipfile.ZipFile(p,'a') as z:z.writestr('foreign.bin',b'preserve')
+  old=p.read_bytes();expect_failure(lambda:f[5].update(ws));assert p.read_bytes()==old
+  p.unlink();u=ws/'user.stage';u.write_bytes(b'foreign stage');expect_failure(lambda:f[5].update(ws));assert u.read_bytes()==b'foreign stage'
+  print('PASS: forged known name/metadata and unrelated stage refuse without deleting, moving or enabling files')
+ with fixture() as f:
+  ws=migrate(f);source=ws/'_source';stem='MSM2-WS-SteeringProbe-TurnSpeedSlow5';p=source/(stem+'.stage');p.write_bytes(probe_fixture_bytes(stem))
+  (source/'README.md').write_text('dirty user work');expect_failure(lambda:f[5].update(ws));assert p.exists()
+  cmd('git','-C',source,'checkout','--','README.md');p.unlink();target=ws/'probe-target';target.write_bytes(probe_fixture_bytes(stem));p.symlink_to(target)
+  expect_failure(lambda:f[5].update(ws));assert p.is_symlink() and target.exists()
+  print('PASS: dirty tracked work and reparse candidates refuse before any retirement')
+ with fixture() as f:
+  repo=f[2];stem='MSM2-WS-SteeringProbe-TurnSpeedSlow5';p=repo/'source/tools'/(stem+'.stage');p.write_bytes(probe_fixture_bytes(stem))
+  cmd('git','-C',repo,'add','.');cmd('git','-C',repo,'commit','-m','owned tracked stage history');cmd('git','-C',repo,'push','origin',BRANCH)
+  ws=migrate(f);source=ws/'_source';assert not list(source.rglob('*.stage'))
+  assert cmd('git','-C',source,'show','HEAD:source/tools/'+p.name)
+  cmd('git','-C',source,'sparse-checkout','set','--no-cone',*w.LEGACY_SOURCE_PATTERNS);assert (source/'source/tools'/p.name).exists()
+  f[5].update(ws);assert not list(source.rglob('*.stage')) and not cmd('git','-C',source,'status','--porcelain')
+  print('PASS: legacy managed sparse policy upgrades without losing tracked stage history; next update never restores manually removed probes')
+ with fixture() as f:
+  ws=migrate(f);old=(ws/'MSM2-WS-v0.1c20.script').read_bytes();base=f[4].build
+  def stage_build(source,dest):
+   result=base(source,dest);(dest/'unrelated.stage').write_bytes(b'foreign stage');return result
+  f[4].build=stage_build;expect_failure(lambda:f[5].update(ws));assert (ws/'MSM2-WS-v0.1c20.script').read_bytes()==old
+  print('PASS: unexpected stage generated by build refuses deployment rather than silently enabling a new mod')
+finally:w.retired_probes.VANILLA_SHA=original_probe_sha

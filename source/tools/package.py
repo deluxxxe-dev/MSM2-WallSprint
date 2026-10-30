@@ -3,7 +3,9 @@ import hashlib,json,subprocess,re,zipfile,shutil,configparser
 root=Path(__file__).resolve().parents[1]
 header=(root/'include/version.hpp').read_text();label=re.search(r'versionLabel\[\]="([^"]+)"',header)[1];version=re.search(r'packageVersion\[\]="([^"]+)"',header)[1]
 info=json.loads((root/'mod/info.json').read_text());assert info['version']==version and label in info['description']
-out=root/'output'/('MSM2-WS-'+label);out.mkdir(parents=True,exist_ok=True)
+out=root/'output'/('MSM2-WS-'+label)
+assert not any(p.is_file() and p.suffix.lower() in {'.stage','.zip','.rar','.7z'} for p in out.rglob('*')), 'Scanner-visible research/stale archive in package output; preserve it outside distribution first'
+out.mkdir(parents=True,exist_ok=True)
 readme=(root/'README_TEST.md').read_text();assert label in readme and version in readme;shutil.copy2(root/'README_TEST.md',out/'README_TEST.md')
 binary=(root/'build/windows/WallSprint.dll').read_bytes();assert label.encode()+b'\0' in binary and version.encode()+b'\0' in binary
 pe=subprocess.check_output(['objdump','-p',str(root/'build/windows/WallSprint.dll')],text=True);assert 'PE32+' in pe
@@ -57,7 +59,7 @@ source=out/'source';source.mkdir(exist_ok=True)
 for directory in ['src','include','tools','mod','vendor']:
  for p in (root/directory).rglob('*'):
   relative=p.relative_to(root)
-  if not p.is_file() or '__pycache__' in p.parts or p.suffix=='.pyc' or 'native_v01a7' in p.parts or 'orientation_v01b3' in p.parts:continue
+  if not p.is_file() or '__pycache__' in p.parts or p.suffix.lower() in {'.pyc','.stage','.zip','.rar','.7z'} or 'native_v01a7' in p.parts or 'orientation_v01b3' in p.parts:continue
   target=source/relative;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(p,target)
 for name in ['README.md','README_TEST.md','BUILD.md','WORKLOG.md','CMakeLists.txt','LICENSE.txt','THIRD_PARTY_NOTICES.md']:shutil.copy2(root/name,source/name)
 docs=root.parent/'docs' if (root.parent/'docs').is_dir() else root/'docs'
@@ -377,6 +379,7 @@ for name in ['Migrate-WS.cmd','Update-WS.cmd']:
  shutil.copy2(root/'tools/windows'/name,out/name)
 (out/'tools/windows').mkdir(parents=True,exist_ok=True)
 shutil.copy2(root/'tools/workspace.py',out/'tools/workspace.py')
+shutil.copy2(root/'tools/retired_probes.py',out/'tools/retired_probes.py')
 shutil.copy2(root/'tools/windows/stop-processes.ps1',out/'tools/windows/stop-processes.ps1')
 for name in ['Migrate-WS.cmd','Update-WS.cmd']:
  shutil.copy2(root/'tools/windows'/name,source/name)

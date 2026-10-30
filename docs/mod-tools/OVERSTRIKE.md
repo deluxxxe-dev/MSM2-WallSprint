@@ -111,3 +111,58 @@ Windows実機では、移動した `.lnk` を含め、既存の普通MOD+SF+WS�
 Overstrike1.8.1.0公開tagのSetupScriptsは `File.Copy("scripts_proxy.dll", <game>/winmm.dll)` を使用します。コピー元はprocess CWD相対で、exe隣へ絶対固定したコードではありません。この実機の例外は `<game>/Overstrike/scripts_proxy.dll` を要求していました。通常ファイル・非reparseのそのコピー元を許容し、rootの2ファイルも維持します。`Overstrike/winmm.dll` の既存拒否・限定退避は維持します。sourceとloaderの新規hash一致条件、DLLの自動取得・コピー・削除は追加しません。
 
 共通 `environment_ready()` の同じ混同も訂正したのでStart/Open/Playに適用されます。Start CMD自体はwinmmだけを退避し、scripts_proxyを削除しないため変更しません。既存ReadOnly正規化はrootファイルだけです。実際のコピー元がexe隣なら、その属性も別に影響し得るため、root正規化だけでInstall成功を保証する説明はしません。Profile/script-support設定は変更しません。
+
+
+## Retired WS Steering Probes — 2026-10-31
+
+Normal Update-WS deploys only the current WS script. Direct `.stage` files are
+scanner inputs too; ZIP/RAR/7z can expose nested stages. Managed sparse policy now
+excludes stages as well as archives (old managed policy upgrades; custom patterns
+still refuse). Builders/research and all Git blobs/history remain available.
+The build checks for unexpected stages and distribution excludes asset/archive
+files from source copies; contaminated stale package output refuses.
+
+Only exact `MSM2-WS-SteeringProbe-TurnSpeedFast10` / `TurnSpeedSlow5` `.stage` or
+single-stage `.zip` artifacts inside MSM2-WS are eligible for retirement. Names
+alone are insufficient: exact metadata/member set and544byte asset restored to
+its pinned vanilla SHA must match. Untracked owned probes are retired before
+sparse preparation; clean tracked stages are hidden by Git, never removed from
+history. Dirty tracked work, unknown stages/archives and reparse points refuse.
+
+Retirement moves verified artifacts into a unique
+`<game>/MSM2-WS-Retired-Probes/retired-*/` directory OUTSIDE Mods Library, with
+source-relative paths and SHA256 in manifest.json. Existing backups never
+overwrite. Restore only manually with manager/game closed and original path
+absent; moving them back intentionally makes them discoverable again. Profiles,
+selections/order, SF and other mods are not edited. Never put this backup inside
+Mods Library, including under _archive. A `.zip.disabled` is ignored by the
+reviewed extension dispatch; an active `.stage` beside it is still scanned.
+
+Copies elsewhere in Mods Library are outside automatic scope. Use the entry's
+Overstrike tooltip path (`archive||member` identifies the actual container),
+close Overstrike and move only the verified obsolete probe file/container outside
+Mods Library. A mixed container containing unrelated mods must NOT be moved as
+probe cleanup; inspect/report its exact path first. Actual owner duplicate paths
+are unknown; no cloud claim that both installed entries were retired.
+
+If an old engine refuses before fetch, close game/Overstrike and use the guarded
+Git refresh from PowerShell (this only updates the existing source checkout):
+
+```powershell
+$ws = Join-Path "<actual game root>" "Mods Library\Mods-Developing\MSM2-WS"
+$src = Join-Path $ws "_source"
+$branch = "codex/v01c20-edi-value-provenance"
+if ((git -C $src branch --show-current) -ne $branch) { throw "Wrong branch" }
+if ((git -C $src remote get-url origin) -ne "https://github.com/deluxxxe-dev/MSM2-WallSprint.git") { throw "Wrong origin" }
+$dirty = git -C $src status --porcelain --untracked-files=no
+if ($LASTEXITCODE -ne 0 -or $dirty) { throw "Preserve tracked changes first" }
+git -C $src fetch origin $branch
+if ($LASTEXITCODE -ne 0) { throw "Fetch failed" }
+git -C $src merge --ff-only "origin/$branch"
+if ($LASTEXITCODE -ne 0) { throw "Fast-forward failed; preserve checkout" }
+& (Join-Path $ws "Update-WS.cmd")
+```
+
+Untracked/unknown files are not deleted by the refresh. The current updater still
+checks them before preparation/build; this is not a validation bypass. No install,
+loader repair or real-PC acceptance is performed by this cloud task.
