@@ -6,6 +6,19 @@ Owner r4 test accepted for fixed5s-expiry removal: session3 eleven completed rev
 Owner explicitly allows earlier facing START to be deferred. It remains unresolved, not accepted as fixed. Current CODEX_NEXT supersedes old lifetime/input queue and authorizes only one-flat-wall lateral movement route investigation per AFTER_TURN_PLAN. No movement writes yet. Existing4096 budgets and all native/stale/identity gates remain.
 
 
+## Lateral-route review completed — one missing original continuation
+
+See analysis/FLAT_WALL_LATERAL_ROUTE_REVIEW.md. Existing authenticated Update
+capture (0x1424530..0x14246d6,422 bytes, SHA matches static plan) was privately
+verified and decoded89/89 instructions. It is NOT a complete logical function:
+four conditional edges go to uncaptured0x14248f9 and terminal fallthrough is absent.
+ONE selected original route is Update -> shared0x14248f9 continuation; helper CALLs
+are untyped, not certified input/motion APIs. Next bounded acquisition is only
+up to128 original bytes at0x14248f9 with current-build/section/runtime metadata,
+using existing offline PE range primitives; no new runtime capture command exists.
+No motion-write experiment admitted, no repeated input inventory/duration tuning.
+Runtime/artifacts remain r4/package0.1.60. Earlier START is deferred backlog.
+
 ## Current handoff — repeated reversal lifetime
 
 See analysis/V01C38R3_REPEATED_REVERSAL_RUNTIME.md. Supplied023446 r3 log session2 completes3 reversals and session4 completes2, then both hit5second override expiry. Video unavailable; precise visible-release alignment UNKNOWN. START remains displacement-based and unmodified.
@@ -23,7 +36,7 @@ Heading64/actor256/counter64 diagnostics remain independent of source permission
 Actual31s synthetic/Wine A/B run passes straight beyond5s and >=20 completed
 reversals beyond30s with original session/generation/entry, plus close/reset gates.
 Build/focused12/portable25/smoke7/native11 pass; canonical 901 PASS/5 SKIP/17 UNAVAILABLE.
-Owner in-game acceptance UNKNOWN; INPUT follow-on inventory completed separately after verified lifetime push.
+Owner r4 persistence acceptance is now bounded VERIFIED-RUNTIME per latest owner evidence; prior synthetic validation remains distinct. INPUT inventory completed separately.
 See analysis/V01C38R4_SESSION_LIFETIME.md.
 
 ## INPUT START follow-on — inventory completed after lifetime publication
