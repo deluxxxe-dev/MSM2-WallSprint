@@ -1,5 +1,11 @@
 # WallSprint project state
 
+## Current handoff — repeated reversal lifetime
+
+See analysis/V01C38R3_REPEATED_REVERSAL_RUNTIME.md. Supplied023446 r3 log session2 completes3 reversals and session4 completes2, then both hit5second override expiry. Video unavailable; precise visible-release alignment UNKNOWN. START remains displacement-based and unmodified.
+Current CODEX_NEXT now authorizes replacing only mandatory normal5second expiry with authenticated session-bound continuation. This supersedes older preserve-five-second task constraints for that expiry alone; all freshness/emergency/build/identity/native safety gates remain. Earlier START timing work remains blocked separately. Runtime change not yet implemented.
+
+
 ## Current owner correction — 2026-10-31 JST
 
 Supersedes duration-only acceptance/task wording below: owner requests earlier reversal START, not faster turn/animation. Approx1.1s is requested adjustment, not measured latency. r3 video/log supplied; visible lag remains owner-reported. No further duration tuning is authorized. Current CODEX_NEXT requests bounded source review and only necessary existing-value diagnostics; no behavior/timer change.
