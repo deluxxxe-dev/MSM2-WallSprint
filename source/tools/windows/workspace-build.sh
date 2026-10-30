@@ -16,6 +16,22 @@ if any(p.name.casefold()=='mods library' for p in [source,*source.parents]):
  if any(p.is_file() and p.suffix.lower() in {'.script','.stage','.zip','.rar','.7z'} for p in source.rglob('*')):
   raise SystemExit('WS ERROR: source tree contains scanner-visible scripts/archives; update the preparation checkout and rerun its latest Migrate-WS.cmd before building')
 PY
+export MSM2_WS_STATUS_DIR="$result"
+status_helper="$repo/source/tools/windows/build-status.py"
+build_stage=preflight
+stage=''
+progress(){ if [[ -n "${MSM2_WS_OPERATION_TOKEN:-}" ]]; then python3 "$status_helper" "$result" "$build_stage" "$1" "${2:-}"; fi; }
+finish(){
+ local rc=$?
+ trap - EXIT INT TERM
+ progress finished "$rc" || { if [[ $rc == 0 ]]; then rc=74; fi; }
+ if [[ -n "$stage" ]]; then rm -rf -- "$stage"; fi
+ exit "$rc"
+}
+trap finish EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+progress running
 for tool in bash python g++ make objdump tar curl sha256sum; do
  command -v "$tool" >/dev/null || { echo "WS ERROR: missing WSL prerequisite $tool; see source/BUILD.md" >&2; exit 1; }
 done
@@ -23,16 +39,22 @@ for tool in /workspace/toolchains/windows/usr/bin/x86_64-w64-mingw32-g++-posix /
  [[ -x "$tool" ]] || { echo "WS ERROR: missing configured WSL toolchain $tool; no validation is skipped" >&2; exit 1; }
 done
 stage=$(mktemp -d /tmp/msm2-ws-validation.XXXXXX)
-trap 'rm -rf -- "$stage"' EXIT
+
 mkdir -p "$stage/repository"
 # Copy sources/docs only. No legacy checkout/gitdir/reference/cache dependency.
 tar -C "$repo" --exclude=source/build --exclude=source/logs --exclude=source/output --exclude=__pycache__ -cf - AGENTS.md docs analysis source environment README.md README_TEST.md Update-WS.cmd Migrate-WS.cmd .gitattributes | tar -C "$stage/repository" -xf -
 cd "$stage/repository"
+build_stage=build; progress running
 bash source/tools/build_windows.sh
+build_stage=portable; progress running
 bash source/tools/test.sh
+build_stage=smoke; progress running
 bash source/tools/smoke_windows.sh
+build_stage=hooks; progress running
 bash source/tools/test_hooks_windows.sh
+build_stage=package; progress running
 python source/tools/release.py
+build_stage=stage_payload; progress running
 python - "$result" <<'PY'
 from pathlib import Path
 import json,shutil,sys,zipfile

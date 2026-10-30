@@ -206,3 +206,13 @@ worktreeは変更せず、process/WSLを終了しません。bootstrap fetchの�
 KITだけを修復します。user QUIETでもescaped UIDの子をrootで確認。権限不明/root失敗は
 拒否、旧UIDnullは未記録のままです。root build/配置や設定変更は行いません。
 TOKEN_ABSENTは配置完了ではなく、後のUpdate-WSは再ビルドします。実機受入れ待ちです。
+
+
+### 現在のmid-suite ACTIVE停止
+
+前回root修復の成功と、その後のビルド成功/配置成功は別です。新runnerはWSL transport
+戻り値とLinux終了記録を先に保存し、bound完了記録のない0終了でも旧成果物を流用しません。
+関連子だけPIDFDの実終了を期限付き待機し、残存/不明ならpendingを保持します。
+共通mod-tools README「現在のACTIVE停止」のschema2役割診断がONE next actionです。
+この新診断はsource/KITを更新せず、ビルドもせず、ACTIVEでもrootで関連PIDだけ観測します。
+旧mainの未記録終了コードは復元しません。元の実機中断原因/配置はまだ未確認です。

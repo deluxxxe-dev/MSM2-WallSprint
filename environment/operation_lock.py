@@ -83,14 +83,22 @@ def parsed(data,game):
  if r.get('state') not in ('active','released','interrupted'):return None
  return r
 
-WSL_PROBE = r"""import os,sys,json,errno,select
+WSL_PROBE = r"""import os,sys,json,errno,select,time
 
-def probe(token,legacy,distro,expected_uid=None,elevated=False,attempt=0):
+def probe(token,legacy,distro,expected_uid=None,elevated=False,attempt=0,wait_ms=0,deadline=None,wait_round=0):
+ if deadline is None:deadline=time.monotonic()+min(max(wait_ms,0),5000)/1000
  uid=os.getuid();observed=os.environ.get('WSL_DISTRO_NAME','')
  out=dict(schema=1,result='UNKNOWN',distro_expected=distro,distro_observed=observed,uid_expected=expected_uid,uid_observed=uid,inspection='root_token_all_uids' if elevated else 'user',events=[],counts={})
- def event(pid,stage,category,err=None):
+ def event(pid,stage,category,err=None,**detail):
   out['counts'][category]=out['counts'].get(category,0)+1
-  if len(out['events'])<32:out['events'].append(dict(pid=pid,stage=stage,category=category,errno=err))
+  item=dict(pid=pid,stage=stage,category=category,errno=err,**detail)
+  gone={'absent_confirmed','exited_confirmed'}
+  if category in gone and sum(e['category'] in gone for e in out['events'])>=2:return
+  if len(out['events'])<32:out['events'].append(item)
+  elif category not in gone:
+   candidate=next((i for i,e in enumerate(out['events']) if e['category'] in gone or (category=='active_build' and e['category']!='active_build')),None)
+   if candidate is not None:out['events'][candidate]=item
+
  if not distro or observed!=distro:event(None,'identity','distro_mismatch');return out
  if os.geteuid()!=uid or (expected_uid is not None and uid!=expected_uid):event(None,'identity','uid_mismatch');return out
  if elevated and (uid!=0 or expected_uid!=0 or legacy or not token):event(None,'scope','invalid_root_scope');return out
@@ -98,7 +106,7 @@ def probe(token,legacy,distro,expected_uid=None,elevated=False,attempt=0):
   with open('/proc/'+str(pid)+'/stat') as f:s=f.read()
   tail=s.rsplit(')',1)[1].split()
   if len(tail)<20 or not tail[19].isdigit():raise ValueError('invalid stat')
-  return tail[19],tail[0]
+  return tail[19],tail[0],int(tail[1])
  def departed(pid,fd,before):
   # pidfd reports this exact process's exit, including zombies; never infer from
   # an unreadable environ/cwd or an old numeric PID alone.
@@ -117,7 +125,7 @@ def probe(token,legacy,distro,expected_uid=None,elevated=False,attempt=0):
   if before is not None and after[0]!=before[0]:return 'pid_reused'
   if exited and after[1] not in ('Z','X','x'):return 'pid_reused'
   return 'exited_confirmed' if exited and before is not None else None
- unknown=False;active=False;seen_ids={}
+ unknown=False;active=False;seen_ids={};active_fds=[]
  try:names=os.listdir('/proc')
  except OSError as ex:event(None,'enumerate','enumeration_error',ex.errno);return out
  for n in names:
@@ -141,11 +149,27 @@ def probe(token,legacy,distro,expected_uid=None,elevated=False,attempt=0):
     with open('/proc/'+n+'/cmdline','rb') as f:cmd=f.read()
     stage='cwd';cmd+=b' '+os.fsencode(os.readlink('/proc/'+n+'/cwd'))
     matched=matched or any(x in cmd for x in [b'/msm2-ws-validation.',b'workspace-build.sh',b'Mods-Developing/MSM2-WS'])
+   name='unavailable';name_error=None;process_name='unavailable'
+   if matched:
+    try:name=os.path.basename(os.readlink('/proc/'+n+'/exe'))[:128]
+    except OSError as ex:name_error=ex.errno
+    try:
+     with open('/proc/'+n+'/comm') as f:process_name=f.read(64).strip()
+    except OSError:pass
    stage='identity_after';after=start(pid)
    if after[0]!=before[0]:event(pid,stage,'pid_reused');unknown=True;continue
    if after[1] not in ('Z','X','x'):seen_ids[pid]=after[0]
    # Matching live token is enough to block even if its process exits next.
-   if matched:event(pid,'match','active_build');active=True
+   if matched:
+    event(pid,'match','active_build',ppid=after[2],start=after[0],state=after[1],executable_name=name,process_name=process_name,name_errno=name_error);active=True
+    if wait_ms and fd is not None:
+     q=select.poll();q.register(fd,select.POLLIN)
+     if q.poll(0):
+      try:gone=departed(pid,fd,before)
+      except (OSError,ValueError,IndexError):gone=None
+      if gone not in ('exited_confirmed','absent_confirmed'):event(pid,'wait',gone or 'unbound_pidfd');unknown=True
+      else:active_fds.append(fd);fd=None
+     else:active_fds.append(fd);fd=None
   except (OSError,ValueError,IndexError) as ex:
    try:gone=departed(pid,fd,before)
    except (OSError,ValueError,IndexError):gone=None
@@ -155,6 +179,26 @@ def probe(token,legacy,distro,expected_uid=None,elevated=False,attempt=0):
     event(pid,stage,category,getattr(ex,'errno',None));unknown=True
   finally:
    if fd is not None:os.close(fd)
+ if active_fds:
+  try:
+   benign={'access_denied','absent_confirmed','exited_confirmed','active_build'}
+   if wait_round<16 and (not unknown or set(out['counts'])<=benign):
+    pending=set(active_fds);q=select.poll()
+    for fd in pending:q.register(fd,select.POLLIN)
+    while pending and time.monotonic()<deadline:
+     for fd,bits in q.poll(max(1,int((deadline-time.monotonic())*1000))):
+      if bits&(select.POLLIN|select.POLLHUP):pending.discard(fd);q.unregister(fd)
+      else:event(None,'wait','invalid_pidfd');break
+     if 'invalid_pidfd' in out['counts']:break
+    if not pending:
+     for fd in active_fds:os.close(fd)
+     count=len(active_fds);active_fds=[]
+     result=probe(token,legacy,distro,expected_uid,elevated,attempt,wait_ms,deadline,wait_round+1)
+     result['counts']['owned_exits_waited']=result['counts'].get('owned_exits_waited',0)+count
+     return result
+    event(None,'wait','owned_exit_deadline')
+  finally:
+   for fd in active_fds:os.close(fd)
  if elevated and not unknown and not active:
   final_ids={}
   try:
@@ -165,7 +209,7 @@ def probe(token,legacy,distro,expected_uid=None,elevated=False,attempt=0):
       if identity[1] not in ('Z','X','x'):final_ids[int(n)]=identity[0]
      except FileNotFoundError:continue
    if final_ids!=seen_ids:
-    if attempt<2:return probe(token,legacy,distro,expected_uid,True,attempt+1)
+    if attempt<2:return probe(token,legacy,distro,expected_uid,True,attempt+1,wait_ms,deadline,wait_round)
     event(None,'inventory','inventory_unstable');unknown=True
   except (OSError,ValueError,IndexError) as ex:event(None,'inventory','inventory_error',getattr(ex,'errno',None));unknown=True
  out['result']='ACTIVE' if active else 'UNKNOWN' if unknown else 'QUIET'
@@ -173,7 +217,7 @@ def probe(token,legacy,distro,expected_uid=None,elevated=False,attempt=0):
 
 if __name__=='__main__':
  try:
-  result=probe(sys.argv[1],sys.argv[2]=='1',sys.argv[3],None if sys.argv[4]=='unknown' else int(sys.argv[4]),len(sys.argv)>5 and sys.argv[5]=='root_token')
+  result=probe(sys.argv[1],sys.argv[2]=='1',sys.argv[3],None if sys.argv[4]=='unknown' else int(sys.argv[4]),len(sys.argv)>5 and sys.argv[5]=='root_token',wait_ms=int(sys.argv[6]) if len(sys.argv)>6 else 0)
  except Exception as ex:
   result=dict(schema=1,result='UNKNOWN',events=[dict(pid=None,stage='probe',category=type(ex).__name__,errno=getattr(ex,'errno',None))])
  print(json.dumps(result,sort_keys=True))
@@ -196,8 +240,8 @@ def wsl_quiet(record,legacy=False):
  if not token and not legacy:return
  # The user check binds the selected distro/default UID. Only EACCES can be
  # resolved by privileged reading; identity/reuse/malformed evidence is not washed.
- user=_wsl_query(record,legacy,False)
- allowed={'access_denied','absent_confirmed','exited_confirmed'}
+ user=_wsl_query(record,legacy,False,wait_ms=5000)
+ allowed={'access_denied','absent_confirmed','exited_confirmed','owned_exits_waited'}
  if user['result']=='ACTIVE' or (user['result']=='UNKNOWN' and (not user['counts'] or not set(user['counts'])<=allowed)):
   raise OperationError('WSL build not proved inactive: '+json.dumps(user,sort_keys=True))
  if legacy:
@@ -205,18 +249,26 @@ def wsl_quiet(record,legacy=False):
   return user
  # Every token retirement requires all-UID inspection, even after a user QUIET:
  # surviving/reparented or UID-changed descendants must not escape the inventory.
- root=_wsl_query(record,False,True)
+ root=_wsl_query(record,False,True,wait_ms=5000)
  if root['result']!='QUIET':raise OperationError('Read-only root token absence NOT proved: '+json.dumps(root,sort_keys=True))
  print('WSL_TOKEN_CHECK '+json.dumps(dict(result='TOKEN_ABSENT',inspection='root_token_all_uids',inspector_uid=root['uid_observed'],build_uid_expected=record.get('linux_uid'),user_uid_observed=user['uid_observed'],distro=distro,authority='token_retirement_only_not_deployment'),sort_keys=True))
  return {**root,'build_uid_expected':record.get('linux_uid'),'user_uid_observed':user['uid_observed'],'recovery_authority':'all_uid_exact_token_absence'}
 
-def _wsl_query(record,legacy,root):
+def wsl_inspect(record):
+ # Diagnostic-only: unlike retirement, ACTIVE is inspected as root, not ignored.
+ token=record.get('build_token')
+ if not token or (record.get('token') is not None and token!=record['token']):raise OperationError('No bound pending operation token for inspection')
+ user=_wsl_query(record,False,False)
+ root=_wsl_query(record,False,True)
+ return dict(authority='diagnostic_only_no_recovery',user=user,root=root)
+
+def _wsl_query(record,legacy,root,wait_ms=0):
  token=record.get('build_token');distro=record.get('distro');uid=0 if root else record.get('linux_uid')
  if not isinstance(distro,str) or not distro or distro.startswith('-') or len(distro)>256 or '\0' in distro:raise OperationError('WSL missing/invalid selected distro identity; no inspection/recovery')
  if uid is not None and (type(uid) is not int or not 0<=uid<=0xffffffff):raise OperationError('WSL malformed inspector UID identity; no inspection/recovery')
  if token is not None and (not isinstance(token,str) or not 0<len(token)<=128 or '\0' in token):raise OperationError('WSL malformed exact token; no inspection/recovery')
  if root and (legacy or not isinstance(token,str) or not 0<len(token)<=128):raise OperationError('Read-only root probe requires a bounded exact operation token')
- args=['wsl.exe','--distribution',distro]+(['--user','root'] if root else [])+['--exec','python3','-c',WSL_PROBE,token or '',str(int(legacy)),distro or '',str(uid) if uid is not None else 'unknown','root_token' if root else 'user']
+ args=['wsl.exe','--distribution',distro]+(['--user','root'] if root else [])+['--exec','python3','-c',WSL_PROBE,token or '',str(int(legacy)),distro or '',str(uid) if uid is not None else 'unknown','root_token' if root else 'user',str(wait_ms)]
  try:p=subprocess.run(args,capture_output=True,text=True,timeout=25)
  except (OSError,subprocess.TimeoutExpired) as ex:raise OperationError('WSL probe unavailable: distro='+str(distro)+' inspection='+('root_token_all_uids' if root else 'user')+' stage=invoke category='+type(ex).__name__) from ex
  try:
@@ -297,7 +349,7 @@ def hold(game,action='environment',quiescent=None):
   _current=h
   try:yield h
   finally:
-   h.record['state']='interrupted' if h.record.get('phase')=='building' else 'released'
+   h.record['state']='interrupted' if h.record.get('build_token') else 'released'
    for path,fd,st in h.files:
     current=path.lstat()
     if (current.st_dev,current.st_ino)!=(st.st_dev,st.st_ino) or (parsed(read(fd),game) or {}).get('token')!=h.record['token']:raise OperationError('Operation artifact replaced; foreign state preserved: '+str(path))

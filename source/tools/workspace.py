@@ -223,6 +223,16 @@ def shared_tools(source=None):
  spec=importlib.util.spec_from_file_location('ws_owned_shared_tools',path);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
  return m
 
+def build_progress(destination,token):
+ path=Path(destination)/'Build-WS-status.json'
+ try:
+  operation_lock.safe(path)
+  if path.stat().st_size>32768:return {'stage':'unknown_oversized_receipt'}
+  r=json.loads(path.read_text(encoding='utf-8'))
+  if not isinstance(r,dict) or r.get('schema')!=1 or r.get('token')!=token or not isinstance(r.get('stage'),str) or not re.fullmatch(r'[A-Za-z0-9_:./-]{1,160}',r['stage']) or (r.get('exit_status') is not None and type(r['exit_status']) is not int) or r.get('state') not in ('running','completed','failed'):return {'stage':'unknown_unbound_receipt'}
+  return {k:r.get(k) for k in ['stage','state','exit_status','last_detail']}
+ except (OSError,ValueError,operation_lock.OperationError):return {'stage':'unknown_no_bound_receipt'}
+
 class WindowsSystem:
  def stop(self,game):
   require(os.name=='nt','Use Windows for real migration/update')
@@ -240,15 +250,34 @@ class WindowsSystem:
   script=src+'/source/tools/windows/workspace-build.sh'
   token=operation_lock._current.record['token']
   operation_lock.phase('building',build_token=token,distro=distro,linux_uid=int(linux_uid))
-  p=subprocess.run(prefix+['env','MSM2_WS_OPERATION_TOKEN='+token,'bash','--noprofile','--norc',script,src,dest],**operation_lock.child_options())
-  operation_lock.wsl_quiet(operation_lock._current.record)
-  operation_lock.phase('validated',build_token=None)
-  require(p.returncode==0,'Required WSL build/test/package pipeline failed; previous active script retained')
+  try:p=subprocess.run(prefix+['env','MSM2_WS_OPERATION_TOKEN='+token,'bash','--noprofile','--norc',script,src,dest],**operation_lock.child_options())
+  except BaseException as ex:
+   operation_lock.phase('build_interrupted',build_returncode=None,build_exception=type(ex).__name__)
+   raise
+  progress=build_progress(destination,token)
+  stage=progress.get('stage','unknown_no_bound_receipt')
+  # Persist/report primary exit BEFORE any secondary completion check can fail.
+  linux_exit=progress.get('exit_status')
+  operation_lock.phase('build_returned',build_returncode=p.returncode,build_linux_exit=linux_exit,build_stage=stage,build_receipt_state=progress.get('state'))
+  print('WSL_BUILD_EXIT primary_returncode='+str(p.returncode)+' linux_pipeline_exit='+str(linux_exit)+' stage='+stage,flush=True)
+  quiet_error=None
+  try:operation_lock.wsl_quiet(operation_lock._current.record)
+  except operation_lock.OperationError as ex:quiet_error=str(ex)
+  primary_failed=p.returncode!=0 or (progress.get('state')=='failed' and linux_exit is not None and linux_exit!=0)
+  if primary_failed or quiet_error:
+   operation_lock.phase('build_failed' if primary_failed else 'build_nonquiet',build_token=token if quiet_error else None,completion_check=quiet_error or 'quiet')
+   raise WorkspaceError('WSL build primary_returncode='+str(p.returncode)+' linux_pipeline_exit='+str(linux_exit)+' stage='+stage+'; completion_check='+(quiet_error or 'quiet')+'; previous active script retained; no deployment')
+  operation_lock.phase('build_validation',build_token=None)
+  if progress.get('state')!='completed' or progress.get('exit_status')!=0 or stage!='stage_payload':
+   operation_lock.phase('build_validation_failed')
+   raise WorkspaceError('WSL build primary_returncode=0 linux_pipeline_exit='+str(linux_exit)+' stage='+stage+'; no authenticated completion receipt; previous artifact not reused; no deployment')
   result=json.loads((destination/'Build-WS-result.json').read_text())
   name=result.get('artifact','')
   require(re.fullmatch(r'MSM2-WS-v[0-9A-Za-z.]+\.script\.disabled',name),'Invalid build artifact basename')
   payload=destination/name
-  return payload,json.loads((destination/'BUILD_MANIFEST.json').read_text())
+  manifest=json.loads((destination/'BUILD_MANIFEST.json').read_text())
+  operation_lock.phase('build_complete')
+  return payload,manifest
  def quiet(self,game):self.stop(game)
  def refresh(self,source,game):
   m=shared_tools(source);m.environment_ready(game);m.refresh_kit(game,self)
@@ -318,6 +347,7 @@ class Manager:
    data=validate_payload(payload,manifest,label,pkg)
    independent_clone(source,self.remote)
    require(git(source,'rev-parse','HEAD')==head,'Source changed during validation')
+   operation_lock.phase('validated')
    game_preflight(game);previous=assert_layout(workspace)
    if hasattr(self.system,'refresh'):self.system.refresh(source,game)
    helper=source/'source/tools/windows/Update-WS.cmd'

@@ -17,6 +17,7 @@ class Proc:
   if field=='stat':return io.StringIO(self.start_text(self.before if self.reads.count('stat')==1 else self.after))
   if field=='environ':return io.BytesIO(self.env)
   if field=='cmdline':return io.BytesIO(b'unrelated private command')
+  if field=='comm':return io.StringIO('owned-fixture')
   raise AssertionError(field)
  def kill(self,pid,signal):
   assert signal==0
@@ -24,14 +25,14 @@ class Proc:
  def readlink(self,path):
   if self.cwd_error:raise PermissionError(errno.EACCES,'owned')
   return '/unrelated'
- def run(self,token='token',legacy=False,distro='Owned',expected_uid=None,elevated=False):
+ def run(self,token='token',legacy=False,distro='Owned',expected_uid=None,elevated=False,wait_ms=0):
   ns={'__name__':'owned_probe'};exec(o.WSL_PROBE,ns)
   me=self
   class Poll:
    def register(self,*a):pass
    def poll(self,t):return [(42,select.POLLIN)] if me.exited else []
   with patch.dict(os.environ,{'WSL_DISTRO_NAME':'Owned'}),patch('os.listdir',return_value=[str(self.pid),str(self.selfpid)]),patch('os.getpid',return_value=self.selfpid),patch('os.stat',side_effect=self.stat),patch('builtins.open',side_effect=self.open),patch('os.pidfd_open',return_value=42),patch('os.close',side_effect=self.closed.append),patch('os.kill',side_effect=self.kill),patch('select.poll',Poll),patch('os.readlink',side_effect=self.readlink):
-   return ns['probe'](token,legacy,distro,expected_uid,elevated)
+   return ns['probe'](token,legacy,distro,expected_uid,elevated,wait_ms=wait_ms)
 class ProbeTests(unittest.TestCase):
  def test_unrelated_reads_only_environment_not_cwd_or_cmd(self):
   p=Proc();r=p.run();self.assertEqual(r['result'],'QUIET');self.assertNotIn('cmdline',p.reads);self.assertEqual(p.closed,[42]);self.assertNotIn('private',json.dumps(r))
@@ -84,7 +85,7 @@ class ProbeTests(unittest.TestCase):
   def quiet(r):seen.append(dict(r));raise RuntimeError('owned-postcheck')
   with patch.dict(os.environ,{'MSM2_WS_WSL_DISTRO':'Owned'}),patch.object(w.shutil,'which',return_value='owned-wsl'),patch.object(w,'run',side_effect=run),patch.object(o,'_current',types.SimpleNamespace(record=record)),patch.object(o,'phase',side_effect=phase),patch.object(o,'child_options',return_value={}),patch.object(o,'wsl_quiet',side_effect=quiet),patch.object(w.subprocess,'run',return_value=subprocess.CompletedProcess([],0)):
    with self.assertRaisesRegex(RuntimeError,'owned-postcheck'):w.WindowsSystem().build(Path('/owned'),Path('/not-deployed'))
-  self.assertEqual((seen[0]['linux_uid'],seen[0]['distro'],seen[0]['build_token'],seen[0]['phase']),(1000,'Owned','owned-token','building'))
+  self.assertEqual((seen[0]['linux_uid'],seen[0]['distro'],seen[0]['build_token'],seen[0]['phase']),(1000,'Owned','owned-token','build_returned'))
  def test_bound_quiet_output_reports_successful_exit(self):
   data=Proc().run()
   with patch.object(o.subprocess,'run',return_value=subprocess.CompletedProcess([],0,json.dumps(data),'')):

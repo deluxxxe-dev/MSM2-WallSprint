@@ -1,5 +1,19 @@
 # WallSprint project state
 
+## Current handoff — preserve primary exit / scoped child drain / role observation
+
+New transport/Linux exit and bound stage receipt precede completion checking;
+nonzero or active children never validate/deploy. Zero without fresh completed
+stage_payload receipt cannot reuse old artifact. Token-bearing child PIDFDs wait
+natural exit at most5s/query; remaining/reused/unknown children keep pending.
+Cloud c48 passes yet6 token-associated Wine service helpers briefly survive and
+naturally drain; this does NOT establish owner PID roles or main termination cause.
+Owner original exit was not recorded; new schema2 readonly inspection gives current
+PID/PPID/start/state/names plus saved/bound status, no guessed historical exit.
+ONE next action is fresh role diagnostic, not repeated repair/rebuild; source/KIT
+on owner are NOT updated by diagnosis. R5 semantics/checked-in bytes unchanged.
+See analysis/WSL_BUILD_EXIT_AND_CHILD_DRAIN.md and CODEX_RESULT for exact outcomes.
+
 ## Latest blocker — ACTIVE descendants after partial owner test output
 
 Owner745fcbf root repair succeeded TOKEN_ABSENT and TOOLING_REPAIR_COMPLETE. Next update ends mid c48 fixture output without pipeline completion marker; error lists6 token-matching processes plus2 environ EACCES. Roles and primary runner return cause UNKNOWN. WindowsSystem.build quiet check precedes p.returncode check and can mask original build failure. Current CODEX_NEXT targets original-exit reporting and responsible owned-child cleanup/diagnosis, not repeated EACCES-only recovery. No r5 owner deployment or game test acceptance.

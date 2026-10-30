@@ -246,7 +246,7 @@ payload/manifestが残っていてもexact source-HEAD/session/inactivity receip
 新buildではUIDを記録し、不一致を拒否します。WSL/PIDの一括終了やlock削除はしません。
 
 
-## 現在のEACCES回復 — root読み取り確認付きtooling修復
+## 前回のEACCES回復（実機成功済み・今回は繰り返さない）
 
 前回の診断は受理済みです。今回は同じDiagnoseWSLを繰り返さず、以下の通常修復を
 一括実行します。WSLの選択済みdistro内でrootが**正確な操作tokenだけを読み取り確認**
@@ -280,3 +280,41 @@ finally { Remove-Item -LiteralPath $temp -Force }
 その後の `TOOLING_REPAIR_COMPLETE runtime_unchanged=1 no_build=1 no_game_launch=1`
 がtooling修復完了です。root利用不能/拒否でもlock削除等で回避せず、その出力を返します。
 現在はr5配置・実ゲーム確認は未完了です。後で通常Update-WSを行う際は再ビルドします。
+
+
+## 現在のACTIVE停止 — 役割・終了記録の診断（schema2）
+
+前回のroot修復は成功済みです。新しい停止には実際にtokenが一致する子が含まれます。
+名前だけでcompiler/Wineと決めず、同じ修復・ビルドを繰り返しません。
+現在のcheckerはPID/PPID/start/state/executable名/process名を、関連tokenの対象だけに出します。
+新runnerは戻り値を先に保存し、終了済みの関連子だけpidfdで期限付き待機します。
+生存子・権限不明・再利用は拒否し、全WSL/Wineの終了やtoken消去は行いません。
+
+次は以下の**読み取り専用の新診断**だけを実行し、出力を返してください。
+古いrunnerの終了コードは未記録なので `not_recorded` と出る場合があります。
+この操作はfetchのrefs/objectsと一時コードを取得しますが、source worktree/KIT/lock/
+runtimeを更新・解放せず、コンパイル・配置・ゲーム起動をしません。
+
+```powershell
+$game = "C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2"
+$repo = Join-Path $game 'Mods Library\Mods-Developing\MSM2-WS\_source'
+$branch = 'codex/v01c20-edi-value-provenance'
+if ((git -C $repo branch --show-current) -ne $branch) { throw 'Wrong WS branch' }
+if ((git -C $repo remote get-url origin) -ne 'https://github.com/deluxxxe-dev/MSM2-WallSprint.git') { throw 'Wrong WS origin' }
+git -C $repo fetch origin $branch
+if ($LASTEXITCODE -ne 0) { throw 'Fetch failed' }
+$commit = git -C $repo rev-parse "origin/$branch"
+if ($LASTEXITCODE -ne 0) { throw 'Head unavailable' }
+$body = @(git -C $repo show ($commit + ':environment/Repair-Mod-Tools.ps1'))
+if ($LASTEXITCODE -ne 0) { throw 'Diagnostic bootstrap unavailable' }
+$temp = Join-Path $env:TEMP ('MSM2-role-diagnostic-' + [guid]::NewGuid().ToString('N') + '.ps1')
+[IO.File]::WriteAllText($temp, ($body -join "`n"), (New-Object Text.UTF8Encoding($false)))
+try { & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $temp -GameRoot $game -DiagnoseWSL }
+finally { Remove-Item -LiteralPath $temp -Force }
+```
+
+`WSL_DIAGNOSTIC schema=2 ... source_worktree_updated=0 installed_KIT_updated=0` が目印です。
+`ACTIVE` でも今回はroot側で役割を観測し、回収許可にはしません。旧版と同じ早期拒否だけの
+診断ではありません。旧mainの終了コードは後から推測せず、保存がなければ不明のままです。
+今はGitHub sourceを公開した段階で、ownerの実行中/インストール済みKITが更新済みとは
+扱いません。次の正常updateではsource/kit更新後のフルビルドが必要ですが、今回は行いません。

@@ -1,132 +1,156 @@
-# Codex result — confirmed WSL environ EACCES / narrow root token recovery
+# Codex result — main exit visibility / owned child drain / ACTIVE role diagnostic
 
-2026-10-31 JST. STATUS: tooling implementation validated and published; owner recovery pending.
+2026-10-31 JST. STATUS: implementation/cloud validation complete; owner cause pending.
 Branch `codex/v01c20-edi-value-provenance`; baseline
-`053f6a5c1c7a73a0cccd7d18144c74ab99099040`. No WallSprint main merge.
-R5 native/source/INI/binary/package/manifests byte-identical; no native rebuild.
+`242aa7f836e8243cd29bbd3f4d3fff543887c456`. No main merge.
+R5 native/include/INI/checked-in script/ZIP/BUILD_MANIFEST bytes unchanged.
 
-## Supplied evidence / concrete change
+## Evidence and changes
 
-Prior fresh23525e8 DiagnoseWSL confirms Ubuntu-24.04 matches, observed UID1000,
-legacy expected UIDnull, PIDs346/347 environ EACCES(errno13), UNKNOWN/exit2.
-No repair/deploy occurred. Their identity/relevance and owner r5 installed state
-remain unknown. Do NOT repeat identical diagnosis, assume orphan or ignore all
-unreadable same-user processes. Same UID does not establish environ readability.
+Previous owner root repair succeeded; do not repeat that EACCES-only task.
+New owner420-line update stops during c48 JSON, ACTIVE6 + EACCES2, distro/UID1000
+match. No final owner pipeline/package/update success. Exact six process roles
+and main exit UNKNOWN. Token association does NOT establish active compiler.
+Fixture v0.1c20 success lines are not deployment. Original returncode was hidden
+by quiet-before-returncode and not saved; it cannot be reconstructed by guessing.
 
-Selected minimum allowed route: bounded read-only selected-distro root token
-inspection, not a new supervisor/process framework. Existing user check binds
-distro/known UID; only QUIET or access-denied-only UNKNOWN can reach root. Active,
-reused/malformed identity, wrong distro/UID and other genuine unknowns refuse.
-The only privileged command is WSL `--distribution <recorded> --user root --exec
-python3 -c <authored readonly exact-token probe>`. Actual inspector UID0 and
-scope/exit/schema/identity required. No build/compiler/deployment/shell is run as
-root; no security settings/permissions/sysctl changes, WSL shutdown, process kill,
-loader/profile/SF/ordinary-mod cleanup or lock/index deletion.
+Changed workspace.py: persist/flush WSL transport primary_returncode BEFORE quiet,
+separately record Linux exit from bound progress, state and last stage. Nonzero +
+quiet or live children both fail; success + live children fails. Exceptions retain
+unknown exit/class. Interrupted/pending token remains interrupted regardless of
+phase. Only fresh same-operation completed0 stage_payload receipt permits result
+reading; old artifact cannot be reused when transport0 stops mid-suite. All
+payload/hash/DLL/version/source-HEAD/environment checks still required; validated
+phase moved after actual manager payload checks. Deployment/rollback/unlock/checked
+launch ordering unchanged. No root build, controller process kill or cache bypass.
 
-Root checks exact token across ALL UIDs, even after user QUIET, to cover surviving /
-reparented/new-session/UID-escaped token children. Final PID/start inventory is
-rechecked; changed/new identities rescan immediately at most3 passes then UNKNOWN.
-No sleep or top-level-exit-only completion claim. Root unavailable/denied/timeouts/
-wrong identity/malformed output remain specific refusal, never silently assumed
-available. Null legacy original UID is not manufactured as1000: user observed1000,
-inspector0 and build UIDnull are separate fields; all-UID exact-token absence is
-the narrower recovery authority. Empty/PID-only records without exact token cannot
-use this privileged route. No full environ/argv/token/private stderr is emitted.
+New atomic source/tools/windows/build-status.py and runner/c48/hooks annotations
+preserve Linux EXIT/INT/TERM and failing line/scenario. Running stage is last
+observed, not a fault diagnosis. Receipt is build progress, not deployment proof.
+The old source archive refusal still precedes instrumentation; no assertion relaxed.
 
-WSL_TOKEN_CHECK TOKEN_ABSENT authority=token_retirement_only_not_deployment is a
-snapshot, not deployment or universal process-tree proof. Descendants that erase
-the token/arbitrary adversarial future processes are outside the existing inherited-
-token contract; no broader certificate invented. Existing OS/inherited Windows
-handle exclusion, safe interrupted-record preservation, Git clean/ff gates, build
-exit/result/hash/version/source-HEAD and commit/unlock/checked-launch protections
-remain independent. Supported normal repair holds that gate before reclaim/KIT
-refresh. Root proof failure preserves old lock/source HEAD/KIT/runtime in fixtures.
+Probe now includes bounded associated PID/PPID/start/state/executable NAME/process
+name/stage. At most2 departed samples keep live events visible under zombie noise;
+full category counts and32-event cap retained. Names are observation only, never
+cleanup authority. No full unrelated argv/environment/token dump.
 
-Files: operation_lock.py; root/ordinary probe and repair tests; analysis/
-WSL_TOKEN_ROOT_RECOVERY.md; individual+combined operational manuals, environment/
-LOCAL_WORKSPACE docs and PROJECT_STATE/result. No version/package regeneration.
-Original five untracked historical ZIP/bundle files retained unstaged.
+Exact-token PIDFDs may wait natural exit up to5000ms/query, same absolute deadline /
+bounded16 cohort rescans. No sleeps, executable whitelist, token erasure, wineserver
+kill, WSL shutdown or unrelated process termination. Remaining/malformed/reused
+identity preserves pending ownership. Root remains read-only with existing UID/
+distro/all-UID/privacy gates. This is the inherited-token contract, not universal
+supervision of token-erasing descendants or a native continuation certificate.
 
-## Exact commands / expected / actual
+Fresh DiagnoseWSL schema2 can observe ACTIVE as root without claiming/releasing
+ownership. It shows saved transport/Linux exits or not_recorded, bound receipt or
+unavailable, and current related roles. source_worktree_updated=0 /
+installed_KIT_updated=0 are explicit. Fetch changes Git refs/objects/private staging
+only; no code merge/KIT/deploy/build/launch from this diagnostic. No pending token
+but known saved exit may be reported without process inspection. Owner output is
+still needed to distinguish currently surviving compiler/test/service work.
 
-PASS counts below are cases/groups/checks, not summed unique assertions.
-All final commands exited0.
+## Owned reproduction, not owner attribution
 
-| Command | Expected | Actual |
+Unchanged c48 native C++ returns0:8 JSON cases + final checker,9 PASS. Immediate
+fresh-token /proc inspection finds6 PPID1/stateS helpers: wineserver64, services.exe,
+plugplay.exe, explorer.exe, svchost.exe, rpcss.exe. All6 naturally exit during actual
+PIDFD wait; readable associated active count becomes0. Other protected reads remain
+UNKNOWN on non-root host. This proves a cloud Wine completion-tail race, NOT the
+owner main's termination reason. c48 prints JSON BEFORE final finish/join/assert;
+partial JSON alone never proves native exit0. Native assertions/code unchanged.
+
+Files: workspace/operation_lock/repair diagnostics; build status helper; runner/
+hooks/c48 script annotations; reporting/drain/inspection and related tests;
+analysis/WSL_BUILD_EXIT_AND_CHILD_DRAIN.md; individual+combined manuals/state/result.
+No SF/profile/loader/ordinary-mod/gameplay changes; five old untracked files preserved.
+
+## Exact validation / expected / actual
+
+Counts are emitted cases/groups/checks, not unique assertions across repeated suites.
+All final targeted commands exited0. Cloud Linux/Wine is not actual owner WSL.
+
+| Exact command | Expected | Actual |
 |---|---|---|
-| `python3 environment/test_wsl_root_recovery.py` | protected unrelated absence resolves only via root; protected matching/unknown, escaped UID token, known/null UID, actual root identity/distro, root unavailable/timeout/failed protocol, malformed/reused records, bounded inventory churn; actual reparented live child after top parent exit blocks | 21 PASS /0 SKIP /0 UNAVAILABLE |
-| `python3 environment/test_wsl_process_probe.py` | prior PID/permission/identity/scope/UID/post-caller and owned Linux token/pidfd cases | 21 PASS /0 SKIP /0 UNAVAILABLE |
-| `python3 environment/test_operation_lock.py` | crash/child/legacy/race/replacement/shared exclusion, all-distro legacy and token regressions | 14 PASS /1 SKIP /0 UNAVAILABLE |
-| `python3 source/tools/test-workspace.py` | build/test/hash failure keeps previous runtime; launch failure keeps committed new runtime; actual second updater cannot deploy | 20 PASS groups /0 SKIP /0 UNAVAILABLE |
-| `python3 environment/test_mod_environment.py` | shared environment/settings/backup/restore/refresh safety | 28 PASS /0 SKIP /0 UNAVAILABLE |
-| `python3 environment/test_tooling_repair.py` | existing clean/dirty/divergent/old-checker/idempotent/readonly tests; real owned Git ff + simulated EACCES/root absence repairs without build; root denial leaves prior bytes/HEAD | 6 PASS /0 SKIP /0 UNAVAILABLE |
-| `python3 environment/test_start_overstrike_preflight.py` | installer proxy accepted, misplaced loader refused unchanged | 1 PASS group /0 SKIP /0 UNAVAILABLE |
-| PowerShell mock contract below | existing launch contract preserved | 16 PASS checks /0 SKIP /0 UNAVAILABLE |
-| PowerShell parser below | existing bootstrap syntax retained | 1 PASS /0 SKIP /0 UNAVAILABLE |
+| `python3 source/tools/test_build_reporting.py` | nonzero+children, zero+children, transport0/Linux31, quiet failure, interruption, incomplete/malformed/stale result refusal, real fake-shell exits37/143/0 and specific stages | 13 PASS /0 SKIP /0 UNAVAILABLE |
+| `python3 environment/test_owned_child_drain.py` | actual pidfd natural exit, unrelated alive, deadline retains ACTIVE, reused fd refuses, persistent pending, ACTIVE observation no wait/claim, departed noise cannot hide matches | 6 PASS /0 SKIP /0 UNAVAILABLE |
+| `python3 environment/test_build_inspection.py` | old unknown exit not invented; bound/unbound receipts, active root role names; no source/KIT/lock/runtime mutation | 3 PASS /0 SKIP /0 UNAVAILABLE |
+| `python3 environment/test_wsl_process_probe.py` | prior identity/permission/self/distro/UID/protocol cases | 21 PASS /0 SKIP /0 UNAVAILABLE |
+| `python3 environment/test_wsl_root_recovery.py` | root failure/scope/identity/legacy/escaped cohort predicates preserved | 21 PASS /0 SKIP /0 UNAVAILABLE |
+| `python3 environment/test_operation_lock.py` | real cross-process exclusion/crash/child/legacy/PID reuse/retained pending | 14 PASS /1 SKIP /0 UNAVAILABLE |
+| `python3 source/tools/test-workspace.py` | build/test/hash/launch rollback contracts and actual concurrent owner exclusion | 20 PASS groups /0 SKIP /0 UNAVAILABLE |
+| `MSM2_WS_OPERATION_TOKEN=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa WSL_DISTRO_NAME=OwnedCloud python3 source/tools/test-workspace.py` | original archive-refusal under inherited operation environment | 20 PASS groups /0 SKIP /0 UNAVAILABLE |
+| `python3 environment/test_tooling_repair.py` | old checker, clean/dirty/divergent/reversible source/KIT/record protections | 6 PASS /0 SKIP /0 UNAVAILABLE |
+| `python3 environment/test_mod_environment.py` | backup/restore/refresh/settings/data unchanged | 28 PASS /0 SKIP /0 UNAVAILABLE |
+| `python3 environment/test_start_overstrike_preflight.py` | installer proxy accepted; misplaced loader refused unchanged | 1 PASS group /0 SKIP /0 UNAVAILABLE |
+| PowerShell mock contract below | shared launch contract unchanged | 16 PASS checks /0 SKIP /0 UNAVAILABLE |
 
 ```
 XDG_CACHE_HOME=/tmp/ws-lock-xdg-cache XDG_CONFIG_HOME=/tmp/ws-lock-xdg-config XDG_DATA_HOME=/tmp/ws-lock-xdg-data DOTNET_CLI_HOME=/tmp/ws-lock-dotnet /tmp/ws-proxy-pwsh/pwsh -NoLogo -NoProfile -File environment/test_windows_contract.ps1
 ```
 
-Same private XDG variables with `-File /tmp/ws-proc-parse.ps1` invoke Parser.ParseFile
-on environment/Repair-Mod-Tools.ps1, throw on errors, no bootstrap execution.
-PowerShell is Core/Linux with owned mocks, NOT actual Windows/WSL acceptance.
-`python3 -m py_compile environment/operation_lock.py environment/test_wsl_root_recovery.py`: PASS.
-`git diff --check`: PASS.
-`git diff --exit-code 053f6a5 -- source/include source/src source/mod BUILD_MANIFEST.json 'MSM2-WS-v0.1c38r5*' 'MSM2-Mod-Tools-v1.2.0.zip'`: PASS; protected bytes identical.
+`python3 /tmp/ws-active-c48-drain.py`: actual targeted runner
+`bash source/tools/test_production_witness_review.sh` with generated fresh operation
+token/private status dir, then probe with wait0 and5000ms; exit0/9 PASS,6 live Wine
+helpers before, owned_exits_waited6 after, no ACTIVE among readable processes.
+This harness invokes only authored Linux probe and owned native fixtures; no game.
 
-Initial existing isolated Linux fixture incorrectly expected a privileged proof
-while running as non-root. It now verifies user token absence and mandatory root
-identity refusal on non-root hosts; production checks were not weakened. Retested
-full affected focused suites after final guards. Real owned subreaper harness is
-process-local, reaps all its children, and proves top-level exit != child exit.
-Cross-UID/root-read authorization cases are models, not a claim of actual WSL root
-privilege. Reparented live-child/environment/pidfd evidence is actual owned Linux.
+### Full pipeline — final corrected pass
 
-SKIP1: full sandbox same-user /proc inventory cannot read protected environment;
-probe fails closed. Isolated token tests are separate evidence, not a replacement.
-UNAVAILABLE: actual Windows/selected WSL root readability, ptrace restrictions,
-owner repair and r5 deployment (one owner acceptance group). Never counted PASS.
-NOT RUN: native Windows build/runtime portable/smoke/hooks/package/release suites,
-per explicit tooling-only/byte-preservation scope; no runtime changes justify them.
-No BLOCKED code subtask; owner privilege/recovery acceptance remains pending.
+Actual controller `python3 /tmp/ws-life-full-retry.py` invokes:
+`bash source/tools/windows/workspace-build.sh /workspace/WallSprint /tmp/ws-life-full-result-retry`
+with fresh uuid4.hex MSM2_WS_OPERATION_TOKEN, synthetic WSL_DISTRO_NAME=OwnedCloud
+and PATH=/workspace/toolchains/analysis-python/bin:$PATH. Source-only equivalent:
 
-## ONE owner action / staging / result boundaries
+```bash
+MSM2_WS_OPERATION_TOKEN="$(python3 -c 'import uuid; print(uuid.uuid4().hex)')" WSL_DISTRO_NAME=OwnedCloud PATH=/workspace/toolchains/analysis-python/bin:$PATH bash source/tools/windows/workspace-build.sh /workspace/WallSprint /tmp/fresh-private-WS-result
+```
 
-Use the common manual's fresh NORMAL Repair-Mod-Tools.ps1 bootstrap, WITHOUT
-DiagnoseWSL, game/manager/updater normally closed. It fetches/stages current code
-before old checks; root inspects only; held-gate clean/ff repair refreshes KIT with
-original records preserved. Success marker:
-`TOOLING_REPAIR_COMPLETE runtime_unchanged=1 no_build=1 no_game_launch=1`.
-Return its output including refusal. No full compile merely to classify blocked
-processes, no game test requested, no identical diagnosis-only loop.
+It runs Windows cross-build, portable, smoke, full hooks/native/counterexamples,
+package/release and disabled staging. Expected all required commands pass and
+completed0 stage_payload receipt bound to current token. Actual exit0,457.36s,
+943 PASS /32 SKIP /17 UNAVAILABLE; completed/exit0/stage_payload. No owner deployment.
+Initial full attempt (same controller, original /tmp/ws-life-full-result) exit1,
+283.98s,428 PASS/5 SKIP/17 UNAVAILABLE: new instrumentation tried missing helper
+before old-bootstrap archive refusal under inherited token. Receipt correctly
+retained hooks:line91/exit1. Moved original archive preflight before instrumentation;
+kept assertion/bytes, targeted inherited-env case passes, final full retry passes.
+This task-induced regression is NOT claimed to be the original owner cause.
+Earlier isolated liveness fixture ended at its old5s sleep during new5s wait; changed
+it to owned stdin-blocked child so it genuinely remains live until cleanup, no
+production gate weakened. New fake-shell fixture path corrected to its real source
+CWD. Final affected suites rerun. No native C++ assertion skipped/changed to pass.
 
-Existing validated staging may persist but lacks authenticated exact-source/
-build-session/inactivity receipt. No cache/manual deployment shortcut added.
-Normal subsequent Update-WS rebuild is still unavoidable and is NOT this action.
-TOKEN_ABSENT or TOOLING_REPAIR_COMPLETE does not establish r5 deployment. Chat
-gives game-test instructions only after deployment success. Publication SHA /
-independent readback recorded after commit/push.
+SKIP32 full pipeline:5 preexisting optional private captures/replays unavailable,
+27 optional historical maintainer logs absent in clean external staging. Required
+native fixtures execute. Focused SKIP1: host cannot inspect full protected /proc;
+actual query fails closed. Isolated owned PIDFD evidence is separate.
+UNAVAILABLE17 full: existing c40/c49/c50/c51 native VCH/bridge evidence absent;
+all certificates remain closed. Actual Windows/owner WSL transport/current roles/
+original exit/deployment additionally UNAVAILABLE (owner acceptance group), not PASS.
+No BLOCKED code subtask; original historical exit is unrecorded, not fabricated.
 
-Final review additionally binds saved build_token to its recorded operation token when present; mismatched identity refuses before inspection. Authentic owned fixtures now use their actual operation token; focused20/lock/repair suites rerun.
+Other checks, expected/actual PASS:
+`python3 -m py_compile environment/operation_lock.py environment/repair_tools.py source/tools/workspace.py source/tools/windows/build-status.py`
+`bash -n source/tools/windows/workspace-build.sh source/tools/test_hooks_windows.sh source/tools/test_production_witness_review.sh`
+`git diff --check`
+`git diff --exit-code 242aa7f -- source/include source/src source/mod BUILD_MANIFEST.json 'MSM2-WS-v0.1c38r5*'`
+No committed r5 binaries/packages regenerated. Full validation output stays external,
+not manually copied/deployed or offered as a new release.
 
-Root live-inventory closure excludes kernel-confirmed zombie/exited states consistently; a focused regression prevents an already-exited protected process from being mislabeled perpetual inventory churn. Final root suite21 PASS; affected lock/repair suites repeated.
+## ONE owner next action
 
-## Publication confirmed
+Fresh bootstrap's new DiagnoseWSL schema2 role/exit observation; no identical
+EACCES repair/rebuild. Common manual has exact block runnable before old checker.
+Return output. Historical primary exit remains not_recorded if old runner lacked
+receipt; current associated names/start/PPID/state are new evidence, not guesses.
+Fetch/staging does NOT update source worktree or installed KIT, and does NOT deploy.
+Later source/KIT update and normal rebuild require a separate confirmed next step;
+no cached/unverified artifact reuse or game test requested now. Publication SHA /
+independent readback recorded after push.
 
-Final implementation commit `b24348f642b376fc653ef3f123c1958bc418d07f`
-(including preceding bab2580/6a26249) pushed to the intended WS branch.
-`python3 /tmp/ws-root-publication.py` PASS: independent clone fetch/FETCH_HEAD,
-ls-remote and local HEAD match; all13 changed tracked blobs match exact local
-bytes. Final record-only commit is pushed/read back with the same script; no
-code/package edits or test rerun necessary for that record. Original five
-untracked historical archive/bundle files remain unstaged.
+## Shared knowledge synchronization
 
-Reusable protected-environ/read-only-root/token-authority distinction synchronized
-to separate MSM2-Wisdoms development manual, commit
-`d058365187923a90eba61cbbedc3e36afc4f07e7`; push, remote head/FETCH_HEAD and document
-blob readback PASS. That separate documentation main is not a WallSprint main
-merge. Owner root availability, actual recovery and r5 deployment remain pending.
-
-ONE next action is normal fresh Repair-Mod-Tools.ps1, no DiagnoseWSL/full build/
-game test. Return its output. No deployment claim from token absence alone.
+Wisdoms operational manual updated/pushed at
+`ce7d97db095fd6f5995339c1adafb61d687b9273`; remote main readback matches.
+Corrected prior pending owner root-repair acceptance, kept later update/deployment
+unknown, and recorded primary-exit/owned PIDFD/diagnostic authority distinctions.

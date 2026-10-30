@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+trap 'rc=$?; if [[ -n "${MSM2_WS_STATUS_DIR:-}" ]]; then python3 tools/windows/build-status.py "$MSM2_WS_STATUS_DIR" "hooks:line${LINENO}" failed "$rc" || true; fi' ERR
 cd "$(dirname "$0")/.."
 toolchain_root=${WALLSPRINT_TOOLCHAIN_ROOT:-/workspace/toolchains/windows}
 gpp="$toolchain_root/usr/bin/x86_64-w64-mingw32-g++-posix"

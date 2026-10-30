@@ -157,3 +157,6 @@ loader repair or real-PC acceptance is performed by this cloud task.
 WSL environ EACCESの前回診断は受理済みです。今回の回復は共通READMEの
 「現在のEACCES回復」にある通常修復を使用します。rootはtokenの読み取り確認だけを行い、
 build/配置/manager起動をしません。実機でのroot利用可否とr5配置はまだ未確認です。
+
+新しいACTIVE停止は共通README「現在のACTIVE停止」のschema2診断が次操作です。
+前回EACCES修復を繰り返さず、診断中にsource/KIT更新やmanager起動はしません。

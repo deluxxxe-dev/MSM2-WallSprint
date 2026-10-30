@@ -99,8 +99,9 @@ class Locks(unittest.TestCase):
  def test_exact_wsl_token_probe_runs_on_owned_linux_process(self):
   from unittest.mock import patch
   real_run=subprocess.run;token='owned-wsl-token-'+str(os.getpid())
-  p=subprocess.Popen([sys.executable,'-c','import time;time.sleep(5)'],env={**os.environ,'MSM2_WS_OPERATION_TOKEN':token})
-  self.addCleanup(lambda:p.poll() is None and p.kill())
+  p=subprocess.Popen([sys.executable,'-c','import sys;sys.stdin.buffer.read()'],stdin=subprocess.PIPE,env={**os.environ,'MSM2_WS_OPERATION_TOKEN':token})
+  self.addCleanup(p.stdin.close)
+  self.addCleanup(lambda:p.poll() is None and (p.terminate(),p.wait(timeout=5)))
   def run(args,**kw):
    at=args.index('-c');return real_run([sys.executable,*args[at:]],capture_output=True,text=True,env={**os.environ,'WSL_DISTRO_NAME':'owned'})
   with patch.object(o.subprocess,'run',run):
@@ -115,7 +116,7 @@ class Locks(unittest.TestCase):
  def test_token_probe_with_isolated_owned_proc_inventory(self):
   from unittest.mock import patch
   real_run=subprocess.run;token='owned-isolated-'+str(os.getpid())
-  p=subprocess.Popen([sys.executable,'-c','import time;time.sleep(5)'],env={**os.environ,'MSM2_WS_OPERATION_TOKEN':token})
+  p=subprocess.Popen([sys.executable,'-c','import sys;sys.stdin.buffer.read()'],stdin=subprocess.PIPE,env={**os.environ,'MSM2_WS_OPERATION_TOKEN':token})
   def run(args,**kw):
    at=args.index('-c');script=args[at+1]
    prefix="import os;_ls=os.listdir;os.listdir=lambda p: ["+repr(str(p.pid))+"] if p=='/proc' else _ls(p);\n"
@@ -130,4 +131,5 @@ class Locks(unittest.TestCase):
      with self.assertRaisesRegex(o.OperationError,'inspection=root'):o.wsl_quiet(record)
   finally:
    if p.poll() is None:p.kill();p.wait()
+   p.stdin.close()
 if __name__=='__main__':unittest.main()

@@ -55,7 +55,7 @@ class Repair(unittest.TestCase):
   from unittest.mock import patch
   with o.hold(self.game,'update'):o.phase('building',build_token=o._current.record['token'],distro='Owned')
   calls=[]
-  def query(record,legacy,root):
+  def query(record,legacy,root,wait_ms=0):
    calls.append(root)
    return dict(result='QUIET' if root else 'UNKNOWN',counts={} if root else {'access_denied':2},uid_observed=0 if root else 1000,exit_status=0 if root else 2)
   before=self.script.read_bytes()
@@ -67,7 +67,7 @@ class Repair(unittest.TestCase):
   from unittest.mock import patch
   with o.hold(self.game,'update'):o.phase('building',build_token=o._current.record['token'],distro='Owned')
   lock=self.game/'.MSM2-Operations.guard';before=lock.read_bytes();head=git(self.source,'rev-parse','HEAD');runtime=self.script.read_bytes();kit=(self.game/'Mod-Tools/mod_environment.py').read_bytes()
-  def query(record,legacy,root):return dict(result='UNKNOWN',counts={'access_denied':1},uid_observed=0 if root else 1000,exit_status=2)
+  def query(record,legacy,root,wait_ms=0):return dict(result='UNKNOWN',counts={'access_denied':1},uid_observed=0 if root else 1000,exit_status=2)
   with patch.object(o,'_wsl_query',side_effect=query):
    with self.assertRaisesRegex(o.OperationError,'NOT proved'):r.repair(self.source,self.game,self.head,self.system)
   self.assertEqual((lock.read_bytes(),git(self.source,'rev-parse','HEAD'),self.script.read_bytes(),(self.game/'Mod-Tools/mod_environment.py').read_bytes()),(before,head,runtime,kit))
@@ -77,7 +77,7 @@ class Repair(unittest.TestCase):
   with o.hold(self.game,'update'):
    o.phase('building',build_token=o._current.record['token'],distro='Owned',linux_uid=1000)
   lock=self.game/'.MSM2-Operations.guard';before=lock.read_bytes();head=git(self.source,'rev-parse','HEAD');kit=(self.game/'Mod-Tools/mod_environment.py').read_bytes();runtime=self.script.read_bytes()
-  with patch.object(o,'wsl_quiet',return_value={'result':'QUIET'}) as quiet,contextlib.redirect_stdout(io.StringIO()) as output:r.diagnose(self.source,self.game)
+  with patch.object(o,'wsl_inspect',return_value={'result':'QUIET'}) as quiet,contextlib.redirect_stdout(io.StringIO()) as output:r.diagnose(self.source,self.game)
   self.assertIn('read_only=1',output.getvalue());self.assertEqual(quiet.call_args.args[0]['linux_uid'],1000)
   self.assertEqual((lock.read_bytes(),git(self.source,'rev-parse','HEAD'),(self.game/'Mod-Tools/mod_environment.py').read_bytes(),self.script.read_bytes()),(before,head,kit,runtime))
  def test_dirty_and_divergent_preserve_checkout_runtime(self):
