@@ -9,6 +9,25 @@ static void check(const heading::Result& r){assert(r.basis.valid&&diag::measure(
 static heading::Reversal ready(){heading::Reversal h;assert(h.enter(entry));h.sample({},1,0,0);return h;}
 static void reverse(heading::Reversal& h){auto a=h.sample({-.4f,0,0},2,100,100);check(a);assert(a.candidate==-1&&!h.turning);auto b=h.sample({-.8f,0,0},3,200,200);check(b);assert(h.turning&&h.sign==-1);}
 int main(){
+ // A: correctness reproduction with the original100ms thresholds.
+ auto equal=ready();equal.sample({-.4f,0,0},2,100,100);
+ auto savedPosition=equal.position;auto savedUpdate=equal.update;
+ for(unsigned u=3;u<100;++u){auto r=equal.sample({-100,0,0},u,100,200);check(r);assert(equal.pending==-1&&equal.pendingCount==1&&!equal.turning&&equal.pendingMs==100&&equal.observationMs==100&&equal.update==savedUpdate&&equal.position.x==savedPosition.x);}
+ equal.sample({-.8f,0,0},100,200,200);assert(equal.turning);auto frozen=equal.sample({},101,250,250);
+ for(unsigned u=102;u<130;++u){auto r=equal.sample({},u,250,1000);check(r);assert(equal.turning&&dot(r.basis.forward,frozen.basis.forward)>.99999f&&equal.lastClock==250);}
+ auto gap=ready();gap.sample({-.4f,0,0},2,100,100);gap.sample({-1,0,0},3,100,100);gap.sample({-2,0,0},4,351,351);assert(!gap.pending&&!gap.turning&&gap.observationMs==351);
+ auto back=ready();back.sample({-.4f,0,0},2,100,100);back.sample({-.8f,0,0},3,99,101);assert(!back.pending&&!back.turning&&back.observationMs==99);
+ puts("PASS: A original100ms same-clock reproduction preserves candidate/baseline; duplicate time cannot vote, turn or extend freshness; backward/gap reset");
+ // B: tuning-only threshold after A passed at original100ms.
+ static_assert(heading::observationIntervalMs==33.);
+ auto tuned=ready();tuned.sample({-.132f,0,0},2,33,33);assert(tuned.pendingCount==1&&!tuned.turning);
+ tuned.sample({-50,0,0},3,33,66);assert(tuned.pendingCount==1&&!tuned.turning&&tuned.observationMs==33&&tuned.update==2);
+ tuned.sample({-.264f,0,0},4,66,66);assert(tuned.turning&&tuned.turnStart==66);
+ auto tunedMid=tuned.sample({},5,191,191);check(tunedMid);assert(dot(tunedMid.basis.forward,Vec3{0,1,0})>.9999f);
+ auto tunedEnd=tuned.sample({},6,316,316);check(tunedEnd);assert(tunedEnd.basis.forward.x==-tuned.f0.x&&!tuned.turning);
+ auto regressed=ready();regressed.sample({-.132f,0,0},2,33,33);regressed.sample({-.264f,0,0},1,66,66);assert(!regressed.pending&&!regressed.turning);
+ auto seenRegression=ready();seenRegression.sample({-.132f,0,0},2,33,33);seenRegression.sample({-.2f,0,0},3,33,33);seenRegression.sample({-.3f,0,0},2,66,66);assert(!seenRegression.pending&&!seenRegression.turning);
+ puts("PASS: B two33ms observations accept at66ms; equal-time update cannot add vote; fixed250ms proper turn and native regression remain closed");
  source_math::Matrix m{};m.v[0]=m.v[5]=m.v[10]=m.v[15]=1;m.v[12]=12;m.v[13]=34;m.v[14]=56;source_math::Transition t;assert(t.enter(m,{0,0,1},0)==false); // parallel forward cannot define an entry heading
  m.v[0]=0;m.v[2]=-1;m.v[8]=1;m.v[10]=0;assert(t.enter(m,{0,0,1},0));source_math::Matrix a{};float progress{};assert(t.sample(m,{0,0,1},125,.25f,a,progress)&&progress==.5f);assert(!std::memcmp(a.v+12,m.v+12,16));
  puts("PASS: unchanged entry interpolation and Position/W preservation");

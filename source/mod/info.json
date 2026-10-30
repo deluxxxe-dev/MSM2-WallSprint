@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.57",
-  "description": "WallSprint v0.1c38r1: bounded orientation-only forward/back reversal after two validated displacement observations; positive 180-degree wall-normal turn over 0.25 seconds through existing coherent A/B source paths. No Position, input, velocity or animation writes; existing guards and five-second source budget unchanged.",
+  "version": "0.1.58",
+  "description": "WallSprint v0.1c38r2: equal-timestamp updates wait without resetting evidence; two33ms displacement observations confirm bounded forward/back heading reversal. Existing250ms wall-normal turn, entry transition, five-second budget and coherent A/B orientation-only contracts unchanged; no Position/input/velocity/animation writes.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

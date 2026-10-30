@@ -1,3 +1,7 @@
+# WallSprint v0.1c38r2 — equal-timestamp correction and33ms observation
+
+Package **0.1.58**. Different native updates sharing a wall timestamp wait without discarding candidate/baseline or voting/advancing a turn. Observation and confirmation minimum intervals are33ms; two eligible new-sign samples remain required. Maximum250ms gap, speed2, dot0.8, fixed250ms turn, unchanged entry/A-B/Position-W/scale-metadata/five-second contracts. Correctness was tested at old100ms before tuning. Separate movement diagnostic sampler stays100ms. Real r2 game outcome remains unverified.
+
 # WallSprint v0.1c38r1 — orientation-only reversal proof
 
 Package **0.1.57**. After entry interpolation, two consecutive eligible position-difference observations confirm a forward/back reversal along the entry wall-tangent heading. Orientation turns by a positive 180 degrees about the existing wall normal over 0.25 pause-aware seconds. Existing A/B source publication, Position/W preservation, compact scales/metadata, admission, F8 and five-second budget remain unchanged. This is a displacement-following experiment, not input intent, physics velocity, movement ownership or animation control. Real-game reversal outcome remains unverified for r1.

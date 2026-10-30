@@ -1,9 +1,29 @@
 # WallSprint project state
 
-## Current stage — installer-source checker corrected; r1 runtime unchanged; owner checker refresh pending
+## Current stage — r2 equal-timestamp correction and33ms observation implemented; canonical validation passed (895 PASS /5 SKIP /17 UNAVAILABLE)
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
+
+## v0.1c38r2 / package0.1.58 — correctness and tuning separated
+
+Canonical evidence: `analysis/V01C38R1_REVERSAL_RUNTIME_RESULT_20261031.md`.
+Implementation: `analysis/V01C38R2_REVERSAL_LATENCY.md`.
+Owner confirms r1 reverses but perceives delay. Logged candidate-to-completion
+474/358/366/353ms is not input latency. Update160->161 at the SAME timestamp
+reset pending evidence unnecessarily; no lifecycle stale episode explains it.
+
+A: equal-time different updates WAIT, preserving observation and candidate
+baseline; no extra votes, events, turn progress or freshness. Genuine backward
+wall/native order and >250ms gaps still reset. Correctness passed separately
+with original100ms parameters before tuning, then rechecked on final code.
+B: one named interval33ms for observation/confirmation; two samples remain
+necessary (synthetic acceptance at66ms after baseline0). Speed2, dot0.8,
+max250ms gap and fixed250ms turn, entry/A-B/Position-W/metadata/scales/five-second
+contracts and diagnostic sampler100ms are unchanged. Actual r2 response UNKNOWN.
+
+No source/input/velocity/Position writes or animation/input ownership claim.
+Exact automated outcomes/publication in CODEX_RESULT; no cloud deployment.
 
 ## Shared checker correction — 2026-10-31
 
@@ -16,10 +36,10 @@ requirement or profile change. Current source contract and owner-evidence limits
 Owner's later supplied log loaded v0.1c38, not proof of r1/Update-WS success.
 The old updater checker executes before fetch, so a guarded one-time Git
 fast-forward is required to obtain this correction (exact block in CODEX_RESULT).
-Runtime/reversal v0.1c38r1/package0.1.57 bytes remain unchanged. Real-PC updater
+That checker-only patch preserved v0.1c38r1/package0.1.57 bytes. Real-PC updater
 and game acceptance remain unverified.
 
-## Orientation-only reversal proof — v0.1c38r1 / package0.1.57
+## Historical r1 orientation-only proof — v0.1c38r1 / package0.1.57
 
 Canonical implementation: `analysis/V01C38R1_REVERSAL_HEADING.md`.
 Accepted evidence: `analysis/WALLRUN_REVERSAL_RUNTIME_RESULT_20261030.md`.
@@ -211,7 +231,7 @@ This repair does not modify SocialFeed, ordinary MODs, WS runtime code, Profiles
 
 ## Safety
 
-Runtime script is `v0.1c38r1` (package0.1.57); only the authorized post-entry
+Runtime script is `v0.1c38r2` (package0.1.58); only the authorized post-entry
 orientation-source reversal behavior changes. C52 remains binding:
 
 `PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
