@@ -1,6 +1,6 @@
 # Codex result — r4 session-bound source lifetime
 
-2026-10-31 JST. STATUS: success (bounded expiry-policy change, synthetic validation).
+2026-10-31 JST. STATUS: partial overall — lifetime patch validated/published; INPUT inventory complete, trigger lacks a statically established runtime candidate.
 Branch codex/v01c20-edi-value-provenance; baseline18c563a. No main merge.
 Runtime v0.1c38r4/package0.1.60. Follow-on INPUT task starts AFTER this push.
 
@@ -150,3 +150,15 @@ no synthetic input test promoted to native or owner-game acceptance.
 No new output log/version or owner update/game instruction; r4 existing log name
 above. Normal docs-only commit/push and independent changed-blob/head readback
 recorded below; runtime lifetime patch remains independently reproducible.
+
+
+### Verified separate INPUT publication
+
+Inventory commit53bf93f0b7a34f04a2e7543f760bbce4169e26a5, normal push after
+lifetime6af7b78. `python3 /tmp/ws-input-publication.py` exit0: independent GitHub
+fetch/head/ls-remote equality and all3 changed blobs against6af7b78 match local.
+Exact final caller query was also rerun into /tmp/ws-input-callers-final.log
+(single regex word-boundary escapes), same fixture-only callers. Documentation
+query spelling normalized; runtime/artifacts unchanged. This record-only commit
+is normally pushed and independently verified again; final full SHA in chat.
+No rebuild/repackage for docs-only follow-on, no owner deployment/test request.
