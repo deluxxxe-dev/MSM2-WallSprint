@@ -1,89 +1,107 @@
-# Codex result — Fast steering A/B negative; Slow probe prepared; Overstrike launcher hardened
+# Codex result — read-only steering extraction-source investigation
 
-2026-10-29 JST. Branch `codex/v01c20-edi-value-provenance`.
+2026-10-30 JST. Branch `codex/v01c20-edi-value-provenance`.
+Task baseline: `afa7654549380b45b58fabadcdfc333adaa7c2d3`.
 
 ## STATUS
 
-success
+**partial** — tool-source review and controlled existing-tool procedure complete;
+actual installed asset and runtime consumption remain unverified.
 
 ## CHANGED
 
-- `analysis/WALLRUN_STEERING_PROBE_AB_RESULT_20261029.md`
-- `source/tools/build_wallrun_steering_slow_probe.py`
-- `source/tools/test_build_wallrun_steering_slow_probe.py`
-- `environment/Start-Overstrike.cmd`
-- `environment/test_start_overstrike_preflight.py`
-- `docs/PROJECT_STATE.md`
-- `docs/CODEX_NEXT.md`
+- `analysis/WALLRUN_STEERING_EXTRACTION_SOURCE_REVIEW_20261030.md`
 - `docs/CODEX_RESULT.md`
+
+No code, PROJECT_STATE, CODEX_NEXT, package, game data or other repository changed.
+Two pre-existing unfinished c66 experimental Python files conflicted with newly
+tracked upstream names. Their exact bytes were preserved in cloud scratch
+`/workspace/scratch/ws-c66/preserved-before-steering-20261030` before the normal
+fast-forward to the current task. Five pre-existing untracked archives/bundle
+remain untouched and are not part of this commit. No main merge/reset/force push.
 
 ## RESULT
 
-Completed owner A/B for:
+- Modding Tool 1.4.5 resolves a selected file to its parent directory and prefers
+  `toc.BAK` over `toc`, even if the file picker selected `toc`.
+- MSM2 live toc is at game root. Archives are read relative to the loaded toc;
+  copying only toc is insufficient. The list suppresses a leading `d\` in I29
+  archive names: displayed `mods\mod7` means actual `d\mods\mod7`.
+- Export uses the currently loaded toc's `(span, asset ID)` mapping, not the UI
+  archive text, and has no export-time vanilla fallback.
+- List size is raw payload size; exported STG can add a header/extras/padding.
+  A 512-byte payload and 544-byte export are compatible, not a demonstrated
+  selection mismatch. Derive wrapper length before applying byte offsets.
+- The accepted ChatGPT-inspected export hash matches vanilla (Fast100/Slow75),
+  not Slow5. That does not prove which toc was used in the historical session,
+  installation failure, or the identity of an overriding MOD.
+- Missing copied archives can produce a silent extraction failure, but the
+  reported still-open Save dialog cannot be attributed to this from source
+  alone: extraction runs only after the save dialog returns OK.
+- Installed Standard.Slow5, actual Standard/Slow runtime selection and runtime
+  adoption are three separate claims. The last two are not established here.
 
-```text
-Standard.TurnSpeedFast: 100 -> 10
-```
+Full source references, wrapper/raw offsets, and **one exact owner PowerShell
+block** are in the new analysis document. That block only reads game-root `toc`
+and `d\mods\mod7`, verifies copies in a new TEMP directory, and prints paths
+for the existing GUI. GUI menus and exact ref `0/948FA063808F7E18` were checked
+against versioned source. No invented extractor CLI arguments, new extractor,
+framework, game/backup rename or reinstall is proposed.
 
-Observed:
+## Checks — exact commands, expectations and actual results
 
-```text
-ordinary WallRun probe ON: unchanged
-ordinary WallRun probe OFF: unchanged
-WS reversal probe ON: moonwalk YES
-WS reversal probe OFF: moonwalk YES
-WS disabled + probe ON ordinary WallRun: unchanged
-```
+All source commands below were run in the temporary upstream-source clone;
+WS commands were run in `/workspace/WallSprint`. These are source/manual audit
+groups, not native/GUI tests or real installation verification.
 
-Therefore the visible WS moonwalk mismatch is not caused by the Fast probe. The Fast probe produced no visible ordinary-WallRun heading-response change in the tested maneuvers; this is not proof the field is unused.
+| Check / exact command | Expected | Actual / classification |
+| --- | --- | --- |
+| `git branch --show-current`; `git rev-parse HEAD`; `git fetch origin codex/v01c20-edi-value-provenance`; `git merge --ff-only origin/codex/v01c20-edi-value-provenance` | Correct branch; update only by fast-forward; current bounded task read | Expected branch, baseline `afa7654`; required AGENTS/manual/rules/layout/state/task/evidence read. PASS |
+| `git -C /tmp/ws-steering-overstrike-review rev-parse 'MT/v1.4.5^{}'`; `git -C /tmp/ws-steering-overstrike-review show MT/v1.4.5:ModdingTool/ModdingTool.csproj`; `git -C /tmp/ws-steering-overstrike-review show MT/v1.4.5:ModdingTool/MainWindow.xaml.cs \| sed -n '129,213p'` | Version matched; selection branch identified | Tag commit `98bb04f1a37d73f1b0ec2c2148d0a0b354d61292`, assembly1.4.5; toc.BAK preference explicit. PASS |
+| `git -C /tmp/ws-steering-overstrike-review show MT/v1.4.5:DAT1/TOC.cs \| sed -n '84,108p'`; same file `sed -n '185,200p'` and `sed -n '460,488p'`; `git -C /tmp/ws-steering-overstrike-review show MT/v1.4.5:Overstrike/Games/GameMSM2.cs \| sed -n '19,27p'` | Loaded toc parent determines read-only archive location; MSM2 root | `File.OpenRead(Path.Combine(AssetArchivePath, fn))`; parent stored at Load; MSM2 root toc. UI leading-d suppression checked in preceding source. PASS |
+| `git -C /tmp/ws-steering-overstrike-review show MT/v1.4.5:OverstrikeShared/STG/STG.cs \| sed -n '10,90p'`; same file `sed -n '100,177p'`; `git -C /tmp/ws-steering-overstrike-review show MT/v1.4.5:Overstrike/Installers/StageInstaller.cs \| sed -n '190,250p'` | Raw payload versus STG extras differentiated; no DAT1 repack on export | Selected size is raw; wrapper added on export and stripped on install; offsets conditional on actual wrapper. PASS |
+| `git -C /tmp/ws-steering-overstrike-review show MT/v1.4.5:ModdingTool/MainWindow.xaml.cs \| sed -n '532,619p'` | Determine error handling and whether export falls back | Current `_toc`/span/id passed to STG; extraction/write catch empty; save dialog completes before extraction. No fallback. PASS |
+| `git -C /tmp/ws-steering-overstrike-review show MT/v1.4.5:ModdingTool/MainWindow.xaml \| sed -n '18,64p'`; `git -C /tmp/ws-steering-overstrike-review show MT/v1.4.5:ModdingTool/MainWindow.xaml.cs \| sed -n '450,497p'`; `git -C /tmp/ws-steering-overstrike-review show MT/v1.4.5:ModdingTool/README.txt \| sed -n '36,61p'` | Existing GUI operations/ref syntax verified; no fabricated CLI | Load toc, Jump to path or ref, extraction supported; regex accepts `0/948FA063808F7E18`. Owner command paths conform to loader/oracle source. PASS |
+| `test -f "/mnt/c/SteamLibrary/steamapps/common/Marvel's Spider-Man 2/toc"`; same test for `d/mods/mod7` | Establish availability without scanning private data | Both absent; owner live extraction/value check UNAVAILABLE |
+| `command -v pwsh`; `command -v powershell` | Establish native command/UI execution capability | Neither available; no Windows GUI/display or owner ModdingTool executable. Owner PowerShell/GUI reproduction UNAVAILABLE; source review is not execution |
+| `git diff --name-only afa7654549380b45b58fabadcdfc333adaa7c2d3`; `git status --short` | Only the two intended documentation paths plus original untracked artifacts | Scope checked before staging and after commit. PASS |
+| `git diff --check`; `git diff --cached --check` | No whitespace errors | Exit0. PASS |
 
-One further one-field discrimination is prepared:
+Before publication: **PASS 8 audit groups / SKIP 1 suite group / UNAVAILABLE 2
+owner-execution groups / BLOCKED 0**. No unit/regression/native/game PASS claimed.
 
-```text
-Standard.TurnSpeedSlow: 75 -> 5
-offset 0x219: 0x4B -> 0x05
-```
+### Unrun tests and reasons
 
-The owner-facing package is not committed because it contains a modified proprietary game asset. The repository contains a fail-closed reproducible builder and focused contract test.
+SKIP: no tool/runtime code changes, so no focused Fast/Slow builder test, Windows
+build, portable test, Windows smoke/hooks suite or package run. These are not
+required by the current documentation-only task. No Update-WS, reinstall, game
+launch, native probe, c73, steering change or broader movement investigation.
 
-Stopping rule: if the Slow probe also produces no visible ordinary-WallRun heading change, stop serial Fast/Slow steering probes and move to the higher-level WS movement/facing/orientation investigation.
+UNAVAILABLE: live toc/referenced archive/control export missing in cloud; actual
+owner PowerShell/ModdingTool UI behavior and Save-dialog symptom not reproduced.
+The proposed block is source-reviewed, not reported as locally executed.
+The supplied file hash is accepted from CODEX_NEXT, not freshly recomputed here.
 
-## OVERSTRIKE RECURRENCE
+## Safety and artifact
 
-Two recurring shared-environment failures have been observed:
+Runtime v0.1c38 unchanged. Existing C52
+`PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL` and all closed gates unchanged.
+No generated install/source ZIP. No private asset/archive/log committed.
+Wisdoms read-only references consulted; synchronization intentionally not made
+because current task forbids other-repository changes.
 
-```text
-<game>\Overstrike\winmm.dll       # misplaced loader
-<game>\winmm.dll                  # Install mods cannot delete: UnauthorizedAccessException
-```
+## Branch / publication
 
-Current public Overstrike code deletes game-root `winmm.dll` during script setup and recreates it by copying game-root `scripts_proxy.dll`. A ReadOnly source can therefore recreate a ReadOnly destination, matching the observed pattern where one manual repair succeeds and a later Install mods fails again.
+Branch: `codex/v01c20-edi-value-provenance`.
+Documentation commit and independent GitHub publication verification pending
+until the implementation commit has been pushed; finalize this section before
+owner handoff.
 
-The installed `MSM2 - Overstrike` launcher source now runs a bounded preflight before the Python environment checker:
+## NEED
 
-- if misplaced `Overstrike\winmm.dll` exists, preserve it under `Mod-Tools\_quarantine` keyed by SHA256;
-- if the same quarantined bytes already exist, remove only the duplicate misplaced copy;
-- if game-root `scripts_proxy.dll` or `winmm.dll` is ReadOnly, clear only that attribute and verify it cleared;
-- remove `.MSM2-Mod-Tools.lock` only when its recorded PID is demonstrably not running;
-- fail rather than widening cleanup if any repair itself fails.
-
-This preflight does not change loader bytes, Profiles, MOD assets, SocialFeed, ordinary MODs, or WS runtime content.
-
-A focused static regression test pins the repair scope to only these loader/stale-environment cases.
-
-If `UnauthorizedAccessException` recurs after the updated launcher has normalized both root loader attributes, the next diagnosis is an active file lock or Windows ACL; do not repeat Install mods unchanged.
-
-## VALIDATION
-
-The Slow package was regenerated from the authenticated current-build Standard asset and verified as exactly one byte different at offset `0x219` (`75 -> 5`). The prepared package identity is:
-
-```text
-MSM2-WS-SteeringProbe-TurnSpeedSlow5.zip
-SHA256 f9d10c6e3988f464a287c362d9d7312620cfa46f6af01a124671728519d8af79
-```
-
-Existing Fast builder/test remain single-purpose. Slow uses its separate repository-owned builder/test.
-
-## SAFETY
-
-Runtime script remains `v0.1c38`. C52 remains binding. Direct-CFG c73 remains paused. No SocialFeed or other MOD repository was modified.
+Only a controlled export of the currently installed entry from the existing
+Modding Tool, with copied live toc + its referenced `d/mods/mod7`, input hashes,
+Span/Archive/Size and the new `installed-Standard.config`. Exact command and
+existing GUI sequence are in the analysis. If the copied toc points elsewhere,
+report that exact archive instead. Do not send whole private archives by default.
+No additional game run is requested and no runtime-use conclusion is available.
