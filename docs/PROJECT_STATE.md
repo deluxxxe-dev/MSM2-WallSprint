@@ -1,5 +1,10 @@
 # WallSprint project state
 
+## Latest blocker — ACTIVE descendants after partial owner test output
+
+Owner745fcbf root repair succeeded TOKEN_ABSENT and TOOLING_REPAIR_COMPLETE. Next update ends mid c48 fixture output without pipeline completion marker; error lists6 token-matching processes plus2 environ EACCES. Roles and primary runner return cause UNKNOWN. WindowsSystem.build quiet check precedes p.returncode check and can mask original build failure. Current CODEX_NEXT targets original-exit reporting and responsible owned-child cleanup/diagnosis, not repeated EACCES-only recovery. No r5 owner deployment or game test acceptance.
+
+
 ## Current handoff — bounded root token inspection / tooling recovery
 
 Confirmed user environ EACCES no longer forces broad same-user-env readability:
