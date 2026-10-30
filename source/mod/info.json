@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.59",
-  "description": "WallSprint v0.1c38r3: experimental120ms post-entry reversal turn; equal-time WAIT, two33ms displacement observations, entry transition, five-second budget and coherent A/B orientation-only contracts unchanged. Chosen turn duration is not total input latency or animation synchronization; no Position/input/velocity/animation writes.",
+  "version": "0.1.60",
+  "description": "WallSprint v0.1c38r4: authenticated native-session lifetime replaces normal5s experiment expiry. Existing100ms freshness, identity/code/Deinit/disable gates and independent write budgets remain. Displacement reversal33ms/two samples and120ms duration unchanged; no new movement/input/animation writes.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

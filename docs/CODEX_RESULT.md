@@ -1,107 +1,83 @@
-# Codex result — reversal START timing review
+# Codex result — r4 session-bound source lifetime
 
-STATUS: success (bounded source review); earlier-intent behavior change unsupported.
-2026-10-31 JST. Branch codex/v01c20-edi-value-provenance.
-Baseline08028ff2da3891a02f691a9af97452b9bf25c92f, latest branch fetched/fast-forwarded;
-no main merge. Publication SHA recorded after normal push below.
+2026-10-31 JST. STATUS: success (bounded expiry-policy change, synthetic validation).
+Branch codex/v01c20-edi-value-provenance; baseline18c563a. No main merge.
+Runtime v0.1c38r4/package0.1.60. Follow-on INPUT task starts AFTER this push.
 
-## Changes / conclusions
+## Scope / evidence / safety
 
-Documentation ONLY: analysis/REVERSAL_START_TIMING_REVIEW.md,
-docs/PROJECT_STATE.md current handoff and this result. No runtime instrumentation,
-source/test/package/version/asset/environment/profile/SF change. No archive output.
-Current v0.1c38r3/package0.1.59 and all three existing r3 artifacts stay byte-equal.
-r3's faster120ms rotation is not accepted as the requested earlier START solution.
+See analysis/V01C38R4_SESSION_LIFETIME.md and supplied r3 repeated-reversal
+runtime analysis. Session2 three/session4 two completed reversals, then5s expiry;
+no stale in those sessions, session1 separately10 stale pairs/max1385ms. Missing
+video means no visual-release clock claim. This patch addresses total duration,
+not earlier START or animation speed. Private raw evidence is not redistributed.
 
-Actual callers/line references, gates, publication/consumer and lifecycle paths
-are inventoried in analysis. Trigger waits for displacement, distinct33ms samples,
-speed2/dot0.8 and two consecutive new-sign observations. Acceptance sets logical
-turnStart; that call retains previous basis, later positive-time sample rotates,
-worker publication and actual A/B commit remain separate. Initial0.70s admission
-and0.25s interpolation are not repeated per-reversal delays. No1.1s timer exists
-to subtract; owner-requested1.1s is not a measured input latency.
+Changed native_source_override.cpp: remove normal now-entryMs>=5000 end only;
+cap emitted actor observations256 and counter snapshots64 per session. Retention
+validation continues past log caps. Existing heading64/movement40/plane64/stale16,
+fixed ring1024 unchanged. No admission/reversal math/source target/store changes.
+State reset only on genuine new session; no reversal entry-time/generation renewal.
+Transition/helper/ownership/source-lifecycle code unchanged. Existing100ms native/
+worker freshness, stale suspend/recovery, invalid owner/normal/code/Deinit/disable/
+F8/HardClosed guards and A/B stack/caller/target checks remain. Reviewed per-update
+and per-store checks have no5s certificate dependency. C52 remains FAIL, no new
+watch/hook/input/animation/Position/movement writes. Shared tooling/SF untouched.
 
-Five-second source timer starts at Transition.enter(), not reversal. Reversal
-never resets it; stale clock pausing does not extend the real budget. Source exit
-hard-closes override, not native WallRun. Supplied session1 timeout17:10:57.972Z
-and native summary17:11:00.241Z/session2 same5s timeout establish distinct lifetimes,
-not reversal-caused release, unlimited straight override, or video/log alignment.
+Independent4096-per-path write/attempt safety budgets are PRESERVED. Removing
+total TIME expiry does not authorize unlimited stores or quota reset. These can
+remain a practical long-session limit; changing them needs separate review.
+Do not silently call that quota diagnostic-only. No in-game acceptance claimed.
 
-Existing bounded events distinguish detector candidate/acceptance/completion,
-source timeout and native Deinit. They are not exhaustive rejection/observation/
-first-changed-publication/animation telemetry; log caps/drops and prepublication
-close race remain explicit. No further logging of already sampled displacement
-can reveal the decisive missing earlier intent, so no redundant runtime diagnostic
-or new package is justified for this review. No assertion that all historical
-substage timings are reconstructed. No guessed input API, offset or timer change.
+Also changed native smoke fixture, version.hpp/info.json/README_TEST, package
+manifest metadata, PROJECT_STATE/result and new analysis. Artifacts:
+MSM2-WS-v0.1c38r4.zip, MSM2-WS-v0.1c38r4-source.zip,
+MSM2-WS-v0.1c38r4.script.disabled, BUILD_MANIFEST.json. Prior r3 artifacts retained.
 
-ONE missing fact: authenticated wall-relative requested-direction/sign BEFORE
-position reversal, with same session/native update and monotonic time/lifetime
-identity. Existing Snapshot/lifecycle do not supply it; source axes can contain
-our own output. No supported smallest behavior patch meets the requested lead
-without that evidence. Chat judges a later bounded task; no raw-full-log request,
-new input capture, future movement/c73 or owner game/update instructions here.
+## Exact validation / expected / actual
 
-## Verification commands / expected / actual
+Repository root with `export PATH=/workspace/toolchains/analysis-python/bin:$PATH`.
+PASS labels/groups are not summed unique assertions; focused/native suites repeat
+within portable/canonical commands.
 
-Read AGENTS required manuals, state/result, latest NEXT and r1/r2/r3 analyses;
-Wisdoms WALLSPRINT/MSM2_DEVELOPMENT_MANUAL/INTERNALS reference (read-only checkout
-afb1513c80edff9bf11f19b7a36baf3894bb6429). No new reusable engine fact or Wisdoms
-change; findings are local source semantics and supplied timeout evidence.
-Targeted `nl -ba ... | sed -n ...` and `rg -n ...` reads of actual helper, native
-source module, telemetry, source_lifecycle, hook_thunks, immediate_reset_trace,
-sdk_bridge and INI support analysis path inventory. This is STATIC review, not
-an executed game timing measurement. Two exploratory rg reads used nonexistent
-snapshot/input header guesses; corrected to actual sdk_bridge.hpp/source files,
-no fictitious API/interface inferred.
-
-| Command / procedure | Expected | Actual |
+| Command | Expected | Actual |
 | --- | --- | --- |
-| `git diff --check` | no whitespace errors | exit0; PASS |
-| `git diff --exit-code 08028ff -- source environment BUILD_MANIFEST.json MSM2-WS-v0.1c38r3.zip MSM2-WS-v0.1c38r3-source.zip MSM2-WS-v0.1c38r3.script.disabled` | source/environment/manifest/artifacts unchanged | exit0, empty diff; PASS |
-| Python identity check below | existing script/DLL match manifest and package0.1.59 | exit0; PASS |
+| `bash source/tools/test_reversal_heading.sh` | same reversal timing/duration and12 focused groups | exit0; 12 PASS / 0 SKIP / 0 UNAVAILABLE; 0.76s |
+| `bash source/tools/build_windows.sh` | Windows build/version checks | exit0; 0 PASS / 0 SKIP / 0 UNAVAILABLE; 38.74s |
+| `bash source/tools/test.sh` | portable regressions including unchanged entry/reversal | exit0; 25 PASS / 0 SKIP / 0 UNAVAILABLE; 7.83s |
+| `bash source/tools/smoke_windows.sh` | Windows/Wine smoke invariants | exit0; 7 PASS / 0 SKIP / 0 UNAVAILABLE; 11.79s |
+| `bash source/tools/test_native_source.sh` | actual31.1s same-session owned A/B run with straight>5s, >=20 completed alternating turns, active>30s; caps/Deinit/closed-generation/new-session/disable plus existing stale/identity/code cases | exit0; 11 PASS / 0 SKIP / 0 UNAVAILABLE; 98.45s |
+| `bash source/tools/test_hooks_windows.sh` | full canonical chain/counterexamples, no skip/bypass of prior native gates | exit0; 901 PASS / 5 SKIP / 17 UNAVAILABLE; 381.68s |
+| `python source/tools/release.py` | version/script/export/import/package validation and both CRCs | exit0; 1 PASS / 0 SKIP / 0 UNAVAILABLE; 1.61s |
 
-Exact read-only identity check executed:
+Long run uses actual wall clock with synthetic owned lifecycle events and real
+MinHook fixture A/B source commits. No backdated source entry/per-reversal reset;
+GetTickCount64 advances normally on16ms cadence. Original source entry/session/
+generation asserted each iteration; path budgets unexhausted. This is NOT native
+owner Windows or actual game proof. Existing real-position-watch regression is
+retained, not a newly enabled game watch. No safety assertions removed.
 
-```bash
-python3 - <<'PY'
-from pathlib import Path
-import hashlib,json,zipfile
-m=json.loads(Path('BUILD_MANIFEST.json').read_text());p=Path(m['artifact'])
-assert hashlib.sha256(p.read_bytes()).hexdigest()==m['sha256']
-with zipfile.ZipFile(p) as z:
- assert hashlib.sha256(z.read('WallSprint.dll')).hexdigest()==m['dll_sha256']
- assert json.loads(z.read('info.json'))['version']=='0.1.59'
-print('PASS unchanged v0.1c38r3/package0.1.59 script/DLL identity against manifest')
-PY
-```
+`git diff --exit-code 18c563a -- source/include/Math/reversal_heading.hpp
+source/include/Math/source_orientation.hpp source/include/NativeHooks/ownership_guards.hpp
+source/src/NativeHooks/source_lifecycle.cpp source/tools/workspace.py environment`
+returned0/empty: unchanged independent guards/heading/entry/shared code.
+`git diff --check`, staged equivalent and final ZIP CRC/source member identity
+checks pass. Packaging repeated only after docs update; binary tests not repeated
+for report-only package changes. Nonfatal Wine winedevice warnings do not replace
+exit-code checks. All required commands executed; no previous run counted as new.
 
-Script SHA256 d17b24b8a8aef06dbb0a5f41302cbcfcf0cdf7f68e09f5a2e0b5c670bcc427cc;
-DLL SHA2569d624d56d71d60e8f44ea354b8228fc05bc531889febc34076d98213968dbe40.
+## SKIP / UNAVAILABLE / owner / publication
 
-Automated review checks3 PASS; manual path/condition inventory completed.
-SKIP7: test_reversal_heading.sh, test.sh, build_windows.sh, smoke_windows.sh,
-test_native_source.sh, test_hooks_windows.sh and release.py intentionally NOT
-rerun: task explicitly says docs-only must not rebuild unchanged binaries. No
-source/test or package changed; no previous900 PASS run represented as current.
-UNAVAILABLE1 evidence group: authenticated pre-motion intent / owner frame timing;
-no access/authenticated data, not inferred from appearance or provided excerpts.
-BLOCKED0 for this review. Behavior advancement remains evidence-blocked as above.
+Canonical5 optional private replay datasets SKIP (not redistributed); independent
+synthetic wrong-hash/decoder/native regressions still execute.17 UNAVAILABLE:
+c40 VCH2, c49 bridge6, c50 native identity7, c51 post-return2. Registration never
+stands in for native dispatch/order evidence; counterexamples/refusals preserved.
+BLOCKED0 for bounded lifetime change. Owner r4 game acceptance additionally
+UNAVAILABLE (no owner PC/game run here). No human update/game procedure written.
+No full-log request or new capture. No active install/deploy.
 
-All A/B/native admission, stale/cleanup, C52 and five-second gates unchanged.
-No new output artifact or runtime log/version. Owner-side next operation: none
-for this review; no Update-WS/game run required. Detailed current docs live in
-Git; prior ZIP documentation is historical and intentionally not regenerated.
-
-## Publication
-
-Normal commit/push, then independent remote fetch/head and changed-blob comparison;
-actual commit recorded below. No legacy untracked archive/bundle staged or removed.
-
-Review commit `0aeb9f6f9945ee8d4dbed5a04bf49da230722df1` pushed normally:
-08028ff->0aeb9f6. `python3 /tmp/ws-start-publication.py` exit0: independent
-GitHub fetch in /tmp/ws-steering-docs-publication, FETCH_HEAD/ls-remote/local HEAD
-match; all3 changed blobs from08028ff equal local files. The script fetches the
-named development branch and compares `git show FETCH_HEAD:<path>` bytes for each
-`git diff --name-only 08028ff HEAD` path. Same verification repeated after this
-record-only commit. Final SHA in chat avoids self-reference. No rebuild/repackage.
+Read required AGENTS/manuals/runtime analyses and shared Wisdoms references;
+local policy change is not an engine ownership fact. No other repository changed.
+Publication commit and independent GitHub head/blob equality recorded after push;
+only then continue docs/CODEX_INPUT_START.md separately. Five old untracked legacy
+artifacts remain unstaged. Final exact runtime log name if owner later runs:
+MSM2-WS-v0.1c38r4-YYYYMMDD-HHMMSS[-NN].log under MSM2-WS/logs (existing naming).

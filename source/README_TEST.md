@@ -1,3 +1,12 @@
+# v0.1c38r4 / package0.1.60 — session-bound normal source lifetime
+
+Normal5s experimental expiry removed; fresh authenticated same-session native
+updates retain orientation until existing close/invalidity/disable conditions.
+Independent4096-per-path write budgets are unchanged; no unlimited-write claim.
+Reversal timing/duration,100ms freshness and A/B gates unchanged. Diagnostic
+heading64/actor256/count64 caps do not terminate source. Older notes below are
+historical, not current expiry policy. No owner game-test instructions here.
+
 # r3 duration-only experiment — v0.1c38r3 / package0.1.59
 
 Only post-entry reversal turn duration is120ms (chosen experiment, not measured

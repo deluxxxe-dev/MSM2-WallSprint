@@ -461,6 +461,27 @@ int main(){
  assert(!std::memcmp(ws_test_source_received+12,vanilla.v+12,16));
  ws::native_source::event(3,owner);context.wallRunActive=false;workerTick(false);
  puts("PASS: r3 real-time confirmed reversal publishes one coherent midpoint/final basis through real A/B stores, preserves Position/W and compact metadata, freezes turn and clears displacement across stale resume, closes on Deinit");
+ // Actual wall-clock lifecycle regression, no backdated source entry or timer reset.
+ prepare({0,0,1});auto longSession=state.session;auto longGeneration=state.generation;auto longEntry=state.transition.entryMs;
+ auto longStart=GetTickCount64();unsigned completed=0;bool straightChecked=false;
+ while(GetTickCount64()-longStart<31100){
+  waitMs(16);auto age=GetTickCount64()-longStart;bool wasTurning=state.heading.turning;
+  auto direction=age<6000?1:(state.heading.turning?state.heading.sign:-state.heading.sign);
+  fakeHero.position[0]+=.08f*float(direction);workerTick();callA();callB();msm2::native_source::drainLogs();
+  assert(state.session==longSession&&state.generation==longGeneration&&state.transition.entryMs==longEntry);
+  assert(state.transition.active&&!killed.load()&&state.ownership!=Ownership::HardClosed);
+  if(age>=5500&&!straightChecked){assert(state.heading.sign==1&&!state.heading.turning&&pathAWrites>0&&pathBWrites>0);straightChecked=true;}
+  if(wasTurning&&!state.heading.turning)++completed;
+ }
+ assert(straightChecked&&completed>=20&&double(GetTickCount64())-longEntry>30000);
+ assert(state.headingLogs==64&&state.actorLogs==256&&state.countLogs<=64&&state.movementSamples==40);
+ assert(pathAWrites>0&&pathBWrites>0&&pathAWrites<4096&&pathBWrites<4096);
+ ws::native_source::event(3,owner);context.wallRunActive=false;workerTick(false);auto longA=pathAWrites.load(),longB=pathBWrites.load();callA();callB();
+ assert(!state.transition.active&&state.summaryEmitted&&pathAWrites==longA&&pathBWrites==longB);
+ context.wallRunActive=true;workerTick(false);assert(!state.transition.active); // Closed generation cannot re-enter.
+ prepare({0,0,1});assert(state.session!=longSession&&state.heading.sign==1&&state.headingLogs==0&&state.actorLogs==0);
+ msm2::native_source::kill("long_session_disable","shutdown");workerTick(false);callA();callB();assert(!state.transition.active&&pathAWrites==0&&pathBWrites==0);
+ puts("PASS: r4 real31s same-session A/B continuation, straight beyond5s and >=20 completed reversals without entry/generation reset; bounded diagnostic caps do not close source; Deinit/closed-generation/new-session/disable gates preserved");
  assert(MH_DisableHook(reinterpret_cast<void*>(&ws_test_copy_writer))==MH_OK);assert(MH_RemoveHook(reinterpret_cast<void*>(&ws_test_copy_writer))==MH_OK);assert(MH_DisableHook(reinterpret_cast<void*>(&ws_test_native_source_writer))==MH_OK);assert(MH_RemoveHook(reinterpret_cast<void*>(&ws_test_native_source_writer))==MH_OK);assert(MH_Uninitialize()==MH_OK);assert(VirtualFree(mem,0,MEM_RELEASE));
  auto f=std::fopen("logs/windows_native_source_synthetic.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);
  puts("PASS: lock-free coherent A/B shared basis, A exact stack source, B compact36-only scale/metadata preservation, contended worker lock cannot reject hooks, A/E retention, identity/thread/lifecycle/auth/kill/degenerate gates; independent MinHook fixtures only");

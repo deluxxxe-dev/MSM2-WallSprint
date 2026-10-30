@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c38r3",
-  "package_version": "0.1.59",
-  "artifact": "MSM2-WS-v0.1c38r3.script.disabled",
-  "sha256": "d17b24b8a8aef06dbb0a5f41302cbcfcf0cdf7f68e09f5a2e0b5c670bcc427cc",
-  "dll_sha256": "9d624d56d71d60e8f44ea354b8228fc05bc531889febc34076d98213968dbe40",
+  "version": "v0.1c38r4",
+  "package_version": "0.1.60",
+  "artifact": "MSM2-WS-v0.1c38r4.script.disabled",
+  "sha256": "a471cc11de2f63e3c5eb659311db0c1b1f72fd0a0b14d583aac17ddd4bd5df83",
+  "dll_sha256": "2d4ee5d16d0eb4b5ee8e68e6cbc9a187ba93fb2970cdc2f3e7106d9fdd6c8e53",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -53,7 +53,13 @@
   "native_sample_max_age_ms": 100,
   "worker_context_max_age_ms": 100,
   "max_writes_per_session": 4096,
-  "max_override_seconds": 5,
+  "max_override_seconds": null,
+  "normal_lifetime": "authenticated_native_session",
+  "diagnostic_caps": {
+    "heading_events": 64,
+    "actor_observations": 256,
+    "counter_snapshots": 64
+  },
   "log_ring_records": 1024,
   "write_helper": "currentthreadstack check,64byte expected reread,SEH48byte store,64byte full readback including untouched Position16; best-effort48byte rollback on failure, abort no directActor recovery",
   "stop": "Hard: source code/build/proof/patch/identity/epoch/collision/native owner-thread/A-thread/rollback/F8/shutdown failure; secondary B thread mismatch starts per-call verification; foreign target/caller/stack/layout rejects without payload; time-only stale suspends then later same-identity real Update resumes",
@@ -252,7 +258,7 @@
       "HARD_CLOSED"
     ],
     "resume_requires_later_real_Update": true,
-    "partial_transition_recovery": "freeze last published progress; resume virtual clock, original entry/real5s cap unchanged",
+    "partial_transition_recovery": "freeze last published progress; resume virtual clock, original entry retained; normal lifetime follows authenticated native session; freshness/write budgets unchanged",
     "stale_episode_log_pair_cap": 16,
     "stale_summary_metrics": [
       "stale_suspend_count",
@@ -656,7 +662,7 @@
   },
   "isolated_logging": {
     "directory": "game-root/Mods Library/Mods-Developing/MSM2-WS/logs",
-    "filename": "MSM2-WS-v0.1c38r3-YYYYMMDD-HHMMSS.log",
+    "filename": "MSM2-WS-v0.1c38r4-YYYYMMDD-HHMMSS.log",
     "filename_clock": "host_local_GetLocalTime",
     "line_clock": "UTC_unchanged",
     "collision_creation": "CREATE_NEW_atomic",
@@ -732,8 +738,8 @@
     "source": "_source_independent_clone",
     "archive": "_archive_disabled_only",
     "runtime_logs": "logs",
-    "active_script": "MSM2-WS-v0.1c38r3.script",
-    "artifact": "MSM2-WS-v0.1c38r3.script.disabled",
+    "active_script": "MSM2-WS-v0.1c38r4.script",
+    "artifact": "MSM2-WS-v0.1c38r4.script.disabled",
     "update_helper": "Update-WS.cmd",
     "migration_helper": "Migrate-WS.cmd",
     "overstrike": "game-root/Overstrike/Overstrike.exe",

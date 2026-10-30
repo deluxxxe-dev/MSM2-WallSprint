@@ -61,7 +61,7 @@ struct Shared {
  std::uint64_t permissionEpoch{},acceptedEpoch{},staleStart{},staleUpdate{},staleAge{},maxStaleMs{},handledStaleUpdate{};
  double pausedTransitionMs{},frozenTransitionMs{};
  bool positionRequested{};unsigned movementSamples{},movementEmitted{};std::uint64_t movementMs{},movementUpdate{};Vec3 movementPosition{};
- ws::heading::Reversal heading;double headingClock{};std::uint64_t headingWallMs{};unsigned headingLogs{};
+ ws::heading::Reversal heading;double headingClock{};std::uint64_t headingWallMs{};unsigned headingLogs{},actorLogs{},countLogs{};
  Adhesion adhesion{};
 } state;
 struct Record {
@@ -343,7 +343,7 @@ bool observe(const msm2::Snapshot& s,const Token& token,std::uint64_t now,bool m
  state.maxHeldMs=std::max(state.maxHeldMs,state.firstHeld?now-state.firstHeld:std::uint64_t(0));state.maxHeldUpdates=std::max(state.maxHeldUpdates,state.heldUpdates);
  // An observed reset invalidates retention, NOT source ownership. The old
  // abort here allowed subsequent exact valid WorldUp calls through untouched.
- if(room()&&(distinct||!valid||ds<.98f||now-state.lastMetricMs>=50)){state.lastMetricMs=now;Record r{};r.kind=3;r.reason=mayAbort?"verified_native_update_worker":"supplementary_worker";r.session=state.session;r.generation=state.generation;r.ms=now;r.nativeUpdate=token.updates;r.actorUp=up;r.n=state.transition.surface;r.actorDotSurface=ds;r.actorDotWorld=dw;r.heldMs=state.firstHeld?now-state.firstHeld:0;r.heldUpdates=state.heldUpdates;r.success=state.pass;emit(r);}
+ if(state.actorLogs<256&&room()&&(distinct||!valid||ds<.98f||now-state.lastMetricMs>=50)){++state.actorLogs;state.lastMetricMs=now;Record r{};r.kind=3;r.reason=mayAbort?"verified_native_update_worker":"supplementary_worker";r.session=state.session;r.generation=state.generation;r.ms=now;r.nativeUpdate=token.updates;r.actorUp=up;r.n=state.transition.surface;r.actorDotSurface=ds;r.actorDotWorld=dw;r.heldMs=state.firstHeld?now-state.firstHeld:0;r.heldUpdates=state.heldUpdates;r.success=state.pass;emit(r);}
  return true;
 }
 }
@@ -459,8 +459,8 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
  Published p{};p.session=state.session;p.generation=state.generation;p.lifecycleEpoch=epoch;p.acceptedEpoch=state.acceptedEpoch;p.publishedMs=now;p.initMs=token.initMs;p.hero=state.hero;p.transform=state.transform;p.owner=state.owner;p.thread=token.thread;p.nativeUpdate=token.updates;p.elapsed=float(now-token.initMs)/1000.f;
  if(state.transition.active&&!normalOk){end("owned_surface_normal_unreadable",now);}
  if(state.transition.active&&normalOk){Matrix sampled{};float t{};Matrix incoming=state.entryBasis;
-  if(now-state.transition.entryMs>=5000){end("bounded_test_window_5seconds",now);}
-  else if(state.transition.sample(incoming,n,double(now)-state.pausedTransitionMs,config.rotateTime,sampled,t)){p.active=true;p.t=t;p.surface=state.transition.surface;p.basis=ws::diag::actorAxes(sampled.v);state.currentBasis=sampled;state.lastT=t;lifecycleOpen=true;}
+  // Normal lifetime follows authenticated native session; freshness/watchdog and write budgets remain independent.
+  if(state.transition.sample(incoming,n,double(now)-state.pausedTransitionMs,config.rotateTime,sampled,t)){p.active=true;p.t=t;p.surface=state.transition.surface;p.basis=ws::diag::actorAxes(sampled.v);state.currentBasis=sampled;state.lastT=t;lifecycleOpen=true;}
   else {end("invalid_owned_surface_or_transition",now);}
  }
  if(p.active&&p.t>=1){
@@ -625,7 +625,7 @@ void drainLogs(){
  path_b::drainLogs();
  auto lost=recordDrops.exchange(0);if(lost)writeLog("NATIVE_SOURCE_LOG_DROPS count=%u writes_unaffected=1",lost);
  auto a=pathAWrites.load(),b=pathBWrites.load(),ar=pathARejects.load(),br=pathBRejects.load();
- if(reportedA==~0u||a-reportedA>=64||b-reportedB>=64||ar-reportedAR>=64||br-reportedBR>=64){writeLog("PATH_A_OVERRIDE_COUNT=%u PATH_A_REJECT_COUNT=%u PATH_A_STATE_LOCK_CONTENTION=0 PATH_B_OVERRIDE_COUNT=%u PATH_B_REJECT_COUNT=%u",a,ar,b,br);reportedA=a;reportedB=b;reportedAR=ar;reportedBR=br;}
+ if(state.countLogs<64&&(reportedA==~0u||a-reportedA>=64||b-reportedB>=64||ar-reportedAR>=64||br-reportedBR>=64)){++state.countLogs;writeLog("PATH_A_OVERRIDE_COUNT=%u PATH_A_REJECT_COUNT=%u PATH_A_STATE_LOCK_CONTENTION=0 PATH_B_OVERRIDE_COUNT=%u PATH_B_REJECT_COUNT=%u",a,ar,b,br);reportedA=a;reportedB=b;reportedAR=ar;reportedBR=br;}
  for(unsigned n=0;n<capacity;++n){auto t=tail.load(std::memory_order_relaxed);if(t==head.load(std::memory_order_acquire))break;auto r=records[t%capacity];tail.store(t+1,std::memory_order_release);
   if(r.kind==13)refreshLog(r);
   if(r.kind==12)secondaryLog(r);

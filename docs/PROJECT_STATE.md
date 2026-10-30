@@ -3,8 +3,22 @@
 ## Current handoff — repeated reversal lifetime
 
 See analysis/V01C38R3_REPEATED_REVERSAL_RUNTIME.md. Supplied023446 r3 log session2 completes3 reversals and session4 completes2, then both hit5second override expiry. Video unavailable; precise visible-release alignment UNKNOWN. START remains displacement-based and unmodified.
-Current CODEX_NEXT now authorizes replacing only mandatory normal5second expiry with authenticated session-bound continuation. This supersedes older preserve-five-second task constraints for that expiry alone; all freshness/emergency/build/identity/native safety gates remain. Earlier START timing work remains blocked separately. Runtime change not yet implemented.
+Current CODEX_NEXT now authorizes replacing only mandatory normal5second expiry with authenticated session-bound continuation. This supersedes older preserve-five-second task constraints for that expiry alone; all freshness/emergency/build/identity/native safety gates remain. Earlier START timing work remains blocked separately. r4 lifetime change implemented; validation/publication status below.
 
+
+## r4 lifetime implementation — validation complete
+
+v0.1c38r4/package0.1.60 removes ONLY normal5s expiry in tick. Existing per-update/
+per-write100ms freshness, native identity/current-code/normal and Deinit/disable
+close/recovery gates remain; reversal never resets entry or generations. No
+5s-only certificate dependency found in current revalidated A/B consumers.
+Independent4096-per-path write/attempt budgets still apply (not unlimited writes).
+Heading64/actor256/counter64 diagnostics remain independent of source permission.
+Actual31s synthetic/Wine A/B run passes straight beyond5s and >=20 completed
+reversals beyond30s with original session/generation/entry, plus close/reset gates.
+Build/focused12/portable25/smoke7/native11 pass; canonical 901 PASS/5 SKIP/17 UNAVAILABLE.
+Owner in-game acceptance UNKNOWN; INPUT follow-on begins only after lifetime push.
+See analysis/V01C38R4_SESSION_LIFETIME.md.
 
 ## Current owner correction — 2026-10-31 JST
 
