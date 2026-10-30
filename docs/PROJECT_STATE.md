@@ -1,6 +1,6 @@
 # WallSprint project state
 
-## Current stage — c72 accepted; direct-CFG paused; steering Fast probe no-effect A/B complete; Slow probe next
+## Current stage — c72 accepted; Fast/Slow no visible effect; Slow5 export accepted; bounded WS facing source review complete
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
@@ -26,6 +26,7 @@ Canonical detail:
 - `analysis/V01C72_OWNER_OFFLINE_RESULT.md`
 - `analysis/VANILLA_WALLRUN_STEERING_CONFIG_20261029.md`
 - `analysis/WALLRUN_STEERING_PROBE_AB_RESULT_20261029.md`
+- `analysis/WALLRUN_MOVEMENT_FACING_SOURCE_REVIEW_20261030.md`
 
 ## Current-build vanilla steering evidence
 
@@ -83,25 +84,65 @@ WS disabled + probe ON ordinary WallRun: no visible heading-response change
 
 Current Overstrike source confirms the probe package shape is valid for MSM2 format-version-2 stage installation, so invalid stage layout is not the leading no-effect explanation.
 
-## Next minimal steering discrimination
+## Completed Slow5 probe and later extraction evidence
 
-One further one-field probe is prepared:
+Owner observed no visible change from Standard `TurnSpeedSlow: 75 -> 5`.
+This is a narrow owner-observed runtime result; actual Standard/Slow selection
+and consumption remain **UNKNOWN**, and the isolation steps were not all
+independently verified.
 
-```text
-Standard.TurnSpeedSlow: 75 -> 5
-file offset 0x219: 0x4B -> 0x05
-```
-
-Repository-owned reproducible files:
+ChatGPT directly inspected the later supplied export (2026-10-30 JST):
 
 ```text
-source/tools/build_wallrun_steering_slow_probe.py
-source/tools/test_build_wallrun_steering_slow_probe.py
+hero_wallrunsteeringsetup_standard(1).config
+544 bytes
+SHA256 d83095b5e68cc6fa20c95bc044345f7f46fd6c0a35a682df25374b140dfcec2d
+exactly one byte differs from authenticated vanilla:
+file offset 0x219: 75 -> 5
+TurnSpeedFast at 0x218 remains 100
 ```
 
-Runtime test must disable WallSprint and the prior Fast probe, enable only the Slow probe, install mods, and test ordinary outdoor WallRun heading response.
+**VERIFIED-STATIC (supplied export):** the intended Slow5 payload is present.
+Owner-workflow evidence supports installed replacement at the later extraction
+time; source/copy hashes and a full GUI trace were not supplied. It does not
+retroactively certify the earlier game session's installed state. The earlier
+vanilla export does not establish installation failure. Extraction investigation
+is sufficiently resolved; do not repeat it by default.
 
-Stopping rule: if this also has no visible effect, stop serial TurnSpeedFast/Slow config probing and move to the higher-level movement/facing/orientation investigation. Do not open c73 merely because the config route did not yield a visible effect.
+The Fast/Slow serial-probe stopping rule now applies. No further steering values,
+c73, reinstall or repeated game test is requested.
+
+## Bounded WS movement/facing source review — 2026-10-30
+
+Canonical source locations and evidence limits:
+`analysis/WALLRUN_MOVEMENT_FACING_SOURCE_REVIEW_20261030.md`.
+
+**VERIFIED-STATIC (current WS source):**
+
+- The reachable orientation path is telemetry `run` -> native-source `tick` ->
+  `source_math::Transition`, then existing A/B caller-local source replacements.
+- The entry Transform Forward is projected onto the wall to construct a saved
+  target. Up becomes the wall normal; Forward/Right remain entry-derived after
+  interpolation. Both source paths replace all orientation axes, not just Up.
+- This runtime path does not select movement/input direction or rebuild that
+  target when displacement reverses. The direction-aware `ws::Controller` and
+  `ws::planar::Controller` helpers have test instantiations, not runtime callers;
+  the legacy Actor writer is disabled. Movement sampling here is read-only.
+- Existing diagnostics can log displacement and sampled Transform Forward with
+  bounded/conditional coverage. Source Forward logs are not final Actor readback;
+  retention diagnostics check Up. There is no independent visible-animation
+  facing measurement or numeric three-way reversal comparison in those paths.
+
+**HYPOTHESIS, not runtime causality:** entry-derived orientation-source retention
+may separate from displacement handled elsewhere. It does not prove the final
+Transform stayed fixed or explain the visible body/animation.
+
+**Current action:** ChatGPT decides the next evidence question. The exact missing
+fact is whether, during the same active-source reversal, Transform Forward stays
+entry-derived as displacement reverses, or turns while only the visible animation
+keeps its old facing. Override admission/activity at that event is also unproven.
+No runtime/source/tool change, new design, capture request or broad engine scan
+is authorized by this documentation-only review.
 
 ## Shared Overstrike recurrence mitigation
 
