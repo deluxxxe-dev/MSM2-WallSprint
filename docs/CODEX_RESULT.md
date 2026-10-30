@@ -39,3 +39,8 @@ in LOCAL_WORKSPACE. Outside-WS copies require tooltip path verification and manu
 movement of only exact probe container; actual path unknown, never broad cleanup.
 No mandatory game run. Queued r3 starts only after this implementation is pushed
 and independently read back. Publication commit/head/blob comparison follows.
+
+Implementation commit `faace6f6412fcc5c467166fd7f116c2e8cbe1473`. Initial push rejected because concurrent roadmap-only
+commits advanced the same branch. Fetched and merged that branch (not main),
+preserving roadmap/PROJECT_STATE changes. No runtime files affected. Normal
+push and independent remote head/blob verification performed before r3.
