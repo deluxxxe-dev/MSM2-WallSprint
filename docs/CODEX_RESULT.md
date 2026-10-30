@@ -143,3 +143,23 @@ only for included documentation, not a substitute for binary tests.
 
 Normal push and independent remote readback recorded after actual verification.
 Final chat SHA identifies record-only commit without self-reference.
+
+### Verified r3 publication
+
+Implementation commit `95ff38478c66767b47a70e89880ba399caa0527e`.
+`git push origin codex/v01c20-edi-value-provenance`:success, b0683a5->95ff384.
+`python3 /tmp/ws-r3-publication.py`:exit0; independent GitHub fetch into
+/tmp/ws-steering-docs-publication, FETCH_HEAD/ls-remote/local HEAD equal that SHA;
+all14 changed file blobs against b0683a5 equal local files (including both ZIPs).
+The script executes `git -C /tmp/ws-steering-docs-publication fetch origin
+codex/v01c20-edi-value-provenance`, `git ... rev-parse FETCH_HEAD`, `git ls-remote
+origin refs/heads/codex/v01c20-edi-value-provenance` and compares every
+`git show FETCH_HEAD:<path>` byte string with local paths from
+`git diff --name-only b0683a5 HEAD`.
+
+This record-only update regenerates included result documentation with
+`python source/tools/release.py`; `python3 /tmp/ws-r3-final-audit.py` passes again.
+Runtime script bytes remain equal to implementation commit. No need to rerun
+unchanged binary tests for record-only ZIP documentation changes. Same normal
+push and independent readback repeated for final record commit; final full SHA
+reported in chat (no self-referential commit hash). No owner deployment/request.
