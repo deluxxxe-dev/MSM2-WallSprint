@@ -66,3 +66,10 @@ UNAVAILABLE (cloud-only). Native suites not rerun: explicitly tooling-only task,
 unchanged runtime hash verified. Exact publication record in CODEX_RESULT;
 manual guard refresh/restore/external-copy handling in LOCAL_WORKSPACE and
 mod-tools OVERSTRIKE/MANUAL. No owner automatic install/reinstall.
+
+Publication verified before any r3 runtime edit: implementation faace6f,
+normal same-branch merge preserving concurrent planning docs, final retirement
+head b0683a5af79a522d596937c842321ea420f1b8ac. Normal push succeeded;
+`python3 /tmp/ws-r2-publication.py` independently fetched GitHub into existing
+/tmp/ws-steering-docs-publication and checked FETCH_HEAD/ls-remote/local head
+and all27 changed blobs against3ba11ef baseline (equal).

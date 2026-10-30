@@ -1,10 +1,17 @@
-# WallSprint v0.1c38r2 — equal-timestamp correction and33ms observation
+# r3 duration-only experiment — v0.1c38r3 / package0.1.59
 
-Package **0.1.58**. Different native updates sharing a wall timestamp wait without discarding candidate/baseline or voting/advancing a turn. Observation and confirmation minimum intervals are33ms; two eligible new-sign samples remain required. Maximum250ms gap, speed2, dot0.8, fixed250ms turn, unchanged entry/A-B/Position-W/scale-metadata/five-second contracts. Correctness was tested at old100ms before tuning. Separate movement diagnostic sampler stays100ms. Real r2 game outcome remains unverified.
+Only post-entry reversal turn duration is120ms (chosen experiment, not measured
+animation match or total input latency). Observation/confirmation33ms/two samples,
+250ms maximum gap, equal-time WAIT and all existing A/B and safety contracts stay.
+No owner game-test instructions in this queued implementation task.
 
-# WallSprint v0.1c38r1 — orientation-only reversal proof
+# Historical v0.1c38r2 — equal-timestamp correction and33ms observation
 
-Package **0.1.57**. After entry interpolation, two consecutive eligible position-difference observations confirm a forward/back reversal along the entry wall-tangent heading. Orientation turns by a positive 180 degrees about the existing wall normal over 0.25 pause-aware seconds. Existing A/B source publication, Position/W preservation, compact scales/metadata, admission, F8 and five-second budget remain unchanged. This is a displacement-following experiment, not input intent, physics velocity, movement ownership or animation control. Real-game reversal outcome remains unverified for r1.
+Package **0.1.58**. Different native updates sharing a wall timestamp wait without discarding candidate/baseline or voting/advancing a turn. Observation and confirmation minimum intervals are33ms; two eligible new-sign samples remain required. Maximum250ms gap, speed2, dot0.8, fixed250ms turn, unchanged entry/A-B/Position-W/scale-metadata/five-second contracts. Correctness was tested at old100ms before tuning. Separate movement diagnostic sampler stays100ms. Supplied r2 game evidence now confirms reversals with residual lag; see analysis/V01C38R3_TURN_DURATION.md.
+
+# Historical v0.1c38r1 — orientation-only reversal proof
+
+Package **0.1.57**. After entry interpolation, two consecutive eligible position-difference observations confirm a forward/back reversal along the entry wall-tangent heading. Orientation turns by a positive 180 degrees about the existing wall normal over 0.25 pause-aware seconds. Existing A/B source publication, Position/W preservation, compact scales/metadata, admission, F8 and five-second budget remain unchanged. This is a displacement-following experiment, not input intent, physics velocity, movement ownership or animation control. This paragraph records the original implementation scope; later r1/r2 acceptance evidence is recorded in analysis.
 
 Focused validation: `bash source/tools/test_reversal_heading.sh` from the full repository root. Existing native source fixtures verify coherent A/B midpoint/final basis and stale recovery.
 

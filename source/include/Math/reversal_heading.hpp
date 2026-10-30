@@ -2,6 +2,7 @@
 #include "Math/source_orientation.hpp"
 namespace ws::heading {
 inline constexpr double observationIntervalMs=33.;
+inline constexpr double reversalTurnDurationMs=120.; // Chosen experiment; not animation/input latency.
 // Experimental displacement thresholds, not engine constants. No memory access.
 struct Result {diag::ActorAxes basis{};Vec3 delta{},target{};float speed{};int candidate{},accepted{1};const char* event="hold";};
 struct Reversal {
@@ -24,7 +25,7 @@ struct Reversal {
   seenWall=wallMs;seenUpdate=nativeUpdate;
   if(!wait){haveSample=true;sampleWall=wallMs;sampleUpdate=nativeUpdate;}
   if(turning){
-   double t=std::clamp((clock-turnStart)/250.,0.,1.);float angle=float(t*3.14159265358979323846);
+   double t=std::clamp((clock-turnStart)/reversalTurnDurationMs,0.,1.);float angle=float(t*3.14159265358979323846);
    Vec3 start=f0*float(from);Vec3 f=start*std::cos(angle)+cross(normal,start)*std::sin(angle);
    if(t>=1&&!wait&&!regression){turning=false;f=f0*float(sign);clearObservation();out.event="turn_complete";}
    if(!basis(f,out.basis,t>=1))return out;

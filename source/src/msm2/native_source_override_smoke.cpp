@@ -449,7 +449,7 @@ int main(){
  fakeHero.position[0]-=.5f;workerTick();assert(state.heading.pendingCount==1&&!state.heading.turning);
  waitMs(34);
  fakeHero.position[0]-=.5f;workerTick();assert(state.heading.turning);
- while(state.headingClock<state.heading.turnStart+110&&!killed.load()){waitMs(16);workerTick();}assert(state.heading.turning);
+ while(state.headingClock<state.heading.turnStart+50&&!killed.load()){waitMs(16);workerTick();}assert(state.heading.turning);
  Published headingMid{};assert(publication.read(headingMid)&&headingMid.active);assert(ws::dot(headingMid.basis.up,ws::Vec3{0,0,1})>.9999f);
  callA();callB();for(unsigned i=0;i<3;++i){ws::Vec3 v=i==0?headingMid.basis.right:i==1?headingMid.basis.up:headingMid.basis.forward;
   assert(std::abs(ws_test_source_received[4*i]-v.x)<.0001f&&std::abs(ws_test_source_received[4*i+1]-v.y)<.0001f&&std::abs(ws_test_source_received[4*i+2]-v.z)<.0001f);
@@ -460,7 +460,7 @@ int main(){
  assert(ws::dot(headingEnd.basis.forward,state.heading.f0)<-.99999f&&!state.heading.turning);callA();callB();
  assert(!std::memcmp(ws_test_source_received+12,vanilla.v+12,16));
  ws::native_source::event(3,owner);context.wallRunActive=false;workerTick(false);
- puts("PASS: r2 real-time confirmed reversal publishes one coherent midpoint/final basis through real A/B stores, preserves Position/W and compact metadata, freezes turn and clears displacement across stale resume, closes on Deinit");
+ puts("PASS: r3 real-time confirmed reversal publishes one coherent midpoint/final basis through real A/B stores, preserves Position/W and compact metadata, freezes turn and clears displacement across stale resume, closes on Deinit");
  assert(MH_DisableHook(reinterpret_cast<void*>(&ws_test_copy_writer))==MH_OK);assert(MH_RemoveHook(reinterpret_cast<void*>(&ws_test_copy_writer))==MH_OK);assert(MH_DisableHook(reinterpret_cast<void*>(&ws_test_native_source_writer))==MH_OK);assert(MH_RemoveHook(reinterpret_cast<void*>(&ws_test_native_source_writer))==MH_OK);assert(MH_Uninitialize()==MH_OK);assert(VirtualFree(mem,0,MEM_RELEASE));
  auto f=std::fopen("logs/windows_native_source_synthetic.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);
  puts("PASS: lock-free coherent A/B shared basis, A exact stack source, B compact36-only scale/metadata preservation, contended worker lock cannot reject hooks, A/E retention, identity/thread/lifecycle/auth/kill/degenerate gates; independent MinHook fixtures only");

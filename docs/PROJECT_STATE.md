@@ -3,17 +3,32 @@
 ## Roadmap / current handoff — 2026-10-31 JST
 
 Overall scope and order are reconciled in `docs/FEATURE_ROADMAP.md`.
-Current tooling task: retire probes (`docs/CODEX_NEXT.md`).
-Queued runtime task: r3 turn-duration-only120ms experiment (`docs/CODEX_TURN_SPEED.md`), not yet accepted in game.
+Steering Probe tooling retirement is completed/published; see analysis/STEERING_PROBE_RETIREMENT.md.
+Current runtime task: r3 turn-duration-only120ms experiment (`docs/CODEX_TURN_SPEED.md`), implemented; automated validation passed, not accepted in game.
 R2 supplied runtime now confirms reversals with remaining visible lag; six completed logged candidate-to-completion intervals approximately302–322ms. This supersedes earlier r2-runtime-UNKNOWN notes below; it is not input/animation latency.
 After facing acceptance: flat-wall sideways movement proof, then four-way/diagonal movement and stop/contact/lifecycle foundation; camera only afterward. See `docs/AFTER_TURN_PLAN.md` for the staged handoff and proof boundaries. This is planning, not movement-write authorization.
 Current five-second bound, C52 and every existing native safety gate remain.
 
 
-## Current stage — r2 equal-timestamp correction and33ms observation implemented; canonical validation passed (895 PASS /5 SKIP /17 UNAVAILABLE)
+## Current stage — r3 duration-only120ms experiment; r2 observation contracts preserved
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
+
+## v0.1c38r3 / package0.1.59 — duration-only experiment
+
+See analysis/V01C38R3_TURN_DURATION.md. Supplied r2 six completed turns confirm
+reversal with candidate-to-completion302–322ms; logged acceptance41–54ms and
+turn248–270ms are not input latency. Qualitative visible lag remains; no exact
+animation/video-clock alignment. Session3 had one25ms stale episode. Expected
+five-second stops/verified Deinit/Up retention/Position writes0 remain.
+
+Only post-entry reversal duration is now120ms through one named constant. Two
+33ms observations, speed2/dot0.8/max gap250/equal-time WAIT, entry0.25s and all
+native A/B/lifecycle/write gates stay unchanged. No new movement/animation/input
+API. Canonical hooks 900 PASS /5 SKIP /17 UNAVAILABLE; build/focused/portable/smoke/native/release pass. Actual r3 response UNKNOWN. This experimental120ms is not animation sync or
+total input latency. No owner deployment/game-test prose; future roadmap stays
+unauthorized pending the separate acceptance/task handoff.
 
 ## Steering Probe retirement completed (tooling only)
 
@@ -40,7 +55,7 @@ with original100ms parameters before tuning, then rechecked on final code.
 B: one named interval33ms for observation/confirmation; two samples remain
 necessary (synthetic acceptance at66ms after baseline0). Speed2, dot0.8,
 max250ms gap and fixed250ms turn, entry/A-B/Position-W/metadata/scales/five-second
-contracts and diagnostic sampler100ms are unchanged. Actual r2 response UNKNOWN.
+contracts and diagnostic sampler100ms are unchanged. Actual r2 response: reversal confirmed with residual lag (supplied evidence above).
 
 No source/input/velocity/Position writes or animation/input ownership claim.
 Exact automated outcomes/publication in CODEX_RESULT; no cloud deployment.
