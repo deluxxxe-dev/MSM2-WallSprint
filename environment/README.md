@@ -187,3 +187,12 @@ Backup/Restoreも同じゲートです。互換lockはsnapshot対象外。復元
 実機で健全な環境を消す復元試験は要求しません。
 
 修復の一括実行例: docs/mod-tools/README.md「一度だけのtooling修復」。
+
+
+### r5 post-build WSL確認の切り分け
+
+ビルド/テスト/package完了の行は配置完了ではありません。原因別PID/stage/category/
+errno/exitとdistro/UIDの診断はdocs/mod-tools/README.mdの一括ブロックから実行できます。
+古いcheckerを通る前に最新コードをstageするDiagnoseWSLモードです。lock/KIT/runtime/
+worktreeは変更せず、process/WSLを終了しません。bootstrap fetchのみGit refs/objects更新。
+実機PID339の原因は未確定。retryはフルビルド、既存stagingの手動配置はしません。

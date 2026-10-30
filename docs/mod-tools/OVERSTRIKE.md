@@ -153,3 +153,6 @@ if ($LASTEXITCODE -ne 0) { throw "Fast-forward failed; preserve checkout" }
 Untracked/unknown files are not deleted by the refresh. The current updater still
 checks them before preparation/build; this is not a validation bypass. No install,
 loader repair or real-PC acceptance is performed by this cloud task.
+
+WSL post-build失敗時は共通READMEの「r5更新後のWSL確認失敗」診断を先に実行します。
+診断は現在のlockを解放したりmanagerを起動したりしません。実機原因は未確定です。

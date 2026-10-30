@@ -83,6 +83,88 @@ def parsed(data,game):
  if r.get('state') not in ('active','released','interrupted'):return None
  return r
 
+WSL_PROBE = r"""import os,sys,json,errno,select
+
+def probe(token,legacy,distro,expected_uid=None):
+ uid=os.getuid();observed=os.environ.get('WSL_DISTRO_NAME','')
+ out=dict(schema=1,result='UNKNOWN',distro_expected=distro,distro_observed=observed,uid_expected=expected_uid,uid_observed=uid,events=[],counts={})
+ def event(pid,stage,category,err=None):
+  out['counts'][category]=out['counts'].get(category,0)+1
+  if len(out['events'])<32:out['events'].append(dict(pid=pid,stage=stage,category=category,errno=err))
+ if not distro or observed!=distro:event(None,'identity','distro_mismatch');return out
+ if os.geteuid()!=uid or (expected_uid is not None and uid!=expected_uid):event(None,'identity','uid_mismatch');return out
+ def start(pid):
+  with open('/proc/'+str(pid)+'/stat') as f:s=f.read()
+  tail=s.rsplit(')',1)[1].split()
+  if len(tail)<20 or not tail[19].isdigit():raise ValueError('invalid stat')
+  return tail[19],tail[0]
+ def departed(pid,fd,before):
+  # pidfd reports this exact process's exit, including zombies; never infer from
+  # an unreadable environ/cwd or an old numeric PID alone.
+  if fd is not None:
+   poll=select.poll();poll.register(fd,select.POLLIN);exited=any(bits&(select.POLLIN|select.POLLHUP) for _,bits in poll.poll(0))
+  else:
+   try:os.kill(pid,0);exited=False
+   except ProcessLookupError:exited=True
+  try:after=start(pid)
+  except FileNotFoundError:
+   if exited:return 'exited_confirmed'
+   # Revalidate actual PID absence when pidfd support is unavailable.
+   try:os.kill(pid,0)
+   except ProcessLookupError:return 'absent_confirmed'
+   return None
+  if before is not None and after[0]!=before[0]:return 'pid_reused'
+  if exited and after[1] not in ('Z','X','x'):return 'pid_reused'
+  return 'exited_confirmed' if exited and before is not None else None
+ unknown=False;active=False
+ try:names=os.listdir('/proc')
+ except OSError as ex:event(None,'enumerate','enumeration_error',ex.errno);return out
+ for n in names:
+  if not n.isdigit():continue
+  pid=int(n)
+  if pid==os.getpid():continue # Exact self probe only, never a broad same-user exemption.
+  fd=None;before=None;stage='pidfd'
+  try:
+   try:fd=os.pidfd_open(pid,0)
+   except AttributeError:pass # signal0/identity fallback below remains fail closed.
+   except OSError as ex:
+    if ex.errno not in (errno.ENOSYS,errno.EINVAL):raise
+   stage='uid';owner=os.stat('/proc/'+n).st_uid
+   if owner!=uid:continue
+   stage='identity_before';before=start(pid)
+   stage='environ'
+   with open('/proc/'+n+'/environ','rb') as f:env=f.read()
+   matched=bool(token and ('MSM2_WS_OPERATION_TOKEN='+token).encode() in env.split(b'\0'))
+   if legacy:
+    stage='cmdline'
+    with open('/proc/'+n+'/cmdline','rb') as f:cmd=f.read()
+    stage='cwd';cmd+=b' '+os.fsencode(os.readlink('/proc/'+n+'/cwd'))
+    matched=matched or any(x in cmd for x in [b'/msm2-ws-validation.',b'workspace-build.sh',b'Mods-Developing/MSM2-WS'])
+   stage='identity_after';after=start(pid)
+   if after[0]!=before[0]:event(pid,stage,'pid_reused');unknown=True;continue
+   # Matching live token is enough to block even if its process exits next.
+   if matched:event(pid,'match','active_build');active=True
+  except (OSError,ValueError,IndexError) as ex:
+   try:gone=departed(pid,fd,before)
+   except (OSError,ValueError,IndexError):gone=None
+   if gone in ('absent_confirmed','exited_confirmed'):event(pid,stage,gone,getattr(ex,'errno',None))
+   else:
+    category=gone or ('access_denied' if isinstance(ex,PermissionError) else 'malformed_identity' if isinstance(ex,(ValueError,IndexError)) else 'process_read_error')
+    event(pid,stage,category,getattr(ex,'errno',None));unknown=True
+  finally:
+   if fd is not None:os.close(fd)
+ out['result']='ACTIVE' if active else 'UNKNOWN' if unknown else 'QUIET'
+ return out
+
+if __name__=='__main__':
+ try:
+  result=probe(sys.argv[1],sys.argv[2]=='1',sys.argv[3],None if sys.argv[4]=='unknown' else int(sys.argv[4]))
+ except Exception as ex:
+  result=dict(schema=1,result='UNKNOWN',events=[dict(pid=None,stage='probe',category=type(ex).__name__,errno=getattr(ex,'errno',None))])
+ print(json.dumps(result,sort_keys=True))
+ raise SystemExit(0 if result['result']=='QUIET' else 2)
+"""
+
 def wsl_quiet(record,legacy=False):
  # No game API/process calls. Read only same-user Linux process environments.
  token=record.get('build_token');distro=record.get('distro')
@@ -96,24 +178,20 @@ def wsl_quiet(record,legacy=False):
    if name:wsl_quiet({'distro':name,'_selected_distro':True},legacy=True)
   return
  if not token and not legacy:return
- script="""import os,sys,json
-found=[];uid=os.getuid()
-for n in os.listdir('/proc'):
- if not n.isdigit() or int(n)==os.getpid():continue
- p='/proc/'+n
- try:
-  if os.stat(p).st_uid!=uid:continue
-  env=open(p+'/environ','rb').read();cmd=open(p+'/cmdline','rb').read()+b' '+os.fsencode(os.readlink(p+'/cwd'))
- except FileNotFoundError:continue
- except PermissionError:raise SystemExit('Cannot verify same-user Linux process '+n)
- if (sys.argv[1] and ('MSM2_WS_OPERATION_TOKEN='+sys.argv[1]).encode() in env.split(b'\\0')) or (sys.argv[2]=='1' and any(x in cmd for x in [b'/msm2-ws-validation.',b'workspace-build.sh',b'Mods-Developing/MSM2-WS'])):found.append(n)
-if found:raise SystemExit('Remaining WSL build PID(s): '+','.join(found))
-print('QUIET')
-"""
- args=['wsl.exe']+(['--distribution',distro] if distro else [])+['--exec','python3','-c',script,token or '',str(int(legacy))]
+ args=['wsl.exe']+(['--distribution',distro] if distro else [])+['--exec','python3','-c',WSL_PROBE,token or '',str(int(legacy)),distro or '',str(record['linux_uid']) if record.get('linux_uid') is not None else 'unknown']
  try:p=subprocess.run(args,capture_output=True,text=True,timeout=25)
- except (OSError,subprocess.TimeoutExpired) as ex:raise OperationError('WSL build inactivity unavailable; preserve lock. Distro='+str(distro or 'default')) from ex
- if p.returncode or p.stdout.strip()!='QUIET':raise OperationError('WSL build not proved inactive: '+p.stderr.strip()+' '+p.stdout.strip())
+ except (OSError,subprocess.TimeoutExpired) as ex:raise OperationError('WSL probe unavailable: distro='+str(distro)+' stage=invoke category='+type(ex).__name__) from ex
+ try:
+  result=json.loads(p.stdout)
+  if not isinstance(result,dict) or set(result)!={'schema','result','distro_expected','distro_observed','uid_expected','uid_observed','events','counts'}:raise ValueError('fields')
+  if result['schema']!=1 or result['result'] not in ('QUIET','ACTIVE','UNKNOWN') or not isinstance(result['events'],list) or len(result['events'])>32 or not isinstance(result['counts'],dict) or type(result['uid_observed']) is not int:raise ValueError('schema')
+  if result['distro_expected']!=distro or result['uid_expected']!=record.get('linux_uid'):raise ValueError('identity binding')
+  if result['result']=='QUIET' and (result['distro_observed']!=distro or (record.get('linux_uid') is not None and result['uid_observed']!=record['linux_uid'])):raise ValueError('quiet identity')
+ except (ValueError,TypeError):raise OperationError('WSL probe invalid output: distro='+str(distro)+' stage=output category=malformed exit='+str(p.returncode))
+ # Re-serialize only the bounded authored schema; never echo private stderr/cmdline/env.
+ diagnostic=json.dumps(result,sort_keys=True)
+ if p.returncode or result['result']!='QUIET':raise OperationError('WSL build not proved inactive: exit='+str(p.returncode)+' '+diagnostic)
+ return {**result,'exit_status':p.returncode}
 
 def legacy_quiet(game,record):
  if os.name!='nt':raise OperationError('Legacy recovery needs Windows process/WSL evidence; artifact preserved')

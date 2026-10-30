@@ -57,7 +57,7 @@ class Locks(unittest.TestCase):
  def test_unresolved_build_blocks_even_after_parent_death(self):
   p=self.script("\nwith o.hold(g):\n o.phase('building',build_token='owned-fixture',distro='not-real');print('READY',flush=True);os._exit(21)")
   p.stdout.readline();p.wait(timeout=5)
-  with self.assertRaisesRegex(o.OperationError,'WSL build inactivity unavailable'):
+  with self.assertRaisesRegex(o.OperationError,'WSL probe unavailable'):
    with o.hold(self.game):pass
   with o.hold(self.game,quiescent=lambda g,r:None):pass # Injected QUIET evidence only.
  def test_reparse_refuses(self):
@@ -93,7 +93,7 @@ class Locks(unittest.TestCase):
   seen=[]
   def run(args,**kw):
    if '--list' in args:return subprocess.CompletedProcess(args,0,'First\nSecond\n'.encode('utf-16-le'),b'')
-   seen.append(args[args.index('--distribution')+1]);return subprocess.CompletedProcess(args,0,'QUIET\n','')
+   seen.append(args[args.index('--distribution')+1]);return subprocess.CompletedProcess(args,0,json.dumps(dict(schema=1,result='QUIET',distro_expected=seen[-1],distro_observed=seen[-1],uid_expected=None,uid_observed=os.getuid(),events=[],counts={})), '')
   with patch.object(o.subprocess,'run',run):o.wsl_quiet({},legacy=True)
   self.assertEqual(seen,['First','Second'])
  def test_exact_wsl_token_probe_runs_on_owned_linux_process(self):
@@ -102,13 +102,13 @@ class Locks(unittest.TestCase):
   p=subprocess.Popen([sys.executable,'-c','import time;time.sleep(5)'],env={**os.environ,'MSM2_WS_OPERATION_TOKEN':token})
   self.addCleanup(lambda:p.poll() is None and p.kill())
   def run(args,**kw):
-   at=args.index('-c');return real_run([sys.executable,*args[at:]],capture_output=True,text=True)
+   at=args.index('-c');return real_run([sys.executable,*args[at:]],capture_output=True,text=True,env={**os.environ,'WSL_DISTRO_NAME':'owned'})
   with patch.object(o.subprocess,'run',run):
    try:o.wsl_quiet({'build_token':token,'distro':'owned'})
    except o.OperationError as ex:
-    if 'Cannot verify same-user Linux process' in str(ex):
+    if 'access_denied' in str(ex):
      p.terminate();p.wait(timeout=5);self.skipTest('Full /proc environment inspection unavailable in sandbox; production probe failed closed')
-    self.assertIn('Remaining WSL build PID',str(ex))
+    self.assertIn('active_build',str(ex))
    else:self.fail('Live token not detected')
    p.terminate();p.wait(timeout=5)
    o.wsl_quiet({'build_token':token,'distro':'owned'})
@@ -119,10 +119,10 @@ class Locks(unittest.TestCase):
   def run(args,**kw):
    at=args.index('-c');script=args[at+1]
    prefix="import os;_ls=os.listdir;os.listdir=lambda p: ["+repr(str(p.pid))+"] if p=='/proc' else _ls(p);\n"
-   return real_run([sys.executable,'-c',prefix+script,*args[at+2:]],capture_output=True,text=True)
+   return real_run([sys.executable,'-c',prefix+script,*args[at+2:]],capture_output=True,text=True,env={**os.environ,'WSL_DISTRO_NAME':'owned'})
   try:
    with patch.object(o.subprocess,'run',run):
-    with self.assertRaisesRegex(o.OperationError,'Remaining WSL build PID'):o.wsl_quiet({'build_token':token,'distro':'owned'})
+    with self.assertRaisesRegex(o.OperationError,'active_build'):o.wsl_quiet({'build_token':token,'distro':'owned'})
     p.terminate();p.wait(timeout=5);o.wsl_quiet({'build_token':token,'distro':'owned'})
   finally:
    if p.poll() is None:p.kill();p.wait()

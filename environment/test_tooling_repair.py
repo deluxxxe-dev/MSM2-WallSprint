@@ -51,6 +51,15 @@ class Repair(unittest.TestCase):
   self.assertEqual(self.script.read_bytes(),runtime)
   for p,data in dlls:self.assertEqual(p.read_bytes(),data)
   self.assertTrue((self.ws/'Update-WS.cmd').is_file())
+ def test_readonly_diagnostic_does_not_claim_refresh_or_deploy(self):
+  from unittest.mock import patch
+  import contextlib,io
+  with o.hold(self.game,'update'):
+   o.phase('building',build_token='owned-token',distro='Owned',linux_uid=1000)
+  lock=self.game/'.MSM2-Operations.guard';before=lock.read_bytes();head=git(self.source,'rev-parse','HEAD');kit=(self.game/'Mod-Tools/mod_environment.py').read_bytes();runtime=self.script.read_bytes()
+  with patch.object(o,'wsl_quiet',return_value={'result':'QUIET'}) as quiet,contextlib.redirect_stdout(io.StringIO()) as output:r.diagnose(self.source,self.game)
+  self.assertIn('read_only=1',output.getvalue());self.assertEqual(quiet.call_args.args[0]['linux_uid'],1000)
+  self.assertEqual((lock.read_bytes(),git(self.source,'rev-parse','HEAD'),(self.game/'Mod-Tools/mod_environment.py').read_bytes(),self.script.read_bytes()),(before,head,kit,runtime))
  def test_dirty_and_divergent_preserve_checkout_runtime(self):
   p=self.source/'.gitignore';p.write_text('dirty owned file')
   with self.assertRaisesRegex(RuntimeError,'Dirty'):self.repair()

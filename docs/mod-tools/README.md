@@ -207,3 +207,40 @@ finally { Remove-Item -LiteralPath $temp -Force }
 
 成功は `TOOLING_REPAIR_COMPLETE runtime_unchanged=1 no_build=1 no_game_launch=1`。
 拒否時は表示されたPID/phase/WSL/パスを保全し、lockを手で削除しないでください。
+
+
+## r5更新後のWSL確認失敗 — 一度だけの読み取り診断
+
+ビルド成功と配置成功は別です。`Cannot verify same-user Linux process339` だけでは
+消滅競合・権限・残存buildのどれか分かりません。現在のcheckerはdistro/UID/PID/
+stage/category/errno/exitを出し、token方式で不要なcmdline/cwdを読みません。
+生存token、権限不明、PID再利用、distro/既知UID不一致は引き続き拒否します。
+`pidfd`/再確認した不存在で終了が証明されたPIDだけを除外します。
+
+ゲーム/Overstrike/updaterを通常終了し、Windows PowerShellで以下を一括実行します。
+これは最新診断コードを一時取得します。fetchはGit refs/objectsを更新しますが、
+worktree/lock/KIT/runtimeを変更せず、ビルド・配置・起動はしません。診断のQUIETは
+配置成功の証明ではありません。出力をChatへ返してください。
+
+```powershell
+$game = "C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2"
+$repo = Join-Path $game 'Mods Library\Mods-Developing\MSM2-WS\_source'
+$branch = 'codex/v01c20-edi-value-provenance'
+if ((git -C $repo branch --show-current) -ne $branch) { throw 'Wrong WS branch' }
+if ((git -C $repo remote get-url origin) -ne 'https://github.com/deluxxxe-dev/MSM2-WallSprint.git') { throw 'Wrong WS origin' }
+git -C $repo fetch origin $branch
+if ($LASTEXITCODE -ne 0) { throw 'Fetch failed' }
+$commit = git -C $repo rev-parse "origin/$branch"
+if ($LASTEXITCODE -ne 0) { throw 'Head unavailable' }
+$body = @(git -C $repo show ($commit + ':environment/Repair-Mod-Tools.ps1'))
+if ($LASTEXITCODE -ne 0) { throw 'Diagnostic bootstrap unavailable' }
+$temp = Join-Path $env:TEMP ('MSM2-diagnostic-' + [guid]::NewGuid().ToString('N') + '.ps1')
+[IO.File]::WriteAllText($temp, ($body -join "`n"), (New-Object Text.UTF8Encoding($false)))
+try { & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $temp -GameRoot $game -DiagnoseWSL }
+finally { Remove-Item -LiteralPath $temp -Force }
+```
+
+診断後の通常retryは既存仕様上フルビルドをやり直します。`_archive/_build` に
+payload/manifestが残っていてもexact source-HEAD/session/inactivity receiptがないため
+自動再利用・手動配置は許可しません。旧pending記録のUIDは未記録なのでnullと明示します。
+新buildではUIDを記録し、不一致を拒否します。WSL/PIDの一括終了やlock削除はしません。

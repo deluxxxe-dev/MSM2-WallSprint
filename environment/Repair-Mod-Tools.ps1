@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$GameRoot)
+param([Parameter(Mandatory=$true)][string]$GameRoot,[switch]$DiagnoseWSL)
 $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath($GameRoot)
 $repo=Join-Path $root 'Mods Library\Mods-Developing\MSM2-WS\_source'
@@ -19,7 +19,8 @@ try {
   [IO.File]::WriteAllText((Join-Path $temp $name), (($lines -join "`n")+"`n"), (New-Object Text.UTF8Encoding($false)))
  }
  $engine=Join-Path $temp 'repair_tools.py'
- if (Get-Command py -ErrorAction SilentlyContinue) { & py -3 $engine --source $repo --game-root $root --commit $commit }
- else { & python $engine --source $repo --game-root $root --commit $commit }
- if ($LASTEXITCODE -ne 0) { throw 'Tooling repair refused; runtime retained. See exact owner/inactivity evidence above.' }
+ $probeArgs=@();if($DiagnoseWSL){$probeArgs=@('--diagnose-wsl')}
+ if (Get-Command py -ErrorAction SilentlyContinue) { & py -3 $engine --source $repo --game-root $root --commit $commit @probeArgs }
+ else { & python $engine --source $repo --game-root $root --commit $commit @probeArgs }
+ if ($LASTEXITCODE -ne 0) { throw 'Tooling action refused; runtime retained. See cause-specific WSL/ownership evidence above.' }
 } finally { Remove-Item -LiteralPath $temp -Recurse -Force }

@@ -233,11 +233,13 @@ class WindowsSystem:
   require(distro and not distro.startswith('-'),'Cannot bind the WSL distribution identity')
   prefix=['wsl.exe','--distribution',distro,'--exec']
   require('wsl2' in run(prefix+['uname','-r']).lower(),'WSL2 Linux distribution is required for the supported cross-build')
+  linux_uid=run(prefix+['id','-u'])
+  require(linux_uid.isdigit(),'Cannot bind WSL build UID identity')
   src=run(prefix+['wslpath','-u',source])
   dest=run(prefix+['wslpath','-u',destination])
   script=src+'/source/tools/windows/workspace-build.sh'
   token=operation_lock._current.record['token']
-  operation_lock.phase('building',build_token=token,distro=distro)
+  operation_lock.phase('building',build_token=token,distro=distro,linux_uid=int(linux_uid))
   p=subprocess.run(prefix+['env','MSM2_WS_OPERATION_TOKEN='+token,'bash','--noprofile','--norc',script,src,dest],**operation_lock.child_options())
   operation_lock.wsl_quiet(operation_lock._current.record)
   operation_lock.phase('validated',build_token=None)
