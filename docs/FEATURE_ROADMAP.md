@@ -4,7 +4,40 @@ This file records deferred user-facing features that should be implemented only 
 
 ## Design principle
 
-Current priority remains engine ownership / movement-source proof. User-facing controls and tuning should be layered on top only after the relevant behavior exists safely and deterministically.
+Current near-term priority is completing the bounded orientation/reversal proof, then establishing safe wall-relative directional locomotion. A validated high-level motion route may replace the deferred low-level writer route; a roadmap is not permission to bypass ownership/lifecycle proof. User-facing controls and tuning follow the relevant demonstrated behavior.
+
+## Agreed overall flow — reconciled 2026-10-31 JST
+
+User's requested sequence recovered from prior project conversation (2026-10-22) is: movement -> wall-relative camera -> wall jump -> corners/ceilings/complex surfaces -> parkour -> swing -> combat -> stabilization.
+The older order at the bottom of this document placed camera late; that order is superseded by the reconciled sequence below. Keep useful deferred feature details, not that conflicting global ordering.
+Historical v0.x labels described feature milestones, not the current c/r diagnostic build numbers or completion percentages.
+
+Final intent: vanilla WallRun transitions after a delay into a wall-as-ground locomotion stance with a normal ground-sprint-like posture; later wall-relative camera, wall-to-wall jump, parkour, swing, ceilings and wall combat. Finishers transition to ground. These are goals, not implemented claims. Current independent implementation/no third-party binary copying rules remain binding over older reference-use discussion.
+
+Current state: r2 has actual reversal evidence, remaining visible delay; r3 duration-only120ms experiment is queued in CODEX_TURN_SPEED.md. Steering Probe retirement is the separate current tooling task. Existing movement is still supplied by vanilla; reversing WS orientation does NOT establish arbitrary wall-relative input/movement control. Five-second source budget remains diagnostic; continuous stance is not accepted.
+R2 log: six completed candidate-to-completion intervals approximately302–322ms, not input latency. No animation owner has been identified.
+
+### Immediate next feature after reversal acceptance
+
+**Wall-relative directional movement and stopping on ONE flat wall.**
+Expected play behavior: forward/back/left/right/diagonal directional requests on the same surface, heading following actual travel, stable slowdown/stop and ordinary detach without transform corruption.
+First proof is only ONE additional sideways direction on the same flat wall; then its opposite and diagonals. Do not change multiple unknown engine quantities together.
+Reuse vanilla contact/gravity where demonstrated sufficient. A bespoke adhesion force is conditional on an observed contact failure, not a mandatory implementation for its own sake.
+Zero-speed idle/manual stance is a later substep after contact/lifecycle is proven. Stationary wall hold is not predeclared solved by heading hold.
+
+Before writing movement, identify one authenticated current-build input/motion-request route and its lifecycle/ownership. Prefer a bounded higher-level investigation suggested by existing reference labels. If no route is proven, next task is read-only proof, not guessed Position/velocity patches.
+Do not automatically resume c56–c72/c73 low-level publisher scans. Return there only for a concrete necessary unresolved question.
+
+### Acceptance to leave the movement milestone
+
+- Initial entry, straight motion, reversals, sideways and diagonals work on one flat wall.
+- Cardinal and diagonal wall orientations are tested; forward/normal/axes remain consistent.
+- Near-zero motion does not flicker or turn spuriously. Stop behavior and detach are explicit.
+- Surface contact is maintained without unexplained drift/clipping; independent adhesion only if measured necessary.
+- A lifecycle review separately resolves the current five-second diagnostic stop before any longer active window. Never merely remove the timeout.
+- End/detach, stale identity, death/reload/fast travel restore ordinary behavior under bounded tests.
+- Ground-sprint-like posture is visually verified. If required animation changes are unproven, mark that gap; do not label movement milestone complete.
+- Only then begin the camera milestone. ModSettings exposes stable controls/values incrementally, not before their meanings exist.
 
 ## Deferred feature: manual surface-stance hold
 
@@ -129,18 +162,20 @@ Planned categories:
 
 ## Recommended implementation order
 
-1. Current reverse-engineering and writer/effect proof.
-2. Safe writable upstream movement source / ownership proof.
-3. Basic surface-relative movement and stopping.
-4. Adhesion/contact persistence state machine.
-5. Surface-relative obstacle / protrusion sensing and safe stop behavior.
-6. Manual surface-stance input for idle/walk/stop.
-7. Basic surface jump and controlled return to world gravity.
-8. Vanilla Web Zip handoff/reacquisition while WallSprint is active.
-9. Surface-relative Zip Jump / point-launch transition and gravity handoff.
-10. Corner/complex-surface traversal policies using the same contact classifier.
-11. ModSettings exposure for stable parameters.
-12. Animation/camera polish and additional traversal features.
+| Stage | Scope | Exit condition |
+|---|---|---|
+| Current | Probe retirement as separate tooling fix; r3 facing-delay experiment and actual-game acceptance | No unwanted probes; reproducible reversal/low-speed behavior |
+| 1 Movement foundation | Authenticated safe input/motion route; one flat wall sideways proof; then four-way/diagonal, stop, contact and lifecycle/stance duration; required sprint posture | Movement acceptance checklist above |
+| 2 Camera | Wall-relative up, input/view consistency, smooth entry/detach return | Playable camera without disrupting accepted movement |
+| 3 Jump | Surface jump, wall-to-wall landing, controlled world-gravity return | Jump/landing/detach distinct and verified |
+| 4 Surface changes | Corners, ceilings and complex/curved surfaces one at a time; obstacle/protrusion classification | No tunneling or unsupported surface transfer |
+| 5 Parkour / zip | Existing parkour and Web Zip handoff/reacquisition; Zip Jump | Each vanilla action receives exclusive control and returns safely |
+| 6 Wall Swing | Swing entry, release and surface reacquisition | No competing movement ownership |
+| 7 Wall Combat | Basic wall combat/web attacks, then extensions; Finisher returns to ground | Combat/traversal ownership and recovery verified |
+| 8 Stabilization | Regression, compatibility, settings and distribution | Explicit supported behavior/limitations and repeatable install |
+
+Contact validation/basic safe stopping belongs to stage1. Sophisticated protrusion handling belongs to stage4 (bring forward only if an observed blocker makes it necessary). Manual surface hold/walk is a stage1 subgoal after safe zero-speed/contact proof; binding/toggle choice remains deferred. ModSettings is incremental for stable parameters, with final UI/polish late.
+Camera is a dedicated stage2 feature; minimum posture correctness belongs to stage1 rather than deferring all animation until the end.
 
 ## Non-goals for current movement-ownership research
 
