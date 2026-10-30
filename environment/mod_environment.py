@@ -20,13 +20,14 @@ import sys
 import tempfile
 import uuid
 import zipfile
+import operation_lock
 
-VERSION = '1.1.0'
+VERSION = '1.2.0'
 FORMAT = 'msm2-mod-environment-1'
 TREES = ('Overstrike', 'Profiles', 'Mods Library', 'scripts', 'Mod-Tools')
 FILES = ('scripts_proxy.dll', 'winmm.dll', 'scripts.txt', 'commandline.txt')
 ROOTS = TREES + FILES
-KIT = ('mod_environment.py', 'windows.ps1', 'Install-Mod-Tools.cmd',
+KIT = ('Repair-Mod-Tools.ps1', 'repair_tools.py', 'operation_lock.py', 'mod_environment.py', 'windows.ps1', 'Install-Mod-Tools.cmd',
        'Play-Modded.cmd', 'Open-Overstrike.cmd', 'Start-Overstrike.cmd', 'Backup-Mods.cmd',
        'Restore-Mods.cmd', 'Verify-Backup.cmd', 'README.md', 'LICENSE.txt')
 BUFFER = 1024 * 1024
@@ -138,6 +139,8 @@ def scan(game):
             else:
                 s = p.stat()
                 require(stat.S_ISREG(s.st_mode), f'Not a regular file: {p}')
+                if p.name == 'Update-WS.lock' and operation_lock.owned_artifact(p,game):
+                    continue
                 require(p.name not in ('index.lock', 'Update-WS.lock'), f'An update appears active: {p}')
                 entries.append({'path': rel, 'size': s.st_size, 'mtime_ns': s.st_mtime_ns,
                                 'mode': stat.S_IMODE(s.st_mode)})
@@ -197,7 +200,7 @@ class Windows:
             cfg.write_text(json.dumps(request, ensure_ascii=False), encoding='utf-8')
             p = subprocess.run(['powershell.exe', '-NoLogo', '-NoProfile', '-NonInteractive',
                                 '-ExecutionPolicy', 'RemoteSigned', '-File', str(Path(__file__).with_name('windows.ps1')),
-                                '-Request', str(cfg)], capture_output=True)
+                                '-Request', str(cfg)], capture_output=True, **operation_lock.child_options())
             require(p.returncode == 0, (p.stderr or p.stdout).decode('utf-8', errors='replace').strip())
 
     def quiet(self, game):
@@ -213,20 +216,12 @@ class Windows:
             self.invoke('play', game)
 
 
-def lock(game):
+def lock(game,action="shared-tools"):
     @contextlib.contextmanager
     def held():
-        path = game / '.MSM2-Mod-Tools.lock'
         try:
-            fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-        except FileExistsError as ex:
-            raise EnvironmentError('Another environment operation is active; existing lock preserved') from ex
-        try:
-            with os.fdopen(fd, 'w') as f:
-                f.write(str(os.getpid()))
-            yield
-        finally:
-            path.unlink()
+            with operation_lock.hold(game,action) as h: yield h
+        except operation_lock.OperationError as ex: raise EnvironmentError(str(ex)) from ex
     return held()
 
 
@@ -391,10 +386,11 @@ def restore(archive, game, system=None, apply=False):
         return {'game': str(game), 'files': len(m['files']),
                 'bytes': sum(e['size'] for e in m['files']), 'roots': list(ROOTS)}
     require(not inside(Path(archive).resolve(), game), 'Recovery archive must be outside the game folder')
-    with lock(game):
+    with lock(game,"restore"):
         system.quiet(game)
         # Validate existing trees before moving anything; reject links, preserve data.
         existing = scan(game)
+        frozen_kit={name:Path(__file__).with_name(name).read_bytes() for name in KIT}
         needed = sum(e['size'] for e in m['files'])
         require(shutil.disk_usage(game).free > needed + 64 * BUFFER, 'Insufficient free space for staged restore')
         stage = game / ('.MSM2-restore-' + uuid.uuid4().hex)
@@ -413,6 +409,11 @@ def restore(archive, game, system=None, apply=False):
             system.quiet(game)
             require(scan(game) == existing, 'Existing environment changed during staging; retry when idle')
             require(sha(game / 'Spider-Man2.exe') == m['game_sha256'], 'Game executable changed during staging')
+            # Keep the current locking protocol even when restoring an older toolkit.
+            kit=stage/'Mod-Tools';kit.mkdir(exist_ok=True)
+            for name,data in frozen_kit.items(): (kit/name).write_bytes(data)
+            compat=stage/'Mods Library/Mods-Developing/MSM2-WS/_archive/Update-WS.lock'
+            if compat.parent.is_dir():compat.write_text(json.dumps({**operation_lock._current.record,'state':'released'})+'\n')
             for name in ROOTS:
                 old, new = game / name, stage / name
                 if old.exists():
@@ -472,6 +473,81 @@ def profile(game, settings=None):
     return matches[0]
 
 
+def refresh_kit(game, system=None, initial=False):
+    """Stage current owned code before legacy checker use; preserve existing settings values."""
+    require(operation_lock._current is not None and operation_lock._current.record['game'] == str(game), 'Toolkit refresh requires shared OS ownership')
+    system = system or Windows()
+    target = game / 'Mod-Tools'
+    settings = load_settings(game)
+    if not initial and settings.get('format') != 'msm2-mod-tools-1':
+        require(not target.exists() or not any(target.iterdir()), 'Unrecognized Mod-Tools folder preserved')
+        return _install(game, system=system)
+    ancestors_safe(target)
+    target.mkdir(exist_ok=True)
+    changed = []
+    for name in KIT:
+        src, dst = Path(__file__).with_name(name), target / name
+        ancestors_safe(dst)
+        require(src.is_file() and not linked(src), 'Incomplete/linked toolkit source: ' + str(src))
+        require(not os.path.lexists(dst) or (dst.is_file() and not linked(dst)), 'Unsafe toolkit destination: ' + str(dst))
+        if src.resolve() != dst.resolve() and (not dst.exists() or sha(src) != sha(dst)):
+            changed.append((src,dst))
+    metadata_change = settings.get('tool_version') != VERSION
+    if not changed and not metadata_change:
+        return False
+    if not initial: system.quiet(game)
+    saved = []
+    with tempfile.TemporaryDirectory(prefix='.MSM2-kit-stage-', dir=game) as temp:
+        stage = Path(temp)
+        for src,dst in changed:
+            shutil.copy2(src, stage / dst.name)
+            require(sha(stage/dst.name) == sha(src), 'Toolkit staging hash mismatch')
+        previous = target / '_toolkit_previous' / uuid.uuid4().hex
+        previous.mkdir(parents=True)
+        try:
+            for src,dst in changed:
+                old = previous / dst.name if dst.exists() else None
+                if old: shutil.copy2(dst, old)
+                digest = sha(stage/dst.name)
+                os.replace(stage/dst.name, dst)
+                saved.append((dst,old,digest))
+        except BaseException:
+            for dst,old,digest in reversed(saved):
+                require(dst.is_file() and sha(dst)==digest, 'Toolkit rollback conflict; previous code preserved in ' + str(previous))
+                if old: shutil.copy2(old,dst)
+                else: dst.unlink()
+            raise
+    if not initial:
+        if metadata_change:
+            settings['tool_version']=VERSION
+            save_settings(game,settings)
+        system.shortcuts(game)
+    return True
+
+
+def repair_locked(game, system=None):
+    require(operation_lock._current is not None, 'Repair requires OS ownership')
+    game = game_root(game)
+    system = system or Windows()
+    system.quiet(game)
+    # Current checker, never the installed older failing checker.
+    environment_ready(game)
+    refresh_kit(game,system)
+    ws_launch_ready(game)
+    ws = game / 'Mods Library/Mods-Developing/MSM2-WS'
+    helper = ws / '_source/source/tools/windows/Update-WS.cmd'
+    ancestors_safe(helper);ancestors_safe(ws/'Update-WS.cmd')
+    require(helper.is_file(), 'Current Update-WS.cmd source missing')
+    pending = ws / ('Update-WS-' + uuid.uuid4().hex + '.cmd.pending')
+    try:
+        with pending.open('xb') as f: f.write(helper.read_bytes())
+        os.replace(pending,ws/'Update-WS.cmd')
+    finally:
+        if pending.exists(): pending.unlink()
+    system.shortcuts(game)
+    print('TOOLING_REPAIR_COMPLETE runtime_unchanged=1 no_build=1 no_game_launch=1')
+
+
 def install(game, backup_dir=None, selected=None, system=None):
     game = game_root(game)
     with lock(game):
@@ -498,12 +574,7 @@ def _install(game, backup_dir=None, selected=None, system=None):
     settings['profile'] = name
     target = game / 'Mod-Tools'
     target.mkdir(exist_ok=True)
-    # Copy only this toolkit, never the repository or other project sources.
-    for name in KIT:
-        src = Path(__file__).with_name(name)
-        dst = target / name
-        if src.resolve() != dst.resolve():
-            shutil.copy2(src, dst)
+    refresh_kit(game,system,initial=True)
     save_settings(game, settings)
     system.shortcuts(game)
     return target
@@ -512,12 +583,14 @@ def _install(game, backup_dir=None, selected=None, system=None):
 def play(game, system=None, confirm_install=False):
     game = game_root(game)
     with lock(game):
+        refresh_kit(game,system)
         return _play(game, system, confirm_install)
 
 
 def open_manager(game, system=None):
     game = game_root(game)
     with lock(game):
+        refresh_kit(game,system)
         environment_ready(game)
         (system or Windows()).launch(game, manager=True)
 
@@ -548,8 +621,6 @@ def ws_launch_ready(game):
     require(len(scripts) == 1 and scripts[0].parent == workspace and
             re.fullmatch(r'MSM2-WS-v[0-9A-Za-z.]+\.script', scripts[0].name),
             'Expected exactly one versioned WS .script at workspace root; use Update-WS to validate the layout')
-    require(not (workspace / '_archive/Update-WS.lock').exists(),
-            'WS update lock is present; let Update-WS finish first')
     return scripts[0]
 
 
@@ -558,29 +629,14 @@ def start_manager(game, system=None):
     game = game_root(game)
     system = system or Windows()
     with lock(game):
+        known = load_settings(game).get('format') == 'msm2-mod-tools-1'
+        if known: refresh_kit(game,system)
         environment_ready(game)
         profile(game)
         script = ws_launch_ready(game)
+        if not known: refresh_kit(game,system)
         print('PASS: shared Overstrike, game-root loaders and MSM2 profile')
         print('PASS: one active WS script:', script.name)
-        target = game / 'Mod-Tools'
-        settings = load_settings(game)
-        require(not target.exists() or not any(target.iterdir()) or
-                settings.get('format') == 'msm2-mod-tools-1',
-                'Unrecognized Mod-Tools folder; existing files preserved')
-        home = Path(__file__).resolve().parent
-        refresh = settings.get('tool_version') != VERSION
-        for name in KIT:
-            src, dst = home / name, target / name
-            ancestors_safe(dst)
-            require(src.is_file(), 'Incomplete launcher files: ' + str(src))
-            if not dst.is_file() or (src.resolve() != dst.resolve() and sha(src) != sha(dst)):
-                refresh = True
-        if refresh:
-            # Installation preserves existing backup/profile/restore settings.
-            # Subsequent installed launches do not scan/copy the whole environment.
-            _install(game, system=system)
-            print('Installed desktop shortcut: MSM2 - Overstrike')
         system.launch(game, manager=True)
         print('Shared Overstrike opened. Use Install mods -> Run modded game as needed.')
 
@@ -618,7 +674,7 @@ def prompt_path(message, default=''):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Local shared MSM2 mod launch/backup/restore; game data excluded')
-    parser.add_argument('action', choices=['install', 'play', 'manager', 'start', 'backup', 'verify', 'restore'])
+    parser.add_argument('action', choices=['install', 'play', 'manager', 'start', 'repair', 'backup', 'verify', 'restore'])
     parser.add_argument('--game-root')
     parser.add_argument('--backup-dir')
     parser.add_argument('--profile')
@@ -644,7 +700,9 @@ def main(argv=None):
     if not root:
         root = prompt_path('Game folder containing Spider-Man2.exe')
     game = game_root(root)
-    if a.action == 'install':
+    if a.action == 'repair':
+        with lock(game): repair_locked(game)
+    elif a.action == 'install':
         destination = a.backup_dir or prompt_path('Backup folder outside the game', load_settings(game).get('backup_directory', str(Path.home() / 'MSM2-Mod-Backups')))
         print('Installed:', install(game, destination, a.profile))
     elif a.action == 'backup':

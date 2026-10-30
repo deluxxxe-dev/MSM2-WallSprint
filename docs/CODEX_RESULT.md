@@ -1,3 +1,105 @@
+# Codex result — durable update ownership / stale KIT repair
+
+2026-10-31 JST. STATUS: implementation complete; owner Windows acceptance pending.
+Branch `codex/v01c20-edi-value-provenance`; baseline `6eeef17`.
+No main merge. Toolkit `MSM2-Mod-Tools-v1.2.0.zip` only; runtime/package r4 unchanged.
+Implementation commit and independent publication readback recorded below after push.
+
+## Changes and result
+
+OS-backed shared gate replaces empty presence-only ownership. Explicit inherited
+handles protect surviving build children; PID creation identity/token/workspace
+metadata, strict inactivity evidence and reversible legacy preservation fail closed
+on ambiguity. Update commits/releases ownership before checked launch; launch
+failure cannot roll back validated deployment. No process killing, DLL relocation,
+attribute normalization, index.lock deletion or SF/ordinary-mod cleanup.
+
+Fresh fetch/bootstrap repairs old installed KIT without executing old checker or
+building/deploying runtime. Current successful updater refreshes owned KIT; backup
+settings/profile/shortcuts and previous toolkit are retained. Source/distributed
+bootstrap dependencies updated for future packaging; r4 package not regenerated.
+Actual previous launcher was raw Popen, NOT checked launcher; do not infer previous
+self-lock checker failure. Exact chain and constraints:
+`analysis/UPDATE_LOCK_TOOLKIT_RECOVERY.md`.
+
+Changed files: environment ownership/repair/launcher/distribution/tests; workspace
+engine and Windows updater/launch/process helpers; future package/bootstrap tool
+dependencies; individual+combined manuals; PROJECT_STATE; analysis/release record.
+No native code or INI/runtime/package change. Original five untracked historical
+archives/bundle retained unstaged.
+
+## Validation
+
+
+2026-10-31 JST. Owned temporary fixtures only. Expected all admitted operations
+pass, unsafe/concurrent/unknown cases refuse without losing runtime/user bytes.
+Actual final results:
+
+| Exact command | Expected / actual | PASS | SKIP | UNAVAILABLE |
+|---|---|---:|---:|---:|
+| `python3 environment/test_operation_lock.py` | cross-process lifetime, legacy/identity/race/replacement refusal; matches | 14 | 1 | 0 |
+| `python3 source/tools/test-workspace.py` | update failure preserves old runtime; launch failure retains committed new runtime; concurrent update denied; matches | 20 groups | 0 | 0 |
+| `python3 environment/test_mod_environment.py` | backup/restore, refresh/settings/data safety; matches | 28 | 0 | 0 |
+| `python3 environment/test_tooling_repair.py` | real owned Git ff/old checker repair/idempotence/dirty/divergent/live blocks; matches | 3 | 0 | 0 |
+| `python3 environment/test_start_overstrike_preflight.py` | installer proxy accepted, misplaced loader refused unchanged; matches | 1 group | 0 | 0 |
+| `bash environment/test_operation_lock_windows.sh` | Win32 sharing/crash/child lifetime under Wine; matches | 4 groups | 0 | 1 |
+| PowerShell command below | mocked Windows launch contract; matches | 16 checks | 0 | 0 |
+
+```
+XDG_CACHE_HOME=/tmp/ws-lock-xdg-cache XDG_CONFIG_HOME=/tmp/ws-lock-xdg-config XDG_DATA_HOME=/tmp/ws-lock-xdg-data DOTNET_CLI_HOME=/tmp/ws-lock-dotnet /tmp/ws-proxy-pwsh/pwsh -NoLogo -NoProfile -File environment/test_windows_contract.ps1
+```
+
+SKIP: full sandbox /proc environment inventory cannot inspect process1; actual
+probe refused. Isolated real owned process token inventory passed, not WSL proof.
+UNAVAILABLE: Wine reparse API did not materialize a reparse node; Linux symlink
+refusal passed. Actual owner Windows CPython/CIM/WSL/shortcuts/deployment are
+separately UNAVAILABLE (one acceptance group); no actual-PC PASS claim.
+PowerShell Core on Linux uses owned mocks, not actual COM shortcuts. Native API
+fixture is Win32 C++ under Wine, not the Python ctypes integration on Windows.
+
+Initial diagnostic runs encountered read-only default PowerShell cache (fixed by
+private XDG dirs), Wine reparse nonmaterialization (reported UNAVAILABLE), and an
+aborted fixture path collision (unique tick suffix fixes fixture). Official Windows
+embeddable Python download returned403; no Windows Python integration claimed.
+
+`python3 environment/build_distribution.py`: toolkit-only ZIP CRC/member bytes/
+SHA checks; no game, external binary, user backup or r4 rebuild. Existing r4 runtime
+and packages must match baseline6eeef17. Native/game suites intentionally NOT RUN:
+CODEX_NEXT forbids native suite rerun for tooling-only work. No gameplay changes.
+
+Additional verification, expected/actual all PASS:
+
+- `python3 -m py_compile environment/operation_lock.py environment/repair_tools.py environment/mod_environment.py source/tools/workspace.py source/tools/package.py`
+- `bash -n source/tools/windows/workspace-build.sh environment/test_operation_lock_windows.sh`
+- `git diff --check`
+- `git diff --exit-code 6eeef17 -- source/src source/include source/mod BUILD_MANIFEST.json 'MSM2-WS-v0.1c38r4*'` (no differences)
+- PowerShell Parser.ParseFile on five changed .ps1 files: Repair-Mod-Tools,
+  launch-overstrike, stop-processes, stop-overstrike-updater, windows.ps1; zero errors.
+  Run with the same private XDG variables above and `-File /tmp/ws-lock-parse.ps1`.
+  Parser body: for each file, call `[System.Management.Automation.Language.Parser]::ParseFile`
+  with token/error refs and throw if errors.Count; no script operations executed.
+- `python3 environment/build_distribution.py` verifies ZIP CRC and exact member
+  bytes. Artifact58259bytes / SHA256
+  `3dca209251afa2c931f0c6799bc067568b3d999631b5290730f4887f112f6515`.
+
+No BLOCKED implementation subtask. Actual-PC group UNAVAILABLE, not PASS.
+Wisdoms read access confirmed; synchronization deferred to connected shared-manual
+handoff; reusable detailed proof retained in project analysis. No shared claim
+of owner deployment or actual Windows Python/WSL acceptance.
+
+## ONE owner repair action
+
+Close game/Overstrike/updater normally, then paste the single bootstrap block in
+`docs/mod-tools/README.md` into Windows PowerShell. It fetches exact canonical
+branch, then runs freshly staged repair under OS ownership, refuses dirty/divergent
+Git or ambiguous/live legacy state. Expected marker:
+`TOOLING_REPAIR_COMPLETE runtime_unchanged=1 no_build=1 no_game_launch=1`.
+No Update-WS rebuild or game test requested for this toolkit repair. Return exact
+refusal/output if inactivity cannot be proved. Never manually delete a lock.
+
+---
+Previous lateral-route result (historical):
+
 # Codex result — one flat-wall lateral movement route research
 
 2026-10-31 JST. STATUS: partial — bounded investigation completed, movement route

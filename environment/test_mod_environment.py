@@ -38,7 +38,8 @@ def git(root, *args):
 
 
 def tree(root):
-    return {str(p.relative_to(root)): p.read_bytes() for p in root.rglob('*') if p.is_file()}
+    game=next((p for p in [root,*root.parents] if (p/'Spider-Man2.exe').is_file()),root)
+    return {str(p.relative_to(root)): p.read_bytes() for p in root.rglob('*') if p.is_file() and not m.operation_lock.owned_artifact(p,game)}
 
 
 class EnvironmentTests(unittest.TestCase):

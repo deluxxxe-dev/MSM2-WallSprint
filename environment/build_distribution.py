@@ -9,7 +9,7 @@ from mod_environment import KIT, VERSION
 
 root = Path(__file__).resolve().parent
 repo = root.parent
-files = list(KIT) + ['test_mod_environment.py', 'test_windows_contract.ps1', 'build_distribution.py', 'TEST_REPORT.md']
+files = list(KIT) + ['test_mod_environment.py', 'test_windows_contract.ps1', 'build_distribution.py', 'TEST_REPORT.md', 'test_operation_lock.py', 'operation_lock_windows.cpp', 'test_operation_lock_windows.sh', 'test_start_overstrike_preflight.py', 'test_tooling_repair.py']
 output = repo / f'MSM2-Mod-Tools-v{VERSION}.zip'
 pending = output.with_suffix('.pending')
 prefix = f'MSM2-Mod-Tools-v{VERSION}'

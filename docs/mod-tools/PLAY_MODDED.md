@@ -1,6 +1,6 @@
 # MSM2 - Play Modded 仕様書
 
-対象: Mod-Tools v1.1.0 / 2026-10-24。配置・設定の共通仕様は
+対象: Mod-Tools v1.2.0 / 2026-10-24。配置・設定の共通仕様は
 [仕様書ライブラリ](README.md)を参照。
 
 ## 目的・入出力
@@ -80,3 +80,6 @@ Vanillaへファイルを戻しただけではゲームアーカイブへのMOD�
 同じゲームの再利用・別ゲームパスの拒否・正しいCWDを検証します。
 改変でSF/通常MODの設定を書き換えたり、ゲーム内のPosition等の書込みを追加したりしません。
 Windows実機では通常のSteam環境でゲームが開き、導入済みMODが作用することを確認します。
+
+共有OS所有権・KIT refresh・legacy修復の現行仕様は共通READMEのv1.2節です。
+active update中のPlayはOS所有権で拒否し、存在だけのsentinel判定はしません。

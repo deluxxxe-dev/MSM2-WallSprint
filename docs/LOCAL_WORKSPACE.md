@@ -272,3 +272,31 @@ if ($LASTEXITCODE -ne 0) { throw "Fast-forward failed; preserve checkout" }
 Untracked/unknown files are not deleted by the refresh. The current updater still
 checks them before preparation/build; this is not a validation bypass. No install,
 loader repair or real-PC acceptance is performed by this cloud task.
+
+
+## v1.2 OS所有権と互換lock
+
+`environment/operation_lock.py` が正本です。`.MSM2-Operations.guard` をWindowsの
+CreateFile共有排他で保持し、閉じる/プロセス終了でOSが解放します。ビルド子へ明示的に
+ハンドルを継承し、PIDと開始identity、token、workspace、phase、WSL distroを監査記録に保持。
+`.MSM2-Mod-Tools.lock` / `Update-WS.lock` は旧版を止める互換記録として残り得ます。
+**ファイルを削除する必要はありません。存在はactiveの証拠ではありません。**
+
+OS busyなら実所有が残っています。PID/start/action/phaseを確認し、子ビルドが保持して
+いる可能性も示します。旧empty/PID lockは年齢だけで回収せず、Windows operation processと
+全running WSL distroのbuild停止を確認できた場合だけ `.MSM2-lock-recovery/<token>` に
+元bytesを保存して移行。PID再利用は開始identityで区別。legacy PID-onlyで現PIDが生きて
+いる場合、malformed/reparse/所有者変更/WSL検証不能は保持・具体的理由で拒否します。
+`index.lock` は自動削除しません。プロセスの自動kill、DLLの移動/削除/属性修正もしません。
+
+新WSLビルドはdistroとtokenを固定。親の異常終了後、Windows子のOSハンドルが残れば
+次操作は取得できません。WSLホストまで終了してLinux子が残った場合も、未解決build
+記録を保持し、同tokenのプロセスが消えた証拠が得られるまで再開しません。プロセス環境を
+読めない場合は成功扱いにしません。手動の外部Git/ビルドは同時実行しないでください。
+
+Backup/Restoreも同じゲートです。互換lockはsnapshot対象外。復元時は現在のKITをstageに
+保持し、古いbackupから旧ロック方式を再導入しません。mods/profile/復元確認設定の既存
+保全・rollbackは維持。KIT旧bytesはbackup/退避先に残り、全体cleanupはしません。
+実機で健全な環境を消す復元試験は要求しません。
+
+修復の一括実行例: docs/mod-tools/README.md「一度だけのtooling修復」。

@@ -1,48 +1,37 @@
-# MSM2 Mod-Tools v1.1.0 — 検証結果
+# Mod-Tools 1.2.0 — tooling-only validation
 
-ゲーム本体・実MOD・実ユーザーデータを使用しない、一時フォルダーの所有テストです。
+2026-10-31 JST. Owned temporary fixtures only. Expected all admitted operations
+pass, unsafe/concurrent/unknown cases refuse without losing runtime/user bytes.
+Actual final results:
 
-## 通過した自動検証
+| Exact command | Expected / actual | PASS | SKIP | UNAVAILABLE |
+|---|---|---:|---:|---:|
+| `python3 environment/test_operation_lock.py` | cross-process lifetime, legacy/identity/race/replacement refusal; matches | 14 | 1 | 0 |
+| `python3 source/tools/test-workspace.py` | update failure preserves old runtime; launch failure retains committed new runtime; concurrent update denied; matches | 20 groups | 0 | 0 |
+| `python3 environment/test_mod_environment.py` | backup/restore, refresh/settings/data safety; matches | 28 | 0 | 0 |
+| `python3 environment/test_tooling_repair.py` | real owned Git ff/old checker repair/idempotence/dirty/divergent/live blocks; matches | 3 | 0 | 0 |
+| `python3 environment/test_start_overstrike_preflight.py` | installer proxy accepted, misplaced loader refused unchanged; matches | 1 group | 0 | 0 |
+| `bash environment/test_operation_lock_windows.sh` | Win32 sharing/crash/child lifetime under Wine; matches | 4 groups | 0 | 1 |
+| PowerShell command below | mocked Windows launch contract; matches | 16 checks | 0 | 0 |
 
-- **Python 27試験**：実Gitの2コミット履歴・未コミット変更・未追跡ファイル、SF/WS風の
-  階層、通常MOD、ログ、空フォルダー、読み取り専用ファイルと更新時刻の往復復元。
-- 元のゲームフォルダーを退避し、同じ場所にVanilla風のEXE/ゲームデータだけを
-  作り直した後、バックアップに付属する独立エンジンで復元できること。
-- ゲームEXE/ゲームデータがバックアップ対象にも書き換え対象にも入らないこと。
-- CRC正常でも内容/SHA256が違うZIP、危険なパス、Windows予約名、大小文字衝突、
-  未登録・重複エントリ、リンク、外部Git依存、異なるゲームビルド/復元先の拒否。
-- 稼働プロセス/同時操作ロック、バックアップ/ステージ中の更新検出、既存データ保全。
-- 途中の置き換え失敗で全対象を戻すこと。ロールバック自体の失敗は両方の退避を
-  保全し、成功扱いにしないこと。正常復元でも現在の新しい作業は退避に残すこと。
-- 確認のみの復元で変更がないこと、バックアップ名衝突時の過去保存の保持、
-  復元後の「Install mods完了確認」前に直接ゲーム起動しないこと。
-- 新しい起動入口の初回導入と旧版更新、バックアップ先/復元確認設定/未コミット作業の保持。
-- 通常起動で再導入・全環境スキャン・Git/ビルドをせず、共有Overstrikeだけを開くこと。
-- 有効WS scriptの重複・可視アーカイブ・更新ロック・ローダー欠落・誤ったプロファイル・
-  無関係なツールフォルダーを拒否し、元ファイルを保全すること。配置からのゲーム自動判定。
-- **PowerShell 16チェック**：所有する偽プロセス/偽ランチャー/偽COMで、正しいEXE/CWDと
-  `-scripts`、既存の引数の保持、既存ゲームの再利用、稼働中/別マネージャーの拒否、
-  2本のPowerShellファイルの構文解析。既存Overstrikeの再利用、3つのショートカットの
-  対象/CWD/アイコン、同名の無関係なショートカットを保存前に拒否すること。
-- 配布ZIPのCRC、全収録ファイルの完全一致、実データ/外部バイナリの非同梱。
-
-実行環境：Linux、Python 3.12、PowerShell 7.5.4。Windows側で使うPythonは3.11以降。
-
-```sh
-python3 environment/test_mod_environment.py
-pwsh -NoProfile -File environment/test_windows_contract.ps1
-python3 environment/build_distribution.py
+```
+XDG_CACHE_HOME=/tmp/ws-lock-xdg-cache XDG_CONFIG_HOME=/tmp/ws-lock-xdg-config XDG_DATA_HOME=/tmp/ws-lock-xdg-data DOTNET_CLI_HOME=/tmp/ws-lock-dotnet /tmp/ws-proxy-pwsh/pwsh -NoLogo -NoProfile -File environment/test_windows_contract.ps1
 ```
 
-## 実機で残る確認
+SKIP: full sandbox /proc environment inventory cannot inspect process1; actual
+probe refused. Isolated real owned process token inventory passed, not WSL proof.
+UNAVAILABLE: Wine reparse API did not materialize a reparse node; Linux symlink
+refusal passed. Actual owner Windows CPython/CIM/WSL/shortcuts/deployment are
+separately UNAVAILABLE (one acceptance group); no actual-PC PASS claim.
+PowerShell Core on Linux uses owned mocks, not actual COM shortcuts. Native API
+fixture is Win32 C++ under Wine, not the Python ctypes integration on Windows.
 
-Windowsのショートカット作成、WScriptによるウィンドウ再利用、実ゲーム/共有Overstrikeの起動、
-実ユーザー環境の最初の保存・検証・Vanillaへの復元はクラウドから確認していません。
-Windowsの長いパスAPIも実機での復元確認が必要です。
-最初は通常環境へのツール導入・起動と、保存済みバックアップの検証から進めます。
-動いている環境を削除して試す必要はありません。
+Initial diagnostic runs encountered read-only default PowerShell cache (fixed by
+private XDG dirs), Wine reparse nonmaterialization (reported UNAVAILABLE), and an
+aborted fixture path collision (unique tick suffix fixes fixture). Official Windows
+embeddable Python download returned403; no Windows Python integration claimed.
 
-復元するのはフォルダー/設定/ローダーです。ゲームアーカイブへのMOD再適用は
-共有Overstrikeの `Install mods` を使用します。ゲーム本体、セーブ、外部のWSL/
-Python/MSVC/Git本体や資格情報ストアを含むPC全体のバックアップではありません。
-SHA256は破損検出であり、発行者署名/バックアップ元の正常動作保証ではありません。
+`python3 environment/build_distribution.py`: toolkit-only ZIP CRC/member bytes/
+SHA checks; no game, external binary, user backup or r4 rebuild. Existing r4 runtime
+and packages must match baseline6eeef17. Native/game suites intentionally NOT RUN:
+CODEX_NEXT forbids native suite rerun for tooling-only work. No gameplay changes.

@@ -1,9 +1,17 @@
 # WallSprint project state
 
-## Priority owner blocker — shared launcher / update lock
+## Current handoff — update ownership / Mod-Tools 1.2.0
 
-Owner source Start launcher stops on WS update-lock presence after installed shortcuts rejected permitted Overstrike/scripts_proxy.dll. Actual lock ownership on PC UNKNOWN. Static updater uses empty existence sentinel, launch-before-finally-unlock; environment checker rejects presence and source start checks before KIT refresh. Current CODEX_NEXT authorizes durable tooling-only ownership/order/refresh/bootstrap repair. Movement work paused, r4 runtime unchanged. No blind deletion or active-lock bypass. Test owner current movement only after launch repaired.
-
+Implemented tooling-only OS-held shared ownership, commit-before-checked-launch,
+and a fresh Git-authenticated bootstrap that repairs installed KIT before old
+checkers can reject it. Audit records persist intentionally; do not delete them.
+Unknown/active/malformed/reparse locks refuse; empty legacy recovery requires
+Windows process and all running WSL distributions to be proved inactive.
+See analysis/UPDATE_LOCK_TOOLKIT_RECOVERY.md and docs/CODEX_RESULT.md.
+Cloud regressions passed; actual owner Windows/CIM/WSL/shortcut acceptance is
+UNAVAILABLE here. Runtime/package r4 bytes unchanged; movement remains paused.
+Next owner action is the single bootstrap block in docs/mod-tools/README.md,
+with game/Overstrike/updater closed. No full WS rebuild/game test requested.
 
 ## Active handoff — lateral movement route investigation
 
@@ -327,25 +335,13 @@ reversal. It does not certify animation ownership. The fixed r1 task now
 supersedes this historical no-change handoff; runtime outcome for r1 remains
 pending, with no serial steering changes or c73 authorized.
 
-## Shared Overstrike recurrence mitigation
+## Historical shared Overstrike mitigation — superseded
 
-Two separate loader failure modes are now handled by the owner-operated `MSM2 - Overstrike` launcher preflight:
-
-```text
-1. <game>\Overstrike\winmm.dll exists even though loaders belong at game root.
-2. <game>\scripts_proxy.dll or <game>\winmm.dll is marked ReadOnly.
-```
-
-The second mode can explain recurrence when the actual installer source is ReadOnly (the public source uses process-CWD-relative scripts_proxy.dll; owner exception pointed beside Overstrike.exe): Overstrike deletes/recreates game-root `winmm.dll` during Install mods by copying `scripts_proxy.dll`, so a ReadOnly source can recreate a ReadOnly destination and make the next install fail at `File.Delete(winmm.dll)` with `UnauthorizedAccessException`.
-
-`environment/Start-Overstrike.cmd` now performs a bounded installed-launch preflight before the Python environment checker:
-
-- misplaced `Overstrike\winmm.dll` is preserved under `Mod-Tools\_quarantine` (or only the duplicate copy is removed when identical bytes are already preserved);
-- game-root `scripts_proxy.dll` and `winmm.dll` have only their ReadOnly attribute cleared when present; no bytes are changed;
-- `.MSM2-Mod-Tools.lock` is removed only when its recorded PID is demonstrably not running;
-- any unexpected repair failure stops launch rather than widening cleanup.
-
-This repair does not modify SocialFeed, ordinary MODs, WS runtime code, Profiles, or asset data.
+The previous launcher moved manager-side winmm, cleared ReadOnly attributes and
+removed PID-only locks. Mod-Tools 1.2.0 removes these automatic mutations. It
+permits a regular installer Overstrike/scripts_proxy.dll, refuses misplaced
+Overstrike/winmm.dll unchanged, and uses process-lifetime OS ownership. Legacy
+artifacts are preserved only after verified inactivity; no automatic process kill.
 
 ## Safety
 

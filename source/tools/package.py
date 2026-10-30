@@ -379,6 +379,17 @@ for name in ['Migrate-WS.cmd','Update-WS.cmd']:
  shutil.copy2(root/'tools/windows'/name,out/name)
 (out/'tools/windows').mkdir(parents=True,exist_ok=True)
 shutil.copy2(root/'tools/workspace.py',out/'tools/workspace.py')
+kit_source=root.parent/'environment'
+if not kit_source.is_dir():kit_source=root/'tools/shared'
+shutil.copy2(kit_source/'operation_lock.py',out/'tools/operation_lock.py')
+# Owned toolkit dependencies for standalone source/install bootstraps, not user data.
+import sys
+sys.path.insert(0,str(kit_source))
+from mod_environment import KIT
+for folder in [out/'tools/shared',source/'tools/shared']:
+ folder.mkdir(parents=True,exist_ok=True)
+ for name in KIT:shutil.copy2(kit_source/name,folder/name)
+shutil.copy2(kit_source/'operation_lock.py',source/'tools/operation_lock.py')
 shutil.copy2(root/'tools/retired_probes.py',out/'tools/retired_probes.py')
 shutil.copy2(root/'tools/windows/stop-processes.ps1',out/'tools/windows/stop-processes.ps1')
 for name in ['Migrate-WS.cmd','Update-WS.cmd']:

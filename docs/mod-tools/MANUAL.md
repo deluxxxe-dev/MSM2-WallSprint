@@ -1,25 +1,15 @@
 # MSM2 Mod-Tools 総合マニュアル・仕様書
 
-対象: v1.1.0 / 作成日: 2026-10-24（日本時間）。
-用途: GitHubで運用・設定・安全条件・今後の改変箇所をまとめて参照する資料。
-
-- [共通仕様・使い方・改変運用](#common)
-- [MSM2 - Overstrike](#overstrike)
-- [MSM2 - Play Modded](#play)
-- [MSM2 - Backup Mods／検証・復元](#backup)
-
-原本はリポジトリの `docs/mod-tools/README.md` と各仕様書です。
-このファイルと原本を同時に更新してください。
-以下の実装リンクは対象版のコミットに固定しています。
+対象v1.2.0 / 更新2026-10-31 JST。個別原本と同時更新。
 
 <a id="common"></a>
 
-## MSM2 Mod-Tools 仕様書ライブラリ
+# MSM2 Mod-Tools 仕様書ライブラリ
 
-対象は現在の **Mod-Tools v1.1.0** が作成する3つのショートカットです。
+対象は現在の **Mod-Tools v1.2.0** が作成する3つのショートカットです。
 作成日: 2026-10-24（日本時間）。実装基準:
-[`845e33cafecae352e5194d790358500bb0066081`](https://github.com/deluxxxe-dev/MSM2-WallSprint/commit/845e33cafecae352e5194d790358500bb0066081)。
-この資料追加はツールの動作・配布ZIP・WS/SFのバージョンを変更しません。
+現行開発ブランチ `codex/v01c20-edi-value-provenance`（公開SHAはCODEX_RESULT参照）。
+今回のtooling変更はロック・KIT更新のみです。WS r4/SFのruntime/package bytesは変更しません。
 
 | ショートカット | 目的 | 仕様書 |
 |---|---|---|
@@ -33,7 +23,7 @@
 GitHubでまとめて読む場合は、全仕様を含む [一冊版 MANUAL.md](MANUAL.md) を使用できます。
 一冊版はこの索引/共通仕様と3つの仕様書を統合したスナップショットです。改訂時は両方を更新します。
 
-### いつ何を使うか
+## いつ何を使うか
 
 | やりたいこと | 操作 |
 |---|---|
@@ -45,7 +35,7 @@ GitHubでまとめて読む場合は、全仕様を含む [一冊版 MANUAL.md](
 | 保存したデータの破損を確認する | 保存フォルダーの `Verify-Backup.cmd` |
 | 同じ場所のVanillaへ環境を戻す | 保存フォルダーの `Restore-Mods.cmd` → Install mods → Playの確認 |
 
-### 導入・ツール更新
+## 導入・ツール更新
 
 現在の独立Git cloneを、意図した開発ブランチ上でfast-forward更新します。
 その後 `_source/environment/Start-Overstrike.cmd` をダブルクリックします。
@@ -58,7 +48,7 @@ Python等が導入済みなら、共有Overstrikeやローダーを再インス�
 ダウンロードURLが404でも既存Git cloneから取得できます。認証/アクセス権も確認し、
 リンク表示だけを配布成功の証拠にしないでください。Gitの更新失敗時は古い内容を破棄せず出力を保存します。
 
-### 共通の配置と依存
+## 共通の配置と依存
 
 `<game>` は `Spider-Man2.exe` が存在するゲームルートです。
 
@@ -92,7 +82,7 @@ Windows、Python 3.11以降、Windows標準PowerShellを使用します。
 通常起動・保存・復元にはGit更新、WSL、コンパイラー、ネット接続を使用しません。
 WS/SFの開発更新はそれぞれの既存アップデーターで行います。
 
-### ショートカットと実ファイルの違い
+## ショートカットと実ファイルの違い
 
 `.lnk` のリンク先は `<game>/Mod-Tools/<対応するCMD>`、作業フォルダーは `<game>`。
 Overstrike/Backupのアイコンは共有Overstrike、PlayはゲームEXEを使用します。
@@ -106,7 +96,7 @@ CMDは隣にある `mod_environment.py` を起動し、同じツール一式を�
 既存の同名 `.lnk` が別アプリを指す場合は保存前に停止します。移動した `.lnk` の
 内容は自動で更新されません。同じリンク先を維持する限り、その場所で引き続き使えます。
 
-### 共通の実行経路
+## 共通の実行経路
 
 ```text
 .lnk -> <game>/Mod-Tools/*.cmd
@@ -125,14 +115,14 @@ PythonからPowerShellへは一時JSONでaction/gameを渡し、`powershell.exe`
 実行ポリシーを恒久変更しません。ダウンロード由来のブロック等で失敗した場合は、
 失敗出力を確認し、既存Git cloneからの導入も利用できます。
 
-### 設定ファイル
+## 設定ファイル
 
 保存場所: `<game>/Mod-Tools/mod-tools.json`。ユーザーごとのローカル設定です。
 
 | キー | 内容 |
 |---|---|
 | `format` | `msm2-mod-tools-1`。既存フォルダーを自ツールとして認識する識別子 |
-| `tool_version` | 導入版。現在 `1.1.0` |
+| `tool_version` | 導入版。現在 `1.2.0` |
 | `backup_directory` | ゲーム外の保存先。初回の既定値はホームの `MSM2-Mod-Backups` |
 | `profile` | 使用するMSM2プロファイルのJSONファイル名から拡張子を除いた名前 |
 | `restore_requires_install` | 復元後のMOD再適用確認が必要ならtrue。未設定はfalse相当 |
@@ -140,7 +130,7 @@ PythonからPowerShellへは一時JSONでaction/gameを渡し、`powershell.exe`
 `save_settings()` は一時 `.pending` へ書いた後に `os.replace()` で反映します。
 設定形式を変える際は既存の保存先・プロファイル・復元確認状態を移行してください。
 
-### 共通の保護と境界
+## 共通の保護と境界
 
 処理対象はゲームルートの実在EXEから判定し、リンク・ジャンクション等を検査します。
 共有Overstrikeは `<game>/Overstrike/Overstrike.exe` の1つで、起動CWDは常に `<game>`。
@@ -148,12 +138,12 @@ PythonからPowerShellへは一時JSONでaction/gameを渡し、`powershell.exe`
 存在するSF/WSの `_source/.git` は独立保存であることを調べ、外部Git依存を拒否します。
 
 Install/Start/Play/Open/Backup/Restore適用は `<game>/.MSM2-Mod-Tools.lock` の
-排他的作成で調停します。残っているロックを自動削除しません。
+存在だけでは判定しません。全更新・起動・保存・復元を `.MSM2-Operations.guard` のOS所有権で直列化します。監査・互換用lockファイルは解放後も残り得ます。
 VerifyとRestoreの確認のみは、この変更操作用ロックを取得しません。
 PowerShellはゲームとOverstrikeのプロセス実行パスを照合し、同名の別パスや
 実行パス不明のプロセスを拒否します。強制終了は行いません。
 
-### 改変・保存の運用
+## 改変・保存の運用
 
 実装は [mod_environment.py](../../environment/mod_environment.py)、Windows部分は
 [windows.ps1](../../environment/windows.ps1)、入口は各CMDです。
@@ -166,21 +156,73 @@ PowerShellはゲームとOverstrikeのプロセス実行パスを照合し、同
 `build_distribution.py` でソースのみのZIPを生成して内容を検証します。
 原データを含むユーザーバックアップを、仕様書や公開ZIPへ添付しないでください。
 
-既存自動検証はPython 27試験・PowerShell 16チェックです。これはv1.1.0実装の記録で、
+既存自動検証はPython 27試験・PowerShell 16チェックです。これはv1.2.0実装の記録で、
 この文書だけの追加のために再実行したという意味ではありません。
 ユーザーの画面で3つのショートカットが存在することは確認済みですが、
 各アイコンからの全機能の実行・実バックアップ・Vanilla復元の完了とは区別します。
 
----
+
+## v1.2 OS所有権と互換lock
+
+`environment/operation_lock.py` が正本です。`.MSM2-Operations.guard` をWindowsの
+CreateFile共有排他で保持し、閉じる/プロセス終了でOSが解放します。ビルド子へ明示的に
+ハンドルを継承し、PIDと開始identity、token、workspace、phase、WSL distroを監査記録に保持。
+`.MSM2-Mod-Tools.lock` / `Update-WS.lock` は旧版を止める互換記録として残り得ます。
+**ファイルを削除する必要はありません。存在はactiveの証拠ではありません。**
+
+OS busyなら実所有が残っています。PID/start/action/phaseを確認し、子ビルドが保持して
+いる可能性も示します。旧empty/PID lockは年齢だけで回収せず、Windows operation processと
+全running WSL distroのbuild停止を確認できた場合だけ `.MSM2-lock-recovery/<token>` に
+元bytesを保存して移行。PID再利用は開始identityで区別。legacy PID-onlyで現PIDが生きて
+いる場合、malformed/reparse/所有者変更/WSL検証不能は保持・具体的理由で拒否します。
+`index.lock` は自動削除しません。プロセスの自動kill、DLLの移動/削除/属性修正もしません。
+
+新WSLビルドはdistroとtokenを固定。親の異常終了後、Windows子のOSハンドルが残れば
+次操作は取得できません。WSLホストまで終了してLinux子が残った場合も、未解決build
+記録を保持し、同tokenのプロセスが消えた証拠が得られるまで再開しません。プロセス環境を
+読めない場合は成功扱いにしません。手動の外部Git/ビルドは同時実行しないでください。
+
+Backup/Restoreも同じゲートです。互換lockはsnapshot対象外。復元時は現在のKITをstageに
+保持し、古いbackupから旧ロック方式を再導入しません。mods/profile/復元確認設定の既存
+保全・rollbackは維持。KIT旧bytesはbackup/退避先に残り、全体cleanupはしません。
+実機で健全な環境を消す復元試験は要求しません。
+
+## 一度だけのtooling修復（PowerShell）
+
+ゲーム・Overstrike・そのupdaterを閉じて実行します。旧launcher/checkerを通さず、
+現在のGit branch/remote/dirty/ff-onlyを確認してKITとUpdate-WS.cmdだけを更新します。
+WS build/配置、DLL移動、profile resetは実行しません。個人のゲームパスはこの実行例のみです。
+
+```powershell
+$game = "C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2"
+$repo = Join-Path $game 'Mods Library\Mods-Developing\MSM2-WS\_source'
+$branch = 'codex/v01c20-edi-value-provenance'
+if ((git -C $repo branch --show-current) -ne $branch) { throw 'Wrong WS branch' }
+if ((git -C $repo remote get-url origin) -ne 'https://github.com/deluxxxe-dev/MSM2-WallSprint.git') { throw 'Wrong WS origin' }
+git -C $repo fetch origin $branch
+if ($LASTEXITCODE -ne 0) { throw 'Fetch failed' }
+$commit = git -C $repo rev-parse "origin/$branch"
+if ($LASTEXITCODE -ne 0) { throw 'Head unavailable' }
+$body = @(git -C $repo show ($commit + ':environment/Repair-Mod-Tools.ps1'))
+if ($LASTEXITCODE -ne 0) { throw 'Repair source unavailable' }
+$temp = Join-Path $env:TEMP ('MSM2-repair-' + [guid]::NewGuid().ToString('N') + '.ps1')
+[IO.File]::WriteAllText($temp, ($body -join "`n"), (New-Object Text.UTF8Encoding($false)))
+try { & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $temp -GameRoot $game }
+finally { Remove-Item -LiteralPath $temp -Force }
+```
+
+成功は `TOOLING_REPAIR_COMPLETE runtime_unchanged=1 no_build=1 no_game_launch=1`。
+拒否時は表示されたPID/phase/WSL/パスを保全し、lockを手で削除しないでください。
+
 
 <a id="overstrike"></a>
 
-## MSM2 - Overstrike 仕様書
+# MSM2 - Overstrike 仕様書
 
-対象: Mod-Tools v1.1.0 / 2026-10-29。配置・設定の共通仕様は
+対象: Mod-Tools v1.2.0 / 2026-10-29。配置・設定の共通仕様は
 [仕様書ライブラリ](README.md)を参照。
 
-### 目的・入出力
+## 目的・入出力
 
 ダブルクリックで共有Overstrikeを開くための入口です。WSの配置を確認し、初回は
 ツールとショートカットを導入します。通常起動の中でMODの更新・ビルド・インストールや
@@ -199,7 +241,7 @@ PowerShellはゲームとOverstrikeのプロセス実行パスを照合し、同
 成功は起動要求・既存ウィンドウ再利用の成功であり、Overstrikeの起動後の正常動作や
 MODインストール完了まで監視する仕様ではありません。
 
-### ゲームルートの決定
+## ゲームルートの決定
 
 1. `--game-root` があれば使用。
 2. エンジンの所在が `<game>/Mod-Tools` ならその親。
@@ -209,40 +251,27 @@ MODインストール完了まで監視する仕様ではありません。
 そのため現在の `_source/environment/Start-Overstrike.cmd` からも自動判定できます。
 外へ展開したZIPからの初回は入力が必要です。個人用C:/D:パスは組み込みません。
 
-### 起動前の限定自己修復
+## v1.2 の起動・修復順序
 
-インストール済み `Start-Overstrike.cmd` はPythonの環境検査より前に、共有環境で実際に確認された次の3ケースだけを限定的に処理します。
+旧版のDLL退避、ReadOnly属性変更、PIDだけでのlock削除は行いません。
+`Start-Overstrike.cmd` はPythonの現行 `start_manager()` を呼びます。
 
-1. `<game>/Overstrike/winmm.dll` が誤配置されている場合、SHA256で識別して `<game>/Mod-Tools/_quarantine` へ退避する。同一bytesが既に退避済みなら誤配置側だけを削除する。
-2. ゲームルートの `scripts_proxy.dll` または `winmm.dll` がReadOnlyの場合、その属性だけを解除して再確認する。ファイルbytesは変更しない。
-3. `<game>/.MSM2-Mod-Tools.lock` が残っていて、その中のPIDが現在存在しない場合だけstale lockとして削除する。PIDが生きている場合は保持する。
+1. ゲームルートを検証し、共有OSゲートを取得。既存ファイルの存在だけで更新中としない。
+2. 導入済みと認識できるKITは、現行ソースから検証・stageして旧checker実行前に更新。
+   変更が必要な場合はゲーム/manager/updaterの終了を確認し、強制終了しない。
+3. 現行の環境/DLL/profile/独立Git/単一WS script/可視archiveなしを検査。
+   Git `index.lock` は削除せず拒否。解放済み監査lockは起動を妨げない。
+4. 初回導入は現行検査を通してから行う。既存設定、保存先、profile、復元確認状態を保持。
+5. ゲート保持中にWindows helperで共有managerを起動/再利用し、その後OSハンドルを閉じる。
 
-このReadOnly正規化はrootの2ファイルに限定した属性修復です。Overstrike1.8.1.0のコピー元 `scripts_proxy.dll` はprocess CWD相対なので、実際のコピー元がOverstrike配下ならそのReadOnly属性はこのroot修復では変わりません。コピー元がReadOnlyなら再作成されたwinmmへ属性が引き継がれ得ますが、root正規化だけでInstall成功や再発防止を保証しません。
-
-自己修復は上記ローダー/lockだけに限定し、Profiles、Mods Library、SF、WS runtime、通常MOD、asset dataを変更しません。予期しない状態ではcleanup範囲を広げず失敗します。
-
-### 処理順序
-
-1. インストール済みCMDなら上記の限定自己修復を実行する。
-2. ゲームルートとEXEを検証し、共通操作ロックを取得。
-3. 共有Overstrike、ルートの2つのローダー、Mods Library、独立Git保存を確認。
-4. このゲームを対象にしたMSM2プロファイルを選択・確認する。設定は書き換えない。
-5. `ws_launch_ready()` でWSの次の条件を確認する。
-   - `MSM2-WS/_source/.git` がディレクトリとして存在する。
-   - Gitの `index.lock` と `_archive/Update-WS.lock` がない。
-   - WS配下にリンク・ジャンクション等、走査不能の場所がない。
-   - 有効 `.script` はルートに1個だけで、名前は `MSM2-WS-v<version>.script`。
-   - WS配下に可視 `.zip/.rar/.7z` がない（大文字拡張子も対象）。
-   - `_source/.git` の内部オブジェクトは、このscript/アーカイブ走査から除外する。
-6. `Mod-Tools` が未知の他用途フォルダーなら停止する。
-7. バージョン不一致・ファイル不足・元ツールとの差分があれば `_install()` を実行。
-8. Windows helperの `manager` actionへ進み、共有Overstrikeを起動/再利用。
-9. 成功/失敗を問わず通常の例外処理ではロックを解放する。
+正常Update-WSは同じゲートで検証/配置を確定し、所有権を解放してからこのchecked
+launcherへ進みます。起動だけが失敗しても確定済みWSは巻き戻しません。
+旧入口で検査前に止まる場合は共通READMEの「一度だけのtooling修復」を使います。
 
 `.script` の確認は名前・配置の確認です。内部DLLのハッシュ検証、ゲームビルドの
 ネイティブ互換性判定やGitブランチ/dirty状態の検証を行う代替アップデーターではありません。
 
-### 初回・ツール更新時だけ行うこと
+## 初回・ツール更新時だけ行うこと
 
 `_install()` はゲーム/Overstrikeが終了していることと保存対象の走査を確認し、
 `KIT` に列挙された自ツールだけを `<game>/Mod-Tools` へコピーします。
@@ -251,10 +280,10 @@ MODインストール完了まで監視する仕様ではありません。
 バックアップ先が未設定ならホームの `MSM2-Mod-Backups` を登録しますが、この段階では保存しません。
 
 導入済みの通常起動は、全MODのバックアップ走査や再コピーを行いません。
-自動アップデートはなく、GitHub上の新版は利用者が取得して初回と同様に導入します。
+正常Update-WS後も現行KITを自動refreshします。`refresh_kit()` は同一hashなら何も変更せず、旧コードは `_toolkit_previous` に可逆保存します。
 配布一式が欠けた状態は、インターネットから補完せずエラーにします。
 
-### 起動済みプロセス・失敗時の扱い
+## 起動済みプロセス・失敗時の扱い
 
 同じパスのOverstrikeが起動済みなら `WScript.Shell.AppActivate(PID)` を使用します。
 前面化できなければエラーにして、二重起動しません。ゲームが起動中でも通常の
@@ -266,9 +295,9 @@ manager action自体はそれを強制終了しません。初回/更新の導�
 旧 `Open-Overstrike.cmd` は `manager` actionの簡易入口であり、`start` の初回セットアップや
 追加のWS一意性検査を行わないことを区別してください。
 
-`Install mods` が、更新済みlauncherで両root loaderのReadOnlyを解除した後にも `winmm.dll` の `UnauthorizedAccessException` で失敗する場合は、同じInstallを繰り返さず、active file lockまたはWindows ACLを次に調査します。
+`Install mods` のloader/ACLエラーは別のinstaller問題として扱います。今回のlauncher/repairはDLLや属性を変更せず、誤配置winmmも自動移動しません。
 
-### 改変箇所と確認項目
+## 改変箇所と確認項目
 
 | 変更したい内容 | 主な実装箇所 |
 |---|---|
@@ -278,19 +307,16 @@ manager action自体はそれを強制終了しません。初回/更新の導�
 | 名前・アイコン・リンク先 | `Set-ModShortcuts()` と `Start-Overstrike.cmd` |
 
 変更後は新規/旧版からの導入、設定と未コミット作業の保持、通常2回目の非再導入、
-誤配置loader/ReadOnly root loader/stale lockの限定修復、重複script/大文字ZIP/active lock/リンク/ローダー欠落/異なるプロファイルの拒否を確認します。
+OS所有権・旧lockの証明付き回復、KIT refreshの反復、loader非変更、重複script/大文字ZIP/active lock/リンク/ローダー欠落/異なるプロファイルの拒否を確認します。
 PowerShell側は正しいEXE/CWD、同一プロセス再利用、別パス拒否、3つの `.lnk` と
 同名別アプリ保全を検証します。自動テストは共通READMEから参照してください。
-Windows実機では、移動した `.lnk` を含め、既存の普通MOD+SF+WSが同じUIに現れること、ReadOnly正規化後に連続した `Install mods` が再び `winmm.dll` 削除エラーを起こさないことも確認します。
+Windows実機では、移動した `.lnk` を含め、既存の普通MOD+SF+WSが同じUIに現れること、DLL属性を自動変更しないことも確認します。Install modsのloader/ACLエラーは別途診断します。
 
-### scripts_proxy installer依存の訂正 — 2026-10-31
+## scripts_proxy installer依存の訂正 — 2026-10-31
 
-Overstrike1.8.1.0公開tagのSetupScriptsは `File.Copy("scripts_proxy.dll", <game>/winmm.dll)` を使用します。コピー元はprocess CWD相対で、exe隣へ絶対固定したコードではありません。この実機の例外は `<game>/Overstrike/scripts_proxy.dll` を要求していました。通常ファイル・非reparseのそのコピー元を許容し、rootの2ファイルも維持します。`Overstrike/winmm.dll` の既存拒否・限定退避は維持します。sourceとloaderの新規hash一致条件、DLLの自動取得・コピー・削除は追加しません。
+Overstrike1.8.1.0公開tagのSetupScriptsは `File.Copy("scripts_proxy.dll", <game>/winmm.dll)` を使用します。コピー元はprocess CWD相対で、exe隣へ絶対固定したコードではありません。この実機の例外は `<game>/Overstrike/scripts_proxy.dll` を要求していました。通常ファイル・非reparseのそのコピー元を許容し、rootの2ファイルも維持します。`Overstrike/winmm.dll` は拒否し、今回のlauncherは移動・削除しません。sourceとloaderの新規hash一致条件、DLLの自動取得・コピー・削除は追加しません。
 
-共通 `environment_ready()` の同じ混同も訂正したのでStart/Open/Playに適用されます。Start CMD自体はwinmmだけを退避し、scripts_proxyを削除しないため変更しません。既存ReadOnly正規化はrootファイルだけです。実際のコピー元がexe隣なら、その属性も別に影響し得るため、root正規化だけでInstall成功を保証する説明はしません。Profile/script-support設定は変更しません。
-
----
-
+共通 `environment_ready()` の同じ混同も訂正したのでStart/Open/Playに適用されます。v1.2.0のStart CMDは現在のPython checkerへ委譲し、DLL退避・削除・ReadOnly正規化を行いません。コピー元属性がInstallに影響する可能性と、launcher起動確認は別です。Profile/script-support設定は変更しません。
 
 
 ## Retired WS Steering Probes — 2026-10-31
@@ -347,14 +373,15 @@ Untracked/unknown files are not deleted by the refresh. The current updater stil
 checks them before preparation/build; this is not a validation bypass. No install,
 loader repair or real-PC acceptance is performed by this cloud task.
 
+
 <a id="play"></a>
 
-## MSM2 - Play Modded 仕様書
+# MSM2 - Play Modded 仕様書
 
-対象: Mod-Tools v1.1.0 / 2026-10-24。配置・設定の共通仕様は
+対象: Mod-Tools v1.2.0 / 2026-10-24。配置・設定の共通仕様は
 [仕様書ライブラリ](README.md)を参照。
 
-### 目的・入出力
+## 目的・入出力
 
 Overstrikeで既に適用したMOD構成のまま、ゲームを直接開く入口です。
 実装は参照時点のOverstrike `LaunchGame` と同じEXE/CWD/`-scripts` の方針を使用します。
@@ -374,7 +401,7 @@ Overstrikeで既に適用したMOD構成のまま、ゲームを直接開く入�
 起動要求後のプロセス継続・ゲーム画面・各MODの動作までは検証しません。
 Steamを別途インストール/起動/ログインさせる処理もありません。
 
-### 前提と処理順序
+## 前提と処理順序
 
 1. `--game-root` またはエンジンがある `Mod-Tools` の親からゲームを決定する。
    それ以外の場所からの実行は入力を求める（`start` 専用の祖先探索は行わない）。
@@ -393,7 +420,7 @@ Steamを別途インストール/起動/ログインさせる処理もありま�
 インストール不足は共有Overstrikeで `Install mods` を実行して解決します。
 `start` のWS配下script/ZIP一意性検査は、直接Playの処理には含まれません。
 
-### 起動引数と起動済みの場合
+## 起動引数と起動済みの場合
 
 `commandline.txt` があり、空白で分割した中に `-scripts` があれば引数を追加しません。
 PowerShellの比較は大文字小文字を区別しないので `-ScRiPtS` も認識します。
@@ -406,7 +433,7 @@ PowerShellの比較は大文字小文字を区別しないので `-ScRiPtS` も�
 PowerShellの共有事前検査はOverstrike側のプロセス実行パスも確認するため、
 別場所のOverstrikeが動いている場合も停止します。プロセスの強制終了はありません。
 
-### 復元後の確認フラグ
+## 復元後の確認フラグ
 
 Restore適用は、ファイル復元後に `restore_requires_install=true` を設定します。
 Vanillaへファイルを戻しただけではゲームアーカイブへのMOD再適用が終わらないためです。
@@ -417,7 +444,7 @@ Vanillaへファイルを戻しただけではゲームアーカイブへのMOD�
 現在はフラグを保存してから起動要求を送るため、起動要求が後で失敗してもフラグはfalseのままです。
 この順序を変更する場合、二重起動対策と失敗時の設定保全を併せて検討します。
 
-### 改変箇所と確認項目
+## 改変箇所と確認項目
 
 | 変更したい内容 | 主な実装箇所 |
 |---|---|
@@ -432,16 +459,18 @@ Vanillaへファイルを戻しただけではゲームアーカイブへのMOD�
 改変でSF/通常MODの設定を書き換えたり、ゲーム内のPosition等の書込みを追加したりしません。
 Windows実機では通常のSteam環境でゲームが開き、導入済みMODが作用することを確認します。
 
----
+共有OS所有権・KIT refresh・legacy修復の現行仕様は共通READMEのv1.2節です。
+active update中のPlayはOS所有権で拒否し、存在だけのsentinel判定はしません。
+
 
 <a id="backup"></a>
 
-## MSM2 - Backup Mods 仕様書
+# MSM2 - Backup Mods 仕様書
 
-対象: Mod-Tools v1.1.0 / 2026-10-24。配置・設定の共通仕様は
+対象: Mod-Tools v1.2.0 / 2026-10-24。配置・設定の共通仕様は
 [仕様書ライブラリ](README.md)を参照。
 
-### 目的・入出力
+## 目的・入出力
 
 通常MOD、SF/WSのソース・Git履歴・未コミット作業・ログを含む共有MOD環境を、
 フォルダー階層ごと私用バックアップとして保存します。保存後に全ファイルを検証します。
@@ -461,7 +490,7 @@ Windows実機では通常のSteam環境でゲームが開き、導入済みMOD�
 この指定は今回の出力先です。既定の保存先を変更するには
 `Install-Mod-Tools.cmd --backup-dir "<保存先>"` を使用します。
 
-### 保存範囲
+## 保存範囲
 
 | ルート | 保存内容 |
 |---|---|
@@ -477,12 +506,12 @@ Windows実機では通常のSteam環境でゲームが開き、導入済みMOD�
 資格情報ストアは対象外です。Gitローカル設定やログ等、対象ルート内にある個人情報は含みます。
 アップロードはせず、公開配布ZIPにも私用バックアップを入れません。
 
-### 保存処理の順序
+## 保存処理の順序
 
 1. ゲームと出力先を検証。出力先はゲーム内・ゲームの祖先フォルダーを拒否。
 2. 共通ロック取得後、ゲーム/共有Overstrikeが終了していることを確認。
 3. 共有環境、独立Git、導入済み設定のformatを確認し、対象の一覧/メタデータを採取。
-   リンク等、外部Git依存、`index.lock` / `Update-WS.lock`、非通常ファイルを拒否。
+   リンク等、外部Git依存、`index.lock`、未検証のlegacy lock、非通常ファイルを拒否。現行の認証済み互換lockは保存対象から除外。
 4. 出力先を作成し、未圧縮合計+64MiBより多い空き容量を要求。
 5. `.pending-<識別子>` 内にZIP64対応・DEFLATEレベル1で `environment.zip` を作成。
 6. ファイルごとに1MiBずつ読み書きし、SHA256を算出。200ファイルごとに進捗を表示。
@@ -495,7 +524,7 @@ Windows実機では通常のSteam環境でゲームが開き、導入済みMOD�
 止めて保存します。走査前後のメタデータ比較は、変更の完全検出を保証するものではありません。
 クラッシュ/電源断でのpending自動回収やバックアップ世代の自動削除はありません。
 
-### 出力形式・互換性
+## 出力形式・互換性
 
 完成フォルダー名はローカル時刻の `MSM2-Mod-Environment-YYYYMMDD-HHMMSS`。
 同名がある場合は `-01` 等を追加し、過去の保存を上書きしません。フォルダーを丸ごと保管します。
@@ -523,7 +552,7 @@ manifestの `format` は `msm2-mod-environment-1`。
 ファイル内容・ファイル更新時刻・基本modeは保持しますが、ACL/所有者/代替ストリームや
 ディレクトリ時刻を完全に保存する仕様ではありません。SHA256は破損検出用で、発行者署名ではありません。
 
-### 付属の検証・復元
+## 付属の検証・復元
 
 `Verify-Backup.cmd` は隣の `environment.zip` または `--archive` を全件検証します。
 対象ゲームが失われていても検証でき、元リポジトリには依存しません。
@@ -541,7 +570,7 @@ manifestの `format` は `msm2-mod-environment-1`。
 Vanillaゲームアーカイブへの再適用は `Install mods`、その後Playの `INSTALLED` 確認で進めます。
 別パスへの移設・破損した元データの意味的な修復・各MODの正常動作保証は行いません。
 
-### 改変箇所と確認項目
+## 改変箇所と確認項目
 
 | 変更したい内容 | 主な実装箇所 |
 |---|---|
@@ -554,3 +583,7 @@ Vanillaゲームアーカイブへの再適用は `Install mods`、その後Play
 Git履歴/dirty/未追跡/通常MOD/空フォルダー/読み取り専用と時刻の往復、元ゲーム消失後の
 独立復元、ZIP破損と危険パス拒否、更新中拒否、途中置換失敗とロールバック失敗の保全を検証します。
 Windows実機では最初の保存と再検証を優先し、健全な環境を消して復元試験をしないでください。
+
+現行restoreはOSゲートをROOTS外で保持し、Mods Library内に開いたlock handleを残しません。
+復元stageには現行KIT/互換markerを用意してから切替し、旧checker復活を防ぎます。
+詳細は共通READMEのv1.2 OS所有権を参照。

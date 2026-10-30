@@ -26,7 +26,7 @@ stage=$(mktemp -d /tmp/msm2-ws-validation.XXXXXX)
 trap 'rm -rf -- "$stage"' EXIT
 mkdir -p "$stage/repository"
 # Copy sources/docs only. No legacy checkout/gitdir/reference/cache dependency.
-tar -C "$repo" --exclude=source/build --exclude=source/logs --exclude=source/output --exclude=__pycache__ -cf - AGENTS.md docs analysis source README.md README_TEST.md Update-WS.cmd Migrate-WS.cmd .gitattributes | tar -C "$stage/repository" -xf -
+tar -C "$repo" --exclude=source/build --exclude=source/logs --exclude=source/output --exclude=__pycache__ -cf - AGENTS.md docs analysis source environment README.md README_TEST.md Update-WS.cmd Migrate-WS.cmd .gitattributes | tar -C "$stage/repository" -xf -
 cd "$stage/repository"
 bash source/tools/build_windows.sh
 bash source/tools/test.sh

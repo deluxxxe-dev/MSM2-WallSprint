@@ -1,4 +1,4 @@
-# MSM2 Mod-Tools v1.1.0
+# MSM2 Mod-Tools v1.2.0
 
 今回構築した共有MOD環境の起動・バックアップ・同じ場所への復元用ツールです。
 SF/WS本体の開発・更新は、それぞれの既存アップデーターで行います。
@@ -13,7 +13,7 @@ SF/WS本体の開発・更新は、それぞれの既存アップデーターで
 
 以後はデスクトップの **`MSM2 - Overstrike`** をダブルクリックするだけです。
 共有Overstrike・ローダーの配置、MSM2プロファイル、WSの独立ソースと
-ルートの有効scriptが1つであること、WS内の重複を生むZIP等や更新ロックの不在を
+ルートの有効scriptが1つであること、WS内の重複を生むZIP等とOS上の更新所有権を
 確認して、`<game>\Overstrike\Overstrike.exe` をゲームルートの作業フォルダーで開きます。
 同じOverstrikeが起動済みなら既存ウィンドウを前面に出します。
 起動時のGit更新・ビルド・バックアップは実行せず、通常MODやSF/WSのファイルも変更しません。
@@ -158,4 +158,32 @@ SHA256は破損検出用で、バックアップの作者を認証する署名�
 `Profile`/`AppSettings` を参照（commit `ab61de27a4ba76d92780178f600f73f15bcddd81`）。
 外部の実装・バイナリはこのツールにコピーしていません。
 
-Shared dependency clarification (2026-10-31): preserve root scripts_proxy.dll/winmm.dll; allow regular non-reparse Overstrike/scripts_proxy.dll as installer source. Overstrike/winmm.dll remains refused/quarantined. No automatic DLL copying/downloading/deletion or new source/loader hash-equality requirement. See docs/mod-tools/OVERSTRIKE.md.
+Shared dependency clarification (2026-10-31): preserve root scripts_proxy.dll/winmm.dll; allow regular non-reparse Overstrike/scripts_proxy.dll as installer source. Overstrike/winmm.dll remains refused; no launcher-side relocation/deletion. No automatic DLL copying/downloading/deletion or new source/loader hash-equality requirement. See docs/mod-tools/OVERSTRIKE.md.
+
+
+## v1.2 OS所有権と互換lock
+
+`environment/operation_lock.py` が正本です。`.MSM2-Operations.guard` をWindowsの
+CreateFile共有排他で保持し、閉じる/プロセス終了でOSが解放します。ビルド子へ明示的に
+ハンドルを継承し、PIDと開始identity、token、workspace、phase、WSL distroを監査記録に保持。
+`.MSM2-Mod-Tools.lock` / `Update-WS.lock` は旧版を止める互換記録として残り得ます。
+**ファイルを削除する必要はありません。存在はactiveの証拠ではありません。**
+
+OS busyなら実所有が残っています。PID/start/action/phaseを確認し、子ビルドが保持して
+いる可能性も示します。旧empty/PID lockは年齢だけで回収せず、Windows operation processと
+全running WSL distroのbuild停止を確認できた場合だけ `.MSM2-lock-recovery/<token>` に
+元bytesを保存して移行。PID再利用は開始identityで区別。legacy PID-onlyで現PIDが生きて
+いる場合、malformed/reparse/所有者変更/WSL検証不能は保持・具体的理由で拒否します。
+`index.lock` は自動削除しません。プロセスの自動kill、DLLの移動/削除/属性修正もしません。
+
+新WSLビルドはdistroとtokenを固定。親の異常終了後、Windows子のOSハンドルが残れば
+次操作は取得できません。WSLホストまで終了してLinux子が残った場合も、未解決build
+記録を保持し、同tokenのプロセスが消えた証拠が得られるまで再開しません。プロセス環境を
+読めない場合は成功扱いにしません。手動の外部Git/ビルドは同時実行しないでください。
+
+Backup/Restoreも同じゲートです。互換lockはsnapshot対象外。復元時は現在のKITをstageに
+保持し、古いbackupから旧ロック方式を再導入しません。mods/profile/復元確認設定の既存
+保全・rollbackは維持。KIT旧bytesはbackup/退避先に残り、全体cleanupはしません。
+実機で健全な環境を消す復元試験は要求しません。
+
+修復の一括実行例: docs/mod-tools/README.md「一度だけのtooling修復」。

@@ -1,6 +1,6 @@
 # MSM2 - Overstrike 仕様書
 
-対象: Mod-Tools v1.1.0 / 2026-10-29。配置・設定の共通仕様は
+対象: Mod-Tools v1.2.0 / 2026-10-29。配置・設定の共通仕様は
 [仕様書ライブラリ](README.md)を参照。
 
 ## 目的・入出力
@@ -32,35 +32,22 @@ MODインストール完了まで監視する仕様ではありません。
 そのため現在の `_source/environment/Start-Overstrike.cmd` からも自動判定できます。
 外へ展開したZIPからの初回は入力が必要です。個人用C:/D:パスは組み込みません。
 
-## 起動前の限定自己修復
+## v1.2 の起動・修復順序
 
-インストール済み `Start-Overstrike.cmd` はPythonの環境検査より前に、共有環境で実際に確認された次の3ケースだけを限定的に処理します。
+旧版のDLL退避、ReadOnly属性変更、PIDだけでのlock削除は行いません。
+`Start-Overstrike.cmd` はPythonの現行 `start_manager()` を呼びます。
 
-1. `<game>/Overstrike/winmm.dll` が誤配置されている場合、SHA256で識別して `<game>/Mod-Tools/_quarantine` へ退避する。同一bytesが既に退避済みなら誤配置側だけを削除する。
-2. ゲームルートの `scripts_proxy.dll` または `winmm.dll` がReadOnlyの場合、その属性だけを解除して再確認する。ファイルbytesは変更しない。
-3. `<game>/.MSM2-Mod-Tools.lock` が残っていて、その中のPIDが現在存在しない場合だけstale lockとして削除する。PIDが生きている場合は保持する。
+1. ゲームルートを検証し、共有OSゲートを取得。既存ファイルの存在だけで更新中としない。
+2. 導入済みと認識できるKITは、現行ソースから検証・stageして旧checker実行前に更新。
+   変更が必要な場合はゲーム/manager/updaterの終了を確認し、強制終了しない。
+3. 現行の環境/DLL/profile/独立Git/単一WS script/可視archiveなしを検査。
+   Git `index.lock` は削除せず拒否。解放済み監査lockは起動を妨げない。
+4. 初回導入は現行検査を通してから行う。既存設定、保存先、profile、復元確認状態を保持。
+5. ゲート保持中にWindows helperで共有managerを起動/再利用し、その後OSハンドルを閉じる。
 
-このReadOnly正規化はrootの2ファイルに限定した属性修復です。Overstrike1.8.1.0のコピー元 `scripts_proxy.dll` はprocess CWD相対なので、実際のコピー元がOverstrike配下ならそのReadOnly属性はこのroot修復では変わりません。コピー元がReadOnlyなら再作成されたwinmmへ属性が引き継がれ得ますが、root正規化だけでInstall成功や再発防止を保証しません。
-
-自己修復は上記ローダー/lockだけに限定し、Profiles、Mods Library、SF、WS runtime、通常MOD、asset dataを変更しません。予期しない状態ではcleanup範囲を広げず失敗します。
-
-## 処理順序
-
-1. インストール済みCMDなら上記の限定自己修復を実行する。
-2. ゲームルートとEXEを検証し、共通操作ロックを取得。
-3. 共有Overstrike、ルートの2つのローダー、Mods Library、独立Git保存を確認。
-4. このゲームを対象にしたMSM2プロファイルを選択・確認する。設定は書き換えない。
-5. `ws_launch_ready()` でWSの次の条件を確認する。
-   - `MSM2-WS/_source/.git` がディレクトリとして存在する。
-   - Gitの `index.lock` と `_archive/Update-WS.lock` がない。
-   - WS配下にリンク・ジャンクション等、走査不能の場所がない。
-   - 有効 `.script` はルートに1個だけで、名前は `MSM2-WS-v<version>.script`。
-   - WS配下に可視 `.zip/.rar/.7z` がない（大文字拡張子も対象）。
-   - `_source/.git` の内部オブジェクトは、このscript/アーカイブ走査から除外する。
-6. `Mod-Tools` が未知の他用途フォルダーなら停止する。
-7. バージョン不一致・ファイル不足・元ツールとの差分があれば `_install()` を実行。
-8. Windows helperの `manager` actionへ進み、共有Overstrikeを起動/再利用。
-9. 成功/失敗を問わず通常の例外処理ではロックを解放する。
+正常Update-WSは同じゲートで検証/配置を確定し、所有権を解放してからこのchecked
+launcherへ進みます。起動だけが失敗しても確定済みWSは巻き戻しません。
+旧入口で検査前に止まる場合は共通READMEの「一度だけのtooling修復」を使います。
 
 `.script` の確認は名前・配置の確認です。内部DLLのハッシュ検証、ゲームビルドの
 ネイティブ互換性判定やGitブランチ/dirty状態の検証を行う代替アップデーターではありません。
@@ -74,7 +61,7 @@ MODインストール完了まで監視する仕様ではありません。
 バックアップ先が未設定ならホームの `MSM2-Mod-Backups` を登録しますが、この段階では保存しません。
 
 導入済みの通常起動は、全MODのバックアップ走査や再コピーを行いません。
-自動アップデートはなく、GitHub上の新版は利用者が取得して初回と同様に導入します。
+正常Update-WS後も現行KITを自動refreshします。`refresh_kit()` は同一hashなら何も変更せず、旧コードは `_toolkit_previous` に可逆保存します。
 配布一式が欠けた状態は、インターネットから補完せずエラーにします。
 
 ## 起動済みプロセス・失敗時の扱い
@@ -89,7 +76,7 @@ manager action自体はそれを強制終了しません。初回/更新の導�
 旧 `Open-Overstrike.cmd` は `manager` actionの簡易入口であり、`start` の初回セットアップや
 追加のWS一意性検査を行わないことを区別してください。
 
-`Install mods` が、更新済みlauncherで両root loaderのReadOnlyを解除した後にも `winmm.dll` の `UnauthorizedAccessException` で失敗する場合は、同じInstallを繰り返さず、active file lockまたはWindows ACLを次に調査します。
+`Install mods` のloader/ACLエラーは別のinstaller問題として扱います。今回のlauncher/repairはDLLや属性を変更せず、誤配置winmmも自動移動しません。
 
 ## 改変箇所と確認項目
 
@@ -101,16 +88,16 @@ manager action自体はそれを強制終了しません。初回/更新の導�
 | 名前・アイコン・リンク先 | `Set-ModShortcuts()` と `Start-Overstrike.cmd` |
 
 変更後は新規/旧版からの導入、設定と未コミット作業の保持、通常2回目の非再導入、
-誤配置loader/ReadOnly root loader/stale lockの限定修復、重複script/大文字ZIP/active lock/リンク/ローダー欠落/異なるプロファイルの拒否を確認します。
+OS所有権・旧lockの証明付き回復、KIT refreshの反復、loader非変更、重複script/大文字ZIP/active lock/リンク/ローダー欠落/異なるプロファイルの拒否を確認します。
 PowerShell側は正しいEXE/CWD、同一プロセス再利用、別パス拒否、3つの `.lnk` と
 同名別アプリ保全を検証します。自動テストは共通READMEから参照してください。
-Windows実機では、移動した `.lnk` を含め、既存の普通MOD+SF+WSが同じUIに現れること、ReadOnly正規化後に連続した `Install mods` が再び `winmm.dll` 削除エラーを起こさないことも確認します。
+Windows実機では、移動した `.lnk` を含め、既存の普通MOD+SF+WSが同じUIに現れること、DLL属性を自動変更しないことも確認します。Install modsのloader/ACLエラーは別途診断します。
 
 ## scripts_proxy installer依存の訂正 — 2026-10-31
 
-Overstrike1.8.1.0公開tagのSetupScriptsは `File.Copy("scripts_proxy.dll", <game>/winmm.dll)` を使用します。コピー元はprocess CWD相対で、exe隣へ絶対固定したコードではありません。この実機の例外は `<game>/Overstrike/scripts_proxy.dll` を要求していました。通常ファイル・非reparseのそのコピー元を許容し、rootの2ファイルも維持します。`Overstrike/winmm.dll` の既存拒否・限定退避は維持します。sourceとloaderの新規hash一致条件、DLLの自動取得・コピー・削除は追加しません。
+Overstrike1.8.1.0公開tagのSetupScriptsは `File.Copy("scripts_proxy.dll", <game>/winmm.dll)` を使用します。コピー元はprocess CWD相対で、exe隣へ絶対固定したコードではありません。この実機の例外は `<game>/Overstrike/scripts_proxy.dll` を要求していました。通常ファイル・非reparseのそのコピー元を許容し、rootの2ファイルも維持します。`Overstrike/winmm.dll` は拒否し、今回のlauncherは移動・削除しません。sourceとloaderの新規hash一致条件、DLLの自動取得・コピー・削除は追加しません。
 
-共通 `environment_ready()` の同じ混同も訂正したのでStart/Open/Playに適用されます。Start CMD自体はwinmmだけを退避し、scripts_proxyを削除しないため変更しません。既存ReadOnly正規化はrootファイルだけです。実際のコピー元がexe隣なら、その属性も別に影響し得るため、root正規化だけでInstall成功を保証する説明はしません。Profile/script-support設定は変更しません。
+共通 `environment_ready()` の同じ混同も訂正したのでStart/Open/Playに適用されます。v1.2.0のStart CMDは現在のPython checkerへ委譲し、DLL退避・削除・ReadOnly正規化を行いません。コピー元属性がInstallに影響する可能性と、launcher起動確認は別です。Profile/script-support設定は変更しません。
 
 
 ## Retired WS Steering Probes — 2026-10-31

@@ -1,9 +1,9 @@
 # MSM2 Mod-Tools 仕様書ライブラリ
 
-対象は現在の **Mod-Tools v1.1.0** が作成する3つのショートカットです。
+対象は現在の **Mod-Tools v1.2.0** が作成する3つのショートカットです。
 作成日: 2026-10-24（日本時間）。実装基準:
-[`845e33cafecae352e5194d790358500bb0066081`](https://github.com/deluxxxe-dev/MSM2-WallSprint/commit/845e33cafecae352e5194d790358500bb0066081)。
-この資料追加はツールの動作・配布ZIP・WS/SFのバージョンを変更しません。
+現行開発ブランチ `codex/v01c20-edi-value-provenance`（公開SHAはCODEX_RESULT参照）。
+今回のtooling変更はロック・KIT更新のみです。WS r4/SFのruntime/package bytesは変更しません。
 
 | ショートカット | 目的 | 仕様書 |
 |---|---|---|
@@ -116,7 +116,7 @@ PythonからPowerShellへは一時JSONでaction/gameを渡し、`powershell.exe`
 | キー | 内容 |
 |---|---|
 | `format` | `msm2-mod-tools-1`。既存フォルダーを自ツールとして認識する識別子 |
-| `tool_version` | 導入版。現在 `1.1.0` |
+| `tool_version` | 導入版。現在 `1.2.0` |
 | `backup_directory` | ゲーム外の保存先。初回の既定値はホームの `MSM2-Mod-Backups` |
 | `profile` | 使用するMSM2プロファイルのJSONファイル名から拡張子を除いた名前 |
 | `restore_requires_install` | 復元後のMOD再適用確認が必要ならtrue。未設定はfalse相当 |
@@ -132,7 +132,7 @@ PythonからPowerShellへは一時JSONでaction/gameを渡し、`powershell.exe`
 存在するSF/WSの `_source/.git` は独立保存であることを調べ、外部Git依存を拒否します。
 
 Install/Start/Play/Open/Backup/Restore適用は `<game>/.MSM2-Mod-Tools.lock` の
-排他的作成で調停します。残っているロックを自動削除しません。
+存在だけでは判定しません。全更新・起動・保存・復元を `.MSM2-Operations.guard` のOS所有権で直列化します。監査・互換用lockファイルは解放後も残り得ます。
 VerifyとRestoreの確認のみは、この変更操作用ロックを取得しません。
 PowerShellはゲームとOverstrikeのプロセス実行パスを照合し、同名の別パスや
 実行パス不明のプロセスを拒否します。強制終了は行いません。
@@ -150,7 +150,60 @@ PowerShellはゲームとOverstrikeのプロセス実行パスを照合し、同
 `build_distribution.py` でソースのみのZIPを生成して内容を検証します。
 原データを含むユーザーバックアップを、仕様書や公開ZIPへ添付しないでください。
 
-既存自動検証はPython 27試験・PowerShell 16チェックです。これはv1.1.0実装の記録で、
+既存自動検証はPython 27試験・PowerShell 16チェックです。これはv1.2.0実装の記録で、
 この文書だけの追加のために再実行したという意味ではありません。
 ユーザーの画面で3つのショートカットが存在することは確認済みですが、
 各アイコンからの全機能の実行・実バックアップ・Vanilla復元の完了とは区別します。
+
+
+## v1.2 OS所有権と互換lock
+
+`environment/operation_lock.py` が正本です。`.MSM2-Operations.guard` をWindowsの
+CreateFile共有排他で保持し、閉じる/プロセス終了でOSが解放します。ビルド子へ明示的に
+ハンドルを継承し、PIDと開始identity、token、workspace、phase、WSL distroを監査記録に保持。
+`.MSM2-Mod-Tools.lock` / `Update-WS.lock` は旧版を止める互換記録として残り得ます。
+**ファイルを削除する必要はありません。存在はactiveの証拠ではありません。**
+
+OS busyなら実所有が残っています。PID/start/action/phaseを確認し、子ビルドが保持して
+いる可能性も示します。旧empty/PID lockは年齢だけで回収せず、Windows operation processと
+全running WSL distroのbuild停止を確認できた場合だけ `.MSM2-lock-recovery/<token>` に
+元bytesを保存して移行。PID再利用は開始identityで区別。legacy PID-onlyで現PIDが生きて
+いる場合、malformed/reparse/所有者変更/WSL検証不能は保持・具体的理由で拒否します。
+`index.lock` は自動削除しません。プロセスの自動kill、DLLの移動/削除/属性修正もしません。
+
+新WSLビルドはdistroとtokenを固定。親の異常終了後、Windows子のOSハンドルが残れば
+次操作は取得できません。WSLホストまで終了してLinux子が残った場合も、未解決build
+記録を保持し、同tokenのプロセスが消えた証拠が得られるまで再開しません。プロセス環境を
+読めない場合は成功扱いにしません。手動の外部Git/ビルドは同時実行しないでください。
+
+Backup/Restoreも同じゲートです。互換lockはsnapshot対象外。復元時は現在のKITをstageに
+保持し、古いbackupから旧ロック方式を再導入しません。mods/profile/復元確認設定の既存
+保全・rollbackは維持。KIT旧bytesはbackup/退避先に残り、全体cleanupはしません。
+実機で健全な環境を消す復元試験は要求しません。
+
+## 一度だけのtooling修復（PowerShell）
+
+ゲーム・Overstrike・そのupdaterを閉じて実行します。旧launcher/checkerを通さず、
+現在のGit branch/remote/dirty/ff-onlyを確認してKITとUpdate-WS.cmdだけを更新します。
+WS build/配置、DLL移動、profile resetは実行しません。個人のゲームパスはこの実行例のみです。
+
+```powershell
+$game = "C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2"
+$repo = Join-Path $game 'Mods Library\Mods-Developing\MSM2-WS\_source'
+$branch = 'codex/v01c20-edi-value-provenance'
+if ((git -C $repo branch --show-current) -ne $branch) { throw 'Wrong WS branch' }
+if ((git -C $repo remote get-url origin) -ne 'https://github.com/deluxxxe-dev/MSM2-WallSprint.git') { throw 'Wrong WS origin' }
+git -C $repo fetch origin $branch
+if ($LASTEXITCODE -ne 0) { throw 'Fetch failed' }
+$commit = git -C $repo rev-parse "origin/$branch"
+if ($LASTEXITCODE -ne 0) { throw 'Head unavailable' }
+$body = @(git -C $repo show ($commit + ':environment/Repair-Mod-Tools.ps1'))
+if ($LASTEXITCODE -ne 0) { throw 'Repair source unavailable' }
+$temp = Join-Path $env:TEMP ('MSM2-repair-' + [guid]::NewGuid().ToString('N') + '.ps1')
+[IO.File]::WriteAllText($temp, ($body -join "`n"), (New-Object Text.UTF8Encoding($false)))
+try { & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $temp -GameRoot $game }
+finally { Remove-Item -LiteralPath $temp -Force }
+```
+
+成功は `TOOLING_REPAIR_COMPLETE runtime_unchanged=1 no_build=1 no_game_launch=1`。
+拒否時は表示されたPID/phase/WSL/パスを保全し、lockを手で削除しないでください。

@@ -22,7 +22,7 @@ $r = [IO.File]::ReadAllText($Request, [Text.Encoding]::UTF8) | ConvertFrom-Json
 $game = [IO.Path]::GetFullPath([string]$r.game)
 $exe = Join-Path $game 'Spider-Man2.exe'
 $manager = Join-Path $game 'Overstrike\Overstrike.exe'
-$targets = @{ 'Spider-Man2'=$exe; 'Overstrike'=$manager }
+$targets = @{ 'Spider-Man2'=$exe; 'Overstrike'=$manager; 'Check for updates'=(Join-Path $game 'Check for updates.exe') }
 $running = @{}
 foreach ($name in $targets.Keys) {
     $running[$name] = @()
@@ -35,7 +35,7 @@ foreach ($name in $targets.Keys) {
     }
 }
 if ($r.action -eq 'check') {
-    if ($running['Spider-Man2'].Count -or $running['Overstrike'].Count) {
+    if ($running['Spider-Man2'].Count -or $running['Overstrike'].Count -or $running['Check for updates'].Count) {
         $details = foreach ($name in $targets.Keys) { foreach ($p in $running[$name]) { "$name PID=$($p.Id) Path=$($p.Path)" } }
         throw ('Close MSM2 and Overstrike before install/backup/restore. No process was stopped. ' + ($details -join '; '))
     }

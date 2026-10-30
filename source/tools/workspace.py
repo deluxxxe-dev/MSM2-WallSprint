@@ -1,6 +1,12 @@
 """Fail-closed WS-only Windows migration/update; platform-neutral core is fixture-tested."""
 from pathlib import Path
 import retired_probes
+try:import operation_lock
+except ModuleNotFoundError:
+ import sys
+ sys.path.insert(0,str(Path(__file__).resolve().parents[2]/"environment"))
+ import operation_lock
+import contextlib
 import argparse,hashlib,json,os,re,shutil,stat,subprocess,sys,zipfile
 REMOTE='https://github.com/deluxxxe-dev/MSM2-WallSprint.git'
 WS_NAME='MSM2-WS'
@@ -10,10 +16,18 @@ LEGACY_SOURCE_PATTERNS=('/*','!*.[zZ][iI][pP]','!*.[rR][aA][rR]','!*.7[zZ]')
 SOURCE_PATTERNS=LEGACY_SOURCE_PATTERNS+('!*.[sS][tT][aA][gG][eE]',)
 class WorkspaceError(RuntimeError):pass
 
+@contextlib.contextmanager
+def update_ownership(game):
+ try:
+  with operation_lock.hold(game,'update') as h:yield h
+ except RuntimeError as ex:
+  if isinstance(ex,WorkspaceError):raise
+  raise WorkspaceError(str(ex)) from ex
+
 def require(condition,message):
  if not condition:raise WorkspaceError(message)
 def run(args,cwd=None):
- p=subprocess.run([str(x) for x in args],cwd=cwd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,encoding='utf-8',errors='replace')
+ p=subprocess.run([str(x) for x in args],cwd=cwd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,encoding='utf-8',errors='replace',**operation_lock.child_options())
  require(p.returncode==0,'Command failed: '+str(args[0])+' '+p.stderr.strip())
  return p.stdout.strip()
 def linked(path):
@@ -199,56 +213,73 @@ def assert_layout(workspace,expected=None,allow_legacy_archives=False):
   require(all(p.parent==workspace and owned_script(p) for p in scripts),'Unowned/nested active .script refused; no unrelated mod will be moved')
  return scripts
 
+def shared_tools(source=None):
+ import importlib.util
+ if source is not None:path=source/'environment/mod_environment.py'
+ else:
+  bundled=Path(__file__).parent/'shared/mod_environment.py'
+  path=bundled if bundled.is_file() else Path(__file__).resolve().parents[2]/'environment/mod_environment.py'
+ require(path.is_file() and not linked(path),'Current shared toolkit source missing: '+str(path))
+ spec=importlib.util.spec_from_file_location('ws_owned_shared_tools',path);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+ return m
+
 class WindowsSystem:
  def stop(self,game):
-  require(os.name=='nt','Use the Windows helper for real migration/update')
-  require(shutil.which('powershell.exe'),'Windows PowerShell is required to stop only the validated game/shared Overstrike processes')
-  script=Path(__file__).parent/'windows/stop-processes.ps1'
-  run(['powershell.exe','-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',script,'-GameRoot',game])
+  require(os.name=='nt','Use Windows for real migration/update')
+  shared_tools().Windows().quiet(game)
  def build(self,source,destination):
   require(shutil.which('wsl.exe'),'WSL2 is required; see source/BUILD.md. Build/tests are not skipped.')
-  distro=os.environ.get('MSM2_WS_WSL_DISTRO')
-  prefix=['wsl.exe']+(['--distribution',distro] if distro else [])+['--exec']
+  distro=os.environ.get('MSM2_WS_WSL_DISTRO') or run(['wsl.exe','--exec','printenv','WSL_DISTRO_NAME'])
+  require(distro and not distro.startswith('-'),'Cannot bind the WSL distribution identity')
+  prefix=['wsl.exe','--distribution',distro,'--exec']
   require('wsl2' in run(prefix+['uname','-r']).lower(),'WSL2 Linux distribution is required for the supported cross-build')
   src=run(prefix+['wslpath','-u',source])
   dest=run(prefix+['wslpath','-u',destination])
   script=src+'/source/tools/windows/workspace-build.sh'
-  p=subprocess.run(prefix+['bash','--noprofile','--norc',script,src,dest])
+  token=operation_lock._current.record['token']
+  operation_lock.phase('building',build_token=token,distro=distro)
+  p=subprocess.run(prefix+['env','MSM2_WS_OPERATION_TOKEN='+token,'bash','--noprofile','--norc',script,src,dest],**operation_lock.child_options())
+  operation_lock.wsl_quiet(operation_lock._current.record)
+  operation_lock.phase('validated',build_token=None)
   require(p.returncode==0,'Required WSL build/test/package pipeline failed; previous active script retained')
   result=json.loads((destination/'Build-WS-result.json').read_text())
   name=result.get('artifact','')
   require(re.fullmatch(r'MSM2-WS-v[0-9A-Za-z.]+\.script\.disabled',name),'Invalid build artifact basename')
   payload=destination/name
   return payload,json.loads((destination/'BUILD_MANIFEST.json').read_text())
- def launch(self,game):
-  subprocess.Popen([str(game/'Overstrike/Overstrike.exe')],cwd=game)
+ def quiet(self,game):self.stop(game)
+ def refresh(self,source,game):
+  m=shared_tools(source);m.environment_ready(game);m.refresh_kit(game,self)
+ def shortcuts(self,game):shared_tools().Windows().shortcuts(game)
+ def launch(self,game):shared_tools().start_manager(game)
 
 class Manager:
  def __init__(self,system=None,remote=REMOTE):self.system=system or WindowsSystem();self.remote=remote
  def migrate(self,game,branch):
   require(shutil.which('git'),'Git for Windows is required; no migration action started')
   game=game_preflight(game);branch=branch_name(branch)
-  parent=game/'Mods Library'/'Mods-Developing'
-  # Never follow a pre-existing junction into SF or a legacy checkout.
-  for p in [game/'Mods Library',parent,parent/WS_NAME]:
-   if p.exists() or p.is_symlink():require(p.is_dir() and not linked(p),'Reparse/non-directory migration destination refused')
-   else:p.mkdir()
-  workspace=parent/WS_NAME
-  for name in ['logs','_archive']:
-   p=workspace/name
-   if not p.exists():p.mkdir()
-   require(p.is_dir() and not linked(p),'Unsafe workspace folder: '+name)
-  source=workspace/'_source'
-  self.system.stop(game)
-  if os.path.lexists(source):
-   require(source.is_dir() and not linked(source),'Existing _source must not be a file or reparse dependency')
-  if not source.exists():
-   run(['git','-c','core.longpaths=true','clone','--no-local','--single-branch','--branch',branch,self.remote,source])
-   git(source,'config','core.longpaths','true')
-   git(source,'config','wallsprint.expectedBranch',branch)
-  independent_clone(source,self.remote,allow_legacy_archives=True)
-  # Existing independent clones must match the explicit migration branch.
-  expected_branch(source,branch)
+  with update_ownership(game):
+   parent=game/'Mods Library'/'Mods-Developing'
+   # Never follow a pre-existing junction into SF or a legacy checkout.
+   for p in [game/'Mods Library',parent,parent/WS_NAME]:
+    if p.exists() or p.is_symlink():require(p.is_dir() and not linked(p),'Reparse/non-directory migration destination refused')
+    else:p.mkdir()
+   workspace=parent/WS_NAME
+   for name in ['logs','_archive']:
+    p=workspace/name
+    if not p.exists():p.mkdir()
+    require(p.is_dir() and not linked(p),'Unsafe workspace folder: '+name)
+   source=workspace/'_source'
+   self.system.stop(game)
+   if os.path.lexists(source):
+    require(source.is_dir() and not linked(source),'Existing _source must not be a file or reparse dependency')
+   if not source.exists():
+    run(['git','-c','core.longpaths=true','clone','--no-local','--single-branch','--branch',branch,self.remote,source])
+    git(source,'config','core.longpaths','true')
+    git(source,'config','wallsprint.expectedBranch',branch)
+   independent_clone(source,self.remote,allow_legacy_archives=True)
+   # Existing independent clones must match the explicit migration branch.
+   expected_branch(source,branch)
   self.update(workspace,branch)
   migration=source/'source/tools/windows/Migrate-WS.cmd'
   require(migration.is_file(),'Validated checkout lacks Migrate-WS.cmd')
@@ -264,12 +295,8 @@ class Manager:
   no_links(workspace)
   source=independent_clone(workspace/'_source',self.remote,allow_legacy_archives=True)
   branch=expected_branch(source,expected)
-  self.system.stop(game)
-  lock=workspace/'_archive/Update-WS.lock'
-  try:fd=os.open(lock,os.O_WRONLY|os.O_CREAT|os.O_EXCL)
-  except FileExistsError:raise WorkspaceError('Another update or stale Update-WS.lock exists; no deployment started')
-  os.close(fd)
-  try:
+  with update_ownership(game):
+   self.system.stop(game)
    tracked=set(git(source,'ls-files','-z').split('\0'))
    retired_probes.retire(workspace,game,tracked)
    prepare_source_checkout(source)
@@ -290,6 +317,7 @@ class Manager:
    independent_clone(source,self.remote)
    require(git(source,'rev-parse','HEAD')==head,'Source changed during validation')
    game_preflight(game);previous=assert_layout(workspace)
+   if hasattr(self.system,'refresh'):self.system.refresh(source,game)
    helper=source/'source/tools/windows/Update-WS.cmd'
    require(helper.is_file(),'Validated checkout lacks Update-WS.cmd')
    before=(workspace/'Update-WS.cmd').read_bytes() if (workspace/'Update-WS.cmd').exists() else None
@@ -305,7 +333,6 @@ class Manager:
     os.replace(stage,active);deployed=True
     (workspace/'Update-WS.cmd').write_bytes(helper.read_bytes())
     assert_layout(workspace,target)
-    self.system.launch(game)
    except BaseException:
     if deployed and active.exists() and hashlib.sha256(active.read_bytes()).hexdigest()==hashlib.sha256(data).hexdigest():active.unlink()
     for old,archive in reversed(saved):archive.rename(old)
@@ -313,9 +340,11 @@ class Manager:
      if (workspace/'Update-WS.cmd').exists():(workspace/'Update-WS.cmd').unlink()
     else:(workspace/'Update-WS.cmd').write_bytes(before)
     raise
-   print('WS update complete: '+target+'; select ordinary mods + SF + WS, then Install mods -> Run modded game.')
-   return active
-  finally:lock.unlink()
+  # Deployment is committed and OS ownership released before checked launch.
+  try:self.system.launch(game)
+  except Exception as ex:raise WorkspaceError('WS deployment committed; manager launch failed separately: '+str(ex)) from ex
+  print('WS update complete: '+target+'; select ordinary mods + SF + WS, then Install mods -> Run modded game.')
+  return active
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);sub=p.add_subparsers(dest='action',required=True)
