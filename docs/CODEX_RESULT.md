@@ -14,8 +14,7 @@ Actual owner Windows updater/game validation remains unperformed.
 - `source/tools/test_slot_publication_post_c67_boundary_fix.py`: import Path;
   derive child path using `Path(__file__).resolve().with_name(...)`.
 - `docs/CODEX_RESULT.md`, `docs/PROJECT_STATE.md`.
-- Necessary package documentation/source refresh: r1 install/source ZIPs and any
-  generated manifest metadata. Runtime stays v0.1c38r1 / package0.1.57; script/DLL
+- Necessary package documentation/source refresh: r1 install/source ZIPs (install/source ZIPs only; manifest unchanged). Runtime stays v0.1c38r1 / package0.1.57; script/DLL
   content remains byte-identical. No new package version or gameplay change.
 
 ## RESULT / narrow scope
@@ -104,10 +103,48 @@ Runtime byte hashes (unchanged from task start):
 
 ## Branch / publication
 
-Branch `codex/v01c20-edi-value-provenance`. Implementation SHA and independent
-GitHub readback will be finalized after normal commit/push, before owner handoff.
+Branch `codex/v01c20-edi-value-provenance`.
+Implementation commit `3079fd02af6572e5e9512d379f370420a1fefd83` was normally
+pushed. Independent GitHub checkout fetched the branch and compared all5 changed
+wrapper/docs/ZIP blobs byte-for-byte: head and contents matched (exit0).
+
+```bash
+git -C /tmp/ws-steering-docs-publication fetch origin codex/v01c20-edi-value-provenance
+git -C /tmp/ws-steering-docs-publication rev-parse FETCH_HEAD
+git diff --name-only c51aa45 HEAD
+```
+
+For each changed path, `git -C /tmp/ws-steering-docs-publication show FETCH_HEAD:<path>`
+was read from the separate GitHub object store and compared with the local file.
+Final record-only follow-up refreshes packaged documentation; the same check is
+performed again after its normal push. Final record SHA is reported in handoff
+rather than embedding this file's own hash.
 
 ## NEED
 
 No remaining canonical blocker. Only owner Windows/updater/game evidence remains
 unverified; ChatGPT supplies subsequent instructions, not this task.
+
+## Reproducible final package/runtime consistency check
+
+Executed after final package regeneration; expected all assertions pass, actual
+exit0. No production build or test semantics are changed by this check.
+
+```bash
+python3 - <<'PY_PACKAGE'
+from pathlib import Path
+import io, subprocess, zipfile
+baseline = subprocess.check_output(['git','show','c51aa45:MSM2-WS-v0.1c38r1.script.disabled'])
+assert Path('MSM2-WS-v0.1c38r1.script.disabled').read_bytes() == baseline
+with zipfile.ZipFile(io.BytesIO(baseline)) as old:
+    assert old.read('WallSprint.dll') == Path('source/build/windows/WallSprint.dll').read_bytes()
+for name in ['MSM2-WS-v0.1c38r1.zip','MSM2-WS-v0.1c38r1-source.zip']:
+    with zipfile.ZipFile(name) as z:
+        assert z.testzip() is None
+        if name.endswith('-source.zip'):
+            suffix = 'tools/test_slot_publication_post_c67_boundary_fix.py'
+            member = next(n for n in z.namelist() if n.endswith(suffix))
+            assert z.read(member) == (Path('source') / suffix).read_bytes()
+assert not subprocess.check_output(['git','diff','c51aa45','--','source/include','source/src','source/mod','BUILD_MANIFEST.json','source/tools/test_hooks_windows.sh'])
+PY_PACKAGE
+```
