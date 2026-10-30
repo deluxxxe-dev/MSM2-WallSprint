@@ -81,3 +81,16 @@ Publication commit and independent GitHub head/blob equality recorded after push
 only then continue docs/CODEX_INPUT_START.md separately. Five old untracked legacy
 artifacts remain unstaged. Final exact runtime log name if owner later runs:
 MSM2-WS-v0.1c38r4-YYYYMMDD-HHMMSS[-NN].log under MSM2-WS/logs (existing naming).
+
+### Verified lifetime publication (before INPUT work)
+
+Implementation e63afec169132aaeae36e3b5ec6b68c55dd6ba75, normal push18c563a->e63afec.
+`python3 /tmp/ws-r4-publication.py` exit0: independent GitHub fetch into
+/tmp/ws-steering-docs-publication, FETCH_HEAD/ls-remote/local head equal; all13
+changed file blobs from18c563a equal local bytes. `python3 /tmp/ws-r4-final-audit.py`
+PASS: protected helpers/guards/lifecycle/shared tooling unchanged, None time cap,
+4096 write/100ms freshness metadata, script/DLL hash, both ZIP CRCs and runtime/
+native-fixture source equality. Exact existing script log naming unchanged.
+This record-only package refresh retains script/DLL bytes; no binary test rerun
+needed for documentation. Final lifetime record head is preserved in subsequent
+INPUT inventory result; separately verify final pushed head before starting it.
