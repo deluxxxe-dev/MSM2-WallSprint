@@ -39,7 +39,7 @@ source Forward as vanilla intent.
 An accepted reversal completes a deterministic positive 180-degree turn about
 the SAME stored normal in0.25 active seconds, with no mid-turn retargeting.
 Right/Forward are rebuilt and proper rotation validated; Up remains the normal.
-Final input to the basis rebuild is exact f0/-f0, avoiding cumulative drift.
+Final Forward is component-exact saved f0/-f0, avoiding cumulative drift.
 A private post-entry active clock freezes at existing stale boundaries rather
 than reusing the entry clock's clamped t=1 rebasing. It does not extend the
 five-second real source budget or renew permission. Completion rebases motion.
@@ -72,6 +72,31 @@ the focused10 groups are deliberately also included in portable23.
 | `python3 source/tools/test_slot_publication_post_c69_stitched.py` | exit0; owned fixture groups pass | exit0; PASS 22, SKIP 0, UNAVAILABLE 0 |
 | `python3 source/tools/test_slot_publication_post_c69_boundary.py` | exit0; owned fixture groups pass | exit0; PASS 28, SKIP 0, UNAVAILABLE 0 |
 | `python source/tools/release.py` | exit0; package/import/export/version/CRC checks; distinct r1 artifacts | exit0; PASS 1, SKIP 0, UNAVAILABLE 0 |
+
+### Final exact-endpoint follow-up
+
+Review tightened final Forward from a re-normalized endpoint to component-exact
+saved f0/-f0 while retaining rebuilt Right/proper-frame validation. Added a
+strict diagonal endpoint assertion. This prevents floating-point endpoint
+renormalization from alternating by an ulp; it changes no input threshold,
+clock, guard or source store. After this helper change, reran all affected
+math/portable/Windows build/smoke/native source checks:
+
+| Exact command | Expected | Final actual |
+| --- | --- | --- |
+| `bash source/tools/test_reversal_heading.sh` | exit0; relevant groups/build/package pass | exit0; PASS 10, SKIP 0, UNAVAILABLE 0 |
+| `bash source/tools/build_windows.sh` | exit0; relevant groups/build/package pass | exit0; PASS 0, SKIP 0, UNAVAILABLE 0 |
+| `bash source/tools/test.sh` | exit0; relevant groups/build/package pass | exit0; PASS 23, SKIP 0, UNAVAILABLE 0 |
+| `bash source/tools/smoke_windows.sh` | exit0; relevant groups/build/package pass | exit0; PASS 7, SKIP 0, UNAVAILABLE 0 |
+| `bash source/tools/test_native_source.sh` | exit0; relevant groups/build/package pass | exit0; PASS 10, SKIP 0, UNAVAILABLE 0 |
+| `python source/tools/release.py` | exit0; relevant groups/build/package pass | exit0; PASS 1, SKIP 0, UNAVAILABLE 0 |
+
+The native command includes both corrected standalone r1 A/B reversal case and
+retained real-position-watch integration. No unrelated all-hooks rerun after
+this precision-only follow-up: its unchanged cwd defect is independently
+reproduced, and the affected helper consumers were explicitly revalidated.
+The earlier830-PASS canonical attempt is recorded as that earlier attempt,
+not as a final all-hooks PASS. Packaging was regenerated after final docs.
 
 ### Two distinct failures, retained and explained
 
@@ -155,8 +180,13 @@ Package validation proves mechanics, not full updater acceptance or real-game ef
 
 ## Branch / publication
 
-Branch `codex/v01c20-edi-value-provenance`. Implementation SHA/push verification
-will be filled after the implementation commit and independent GitHub readback.
+Branch `codex/v01c20-edi-value-provenance`.
+Initial implementation commit `31a464402c93f4efc9df17688f443eb68e19ad4d` was
+normally pushed and independently fetched into `/tmp/ws-steering-docs-publication`.
+All16 changed source/docs/manifest/artifact blobs were byte-identical to GitHub
+readback (SHA256 comparison recorded in cloud scratch). The final strict-endpoint
+follow-up and its artifacts will also be verified before handoff; final code
+commit SHA is recorded in the subsequent publication record.
 
 ## NEED
 

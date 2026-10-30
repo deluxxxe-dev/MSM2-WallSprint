@@ -22,5 +22,9 @@ int main(){
  for(unsigned i=0;i<12;++i){h.sample(p,update++,now,now);int next=-h.sign;p=p+entry.forward*(.4f*next);now+=100;h.sample(p,update++,now,now);p=p+entry.forward*(.4f*next);now+=100;h.sample(p,update++,now,now);assert(h.turning);now+=250;auto r=h.sample(p,update++,now,now);check(r);assert(!h.turning&&dot(r.basis.forward,entry.forward)*next>.99999f);now+=100;}
  puts("PASS: repeated opposite turns end at f0/-f0 without drift or mid-turn retarget");
  h=ready();h.sample({-.4f,0,0},2,100,100);h.clearObservation();h.sample({-10,0,0},3,1000,100);assert(!h.pending);assert(h.enter(entry)&&h.sign==1&&!h.havePosition&&!h.turning);h.sample({},1,0,0);h.sample({-.4f,0,0},2,100,100);h.sample({std::numeric_limits<float>::quiet_NaN(),0,0},3,200,200);assert(!h.pending&&!h.havePosition);puts("PASS: pause invalid data and session/identity reset cannot bridge evidence");
+ // Strict diagonal endpoint equality, not merely an angular tolerance.
+ heading::Reversal diagonal;diag::ActorAxes diagonalEntry{{-.70710677f,.70710677f,0},{0,0,1},{.70710677f,.70710677f,0},true};assert(diagonal.enter(diagonalEntry));
+ diagonal.sample({},1,0,0);diagonal.sample(diagonal.f0*-.4f,2,100,100);diagonal.sample(diagonal.f0*-.8f,3,200,200);
+ auto exact=diagonal.sample({},4,450,450);assert(exact.basis.valid&&exact.basis.forward.x==-diagonal.f0.x&&exact.basis.forward.y==-diagonal.f0.y&&exact.basis.forward.z==-diagonal.f0.z);
  source_math::CompactBlock block{},replacement{};block.rows[1]=1;block.rows[5]=1.5;block.rows[6]=.75;block.metadata.fill(0x5a);Vec3 scales{};assert(source_math::compactReplacement(block,end.basis,replacement,scales));assert(block.metadata==replacement.metadata&&scales.x==1&&scales.y==1.5&&scales.z==.75);puts("PASS: resulting orientation fits existing A/B proper-basis scale/metadata contract");
 }

@@ -9,7 +9,7 @@ struct Reversal {
  void clearObservation(){havePosition=false;pending=pendingCount=0;}
  void reset(){*this={};}
  bool enter(diag::ActorAxes entry){reset();if(!entry.valid||!diag::measure({entry.right,entry.up,entry.forward}).properRotation)return false;ready=unit(entry.up,normal)&&unit(entry.forward,f0);return ready;}
- bool basis(Vec3 forward,diag::ActorAxes& out) const {Vec3 r{},f{};if(!unit(cross(normal,forward),r)||!unit(cross(r,normal),f))return false;out={r,normal,f,true};return diag::measure({r,normal,f}).properRotation;}
+ bool basis(Vec3 forward,diag::ActorAxes& out,bool endpoint=false) const {Vec3 r{},f{};if(!unit(cross(normal,forward),r)||!unit(cross(r,normal),f))return false;out={r,normal,endpoint?forward:f,true};return diag::measure({r,normal,f}).properRotation;}
  Result sample(Vec3 p,unsigned nativeUpdate,double wallMs,double clock){
   Result out;out.accepted=sign;out.target=f0*float(sign);
   if(!ready||!finite(p)||!std::isfinite(wallMs)||!std::isfinite(clock)||clock<lastClock){clearObservation();return out;}
@@ -18,10 +18,10 @@ struct Reversal {
    double t=std::clamp((clock-turnStart)/250.,0.,1.);float angle=float(t*3.14159265358979323846);
    Vec3 start=f0*float(from);Vec3 f=start*std::cos(angle)+cross(normal,start)*std::sin(angle);
    if(t>=1){turning=false;f=f0*float(sign);clearObservation();out.event="turn_complete";}
-   if(!basis(f,out.basis))return out;
+   if(!basis(f,out.basis,t>=1))return out;
    return out; // No retargeting or displacement accumulation during a turn.
   }
-  if(!basis(out.target,out.basis))return out;
+  if(!basis(out.target,out.basis,true))return out;
   auto rebase=[&]{position=p;observationMs=wallMs;update=nativeUpdate;havePosition=true;};
   if(!havePosition){rebase();return out;}
   if(nativeUpdate==update)return out;

@@ -30,9 +30,9 @@ camera, engine API, new hooks/watches or direct-CFG investigation.
 - Turn by a deterministic positive signed angle from the current accepted sign
   about the SAME n, from0 to pi in250ms. Forward is formed by axis-angle rotation,
   Right=normalize(cross(n,Forward)), Forward=normalize(cross(Right,n)), Up=n.
-  Proper rotation validation remains mandatory. Final basis uses exact f0/-f0
-  as input to re-orthogonalization, not cumulative rotations or opposite-vector
-  linear interpolation. Completion clears history before another difference.
+  Proper rotation validation remains mandatory. Final Forward is exactly the saved f0/-f0 (including diagonal component
+  equality), with rebuilt Right and proper-frame validation; no cumulative
+  rotations or opposite-vector linear interpolation. Completion clears history before another difference.
 - `source/src/NativeHooks/native_source_override.cpp`: only private heading
   state, post-entry tick calculation, observation clearing on existing end/stale
   boundaries, and bounded logs. Shared `source_math::Transition` is unchanged;

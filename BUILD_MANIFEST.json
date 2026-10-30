@@ -2,8 +2,8 @@
   "version": "v0.1c38r1",
   "package_version": "0.1.57",
   "artifact": "MSM2-WS-v0.1c38r1.script.disabled",
-  "sha256": "b34af4266fb9f141f61a23e0d9d17b3d154be9ff330ebbe95e23940c9096988e",
-  "dll_sha256": "da46d4e3c79cb96db37a4992467fad52fcba6381e01bf78feb44a40334ea1412",
+  "sha256": "eaaf55b9017680bb47c3e4c07249964424c84723edf5c068072548f6b77f68db",
+  "dll_sha256": "88272f32adcfab0afde51f8949faed0cef8fb190a18becfb59befa2f9fa12ece",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
