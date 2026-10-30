@@ -1,99 +1,47 @@
-# Next task — owner runtime test of TurnSpeedSlow steering probe after shared-Overstrike preflight refresh; no c73 yet
+# Next task — determine steering extraction source; read-only investigation
 
-## Status
+Branch: `codex/v01c20-edi-value-provenance`. Do not merge main.
+This task supersedes the previous request to run the Slow5 game test.
 
-Corrected c72 remains accepted **VERIFIED-STATIC**; direct-CFG continuation is paused.
+## Purpose
+Determine whether the supplied extraction represents the installed Slow5 asset or vanilla data. Do not infer runtime config usage from extraction alone.
 
-The first Standard steering probe is complete:
+## Supplied evidence — 2026-10-30 JST
+- Owner reports Slow5 produced no visible behavior change. Actual adoption of the changed value remains unproven; do not assume all isolation steps were independently verified.
+- Modding Tool displayed `hero_wallrunsteeringsetup_standard.config` with Archive `mods\mod7` and size 512 B.
+- Extract from the test copy of toc failed: Save left the dialog open.
+- Extract from the game installation's toc succeeded.
+- ChatGPT inspected that supplied file: STG-wrapped, 544 bytes, SHA256 `32418c218d2feb62fb9227caec321c00278e4500bc75db6c4015888359537b7b`.
+- It exactly matches the previously authenticated vanilla file: TurnSpeedFast=100 at file offset 0x218, TurnSpeedSlow=75 at 0x219, not Slow5.
+- These observations do not prove installation failure, winning-mod identity, toc.BAK fallback, or runtime use. The selected entry and exported bytes differ in apparent size; inspect wrapper/export behavior before drawing a conclusion.
 
-```text
-TurnSpeedFast: 100 -> 10
-```
+## Bounded investigation
+Read AGENTS.md and required operational documents, docs/PROJECT_STATE.md, analysis/VANILLA_WALLRUN_STEERING_CONFIG_20261029.md, and analysis/WALLRUN_STEERING_PROBE_AB_RESULT_20261029.md.
+Inspect only existing relevant tools and the applicable Modding Tool/Overstrike source as available:
+1. Establish toc vs toc.BAK selection, archive path resolution relative to a copied toc, and selected-entry vs exported-byte behavior.
+2. Identify an existing read-only extraction/check method for the live installed Standard asset (asset ID 948FA063808F7E18). Account for STG wrapper offsets vs raw payload offsets.
+3. If the local game data is available, verify actual inputs and extract/check without changing them. Otherwise prepare one exact minimal local command or state the precise missing tool/input. Do not claim local verification from cloud.
+4. Distinguish installed replacement, extraction source, and actual runtime consumption.
 
-Owner A/B result:
+Do not rescan the whole repository or historical logs. Do not build a new extractor/framework if existing tools cannot establish the answer; report the exact blocker.
 
-```text
-probe ON ordinary WallRun: unchanged
-probe OFF ordinary WallRun: unchanged
-WS reversal probe ON: moonwalk YES
-WS reversal probe OFF: moonwalk YES
-WS disabled + probe ON ordinary WallRun: unchanged
-```
+## Allowed / forbidden
+Allowed: read-only inspection; temporary extraction outside Mods Library; concise WS analysis and docs/CODEX_RESULT.md updates.
+Forbidden: game/toc/toc.BAK/archive/loader/profile/MOD changes, renames or deletions; SF/other-repository changes; new steering values; native hooks/watches; gameplay writes; c73 or broad movement investigation.
+Runtime stays v0.1c38. C52 remains binding: PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL. All existing proof/write gates remain closed.
 
-Canonical detail:
+## Completion and checks
+Record confirmed source behavior and remaining uncertainty in a compact WS analysis file and docs/CODEX_RESULT.md; commit/publish documentation on the current branch.
+If no code changes occur, no runtime rebuild/game test is needed. For any read-only command proposed, verify its arguments and input/output paths against actual tool source/help; use relevant existing tests only if tool code is changed under a separately authorized task.
+Do not require Update-WS, reinstall, or another identical game run for this investigation.
 
-- `analysis/V01C72_OWNER_OFFLINE_RESULT.md`
-- `analysis/VANILLA_WALLRUN_STEERING_CONFIG_20261029.md`
-- `analysis/WALLRUN_STEERING_PROBE_AB_RESULT_20261029.md`
-- `docs/PROJECT_STATE.md`
+## Reply
+STATUS: success / partial / blocked
+CHANGED:
+- changed documentation paths
+RESULT:
+- confirmed extraction source behavior and local check result, or exact minimal command
+NEED:
+- only a precise missing input or Chat-side decision
 
-## Current interpretation
-
-Narrow **VERIFIED-RUNTIME** facts:
-
-- the moonwalk-like WS facing mismatch is baseline WS behavior, not caused by the Fast steering probe;
-- `TurnSpeedFast 100 -> 10` produced no visible ordinary-WallRun heading-response change in the tested maneuvers, including a run with WS disabled.
-
-Do not call `TurnSpeedFast` unused. The Fast branch may simply not have been selected, or runtime logic may override/scale the value.
-
-Current Overstrike source independently confirms the MSM2 `format_version=2` stage layout/path mechanism used by the probe, so package-layout failure is not the leading explanation.
-
-## Shared Overstrike prerequisite
-
-Before the next Install mods, refresh the owner-operated Mod-Tools launcher from the current repository once.
-
-The launcher preflight now handles three bounded stale-environment conditions:
-
-- misplaced `<game>\Overstrike\winmm.dll` -> preserve under `Mod-Tools\_quarantine`;
-- ReadOnly on game-root `scripts_proxy.dll` and/or `winmm.dll` -> clear only that attribute;
-- stale `.MSM2-Mod-Tools.lock` -> remove only when its recorded PID is not running.
-
-The ReadOnly normalization is specifically intended to prevent the observed recurring Overstrike failure at `File.Delete(<game>\winmm.dll)`. It changes no loader bytes and touches no MOD/project content.
-
-If Install mods still reports `UnauthorizedAccessException` for game-root `winmm.dll` after this refresh, stop and diagnose an active file lock/ACL rather than repeating installs.
-
-## Next owner runtime test
-
-Test exactly one further field:
-
-```text
-Standard.TurnSpeedSlow: 75 -> 5
-file offset 0x219: 0x4B -> 0x05
-```
-
-Repository builder/test:
-
-```text
-source/tools/build_wallrun_steering_slow_probe.py
-source/tools/test_build_wallrun_steering_slow_probe.py
-```
-
-Procedure:
-
-1. Disable/remove the previous `TurnSpeedFast 10` probe.
-2. Disable WallSprint for this isolation test.
-3. Enable only `WS Steering Probe - TurnSpeedSlow 5` among WS steering probes.
-4. Run `Install mods`.
-5. Launch the modded game.
-6. Perform an ordinary outdoor WallRun and make strong left/right heading changes.
-7. Report `clearly slower / subtle / unchanged / unstable / other`.
-8. Disable/remove the Slow probe and run `Install mods` again before unrelated testing.
-
-No runtime log is required unless load/install/crash failure occurs.
-
-## Stopping rule
-
-If `TurnSpeedSlow 75 -> 5` also yields no visible ordinary-WallRun steering change, stop serial Fast/Slow config probing. Do not stack more steering fields. Move next to the higher-level WS movement/facing/orientation investigation suggested by:
-
-- the baseline moonwalk symptom;
-- the existing Scripted Flight reference evidence around motion request, actor/mover facing and gravity/up orientation.
-
-Do not reopen c73 merely because this config discrimination is negative.
-
-## Binding safety
-
-Runtime remains `v0.1c38`; C52 remains binding:
-
-`PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
-
-No native gameplay-write gate is opened by this asset-only test.
+Keep the reply short. ChatGPT supplies any user-facing test explanation.
