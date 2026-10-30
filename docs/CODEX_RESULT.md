@@ -3,7 +3,7 @@
 2026-10-31 JST. STATUS: success (scoped implementation and cloud validation).
 Branch `codex/v01c20-edi-value-provenance`.
 Baseline `3ba11ef601ef3baa0150a60a7fa19fd05c322f97`; main not merged.
-Implementation publication: pending below; final documentation commit is reported in chat.
+Implementation commit: `27437f184768a033b0f662975ac9d7ca8ca7ae92`; final documentation commit is reported in chat.
 
 ## Changes / accepted evidence
 
@@ -123,3 +123,33 @@ Final documentation/source package regenerated with `python source/tools/release
 ZIP CRC/member equality and `git diff --check` verified before publication.
 Normal push only; independently fetched GitHub head and compared changed blobs.
 Publication record below is completed after actual push verification.
+
+### Verified implementation publication
+
+`git push origin codex/v01c20-edi-value-provenance` succeeded:
+3ba11ef ->27437f1. Independent existing no-checkout clone at
+`/tmp/ws-steering-docs-publication` fetched GitHub (not local filesystem):
+
+```bash
+git -C /tmp/ws-steering-docs-publication fetch origin codex/v01c20-edi-value-provenance
+git -C /tmp/ws-steering-docs-publication rev-parse FETCH_HEAD
+git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance
+python3 /tmp/ws-r2-publication.py
+```
+
+Expected/actual: fetched head, ls-remote and local HEAD all
+`27437f184768a033b0f662975ac9d7ca8ca7ae92`;13 changed file blobs equal. The
+owned verification script runs the fetch and compares `git show FETCH_HEAD:<path>`
+bytes against local files for every `git diff --name-only <baseline> HEAD` path.
+Same procedure repeated after record-only commit/push; final SHA in chat avoids
+a self-referential commit hash. No force push or main merge.
+
+Additional audit commands: `git diff --check`, `git diff --cached --check` (no
+errors); Python zipfile.testzip() for both r2 ZIPs (None) and member-byte equality
+for final helper/focused/native tests (all equal); `git show
+3ba11ef601ef3baa0150a60a7fa19fd05c322f97:source/src/NativeHooks/native_source_override.cpp`
+byte comparison with current file (equal). First audit invocation used nonexistent
+`source/src/msm2/native_source_override.cpp` and stopped before comparison;
+corrected path audit passed before push. This was a verification path typo, not
+an executed production change or test PASS. Record-only packaging preserves the
+validated DLL/script bytes and refreshes included result documentation.
