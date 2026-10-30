@@ -1,6 +1,6 @@
 # After-facing handoff — flat-wall directional movement
 
-Planning only, 2026-10-31 JST. This does not supersede active CODEX_NEXT (retire probes) or queued CODEX_TURN_SPEED (r3). Do not start this work until ChatGPT accepts the r3 runtime result and publishes a bounded implementation/research task into CODEX_NEXT.
+2026-10-31 JST: owner accepts r4 repeated-reversal lifetime and explicitly defers earlier facing START. Current CODEX_NEXT now authorizes the first bounded route investigation below only; later movement-write experiments still require a separate handoff. Do not execute old duration/input tasks.
 Overall sequence/acceptance: docs/FEATURE_ROADMAP.md.
 
 ## Product decision
@@ -17,7 +17,7 @@ If unavailable, stop with one precise missing fact; do not automatically reopen 
 One lateral direction, one planar wall, existing contact behavior and fixed conservative speed policy; log requested direction, actual displacement, surface normal and facing. No camera/animation/adhesion/corner changes in the same proof.
 Exact API/commands/thresholds must be designed from the investigation result, not invented now.
 Then test opposite lateral direction and diagonals separately.
-Five-second window remains until separate lifecycle acceptance. No brute-force Position/gravity/velocity writes.
+Fixed5second expiry removed in r4 and bounded owner runtime accepted. Independent4096 write/attempt budgets and all freshness/lifecycle gates remain. No brute-force Position/gravity/velocity writes.
 
 ## Remaining movement milestone
 Stopping/contact, manual idle/walk stance if safe, ordinary detach/recovery, cardinal/diagonal wall verification and ground-sprint-like posture. Custom adhesion only if existing contact is demonstrably insufficient.
