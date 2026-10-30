@@ -13,6 +13,9 @@ Token check no longer reads unrelated cmdline/cwd. New builds pin Linux UID;
 old metadata exposes uid_expected=null. Fresh bootstrap DiagnoseWSL is read-only
 (no claim/refresh/deploy/build), usable before old failing check. ONE owner next
 action is its common-manual block; actual PID339 cause still UNKNOWN.
+Implementation5ccdd9e published; independent15-file remote readback PASS.
+Focused21/lock14+1SKIP/workspace20/environment28/repair4/launcher1 and
+PowerShell mock16+syntax1 checks pass; actual Windows/WSL owner check unavailable.
 R5 runtime/artifacts unchanged. Existing staging is not source/session/inactivity
 bound enough for reuse; normal retry rebuilds. See analysis/WSL_POST_BUILD_VERIFICATION_REVIEW.md.
 

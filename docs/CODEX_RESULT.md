@@ -106,3 +106,21 @@ its exact output, including refusal JSON/nonzero exit. Do not run Update-WS/game
 or delete locks as part of this action. Chat gives game steps only after actual
 deployment succeeds. Supported normal repair remains documented but is not the
 next requested action. Publication SHA/readback recorded after push.
+
+## Publication / shared knowledge
+
+Implementation commit `5ccdd9ecc2b4b10f3e5bff877d033289a50c7f69` pushed to
+codex/v01c20-edi-value-provenance. `python3 /tmp/ws-proc-publication.py` PASS:
+independent clone fetch/FETCH_HEAD, ls-remote and local HEAD match, all15 changed
+tracked blobs byte-equal. Final documentation-only handoff record is pushed and
+checked with the same script. No runtime/test rerun for record-only edits.
+
+Reusable process-evidence/deployment distinction synchronized to separate
+MSM2-Wisdoms docs/MSM2_DEVELOPMENT_MANUAL.md, commit
+`6e35580572b983862f888e35f4cc06ce67c71724`; push, ls-remote/FETCH_HEAD and document
+blob readback PASS. That repository's documentation main branch is separate;
+WallSprint main has NOT been merged or changed. No engine ownership fact promoted.
+
+Owner ONE next action remains the fresh DiagnoseWSL block; no update/game test
+until its private cause-specific result is reviewed. Build validated != deployment
+validated. R5 binaries/packages unchanged, owner deployment not certified.
