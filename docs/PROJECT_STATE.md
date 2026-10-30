@@ -430,3 +430,14 @@ orientation-source reversal behavior changes. C52 remains binding:
 `PRODUCTION_VCH_WITNESS_INTEGRATION_REVIEW_FAIL`
 
 All native publication/allocation/base/range/lifetime/ownership/destination/CFG/EH/production/watch gates remain closed.
+
+## Publication verified
+
+Implementation commit `a194f0f5e0a4f902b8b7855cd717fca69635eb8a` pushed to
+`codex/v01c20-edi-value-provenance`. Independent checkout fetched GitHub HEAD;
+local HEAD, independent FETCH_HEAD and ls-remote agree. All21 changed file blobs
+match local bytes. Verified with `python3 /tmp/ws-lifecycle-publication.py`.
+This follow-up records publication only; executable/tested bytes unchanged, so the
+completed full pipeline is not repeated for this documentation-only record.
+Owner source worktree/KIT/r5 deployment are NOT updated by this publication.
+Five preexisting untracked files remain unstaged. No main merge/force/reset/cleanup.

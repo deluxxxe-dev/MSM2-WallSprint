@@ -154,3 +154,14 @@ Wisdoms operational manual updated/pushed at
 `ce7d97db095fd6f5995339c1adafb61d687b9273`; remote main readback matches.
 Corrected prior pending owner root-repair acceptance, kept later update/deployment
 unknown, and recorded primary-exit/owned PIDFD/diagnostic authority distinctions.
+
+## Publication verified
+
+Implementation commit `a194f0f5e0a4f902b8b7855cd717fca69635eb8a` pushed to
+`codex/v01c20-edi-value-provenance`. Independent checkout fetched GitHub HEAD;
+local HEAD, independent FETCH_HEAD and ls-remote agree. All21 changed file blobs
+match local bytes. Verified with `python3 /tmp/ws-lifecycle-publication.py`.
+This follow-up records publication only; executable/tested bytes unchanged, so the
+completed full pipeline is not repeated for this documentation-only record.
+Owner source worktree/KIT/r5 deployment are NOT updated by this publication.
+Five preexisting untracked files remain unstaged. No main merge/force/reset/cleanup.
