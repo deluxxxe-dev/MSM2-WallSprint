@@ -1,39 +1,43 @@
-# Next task — r2 reversal latency: equal-timestamp correction and shorter observation interval
+# Next task — stop retired Steering Probes returning/enabling during WS update
 
 Branch codex/v01c20-edi-value-provenance. Do not merge main.
-Read AGENTS required docs, current PROJECT_STATE/CODEX_RESULT, analysis/V01C38R1_REVERSAL_RUNTIME_RESULT_20261031.md and existing reversal helper/tests. Do not reopen broad investigation.
+Read AGENTS required docs, current PROJECT_STATE/CODEX_RESULT and relevant shared Overstrike/layout manuals.
+r2 implementation is complete; runtime response pending. Do not modify it.
 
-## Purpose
-Owner confirms r1 reverses, but delayed facing causes initial moonwalk.
-Implement this prescribed bounded change; no new input API or movement design.
+## Owner request / evidence
+2026-10-31 screenshot: TWO checked identical "WS Steering Probe - TurnSpeedSlow 5" entries beside checked WallSprint. Owner reports probes reappear/re-enable during Update-WS and authorizes retirement/removal of these WS test probes. They are no longer required for the current experiment.
+Do not assume updater explicitly toggles them: distinguish archive discovery, duplicate paths, profile new-entry defaults and actual selection mutation.
 
-## Changes, independently verified
-A. Correct equal-clock handling in source/include/Math/reversal_heading.hpp:
-- Native update regression, wall-clock regression (<), >250ms gap, stale/identity/session failure still invalidate/rebase as before.
-- Different nativeUpdate with wallMs==observationMs must WAIT: preserve position/time/update baseline and pending candidate/count/time; no rebase/reset/event acceptance or fabricated elapsed time.
-- Same nativeUpdate remains non-evidence. Distinct update and positive eligible elapsed interval required.
-- Verify duplicate timestamp cannot extend freshness, bridge lifecycle gaps, accumulate candidate votes or advance turns on its own.
-B. Change only heading observation minimum dt and pending confirmation minimum duration from100ms to33ms, preferably one shared named experimental constant.
-- Still two consecutive eligible NEW-sign observations, >=33ms apart.
-- Keep max dt250ms, tangent speed>=2, direction dot threshold +/-0.8, fixed250ms turn, no mid-turn retarget, entry transition, zero-speed hold, five-second budget and all A/B safety contracts unchanged.
-- Do not change MOVEMENT_DELTA_SAMPLE's separate100ms diagnostic schedule.
-Test A with old100ms parameters first, then B/combined. Preserve clearly separated correctness and tuning evidence.
+## Purpose / bounded change
+Inspect only WS updater/package/discovery/sparse-checkout paths and exact probe names. Determine how stage files or archive members enter recursively scanned Mods Library, including _source/_archive and duplicate copies.
+Normal Update-WS must deploy current WS runtime only and must not copy, unpack, regenerate, auto-enable or reintroduce retired Steering Probes.
+Preserve source builders and research history. Retain useful probe artifacts outside scanner-visible paths or in genuinely ignored disabled form; verify scanner behavior rather than assuming an archive disabled extension hides a nested active stage.
+For recognized retired probes already inside MSM2-WS, updater may preserve/move them to a dedicated location OUTSIDE Mods Library after validating identity (exact known probe names plus package metadata/payload as needed), regular files/no reparse, no overwrite and reversible archival. This is explicit authority ONLY for these WS probe artifacts, not general cleanup.
+If copies live elsewhere in shared Mods Library, do not blindly remove/move broad matches. Report exact verified origin/path and an existing user-operated removal method, or build a separately invoked narrowly scoped retire-probes action if needed. Never scan unrelated file contents unnecessarily.
+Do not edit Overstrike vendor code or broadly rewrite profiles. Preserve user's enabled/disabled choices and ordering for every unrelated MOD and existing WS runtime. No enable-all/reset profile/defaults.
+No automatic game install/reinstall, loader mutation or local-PC claim.
 
-## Scope
-Allowed: reversal helper/tests, minimal required callsite adjustment, distinct v0.1c38r2/package metadata under existing conventions, bounded diagnostic refinement if needed, task/result/state docs and reproducible artifacts.
-No runtime input/velocity/Position writes, animation/camera, native hooks/watches/VEH/VCH, reset_trace, steering assets, c73, producer, shared launcher/checker/loader changes, SF/other MOD changes. Existing C52 and all native write gates unchanged.
+## Allowed / forbidden
+Allowed: minimum WS update/distribution/sparse policy fix, focused regression tests, matching local manuals and combined manual if affected, CODEX_RESULT/PROJECT_STATE. Keep existing archive visibility protection and Git history.
+Forbidden: r2 DLL/gameplay/version changes; probe field changes; SF/IDLE/ordinary MOD mutations; destructive library-wide cleanup; symlinks; disabling sparse protections; reset/clean/main merge; hook/watch/c73 work.
 
-## Automated checks / completion
-Regression tests: exact same-ms/different-update candidate reproduction; preserve candidate until next real-time sample; repeated same time cannot vote/accept; backward clock and real >250ms gap reset; stale/session identity reset; two consecutive33ms observations accept at66ms after baseline while one candidate cannot; low-speed/noisy/oblique hold; deterministic250ms proper turn/Up; repeated reversal and unchanged position/W/compact metadata.
-Run repo-required focused/portable, Windows build/smoke and affected native A/B tests, plus required canonical hooks chain using exact documented commands. No bypass; unchanged skips/unavailable distinguished.
-Update PROJECT_STATE/CODEX_RESULT with supplied runtime evidence and exact results; commit/push and independently verify. Keep distinct r2 version/artifacts so owner logs identify it.
-Codex does not write user game test prose or deploy on owner's PC.
+## Completion / checks
+Use existing required workspace/environment test commands. Test:
+- normal update never introduces probe stage/ZIP/archive members into scanner-visible workspace;
+- repeated updates are idempotent;
+- known duplicate retired WS probes can be reversibly retired only within explicitly owned scope;
+- unrelated stage/script/archive files and profile choices untouched;
+- spaces/Unicode, collisions, dirty Git and reparse safeguards retained.
+If owner manually removes a probe, next update must not restore it.
+Keep v0.1c38r2/package0.1.58 runtime bytes unchanged; no unrelated native-suite rerun needed for tooling-only change.
+Record verified cause, precise scope, commands and remaining owner acceptance; commit/push and verify remote.
+If current installed updater needs a bootstrap before fetch, use documented guarded refresh and report it, not a validation bypass.
 
-Reply:
+Reply briefly:
 STATUS: success / partial / blocked
 CHANGED:
 - paths
 RESULT:
-- separate A/B test evidence, build/canonical checks, published branch/commit/version
+- cause, regression checks, publication
 NEED:
-- exact remaining blocker only
+- exact owner action for existing duplicates only if needed
