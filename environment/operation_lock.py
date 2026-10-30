@@ -143,7 +143,7 @@ def probe(token,legacy,distro,expected_uid=None,elevated=False,attempt=0):
     matched=matched or any(x in cmd for x in [b'/msm2-ws-validation.',b'workspace-build.sh',b'Mods-Developing/MSM2-WS'])
    stage='identity_after';after=start(pid)
    if after[0]!=before[0]:event(pid,stage,'pid_reused');unknown=True;continue
-   seen_ids[pid]=after[0]
+   if after[1] not in ('Z','X','x'):seen_ids[pid]=after[0]
    # Matching live token is enough to block even if its process exits next.
    if matched:event(pid,'match','active_build');active=True
   except (OSError,ValueError,IndexError) as ex:
@@ -160,7 +160,9 @@ def probe(token,legacy,distro,expected_uid=None,elevated=False,attempt=0):
   try:
    for n in os.listdir('/proc'):
     if n.isdigit() and int(n)!=os.getpid():
-     try:final_ids[int(n)]=start(int(n))[0]
+     try:
+      identity=start(int(n))
+      if identity[1] not in ('Z','X','x'):final_ids[int(n)]=identity[0]
      except FileNotFoundError:continue
    if final_ids!=seen_ids:
     if attempt<2:return probe(token,legacy,distro,expected_uid,True,attempt+1)

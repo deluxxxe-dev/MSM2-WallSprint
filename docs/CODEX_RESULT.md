@@ -54,7 +54,7 @@ All final commands exited0.
 
 | Command | Expected | Actual |
 |---|---|---|
-| `python3 environment/test_wsl_root_recovery.py` | protected unrelated absence resolves only via root; protected matching/unknown, escaped UID token, known/null UID, actual root identity/distro, root unavailable/timeout/failed protocol, malformed/reused records, bounded inventory churn; actual reparented live child after top parent exit blocks | 20 PASS /0 SKIP /0 UNAVAILABLE |
+| `python3 environment/test_wsl_root_recovery.py` | protected unrelated absence resolves only via root; protected matching/unknown, escaped UID token, known/null UID, actual root identity/distro, root unavailable/timeout/failed protocol, malformed/reused records, bounded inventory churn; actual reparented live child after top parent exit blocks | 21 PASS /0 SKIP /0 UNAVAILABLE |
 | `python3 environment/test_wsl_process_probe.py` | prior PID/permission/identity/scope/UID/post-caller and owned Linux token/pidfd cases | 21 PASS /0 SKIP /0 UNAVAILABLE |
 | `python3 environment/test_operation_lock.py` | crash/child/legacy/race/replacement/shared exclusion, all-distro legacy and token regressions | 14 PASS /1 SKIP /0 UNAVAILABLE |
 | `python3 source/tools/test-workspace.py` | build/test/hash failure keeps previous runtime; launch failure keeps committed new runtime; actual second updater cannot deploy | 20 PASS groups /0 SKIP /0 UNAVAILABLE |
@@ -109,3 +109,5 @@ gives game-test instructions only after deployment success. Publication SHA /
 independent readback recorded after commit/push.
 
 Final review additionally binds saved build_token to its recorded operation token when present; mismatched identity refuses before inspection. Authentic owned fixtures now use their actual operation token; focused20/lock/repair suites rerun.
+
+Root live-inventory closure excludes kernel-confirmed zombie/exited states consistently; a focused regression prevents an already-exited protected process from being mislabeled perpetual inventory churn. Final root suite21 PASS; affected lock/repair suites repeated.

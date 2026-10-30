@@ -26,6 +26,7 @@ argv or full environment dumps. It runs even after user QUIET so an escaped,
 reparented or UID-changed token-bearing child cannot evade the user-only filter.
 The stable inventory rechecks PID/start identities at the end; churn/new child
 forces an immediate rescan, at most3 passes, then inventory_unstable UNKNOWN.
+Kernel zombie/exited states are excluded consistently from both live-inventory snapshots after the existing exit/identity checks; a protected exited process cannot cause perpetual artificial churn.
 No sleeps or top-level-exit shortcut. Existing pidfd/absence/PID-reuse safeguards
 remain. Still-protected root reads remain UNKNOWN, not unrelated-by-assumption.
 

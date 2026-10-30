@@ -81,6 +81,10 @@ class Recovery(unittest.TestCase):
   p=Proc()
   with patch('os.getuid',return_value=0),patch('os.geteuid',return_value=0):r=p.run(elevated=True,expected_uid=0)
   self.assertEqual(r['result'],'QUIET')
+ def test_confirmed_exited_zombie_is_not_a_live_inventory_change(self):
+  p=Proc();p.exited=True;p.error='environ'
+  with patch('os.getuid',return_value=0),patch('os.geteuid',return_value=0):r=p.run(elevated=True,expected_uid=0)
+  self.assertEqual(r['result'],'QUIET');self.assertIn('exited_confirmed',r['counts'])
  def test_changed_inventory_is_bounded_unknown(self):
   ns={'__name__':'fixture'};exec(o.WSL_PROBE,ns)
   import io,types
