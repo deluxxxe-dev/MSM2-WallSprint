@@ -1,41 +1,28 @@
-# Next task — reversal START timing, not rotation speed
-Branch: codex/v01c20-edi-value-provenance. Do not merge main.
-Read AGENTS required documents, PROJECT_STATE, CODEX_RESULT, analysis/V01C38R3_TURN_DURATION.md and the r1/r2 facing implementation analyses.
+# Next task — keep WS active across repeated reversals
+Branch codex/v01c20-edi-value-provenance; no main merge.
+Read AGENTS required docs and analysis/V01C38R3_REPEATED_REVERSAL_RUNTIME.md plus analysis/REVERSAL_START_TIMING_REVIEW.md.
+Prior START review is complete; do not repeat it or CODEX_TURN_SPEED.
 
-## Goal / owner clarification (2026-10-31 JST)
-Owner wants facing reversal to START approximately 1.1 seconds earlier relative to the current visible maneuver, NOT faster rotation or faster animation. 1.1 seconds is an owner-requested adjustment, not measured input latency. No new duration-only tuning. Current r3 reversal duration120ms is not accepted as the solution.
-Owner also reports WS releases a few seconds after reversal, whereas straight traversal appears to remain active. Determine whether apparent persistence is native WallRun versus WS override; do not infer this from appearance alone.
+## Purpose
+Owner explicitly requests WS remain active across any number of reversals while valid wallrun continues.
+Supplied session2 completes3 reversals; session4 completes2; both close on fixed5second budget without stale episode.
+Change ONLY normal WS lifetime, not reversal timing, duration, movement or animation.
 
-## Supplied evidence / boundaries
-Chat inspected supplied23.068633s video (02-10-47.mp4) and matching r3 log:
-MSM2-WS-v0.1c38r3-20261031-020946.log.
-Visible direction/facing mismatch is qualitative; no exact input timestamp or video/log-clock mapping exists.
-Runtime log contains:
-17:10:57.972Z NATIVE_SOURCE_EXIT session=1 reason=bounded_test_window_5seconds duration_since_source_entry=5.000000
-17:11:00.241Z session1 lifecycle summary: source_exit_reason=bounded_test_window_5seconds; wallrun_duration_ms=7984.
-17:11:17.830Z session2 same5.000000s bound.
-Thus source override can stop while native WallRun continues. Whether either event maps to the supplied video release is UNKNOWN. Do not label reversal as timeout cause or claim straight override is unlimited.
-Earlier r2 candidate-to-completion302–322ms measured only detector/turn stages, NOT input-to-facing latency. Current detector uses displacement after motion changes; earlier intent cannot be inferred from it without evidence.
+## Bounded implementation
+Inspect source/include/Math/source_orientation.hpp and source/src/NativeHooks/native_source_override.cpp (especially Transition.enter, tick fixed5000ms expiry, HardClosed reset), their actual consumers and relevant config/tests.
+Replace mandatory experimental5second stop with session-bound continuation for normal WS: continuing authenticated valid native WallRun updates may retain the existing orientation override regardless of elapsed total time or reversal count.
+Explicitly authorize this specific expiry-policy change; earlier preserve-five-second instructions are superseded ONLY for normal duration expiry.
+Do NOT renew/reset lifecycle by reversal, invent new generations, re-enter HardClosed session, or bypass invalidation. Preserve native Deinit/owner/generation loss, missing or stale updates, invalid surface/basis, disable/emergency stop, exact-build/current code and all A/B destination/ownership guards and cleanup.
+Separate total experimental runtime cap from freshness/watchdog deadlines: never remove the latter.
+If some certification/publication lifetime is actually proven only within5s and cannot be revalidated by existing per-update path, stop with the exact code dependency; do not remove the guard blindly.
+Keep bounded diagnostics bounded on long sessions (no unbounded memory/logging); exhausted diagnostic event quota must not be confused with gameplay lifetime. Preserve independent safety budgets and never expand hooks/watch permissions.
+No new API/hook, Position/velocity/input/animation writes, C52 relaxation or c73.
+Earlier facing START remains unresolved: no rotation acceleration, threshold/count/interval tuning, speculative1.1second offset, or new directional-input work in this task.
 
-## Task: narrow source review and instrument only missing boundaries
-Trace only current runtime reversal observer, accepted heading publication and source exit path. Explain which existing conditions delay START (not turn completion), and whether existing read-only evidence exposes earlier directional intent. Identify actual callers and source locations; no speculative input/animation API or broad reverse engineering.
-Record exact existing timer origin, whether reversal resets it, and distinction between source exit and native Deinit. Preserve the5s bound.
-If existing diagnostics cannot distinguish these stages, add only bounded read-only diagnostics on already authenticated values:
-- observation/candidate/accept/start/publication timestamps with session/update identity and rejection reason;
-- longitudinal displacement/speed and existing heading signs;
-- source-entry elapsed and source-exit reason / native Deinit.
-Reuse current events where sufficient; no per-frame unbounded dump. No new hooks, pointer traversal, input capture API or generic framework.
-Do NOT change gameplay behavior, turn duration, thresholds, confirmation count, entry delay, timers or animation. Do not implement a guessed minus1.1s offset.
-Write a compact analysis with observed facts, static facts, unknowns, and ONE smallest proposed behavior change for Chat to judge, or exact missing evidence if no supported change exists.
-Do not require raw full log re-analysis: provided excerpts establish only the timeout fact; finer measurements remain unknown.
-
-## Allowed / forbidden
-Allowed: targeted source reads, minimum diagnostics only if justified, focused regression tests, analysis document, CODEX_RESULT, PROJECT_STATE current-handoff correction.
-Forbidden: movement/Position/velocity/input/animation writes; timer removal/extension/reset; further rotation speed changes; c73/new hooks; SF/other MOD/shared environment/profile edits; main merge.
-Completed Steering Probe retirement is not a new task. Do not execute stale CODEX_TURN_SPEED.md again.
-Preserve C52 and all A/B/native admission, stale and cleanup gates.
-
-## Completion / validation
-Record actual source paths/conditions and exact instrumentation changes. If runtime changes, follow existing version/package conventions, build and required focused/portable/native/smoke/release checks per current repository commands. For docs-only work do not rebuild unchanged binaries.
-Commit/push and verify publication; update CODEX_RESULT with whether runtime bytes changed and exact log/version if changed. Automated checks do not prove owner game behavior.
-Reply only STATUS / CHANGED / RESULT / NEED. Chat supplies owner update/test instructions.
+## Scope and completion
+Allowed: minimum lifetime implementation/config needed, corresponding focused tests and docs, version/package bump per repository conventions, PROJECT_STATE/CODEX_RESULT and affected manual only.
+Forbidden: SF/other mods, shared loader/environment/updater/profile changes, unrelated cleanup.
+Use existing required build/portable/native/hooks/smoke/release commands from repo.
+Meaningful regression cases: same valid session beyond5s/30s and many alternating completed reversals; valid straight session beyond5s; actual Deinit and disable immediately close; stale/gap/invalid owner/surface/code retain existing refusal/recovery semantics; closed generation cannot re-enter; subsequent genuine session starts cleanly; log caps stay bounded.
+Record tests as synthetic/static, not in-game acceptance. Commit/push and verify. Report exact runtime version/log name and any failure.
+Reply STATUS / CHANGED / RESULT / NEED only; Chat provides human update/test instructions.
