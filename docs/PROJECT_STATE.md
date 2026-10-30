@@ -1,5 +1,10 @@
 # WallSprint project state
 
+## Latest owner cause evidence — confirmed environ permission denial
+
+Fresh23525e8 read-only DiagnoseWSL returns exit2/UNKNOWN: Ubuntu-24.04 matches; uid_observed1000/uid_expectednull; PIDs346,347 environ read EACCES(errno13). This supersedes unknown error-stage wording below, not process relevance/identity. No deploy/repair performed by diagnostic. Current CODEX_NEXT targets permission-independent owned-build proof plus safe legacy recovery, not identical diagnostic repetition. r5 game testing still waits for deployment.
+
+
 ## Active owner blocker — r5 post-build WSL check
 
 Owner terminal confirms r5 WSL build/test/package completed, then fails: WSL build not proved inactive: Cannot verify same-user Linux process339. Actual process cause/installed deployment state UNKNOWN; no final owner r5 update success. Synthetic v0.1c20 success lines within suite are not deployment evidence. Current CODEX_NEXT prioritizes minimum ownership-check repair/diagnostics, preserves r5 runtime bytes. No owner game test until update outcome verified.
