@@ -1,5 +1,10 @@
 # WallSprint project state
 
+## Priority owner blocker — shared launcher / update lock
+
+Owner source Start launcher stops on WS update-lock presence after installed shortcuts rejected permitted Overstrike/scripts_proxy.dll. Actual lock ownership on PC UNKNOWN. Static updater uses empty existence sentinel, launch-before-finally-unlock; environment checker rejects presence and source start checks before KIT refresh. Current CODEX_NEXT authorizes durable tooling-only ownership/order/refresh/bootstrap repair. Movement work paused, r4 runtime unchanged. No blind deletion or active-lock bypass. Test owner current movement only after launch repaired.
+
+
 ## Active handoff — lateral movement route investigation
 
 Owner r4 test accepted for fixed5s-expiry removal: session3 eleven completed reversals,27.031s override until verified native Deinit, no hard kill. One40ms stale episode recovered. See analysis/V01C38R4_OWNER_RUNTIME_20261031.md; this is bounded acceptance, not unlimited lifetime proof.
