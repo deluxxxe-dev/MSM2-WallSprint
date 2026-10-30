@@ -1,6 +1,6 @@
 # Codex result — durable update ownership / stale KIT repair
 
-2026-10-31 JST. STATUS: implementation complete; owner Windows acceptance pending.
+2026-10-31 JST. STATUS: partial — implementation committed; publication BLOCKED by expired GitHub authentication; owner Windows acceptance pending.
 Branch `codex/v01c20-edi-value-provenance`; baseline `6eeef17`.
 No main merge. Toolkit `MSM2-Mod-Tools-v1.2.0.zip` only; runtime/package r4 unchanged.
 Implementation commit and independent publication readback recorded below after push.
@@ -238,3 +238,25 @@ No binary rebuild/repackage, no raw body/log or legacy untracked artifacts stage
 Publication: implementation commit `551515d` plus whitespace/package-metadata follow-up.
 Trailing blank line caught by cached diff check after initial source checks; corrected.
 No behavioral changes after final suite run, so full suites were not repeated.
+
+## Publication attempt — BLOCKED (not published)
+
+Implementation commit `551515d`; final code/artifact commit
+`5d85cf8e8df9e835431fd7d4a17f036684d51fad`.
+`git push origin codex/v01c20-edi-value-provenance` failed:
+`could not read Username for https://github.com: No such device or address`.
+`gh auth status` reports existing GH_TOKEN invalid. No credentials printed.
+Subsequent `git ls-remote origin refs/heads/codex/v01c20-edi-value-provenance`
+failed with the same authentication error, so remote-head/blob readback is
+UNAVAILABLE, not PASS. No force/reset/credential workaround attempted.
+
+Final `git diff 6eeef17 HEAD --check` passed after whitespace correction;
+`git diff --exit-code 6eeef17 HEAD -- source/src source/include source/mod BUILD_MANIFEST.json 'MSM2-WS-v0.1c38r4*'`
+passed (r4 unchanged). Worktree contains only the five preexisting untracked files.
+A final documentation-only commit records this blockage. All code/artifacts are
+committed locally. Git bundle outside the repository preserves these commits.
+
+Owner next action NOW: reconnect GitHub authentication for this cloud environment,
+then ask to resume push/readback. Do not run repair bootstrap until publication
+succeeds. The single documented bootstrap remains the post-publication action;
+no Update-WS/game operation required now.
