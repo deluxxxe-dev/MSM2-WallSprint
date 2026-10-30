@@ -71,9 +71,12 @@ reference. These are source/documentation checks, not executed gameplay tests.
 | `nl -ba source/src/NativeHooks/native_source_override.cpp \| sed -n '620,695p'`; same file `sed -n '250,335p'`; `nl -ba source/src/msm2/orientation_log.cpp \| sed -n '1,145p'`; `nl -ba source/src/msm2/sdk_bridge.cpp \| sed -n '18,49p'`; `nl -ba source/include/diagnostics.hpp \| sed -n '33,60p'`; `nl -ba source/include/Math/movement_delta.hpp \| sed -n '1,75p'` | Determine actual log quantities, origins and gaps | Displacement versus Transform Forward available conditionally; source basis != final readback; Up-only retention; no independent animation-facing channel in inspected paths. PASS |
 | Source-reference/documentation scope audit (Python below); `git diff --name-only 28c5fa6721818e3c5c8e3bdc7c190db7de7c85b3`; `git status --short` | Existing line references valid; exactly three allowed documentation paths; stale Slow5-pending text gone | Verified against unchanged source and scope before staging/commit. PASS |
 | `git diff --check`; `git diff --cached --check` | Whitespace clean | Exit0. PASS |
-| Publication verification below | Pushed branch SHA and independently fetched documentation equal local | Pending initial documentation push; finalize before handoff |
+| Publication verification below | Pushed branch SHA and independently fetched documentation equal local | Pushed `b774b76`; independent remote head and all three document blobs match. PASS |
 
-Expected source-review groups all PASS. No unit/native/game test executions.
+**PASS 8 audit groups / SKIP 1 suite group / UNAVAILABLE 1 evidence group / BLOCKED 0.**
+No unit/native/game test executions. The exact function-start references were
+also checked with `nl -ba source/src/NativeHooks/native_source_override.cpp | sed -n '386,399p'`
+and `nl -ba source/include/Math/source_orientation.hpp | sed -n '16,36p'`: `tick` starts at392, `sample` at27.
 Exact source-reference audit command executed before commit:
 
 ```bash
@@ -124,5 +127,26 @@ No owner runtime operation is requested.
 ## Branch / publication
 
 Branch `codex/v01c20-edi-value-provenance`.
-Initial documentation commit/push and independent remote-content comparison are
-pending; record actual SHA and verification before final handoff.
+Initial source-review documentation commit:
+`b774b76aeb3135bc2ff92c9b280c27396a4fd0f2`.
+Normal `git push origin HEAD:refs/heads/codex/v01c20-edi-value-provenance`
+succeeded. `git ls-remote --heads origin refs/heads/codex/v01c20-edi-value-provenance`
+returned exactly that SHA. In the independent GitHub clone from the prior task:
+
+```bash
+git -C /tmp/ws-steering-docs-publication fetch origin codex/v01c20-edi-value-provenance
+git -C /tmp/ws-steering-docs-publication rev-parse FETCH_HEAD
+git -C /tmp/ws-steering-docs-publication show FETCH_HEAD:analysis/WALLRUN_MOVEMENT_FACING_SOURCE_REVIEW_20261030.md
+git -C /tmp/ws-steering-docs-publication show FETCH_HEAD:docs/PROJECT_STATE.md
+git -C /tmp/ws-steering-docs-publication show FETCH_HEAD:docs/CODEX_RESULT.md
+```
+
+Expected: independently fetched GitHub head equals the pushed local commit;
+all three document blobs equal intended local bytes. Actual: all equal, exit0.
+No local working-tree contents were used as the remote blob source.
+
+This documentation follow-up records the verified publication and corrects two
+function-start line references (`tick`:392, `sample`:27); no code changes.
+After normal push, repeat the same remote-content comparison against final
+local HEAD/files. Final record commit SHA is in the owner handoff (this file
+cannot contain its own hash).
