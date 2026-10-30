@@ -1,35 +1,24 @@
-# Priority — eliminate recurring update-lock / stale launcher dead ends
+# Next task — face existing wall-plane travel, not add duplicate locomotion
 Branch codex/v01c20-edi-value-provenance; no main merge.
-Pause gameplay/movement tasks. Read AGENTS required docs, docs/mod-tools/{README,OVERSTRIKE,PLAY_MODDED,BACKUP_MODS,MANUAL}.md, environment/README.md and relevant shared installer analysis.
+Read AGENTS required docs, analysis/R4_DIRECTIONAL_BASELINE_20261031.md, current heading implementation and r4 native source paths.
+Lock repair implemented; owner repair succeeded and subsequent game log supplied. Do not rerun old tooling/lifetime/input inventory.
 
-## Owner authorization / evidence
-Owner cannot use shortcuts:
-1) old installed checker said Remove misplaced Overstrike/scripts_proxy.dll; current source permits regular non-reparse installer DLL.
-2) source environment/Start-Overstrike.cmd now stops: WS update lock is present; let Update-WS finish first.
-Owner explicitly requests durable correction rather than repeated manual file deletion/renaming. Actual active-versus-orphan lock on owner PC is UNKNOWN.
-VERIFIED-STATIC current workspace.py update creates EMPTY _archive/Update-WS.lock via O_EXCL, closes descriptor, unlinks only in finally. self.system.launch(game) occurs inside transaction BEFORE final lock removal. environment ws_launch_ready rejects lock existence alone. Source start_manager checks readiness BEFORE copying fresh KIT into installed Mod-Tools. Do not claim launch method invokes checker until actual call chain reviewed.
-No owner-PC access; no deployment claims.
+## Purpose
+Existing game already moves up/down/diagonally. Current heading only chooses +/-entry Forward. Implement the smallest orientation-only proof allowing facing to follow measured travel anywhere in ONE unchanged flat wall plane.
+Earlier input-triggered START remains deferred: displacement following is not earlier-input response.
+Do not claim to fix animation playback or descending speed.
 
-## Implement one coherent tooling fix
-1. Identify actual Update-WS -> process/build -> launch and shortcut refresh call chain. Fix ordering: finish/validate deployment and release update ownership BEFORE invoking checked shared launcher. Launcher failure after committed deployment must report launch failure separately, not falsely roll back good WS or leave lock stuck.
-2. Replace presence-only sentinel with robust OS-backed mutual exclusion/process-lifetime ownership suitable for Windows updater and all shared entrypoints. Prefer OS-released lock over stale PID-only guesses; retain audit metadata (owner/process-start identity/workspace/token) where useful. Handle PID reuse, concurrent claim/reclaim, WSL/build children, exceptions/interruption, and never release another owner's lock. Cross-process Windows semantics must be tested, not assumed from Linux unlink.
-3. Distinguish active update vs abandoned artifact. Auto-recover only provably inactive owned state with path/reparse/identity/race checks; preserve legacy lock artifact reversibly if safe. Legacy empty lock cannot prove live/dead by age alone. Provide a narrowly scoped recovery/bootstrap for pre-fix orphan empty lock with verified process/build inactivity; ambiguity must explain exact owner/evidence rather than endlessly generic retry. Do not kill processes automatically or blindly delete lock/index.lock.
-4. Treat shared .MSM2-Mod-Tools.lock and updater lock consistently where entrypoints interact; no separate broad rewrite. Prevent simultaneous launch/install/deploy; no check-then-act race. Preserve backup/restore consistency and live-operation protection.
-5. Fix installed/source tooling refresh deadlock: updater/repair can stage verified current owned KIT safely without first requiring the old failing checker. Automatic refresh on successful normal update must preserve mod-tools settings/backup location/profile and shortcuts; idempotent, no vendor DLL relocation or manager recreation. Source/installed paths supported. Installer source Overstrike/scripts_proxy.dll permitted; Overstrike/winmm.dll remains distinct. Do not bypass all environment validation.
-6. Supply one concrete copy-paste/bootstrap action for owner that can work BEFORE old launcher/updater checks. Retain clean/dirty Git/branch protections and existing previous runtime; do not require full WS rebuild just to update tooling.
+## Implementation limits
+Use ONLY currently authenticated positions, current valid wall normal, lifecycle and existing coherent A/B orientation publication. No new memory/API/hook or movement writer.
+Replace binary forward/back heading selection with wall-tangent direction target; preserve proper basis and Up=wall normal. Reuse existing33ms observations,2-sample confirmation,speed>=2,max250ms gap, equal-time WAIT, reset/stale/identity behavior; changes necessary for angular direction confirmation must be explicit named experimental constants and tested, not engine facts.
+Use angle-based candidate stability and deadband to avoid tiny lateral changes causing repeated turns; document chosen values in analysis. Keep turn interpolation duration120ms and entry0.25s unchanged. Continuous wall-plane angle with deterministic180deg tie, shortest rotation for other angles; no cumulative drift, no invalid basis, no mid-turn discontinuity. At zero/low speed hold last valid heading, do not infer desired direction.
+Pending evidence must not combine different target directions; many-axis travel must not fall back to alternating binary entry signs.
+Log bounded candidate/accepted/completed actual vectors/angle, session/native-update/clock and rejection categories where needed; update old binary event contract honestly.
+No descending-speed/animation/input patch, stop/idle/lifecycle extension, camera/contact/adhesion/corners,4096 budgets or freshness/native/C52 gate changes.
+If valid wall-plane target cannot safely pass existing A/B basis contract, report exact conflict rather than expanding gameplay permissions.
 
-## Scope
-Allowed: WS updater/source Windows entrypoints, shared environment launcher/checker/install files strictly for above, focused tests, matching individual/combined manuals, CODEX_RESULT/PROJECT_STATE.
-Keep WS r4/runtime/package bytes unchanged; no native test suite rerun for tooling only.
-No SF source/runtime or ordinary mods/selection mutations, shared loader deletion/moves, profiles reset, broad cleanup, old checkout deletion, git reset/clean/main merge.
-Existing lateral-route research complete; keep results, no gameplay work in this task.
-
-## Required meaningful regressions
-- Successful update -> checked manager start with no live update lock; committed artifact remains if launch fails.
-- Two concurrent updates cannot both deploy; active update blocks Play/Start/backup safely.
-- Crash/exception and interrupted parent/remaining build child; safe eventual recovery only after ownership ends.
-- Stale owner/PID reuse, empty legacy lock, malformed metadata, reparse path and replacement/claim races.
-- All shortcuts from old installed KIT refresh through supported bootstrap; repeat refresh preserves DLLs, profile/settings and unrelated files.
-- Update/test/build failure preserves old runtime; dirty Git and divergent branch remain protected.
-Use existing workspace/environment/distribution checks and real Windows-capable fixture where available; clearly label unavailable checks. No simulated proof promoted to real PC acceptance.
-Update result with exact root cause, tested cases, publication and ONE owner repair action. Commit/push, verify. Reply STATUS/CHANGED/RESULT/NEED only.
+## Scope / verification
+Allowed: pure heading math, minimal runtime adapter/log changes, corresponding tests, version/package conventions, analysis/PROJECT_STATE/CODEX_RESULT.
+Meaningful cases: both vertical and four diagonal targets, original straight/reversal, no left-right oscillation for stable vertical motion, noise/deadband/low speed hold, unstable candidates cannot accumulate, shortest-angle/180 tie, arbitrary fixed wall orientation, repeated loops no drift, stale/WAIT/reset, Up and Position/W/metadata unchanged.
+Run existing required focused/portable/build/smoke/native/hooks/package checks appropriate to runtime change. Preserve existing safety tests, revise only intentionally superseded binary-heading expectations.
+No other MOD/shared tooling changes. Commit/push and verify; return STATUS/CHANGED/RESULT/NEED. Chat supplies owner test procedure.
