@@ -1,5 +1,11 @@
 # WallSprint project state
 
+## Active handoff — lateral movement route investigation
+
+Owner r4 test accepted for fixed5s-expiry removal: session3 eleven completed reversals,27.031s override until verified native Deinit, no hard kill. One40ms stale episode recovered. See analysis/V01C38R4_OWNER_RUNTIME_20261031.md; this is bounded acceptance, not unlimited lifetime proof.
+Owner explicitly allows earlier facing START to be deferred. It remains unresolved, not accepted as fixed. Current CODEX_NEXT supersedes old lifetime/input queue and authorizes only one-flat-wall lateral movement route investigation per AFTER_TURN_PLAN. No movement writes yet. Existing4096 budgets and all native/stale/identity gates remain.
+
+
 ## Current handoff — repeated reversal lifetime
 
 See analysis/V01C38R3_REPEATED_REVERSAL_RUNTIME.md. Supplied023446 r3 log session2 completes3 reversals and session4 completes2, then both hit5second override expiry. Video unavailable; precise visible-release alignment UNKNOWN. START remains displacement-based and unmodified.
