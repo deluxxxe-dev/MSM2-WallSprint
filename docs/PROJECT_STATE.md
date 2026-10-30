@@ -17,8 +17,24 @@ Heading64/actor256/counter64 diagnostics remain independent of source permission
 Actual31s synthetic/Wine A/B run passes straight beyond5s and >=20 completed
 reversals beyond30s with original session/generation/entry, plus close/reset gates.
 Build/focused12/portable25/smoke7/native11 pass; canonical 901 PASS/5 SKIP/17 UNAVAILABLE.
-Owner in-game acceptance UNKNOWN; INPUT follow-on begins only after lifetime push.
+Owner in-game acceptance UNKNOWN; INPUT follow-on inventory completed separately after verified lifetime push.
 See analysis/V01C38R4_SESSION_LIFETIME.md.
+
+## INPUT START follow-on — inventory completed after lifetime publication
+
+Lifetime implementation e63afec169132aaeae36e3b5ec6b68c55dd6ba75 / record head
+6af7b784505f06961dc8691341c080a10ca2179b pushed and independently verified before
+this separate inventory. See analysis/INPUT_START_ADAPTER_INVENTORY.md.
+Best existing directional definition is planar::Input.inputForward/inputRight,
+but only test fixtures supply it; disabled Actor adapter is not a runtime producer.
+Runtime hotkeys, SDK snapshots and lifecycle tokens do not supply game-accepted
+move intent; msm2::input is orientation-source capture, not directional input.
+No statically safe input address/API/type found, so no input probe/trigger added.
+ONE next discovery target: action-mapped requested move vector consumed by the
+original authenticated WallRun_Update before steering, with identity/type/frame/
+focus/menu/freshness and pre-displacement ordering proof. No broad scan or API guess.
+Runtime remains r4/package0.1.60; earlier START gain still unproven. Independent
+4096 write quotas still limit long sessions; no unlimited-store claim.
 
 ## Current owner correction — 2026-10-31 JST
 

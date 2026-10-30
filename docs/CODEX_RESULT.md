@@ -94,3 +94,59 @@ native-fixture source equality. Exact existing script log naming unchanged.
 This record-only package refresh retains script/DLL bytes; no binary test rerun
 needed for documentation. Final lifetime record head is preserved in subsequent
 INPUT inventory result; separately verify final pushed head before starting it.
+
+## Separately executed follow-on — INPUT START inventory
+
+Lifetime final record head6af7b784505f06961dc8691341c080a10ca2179b independently
+verified before inventory began (`python3 /tmp/ws-r4-publication.py`:13 blobs/head
+match). New docs-only follow-on commit: analysis/INPUT_START_ADAPTER_INVENTORY.md,
+PROJECT_STATE and this appended result; no r4 runtime/artifact change.
+
+RESULT: INPUT_INVENTORY_COMPLETE_NO_RUNTIME_REQUESTED_DIRECTION_CANDIDATE.
+The concrete closest definition is planar::Input.inputForward/inputRight; its
+producer/callers are test fixtures only. Runtime Actor adapter is hard-disabled.
+Actual OS key polling is debug hotkeys, SDK Snapshot is position/yaw/axes, Token
+is lifecycle. Namespace msm2::input is orientation-source capture, not move intent.
+No XInput/gamepad/action-map or game directional type/reader exists in searched
+production/SDK paths. Keyboard remapping/controller/camera-relative/focus/menu
+semantics therefore UNKNOWN, not silently mapped to WASD or overwritten axes.
+
+Exact focused inventory commands executed (repository root):
+
+```bash
+rg --files source | rg -i 'input|controller|gamepad|key|sdk'
+rg -n 'Controller|GetAsyncKeyState|XInput|GetKeyState|moveX|moveY|requestedDirection|MoveDirection|UpdateInput|InputState|GameInput|SetInput' source/include source/src source/vendor --glob '!**/capstone/**' --glob '!**/minhook/**'
+rg -n 'inputRight|inputForward|controller|planar::Input' source/src/msm2/actor_writer.cpp source/include/msm2/actor_writer.hpp
+rg -n 'ws::Controller|planar::Controller|\bController\s+[a-zA-Z]|planar::Input' source/src source/include/msm2 --glob '!**/vendor/**'
+rg -n -i 'input|controller|gamepad|keyboard|button|key' source/vendor/SM2ScriptTemplate source/include/msm2 source/include/NativeHooks/source_lifecycle.hpp
+```
+
+Expected/actual: definitions in pure helpers, fixture callers and hotkeys only;
+manual definition/caller review confirms no runtime directional reader. `rg`
+no-match exit1 is absence evidence, not a runtime test failure. Read actual
+Actor/Native/Component/SDK/lifecycle/capture/bridge and Wisdoms reference sections;
+no new binary scan/hook or unknown API call. Analysis inventories exact paths,
+coordinates/conditions and statuses; no positive game-input proof from names.
+
+ONE next target: current-build action-mapped requested vector consumed by original
+verified WallRun_Update BEFORE steering. Need exact typed consumer access/base/
+lifetime/coordinate mapping BEFORE preparing bounded read-only pair logging.
+No such address/type is established, so no safe candidate diagnostic/adapter was
+implemented. This completes the explicitly allowed no-candidate branch, not just
+restating displacement limitations or repeating the prior START review.
+
+Follow-on verification: `git diff --check` and `git diff --exit-code 6af7b78 --
+source environment BUILD_MANIFEST.json MSM2-WS-v0.1c38r4.zip
+MSM2-WS-v0.1c38r4-source.zip MSM2-WS-v0.1c38r4.script.disabled` both exit0/PASS.
+Source/artifact unchanged, so no recompile/repackage or repeat of the seven
+lifetime commands for docs-only inventory (7 SKIP in THIS follow-on phase only).
+Input adapter tests (old/zero displacement, held one-turn, repeated signs,
+release/conflict/focus/menu/identity/stale) NOT RUN because no adapter exists.
+UNAVAILABLE: actual candidate-input runtime ordering/semantics. Trigger
+implementation BLOCKED by absent static address/type/producer proof, not a safety
+policy denial. Lifetime901 PASS/5 SKIP/17 UNAVAILABLE above remain separate;
+no synthetic input test promoted to native or owner-game acceptance.
+
+No new output log/version or owner update/game instruction; r4 existing log name
+above. Normal docs-only commit/push and independent changed-blob/head readback
+recorded below; runtime lifetime patch remains independently reproducible.
