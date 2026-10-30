@@ -1,13 +1,13 @@
 {
   "tool_version": "1.2.0",
-  "source_commit": "6eeef1776b2a430b5ba493c1be03f0e3251e34c7",
+  "source_commit": "551515d7509722d85c4a00bd0de21a489b9886fe",
   "artifact": "MSM2-Mod-Tools-v1.2.0.zip",
-  "bytes": 58259,
-  "sha256": "3dca209251afa2c931f0c6799bc067568b3d999631b5290730f4887f112f6515",
+  "bytes": 58258,
+  "sha256": "beb58b90e172eb456cada2169dd92751e5bc0818398d082ab4e28575cd93ea08",
   "payloads": {
     "Repair-Mod-Tools.ps1": "d67c5987f15fd8b60523d2176a0ca9f9ef4bd44ddb4c9bb90f226eef50792cd8",
     "repair_tools.py": "6c9f5fd7efdec03e05dedababbb917f8d1ebdd9280dab14bcc08c3490a49b0b0",
-    "operation_lock.py": "bcf9c07d6a4eac3a6c9cbd93390eb8d91bd95ab3fbc701c5ea6de14cf3af1574",
+    "operation_lock.py": "1067ac2c6779f2c6d1b00ed16176f41350d11f4244b95d38a23ded94a2023fe7",
     "mod_environment.py": "de138ac6c5d657826572ca904122ee3f05e2d611abdb01cbaaedb03e5e594e15",
     "windows.ps1": "ba418a668037e4cdeb369ba8d8b22b880e8297ff524a2a9daa49afbf9afbde9c",
     "Install-Mod-Tools.cmd": "e3d99b46a8c69808076fec33457d3ef1cbbdc4c5833948e92633b8c9f209de0f",

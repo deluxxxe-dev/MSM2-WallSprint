@@ -79,8 +79,8 @@ Additional verification, expected/actual all PASS:
   Parser body: for each file, call `[System.Management.Automation.Language.Parser]::ParseFile`
   with token/error refs and throw if errors.Count; no script operations executed.
 - `python3 environment/build_distribution.py` verifies ZIP CRC and exact member
-  bytes. Artifact58259bytes / SHA256
-  `3dca209251afa2c931f0c6799bc067568b3d999631b5290730f4887f112f6515`.
+  bytes. Artifact58258bytes / SHA256
+  `beb58b90e172eb456cada2169dd92751e5bc0818398d082ab4e28575cd93ea08`.
 
 No BLOCKED implementation subtask. Actual-PC group UNAVAILABLE, not PASS.
 Wisdoms read access confirmed; synchronization deferred to connected shared-manual
@@ -234,3 +234,7 @@ fetches the named branch and compares `git show FETCH_HEAD:<path>` bytes for
 all `git diff --name-only d7cb968 HEAD` paths. Same check repeated after this
 record-only commit; final full SHA reported in chat, no self-reference.
 No binary rebuild/repackage, no raw body/log or legacy untracked artifacts staged.
+
+Publication: implementation commit `551515d` plus whitespace/package-metadata follow-up.
+Trailing blank line caught by cached diff check after initial source checks; corrected.
+No behavioral changes after final suite run, so full suites were not repeated.

@@ -196,4 +196,3 @@ def hold(game,action='environment',quiescent=None):
   finally:
    _current=None
    for _,fd,_ in reversed(h.files):os.close(fd)
-
