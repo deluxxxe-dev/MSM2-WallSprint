@@ -1,165 +1,99 @@
-# Codex result — Steering Probe retirement, then v0.1c38r3
+# Codex result — reversal START timing review
 
-2026-10-31 JST. STATUS: success (two sequential scoped implementations).
-Branch `codex/v01c20-edi-value-provenance`; main never merged.
+STATUS: success (bounded source review); earlier-intent behavior change unsupported.
+2026-10-31 JST. Branch codex/v01c20-edi-value-provenance.
+Baseline08028ff2da3891a02f691a9af97452b9bf25c92f, latest branch fetched/fast-forwarded;
+no main merge. Publication SHA recorded after normal push below.
 
-## Published prerequisite BEFORE r3
+## Changes / conclusions
 
-Steering Probe retirement implementation
-`faace6f6412fcc5c467166fd7f116c2e8cbe1473`; final prerequisite head
-`b0683a5af79a522d596937c842321ea420f1b8ac`. Initial push rejected due concurrent
-roadmap commits; fetched/merged SAME development branch, retaining all docs,
-normal push succeeded. `python3 /tmp/ws-r2-publication.py` independently fetched
-GitHub into /tmp/ws-steering-docs-publication, matched fetched head and ls-remote
-and27 changed file blobs from3ba11ef baseline. Only THEN r3 runtime edits began.
-Detailed cause/scope/checks: analysis/STEERING_PROBE_RETIREMENT.md;
-retirement result also preserved at prerequisite commit:docs/CODEX_RESULT.md.
+Documentation ONLY: analysis/REVERSAL_START_TIMING_REVIEW.md,
+docs/PROJECT_STATE.md current handoff and this result. No runtime instrumentation,
+source/test/package/version/asset/environment/profile/SF change. No archive output.
+Current v0.1c38r3/package0.1.59 and all three existing r3 artifacts stay byte-equal.
+r3's faster120ms rotation is not accepted as the requested earlier START solution.
 
-Cause: archive-only sparse protection missed direct stage discovery. Public
-Overstrike recursively detects stages plus archive members; new paths default
-checked, while old path selection is retained. No WS profile mutation found;
-actual owner's duplicate paths UNKNOWN. Exact known Fast10/Slow5 metadata/member/
-reverse-one-byte pinned vanilla SHA identifies retirement candidates ONLY inside
-WS. Backups preserve bytes/relative paths/hash outside Mods Library in unique
-game-root/MSM2-WS-Retired-Probes/retired-*; clean tracked stages stay in Git but
-are sparse-excluded. Unknown/foreign inputs, dirty tracked work/reparse refuse;
-SF/ordinary mods/profile/order untouched. Builders/research retained.
+Actual callers/line references, gates, publication/consumer and lifecycle paths
+are inventoried in analysis. Trigger waits for displacement, distinct33ms samples,
+speed2/dot0.8 and two consecutive new-sign observations. Acceptance sets logical
+turnStart; that call retains previous basis, later positive-time sample rotates,
+worker publication and actual A/B commit remain separate. Initial0.70s admission
+and0.25s interpolation are not repeated per-reversal delays. No1.1s timer exists
+to subtract; owner-requested1.1s is not a measured input latency.
 
-Prerequisite commands / expected / actual:
+Five-second source timer starts at Transition.enter(), not reversal. Reversal
+never resets it; stale clock pausing does not extend the real budget. Source exit
+hard-closes override, not native WallRun. Supplied session1 timeout17:10:57.972Z
+and native summary17:11:00.241Z/session2 same5s timeout establish distinct lifetimes,
+not reversal-caused release, unlimited straight override, or video/log alignment.
 
-| Command | Expected | Actual |
+Existing bounded events distinguish detector candidate/acceptance/completion,
+source timeout and native Deinit. They are not exhaustive rejection/observation/
+first-changed-publication/animation telemetry; log caps/drops and prepublication
+close race remain explicit. No further logging of already sampled displacement
+can reveal the decisive missing earlier intent, so no redundant runtime diagnostic
+or new package is justified for this review. No assertion that all historical
+substage timings are reconstructed. No guessed input API, offset or timer change.
+
+ONE missing fact: authenticated wall-relative requested-direction/sign BEFORE
+position reversal, with same session/native update and monotonic time/lifetime
+identity. Existing Snapshot/lifecycle do not supply it; source axes can contain
+our own output. No supported smallest behavior patch meets the requested lead
+without that evidence. Chat judges a later bounded task; no raw-full-log request,
+new input capture, future movement/c73 or owner game/update instructions here.
+
+## Verification commands / expected / actual
+
+Read AGENTS required manuals, state/result, latest NEXT and r1/r2/r3 analyses;
+Wisdoms WALLSPRINT/MSM2_DEVELOPMENT_MANUAL/INTERNALS reference (read-only checkout
+afb1513c80edff9bf11f19b7a36baf3894bb6429). No new reusable engine fact or Wisdoms
+change; findings are local source semantics and supplied timeout evidence.
+Targeted `nl -ba ... | sed -n ...` and `rg -n ...` reads of actual helper, native
+source module, telemetry, source_lifecycle, hook_thunks, immediate_reset_trace,
+sdk_bridge and INI support analysis path inventory. This is STATIC review, not
+an executed game timing measurement. Two exploratory rg reads used nonexistent
+snapshot/input header guesses; corrected to actual sdk_bridge.hpp/source files,
+no fictitious API/interface inferred.
+
+| Command / procedure | Expected | Actual |
 | --- | --- | --- |
-| `python3 source/tools/test-workspace.py` | original13 plus duplicate/idempotence/collision/identity/dirty/reparse/sparse/build-stage cases | exit0;18 PASS groups |
-| `python3 environment/test_mod_environment.py` | shared environment isolation/roundtrip | exit0;28 tests OK |
-| `python3 environment/test_start_overstrike_preflight.py` | retained preflight boundaries | exit0;PASS |
-| `python source/tools/release.py` | retirement module/CRC/unchanged r2 bytes | exit0;PASS |
-| `python3 /tmp/ws-retire-dist-check.py` | stale output contamination refuses; research-stage input excluded | exit0;PASS |
+| `git diff --check` | no whitespace errors | exit0; PASS |
+| `git diff --exit-code 08028ff -- source environment BUILD_MANIFEST.json MSM2-WS-v0.1c38r3.zip MSM2-WS-v0.1c38r3-source.zip MSM2-WS-v0.1c38r3.script.disabled` | source/environment/manifest/artifacts unchanged | exit0, empty diff; PASS |
+| Python identity check below | existing script/DLL match manifest and package0.1.59 | exit0; PASS |
 
-Detailed owned sentinel/fixture setup and initial fixture-only correction in
-analysis. SKIP0/BLOCKED0 for prerequisite. Owner UI/paths UNAVAILABLE; native
-reruns omitted ONLY in tooling phase by explicit task, r2 runtime bytes equal.
-Guarded old-updater source refresh and outside-WS-copy handling in LOCAL_WORKSPACE,
-mod-tools OVERSTRIKE/MANUAL. No broad library scan/removal or profile rewrite.
+Exact read-only identity check executed:
 
-## r3 exact scope / supplied evidence
+```bash
+python3 - <<'PY'
+from pathlib import Path
+import hashlib,json,zipfile
+m=json.loads(Path('BUILD_MANIFEST.json').read_text());p=Path(m['artifact'])
+assert hashlib.sha256(p.read_bytes()).hexdigest()==m['sha256']
+with zipfile.ZipFile(p) as z:
+ assert hashlib.sha256(z.read('WallSprint.dll')).hexdigest()==m['dll_sha256']
+ assert json.loads(z.read('info.json'))['version']=='0.1.59'
+print('PASS unchanged v0.1c38r3/package0.1.59 script/DLL identity against manifest')
+PY
+```
 
-r3 baseline is published prerequisite b0683a5 above. Runtime v0.1c38r3,
-package0.1.59. Only helper named reversalTurnDurationMs=120 and progress divisor
-change post-entry reversal250->120ms. No other production code/timing change.
-Timing expectations in focused/native fixtures adjusted, safety assertions kept;
-version.hpp/info.json/README_TEST and analysis/PROJECT_STATE/result updated.
-Artifacts: MSM2-WS-v0.1c38r3.zip, MSM2-WS-v0.1c38r3-source.zip,
-MSM2-WS-v0.1c38r3.script.disabled and BUILD_MANIFEST.json. Older r2 distribution
-retains retirement implementation; original five untracked legacy artifacts kept.
+Script SHA256 d17b24b8a8aef06dbb0a5f41302cbcfcf0cdf7f68e09f5a2e0b5c670bcc427cc;
+DLL SHA2569d624d56d71d60e8f44ea354b8228fc05bc531889febc34076d98213968dbe40.
 
-Supplied r2 log: six turns302/304/302/303/322/303ms candidate-to-completion,
-41–54ms candidate-to-accepted,248–270ms accepted-to-completion. These emitted
-line intervals are not exact internal clocks or input latency. Owner still sees
-lag; ChatGPT's42.918s video overview/125ms sampling is qualitative, not measured
-animation/input onset or exact shared clock alignment. Session3 one25ms stale
-pause; sessions2/3/4 expected five-second stop, verified Deinit/Up/Position writes0.
-Late acceptance without completion near timeout is not automatically a failure.
-This supersedes r2-runtime-UNKNOWN, not proof of r3 effect or animation ownership.
-Raw private log/video not inspected anew or redistributed here.
+Automated review checks3 PASS; manual path/condition inventory completed.
+SKIP7: test_reversal_heading.sh, test.sh, build_windows.sh, smoke_windows.sh,
+test_native_source.sh, test_hooks_windows.sh and release.py intentionally NOT
+rerun: task explicitly says docs-only must not rebuild unchanged binaries. No
+source/test or package changed; no previous900 PASS run represented as current.
+UNAVAILABLE1 evidence group: authenticated pre-motion intent / owner frame timing;
+no access/authenticated data, not inferred from appearance or provided excerpts.
+BLOCKED0 for this review. Behavior advancement remains evidence-blocked as above.
 
-Chosen120ms is not a measured vanilla match or total input latency. Keep33ms
-observation/confirmation, two consecutive samples, speed2/dot0.8/max gap250,
-equal-clock WAIT, proper signed180degree/Up/exact endpoint/no drift/no retarget,
-entry0.25s, stale/session/identity/freshness/source lifecycle/5s budget, A/B source/
-Position/W/scale/metadata and native safety gates. No animation/input API/INI,
-asset/c73/producer/new watch/hook/VEH/VCH/Position/velocity/gameplay write or shared
-tooling change in r3. Source entry/callsite/sampler and published retirement
-files byte-equal to b0683a5; helper diff equals only constant+divisor substitution.
+All A/B/native admission, stale/cleanup, C52 and five-second gates unchanged.
+No new output artifact or runtime log/version. Owner-side next operation: none
+for this review; no Update-WS/game run required. Detailed current docs live in
+Git; prior ZIP documentation is historical and intentionally not regenerated.
 
-## r3 validation — exact commands / expected / actual
+## Publication
 
-Repository root, `export PATH=/workspace/toolchains/analysis-python/bin:$PATH`.
-Initial `bash source/tools/test_reversal_heading.sh` also passed12 groups exit0.
-Full final sequence below (PASS labels/groups are not unique assertion totals;
-portable repeats focused and hooks repeats native tests):
-
-| Command | Expected | Actual |
-| --- | --- | --- |
-| `bash source/tools/test_reversal_heading.sh` | 12 focused groups: unchanged acceptance at66, proper midpoint60, no completion119, exact120 endpoint; freeze/repeat/regression contracts | exit0; 12 PASS / 0 SKIP / 0 UNAVAILABLE; 0.65s |
-| `bash source/tools/build_windows.sh` | matching r3 Windows build/version/package | exit0; 0 PASS / 0 SKIP / 0 UNAVAILABLE; 38.68s |
-| `bash source/tools/test.sh` | portable regression including unchanged entry0.25s | exit0; 25 PASS / 0 SKIP / 0 UNAVAILABLE; 7.7s |
-| `bash source/tools/smoke_windows.sh` | Windows/Wine smoke invariants | exit0; 7 PASS / 0 SKIP / 0 UNAVAILABLE; 11.72s |
-| `bash source/tools/test_native_source.sh` | real owned MinHook A/B midpoint/final store, stale freeze, Position/W/compact metadata | exit0; 10 PASS / 0 SKIP / 0 UNAVAILABLE; 66.65s |
-| `bash source/tools/test_hooks_windows.sh` | full canonical chain, existing counterexamples/fail-closed unavailable certificates | exit0; 900 PASS / 5 SKIP / 17 UNAVAILABLE; 349.76s |
-| `python source/tools/release.py` | matching package metadata/export/import/script and CRC checks | exit0; 1 PASS / 0 SKIP / 0 UNAVAILABLE; 1.62s |
-
-Focused midpoint: accepted66 ->126 (=+60);185 (=+119) still turning;
-186 (=+120) exact endpoint. Existing entry125/250ms midpoint stays unchanged.
-All12 repeated reversals/noise/ambiguity/Up/diagonal exact endpoints and metadata
-assertions preserved. Native fixture only midpoint cadence target110->50ms into
-turn, leaving real34ms sample waits/120ms stale pause/A-B assertions unchanged.
-First canonical attempt was stopped after235.98s (exit143) when unchanged
-orientation_trace_smoke.exe made no progress for several minutes:12 earlier PASS,
-2 private SKIP, no completion claimed. Only that owned process was terminated
-with `kill -TERM 206438`. Re-executed exact `bash source/tools/test_hooks_windows.sh`
-in the same environment without source/skip/command changes; final result above.
-This is a transient owned Wine/fixture execution hang, not proven r3 causality.
-Nonfatal Wine winedevice.exe c0000135 warnings
-were emitted, but test executables/commands returned0; no warning silencing or
-environment bypass was added. Metadata wording/report-only packaging after binary
-checks does not alter tested runtime code; required release regenerated afterward.
-
-## SKIP / UNAVAILABLE / BLOCKED / unperformed
-
-Canonical optional private datasets (not redistributed),5 SKIP:
-- SKIP: private original-byte positive replay unavailable; independent wrong-hash rejection executed; later bounded-reader admission is TEST-ONLY
-- SKIP: private native replay files not distributed; synthetic AVX/CFG tests above executed
-- SKIP: optional private game-body installer replay not redistributed; independent native tests continue
-- SKIP: optional private584byte game-writer normalization replay; independent synthetic decoder/source tests ran
-- SKIP: private accepted-build capture replay; set WALLSPRINT_PATH_B_CAPTURE to its PATH_B_FUNCTION/PATH_B_CODE log (never redistribute). Independent proof tests execute in test_dual_source.sh.
-
-17 UNAVAILABLE are retained Wine/native certificate boundaries: c40 reset/Position
-VCH2, c49 bridge6, c50 native identity7, c51 post-return2. Registration not treated
-as dispatch/order proof; no native Windows substitute or certificate. C39-c52
-counterexamples/C52 review FAIL remain. BLOCKED0. Every required cloud command
-executed. Actual owner r3 game effect/UI/animation synchronization additionally
-UNAVAILABLE/UNKNOWN: no owner PC/game runtime access, no deployment or human game
-test prose authorized here. No owner action required for cloud completion. Future
-movement roadmap is planning only, not permission to implement it now.
-
-Shared Wisdoms WALLSPRINT/MSM2_DEVELOPMENT_MANUAL/WALLSPRINT_INTERNALS references
-reviewed read-only from /tmp/ws-current-wisdoms-review. Reusable scanner finding
-preserved in project analysis; Wisdoms synchronization deferred to scoped shared
-handoff, no unrelated-repository modification during isolated runtime experiment.
-
-## Final scope/package/publication verification
-
-`python3 /tmp/ws-r3-final-audit.py` verifies the byte/member conditions below.
-
-`git diff --check` / `git diff --cached --check`:exit0. Python byte comparison
-against b0683a5 verifies source/src/NativeHooks/native_source_override.cpp,
-Math/source_orientation.hpp and all published updater/retirement/package/build
-files unchanged; helper equals only named120ms constant+progress divisor delta.
-ZIP testzip() None and final helper/focused/native source member bytes equal;
-script info.json version0.1.59 matches runtime label in DLL. Script exports/imports
-checked by release. No visible stage/nested archive member in r3 source/install
-ZIPs. No raw private data or legacy untracked file staged. Final release rerun
-only for included documentation, not a substitute for binary tests.
-
-Normal push and independent remote readback recorded after actual verification.
-Final chat SHA identifies record-only commit without self-reference.
-
-### Verified r3 publication
-
-Implementation commit `95ff38478c66767b47a70e89880ba399caa0527e`.
-`git push origin codex/v01c20-edi-value-provenance`:success, b0683a5->95ff384.
-`python3 /tmp/ws-r3-publication.py`:exit0; independent GitHub fetch into
-/tmp/ws-steering-docs-publication, FETCH_HEAD/ls-remote/local HEAD equal that SHA;
-all14 changed file blobs against b0683a5 equal local files (including both ZIPs).
-The script executes `git -C /tmp/ws-steering-docs-publication fetch origin
-codex/v01c20-edi-value-provenance`, `git ... rev-parse FETCH_HEAD`, `git ls-remote
-origin refs/heads/codex/v01c20-edi-value-provenance` and compares every
-`git show FETCH_HEAD:<path>` byte string with local paths from
-`git diff --name-only b0683a5 HEAD`.
-
-This record-only update regenerates included result documentation with
-`python source/tools/release.py`; `python3 /tmp/ws-r3-final-audit.py` passes again.
-Runtime script bytes remain equal to implementation commit. No need to rerun
-unchanged binary tests for record-only ZIP documentation changes. Same normal
-push and independent readback repeated for final record commit; final full SHA
-reported in chat (no self-referential commit hash). No owner deployment/request.
+Normal commit/push, then independent remote fetch/head and changed-blob comparison;
+actual commit recorded below. No legacy untracked archive/bundle staged or removed.

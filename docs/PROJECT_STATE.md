@@ -6,17 +6,34 @@ Supersedes duration-only acceptance/task wording below: owner requests earlier r
 Supplied r3 log session1 exits override at17:10:57.972Z with bounded_test_window_5seconds, native Deinit at17:11:00.241Z. Source override and native WallRun persistence differ; matching video release to those events remains UNKNOWN. Preserve5s bound until separately reviewed.
 
 
+## Reversal START review completed — documentation only
+
+See analysis/REVERSAL_START_TIMING_REVIEW.md. Current trigger observes displacement,
+then waits two eligible33ms samples. Acceptance sets logical turnStart; first
+positive angular sample/publication/actual source commit are later distinct
+boundaries. No existing authenticated pre-displacement intent is available;
+1.1s cannot be subtracted from an existing reversal delay. No behavior patch or
+new diagnostic justified without that missing directional-intent/time identity.
+Existing bounded events distinguish candidate/acceptance/completion and source
+exit/native Deinit; silent rejection/full frame timing remain unknown.
+
+Five-second source budget starts at Transition.enter(), not reversal; reversal
+never resets it. Supplied timeout/Deinit excerpts prove source/native lifetime
+can differ, not that reversal causes release or straight WS override is unlimited.
+Runtime remains v0.1c38r3/package0.1.59, unchanged and not accepted as the START
+solution. No new owner update/game run required by this documentation review.
+
 ## Roadmap / current handoff — 2026-10-31 JST
 
 Overall scope and order are reconciled in `docs/FEATURE_ROADMAP.md`.
 Steering Probe tooling retirement is completed/published; see analysis/STEERING_PROBE_RETIREMENT.md.
-Current runtime task: r3 turn-duration-only120ms experiment (`docs/CODEX_TURN_SPEED.md`), implemented; automated validation passed, not accepted in game.
+Historical r3 duration experiment is implemented/tested but is not the requested START solution. Current START review is complete; do not re-execute CODEX_TURN_SPEED.md.
 R2 supplied runtime now confirms reversals with remaining visible lag; six completed logged candidate-to-completion intervals approximately302–322ms. This supersedes earlier r2-runtime-UNKNOWN notes below; it is not input/animation latency.
 After facing acceptance: flat-wall sideways movement proof, then four-way/diagonal movement and stop/contact/lifecycle foundation; camera only afterward. See `docs/AFTER_TURN_PLAN.md` for the staged handoff and proof boundaries. This is planning, not movement-write authorization.
 Current five-second bound, C52 and every existing native safety gate remain.
 
 
-## Current stage — r3 duration-only120ms experiment; r2 observation contracts preserved
+## Current stage — START review complete; earlier directional-intent evidence missing
 
 Branch: `codex/v01c20-edi-value-provenance`.
 Do not merge `main` into this development line.
