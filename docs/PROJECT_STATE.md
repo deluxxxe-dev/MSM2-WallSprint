@@ -1,5 +1,10 @@
 # WallSprint project state
 
+## Active owner blocker — r5 post-build WSL check
+
+Owner terminal confirms r5 WSL build/test/package completed, then fails: WSL build not proved inactive: Cannot verify same-user Linux process339. Actual process cause/installed deployment state UNKNOWN; no final owner r5 update success. Synthetic v0.1c20 success lines within suite are not deployment evidence. Current CODEX_NEXT prioritizes minimum ownership-check repair/diagnostics, preserves r5 runtime bytes. No owner game test until update outcome verified.
+
+
 ## Current task — r5 wall-plane facing implementation
 
 Owner baseline confirms up/down/diagonal translation already exists; do not treat lateral motion as absent. Sideways body/animation persists, descent slower/alternating facing, stick release returns vanilla cling. See analysis/R4_DIRECTIONAL_BASELINE_20261031.md. Compressed follow-up シーケンス 01.mp4 (36.416667s) successfully inspected: visible wall-travel/sideways-facing mismatch and later cling posture. Camera roll prevents screen-space direction inference; exact input/log alignment and quantitative descent speed remain unverified. Current heading targets only+/-entry Forward; next CODEX_NEXT authorizes minimum full-wall-plane displacement-facing orientation proof only. Speed/animation/idle and earlier INPUT START deferred, not solved. Owner bootstrap succeeded; later game run confirms basic launch recovery, not every tooling case.
