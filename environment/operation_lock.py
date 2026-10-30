@@ -181,6 +181,7 @@ if __name__=='__main__':
 def wsl_quiet(record,legacy=False):
  # No game API/process calls. Read only same-user Linux process environments.
  token=record.get('build_token');distro=record.get('distro')
+ if token and record.get('token') is not None and token!=record['token']:raise OperationError('WSL build token mismatches recorded operation identity; no inspection/recovery')
  if legacy and not record.get('_selected_distro'):
   try:p=subprocess.run(['wsl.exe','--list','--running','--quiet'],capture_output=True,timeout=25)
   except (OSError,subprocess.TimeoutExpired) as ex:raise OperationError('Cannot enumerate running WSL distributions; legacy artifact preserved') from ex

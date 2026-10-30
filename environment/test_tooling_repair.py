@@ -53,7 +53,7 @@ class Repair(unittest.TestCase):
   self.assertTrue((self.ws/'Update-WS.cmd').is_file())
  def test_protected_unrelated_root_absence_repairs_legacy_without_build(self):
   from unittest.mock import patch
-  with o.hold(self.game,'update'):o.phase('building',build_token='old-owned-token',distro='Owned')
+  with o.hold(self.game,'update'):o.phase('building',build_token=o._current.record['token'],distro='Owned')
   calls=[]
   def query(record,legacy,root):
    calls.append(root)
@@ -65,7 +65,7 @@ class Repair(unittest.TestCase):
   self.assertFalse(any(x[0]=='launch' for x in self.system.events))
  def test_root_denial_keeps_legacy_and_previous_environment(self):
   from unittest.mock import patch
-  with o.hold(self.game,'update'):o.phase('building',build_token='old-owned-token',distro='Owned')
+  with o.hold(self.game,'update'):o.phase('building',build_token=o._current.record['token'],distro='Owned')
   lock=self.game/'.MSM2-Operations.guard';before=lock.read_bytes();head=git(self.source,'rev-parse','HEAD');runtime=self.script.read_bytes();kit=(self.game/'Mod-Tools/mod_environment.py').read_bytes()
   def query(record,legacy,root):return dict(result='UNKNOWN',counts={'access_denied':1},uid_observed=0 if root else 1000,exit_status=2)
   with patch.object(o,'_wsl_query',side_effect=query):
@@ -75,7 +75,7 @@ class Repair(unittest.TestCase):
   from unittest.mock import patch
   import contextlib,io
   with o.hold(self.game,'update'):
-   o.phase('building',build_token='owned-token',distro='Owned',linux_uid=1000)
+   o.phase('building',build_token=o._current.record['token'],distro='Owned',linux_uid=1000)
   lock=self.game/'.MSM2-Operations.guard';before=lock.read_bytes();head=git(self.source,'rev-parse','HEAD');kit=(self.game/'Mod-Tools/mod_environment.py').read_bytes();runtime=self.script.read_bytes()
   with patch.object(o,'wsl_quiet',return_value={'result':'QUIET'}) as quiet,contextlib.redirect_stdout(io.StringIO()) as output:r.diagnose(self.source,self.game)
   self.assertIn('read_only=1',output.getvalue());self.assertEqual(quiet.call_args.args[0]['linux_uid'],1000)

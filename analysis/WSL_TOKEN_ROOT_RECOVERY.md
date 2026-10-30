@@ -39,6 +39,7 @@ identity/churn failures are explicit, not hidden behind an all-process certifica
 
 ## Legacy authority / actual repair
 
+Saved build_token must match its recorded operation token when present; a mismatched identity cannot obtain root recovery.
 Known legacy UIDnull is NOT replaced with1000. User-observed UID and inspector0
 are separate fields. The root all-UID exact-token scope can prove absence without
 inventing the original UID. An empty/PID-only artifact with no exact token cannot

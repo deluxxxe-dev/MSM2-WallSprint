@@ -62,6 +62,10 @@ class Recovery(unittest.TestCase):
    with patch.object(o.subprocess,'run') as run:
     with self.assertRaises(o.OperationError):o._wsl_query({'distro':'Owned','build_token':'token',**values},False,False)
     run.assert_not_called()
+ def test_operation_token_mismatch_cannot_be_recovered_by_root(self):
+  with patch.object(o,'_wsl_query') as query:
+   with self.assertRaisesRegex(o.OperationError,'mismatches recorded operation'):o.wsl_quiet({'distro':'Owned','token':'operation-A','build_token':'operation-B'})
+   query.assert_not_called()
  def test_raw_root_legacy_or_missing_token_refused(self):
   for record,legacy in [({'distro':'Owned'},False),({'distro':'Owned','build_token':'token'},True)]:
    with self.assertRaises(o.OperationError):o._wsl_query(record,legacy,True)

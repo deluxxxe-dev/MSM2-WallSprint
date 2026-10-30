@@ -55,7 +55,7 @@ class Locks(unittest.TestCase):
    with o.hold(self.game):pass
   self.assertEqual(path.read_bytes(),old)
  def test_unresolved_build_blocks_even_after_parent_death(self):
-  p=self.script("\nwith o.hold(g):\n o.phase('building',build_token='owned-fixture',distro='not-real');print('READY',flush=True);os._exit(21)")
+  p=self.script("\nwith o.hold(g):\n o.phase('building',build_token=o._current.record['token'],distro='not-real');print('READY',flush=True);os._exit(21)")
   p.stdout.readline();p.wait(timeout=5)
   with self.assertRaisesRegex(o.OperationError,'WSL probe unavailable'):
    with o.hold(self.game):pass
