@@ -1,33 +1,41 @@
-# Next task — repair c67 test path to unblock canonical Update-WS checks
+# Next task — correct scripts_proxy dependency validation blocking Update-WS
 
 Branch: codex/v01c20-edi-value-provenance. Do not merge main.
-Read AGENTS and required docs, current PROJECT_STATE and CODEX_RESULT.
-The v0.1c38r1 reversal implementation is already published and functionally checked. Do not redesign or modify it.
+Read AGENTS, required operational docs, PROJECT_STATE, CODEX_RESULT, docs/mod-tools/{README,OVERSTRIKE,PLAY_MODDED}.md and MANUAL.md; relevant Wisdoms shared environment rules. Scope is the existing shared-environment check conflict only.
 
-## Purpose / exact defect
-Canonical test_hooks_windows.sh runs from source/. Existing tools/test_slot_publication_post_c67_boundary_fix.py uses runpy.run_path('source/tools/test_slot_publication_post_c67_boundary.py', ...), resolving to nonexistent source/source/tools.
-Root invocation passes but source-directory invocation fails. This prevents canonical updater acceptance.
+## Owner evidence — 2026-10-30/31 JST
+- Overstrike1.8.1.0 with script support disabled produced no new WS log/Mod Settings.
+- After enabling script support, Install mods failed in MetaInstallerBase.SetupScripts File.Copy:
+  Could not find <game>/Overstrike/scripts_proxy.dll.
+- ChatGPT directed COPY of existing <game>/scripts_proxy.dll into <game>/Overstrike/scripts_proxy.dll, leaving root copy intact.
+- Subsequent owner game/log capture loaded WS v0.1c38 successfully; no install-success log was separately supplied.
+- Now Update-WS refuses: "Shared Overstrike must not contain scripts_proxy.dll; fix shared installation manually".
+This is direct evidence that current validator prohibition conflicts with the observed installer dependency. Do NOT tell owner to delete/move the DLL again.
 
-## Authorized change
-Make this wrapper's referenced script path derive from its own resolved __file__ directory rather than cwd. Inspect only the directly dependent c67 wrapper chain for the same exact path defect; fix only independently reproduced instances needed by the canonical command. Preserve runpy globals/run_name and all assertions/test semantics.
-No chdir workarounds, test omissions, failure masking, gate weakening, or updater bypass.
-Allowed: those test-runner paths, narrow regression verification, CODEX_RESULT/PROJECT_STATE and necessary package documentation refresh.
-Forbidden: runtime/reversal design/code/version changes, new gameplay behavior, native watch/VEH/VCH/producer work, c73, shared launcher/loader/config/SF changes, broad searches.
+## Decision / implementation
+Distinguish scripts_proxy.dll (installer source dependency) from winmm.dll (game loader that must not be beside Overstrike.exe).
+Authenticate the exact source path contract from applicable Overstrike1.8.1.0 SetupScripts/source when available; report source/version limits. Then correct the named blanket scripts_proxy prohibition in source/tools/workspace.py or exact defining checker. Search only the specific error string and immediate shared checks/tests.
+Allow a regular, non-reparse scripts_proxy.dll beside the shared Overstrike executable. Preserve regular-file/symlink protections. Retain rejection/quarantine policy for misplaced Overstrike/winmm.dll; do not generalize all DLLs.
+Inspect environment checker/launcher for the SAME conflation and correct only reproduced equivalents needed for consistent existing updater/start/play operation. Preserve all unrelated safety checks.
+No automatic DLL downloads/copies/deletes or profile/settings mutation. Preserve root scripts_proxy.dll and winmm.dll. If identity/integrity checks are already required, preserve them and document distinct installer source vs game loader, not a new unverified global equality requirement.
+Update affected local manual and combined manual together; AGENTS/PROJECT_STATE stale placement statements may be corrected only for this fact. Record durable shared finding in WS; Wisdoms sync may remain pending rather than expanding this bounded patch.
 
-## Completion / verification
-- Reproduce original failure and verify corrected wrapper from repo root and source/ (and an unrelated temporary cwd if supported).
-- Run the unchanged canonical bash source/tools/test_hooks_windows.sh to completion; distinguish PASS/SKIP/UNAVAILABLE accurately.
-- Inspect workspace updater's existing command list read-only; run any remaining required build/test checks not already valid for unchanged runtime bytes. Do not declare a local Update-WS execution that did not happen.
-- Verify diff and normal package consistency if docs/artifacts are refreshed; keep v0.1c38r1 / package0.1.57 runtime unchanged.
-- Record exact canonical results and remaining owner Windows/game validation in CODEX_RESULT/PROJECT_STATE, commit/push and verify remote.
-If another unrelated blocker appears, report its exact failing command and cause; do not expand scope or deploy around it.
-No owner game/test prose. ChatGPT will give update and runtime instructions after canonical checks pass.
+## Tests / completion
+Regression: valid installer-source scripts_proxy beside Overstrike accepted; misplaced winmm still refused; missing/wrong-type required inputs and reparse paths still refuse; root loader checks unchanged; SF/unrelated MODs untouched.
+Run required existing workspace/environment tests, relevant PowerShell checks and diff checks. Runtime DLL remains v0.1c38r1/package0.1.57 byte-unchanged. No need to rerun unrelated native research chain for checker-only changes unless required by repository checks.
+Commit/push, verify remote and update CODEX_RESULT/PROJECT_STATE with exact commands/results.
+Check updater order: if this old checker stops before fetch, prepare the exact minimal one-time fetch/fast-forward or existing supported bootstrap to refresh checker without removing DLL or bypassing validation. Preserve dirty worktree and branch divergence; no reset/clean/main merge. Record exact owner bootstrap command in CODEX_RESULT; ChatGPT presents it.
+No claim of real-PC Update-WS success until owner performs it.
 
-Reply briefly:
+## Forbidden
+Gameplay/reversal/runtime/version changes; new movement/hook/watch/VEH/VCH/producer/c73 work; SF or ordinary MOD mutation; loader deletion; test/gate bypass; reinstall loop.
+All existing C52 and native gates unchanged.
+
+Reply:
 STATUS: success / partial / blocked
 CHANGED:
 - paths
 RESULT:
-- canonical checks and published branch/commit; runtime remains v0.1c38r1
+- checks, publication and whether one-time checker refresh is needed
 NEED:
-- only exact remaining blocker
+- exact bootstrap command or unresolved input only
