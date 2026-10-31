@@ -1,3 +1,20 @@
+# Current design handoff — 2026-10-31 JST
+
+Downward-intent source/static research completed; see
+`analysis/DOWNWARD_INTENT_IMPLEMENTATION_DESIGN.md`. Accepted r7 ON/OFF comparison
+supersedes historical pending/UNAVAILABLE comparison entries below. OFF has zero
+source publications/A-B commits yet owner-reported descent still fails. Current
+heading follows displacement and cannot independently request missing down
+motion. Standard TurnMaxDown12 vs retained -12degree slopes is correlation only;
+active selection/units/consumer and mapped-intent producer remain UNKNOWN.
+Preferred minimal design pairs a proven mapped-intent facing adapter with proven
+native steering capability, preserving current heading/native gates. Behavior
+implementation BLOCKED on provenance; no runtime/version/package/config changes.
+Available bounded archive inventory did not identify WSU binaries; no fresh WSU
+disassembly claimed. ONE proposed offline reference input-producer review is
+recorded, not initiated/owner-requested. No Update-WS/game/OFF-video/scalar test
+needed for this docs-only task. CODEX_NEXT intent preserved; no later work authorized.
+
 # Current owner evidence — 2026-10-31 JST
 
 R7 ON/OFF comparison accepted; supersedes historical owner-comparison-UNAVAILABLE/pending entries below. OFF startup and121 retained packets confirm zero active publications/A-B commits; ON89 packets confirm enabled effects. Desired down motion fails in both per owner. Repeated -12degree slopes correlate with native downward-limit hypothesis, not proof of config consumption. No repeat ON/OFF/video/scalar request. Next task is focused downward-intent/native-limit source research and implementation design; runtime unchanged. See analysis/V01C38R7_OWNER_COMPARISON_20261031.md and current CODEX_NEXT.
