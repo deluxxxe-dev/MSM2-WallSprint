@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p build logs
 
-# Fail fast on the active c46 read-only WallRun scalar/config/version/package contract
+# Fail fast on the active c47 read-only WallRun scalar/config/version/package contract
 # (including the dormant c45 presence-hook identity/safety contract) before long suites.
 python3 tests/request_presence_static.py
 
