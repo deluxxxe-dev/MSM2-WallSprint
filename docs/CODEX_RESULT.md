@@ -1,152 +1,105 @@
-# Codex result — downward intent / native limit design
+# Codex result — ground-Sprint support/gravity anchor acquisition
 
 2026-10-31 JST. Branch `codex/v01c20-edi-value-provenance`.
-Baseline `02db844c4b472f9fc2250ad6eb85df1b45e9b548`.
+Baseline `f07e4c077b9f02c70a75be322a774e63fe7d2f59` fetched/fast-forwarded from
+prior completed6347b82; WS main not merged. Five pre-existing untracked old
+archives/bundle preserved. Latest CODEX_NEXT task is acquisition/investigation,
+not another architecture comparison.
 
-## STATUS / scope
+## STATUS / RESULT
 
-Focused source/static research and reviewable design **completed**. Behavior
-implementation **BLOCKED on input provenance and native selection/consumer proof**;
-not a gameplay success. No runtime/version/package/config/updater/SF changes,
-new pointer reads/hooks/writes, ABI guesses, scalar traversal or game test.
+Available source/authenticated-capture/reference inventory executed. Current
+cloud inputs contain no identified original EXE/reference DLL or authenticated
+ground-Sprint code anchor. No actual first support/up/gravity consumer can be
+classified yet: **UNAVAILABLE native acquisition / BLOCKED native consumer
+analysis**, not ground-Sprint feasibility failure. No invented RVA, component
+layout, callable ABI or writable ownership.
 
-## CHANGED / findings
+Mandatory path B completed: read-only OFFLINE bounded metadata acquisition
+helper, Windows fresh-stage entrypoint and focused tests. **EVIDENCE COLLECTION
+READY**, not a gameplay test/descent fix. Names/RTTI-layout/aligned data-word
+references are candidates only. No raw code/EXE fragments exported or uploaded.
+Completed independent intent design preserved. No runtime/version/config/package,
+live hook/read/write, state switch, WR scalar traversal, C52/shared environment/
+SF/profile/loader change. Runtime remains v0.1c38r7/package0.1.63.
 
-Added `analysis/DOWNWARD_INTENT_IMPLEMENTATION_DESIGN.md`; prepended current
-PROJECT_STATE without deleting history; this result updated. CODEX_NEXT unchanged.
-Accepted r7 owner comparison supersedes older pending claims: OFF zero source
-publications/A-B commits but descent still fails. Current heading only follows
-actual displacement, not intent. TurnMaxDown12 versus retained -12degree slopes
-is correlation, not selected native field consumption or units proof.
+## CHANGED
 
-Design enumerates actual runtime source touchpoints, independent intent versus
-velocity/pose/animation, file schema versus native selection, required exact-build
-ABI/ownership/frame/freshness gates, working lateral/upper fallback and repeated
-turn lifecycle. Latest task expansion53655ba and owner steering incorporated: compare A native
-ground Sprint with wall-relative support/up/gravity, B WS surface-relative native
-collision/contact request, C WR constraints. Preferred evidence-gated research
-route is A, arbitrary-up UNKNOWN; historical posture tests did not reject it.
-Mapped-intent design retained across all routes, no motion injection/WSU copying. Includes
-later authorized patch's ON/default restoration and exact-version/log acceptance
-requirements. No present support claimed.
+* `source/tools/discover_ground_support.py`: exact existing EXE SHA, validated
+  AMD64 PE/file ranges/overlaps, fixed metadata-only lexical/type-family search,
+  optional RTTI-layout candidates and actual aligned RVA/VA data-word reference
+  candidates. No executable-section scan, instruction xrefs, bytes or arbitrary
+  RVA options. File512MiB, metadata192MiB, names128/192chars, refs512,
+  final JSON128KiB caps; ambiguity never selects, no-match/refusal explicit.
+  CLI has no build-hash override; exclusive output protects existing files.
+* `source/tools/test_discover_ground_support.py`:18 synthetic/CLI negative tests.
+* `source/tools/windows/Discover-Ground-Support.ps1`: existing clone/branch/origin
+  guards, fetch/pinned Git-show temp helper, installed `py -3`, existing logs,
+  timestamp/suffix outputs; no worktree/update/build/launch.
+* `source/tools/windows/test_discover_ground_support.ps1`:2 mock transport groups.
+* `analysis/GROUND_SPRINT_SUPPORT_ANCHOR_INVESTIGATION.md`: executed native-input
+  boundary, exact candidate/evidence limits, remaining blocker and ONE runnable
+  PowerShell bootstrap; prepend PROJECT_STATE; this result.
 
-Accessible primary Overstrike source pinned at
-`443ec468b5a7a922771dce6bfa96396f56896dcb` establishes serialization only.
-Bounded available ZIP inventory102 found no matching WSU members; no new WSU
-disassembly performed. Existing supplied report remains a lead. ONE proposed
-first discriminator is a bounded current-build ground-Sprint support/up/gravity
-consumer review, not initiated or requested automatically. SwingCore input-context
-producer remains a missing intent prerequisite, not a second immediate request. No new owner capture/download required by this task.
+CODEX_NEXT unchanged. No release ZIP/new artifact; output is
+`MSM2-WS-ground-support-anchors-YYYYMMDD-HHMMSS.json` (optional collision suffix)
+in installed WS `logs`. Return the JSON only, including REFUSED/NO_ANCHOR_MATCH.
 
-## Exact checks / expected / actual
+## Validation — exact commands, expectations and actual results
 
-Static/source checks below are research checks, not runtime regression tests.
-Counts are check groups, not assertions. Expected empty `rg` matches use exit1.
+1. `python3 source/tools/test_discover_ground_support.py`
+   Expected synthetic name/RTTI-layout/ref discovery; Unicode/ASCII, ambiguity/
+   no-match, executable/writable exclusion, invalid hash/PE/ranges/overlap,
+   truncation and name/ref/scan/file/output caps, no CLI SHA bypass, no output/EXE
+   overwrite. Actual **18 PASS /0 SKIP**. Repeated only after final output-size
+   check changed to count the final pretty JSON; no test weakened. Fixtures are
+   not a real-game proof or authenticated native consumer.
+2. `XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -File source/tools/windows/test_discover_ground_support.ps1`
+   Expected derived space/Japanese layout, staged fresh helper/pinned Git reads,
+   collision-safe output, existing dirty file/EXE unchanged, Python failure
+   refusal. Actual **2 PASS groups**, mocked Git/Python, PowerShell on Linux.
+   Initial command without XDG dirs exited134 before tests because /home cache
+   is read-only; fixed execution environment by task-owned /tmp cache/config/data.
+   No HOME reassignment or permission changes. Not Windows5.1/real Git/Python proof.
+3. `git diff --check`
+   Expected whitespace clean; actual PASS.
+4. `python3 /tmp/ws-ground-scope-check.py` (local read-only check):
+   expected only helper/tests/docs touched, current task and all runtime/version/
+   package files unchanged, analysis link exists and owner snippet PowerShell
+   syntax valid. Scope/link check PASS; PowerShell snippet parser command below
+   checks actual snippet syntax separately.
 
-1. `git status --short` and `git rev-parse HEAD`: expected preserved task branch
-   state; actual baseline above, only five pre-existing untracked archives/bundle.
-   `git fetch origin codex/v01c20-edi-value-provenance` followed by
-   `git merge --ff-only origin/codex/v01c20-edi-value-provenance` had advanced
-   clean prior baseline to02db844; no main merge.
-2. `cat source/include/msm2/sdk_bridge.hpp`;
-   `sed -n '1,95p' source/src/msm2/sdk_bridge.cpp`;
-   `sed -n '447,537p' source/src/NativeHooks/native_source_override.cpp`;
-   `cat source/include/Math/reversal_heading.hpp`;
-   `rg -n 'heading.sample|readNormal|snapshot|Transition|writeStack|comparisonSample' source/src/NativeHooks/native_source_override.cpp`:
-   expected trace actual producer->heading->orientation source; actual no input
-   producer/physical velocity in Snapshot, displacement target and native gates
-   confirmed. PASS, no claim of executable game behavior from source inspection.
-3. `rg -n 'TurnMaxDown|SteeringSetupStandard|SteeringSetupIndoor' source/src source/include source/vendor`:
-   expected inspect existing bindings; actual no matches (exit1), no proven
-   current native field consumer. PASS as inventory, not proof no consumer exists
-   elsewhere in the game.
-4. `git -C /tmp/ws-steering-overstrike-review rev-parse HEAD`;
-   `rg -n 'TurnMaxDown|SteeringSetupStandard|SteeringSetupIndoor' /tmp/ws-steering-overstrike-review -g '*.cs' -g '*.json' -g '*.xml'`;
-   read `DAT1/Files/Config.cs`, `DAT1/Sections/Config/ConfigBuiltSection.cs`,
-   `ConfigReferencesSection.cs`, `DAT1/Sections/Generic/SerializedSection_I30.cs`:
-   expected separate serialized schema from consumption; actual pinned source
-   identity, no named consumer matches (exit1), schema/typed-read proof only. PASS.
-5. Read-only archive inventory: exact discovery command
-   `rg --files /workspace /tmp -g '*.zip' -g '*.modular' -g '*.script'`;
-   Python `zipfile.ZipFile` directory inspection excludes >512MiB files and
-   >16384-member archives; case-insensitive member suffixes SwingCore.dll,
-   wallslide.dll, sc_core.script. Expected locate available reference input;
-   actual102 archives,0 matching archives. PASS inventory. New reference-producer
-   disassembly **UNAVAILABLE**, files not identified by bounded inventory; opaque
-   renamed/deeper nested/private-chat files not excluded.
-6. `git diff --check` and the inline Python docs-scope/link check (recorded below):
-   expected whitespace clean, only three intended Markdown files, existing local
-   analysis link targets and task text unchanged; actual PASS.
+Focused test total **PASS20 / SKIP0 / UNAVAILABLE1 / BLOCKED1**. Separate
+whitespace/scope/parser/publication checks are not added to fixture test totals.
+UNAVAILABLE1 = real Windows pinned-EXE acquisition, private input absent here.
+BLOCKED1 = first actual native ground support/Up/gravity consumer investigation,
+no authenticated entry yet; metadata collection is preparatory evidence.
+No unperformed real Windows/game test marked PASS.
+Full portable/native/Wine/runtime build/package suites not run: task explicitly
+requires relevant offline helper tests only, no runtime changes/dependencies.
 
-7. `cat source/vendor/SM2ScriptTemplate/game/Actor.h`;
-   `cat source/vendor/SM2ScriptTemplate/game/Transform.h`;
-   `rg -n -i 'gravity|sprint|support|requestsimplemotion|ground|contact' source/src source/include source/vendor/SM2ScriptTemplate/game -g '*.cpp' -g '*.hpp' -g '*.h'`;
-   read `analysis/INITIAL_WALL_AS_GROUND_REVIEW_20261031.md`,
-   `docs/FEATURE_ROADMAP.md` and Wisdoms reference architecture section:
-   expected distinguish typed controller proof from transform/generic component/
-   fixture/label evidence; actual no identified authenticated ground support-Up/
-   gravity consumer. Three-route comparison and first discriminator completed,
-   arbitrary-up remains UNKNOWN. PASS research check, not ground-route feasibility.
+Research commands included:
+`rg --files /workspace /tmp -g 'Spider-Man2.exe' -g '*SwingCore*' -g '*wallslide*'`;
+`rg -n -i 'gravity|sprint|support|requestsimplemotion|ground|contact' source/src source/include source/vendor/SM2ScriptTemplate/game -g '*.cpp' -g '*.hpp' -g '*.h'`;
+`cat source/vendor/SM2ScriptTemplate/game/Actor.h` / `Transform.h` / `Native.h`.
+Expected find or bound native anchor; actual no identified binary/typed ground
+API; incidental fixture/Transform/generic component matches do not prove it.
+One unrelated /tmp subtree unreadable, so availability search not exhaustive.
+Existing supplied reference report read, no new disassembly claimed.
 
-PASS7 check groups / SKIP0 / UNAVAILABLE1 (new WSU producer trace) / BLOCKED1
-(behavior implementation admission, outside authorized implementation scope).
-Native consumer/active-selection proof remains UNKNOWN; static searches do not
-convert that missing proof into PASS. Native Windows/game acceptance not run:
-this task authorizes documentation only. Build/portable/native/Wine/package
-suites not run because no code/helper/runtime/package change; prior suite results
-are not presented as freshly executed. No new offline helper added.
+## Publication / shared knowledge
 
-Reproducible docs check used:
-```bash
-python3 - <<'PY'
-from pathlib import Path
-import re, subprocess
-expected={'analysis/DOWNWARD_INTENT_IMPLEMENTATION_DESIGN.md',
-          'docs/PROJECT_STATE.md','docs/CODEX_RESULT.md'}
-changed=set(subprocess.check_output(['git','diff','--name-only','HEAD']).decode().splitlines())
-new=Path('analysis/DOWNWARD_INTENT_IMPLEMENTATION_DESIGN.md')
-assert changed | {str(new)} == expected, changed
-for target in re.findall(r'\]\(([^)]+)\)',new.read_text()):
-    assert (new.parent / target).is_file(), target
-assert not subprocess.check_output(['git','diff','HEAD','--','docs/CODEX_NEXT.md'])
-print('PASS docs-only scope, analysis links, unchanged task')
-PY
-```
+Wisdoms candidate-vs-consumer distinction updated in
+`docs/WALLSPRINT_REFERENCE_MODS.md`, pushed
+`faf8613a850e173090ae4c443e56e157dbaa05c3`; ls-remote matches.
+WallSprint helper implementation SHA and independent GitHub readback follow below.
+No private binary fragments/raw game logs committed.
 
-## Shared knowledge / publication
+## NEED / exact owner operation
 
-Wisdoms `docs/WALLSPRINT_REFERENCE_MODS.md` explicitly qualifies the historical
-preset-only evidence and outdated experiment sequence; accepted r7 comparison,
-input unknowns and schema/consumer separation preserved. Commit
-`f9df414c9e99c40f7d8f0d4faacf4ced6b44b9a8` pushed; independent `ls-remote` agrees.
-No raw user logs, proprietary function bodies, binaries or personal paths added.
-
-Wisdoms follow-up architecture qualification also pushed; final SHA recorded
-with readback below.
-
-WallSprint implementation/documentation commit and independent publication
-readback recorded after commit below. Runtime remains v0.1c38r7/package0.1.63;
-no new artifact/output package. Intended output is the analysis document above.
-
-## NEED
-
-No Update-WS, Spider-Man2 launch, unchanged r7 run, OFF video or scalar/config
-probe. ONE future evidence proposal is documented, not automatically authorized.
-No current owner operation required. Future behavior remains gated on both
-independent intent and native capability evidence.
-
-### Verified publication
-
-Completed design implementation commit
-`9baca93035c0919e181152efca1c428fd66c4057` includes local initial design901a293
-and same-branch remote expansion53655ba via preserved merge, never WS main.
-`python3 /tmp/ws-intent-publication.py` fetched the branch into independent clone
-`/tmp/ws-steering-docs-publication`, required FETCH_HEAD/local HEAD/ls-remote
-agreement and byte-for-byte equality for all5 changed Markdown files versus
-02db844. Expected all identities/bytes equal; actual PASS. This adds1 publication
-check: total **PASS8 / SKIP0 / UNAVAILABLE1 / BLOCKED1**, same scopes above.
-Final documentation-only record commit follows; no runtime retest needed.
-Wisdoms final `a7ef5962ae49f2d1f654eb15df461c5d3b3b5db4`: push and fresh fetch
-HEAD/FETCH_HEAD agree. Earlier f9df414 remains its ancestor. Initial preferred
-WR-policy wording superseded by the final three-route comparison; A is conditional
-research preference, not implemented or proven arbitrary-up support.
+Run the ONE PowerShell block in the analysis document (reproduced in final
+handoff) and return generated `logs/MSM2-WS-ground-support-anchors-*.json` only.
+No Update-WS, Install mods, game launch, WSU upload or full EXE upload.
+The JSON will supply exact-image names/reference candidates for the next bounded
+identity review; it will not by itself prove gravity/support semantics or permit
+production integration. No automatic follow-on gameplay changes authorized.

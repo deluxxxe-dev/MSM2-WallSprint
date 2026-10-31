@@ -1,3 +1,18 @@
+# Current acquisition handoff — 2026-10-31 JST
+
+Ground-Sprint support/gravity consumer investigation executed to available-input
+boundary. No current EXE/reference DLL or authenticated ground-controller entry
+identified in cloud. Native first support-Up/gravity consumer remains UNKNOWN;
+not evidence that ground Sprint is world-up-bound or impossible. New read-only
+OFFLINE metadata helper/Windows bootstrap obtains exact-image bounded type/state
+name and aligned metadata-reference candidates only; no code bytes/consumer/
+ownership certificate. See `analysis/GROUND_SPRINT_SUPPORT_ANCHOR_INVESTIGATION.md`
+for one-shot owner command and JSON. Native Windows acquisition pending; no game
+launch, Update-WS or EXE upload. Runtime r7, C52 and source/lifecycle unchanged.
+Python synthetic18 and PowerShell mock2 focused checks PASS; neither is game proof.
+Previous design's “proposed not initiated” discriminator status is superseded by
+this concrete acquisition-ready step, not a completed native consumer analysis.
+
 # Current design handoff — 2026-10-31 JST
 
 Downward-intent source/static research completed; see
