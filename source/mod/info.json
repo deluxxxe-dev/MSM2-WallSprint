@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.71",
-  "description": "WallSprint v0.1c46: read-only verified-WallRun Update scalar observation at five statically evidenced direct-this float offsets (0x208/0x220/0x238/0x250/0x40C), no extra native hook, Gravity presence hook disabled, and all gameplay write gates unchanged.",
+  "version": "0.1.72",
+  "description": "WallSprint v0.1c47: read-only verified-WallRun Update scalar observation at five statically evidenced direct-this float offsets, explicitly independent of disabled legacy surface telemetry; no extra native hook and all gameplay write gates unchanged.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1
