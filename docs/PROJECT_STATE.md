@@ -1,5 +1,10 @@
 # WallSprint project state
 
+## Current decision — successor received; stop scalar traversal
+
+20byte owner successor verified: saveR13/loadscalar/TEST DL/JNE, no motion API/descending cause. See analysis/WALLRUN_SUCCESSOR_OWNER_RESULT_20261031.md. No more byte requests on this scalar route. CODEX_NEXT prepares controlled source override ON/OFF comparison with equivalent safe read-only OFF observation; current r6 active-only windows insufficient. This is diagnostic, not descending behavior fix. Preserve heading/native safety and0writes in OFF.
+
+
 ## Current handoff — shared successor mode ready, complete77 accepted
 
 Local AL relation !P||(C&&R) and reachable R9B definition verified against authentic
