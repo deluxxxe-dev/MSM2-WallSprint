@@ -23,6 +23,8 @@ g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -
 ./build/four_face_tests | tee logs/four_face_tests.log
 g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -Iinclude src/static_field_tests.cpp -o build/static_field_tests
 ./build/static_field_tests | tee logs/static_field_tests.log
+g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -Iinclude src/wallrun_scalar_observation_tests.cpp -o build/wallrun_scalar_observation_tests
+./build/wallrun_scalar_observation_tests | tee logs/wallrun_scalar_observation_tests.log
 
 g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -Iinclude src/surface_pair_tests.cpp -o build/surface_pair_tests
 ./build/surface_pair_tests | tee logs/surface_pair_tests.log
