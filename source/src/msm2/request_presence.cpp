@@ -19,9 +19,9 @@ constexpr std::uintptr_t kRequestEndRva = 0x11A1CA2;
 constexpr std::uintptr_t kRequestUnwindRva = 0x1154EDC;
 constexpr std::size_t kRequestSize = kRequestEndRva - kRequestRva;
 constexpr std::size_t kNativeSnapshot = 32;
-constexpr LONG kPhaseRecordCap = 16384;
+constexpr LONG kPhaseRecordCap = 131072;
 constexpr unsigned kPhaseLimit = 1;
-constexpr ULONGLONG kPhaseDurationMs = 45000;
+constexpr ULONGLONG kPhaseDurationMs = 300000;
 constexpr char kRequestSha256[] = "2d8792492c8b89d4e9885d55fa45fb2c6b4126b4ae992f854f6d687522163d0c";
 constexpr unsigned char kRequestPrefix[] = {0x4c,0x8b,0xdc,0x49,0x89,0x5b,0x08};
 
@@ -289,7 +289,7 @@ void arm(const char* phaseClass,const char* label) {
     ++runtime.phasesStarted;
     runtime.phase=PhaseState::Capturing;
     InterlockedExchange(&ws_request_presence_enabled,1);
-    msm2::writeLog("REQUEST_PRESENCE_PHASE_ARM phase_id=%u class=%s label=%s label_auth=video_posthoc_not_native_authenticated correlation=non_atomic max_ms=%llu max_records=%ld controls=F11_once_auto_stop video_alignment=record_offset_ms_est",runtime.phaseId,phaseClass,label,static_cast<unsigned long long>(kPhaseDurationMs),kPhaseRecordCap);
+    msm2::writeLog("REQUEST_PRESENCE_PHASE_ARM phase_id=%u class=%s label=%s label_auth=video_posthoc_not_native_authenticated correlation=non_atomic max_ms=%llu max_records=%ld controls=automatic_on_admission video_alignment=record_offset_ms_est",runtime.phaseId,phaseClass,label,static_cast<unsigned long long>(kPhaseDurationMs),kPhaseRecordCap);
 }
 
 } // namespace
@@ -297,7 +297,7 @@ void arm(const char* phaseClass,const char* label) {
 namespace msm2::request_presence {
 
 bool start(bool targetBuildConfirmed,Config config,std::uintptr_t moduleBase,std::size_t moduleSize) {
-    msm2::writeLog("REQUEST_PRESENCE_CONFIG requested=%u mode=read_only entry_rva=0x%llx site_size=%llu phase_ms=%llu phase_record_cap=%ld session_phase_cap=%u capture_control=F11_once legacy_F12=disabled",unsigned(config.enabled),static_cast<unsigned long long>(kRequestRva),static_cast<unsigned long long>(kRequestSize),static_cast<unsigned long long>(kPhaseDurationMs),kPhaseRecordCap,kPhaseLimit);
+    msm2::writeLog("REQUEST_PRESENCE_CONFIG requested=%u mode=read_only entry_rva=0x%llx site_size=%llu phase_ms=%llu phase_record_cap=%ld session_phase_cap=%u capture_control=automatic_on_admission legacy_manual_controls=disabled",unsigned(config.enabled),static_cast<unsigned long long>(kRequestRva),static_cast<unsigned long long>(kRequestSize),static_cast<unsigned long long>(kPhaseDurationMs),kPhaseRecordCap,kPhaseLimit);
     if(runtime.created){
         InterlockedExchange(&ws_request_presence_enabled,0);
         msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=resident_hook_already_created process_restart_required=1 previous_hook_enabled=%u trampoline_retained=1 original_forward_preserved=1",unsigned(runtime.enabled));
@@ -370,6 +370,7 @@ bool start(bool targetBuildConfirmed,Config config,std::uintptr_t moduleBase,std
     }
     runtime.admitted=true;
     msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=1 target=0x%llx relay=0x%llx observer=0x%llx trampoline=0x%llx whole_site_sha=verified pdata=exact observer_unwind=split_verified callback_io=0 callback_locks=0 callback_allocations=0 captured_pointer_dereference=0 argument_writes=0 request_suppression=0 original_forward=tail_trampoline retention=process_exit",static_cast<unsigned long long>(target),static_cast<unsigned long long>(relay),static_cast<unsigned long long>(reinterpret_cast<std::uintptr_t>(&ws_request_presence_observer)),static_cast<unsigned long long>(reinterpret_cast<std::uintptr_t>(original)));
+    arm("automatic","auto_admission");
     return true;
 }
 
@@ -383,11 +384,11 @@ void tick() {
 }
 
 void armNextGround() {
-    arm("continuous_video","video_capture");
+    msm2::writeLog("REQUEST_PRESENCE_ARM rejected=1 class=legacy_manual_control reason=F11_disabled_capture_auto_arms_on_admission");
 }
 
 void armNextWallRun() {
-    msm2::writeLog("REQUEST_PRESENCE_ARM rejected=1 class=legacy_wallrun_control reason=F12_disabled_use_F11_once");
+    msm2::writeLog("REQUEST_PRESENCE_ARM rejected=1 class=legacy_manual_control reason=F12_disabled_capture_auto_arms_on_admission");
 }
 
 void closeCapture(const char* reason) {
