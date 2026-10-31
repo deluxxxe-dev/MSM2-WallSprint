@@ -1,0 +1,47 @@
+[
+  {
+    "begin_rva": 54320,
+    "end_rva": 73091,
+    "sha256": "3c7aae978723a832b4c7d4a1a5a27a19ffdc107160d3b09666ff0a86b6160293"
+  },
+  {
+    "begin_rva": 77776,
+    "end_rva": 79308,
+    "sha256": "35559a49805e624668589b6b2bde0f23bf744062061826fd66ad36da9a10e05d"
+  },
+  {
+    "begin_rva": 79792,
+    "end_rva": 87466,
+    "sha256": "757641f6d104aab74f4db544942048d677e841889ff9594b785dfca5a940463d"
+  },
+  {
+    "begin_rva": 92448,
+    "end_rva": 93373,
+    "sha256": "6bc13b504a383f34533817267c615b25cefc66f1ae71dfe3ede1a848c8d4d354"
+  },
+  {
+    "begin_rva": 15456,
+    "end_rva": 15641,
+    "sha256": "8554bc21044ebb896b4df9d48117f1982fa461a13a4ad244f743d2c98027d161"
+  },
+  {
+    "begin_rva": 13328,
+    "end_rva": 13712,
+    "sha256": "e9f7c8cfcad59856ded9c232b871306846b2dca43e6cb754c5f929df2997b829"
+  },
+  {
+    "begin_rva": 27760,
+    "end_rva": 28624,
+    "sha256": "c2a26a768325f878c5c92bc68d7df78ffd67abb8efc8e1916e3831bf4fb5aef9"
+  },
+  {
+    "begin_rva": 41856,
+    "end_rva": 42525,
+    "sha256": "2dd5bc72531037b0535388a80ddb5740722606aadc69cfc08bc487bdef488fed"
+  },
+  {
+    "begin_rva": 34672,
+    "end_rva": 36161,
+    "sha256": "289b70b2f615c19ba7c7ad0f6ba0085d802f25ca3beb75f2ded0bdf19055b8ec"
+  }
+]

@@ -1,3 +1,21 @@
+# Current direct-reference review — 2026-10-31 JST
+
+Owner Scripted Flight ZIP opened here; exact archive/DLL SHA matches accepted
+reference. Absent-input/locator status below superseded; no more reference scan.
+Direct resolver/verifier/use/restore trace completed: unique AOB or bounded
+three-anchor shift fallback; decoded owner+67 CALL->gravity setter and motion+4E6
+CALL->request equality, semantic markers, stored target slots and real indirect
+uses.16920 is diagnostic formatter. Motion hook preserves original second
+argument and substitutes cached third/facing argument; gravity wrapper calls
+setter and save/restore records are explicit. These are reference DLL facts,
+not current-game ABI/contact/ground-Sprint or lifetime proof. Ground-name route
+remains STOPPED; runtime/config/packages/C52 unchanged.
+New fixed four-anchor read-only current-EXE verifier checks reference canonical
+zero-shift relationships/marker hashes only, no scan/raw code upload. ONE owner
+command -> logs/MSM2-WS-motion-gravity-verification-*.json; no Update-WS/Install/
+game/reference locator. See analysis/SCRIPTED_FLIGHT_RESOLVER_MOTION_GRAVITY_REVIEW.md.
+Current EXE relation verification pending; no live write/call authorization.
+
 # Current route stop / alternate evidence handoff — 2026-10-31 JST
 
 Run owner name/code acquisition accepted (GROUND_CODE_OWNER_RESULT_20261031).

@@ -1,123 +1,118 @@
-# Codex result — Run lifecycle stopping rule / reference mover evidence
+# Codex result — direct Scripted Flight resolver/motion/gravity trace
 
-2026-10-31 JST. Branch `codex/v01c20-edi-value-provenance`.
-Baseline `9ed44919e78623b633051c9ac3da2f722d735834`, fetched/fast-forwarded
-from00084e2. No main merge. Five old untracked archives/bundle preserved.
+2026-10-31 JST; branch `codex/v01c20-edi-value-provenance`.
+Baseline `5685d9819ce5f8daebc73fc31a0359c2e5f3c097`, fetched/fast-forwarded from
+d0f03cc. No main merge. Five pre-existing untracked old archives/bundle preserved.
 
-## STATUS / actual stopping-rule outcome
+## STATUS / findings
 
-**GROUND_NAME_REGISTRATION_ROUTE_STOPPED_NO_DEFENSIBLE_MECHANISM.**
-Available WR discovery resolves independent AOBs, validates prefix/function/build/
-patch ownership and existing measured lifecycle; it does not resolve names into
-registered states/methods. SDK generic components/WSU registry labels do not
-supply a Run schema/vtable/method relationship. Accepted Run name reference and
-CALL0x3081DB0 do not justify that transfer. No further Run name/registration/CALL/
-adjacent-byte scanner implemented, no follow-call acquisition cycle. Ground
-Sprint unproven, not impossible. Actual Run lifecycle/grounded consumer BLOCKED.
+**REFERENCE_TRACE_COMPLETED; CURRENT_GAME_RELATION_VERIFICATION_PENDING.**
+Actually opened attached nested ZIP and authenticated DLL SHA7330c68f...b7662.
+No reference locator/name scan repeated; ground-name route remains STOPPED.
+Direct analysis recovered individual resolver uniqueness/three-anchor shift
+fallback, verifier's two signed-rel32 CALL comparisons/semantic checks, stored
+result slots, actual native-target/trampoline uses and vector/mode/scalar capture/
+restore.16920 is diagnostic formatter, not request or setter. Motion hook forwards
+original second argument and supplies cached third/facing argument; gravity wrapper
+performs real indirect target call. Actual facts/limits/locations are in analysis.
+No claim of an independently authenticated current native ABI or grounded contact.
 
-Concrete alternate investigation selected/executed to available-input boundary:
-SHA-pinned ScriptedFlight dependency verifier for RequestSimpleMotion and
-SetGravityVector. Bounded local named-reference search actually returned
-REFERENCE_UNAVAILABLE_OR_DIFFERENT_SHA,0 packages/0 DLLs. No unavailable binary
-was disassembled or executed. ONE runnable owner-local alternate evidence step
-implemented/tested, **ALTERNATE_REFERENCE_ACQUISITION_READY**. Reference DLL RVAs
-are not native EXE RVAs. A nearby verification call may be logging; no native
-request/contact/gravity ABI or ownership certified. Not a descent fix.
+One new tightly grounded read-only current-EXE verifier checks FOUR recovered
+canonical hints, TWO CALL relations and SEVEN marker hashes, exact WS EXE SHA.
+No scanning/shift fallback/raw code export. Explicit zero-shift subset of reference
+method, not a copy of its resolver or a production certificate. Native callable
+ABI/lifetime/contact/production_permission all remain false even on match.
 
-## CHANGED / safety
+## CHANGED / outputs
 
-* Added `source/tools/reference_motion_evidence.py`: known exact reference SHA,
-  TWO previously recorded dependency relationship labels, bounded named-package/
-  nested archive read-only inspection, no filesystem extraction or DLL execution.
-  Invokes shared decoded-reference engine only for authenticated reference bytes.
-* `source/tools/ground_support_code_refs.py`: internal keyword-only needle/ranker
-  parameters for engine reuse; default ground CLI/hash/filter remains unchanged.
-  No new CLI bypass, generic native scanner or ground acquisition requested.
-* Added `source/tools/test_reference_motion_evidence.py` (11 focused tests).
-* Added Windows `Inspect-Reference-Motion.ps1` and `test_reference_motion.ps1`:
-  fresh3-helper Git staging, existing pinned WSL decoder, named reference roots
-  Downloads/Mods Library, exact new output collision handling and mock tests.
-* `analysis/RUN_LIFECYCLE_STOP_AND_MOVER_REFERENCE.md`: concrete source findings,
-  exact unresolved edge, explicit stop/pivot, bounded alternate operation and ONE
-  runnable subprocess bootstrap; PROJECT_STATE prepended; this result.
+* `analysis/SCRIPTED_FLIGHT_RESOLVER_MOTION_GRAVITY_REVIEW.md`: direct actual trace,
+  resolver/argument/compare/store/use/save/restore evidence and exact blockers;
+  one owner bootstrap. `analysis/SCRIPTED_FLIGHT_FUNCTION_IDENTITIES.json`:
+ 9 function ranges/hashes only, no bodies.
+* `source/tools/verify_motion_gravity.py`, `test_verify_motion_gravity.py`:
+  bounded exact-EXE metadata/hash/CALL checks,9 positive/negative fixture tests.
+* Windows `Verify-Motion-Gravity.ps1` / `test_verify_motion_gravity.ps1`:
+  existing fresh dependency staging/WSL decoder checks, exclusive timestamp JSON,
+ 3 mock groups, child powershell Bypass owner command.
+* PROJECT_STATE prepended accepted attachment/direct-trace status; this result.
+  CODEX_NEXT unchanged. All production/runtime/version/config/packages/C52/shared
+  loader/environment/SF untouched. No live reads/hooks/calls/writes, Position/
+  gravity/animation/state changes. Runtime remains r7/package0.1.63, no new package.
 
-CODEX_NEXT unchanged. No runtime/version/build/game package/config/INI, live hook/
-read/write, state/motion/Position/input/gravity/animation, C52, environment/SF/
-profile/loader changes. Runtime remains r7/package0.1.63. No raw reference binary,
-private capture or full function body committed. Partial reference evidence stays
-only in private output JSON, not Git/release artifacts. Output:
-`logs/MSM2-WS-reference-motion-refs-YYYYMMDD-HHMMSS.json` (optional suffix).
+Output `MSM2-WS-motion-gravity-verification-YYYYMMDD-HHMMSS.json` under WS logs,
+optional suffix. It contains metadata/marker booleans/hashes, not code fragments.
+DLL/disassembly/raw function bodies stayed private /tmp, not Git or release inputs.
 
-## Exact checks / expected / actual
+## Executed static analysis / expected / actual
 
-1. `/workspace/toolchains/analysis-python/bin/python3 source/tools/test_reference_motion_evidence.py`
-   Expected reference-only domain/SHA identity, both exact relationship labels,
-   ordinary Run/generic request-name exclusion, nested package in-memory discovery,
-   duplicate same-SHA deduplication, no-input/wrong-SHA status, unrelated ZIP not
-   opened, malformed archive/caps/symlink refusal, member traversal never extracted,
-   CLI output preservation. Actual **11 PASS**, no real game proof from fixtures.
-2. `/workspace/toolchains/analysis-python/bin/python3 source/tools/test_ground_support_code_refs.py`
-   Expected default ground behavior/decoder boundaries/caps/negative refs unchanged
-   after internal reuse parameters. Actual **20 PASS**, no assertion weakened.
-3. `python3 source/tools/test_discover_ground_support.py`
-   Expected reused PE/string/hash/output dependency unchanged. Actual **18 PASS**.
-4. `XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -File source/tools/windows/test_reference_motion.ps1`
-   Expected fresh3 dependencies, Japanese/space paths, output collision/old output/
-   source/fake EXE preservation, WSL/decoder unavailable refusal without install.
-   Actual **3 PASS mock groups**; Git/WSL mocked, not native Windows acceptance.
-   Initial mock exposed Linux lacking USERPROFILE and mismatched output fixture
-   prefix; used cross-platform GetFolderPath and corrected fixture to actual
-   -reference-motion-refs name, then all passed. No machine policy/env changes.
-5. `/workspace/toolchains/analysis-python/bin/python3 source/tools/reference_motion_evidence.py --root /workspace/attachments --root /workspace/WallSprint --output /tmp/ws-reference-motion-local.json`
-   Expected exact reference evidence if present, explicit unavailable otherwise.
-   Actual exit2, REFERENCE_UNAVAILABLE_OR_DIFFERENT_SHA, named_packages0,
-   examined_dlls0. **UNAVAILABLE**, not a synthetic/native PASS.
-6. `git diff --check`: expected clean; actual PASS.
-7. `python3 /tmp/ws-reference-scope.py`: expected only8 intended offline tool/test/
-   docs paths, existing analysis links, unchanged task/runtime/config/packages,
-   process-specific Bypass bootstrap; actual PASS, command extracted for parser.
-8. `XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -Command '$t=$null; $e=$null; [void][System.Management.Automation.Language.Parser]::ParseFile("/tmp/ws-reference-owner.ps1",[ref]$t,[ref]$e); if($e.Count){throw ($e|Out-String)}; "PASS reference bootstrap syntax"'`
-   Expected actual owner block valid; actual PASS parser, not Windows execution.
+1. Python zipfile in-memory nested inspection; `sha256sum` original attached ZIP.
+   Expected accepted identities; actual archive
+   c1f43885f6138143ad54cf0d6d3be86b1e51b0abc27cc51155bb9de6e93794f7;
+   DLL162816bytes SHA7330c68fa87da58a50a6ee4c477d17339e5deb28a82cf77f7b16c3c2092b7662.
+   PASS. No DLL executed, extracted only to task-private /tmp for static tools.
+2. `objdump -h /tmp/ws-flight-review/ScriptedFlight.dll`;
+   `objdump -d -M intel --start-address=0x1800137b0 --stop-address=0x1800155aa /tmp/ws-flight-review/ScriptedFlight.dll`;
+   private xref index `objdump -d -M intel /tmp/ws-flight-review/ScriptedFlight.dll`;
+   `objdump -p /tmp/ws-flight-review/ScriptedFlight.dll` imports.
+   Expected actual verifier/call/data flow; actual reviewed initializer and
+   relevant startup/resolver/formatter/hooks/restore paths, reference text~110KiB
+   indexed privately to locate exact target-slot uses. Not an all-game scan.
+3. Pinned Capstone5.0.6 PE-runtime-range inspection of D430,12FD0,137B0,16920,
+   3C60,3410,6C70,A380,8770 using existing PE helper; private
+   `/workspace/toolchains/analysis-python/bin/python3 /tmp/ws-flight-review/check_findings.py`.
+   Expected exact range/hash and instruction checks; actual PASS9 identities,
+   4 resolver calls,2 formatter calls, real signed-CALL decoders, motion/gravity
+   use and restore edges. Derived range/hash-only JSON committed. Two disassemblers
+   corroborate instructions; no arbitrary mid-instruction decode promoted to fact.
+   Initial scratch utility was named inspect.py and shadowed Python inspect;
+   renamed flight_view.py before successful Capstone inspection. No source change
+   or failed preliminary decode used as evidence.
 
-**Focused test counts PASS52 / SKIP0 / UNAVAILABLE1 / BLOCKED1.**
-UNAVAILABLE1 = actual SHA-pinned reference code/owner-local acquisition, no local
-binary identified. BLOCKED1 = Run registry/lifecycle mechanism, no defensible
-available relationship; exploratory route explicitly stopped. Separate scope/
-parser/whitespace/publication checks not added to fixture counts.
-Full native/Wine/portable/smoke/hooks/build/package suites not run: offline scope
-requires focused tests only; production unchanged. No unexecuted native ABI,
-gravity/contact behavior or Windows acquisition promoted to PASS.
+Reproducible method: authenticate DLL, parse .pdata, decode each recorded exact
+runtime range, use RIP targets to map label/context-slot edges and direct calls
+between recorded functions. Native current binding is not certified by any of
+these reference checks. Marker hashes in new verifier are independently derived
+from this initializer's minimal comparison constants; no binary fragments stored.
 
-## Source proof / shared knowledge / publication
+## Focused tests / exact commands / expected / actual
 
-Inspected `sdk_bridge.cpp`74–94, `wallrun_hooks.cpp`129–158, generic vendor Actor/
-Component declarations, WSU static report, accepted owner result and reference
-review Finding3/Wisdoms. Searches included
-`rg -n 'registry|Registry|HeroStateWallRun|3081DB0|resolve.*state|vtable' source/src source/include analysis/WSU_REFERENCE_REVIEW_20261031.md analysis/ENGINE_INTERNALS_REFERENCE.md`
-and `rg -n -i 'Scripted.Flight|RequestSimpleMotion|SetGravityVector|GravityOrientationOwner' analysis docs /tmp/ws-lock-wisdoms/docs`.
-Expected find transferable mechanism or exact gap; actual independent WR-AOB
-mechanism only, unknown Run name->registration/type/method edge. No proprietary
-callee capture requested. ScriptedFlight SHA/labels grounded in existing report.
+* `/workspace/toolchains/analysis-python/bin/python3 source/tools/test_verify_motion_gravity.py`
+  Expected positive recovered-relation fixture, hash/marker/opcode/target mismatch,
+  partial boundary, call outside owner runtime range, malformed PE/runtime/range/
+  caps, writable code/decoder refusal, Unicode/space and exclusive CLI output,
+  no shift override. Actual **9 PASS**, synthetic marker hashes use authored NOP
+  fixtures, not copied native bytes; no real-game result inferred.
+* `python3 source/tools/test_discover_ground_support.py`
+  Expected reused PE/hash/range/string/output helper stable; actual **18 PASS**.
+* `XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -File source/tools/windows/test_verify_motion_gravity.ps1`
+  Expected fresh2 dependencies, Japanese/space paths, collision output/dirty file/
+  EXE preserved, unavailable WSL/decoder refusal. Actual **3 PASS mock groups**,
+  Git/WSL mocked, not real Windows acceptance.
+* `git diff --check`: expected clean; actual PASS.
+* `python3 /tmp/ws-flight-scope.py`: expected only8 intended offline helper/test/
+  analysis/docs paths, task/runtime/packages preserved, links/9 identity records
+  valid, Bypass command present; actual PASS; extracts owner command for parser.
+* `XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -Command '$t=$null; $e=$null; [void][System.Management.Automation.Language.Parser]::ParseFile("/tmp/ws-flight-owner.ps1",[ref]$t,[ref]$e); if($e.Count){throw ($e|Out-String)}; "PASS verifier bootstrap syntax"'`
+  Expected owner block valid; actual PASS parser, not actual Windows acquisition.
 
-Wisdoms stopping-rule/mover-pivot update pushed
-`f426ed4191da6a9d505d22accd0f2cb9ab7171d6`; ls-remote agrees. WallSprint commit/
-independent publication recorded after commit below.
+**Focused tests PASS30 / SKIP0 / UNAVAILABLE1 / BLOCKED1.** Static/scope/parser/
+publication checks counted separately, not inflated into fixture PASS counts.
+UNAVAILABLE1 = current original EXE verification, no game EXE in cloud.
+BLOCKED1 = native callable ABI/lifetime/grounded-contact authorization; not proved
+by static reference trace or even an eventual canonical-relation match.
+Not run: runtime build/native/Wine/smoke/hooks/package/game tests, task is static/
+offline only and production untouched. Not equivalent to gameplay improvement.
 
-## NEED
+## Shared knowledge / publication / NEED
 
-ONE subprocess PowerShell block in the analysis/final handoff; return the new
-reference-motion-refs JSON, including unavailable/refusal status if generated.
-No repeated ground-name operation, Update-WS, Install mods, game launch, EXE/
-full-binary upload, forced download or production integration. The alternate
-step reads named reference packages only. No matching private file is a useful
-explicit limitation, not permission to resume the stopped Run/scalar route.
+Wisdoms direct static resolver/use/restore facts and certificate limits pushed
+`96ff78fb5691ac89610770ec466b6d802c1a263c`; ls-remote agrees. No raw reference code
+or personal paths committed. WS implementation/publication readback follows.
 
-### Verified publication
-
-Implementation `ae0fd4b046447655dbcd55acdfb535bb26a1a4b9` pushed on task branch.
-`python3 /tmp/ws-reference-publication.py`: expected independent GitHub fetch
-FETCH_HEAD/local HEAD/ls-remote agreement and exact byte readback for8 changed
-files against9ed4491; actual PASS atae0fd4b. Record-only commit follows, then same
-readback repeated. Unchanged52 focused tests need no rerun for documentation-only
-publication record; separate publication checks do not inflate fixture counts.
-Final branch/record SHA in owner handoff. No new runtime package.
+ONE runnable owner command in analysis/final: Verify-Motion-Gravity via child
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File, no global policy edit.
+Return new motion-gravity-verification JSON including mismatch/refusal. No new
+EXE slice chain, reference scan/download, EXE upload, Update-WS, Install mods or
+game launch. Original EXE read-only; source worktree/config/KIT unchanged, Git
+fetch updates refs/objects and own temporary/output files only. Matching checks
+still do not authorize gameplay integration; partial/no runtime entry explicit.
