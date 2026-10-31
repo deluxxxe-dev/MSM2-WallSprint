@@ -121,3 +121,13 @@ Install mods, game launch, reference scan/download, EXE upload or unchanged
 canonical test. All selection and relationship checks happen locally in ONE
 operation. Negative concrete method outcome means stop this reference relocation
 route, not another adjacent-byte or speculative gameplay iteration.
+
+### Verified publication
+
+Implementation `103e8c7dc46b9f43a4a2e7e0020b27ee903e2877` pushed on task branch.
+`python3 /tmp/ws-resolution-publication.py`: expected independent GitHub fetch
+FETCH_HEAD/local HEAD/ls-remote agreement plus exact bytes for8 changed files
+againstba979e1; actual PASS at103e8c7. Record-only commit follows, same readback
+repeated. No reason to rerun unchanged45 focused tests for this docs-only record;
+publication checks do not inflate fixture counts. Final branch/record SHA in
+owner handoff. No runtime release/package created.
