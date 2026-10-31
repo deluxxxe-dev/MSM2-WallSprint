@@ -1,8 +1,8 @@
-"""Package WallSprint with the preserved historical packager plus c42 active-state normalization.
+"""Package WallSprint with the preserved historical packager plus c43 active-state normalization.
 
 package_base.py is retained as the historical monolithic implementation. This wrapper
 changes only the stale active-package policy and then rewrites current-package metadata
-so v0.1c42 cannot be published as if historical native-source/orientation writes were ON.
+so v0.1c43 cannot be published as if historical native-source/orientation writes were ON.
 """
 from pathlib import Path
 import json
@@ -72,4 +72,4 @@ manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
     + "REQUEST_PRESENCE_DIAGNOSTIC=1; historical analysis retained as history only\n",
     encoding="utf-8",
 )
-print("PASS: c42 read-only automatic-capture package manifest normalized")
+print("PASS: c43 read-only automatic-capture package manifest normalized")
