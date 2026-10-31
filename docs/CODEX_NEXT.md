@@ -1,31 +1,30 @@
-# Priority — new owner update stops mid-suite with ACTIVE token descendants
-Branch codex/v01c20-edi-value-provenance; no main merge. Read AGENTS docs/current result and existing WSL ownership analyses. Previous root recovery succeeded on owner PC; do NOT repeat old EACCES-only repair task.
+# Next task — isolate downward WS motion / orientation interaction
+Branch codex/v01c20-edi-value-provenance; no main merge.
+Read AGENTS docs, analysis/R5_NUMBERED_OWNER_RUNTIME_20261031.md, r5 heading implementation analysis and current source paths. Relevant Wisdoms references only.
+Owner r5 actual game run supplied. Stop old updater/WSL diagnostics; do not repeat completed r5 general-plane implementation.
 
-## New supplied owner evidence
-Owner fresh745fcbf normal repair produced TOKEN_ABSENT(root/allUID,3 checks) and TOOLING_REPAIR_COMPLETE runtime_unchanged1.
-Subsequent Update-WS output (420 lines) ends during c48 native fixture JSON, NOT after full WSL completion/package marker.
-Final error user inspection: ACTIVE, counts access_denied2/active_build6:
-unreadable environ PIDs338,339; matching-token PIDs2411,2417,2420,2424,2431,2451; UID1000 expected/observed; Ubuntu-24.04 matches.
-Exact process identities/roles and why main runner returned UNKNOWN. Matching token proves operation association, not necessarily an active compiler; distinguish lingering Wine fixture services/test children. No final update success, no r5 owner deployment proof.
-Do not declare this only unreadable unrelated processes, ignore active matches, or repeatedly ask same repair/rebuild.
+## Objective / decision
+Fix descending WS without periodic horizontal flips. First isolate why measured motion becomes horizontal during owner down-input report. Observer cannot face requested down if sampled translation becomes horizontal; blindly forcing down or reducing thresholds is not supported.
+Current up/general-plane headings execute. Preserve existing working left/right/up and r5 timing.
+Upper diagonal weak lateral movement, direct vertical entry and RT-held stationary WS are explicit later backlog, NOT solved or silently changed here.
 
-## Concrete source issue / scope
-workspace.py WindowsSystem.build:
-p=subprocess.run(...workspace-build.sh...)
-wsl_quiet(record)
-phase(validated...)
-require(p.returncode==0,...)
-Thus quiet exception masks original build exit status. Fix reporting/order without permitting deploy on nonzero or live children. Record primary returncode and failing stage before secondary completion-check errors. Failed/nonquiet build cannot enter validated phase.
-Trace only workspace-build.sh and invoked c48/current terminal fixture/test runner plus its child cleanup. Determine original termination reason and token-bearing descendants. Add compact operation-scoped PID/PPID/start/state/executable NAME/stage diagnostics (not full private argv/env); retain exact identity validation and root read-only restrictions.
-Identify if Wine/test services inherit token and outlive harness, shell pipeline returns early, external interruption or genuine test failure. Do not assert a cause without evidence.
-Fix deterministic owned test/build child teardown and wait at responsible scope. No killall/wsl shutdown/user-wide process killing, no root build, token erasure as a bypass, arbitrary sleeps, clearing pending ownership despite active children or broad executable whitelist. If graceful bounded teardown needed, restrict to authenticated owned process identity/tree and preserve unrelated Wine/user work.
-For real native test failure, preserve assertions and fix actual failing implementation/fixture contract; no skipping tests to ship.
-Keep r5 gameplay/binary semantics unchanged; if native fixture-only changes required report scope and run affected tests.
+## Narrow code/evidence task
+Trace ONLY existing authenticated native WallRun motion/steering and A/B original source vs orientation override interaction; use current known captures and review FLAT_WALL_LATERAL_ROUTE_REVIEW if needed. Do not reopen large c-series search or repeat input inventory.
+Check whether heading/source basis participates in original movement-coordinate calculation, whether original game down steering/contact behavior naturally produces horizontal oscillation, and which existing evidence can distinguish those hypotheses. Names/static interpretation not runtime causality.
+Use supplied concrete session4 delta/target evidence; do not blame low_speed gate alone or claim accepted switches were tiny lateral noise.
+If source shows a specific reproducible pure-math/adapter defect, fix ONLY that defect in separate minimal change with targeted replay tests.
+If original motion semantics unproven, implement only necessary bounded diagnostics on ALREADY authenticated values at existing hook/caller locations: coherent full tangent displacement, current surface normal, requested/published heading, actual actor basis and native lifecycle/update/monotonic clock, plus original incoming A/B axes only if existing safe reads cover them. Original incoming axes may be prior WS output; do not treat them as independent input intent. Reuse existing logs when sufficient.
+Ensure down/diagonal/low_speed rejection samples remain observable beyond first8 hold events: bounded summaries/ring windows with explicit drops, NOT unlimited logging. Preserve no new pointers/hooks/API and no generic telemetry framework.
+If exact current-build original continuation is required but absent, report ONE precise offline capture/helper action; do not fabricate function signatures or broad scan.
 
-## Recovery / validation
-Primary original exit remains visible even when quiet also fails. Test main nonzero+remaining child, success+remaining child, owned service cleanup, unrelated service untouched, stale PID reuse, interruption, access denied/root recovery and concurrent owner exclusions.
-Use focused workspace/ownership/environment plus relevant failing fixture; full build only once corrected targeted checks pass.
-Provide ONE read-only owner diagnostic through fresh bootstrap if exact PID roles/last build exit cannot be inferred. It must work with old checker pending ACTIVE record; no full rebuild to gather that.
-Existing validated artifacts cannot be assumed present (this run ends mid-suite). Do not ask manual script copying or claim deployment.
-Allowed minimum tooling/tests/analysis/manual/PROJECT_STATE/CODEX_RESULT. No WS movement/facing change, SF/profile/loaders/ordinary mods, broad process framework.
-Commit/push verify and give exact recovery/bootstrap action, distinguishing source update vs owner installed KIT. Reply STATUS/CHANGED/RESULT/NEED.
+## Strict change boundaries
+No arbitrary Position/velocity/gravity/input/animation writes; no forcing target down from unmeasured stick, screen axes or sign heuristics; no native Deinit suppression.
+No threshold/count/interval/duration changes as an unsubstantiated fix. Speed2/33ms/two samples/120ms/12deg/8deg stay unless a specific verified bug mandates change and explained.
+No simultaneous descending-speed/animation-playback/diagonal-gain/idle/camera/contact overhaul.
+Existing owner/build/lifetime/stale/A-B proper basis/4096/C52 gates remain. No SF/shared tools/profile/DLL mutation.
+Allowed minimum source/math fix IF evidenced, or scoped diagnostics; analysis/PROJECT_STATE/CODEX_RESULT and corresponding tests/version/package only if runtime bytes change.
+
+## Completion
+One causal explanation limited to established evidence, actual minimal patch or exact remaining missing fact. Synthetic fixture tests must not substitute for native game ownership proof.
+Run appropriate existing required checks for actual diff; no full native suite for docs-only. Runtime patch uses standard build/focused/portable/smoke/native/hooks/release validation and exact version/log naming.
+Commit/push verify; report STATUS/CHANGED/RESULT/NEED only. Chat supplies numbered owner comparison test after implementation. No request to repeat unchanged test now.
