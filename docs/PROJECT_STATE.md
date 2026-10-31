@@ -1,5 +1,20 @@
 # WallSprint project state
 
+## Current handoff — shared successor mode ready, complete77 accepted
+
+Local AL relation !P||(C&&R) and reachable R9B definition verified against authentic
+prefix. Gate preserves EDX but alternate prefix only clears DL; no bool return/API/
+field meaning.77 is complete scalar gating, do not recapture/research motion there.
+No successor bytes locally: existing helper's --shared-successor fixes0x14246d6/
+max128 with prefix/runtime/unwind/file identity, coherent first-control window,
+no recursive following. New successor JSON name preserves old outputs/source/KIT.
+Focused17+PS mock2+static verification pass; actual owner acquisition UNAVAILABLE.
+ONE exact fresh-bootstrap in CODEX_RESULT; no game/update/build/version change.
+After this local consumer task stop scalar traversal; separately authorized A/B
+source-override comparison is the supported alternative, not a current game test.
+See analysis/WALLRUN_SHARED_SUCCESSOR_REVIEW.md. Native cause remains UNKNOWN.
+
+
 ## Current owner result — complete77 captured, scalar gate established
 
 Owner fragment77 capture verified77bytes/17instructions/SHA and prior41 consistency. See analysis/WALLRUN_FRAGMENT77_OWNER_RESULT_20261031.md. Tail sets AL predicate and clears stack byte, preserves EDX; shared next0x14246d6 still missing. No movement/input API or descending cause proven. Current CODEX_NEXT verifies predicate/provenance and local successor consumer, using existing capture first or one bounded offline window if necessary. Do not repeat77, rebuild r6 or request unchanged game test.

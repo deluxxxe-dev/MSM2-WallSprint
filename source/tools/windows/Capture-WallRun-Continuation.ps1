@@ -24,8 +24,8 @@ try {
         [IO.File]::WriteAllText((Join-Path $temp $name), ($body -join "`n"), (New-Object Text.UTF8Encoding($false)))
     }
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-    $output = Join-Path $logs ("MSM2-WS-wallrun-fragment77-$stamp.json")
-    for ($i=1; (Test-Path -LiteralPath $output) -and $i -le 99; $i++) { $output = Join-Path $logs ("MSM2-WS-wallrun-fragment77-$stamp-{0:D2}.json" -f $i) }
+    $output = Join-Path $logs ("MSM2-WS-wallrun-successor-$stamp.json")
+    for ($i=1; (Test-Path -LiteralPath $output) -and $i -le 99; $i++) { $output = Join-Path $logs ("MSM2-WS-wallrun-successor-$stamp-{0:D2}.json" -f $i) }
     if (Test-Path -LiteralPath $output) { throw 'Output collision cap reached' }
     $converted = @()
     foreach ($path in @((Join-Path $temp 'capture_wallrun_continuation.py'),$exe,$output)) {
@@ -33,7 +33,7 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'WSL path conversion unavailable' }
         $converted += $value
     }
-    & wsl.exe --exec /workspace/toolchains/analysis-python/bin/python3 $converted[0] $converted[1] --output $converted[2] --complete-fragment
+    & wsl.exe --exec /workspace/toolchains/analysis-python/bin/python3 $converted[0] $converted[1] --output $converted[2] --shared-successor
     if ($LASTEXITCODE -ne 0) { throw "Offline capture refused/unavailable; return small JSON if generated: $output" }
     Write-Host "Return this small JSON only: $output"
     Write-Host 'Source worktree, runtime, installed KIT and game unchanged; no build/deploy/game launch.'
