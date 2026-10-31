@@ -50,8 +50,8 @@ class RunnerTests(unittest.TestCase):
         result = json.loads(output.read_text())
         self.assertEqual(result['native_result'], 'UNAVAILABLE')
         self.assertEqual(result['fail'], 0)
-        self.assertEqual(result['diagnostic_revision'], 2)
-        self.assertEqual(len(result['stackwalk_diagnostics']), 220)
+        self.assertEqual(result['diagnostic_revision'], 3)
+        self.assertEqual(len(result['stackwalk_diagnostics']), 110)
         self.assertTrue(all(not p.exists() for p in staged))
         self.assertEqual(self.git('status', '--porcelain'), b'')
 
@@ -63,7 +63,7 @@ class RunnerTests(unittest.TestCase):
         for assertion in report['assertions']:
             if assertion['name'].endswith(' StackWalk64 caller'):
                 assertion['pass'] = False
-        report['pass'], report['fail'] = 146, 55
+        report['pass'], report['fail'] = sum(x['pass'] for x in report['assertions']), 55
         def failed_launch(args, **kwargs):
             Path(args[1]).write_text(json.dumps(report))
             return subprocess.CompletedProcess(args, 1, stdout=b'', stderr=b'')
@@ -73,7 +73,7 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(len(outputs), 1)
         retained = json.loads(outputs[0].read_text())
         self.assertEqual(retained['native_result'], 'FAIL')
-        self.assertEqual((retained['pass'], retained['fail']), (146, 55))
+        self.assertEqual((retained['pass'], retained['fail']), (150, 55))
         self.assertFalse(retained['production_admitted'])
 
     def test_hash_mismatch_refuses_execution(self):

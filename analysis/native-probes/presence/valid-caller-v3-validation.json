@@ -1,0 +1,86 @@
+{
+  "schema": "WS-owned-valid-caller-correction-v3",
+  "correction": "CORRECTED_PRIMARY_VALID_CALL_RETURN",
+  "production_admitted": false,
+  "supplied_native_v2": {
+    "primary_invalid_entry": {
+      "pass": 146,
+      "fail": 55
+    },
+    "genuine_call_return": {
+      "pass": 55,
+      "fail": 0
+    },
+    "entry_sentinel_frame_pc_delta": -1,
+    "sp_exact": true,
+    "source_commit": "e402c7c3135fe6c7ce3520866e3fc4df4b4ac1f1"
+  },
+  "current_native_binary": "UNAVAILABLE",
+  "diagnostic_unittest_pass": 4,
+  "runner_unittest_pass": 6,
+  "fixed": {
+    "environment": "Wine",
+    "pass": 205,
+    "fail": 0,
+    "variants": {
+      "primary_valid_call_return": {
+        "total": 55,
+        "predicate_true": 55
+      },
+      "invalid_function_entry_sentinel_diagnostic": {
+        "total": 55,
+        "predicate_true": 55
+      }
+    },
+    "failures": []
+  },
+  "legacy": {
+    "environment": "Wine",
+    "pass": 173,
+    "fail": 32,
+    "variants": {
+      "primary_valid_call_return": {
+        "total": 55,
+        "predicate_true": 39
+      },
+      "invalid_function_entry_sentinel_diagnostic": {
+        "total": 55,
+        "predicate_true": 39
+      }
+    },
+    "failures": [
+      "observer restore 0 step1 StackWalk64 caller",
+      "observer restore 0 step1 VirtualUnwind stack/nonvolatiles",
+      "observer restore 0 step2 StackWalk64 caller",
+      "observer restore 0 step2 VirtualUnwind stack/nonvolatiles",
+      "observer restore 0 step3 StackWalk64 caller",
+      "observer restore 0 step3 VirtualUnwind stack/nonvolatiles",
+      "observer restore 0 step4 StackWalk64 caller",
+      "observer restore 0 step4 VirtualUnwind stack/nonvolatiles",
+      "observer restore 0 step5 StackWalk64 caller",
+      "observer restore 0 step5 VirtualUnwind stack/nonvolatiles",
+      "observer restore 0 step6 StackWalk64 caller",
+      "observer restore 0 step6 VirtualUnwind stack/nonvolatiles",
+      "observer restore 0 step7 StackWalk64 caller",
+      "observer restore 0 step7 VirtualUnwind stack/nonvolatiles",
+      "observer restore 0 step8 StackWalk64 caller",
+      "observer restore 0 step8 VirtualUnwind stack/nonvolatiles",
+      "observer restore 1 step1 StackWalk64 caller",
+      "observer restore 1 step1 VirtualUnwind stack/nonvolatiles",
+      "observer restore 1 step2 StackWalk64 caller",
+      "observer restore 1 step2 VirtualUnwind stack/nonvolatiles",
+      "observer restore 1 step3 StackWalk64 caller",
+      "observer restore 1 step3 VirtualUnwind stack/nonvolatiles",
+      "observer restore 1 step4 StackWalk64 caller",
+      "observer restore 1 step4 VirtualUnwind stack/nonvolatiles",
+      "observer restore 1 step5 StackWalk64 caller",
+      "observer restore 1 step5 VirtualUnwind stack/nonvolatiles",
+      "observer restore 1 step6 StackWalk64 caller",
+      "observer restore 1 step6 VirtualUnwind stack/nonvolatiles",
+      "observer restore 1 step7 StackWalk64 caller",
+      "observer restore 1 step7 VirtualUnwind stack/nonvolatiles",
+      "observer restore 1 step8 StackWalk64 caller",
+      "observer restore 1 step8 VirtualUnwind stack/nonvolatiles"
+    ]
+  }
+}

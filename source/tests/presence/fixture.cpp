@@ -17,6 +17,7 @@ extern "C" {
 alignas(32) float ws_test_vector_input[128],ws_test_vectors[128],ws_test_returns[128];
 uint64_t ws_test_gprs[11],ws_test_result,ws_test_return_gprs[11],ws_test_nonvolatile[8];
 void presence_unwind_return();
+uint64_t presence_unwind_caller();
 void ws_test_probe_target(); void presence_race_target();
 void ws_test_invoke_probe(void*); void presence_request(); void presence_gravity();
 void presence_observer_request(); void presence_observer_gravity();
@@ -136,27 +137,25 @@ void unwind(void* pc,unsigned frame,bool saved,bool pushed,const char* name,bool
  alignas(16) uint64_t stack[512]{}; auto entry=reinterpret_cast<uint64_t>(&stack[384]);
  // x64 entry stack must be 8 mod16.
  entry+=8;
- const uint64_t ret=reinterpret_cast<uint64_t>(&ws_test_invoke_probe);
+ const uint64_t ret=reinterpret_cast<uint64_t>(&presence_unwind_return);
  *reinterpret_cast<uint64_t*>(entry)=ret;
+ // Caller allocated40 bytes before CALL: caller RSP=entry+8; its outer
+ // return slot is entry+48. Zero terminates further synthetic walking.
+ *reinterpret_cast<uint64_t*>(entry+48)=0;
  *reinterpret_cast<uint64_t*>(entry+8)=0x1111;
  *reinterpret_cast<uint64_t*>(entry+16)=gravity?0x3333:0x2222;
  *reinterpret_cast<uint64_t*>(entry+24)=0x3333;
  *reinterpret_cast<uint64_t*>(entry-8)=0x4444;
  CONTEXT c{};c.ContextFlags=CONTEXT_FULL;c.Rip=reinterpret_cast<uint64_t>(pc);c.Rsp=entry-frame;
  c.Rbx=saved?0xdead:0x1111;c.Rbp=saved&&!gravity?0xbeef:0x2222;c.Rsi=saved?0xfeed:0x3333;c.Rdi=pushed?0xaaaa:0x4444;
- auto primary=walk(c,c.Rsp,ret,entry+8,reinterpret_cast<uint64_t>(stack),reinterpret_cast<uint64_t>(stack+512),name,"baseline_zero_context_frame_rsp");
+ // Corrected primary is exactly the v2 native55/55 genuine-return path.
+ auto primary=walk(c,c.Rsp,ret,entry+8,reinterpret_cast<uint64_t>(stack),reinterpret_cast<uint64_t>(stack+512),name,"primary_valid_call_return");
  bool reached=primary.reached;walks.push_back(primary);
- // Diagnostic comparisons only: never replace or OR-away primary predicate.
- CONTEXT captured{};RtlCaptureContext(&captured);
- captured.ContextFlags=CONTEXT_FULL;captured.Rip=c.Rip;captured.Rsp=c.Rsp;
- captured.Rbx=c.Rbx;captured.Rbp=c.Rbp;captured.Rsi=c.Rsi;captured.Rdi=c.Rdi;
- walks.push_back(walk(captured,captured.Rsp,ret,entry+8,reinterpret_cast<uint64_t>(stack),reinterpret_cast<uint64_t>(stack+512),name,"captured_context_frame_rsp"));
- walks.push_back(walk(captured,captured.Rbp,ret,entry+8,reinterpret_cast<uint64_t>(stack),reinterpret_cast<uint64_t>(stack+512),name,"captured_context_frame_rbp"));
- // Old oracle points at a function ENTRY, not an actual call return address.
- // Isolate this variable without changing the original required assertion.
- auto genuineReturn=reinterpret_cast<uint64_t>(&presence_unwind_return);
- *reinterpret_cast<uint64_t*>(entry)=genuineReturn;
- walks.push_back(walk(c,c.Rsp,genuineReturn,entry+8,reinterpret_cast<uint64_t>(stack),reinterpret_cast<uint64_t>(stack+512),name,"baseline_context_genuine_call_return"));
+ // Preserve the old invalid sentinel only as a separately labeled diagnostic.
+ // Its failure/success cannot change the strict valid-caller assertion.
+ auto invalidEntry=reinterpret_cast<uint64_t>(&ws_test_invoke_probe);
+ *reinterpret_cast<uint64_t*>(entry)=invalidEntry;
+ walks.push_back(walk(c,c.Rsp,invalidEntry,entry+8,reinterpret_cast<uint64_t>(stack),reinterpret_cast<uint64_t>(stack+512),name,"invalid_function_entry_sentinel_diagnostic"));
  *reinterpret_cast<uint64_t*>(entry)=ret;
  check(reached,std::string(name)+" StackWalk64 caller");
  // Table-backed frames additionally verify register restoration with VirtualUnwind.
@@ -173,6 +172,20 @@ int wmain(int argc,wchar_t** argv){
  if(!__builtin_cpu_supports("avx")){std::fprintf(stderr,"UNAVAILABLE AVX/OSXSAVE required\n");return 2;}
  try {
  must(SymInitialize(GetCurrentProcess(),nullptr,TRUE)!=FALSE,"DbgHelp initialize");
+ // Validate that the sentinel is a real return PC inside the owned caller,
+ // not merely a nominal symbol. Exercise that actual CALL/return as a control.
+ DWORD64 callerBase=0;auto callerReturn=reinterpret_cast<unsigned char*>(&presence_unwind_return);
+ auto callerFn=RtlLookupFunctionEntry(reinterpret_cast<DWORD64>(callerReturn),&callerBase,nullptr);
+ must(callerFn&&callerBase+callerFn->BeginAddress==reinterpret_cast<DWORD64>(&presence_unwind_caller)&&callerBase+callerFn->EndAddress>reinterpret_cast<DWORD64>(callerReturn),"valid caller return inside exact owned runtime-function range");
+ // Use the runtime-table address, avoiding C++ object arithmetic across
+ // separately declared assembly labels (which the optimizer may treat as distinct functions).
+ auto callSite=reinterpret_cast<unsigned char*>(callerBase+callerFn->BeginAddress+4);
+ int32_t callDisplacement=0;memcpy(&callDisplacement,callSite+1,4);
+ must(callSite[0]==0xe8&&reinterpret_cast<uint64_t>(callSite)+5==reinterpret_cast<uint64_t>(callerReturn)&&reinterpret_cast<uint64_t>(callerReturn)+callDisplacement==reinterpret_cast<uint64_t>(&presence_race_target),"valid caller actual direct CALL ends exactly at return label");
+ auto callerUnwind=reinterpret_cast<const unsigned char*>(callerBase+callerFn->UnwindData);
+ must(callerUnwind[0]==1&&callerUnwind[1]==4&&callerUnwind[2]==1&&callerUnwind[3]==0&&callerUnwind[4]==4&&callerUnwind[5]==0x42,"valid caller unwind describes real40byte allocation");
+ LONG beforeCaller=presence_forwarded;
+ must(presence_unwind_caller()==0x77aabbcc11223344ull&&presence_forwarded==beforeCaller+1,"valid caller executes actual CALL return exactly once");
  for(unsigned i=0;i<128;i++)ws_test_vector_input[i]=static_cast<float>(i*3+1);
  void* targets[]={reinterpret_cast<void*>(&presence_request),reinterpret_cast<void*>(&presence_gravity)};
  void* observers[]={reinterpret_cast<void*>(&presence_observer_request),reinterpret_cast<void*>(&presence_observer_gravity)};
@@ -250,6 +263,6 @@ int wmain(int argc,wchar_t** argv){
  FILE* out=argc>1?_wfopen(argv[1],L"wb"):nullptr;
  if(out){std::fprintf(out,"{\n\"schema\":\"WS-owned-presence-fixture-v1\",\"environment\":\"%s\",\"production_admitted\":false,\"pass\":%u,\"fail\":%u,\"native_windows_unavailable\":%u,\"assertions\":[",wine?"Wine":"native Windows",pass,fail,wine?1:0);for(size_t i=0;i<results.size();i++)std::fprintf(out,"%s{\"name\":\"%s\",\"pass\":%s}",i?",":"",results[i].name.c_str(),results[i].pass?"true":"false");std::fputs("]",out);writeWalks(out);writeDbgHelpVersion(out);
  API_VERSION requested{API_VERSION_NUMBER,0,0,0},version{};auto actual=ImagehlpApiVersionEx(&requested);if(actual)version=*actual;
- std::fprintf(out,",\"dbghelp_api\":{\"major\":%u,\"minor\":%u,\"revision\":%u},\"diagnostic_revision\":2}\n",version.MajorVersion,version.MinorVersion,version.Revision);std::fclose(out);}else{std::fprintf(stderr,"output JSON path required/writable\n");return 2;}
+ std::fprintf(out,",\"dbghelp_api\":{\"major\":%u,\"minor\":%u,\"revision\":%u},\"diagnostic_revision\":3}\n",version.MajorVersion,version.MinorVersion,version.Revision);std::fclose(out);}else{std::fprintf(stderr,"output JSON path required/writable\n");return 2;}
  std::printf("SUMMARY environment=%s PASS=%u FAIL=%u native-Windows-UNAVAILABLE=%u production_admitted=false\n",wine?"Wine":"native Windows",pass,fail,wine?1:0);return fail?1:0;
 }

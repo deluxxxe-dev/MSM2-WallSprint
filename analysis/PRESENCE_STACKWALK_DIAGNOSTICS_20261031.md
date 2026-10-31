@@ -1,3 +1,7 @@
+> Superseded by supplied native v2 genuine-return55/55 result and revision3 correction.
+> See PRESENCE_WINDOWS_V2_ORACLE_RESULT_20261031.md and
+> PRESENCE_VALID_CALLER_CORRECTION_20261031.md. This file preserves revision2 history.
+
 # Owned StackWalk64 native failure investigation — diagnostic revision2
 
 ## Result

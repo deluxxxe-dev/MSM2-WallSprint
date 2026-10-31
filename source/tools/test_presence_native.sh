@@ -25,7 +25,8 @@ import json,sys
 r=json.load(open(sys.argv[1]));mode=sys.argv[2];rc=int(sys.argv[3])
 if mode=='legacy-counterexample':
     failed=[x['name'] for x in r['assertions'] if not x['pass']]
-    assert rc==1 and len(failed)==32 and all(x.startswith('observer restore ') for x in failed), (rc,failed)
+    expected={f'observer restore {site} step{step} {api}' for site in range(2) for step in range(1,9) for api in ['StackWalk64 caller','VirtualUnwind stack/nonvolatiles']}
+    assert rc==1 and set(failed)==expected and len(failed)==32, (rc,failed)
     print('PASS: retained legacy unwind counterexample: exactly32 restore assertions fail')
 else:
     assert rc==0 and r['fail']==0,r

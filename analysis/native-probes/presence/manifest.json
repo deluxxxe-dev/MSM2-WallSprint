@@ -1,22 +1,22 @@
 {
   "schema": "WS-owned-presence-artifact-v1",
   "artifact": "presence-owned.exe",
-  "size": 1548946,
-  "sha256": "c6fc4fff0473c76bf353cbbaa3df40e66d076920871cb05bb7b03e08289e8850",
+  "size": 1534133,
+  "sha256": "8d529dada651c1b4c7b1aa4ffc97b3c97896a3cfaa1c534a728679278220ab08",
   "production_admitted": false,
   "runtime_version_unchanged": "v0.1c38r7/package0.1.63",
   "toolchain": "x86_64-w64-mingw32-g++-posix GCC14-posix; static C++/GCC runtime; system DbgHelp/Kernel32/MSVCRT/Version imports",
   "source_sha256": {
     "source/tests/presence/fixture.S": "e5ea5fa2a275fd92b8849d5df25b51b13d90c0ab8e58d61a8030debd1eb3b433",
-    "source/tests/presence/fixture.cpp": "87adf5f9eb597d18a772aa032b251f9ef45ed1ab0589d6a66b6eb874b2035a7f",
+    "source/tests/presence/fixture.cpp": "c8b06211d7a81d35ac45e0d9a7b5836fa7957d8dea5f244f46b22dbb9a4714da",
     "source/src/msm2/hook_probe_test.S": "cc3dcf9af091f064b42adb12a359f910c9002910740a21bd212a8080431e5c43",
-    "source/tools/test_presence_native.sh": "dedcaf2440dec2c316b2fd120bc589f771360b6b38fc4d4e27d135c6101790b2",
+    "source/tools/test_presence_native.sh": "bf48e697437b0adf3f4d5b652bc046c79c0cf2b4f928027a7cdb87f21ec73e16",
     "source/vendor/minhook/src/buffer.c": "0ab484d7870c3a8e7a3a1ee61e2070072cf445ed85b619d4c4207fed34356d99",
     "source/vendor/minhook/src/hook.c": "edcce4c81985d7dd5b73feae96d6498c8f749b1bca4c3d2d9926ea9a17a84755",
     "source/vendor/minhook/src/trampoline.c": "f13a169f803ff5a8e45c58ce668b4377a9878c0fc4452369b8a1325065186b2b",
     "source/vendor/minhook/src/hde/hde64.c": "824eafa315322e6da105a7ce4ec1fc0e0adeee0106d32152fbb0b59e709bd15c"
   },
-  "diagnostic_revision": 2,
-  "predecessor_sha256": "885cb79fb9e6fc0b4d9e7a8957c30f5679a07ede4bfe6dabf271598e3baa1d5e",
-  "windows_evidence": "predecessor native146PASS/55FAIL; instrumented revision2 not run on native Windows"
+  "diagnostic_revision": 3,
+  "predecessor_sha256": "c6fc4fff0473c76bf353cbbaa3df40e66d076920871cb05bb7b03e08289e8850",
+  "windows_evidence": "Supplied native v2 genuine-CALL-return path55/55 PASS; corrected v3 full binary not native-tested; production=false"
 }

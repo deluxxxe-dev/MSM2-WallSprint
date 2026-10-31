@@ -12,18 +12,18 @@ class DiagnosticsTests(unittest.TestCase):
         cls.fixed = json.loads((BUILD / 'presence-owned-fixed/result.json').read_text())
         cls.legacy = json.loads((BUILD / 'presence-owned-legacy-counterexample/result.json').read_text())
 
-    def test_all_55_primary_checks_and_four_independent_variants(self):
+    def test_all_55_primary_checks_and_valid_primary_and_invalid_diagnostic(self):
         for report in (self.fixed, self.legacy):
             traces = report['stackwalk_diagnostics']
-            self.assertEqual(len(traces), 220)
+            self.assertEqual(len(traces), 110)
             assertions = {x['name']: x['pass'] for x in report['assertions'] if x['name'].endswith(' StackWalk64 caller')}
             self.assertEqual(len(assertions), 55)
-            primary = [x for x in traces if x['variant'] == 'baseline_zero_context_frame_rsp']
+            primary = [x for x in traces if x['variant'] == 'primary_valid_call_return']
             self.assertEqual(len(primary), 55)
             for trace in primary:
                 self.assertEqual(assertions[trace['sample'] + ' StackWalk64 caller'], trace['predicate_pass'])
                 variants = {x['variant'] for x in traces if x['sample'] == trace['sample']}
-                self.assertEqual(variants, {'baseline_zero_context_frame_rsp', 'captured_context_frame_rsp', 'captured_context_frame_rbp', 'baseline_context_genuine_call_return'})
+                self.assertEqual(variants, {'primary_valid_call_return', 'invalid_function_entry_sentinel_diagnostic'})
 
     def test_unhooked_controls_run_before_minhook(self):
         names = [x['name'] for x in self.fixed['assertions']]
@@ -35,7 +35,7 @@ class DiagnosticsTests(unittest.TestCase):
 
     def test_bounded_step_callback_metadata_and_backing_stack(self):
         for report in (self.fixed, self.legacy):
-            self.assertEqual(report['diagnostic_revision'], 2)
+            self.assertEqual(report['diagnostic_revision'], 3)
             self.assertIn('known', report['dbghelp_file_version'])
             self.assertIn('revision', report['dbghelp_api'])
             for trace in report['stackwalk_diagnostics']:
@@ -55,15 +55,20 @@ class DiagnosticsTests(unittest.TestCase):
                     self.assertIn(event['kind'], (1, 2))
 
     def test_independent_virtual_unwind_and_legacy_failure_preserved(self):
-        self.assertEqual((self.fixed['pass'], self.fixed['fail']), (201, 0))
+        self.assertEqual((self.fixed['pass'], self.fixed['fail']), (205, 0))
         failed = [x['name'] for x in self.legacy['assertions'] if not x['pass']]
         self.assertEqual(len(failed), 32)
-        self.assertTrue(all(x.startswith('observer restore ') for x in failed))
+        expected = {f'observer restore {site} step{step} {api}' for site in range(2) for step in range(1, 9) for api in ['StackWalk64 caller', 'VirtualUnwind stack/nonvolatiles']}
+        self.assertEqual(set(failed), expected)
         for report in (self.fixed, self.legacy):
             self.assertFalse(report['production_admitted'])
             virtual = report['virtual_unwind_diagnostics']
             self.assertEqual(len(virtual), 55)
             self.assertEqual(sum(x['available'] for x in virtual), 48)
+        for report in (self.fixed, self.legacy):
+            primary = {x['sample']: x for x in report['stackwalk_diagnostics'] if x['variant'] == 'primary_valid_call_return'}
+            for direct in report['virtual_unwind_diagnostics']:
+                self.assertEqual((direct['expected_pc'], direct['expected_sp']), (primary[direct['sample']]['expected_pc'], primary[direct['sample']]['expected_sp']))
         self.assertTrue(all(x['pc'] == x['expected_pc'] and x['sp'] == x['expected_sp'] for x in self.fixed['virtual_unwind_diagnostics'] if x['available']))
 
 

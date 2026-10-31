@@ -1,3 +1,33 @@
+# Current revision3 — CORRECTED valid CALL-return primary
+
+Native v2 supplied genuine-CALL-return55/55 PASS while invalid-entry primary failed55
+(PC=expected-1, exact SP). Revision3 now uses that proven valid setup as PRIMARY
+for both StackWalk and VirtualUnwind, retaining exact expected PC/SP/nonvolatiles.
+This is a correction, not another context instrumentation loop. No ±1 tolerance,
+OR, skipped assertion or production admission. Four new prerequisites verify
+actual CALL bytes/target/end, caller RUNTIME_FUNCTION/unwind and real execution.
+
+Fixed205 Wine PASS; legacy173 PASS/32 expected failures under VALID caller. Exact
+failure set:2 sites*8 restore positions*2 APIs, unchanged. Two traces/sample now:
+primary_valid_call_return and invalid_function_entry_sentinel_diagnostic (110).
+Invalid diagnostic success/failure cannot alter valid-primary result. Direct API
+and primary use same return slot/expected PC/SP. Caller frameE+8..E+47,outer return
+slotE+48=0; no fictitious nominal return symbol. See
+analysis/PRESENCE_VALID_CALLER_CORRECTION_20261031.md and CODEX_RESULT.
+
+Run same focused commands below; diagnostic unittest remains4 methods, runner6.
+Current EXE/manifest are revision3, exact source hashes; manifest-v2.json archives
+previous c6fc4fff... binary identity (binary preserved in Git e402c7c). v1/v2 Wine
+JSONs and validation summaries remain historical. New summary:
+valid-caller-v3-validation.json. New binary native acceptance remains UNAVAILABLE;
+supplied v2 equivalent path55/55 is positive native evidence but not all-v3 PASS.
+ONE corrected acceptance invocation, no game/build/deploy/Update-WS; return JSON
+with diagnostic_revision3. production_admitted=false. Current runtime unchanged.
+
+---
+
+Historical revision2 specification follows; its permutations/counts are not v3:
+
 # Current revision2 — native StackWalk failure instrumentation
 
 Predecessor native Windows result is **146 PASS/55 FAIL**, including unhooked

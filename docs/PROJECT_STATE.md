@@ -1,3 +1,20 @@
+# Current valid caller CORRECTION — revision3 — 2026-10-31
+
+Supplied Windows v2 proves genuine CALL-return55/55 PASS; invalid entry sentinel
+fails55 with returned frame PC=expected-1 and correct SP. Captured context/RBP
+changes alone do not fix it. Corrected primary now uses SAME genuine return setup
+for both StackWalk and VirtualUnwind, with exact PC/SP/nonvolatile conditions.
+No ±1 tolerance, OR alternatives or removed assertions. Four new prerequisites
+validate real CALL bytes/target/end, containing runtime-function metadata,
+40byte allocation and actual CALL/return execution. Invalid entry case remains
+separate diagnostic; no more context permutations.205 Wine PASS; corrected legacy
+still rejects exact32 restore checks (16 per API), diagnostic4/runner6 tests PASS.
+Supplied native55/55 certifies equivalent v2 path, not newly built v3 full binary.
+ONE corrected native acceptance invocation in CODEX_RESULT; no game/Update-WS.
+Production remains false/unintegrated, r7/package0.1.63 unchanged. No shared/SF/C52/
+slot/gameplay change. See analysis/PRESENCE_VALID_CALLER_CORRECTION_20261031.md.
+Prior investigation/instrumentation entries below are historical.
+
 # Current native StackWalk investigation — 2026-10-31 — FAIL CLOSED
 
 Owner native predecessor146 PASS/55 FAIL is accepted. All55 StackWalk caller
