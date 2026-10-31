@@ -3,7 +3,14 @@
 2026-10-31; branch `codex/v01c20-edi-value-provenance`.
 Baseline `3ea14b28cdd7bddb0f41ccd6659e48bc5d8a6a16`, fetched/current.
 No main merge; five pre-existing untracked archives/bundle preserved.
-Implementation commit/publication: recorded after implementation push below.
+Implementation commit `e082819a4c477c13ea6b36156b78a0242f25a304`.
+Pushed to canonical GitHub branch; independent checkout fetch, exact FETCH_HEAD,
+ls-remote and byte-for-byte readback of all16 changed file blobs PASS using
+`python3 /tmp/ws-presence-publication.py` (baseline3ea14b2, no game data).
+This final publication record is a subsequent documentation-only commit.
+Wisdoms full SHA `80a554c864f2679f1515d48032de624e3910a333` independently
+confirmed via canonical ls-remote. Final WS record-commit SHA is reported in chat;
+implementation and all artifact blobs are ancestors of that published head.
 
 ## STATUS
 
