@@ -12,6 +12,7 @@
 #include "msm2/sdk_bridge.hpp"
 #include "msm2/orientation_log.hpp"
 #include "msm2/wallrun_hooks.hpp"
+#include "msm2/request_presence.hpp"
 #include "version.hpp"
 #include "GameInterop/log_file.hpp"
 #include "msm2/actor_writer.hpp"
@@ -63,7 +64,7 @@ bool buildIdentity(){
 }
 bool foreground(){DWORD pid=0;GetWindowThreadProcessId(GetForegroundWindow(),&pid);return pid==GetCurrentProcessId();}
 bool pressed(int key,bool& wasDown){bool down=foreground()&&(GetAsyncKeyState(key)&0x8000);bool edge=down&&!wasDown;wasDown=down;return edge;}
-struct Settings {bool orientation{},audit=true,surface{};unsigned interval=100;msm2::hooks::Options hooks;ws::planar::Config planar;msm2::trace::Config trace;msm2::input::Config input;msm2::native_source::Config source;};
+struct Settings {bool orientation{},audit=true,surface{};unsigned interval=100;msm2::hooks::Options hooks;msm2::request_presence::Config presence;ws::planar::Config planar;msm2::trace::Config trace;msm2::input::Config input;msm2::native_source::Config source;};
 Settings settings(){
  wchar_t modulePath[32768]{};DWORD length=GetModuleFileNameW(instance,modulePath,32768);
  std::wstring path=directory(length?std::wstring(modulePath,length):executablePath())+L"\\WallSprint.ini";
@@ -95,9 +96,10 @@ Settings settings(){
  const wchar_t* names[]={L"HOOK_WALLRUN_INIT",L"HOOK_WALLRUN_ENTRY",L"HOOK_WALLRUN_UPDATE",L"HOOK_WALLRUN_DEINIT"};
  for(unsigned i=0;i<4;++i)result.hooks.individual[i]=GetPrivateProfileIntW(L"Diagnostics",names[i],1,path.c_str())==1;
  result.hooks.objectDiagnostic=GetPrivateProfileIntW(L"Diagnostics",L"WALLRUN_OBJECT_DIAGNOSTIC",1,path.c_str())==1;
+ result.presence.enabled=GetPrivateProfileIntW(L"Diagnostics",L"REQUEST_PRESENCE_DIAGNOSTIC",0,path.c_str())==1;
  result.surface=GetPrivateProfileIntW(L"Diagnostics",L"SURFACE_PROBE_DIAGNOSTIC",0,path.c_str())==1;
  result.interval=std::clamp(GetPrivateProfileIntW(L"Diagnostics",L"ORIENTATION_INTERVAL_MS",100,path.c_str()),50u,5000u);
- msm2::writeLog("config=%ls ORIENTATION_DIAGNOSTIC=%u interval_ms=%u REFERENCE_AOB_AUDIT=%u",path.c_str(),unsigned(result.orientation),result.interval,unsigned(result.audit));
+ msm2::writeLog("config=%ls ORIENTATION_DIAGNOSTIC=%u interval_ms=%u REFERENCE_AOB_AUDIT=%u REQUEST_PRESENCE_DIAGNOSTIC=%u",path.c_str(),unsigned(result.orientation),result.interval,unsigned(result.audit),unsigned(result.presence.enabled));
  return result;
 }
 unsigned markerEvents(ws::diag::MarkerKeys& keys){
@@ -112,6 +114,7 @@ void run(){
  msm2::writer::configure(config.planar,targetConfirmed&&ready);
  msm2::hooks::start(targetConfirmed,config.hooks);
  auto image=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));IMAGE_DOS_HEADER traceDos{};IMAGE_NT_HEADERS64 traceNt{};bool traceImage=msm2::readMemory(image,&traceDos,sizeof(traceDos))&&traceDos.e_magic==IMAGE_DOS_SIGNATURE&&traceDos.e_lfanew>0&&traceDos.e_lfanew<0x100000&&msm2::readMemory(image+traceDos.e_lfanew,&traceNt,sizeof(traceNt))&&traceNt.Signature==IMAGE_NT_SIGNATURE;
+ msm2::request_presence::start(targetConfirmed,config.presence,image,traceImage?traceNt.OptionalHeader.SizeOfImage:0);
  msm2::trace::configure(config.trace,targetConfirmed&&ready&&traceImage&&msm2::hooks::observationPlanAuthenticated(),image,traceImage?traceNt.OptionalHeader.SizeOfImage:0);
  msm2::input::configure(config.input,targetConfirmed&&ready&&traceImage&&msm2::hooks::observationPlanAuthenticated(),image,traceImage?traceNt.OptionalHeader.SizeOfImage:0);
  msm2::reset_copy::configure(targetConfirmed&&ready&&msm2::input::authenticated()&&msm2::hooks::observationPlanAuthenticated(),image,traceImage?traceNt.OptionalHeader.SizeOfImage:0);
@@ -124,12 +127,15 @@ void run(){
  msm2::writeLog("capabilities position=template rotation=row_axes_validated_with_sanity_check velocity=position_difference automatic_wallrun=complete_hook_set_guarded contact=unavailable");
  msm2::writeLog("WallCrawl=Unknown Ground=Unknown Air=Unknown; WallRun uses verified lifecycle only, user markers DO NOT change automatic state");
  msm2::writeLog("component_diagnostic=legacy_linear_enumeration_REMOVED reason=layout_unverified; reference_AOB_audit provides lookup candidates, no component pointers cached");
- bool debug=config.planar.debug,f8=false,f9=false,f10=false;ws::diag::MarkerKeys keys;ws::diag::History history;
+ bool debug=config.planar.debug,f8=false,f9=false,f10=false,f11=false,f12=false;ws::diag::MarkerKeys keys;ws::diag::History history;
  ULONGLONG lastSample=0,lastLog=0,lastOrientation=0;std::uint64_t id=0;
  msm2::Snapshot recent{};ws::diag::Motion recentMotion{};bool recentAvailable=false;
  // Frequent key polling; game memory reads remain interval-bound or explicit snapshots.
  while(WaitForSingleObject(stopEvent,10)==WAIT_TIMEOUT){
-  if(pressed(VK_F8,f8)){msm2::native_source::kill("F8_kill_switch","shutdown");msm2::reset_trace::kill();msm2::trace::kill();msm2::input::kill();msm2::writer::kill("kill_switch_F8");msm2::writeLog("F8 ORIENTATION_TRACE_STOP=1 ALL_WRITES_DISABLED=1 latched_until_restart=1");}
+  msm2::request_presence::tick();
+  if(pressed(VK_F8,f8)){msm2::request_presence::closeCapture("F8_kill_switch");msm2::request_presence::stop("F8_kill_switch");msm2::native_source::kill("F8_kill_switch","shutdown");msm2::reset_trace::kill();msm2::trace::kill();msm2::input::kill();msm2::writer::kill("kill_switch_F8");msm2::writeLog("F8 ORIENTATION_TRACE_STOP=1 ALL_WRITES_DISABLED=1 REQUEST_PRESENCE_CAPTURE_CLOSED=1 latched_until_restart=1");}
+  if(pressed(VK_F11,f11))msm2::request_presence::armNextGround();
+  if(pressed(VK_F12,f12))msm2::request_presence::armNextWallRun();
   auto ownershipContext=msm2::hooks::context(GetTickCount64());
   auto observationStatus=msm2::hooks::observationPlanStatus();
   msm2::hooks::reportObservationPlanStatus(observationStatus);
@@ -169,13 +175,14 @@ void run(){
    lastOrientation=now;
   }
  }
+ msm2::request_presence::stop("TelemetryStopped");
  msm2::reset_trace::stop();msm2::native_source::stop();msm2::reset_copy::stop();msm2::input::stop();msm2::trace::stop();
  msm2::hooks::stop();
  msm2::writeLog("WallSprint exited reason=TelemetryStopped future_writes_disabled=1 no_forced_ground_restore=1");
  closeLog();
 }
 DWORD WINAPI worker(void*){
- try{run();}catch(const std::exception& e){msm2::reset_trace::stop();msm2::native_source::stop();msm2::reset_copy::stop();msm2::input::stop();msm2::trace::stop();msm2::hooks::stop();msm2::writeLog("exception=%s; telemetry stopped; game overrides=none",e.what());closeLog();}catch(...){msm2::reset_trace::stop();msm2::native_source::stop();msm2::reset_copy::stop();msm2::input::stop();msm2::trace::stop();msm2::hooks::stop();msm2::writeLog("exception=unknown; telemetry stopped; game overrides=none");closeLog();}
+ try{run();}catch(const std::exception& e){msm2::request_presence::stop("exception");msm2::reset_trace::stop();msm2::native_source::stop();msm2::reset_copy::stop();msm2::input::stop();msm2::trace::stop();msm2::hooks::stop();msm2::writeLog("exception=%s; telemetry stopped; game overrides=none",e.what());closeLog();}catch(...){msm2::request_presence::stop("exception_unknown");msm2::reset_trace::stop();msm2::native_source::stop();msm2::reset_copy::stop();msm2::input::stop();msm2::trace::stop();msm2::hooks::stop();msm2::writeLog("exception=unknown; telemetry stopped; game overrides=none");closeLog();}
  auto self=instance;FreeLibraryAndExitThread(self,0);
 }
 }
@@ -202,6 +209,7 @@ extern "C" __declspec(dllexport) void script_enable(){
  ReleaseSRWLockExclusive(&lifecycle);
 }
 extern "C" __declspec(dllexport) void script_disable(){
+ msm2::request_presence::closeCapture("script_disable");
  msm2::native_source::kill("script_stop","shutdown");msm2::reset_trace::kill();msm2::trace::kill();msm2::input::kill();
  msm2::writer::kill("script_disable");
  AcquireSRWLockExclusive(&lifecycle);if(stopEvent)SetEvent(stopEvent);
