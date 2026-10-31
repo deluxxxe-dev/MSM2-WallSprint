@@ -3,7 +3,13 @@
 2026-10-31; branch `codex/v01c20-edi-value-provenance`.
 Baseline `100a1e32259cd64290755ae66573e35c66336ab2`, fetched/fast-forwarded;
 no main merge. Five pre-existing untracked archives/bundle preserved.
-Implementation SHA/publication recorded after push.
+Implementation SHA `6ec63237b897a3d539d8e32cbec6067bfff37e9c`.
+Pushed canonical branch; `python3 /tmp/ws-presence-publication.py` independently
+fetched and verified exact FETCH_HEAD/ls-remote and all13 changed file blobs
+against baseline100a1e3. Final record commit follows (docs only; tested executable
+and build inputs unchanged, so focused tests need not be rerun for that record).
+Wisdoms synchronized at `2f7a4decdc90e300ceea97afd83e8417d5ef24f3`, confirmed by
+canonical ls-remote. Final WS handoff head is reported in chat after readback.
 
 ## STATUS
 
