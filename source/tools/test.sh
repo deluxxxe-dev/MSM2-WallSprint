@@ -2,6 +2,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p build logs
+
+# Fail fast on the active c40 package/config/version/readme contract before the
+# long native/sanitizer suites.
+python3 tests/request_presence_static.py
+
 g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -Iinclude src/core_tests.cpp -o build/core_tests
 ./build/core_tests | tee logs/core_tests.log
 g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -Iinclude src/pattern_tests.cpp -o build/pattern_tests
