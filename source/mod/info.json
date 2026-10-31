@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.67",
-  "description": "WallSprint v0.1c42: read-only RequestSimpleMotion presence diagnostic that auto-arms after exact-site admission, captures up to 5 minutes / 131072 records, requires no F11/F12 input, and leaves gameplay write gates unchanged.",
+  "version": "0.1.68",
+  "description": "WallSprint v0.1c43: read-only RequestSimpleMotion presence diagnostic with corrected exact .pdata UnwindData admission, automatic capture for up to 5 minutes / 131072 records, no F11/F12 input, and all gameplay write gates unchanged.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1
