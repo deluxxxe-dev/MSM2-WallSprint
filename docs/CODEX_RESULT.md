@@ -82,3 +82,15 @@ Baseline full SHA: `e0b626b01baa5e6ee89baff67bdda4e60c67487e`.
 `git diff --exit-code e0b626b -- source/include source/src source/mod environment BUILD_MANIFEST.json 'MSM2-WS-v0.1c38r6*'`
 expected unchanged native/math/INI/shared tools/runtime/artifacts; actual exit0.
 No new package/output ZIP/version: only the future private continuation JSON.
+
+## Publication verified — offline helper
+
+Implementation commit `2ae748985cabe49f0ca614662904d7f1a84884e3` pushed to
+`codex/v01c20-edi-value-provenance`. Independent GitHub fetch, FETCH_HEAD, local
+HEAD and ls-remote agree; all7 changed blobs match checkout bytes using
+`python3 /tmp/ws-offline-publication.py`. Runtime/artifacts remain r6 unchanged.
+This follow-up records publication only; focused tests are not repeated because
+no executable/tested bytes changed. Five original untracked files preserved,
+no main merge/reset/force/clean. Owner actual extraction still UNAVAILABLE.
+Chat's ONE fresh-bootstrap block in CODEX_RESULT obtains only small private JSON;
+no Update-WS/full rebuild or unchanged game test required by this task.

@@ -506,3 +506,15 @@ Owner installed runtime is NOT updated by Git publication. The installed Update-
 is the later r6 update path; numbered owner comparison comes from Chat separately.
 No unchanged r5 game run or old WSL inspection requested. Five preexisting untracked
 files remain unstaged/preserved; no main merge, force/reset/clean or process kill.
+
+## Publication verified — offline helper
+
+Implementation commit `2ae748985cabe49f0ca614662904d7f1a84884e3` pushed to
+`codex/v01c20-edi-value-provenance`. Independent GitHub fetch, FETCH_HEAD, local
+HEAD and ls-remote agree; all7 changed blobs match checkout bytes using
+`python3 /tmp/ws-offline-publication.py`. Runtime/artifacts remain r6 unchanged.
+This follow-up records publication only; focused tests are not repeated because
+no executable/tested bytes changed. Five original untracked files preserved,
+no main merge/reset/force/clean. Owner actual extraction still UNAVAILABLE.
+Chat's ONE fresh-bootstrap block in CODEX_RESULT obtains only small private JSON;
+no Update-WS/full rebuild or unchanged game test required by this task.
