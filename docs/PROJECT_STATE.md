@@ -1,5 +1,11 @@
 # WallSprint project state
 
+## Current next action — r6 owner diagnostic accepted; exact offline continuation
+
+Owner r6 left/right/up passes, down/down-diagonal remains broken. R6 only added logs; no behavior improvement expected. See analysis/R6_OWNER_DOWNWARD_RESULT_20261031.md. Session2 still accepts alternating purely horizontal displacement; some negative vertical window samples held within12deg, not complete movement cause. No stale/timeout closure in cited14s session. Video unavailable.
+Current CODEX_NEXT prepares bounded original EXE continuation0x14248f9/max128 offline acquisition with provenance. Do not add more generic motion diagnostics or request unchanged game test; no runtime change this task. Native steering/frame-feedback cause remains UNKNOWN.
+
+
 ## Current handoff — r6 downward-motion diagnostics, not a movement fix
 
 Owner r5 numbered run supersedes old tooling diagnostic/deployment-unknown next
