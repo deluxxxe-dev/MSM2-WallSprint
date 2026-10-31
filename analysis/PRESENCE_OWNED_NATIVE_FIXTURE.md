@@ -1,3 +1,8 @@
+> Historical revision1 report. Owner native146 PASS/55 StackWalk FAIL now supersedes
+> its native-pending state. Cause UNKNOWN; see PRESENCE_OWNED_WINDOWS_FAIL_20261031.md
+> and current PRESENCE_STACKWALK_DIAGNOSTICS_20261031.md (instrumented revision2).
+> No production admission. Original Wine results remain historical, not native proof.
+
 # Presence hook: actual OWNED MinHook fixture — 2026-10-31
 
 ## Result / boundary

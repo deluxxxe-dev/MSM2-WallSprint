@@ -1,3 +1,4 @@
+#define _WIN32_WINNT 0x0602
 #define NOMINMAX
 #include <windows.h>
 #include <dbghelp.h>
@@ -15,6 +16,7 @@ extern "C" {
 extern "C" {
 alignas(32) float ws_test_vector_input[128],ws_test_vectors[128],ws_test_returns[128];
 uint64_t ws_test_gprs[11],ws_test_result,ws_test_return_gprs[11],ws_test_nonvolatile[8];
+void presence_unwind_return();
 void ws_test_probe_target(); void presence_race_target();
 void ws_test_invoke_probe(void*); void presence_request(); void presence_gravity();
 void presence_observer_request(); void presence_observer_gravity();
@@ -63,11 +65,73 @@ void transfer(void* target,void* observer,void* original,unsigned stolen,const c
  for(unsigned i=0;i<240;i++)if(o[i]==0xff&&o[i+1]==0x25){int32_t d;memcpy(&d,o+i+2,4);auto slot=o+i+6+d;found=qword(slot)==reinterpret_cast<uint64_t>(original);break;}
  check(found,std::string(name)+" observer tail forwards actual trampoline");
 }
-// Windows' actual stack-walker handles table-less MinHook regions as leaf frames.
+// Test the actual stack-walker at table-less MinHook regions; do not assume native success.
 // Fabricated OWNED stack/context: validates Windows API semantics, not asynchronous
 // game sampling, exception dispatch, or saved-context lifetime.
-PVOID CALLBACK lookup(HANDLE,DWORD64 pc){DWORD64 base;return RtlLookupFunctionEntry(pc,&base,nullptr);}
-DWORD64 CALLBACK module(HANDLE,DWORD64 pc){DWORD64 base=0;RtlLookupFunctionEntry(pc,&base,nullptr);if(base)return base;MEMORY_BASIC_INFORMATION info{};return VirtualQuery(reinterpret_cast<void*>(pc),&info,sizeof info)?reinterpret_cast<DWORD64>(info.AllocationBase):0;}
+struct CallbackEvent { unsigned kind; uint64_t pc,base,value; };
+struct VirtualTrace {std::string name;bool available;uint64_t base,entry,pc,sp,expectedPc,expectedSp,rbx,rbp,rsi,rdi;};
+std::vector<VirtualTrace> virtuals;
+struct WalkStep { BOOL ok; DWORD error; uint64_t pc,sp,fp,ret,contextPc,contextSp; };
+struct WalkTrace {
+ std::string sample,variant;
+ uint64_t pc,sp,fp,contextRbp,expectedPc,expectedSp,stackLow,stackHigh,tebLow,tebHigh;
+ DWORD contextFlags; WORD cs,ss; DWORD flags;
+ bool reached=false; unsigned dropped=0;
+ std::vector<WalkStep> steps;std::vector<CallbackEvent> callbacks;
+};
+std::vector<WalkTrace> walks;
+WalkTrace* activeWalk=nullptr;
+void event(unsigned kind,uint64_t pc,uint64_t base,uint64_t value){
+ if(!activeWalk)return;
+ if(activeWalk->callbacks.size()<24)activeWalk->callbacks.push_back({kind,pc,base,value});
+ else activeWalk->dropped++;
+}
+PVOID CALLBACK lookup(HANDLE,DWORD64 pc){DWORD64 base=0;auto fn=RtlLookupFunctionEntry(pc,&base,nullptr);event(1,pc,base,reinterpret_cast<uint64_t>(fn));return fn;}
+DWORD64 CALLBACK module(HANDLE,DWORD64 pc){DWORD64 base=0;RtlLookupFunctionEntry(pc,&base,nullptr);if(!base){MEMORY_BASIC_INFORMATION info{};if(VirtualQuery(reinterpret_cast<void*>(pc),&info,sizeof info))base=reinterpret_cast<DWORD64>(info.AllocationBase);}event(2,pc,base,0);return base;}
+WalkTrace walk(CONTEXT c,uint64_t initialFrame,uint64_t expectedPc,uint64_t expectedSp,
+ uint64_t low,uint64_t high,const char* name,const char* variant){
+ STACKFRAME64 f{};f.AddrPC.Offset=c.Rip;f.AddrStack.Offset=c.Rsp;f.AddrFrame.Offset=initialFrame;
+ f.AddrPC.Mode=f.AddrStack.Mode=f.AddrFrame.Mode=AddrModeFlat;
+ ULONG_PTR stackLow=0,stackHigh=0;GetCurrentThreadStackLimits(&stackLow,&stackHigh);
+ WalkTrace trace{};trace.sample=name;trace.variant=variant;
+ trace.pc=c.Rip;trace.sp=c.Rsp;trace.fp=initialFrame;trace.contextRbp=c.Rbp;trace.expectedPc=expectedPc;trace.expectedSp=expectedSp;
+ trace.stackLow=low;trace.stackHigh=high;trace.tebLow=stackLow;trace.tebHigh=stackHigh;
+ trace.contextFlags=c.ContextFlags;trace.cs=c.SegCs;trace.ss=c.SegSs;trace.flags=c.EFlags;
+ activeWalk=&trace;
+ for(int i=0;i<3;i++){
+  // API generally does not set last-error: clear stale state and retain value
+  // only as an observation, never infer a failure reason from zero or old errno.
+  SetLastError(ERROR_SUCCESS);
+  BOOL ok=StackWalk64(IMAGE_FILE_MACHINE_AMD64,GetCurrentProcess(),GetCurrentThread(),&f,&c,nullptr,lookup,module,nullptr);
+  DWORD error=GetLastError();
+  trace.steps.push_back({ok,error,f.AddrPC.Offset,f.AddrStack.Offset,f.AddrFrame.Offset,f.AddrReturn.Offset,c.Rip,c.Rsp});
+  if(!ok)break;
+  if(f.AddrPC.Offset==expectedPc){trace.reached=f.AddrStack.Offset==expectedSp;break;}
+ }
+ activeWalk=nullptr;return trace;
+}
+void writeDbgHelpVersion(FILE* out){
+ wchar_t path[MAX_PATH]{};bool known=false;VS_FIXEDFILEINFO version{};DWORD ignored=0;
+ DWORD length=GetModuleFileNameW(GetModuleHandleW(L"dbghelp.dll"),path,MAX_PATH);
+ DWORD bytes=length&&length<MAX_PATH?GetFileVersionInfoSizeW(path,&ignored):0;
+ if(bytes&&bytes<=1024*1024){std::vector<unsigned char> data(bytes);PVOID value=nullptr;UINT size=0;
+  if(GetFileVersionInfoW(path,0,bytes,data.data())&&VerQueryValueW(data.data(),L"\\",&value,&size)&&size>=sizeof version){memcpy(&version,value,sizeof version);known=version.dwSignature==0xfeef04bd;}}
+ std::fprintf(out,",\"dbghelp_file_version\":{\"known\":%s,\"major\":%u,\"minor\":%u,\"build\":%u,\"revision\":%u}",known?"true":"false",HIWORD(version.dwFileVersionMS),LOWORD(version.dwFileVersionMS),HIWORD(version.dwFileVersionLS),LOWORD(version.dwFileVersionLS));
+}
+void writeWalks(FILE* out){
+ std::fputs(",\"stackwalk_diagnostics\":[",out);
+ for(size_t i=0;i<walks.size();i++){
+  auto& w=walks[i];
+  std::fprintf(out,"%s{\"sample\":\"%s\",\"variant\":\"%s\",\"initial_pc\":%llu,\"initial_sp\":%llu,\"initial_fp\":%llu,\"context_rbp\":%llu,\"expected_pc\":%llu,\"expected_sp\":%llu,\"stack_low\":%llu,\"stack_high\":%llu,\"teb_low\":%llu,\"teb_high\":%llu,\"context_flags\":%lu,\"cs\":%u,\"ss\":%u,\"eflags\":%lu,\"predicate_pass\":%s,\"callback_dropped\":%u,\"steps\":[",i?",":"",w.sample.c_str(),w.variant.c_str(),w.pc,w.sp,w.fp,w.contextRbp,w.expectedPc,w.expectedSp,w.stackLow,w.stackHigh,w.tebLow,w.tebHigh,w.contextFlags,w.cs,w.ss,w.flags,w.reached?"true":"false",w.dropped);
+  for(size_t k=0;k<w.steps.size();k++){auto& x=w.steps[k];std::fprintf(out,"%s{\"ok\":%s,\"last_error_after_clear\":%lu,\"pc\":%llu,\"sp\":%llu,\"fp\":%llu,\"return_pc\":%llu,\"context_pc\":%llu,\"context_sp\":%llu}",k?",":"",x.ok?"true":"false",x.error,x.pc,x.sp,x.fp,x.ret,x.contextPc,x.contextSp);}
+  std::fputs("],\"callbacks\":[",out);
+  for(size_t k=0;k<w.callbacks.size();k++){auto& x=w.callbacks[k];std::fprintf(out,"%s{\"kind\":%u,\"pc\":%llu,\"base\":%llu,\"function_entry\":%llu}",k?",":"",x.kind,x.pc,x.base,x.value);}
+  std::fputs("]}",out);
+ }
+ std::fputs("],\"virtual_unwind_diagnostics\":[",out);
+ for(size_t i=0;i<virtuals.size();i++){auto& v=virtuals[i];std::fprintf(out,"%s{\"sample\":\"%s\",\"available\":%s,\"base\":%llu,\"function_entry\":%llu,\"pc\":%llu,\"sp\":%llu,\"expected_pc\":%llu,\"expected_sp\":%llu,\"rbx\":%llu,\"rbp\":%llu,\"rsi\":%llu,\"rdi\":%llu}",i?",":"",v.name.c_str(),v.available?"true":"false",v.base,v.entry,v.pc,v.sp,v.expectedPc,v.expectedSp,v.rbx,v.rbp,v.rsi,v.rdi);}
+ std::fputs("]",out);
+}
 void unwind(void* pc,unsigned frame,bool saved,bool pushed,const char* name,bool gravity=false,bool table=true){
  alignas(16) uint64_t stack[512]{}; auto entry=reinterpret_cast<uint64_t>(&stack[384]);
  // x64 entry stack must be 8 mod16.
@@ -80,20 +144,29 @@ void unwind(void* pc,unsigned frame,bool saved,bool pushed,const char* name,bool
  *reinterpret_cast<uint64_t*>(entry-8)=0x4444;
  CONTEXT c{};c.ContextFlags=CONTEXT_FULL;c.Rip=reinterpret_cast<uint64_t>(pc);c.Rsp=entry-frame;
  c.Rbx=saved?0xdead:0x1111;c.Rbp=saved&&!gravity?0xbeef:0x2222;c.Rsi=saved?0xfeed:0x3333;c.Rdi=pushed?0xaaaa:0x4444;
- STACKFRAME64 f{};f.AddrPC.Offset=c.Rip;f.AddrStack.Offset=c.Rsp;f.AddrFrame.Offset=c.Rsp;
- f.AddrPC.Mode=f.AddrStack.Mode=f.AddrFrame.Mode=AddrModeFlat;
- // First call initializes to current frame; subsequent call must reach owned caller.
- bool reached=false;for(int i=0;i<3;i++){
-  if(!StackWalk64(IMAGE_FILE_MACHINE_AMD64,GetCurrentProcess(),GetCurrentThread(),&f,&c,nullptr,lookup,module,nullptr))break;
-  if(f.AddrPC.Offset==ret){reached=f.AddrStack.Offset==entry+8;break;}
- }
+ auto primary=walk(c,c.Rsp,ret,entry+8,reinterpret_cast<uint64_t>(stack),reinterpret_cast<uint64_t>(stack+512),name,"baseline_zero_context_frame_rsp");
+ bool reached=primary.reached;walks.push_back(primary);
+ // Diagnostic comparisons only: never replace or OR-away primary predicate.
+ CONTEXT captured{};RtlCaptureContext(&captured);
+ captured.ContextFlags=CONTEXT_FULL;captured.Rip=c.Rip;captured.Rsp=c.Rsp;
+ captured.Rbx=c.Rbx;captured.Rbp=c.Rbp;captured.Rsi=c.Rsi;captured.Rdi=c.Rdi;
+ walks.push_back(walk(captured,captured.Rsp,ret,entry+8,reinterpret_cast<uint64_t>(stack),reinterpret_cast<uint64_t>(stack+512),name,"captured_context_frame_rsp"));
+ walks.push_back(walk(captured,captured.Rbp,ret,entry+8,reinterpret_cast<uint64_t>(stack),reinterpret_cast<uint64_t>(stack+512),name,"captured_context_frame_rbp"));
+ // Old oracle points at a function ENTRY, not an actual call return address.
+ // Isolate this variable without changing the original required assertion.
+ auto genuineReturn=reinterpret_cast<uint64_t>(&presence_unwind_return);
+ *reinterpret_cast<uint64_t*>(entry)=genuineReturn;
+ walks.push_back(walk(c,c.Rsp,genuineReturn,entry+8,reinterpret_cast<uint64_t>(stack),reinterpret_cast<uint64_t>(stack+512),name,"baseline_context_genuine_call_return"));
+ *reinterpret_cast<uint64_t*>(entry)=ret;
  check(reached,std::string(name)+" StackWalk64 caller");
  // Table-backed frames additionally verify register restoration with VirtualUnwind.
  DWORD64 base=0;auto fn=RtlLookupFunctionEntry(reinterpret_cast<DWORD64>(pc),&base,nullptr);
  check((fn!=nullptr)==table,std::string(name)+" actual function-table presence");
  if(fn){CONTEXT v{};v.ContextFlags=CONTEXT_FULL;v.Rip=reinterpret_cast<uint64_t>(pc);v.Rsp=entry-frame;v.Rbx=saved?0xdead:0x1111;v.Rbp=saved&&!gravity?0xbeef:0x2222;v.Rsi=saved?0xfeed:0x3333;v.Rdi=pushed?0xaaaa:0x4444;
  PVOID data=nullptr;DWORD64 estab=0;RtlVirtualUnwind(UNW_FLAG_NHANDLER,base,v.Rip,fn,&v,&data,&estab,nullptr);
+ virtuals.push_back({name,true,base,reinterpret_cast<uint64_t>(fn),v.Rip,v.Rsp,ret,entry+8,v.Rbx,v.Rbp,v.Rsi,v.Rdi});
  check(v.Rip==ret&&v.Rsp==entry+8&&v.Rbx==0x1111&&v.Rbp==0x2222&&v.Rsi==0x3333&&v.Rdi==0x4444,std::string(name)+" VirtualUnwind stack/nonvolatiles");}
+ else virtuals.push_back({name,false,base,0,0,0,ret,entry+8,0,0,0,0});
 }
 int wmain(int argc,wchar_t** argv){
  bool wine=GetProcAddress(GetModuleHandleA("ntdll.dll"),"wine_get_version")!=nullptr;
@@ -107,6 +180,9 @@ int wmain(int argc,wchar_t** argv){
  unsigned spans[]={7,5};std::array<std::array<unsigned char,7>,2> prefix{};
  Snapshot baseline[2];
  for(unsigned i=0;i<2;i++){memcpy(prefix[i].data(),targets[i],spans[i]);baseline[i]=invoke(targets[i]);}
+ // True unhooked controls execute before even initializing MinHook.
+ for(unsigned off:{0u,3u,7u,11u,15u,16u,23u})unwind(static_cast<unsigned char*>(targets[0])+off,off>=23?1128:off>=16?8:0,off>=23,off>=16,("request original+"+std::to_string(off)).c_str());
+ for(unsigned off:{0u,5u,10u,11u,15u})unwind(static_cast<unsigned char*>(targets[1])+off,off>=15?56:off>=11?8:0,off>=15,off>=11,("gravity original+"+std::to_string(off)).c_str(),true);
  must(MH_Initialize()==MH_OK,"real MinHook initialize");
  for(unsigned i=0;i<2;i++){must(MH_CreateHook(targets[i],observers[i],&presence_originals[i])==MH_OK,"real MinHook create "+std::to_string(i));check(memcmp(prefix[i].data(),presence_originals[i],spans[i])==0,"whole actual stolen span "+std::to_string(i));must(MH_EnableHook(targets[i])==MH_OK,"real MinHook enable "+std::to_string(i));transfer(targets[i],observers[i],presence_originals[i],spans[i],i?"gravity":"request");}
  for(unsigned i=0;i<2;i++){
@@ -123,8 +199,6 @@ int wmain(int argc,wchar_t** argv){
  presence_enabled=0;invoke(targets[0]);check(presence_count==16,"disabled observer forwards without reservation");
  // Unwind original sites only after disable restores their real instruction bytes.
  for(unsigned i=0;i<2;i++)check(MH_DisableHook(targets[i])==MH_OK,"disable owned hook "+std::to_string(i));
- for(unsigned off:{0u,3u,7u,11u,15u,16u,23u})unwind(static_cast<unsigned char*>(targets[0])+off,off>=23?1128:off>=16?8:0,off>=23,off>=16,("request original+"+std::to_string(off)).c_str());
- for(unsigned off:{0u,5u,10u,11u,15u})unwind(static_cast<unsigned char*>(targets[1])+off,off>=15?56:off>=11?8:0,off>=15,off>=11,("gravity original+"+std::to_string(off)).c_str(),true);
  for(unsigned i=0;i<2;i++){
   // Entry is currently restored: obtain relay location from trampoline layout
   // (vendored MinHook appends relay immediately after continuation14).
@@ -174,6 +248,8 @@ int wmain(int argc,wchar_t** argv){
  }catch(const std::exception& e){check(false,e.what());}
  unsigned pass=0,fail=0;for(auto& r:results)(r.pass?pass:fail)++;
  FILE* out=argc>1?_wfopen(argv[1],L"wb"):nullptr;
- if(out){std::fprintf(out,"{\n\"schema\":\"WS-owned-presence-fixture-v1\",\"environment\":\"%s\",\"production_admitted\":false,\"pass\":%u,\"fail\":%u,\"native_windows_unavailable\":%u,\"assertions\":[",wine?"Wine":"native Windows",pass,fail,wine?1:0);for(size_t i=0;i<results.size();i++)std::fprintf(out,"%s{\"name\":\"%s\",\"pass\":%s}",i?",":"",results[i].name.c_str(),results[i].pass?"true":"false");std::fputs("]}\n",out);std::fclose(out);}else{std::fprintf(stderr,"output JSON path required/writable\n");return 2;}
+ if(out){std::fprintf(out,"{\n\"schema\":\"WS-owned-presence-fixture-v1\",\"environment\":\"%s\",\"production_admitted\":false,\"pass\":%u,\"fail\":%u,\"native_windows_unavailable\":%u,\"assertions\":[",wine?"Wine":"native Windows",pass,fail,wine?1:0);for(size_t i=0;i<results.size();i++)std::fprintf(out,"%s{\"name\":\"%s\",\"pass\":%s}",i?",":"",results[i].name.c_str(),results[i].pass?"true":"false");std::fputs("]",out);writeWalks(out);writeDbgHelpVersion(out);
+ API_VERSION requested{API_VERSION_NUMBER,0,0,0},version{};auto actual=ImagehlpApiVersionEx(&requested);if(actual)version=*actual;
+ std::fprintf(out,",\"dbghelp_api\":{\"major\":%u,\"minor\":%u,\"revision\":%u},\"diagnostic_revision\":2}\n",version.MajorVersion,version.MinorVersion,version.Revision);std::fclose(out);}else{std::fprintf(stderr,"output JSON path required/writable\n");return 2;}
  std::printf("SUMMARY environment=%s PASS=%u FAIL=%u native-Windows-UNAVAILABLE=%u production_admitted=false\n",wine?"Wine":"native Windows",pass,fail,wine?1:0);return fail?1:0;
 }

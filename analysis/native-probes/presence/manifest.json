@@ -1,19 +1,22 @@
 {
   "schema": "WS-owned-presence-artifact-v1",
   "artifact": "presence-owned.exe",
-  "size": 1307079,
-  "sha256": "885cb79fb9e6fc0b4d9e7a8957c30f5679a07ede4bfe6dabf271598e3baa1d5e",
+  "size": 1548946,
+  "sha256": "c6fc4fff0473c76bf353cbbaa3df40e66d076920871cb05bb7b03e08289e8850",
   "production_admitted": false,
   "runtime_version_unchanged": "v0.1c38r7/package0.1.63",
-  "toolchain": "x86_64-w64-mingw32-g++-posix GCC14-posix; static CRT; system DbgHelp/Kernel32",
+  "toolchain": "x86_64-w64-mingw32-g++-posix GCC14-posix; static C++/GCC runtime; system DbgHelp/Kernel32/MSVCRT/Version imports",
   "source_sha256": {
-    "source/tests/presence/fixture.S": "f9e6deba60e9b38b1ef01353d9eabdacd842c4b9c842da5b5e851132c29a1206",
-    "source/tests/presence/fixture.cpp": "f43c0b2005e7e3f5f47aff3b24972eafa8b870f38f4f5d817cc145ca7c95646a",
+    "source/tests/presence/fixture.S": "e5ea5fa2a275fd92b8849d5df25b51b13d90c0ab8e58d61a8030debd1eb3b433",
+    "source/tests/presence/fixture.cpp": "87adf5f9eb597d18a772aa032b251f9ef45ed1ab0589d6a66b6eb874b2035a7f",
     "source/src/msm2/hook_probe_test.S": "cc3dcf9af091f064b42adb12a359f910c9002910740a21bd212a8080431e5c43",
-    "source/tools/test_presence_native.sh": "fd049be658f4d6b60b463d42307633a47ba042db5af27f19e13cc342702562ab",
+    "source/tools/test_presence_native.sh": "dedcaf2440dec2c316b2fd120bc589f771360b6b38fc4d4e27d135c6101790b2",
     "source/vendor/minhook/src/buffer.c": "0ab484d7870c3a8e7a3a1ee61e2070072cf445ed85b619d4c4207fed34356d99",
     "source/vendor/minhook/src/hook.c": "edcce4c81985d7dd5b73feae96d6498c8f749b1bca4c3d2d9926ea9a17a84755",
     "source/vendor/minhook/src/trampoline.c": "f13a169f803ff5a8e45c58ce668b4377a9878c0fc4452369b8a1325065186b2b",
     "source/vendor/minhook/src/hde/hde64.c": "824eafa315322e6da105a7ce4ec1fc0e0adeee0106d32152fbb0b59e709bd15c"
-  }
+  },
+  "diagnostic_revision": 2,
+  "predecessor_sha256": "885cb79fb9e6fc0b4d9e7a8957c30f5679a07ede4bfe6dabf271598e3baa1d5e",
+  "windows_evidence": "predecessor native146PASS/55FAIL; instrumented revision2 not run on native Windows"
 }

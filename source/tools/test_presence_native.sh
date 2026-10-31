@@ -15,7 +15,7 @@ for name in buffer hook trampoline hde/hde64; do
 done
 "$gcc" -Wa,--defsym,PRESENCE_LEGACY_UNWIND=$legacy -c tests/presence/fixture.S -o "$build/fixture.o"
 "$gcc" -c src/msm2/hook_probe_test.S -o "$build/invoke.o"
-"$gpp" -std=c++17 -O2 -g -municode -Wall -Wextra -Werror -static -Ivendor/minhook/include -Ivendor/minhook/src/hde tests/presence/fixture.cpp "$build/fixture.o" "$build/invoke.o" "$build/buffer.o" "$build/hook.o" "$build/trampoline.o" "$build/hde64.o" -ldbghelp -o "$build/presence-owned.exe"
+"$gpp" -std=c++17 -O2 -g -municode -Wall -Wextra -Werror -static -Ivendor/minhook/include -Ivendor/minhook/src/hde tests/presence/fixture.cpp "$build/fixture.o" "$build/invoke.o" "$build/buffer.o" "$build/hook.o" "$build/trampoline.o" "$build/hde64.o" -ldbghelp -lversion -o "$build/presence-owned.exe"
 set +e
 WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' /workspace/toolchains/wine/usr/lib/wine/wine64 "$build/presence-owned.exe" "Z:$build/result.json"
 rc=$?

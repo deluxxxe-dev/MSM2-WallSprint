@@ -1,3 +1,20 @@
+# Current native StackWalk investigation — 2026-10-31 — FAIL CLOSED
+
+Owner native predecessor146 PASS/55 FAIL is accepted. All55 StackWalk caller
+checks fail even at unhooked original controls; VirtualUnwind/ABI/transfers/races
+pass. Native cause remains UNKNOWN; older native-pending notes below superseded.
+Revision2 OWNED executable now logs initial/expected/returned frames, BOOL/error,
+backing/thread stack bounds, lookup/module callback events and DbgHelp file/API
+version. Original controls execute BEFORE any MinHook initialization. All55 strict
+primary checks stay unchanged; captured-context/RBP/genuine-CALL-return comparisons
+are diagnostics only and never substitute PASS. Legacy32 failures preserved.
+Wine201 PASS, diagnostic4 tests and runner6 tests PASS; v2 native/PS5.1 unavailable.
+One new instrumented standalone owner operation in CODEX_RESULT, no game/build/
+deploy/Update-WS. Source/manifest/EXE published together; no repeat file acquisition.
+Runtime observer remains NOT implemented/admitted; r7/package0.1.63 unchanged.
+See analysis/PRESENCE_STACKWALK_DIAGNOSTICS_20261031.md. Review real unhooked
+frame/callback results first, then fix only demonstrated cause before integration.
+
 # Current presence fixture handoff — 2026-10-31 — partial, native Windows pending
 
 Owner audit161445 resolves original prefix/unwind inputs; older missing-metadata

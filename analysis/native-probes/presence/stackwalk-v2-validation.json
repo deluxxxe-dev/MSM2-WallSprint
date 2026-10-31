@@ -1,0 +1,94 @@
+{
+  "schema": "WS-owned-stackwalk-diagnostics-validation-v2",
+  "diagnostic_revision": 2,
+  "production_admitted": false,
+  "previous_native_result": {
+    "commit": "7439b0471e958eb1a71e39ed826699fc42c60ab2",
+    "sha256": "885cb79fb9e6fc0b4d9e7a8957c30f5679a07ede4bfe6dabf271598e3baa1d5e",
+    "pass": 146,
+    "fail": 55,
+    "result": "FAIL",
+    "cause": "UNKNOWN"
+  },
+  "current_native_result": "UNAVAILABLE",
+  "fixed": {
+    "environment": "Wine",
+    "pass": 201,
+    "fail": 0,
+    "walk_records": 220,
+    "direct_unwind_records": 55,
+    "variants": {
+      "baseline_zero_context_frame_rsp": {
+        "total": 55,
+        "predicate_true": 55
+      },
+      "captured_context_frame_rsp": {
+        "total": 55,
+        "predicate_true": 55
+      },
+      "captured_context_frame_rbp": {
+        "total": 55,
+        "predicate_true": 55
+      },
+      "baseline_context_genuine_call_return": {
+        "total": 55,
+        "predicate_true": 55
+      }
+    },
+    "dbghelp_file_version": {
+      "known": true,
+      "major": 6,
+      "minor": 1,
+      "build": 7601,
+      "revision": 17514
+    },
+    "dbghelp_api": {
+      "major": 4,
+      "minor": 0,
+      "revision": 2
+    }
+  },
+  "legacy": {
+    "environment": "Wine",
+    "pass": 169,
+    "fail": 32,
+    "walk_records": 220,
+    "direct_unwind_records": 55,
+    "variants": {
+      "baseline_zero_context_frame_rsp": {
+        "total": 55,
+        "predicate_true": 39
+      },
+      "captured_context_frame_rsp": {
+        "total": 55,
+        "predicate_true": 39
+      },
+      "captured_context_frame_rbp": {
+        "total": 55,
+        "predicate_true": 39
+      },
+      "baseline_context_genuine_call_return": {
+        "total": 55,
+        "predicate_true": 39
+      }
+    },
+    "dbghelp_file_version": {
+      "known": true,
+      "major": 6,
+      "minor": 1,
+      "build": 7601,
+      "revision": 17514
+    },
+    "dbghelp_api": {
+      "major": 4,
+      "minor": 0,
+      "revision": 2
+    }
+  },
+  "commands": {
+    "bash source/tools/test_presence_native.sh": "PASS: Wine201 assertions; native unavailable",
+    "bash source/tools/test_presence_native.sh legacy-counterexample": "PASS regression: exactly32 expected failures",
+    "python3 source/tools/test_presence_stackwalk_diagnostics.py": "PASS4 unittest methods",
+    "WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES=mscoree,mshtml= python3 source/tools/test_run_presence_owned.py": "PASS6 unittest methods; synthetic native FAIL classification test is not native execution"
+  }
+}

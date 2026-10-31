@@ -1,108 +1,98 @@
-# Codex result — actual OWNED MinHook presence fixture, native Windows pending
+# Codex result — native StackWalk failure, instrumented owned fixture v2
 
 2026-10-31; branch `codex/v01c20-edi-value-provenance`.
-Baseline `3ea14b28cdd7bddb0f41ccd6659e48bc5d8a6a16`, fetched/current.
-No main merge; five pre-existing untracked archives/bundle preserved.
-Implementation commit `e082819a4c477c13ea6b36156b78a0242f25a304`.
-Pushed to canonical GitHub branch; independent checkout fetch, exact FETCH_HEAD,
-ls-remote and byte-for-byte readback of all16 changed file blobs PASS using
-`python3 /tmp/ws-presence-publication.py` (baseline3ea14b2, no game data).
-This final publication record is a subsequent documentation-only commit.
-Wisdoms full SHA `80a554c864f2679f1515d48032de624e3910a333` independently
-confirmed via canonical ls-remote. Final WS record-commit SHA is reported in chat;
-implementation and all artifact blobs are ancestors of that published head.
+Baseline `24a438a225d89dc13528910863d212f5e236fcb3`, fetched/fast-forwarded.
+No main merge; five old untracked archives/bundle preserved.
+Implementation SHA/publication recorded after push.
 
-## STATUS
+## STATUS — partial investigation, production FAIL CLOSED
 
-**PARTIAL — OWNED_FIXTURE_WINE_PASS / NATIVE_WINDOWS_UNAVAILABLE /
-RUNTIME_PRESENCE_OBSERVER_NOT_IMPLEMENTED.**
+**INSTRUMENTED_FIXTURE_DELIVERED / ROOT_CAUSE_UNKNOWN.**
+Accepted native predecessor:146 PASS/55 FAIL, all55 StackWalk caller assertions
+including unhooked originals. This remains genuinely FAIL. It is not overturned
+by201 Wine PASS or successful direct RtlVirtualUnwind/ABI checks. Native v2 has
+not run in cloud. No production integration, runtime/config/package/gameplay/SF/
+shared-environment/C52 change. Runtime remains v0.1c38r7/package0.1.63.
 
-Accepted owner audit161445 supplies original prefix/unwind metadata. Those inputs
-are no longer missing. Remaining Codex fixture work was implemented and executed:
-real vendored MinHook trampolines, two owned equivalent prologues, a proposed
-preserving observer and actual Windows unwind API calls under Wine. No repeated
-owner byte acquisition or offline parser-only handoff.
+Completed authorized fallback: a NEW instrumented owned EXE and exact source/hash
+manifest, rather than an unchanged rerun, parser or request for game bytes.
+Primary Microsoft StackWalk64/STACKFRAME64 docs were reviewed from pinned
+MicrosoftDocs source (Learn direct403). Exact references/findings are in
+analysis/PRESENCE_STACKWALK_DIAGNOSTICS_20261031.md.
 
-A concrete unsafe first design was found: single-range metadata fails32
-mid-restore unwind assertions despite normal ABI return passing. A materially
-safer split-range restore design passes the same checks under Wine. The old
-failure is retained and reproducible, not masked. **Native Windows is not Wine**;
-the task explicitly permits this standalone Windows-required handoff. Production
-admission is false. No claim this fixture proves all native game behavior.
+## Findings / changed files
 
-## CHANGED
+Known source facts: old zero-initialized CONTEXT_FULL has zero segment/EFlags;
+AddrFrame=RSP differs from context RBP; sentinel points at function ENTRY rather
+than actual call return. Documentation recommends valid CONTEXT and identifies
+x64 frame pointer as RBP/RDI, not necessarily used. These are candidate setup/oracle
+issues, NOT proven reasons for native55 failures. No unjustified fix or relaxed
+predicate was introduced. GetLastError generally is not set by StackWalk64;
+zero/observed callback error must not be treated as a root-cause code.
 
-- `source/tests/presence/fixture.S/.cpp`: owned real MinHook transfer/forwarding/
-  GPR/flags/YMM/stack/return tests, original delayed save/unwind/continuation,
-  every observer push/restore boundary, cap/zero-hit/thread/close tests; old bad
-  unwind counterexample remains executable.
-- `source/tools/test_presence_native.sh`: build and execute fixed fixture or
-  assert exactly32 expected legacy failures. No proprietary function bodies.
-- `source/tools/run_presence_owned.py`, `windows/Run-Presence-Owned.ps1`,
-  `test_run_presence_owned.py`: fetch/pin, byte-preserving binary staging with
-  exact SHA/size checks, own-temp execution and compact WS-logs JSON. Wrong
-  origin/branch/hash/missing-logs refuse. No game-file access or WSL needed.
-- `analysis/native-probes/presence/`: real1.3MB runnable EXE, manifest/source
-  hashes, derived Wine assertion JSONs and detailed scope/reproduction README.
-- `analysis/PRESENCE_OWNED_NATIVE_FIXTURE.md`, prior audit supersession note and
-  `docs/PROJECT_STATE.md`: findings, limits, exact test matrix and next boundary.
-- Wisdoms `docs/WALLSPRINT_INTERNALS.md`: reusable normal-return-vs-mid-restore
-  unwind failure, delayed home saves, real allocator lookup and native evidence
-  limits. Published commit `80a554c` (no SF code/shared environment change).
+- `source/tests/presence/fixture.cpp`: genuinely unhooked controls first, before
+  MH_Initialize. Same55 original assertions, expected PC/SP equality,3-step cap.
+  Four independently labeled experiments per sample: baseline unchanged;
+  RtlCaptureContext-seeded test context/frame=RSP; same/frame=RBP; baseline with
+  a genuine owned CALL return PC. Alternative results never OR into primary PASS.
+- `source/tests/presence/fixture.S`: independently authored owned caller/return
+  label for that diagnostic only; original observer/legacy restore code unchanged.
+- JSON diagnostic_revision2: initial PC/SP/frame/context RBP/segments/flags,
+  expected caller, synthetic/thread stack bounds, each BOOL/cleared last-error/
+  PC/SP/FP/return/context PC/SP, bounded lookup/module callback events, independent
+  VirtualUnwind results and loaded DbgHelp file/API version. No memory byte dumps.
+  Default ReadMemoryRoutine=NULL remains valid current-process reader. DbgHelp
+  calls stay serial; no arbitrary process/game attachment or pointer reads.
+- `test_presence_stackwalk_diagnostics.py`:4 coverage/accounting tests ensure all55
+  primary results survive,220 diagnostic traces/55 independent direct API records,
+  original controls first, bounded events/bounds and legacy32 failure detection.
+- `test_run_presence_owned.py`:6 tests include actual staged Wine/Unicode run and
+  **synthetic** native146/55 failure classification/JSON retention. This is not
+  native execution and is never counted as native PASS.
+- `native-probes/presence/manifest.json`, `presence-owned.exe`: current revision2.
+  Old manifest-v1.json/Wine JSONs and Git predecessor retained. New summary is
+  stackwalk-v2-validation.json. Current README/state/analysis supersede old pending
+  native status while preserving its original evidence.
 
-Artifact SHA256:
-`885cb79fb9e6fc0b4d9e7a8957c30f5679a07ede4bfe6dabf271598e3baa1d5e`.
-Runtime remains **v0.1c38r7/package0.1.63**; this is standalone
-`WS-owned-presence-fixture-v1`, not a new installed diagnostic release.
+EXE SHA256: `c6fc4fff0473c76bf353cbbaa3df40e66d076920871cb05bb7b03e08289e8850`
+Size1548946 bytes; diagnostic_revision2; production_admitted=false.
 
-## Tests — commands / expectations / actuals
+Wisdoms shared debugging note published as `25c53d3` (native FAIL preserved).
 
-| Exact command | Expected | Actual |
+## Exact validation / expected vs actual
+
+| Command | Expected | Actual |
 | --- | --- | --- |
-| `bash source/tools/test_presence_native.sh` | Actual MinHook spans/transfers, original-vs-hooked ABI and all sampled original/tramp/relay/observer unwind positions pass; bounded/racing forwarding preserved | exit0,201 assertions PASS,0 FAIL under Wine; native Windows group UNAVAILABLE |
-| `bash source/tools/test_presence_native.sh legacy-counterexample` | Reject wrong single-range unwind only at known restore positions | exit0 expected-failure regression;169 assertions PASS,exactly32 expected FAIL; no unexpected failure |
-| `WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' python3 source/tools/test_run_presence_owned.py` | Real Git/binary extraction, actual Wine invocation with Unicode output, cleanup, mismatch/origin/branch/log refusal | exit0,5 unittest PASS; nested201 fixture checks are not counted twice; native result UNAVAILABLE |
-| `bash source/tools/build_windows.sh` | Existing unchanged runtime builds | exit0 |
-| `bash source/tools/test.sh` | Portable/ASan/UBSan regressions preserved | exit0 |
-| `bash source/tools/smoke_windows.sh` | Existing synthetic host build-gate refusal/log/stop behavior preserved | exit0 |
-| `bash source/tools/test_hooks_windows.sh` | Existing hook/counterexample/static-proof suites run; native/private evidence stays unavailable/skipped | exit0; existing5 SKIP markers and17 UNAVAILABLE markers retained (see below) |
+| `bash source/tools/test_presence_native.sh` | Existing strict201 assertions preserved, new diagnostics bounded/serialized | exit0;201 PASS/0 FAIL in Wine; all4 configurations55/55; native unavailable |
+| `bash source/tools/test_presence_native.sh legacy-counterexample` | Old bad restore metadata must still fail exactly32 checks | exit0 regression;169 PASS/32 expected FAIL;16 StackWalk +16 VirtualUnwind failures |
+| `python3 source/tools/test_presence_stackwalk_diagnostics.py` | All55 primary predicates unaltered, independent variants/data and bounds present, no missing controls | exit0;4 tests PASS |
+| `WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' python3 source/tools/test_run_presence_owned.py` | Actual byte staging/hash/Unicode/cleanup/refusal plus synthetic native FAIL retention | exit0;6 tests PASS; nested Wine fixture not counted twice |
 | `git diff --check` | No whitespace errors | exit0 |
-| Artifact/source SHA256 comparison against `analysis/native-probes/presence/manifest.json` using Python hashlib | EXE and every recorded build input exactly match manifest | PASS |
+| Python hashlib comparison of EXE and all build inputs to manifest | Exact matching SHA/size/source inputs | PASS |
 
-Fixed fixture:201 assertions PASS; separate runner:5 test methods PASS;
-legacy regression:1 PASS (32 deliberately failing assertions expected).
-All7 main executable commands completed exit0. No native Windows tests promoted.
-Existing hook-suite status lines (separate from current fixture assertions):
-5 SKIP = private original-byte replay, private native-body replay, private installer
-replay, private584byte normalization replay, accepted-build capture replay.
-17 UNAVAILABLE =2 older VCH hardware-event dispatch cases,6 c49 SEARCH bridge
-cases,7 c50 exact-native-identity cases and2 c51 VCH bridge cases. These are
-explicit status-message counts, not unique aggregate test-case totals; the
-full wrapper is exit0 because it preserves these expected evidence limits.
-No native dispatch certificate or private-byte positive replay was invented.
+PASS:4 focused command runs;201 fixed assertions,4 diagnostic unittest methods,
+6 runner methods and1 expected-failure regression are distinct reporting units.
+No sum counting nested201 again. Legacy32 are deliberately expected failures,
+not silently removed. Known prior native result is146 PASS/55 FAIL, separate.
 
-**UNAVAILABLE (2 current groups):** actual Windows owned EXE/API results; actual
-Windows PowerShell5.1 wrapper execution. Cloud has Wine, not a real Windows kernel
-or PowerShell5.1. The same owned executable tests the missing guarantee locally.
-Prior hook-suite SKIP/UNAVAILABLE markers are listed separately below.
+UNAVAILABLE:2 current groups — native Windows instrumented EXE/API execution and
+real Windows PowerShell5.1 launcher execution. Cloud has Wine; this cannot
+establish the native failure cause or claim a native correction.
 
-**SKIP (1 current command):** `python3 source/tools/package.py` / new runtime
-release/package publication. No runtime diff/admission or version change; packaging
-unchangedr7 would not validate this standalone EXE. No new game package claimed.
+SKIP:5 unchanged whole-runtime commands (`bash source/tools/build_windows.sh`,
+`bash source/tools/test.sh`, `bash source/tools/smoke_windows.sh`,
+`bash source/tools/test_hooks_windows.sh`, `python3 source/tools/package.py`).
+CODEX_NEXT explicitly says focused fixture validation only, no unchanged whole-
+runtime suites for this diff. No production source/config/runtime/package change.
 
-**BLOCKED (1 integration group):** production phase/drain/startup/F8/real-game
-mismatch/disable/unload acceptance: observer is deliberately not integrated before
-native fixture review. Retained code does not prove arbitrary saved-CONTEXT
-retirement. No unsafe removal/free, C52 bypass, partial setter hook, pointee read,
-RIP/DR repair, native request/gameplay write, or production lifetime relaxation.
-YMM0–15 measured; no claim of measured AVX-512/XSTATE or asynchronous game EH.
-Original and worker phase tests are OWNED, not actual ground/WR evidence.
+BLOCKED:1 production observer integration/acceptance group; true native success
+and causal diagnosis have not been established. No game test or release is claimed.
 
-## Owner — one standalone command, no game / Update-WS
+## Owner — ONE standalone instrumented invocation
 
-Paste this entire block into **Windows PowerShell**. Existing installed `_source`
-may remain at its old checkout: this fetches and stages the helper from a pinned
-remote commit without pull/checkout/build/deploy. Only native OWNED fixture runs.
+This stages the NEW revision2 binary despite using the same fetch-run workflow.
+No Update-WS, compiler, game build/deploy/launch or attachment. Paste entire block
+into Windows PowerShell:
 
 ```powershell
 & {
@@ -126,9 +116,15 @@ remote commit without pull/checkout/build/deploy. Only native OWNED fixture runs
 }
 ```
 
-Expected: native Windows fixture201 PASS/0 FAIL and production_admitted=false;
-if FAIL/UNAVAILABLE, retain exact assertion results. Return only the new
+Return only the newly created
 `Mods Library\Mods-Developing\MSM2-WS\logs\MSM2-WS-presence-owned-*.json`.
-No Spider-Man2 launch, game attachment, Install mods or Update-WS requested.
-After native review, implement Request-only ground/WR observation if admitted;
-optional Gravity remains independently gated. No downward movement fix promised.
+Confirm diagnostic_revision2; failure JSON is useful and retained. Primary checks
+are deliberately unchanged: native146/55 can recur, but this time each failure
+has observed-vs-expected frames and independent comparisons. Alternative successes
+do not mean the required baseline passed or that production is admitted.
+
+Next Codex review starts with unhooked Request+0 before MinHook: FALSE vs TRUE,
+first/next-frame progression, exact PC/SP, callback/table/base and initial context.
+Then compare seeded/RBP/genuine-return trials and direct VirtualUnwind separately.
+Fix only a demonstrated setup/metadata fault, keep strict assertions and old32
+counterexample, and require actual native success before Request-only integration.

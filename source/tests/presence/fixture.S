@@ -181,3 +181,16 @@ presence_race_target:
  mov rax,0x77aabbcc11223344
  ret
 .seh_endproc
+# Valid OWNED call-return control for StackWalk differential diagnostics.
+.globl presence_unwind_caller
+.seh_proc presence_unwind_caller
+presence_unwind_caller:
+ sub rsp,40
+ .seh_stackalloc 40
+ .seh_endprologue
+ call presence_race_target
+.globl presence_unwind_return
+presence_unwind_return:
+ add rsp,40
+ ret
+.seh_endproc

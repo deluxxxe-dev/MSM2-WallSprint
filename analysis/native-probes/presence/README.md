@@ -1,3 +1,35 @@
+# Current revision2 — native StackWalk failure instrumentation
+
+Predecessor native Windows result is **146 PASS/55 FAIL**, including unhooked
+controls. Cause remains UNKNOWN; Wine201 PASS does not override this result.
+Current EXE is diagnostic_revision2, instrumented rather than a proven native fix.
+See analysis/PRESENCE_STACKWALK_DIAGNOSTICS_20261031.md and CODEX_RESULT.
+
+All55 baseline StackWalk assertions and exact caller PC/SP equality remain.
+Unhooked controls execute before MinHook initialization. Four traces per sample
+(220 total) independently compare baseline setup, captured-context seeding,
+RBP frame initialization and a genuine OWNED CALL-return sentinel. Alternate
+trace success never makes baseline PASS. Each trace logs initial/expected/returned
+addresses, thread/backing stack bounds, <=3 BOOL/error/frame steps and <=24 lookup/
+module callback events. Error is cleared before the API; it is not assumed to
+be authoritative. Direct VirtualUnwind results and DbgHelp file/API versions
+are separate. Default memory reader remains NULL with valid current-process handle.
+No arbitrary memory bytes are dumped, only owned addresses/register metadata.
+
+Focused validation adds `python3 source/tools/test_presence_stackwalk_diagnostics.py`
+(4 tests); runner now has6 tests, including synthetic native146/55 FAIL retention
+(not measured Windows). Fixed201 Wine PASS and exact32 legacy failures remain.
+Old wine_fixed.json, wine_legacy_counterexample.json, validation.json and
+manifest-v1.json describe revision1 and are retained as historical evidence.
+New summarized results: stackwalk-v2-validation.json. Current manifest.json and
+presence-owned.exe describe revision2. Original binary remains in Git7439b04.
+New EXE/source hashes are checked together; no runtime/package/config change.
+Owner invocation is unchanged in form but stages the NEW instrumented binary.
+No game/Update-WS; return JSON with diagnostic_revision2. Native v2 is UNAVAILABLE
+until owner execution/review; production_admitted always false.
+
+---
+
 # WS-owned presence-hook fixture v1
 
 This standalone EXE runs only independently authored fixture functions in its own
