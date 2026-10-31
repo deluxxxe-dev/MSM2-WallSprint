@@ -16,7 +16,7 @@ namespace {
 
 constexpr std::uintptr_t kRequestRva = 0x11A1BD0;
 constexpr std::uintptr_t kRequestEndRva = 0x11A1CA2;
-constexpr std::uintptr_t kRequestUnwindRva = 0x1154EDC;
+constexpr std::uintptr_t kRequestUnwindRva = 0x94697E0;
 constexpr std::size_t kRequestSize = kRequestEndRva - kRequestRva;
 constexpr std::size_t kNativeSnapshot = 32;
 constexpr LONG kPhaseRecordCap = 131072;
