@@ -1,84 +1,102 @@
-# Result — WallSprint v0.1c44 Request presence runtime result
+# Result — WallSprint v0.1c45 GravityOrientationOwner presence diagnostic
 
 2026-10-31. Active implementation branch: `codex/v01c20-edi-value-provenance`. No main merge.
 
 ## STATUS
 
-**C44 ACTUAL-GAME STREAMING CAPTURE VERIFIED / EXACT REQUEST ENTRY ZERO-HIT VERIFIED FOR THE BOUNDED TEST / REQUEST OBSERVATION ROUTE STOPPED / NEXT TARGET IS GRAVITY OWNER PRESENCE ONLY.**
+**C44 ACTUAL-GAME ZERO-HIT ACCEPTED / REQUEST ROUTE STOPPED / C45 GRAVITY OWNER PRESENCE IMPLEMENTED AND PUBLISHED / OWNER FULL PIPELINE + ACTUAL-GAME RUNTIME PENDING.**
 
-## C44 ACTUAL RUNTIME RESULT
+## C44 ACCEPTED RUNTIME RESULT
 
 The owner ran `v0.1c44 / package 0.1.69` on the pinned target build and supplied `MSM2-WS-v0.1c44-20261031-224811.log`.
 
-Target-build and Request hook admission all passed:
+Runtime verified:
 
-- Spider-Man2.exe `2.810.0.0`;
-- on-disk SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`;
-- Request range `0x11A1BD0..0x11A1CA2`;
-- exact whole-function SHA matched;
-- stolen span passed;
-- `.pdata` UnwindData `0x94697E0` matched;
-- all split observer/restore unwind checks passed;
-- MinHook trampoline validation passed;
-- `REQUEST_PRESENCE_ADMISSION admitted=1`;
-- automatic 500 ms streaming capture started.
+- exact target build accepted: Spider-Man2.exe `2.810.0.0`, SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`;
+- exact RequestSimpleMotion hook admission passed including whole SHA, 7-byte/2-instruction prefix, `.pdata` UnwindData `0x94697E0`, split observer unwind and MinHook trampoline;
+- automatic capture and 500 ms worker persistence ran continuously;
+- 335 periodic batches were written across the supplied session;
+- all batches retained 0 records, overflow=0, contention=0, session_retained=0;
+- no `REQUEST_PRESENCE_RECORD` existed;
+- eight verified WallRun sessions occurred during the same capture interval;
+- main WallRun #8 lasted `17.240649 s` with `1377` Update calls and surrounding Request batches still retained 0.
 
-C44 persistence also worked as intended. The complete log contains 335 `REQUEST_PRESENCE_BATCH_SUMMARY` records from the live game session. Every batch reports:
-
-- retained=0;
-- overflow=0;
-- contention=0;
-- session_retained=0.
-
-There are no `REQUEST_PRESENCE_RECORD` lines in the complete log.
-
-This is no longer the c43 shutdown/finalization ambiguity. Empty batches were written continuously while the game was alive, including during verified WallRun gameplay.
-
-Eight completed WallRun lifecycle sessions were present in the same capture interval. Main session #8 recorded:
-
-- Init=1 / Entry=1 / Update=1377 / Deinit=1;
-- duration `17.240649 s`;
-- verified WallRun lifecycle identity;
-- predominantly `WallRunSide` by the existing worker heuristic.
-
-Request batches around and after that session still retained zero hits.
+This is valid bounded zero-hit evidence for the exact Request entry during the tested ordinary movement/WallRun sequence. It supersedes c43's persistence ambiguity. The Request route is stopped as a useful vanilla locomotion observation source; do not repeat it or enlarge its capture.
 
 Detailed evidence: `analysis/REQUEST_PRESENCE_C44_ZERO_HIT_20261031.md`.
 
-## ACCEPTED INTERPRETATION
+## C45 IMPLEMENTATION
 
-Runtime-verified fact:
+Version: `v0.1c45`; package: `0.1.70`.
 
-The exact hooked entry `0x11A1BD0` was not observed executing during this bounded actual-game session containing ordinary movement and verified WallRun activity.
+C45 deliberately reuses the c44 runtime-proven observer, split unwind layout, automatic capture, 16-record hot buffer, 500 ms worker drain, 65536 retained-session cap, shutdown-independent prior-batch persistence and F8 close behavior.
 
-Decision:
+Only the observed native target contract changes to the already accepted `GravityOrientationOwner` identity:
 
-Do not spend more runtime cycles enlarging Request buffers, waiting longer, changing shutdown flush, or decoding Request arguments. The exact RequestSimpleMotion entry is rejected as a useful observation source for the tested vanilla ground-Sprint / WallRun sequence.
+- begin RVA `0x134EF00`;
+- end RVA `0x134EFBB`;
+- whole-function SHA256 `bc9e1a75a4d45f4dc1a1baf99b704778714e83353d58688dce82bab901514a53`;
+- exact `.pdata` UnwindData RVA `0x94A1CB8`;
+- stolen prefix `48 89 5c 24 08` = 5 bytes / one instruction;
+- accepted prefix SHA256 `0666a96c5b537b54fb43e8d983f54c516a379f17f302825c7f047c7e9ff4cab0`.
 
-This does not prove that no engine state can ever call it, nor that indirect/interior entry paths are impossible. No argument semantics were observed because the entry produced zero hits.
+The existing internal `request_presence` module/symbol names and `REQUEST_PRESENCE_*` log keys are intentionally retained to minimize code change. Every c45 runtime record includes `target_role=GravityOrientationOwner`, and config/README/package metadata state that the legacy `REQUEST_PRESENCE_DIAGNOSTIC` switch now activates this Gravity target.
 
-## C44 SAFETY RESULT
+No second native presence target runs simultaneously. RequestSimpleMotion active constants are removed from production observer identity.
 
-The diagnostic remained read-only:
+## SAFETY CONTRACT
 
-- `WALLSPRINT_ENABLE=0`;
-- native-source override OFF;
-- orientation/adhesion/movement writes OFF;
+Unchanged / required:
+
+- exact target-build gate;
+- exact whole-function SHA and `.pdata` identity;
+- exact 5-byte prefix and one-instruction stolen span;
+- MinHook trampoline identity and relay verification;
+- split observer unwind verification;
+- callback has no native `call`, I/O, lock or allocation;
+- GPR/flags preserve; no XMM/YMM/ZMM modification;
+- captured RCX/RDX/R8/R9 remain opaque bits only;
 - no captured-pointer dereference;
-- no Request argument modification;
-- no request suppression.
+- no semantic field labels;
+- no SetGravityVector hook or MOD-originated call;
+- no gravity/orientation/adhesion/movement/native-source write;
+- F11/F12 unnecessary; F8 remains emergency close.
 
-No SocialFeed or other MOD repository/file was changed.
+## STATIC / PACKAGE CONTRACT
 
-## NEXT BOUNDED TARGET
+`source/tests/request_presence_static.py` now fails before the long regression suites unless:
 
-The previously accepted motion/gravity design leaves `GravityOrientationOwner` as the next smallest presence-only discriminator.
+- production Gravity begin/end/SHA/UnwindData match the accepted audit tuple/known exact identity;
+- production prefix is exactly `48 89 5c 24 08` and hashes to the accepted Gravity prefix SHA;
+- the stale c44 Request RVA/end/UnwindData/SHA/prefix are absent from the active production target;
+- stolen-span expectation is exactly 5 bytes / 1 instruction;
+- c44 streaming safety invariants remain present;
+- assembly still has no native `call` or vector-register use and retains the 16-record cap/split unwind forwarding;
+- both INIs/READMEs/info/package metadata identify c45 / 0.1.70 / GravityOrientationOwner;
+- all gameplay write gates remain OFF.
 
-Accepted prior identity:
+`source/tools/package.py` now emits package mode `gravity_owner_presence_read_only` and explicitly records `setter_hooked_or_called_by_mod=false`.
 
-- range `0x134EF00..0x134EFBB`;
-- SHA256 `bc9e1a75a4d45f4dc1a1baf99b704778714e83353d58688dce82bab901514a53`;
-- `.pdata` UnwindData RVA `0x94A1CB8`;
-- 5-byte single-instruction prefix audit already available.
+## CHANGED FOR C45
 
-Next implementation must reuse the proven c44 bounded streaming observer model and change only the observed site/identity contract required for GravityOrientationOwner presence. It must not dereference owner arguments, call SetGravityVector, infer field semantics, or write gravity/movement/orientation state.
+- `source/src/msm2/request_presence.cpp`
+- `source/tests/request_presence_static.py`
+- `source/include/version.hpp`
+- `source/mod/info.json`
+- `source/mod/WallSprint.ini`
+- `source/mod/presets/request_presence_read_only.ini`
+- `source/tools/package.py`
+- `README_TEST.md`
+- `source/README_TEST.md`
+- `docs/CODEX_RESULT.md`
+- `docs/CODEX_NEXT.md`
+
+`source/src/msm2/request_presence.S` is intentionally unchanged from the c44 runtime-proven observer implementation.
+
+No SocialFeed or other MOD repository/file is in scope.
+
+## VALIDATION STILL REQUIRED
+
+Chat/GitHub-side publication and source consistency do not substitute for the owner Windows/WSL build chain. Before game runtime testing, run installed `MSM2-WS/Update-WS.cmd` with game/shared Overstrike closed and require the complete build/test/smoke/hooks/package/deploy PASS for c45.
+
+After that PASS, one short actual-game sequence is sufficient. The only runtime question is whether persisted records with `target_role=GravityOrientationOwner` occur during ground Sprint and/or verified WallRun intervals. Do not interpret the opaque arguments until presence is established.
