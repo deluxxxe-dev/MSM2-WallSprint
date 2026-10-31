@@ -1,5 +1,18 @@
 # WallSprint project state
 
+## Current handoff — exact offline acquisition ready, no r6 rebuild
+
+New capture_wallrun_continuation.py + Capture-WallRun-Continuation.ps1 prepare
+original on-disk RVA0x14248f9/max128 read with pinned EXE SHA, PE executable/raw/
+runtime/unwind provenance and first-control stop. No scan/live read/API/write
+certificate. Focused8 + PowerShell mock2 pass; actual owner Windows/EXE unavailable.
+Fresh bootstrap in CODEX_RESULT is ONE copy/paste action, does not update source
+worktree/KIT/runtime, preserves local changes and old outputs. Return the small
+MSM2-WS-wallrun-continuation timestamped JSON in WS logs, not full EXE/raw log.
+Chat supplies instructions; no unchanged r6 game test/build/package. Runtime r6
+and every C52/movement/owner gate remain unchanged. See analysis acquisition note.
+
+
 ## Current next action — r6 owner diagnostic accepted; exact offline continuation
 
 Owner r6 left/right/up passes, down/down-diagonal remains broken. R6 only added logs; no behavior improvement expected. See analysis/R6_OWNER_DOWNWARD_RESULT_20261031.md. Session2 still accepts alternating purely horizontal displacement; some negative vertical window samples held within12deg, not complete movement cause. No stale/timeout closure in cited14s session. Later31.5s compressed12-04-10(2).mp4 inspected: visible repeated facing/horizontal-body issue persists; camera/input/log alignment limits remain. See runtime analysis follow-up.
