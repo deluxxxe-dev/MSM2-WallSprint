@@ -9,6 +9,9 @@ build=(root/'tools/build_windows.sh').read_text(encoding='utf-8')
 default_ini=(root/'mod/WallSprint.ini').read_text(encoding='utf-8')
 preset=(root/'mod/presets/request_presence_read_only.ini').read_text(encoding='utf-8')
 version=(root/'include/version.hpp').read_text(encoding='utf-8')
+source_readme=(root/'README_TEST.md').read_text(encoding='utf-8')
+project_readme=(root.parent/'README_TEST.md').read_text(encoding='utf-8')
+package_wrapper=(root/'tools/package.py').read_text(encoding='utf-8')
 
 required_cpp=[
     'kRequestRva = 0x11A1BD0',
@@ -60,6 +63,23 @@ for ini in (default_ini,preset):
     assert 'REQUEST_PRESENCE_DIAGNOSTIC=1' in ini
     for needle in ('WALLSPRINT_ENABLE=0','WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0','WALLSPRINT_ORIENTATION_WRITE=0','WALLSPRINT_ADHESION_WRITE=0','WALLSPRINT_MOVEMENT_WRITE=0'):
         assert needle in ini, needle
+
 assert 'versionLabel[]="v0.1c40"' in version
 assert 'packageVersion[]="0.1.65"' in version
+
+for readme in (source_readme, project_readme):
+    assert 'v0.1c40' in readme
+    assert '0.1.65' in readme
+    assert 'F11 once' in readme
+    assert '8192' in readme
+
+for needle in (
+    'package_mode": "request_presence_read_only"',
+    '"native_stack_source_write_enabled": False',
+    '"path_b_override": False',
+    '"request_presence_diagnostic": True',
+    '"native_source": False',
+):
+    assert needle in package_wrapper, needle
+
 print('request_presence_static: PASS')
