@@ -77,11 +77,18 @@ assert (runtime_begin,runtime_end,runtime_unwind,runtime_hash)==(GRAVITY_BEGIN,G
 assert prefix_bytes==GRAVITY_PREFIX
 assert hashlib.sha256(prefix_bytes).hexdigest()==GRAVITY_PREFIX_SHA
 
-# Production identity must match the accepted GravityOrientationOwner audit tuple.
+# Production identity must exactly match the accepted GravityOrientationOwner audit.
 audit_match=re.search(r"'GravityOrientationOwner':\((\d+),(\d+),'([0-9a-f]{64})'\)",audit)
+audit_unwind_match=re.search(r'EXPECTED_GRAVITY_UNWIND_RVA\s*=\s*(\d+)',audit)
 assert audit_match, 'GravityOrientationOwner audit tuple missing'
+assert audit_unwind_match, 'GravityOrientationOwner accepted unwind RVA missing'
 audit_begin,audit_end,audit_hash=int(audit_match[1]),int(audit_match[2]),audit_match[3]
-assert (runtime_begin,runtime_end,runtime_hash)==(audit_begin,audit_end,audit_hash)
+audit_unwind=int(audit_unwind_match[1])
+assert (runtime_begin,runtime_end,runtime_unwind,runtime_hash)==(audit_begin,audit_end,audit_unwind,audit_hash), (
+    (runtime_begin,runtime_end,runtime_unwind,runtime_hash),
+    (audit_begin,audit_end,audit_unwind,audit_hash),
+)
+assert audit_unwind==GRAVITY_UNWIND
 assert GRAVITY_PREFIX_SHA in audit, 'accepted Gravity prefix SHA missing from audit fixture set'
 
 # c44 RequestSimpleMotion must no longer be the active production target.
