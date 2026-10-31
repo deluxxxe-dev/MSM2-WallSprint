@@ -1,8 +1,8 @@
-"""Package WallSprint with the preserved historical packager plus c41 active-state normalization.
+"""Package WallSprint with the preserved historical packager plus c42 active-state normalization.
 
 package_base.py is retained as the historical monolithic implementation. This wrapper
 changes only the stale active-package policy and then rewrites current-package metadata
-so v0.1c41 cannot be published as if historical native-source/orientation writes were ON.
+so v0.1c42 cannot be published as if historical native-source/orientation writes were ON.
 """
 from pathlib import Path
 import json
@@ -53,9 +53,10 @@ manifest.update({
     },
     "current_request_presence": {
         "read_only": True,
-        "capture_control": "F11_once",
-        "capture_duration_ms": 45000,
-        "record_cap": 16384,
+        "capture_control": "automatic_on_admission",
+        "capture_duration_ms": 300000,
+        "record_cap": 131072,
+        "manual_F11_F12_required": False,
         "video_alignment": "offset_ms_est_approximate",
         "authenticated_engine_state_labels": False,
     },
@@ -65,9 +66,10 @@ manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
 (root / "logs/package_check.log").write_text(
     "PASS: "
     + f"{label}/{version} read-only RequestSimpleMotion presence package; "
+    + "automatic capture on admission; no F11/F12 required; "
     + "WALLSPRINT_ENABLE=0; NATIVE_SOURCE_OVERRIDE=0; "
     + "orientation/adhesion/movement/native-source writes OFF; "
     + "REQUEST_PRESENCE_DIAGNOSTIC=1; historical analysis retained as history only\n",
     encoding="utf-8",
 )
-print("PASS: c41 read-only package manifest normalized")
+print("PASS: c42 read-only automatic-capture package manifest normalized")
