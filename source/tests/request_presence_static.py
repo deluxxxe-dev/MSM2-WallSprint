@@ -14,17 +14,21 @@ required_cpp=[
     'kRequestRva = 0x11A1BD0',
     'kRequestEndRva = 0x11A1CA2',
     'kRequestUnwindRva = 0x1154EDC',
-    'kPhaseRecordCap = 16',
-    'kPhaseLimit = 6',
-    'kPhaseDurationMs = 2000',
+    'kPhaseRecordCap = 8192',
+    'kPhaseLimit = 1',
+    'kPhaseDurationMs = 30000',
     '2d879249c65b8074bb548e6563b5e0c2955ab672c4fd3cf080adb83b48691d64',
     'whole_site_sha=verified',
     'observer_unwind=split_verified',
     'captured_pointer_dereference=0',
     'argument_writes=0',
     'request_suppression=0',
-    'label_auth=manual_not_native_authenticated',
+    'label_auth=video_posthoc_not_native_authenticated',
     'correlation=non_atomic',
+    'capture_control=F11_once',
+    'legacy_F12=disabled',
+    'offset_ms_est=',
+    'offset_clock=tsc_linearized_to_GetTickCount64',
     'trampoline_retained=1',
     'observer_module_pinned=1',
 ]
@@ -35,7 +39,8 @@ lower_asm=asm.lower()
 assert '\n    call ' not in lower_asm
 for reg in ('xmm','ymm','zmm'):
     assert reg not in lower_asm
-assert 'cmp eax, 16' in asm
+assert 'cmp eax, 8192' in asm
+assert 'ws_request_presence_read_tsc:' in asm
 assert 'lock cmpxchg DWORD PTR ws_request_presence_count[rip], ecx' in asm
 assert 'lock inc DWORD PTR ws_request_presence_overflow[rip]' in asm
 assert 'lock inc DWORD PTR ws_request_presence_contention[rip]' in asm
@@ -56,6 +61,6 @@ assert 'WALLSPRINT_ORIENTATION_WRITE=0' in default_ini
 assert 'REQUEST_PRESENCE_DIAGNOSTIC=1' in preset
 for needle in ('WALLSPRINT_ENABLE=0','WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0','WALLSPRINT_ORIENTATION_WRITE=0','WALLSPRINT_ADHESION_WRITE=0','WALLSPRINT_MOVEMENT_WRITE=0'):
     assert needle in preset, needle
-assert 'versionLabel[]="v0.1c39"' in version
-assert 'packageVersion[]="0.1.64"' in version
+assert 'versionLabel[]="v0.1c40"' in version
+assert 'packageVersion[]="0.1.65"' in version
 print('request_presence_static: PASS')
