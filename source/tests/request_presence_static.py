@@ -7,6 +7,7 @@ root=Path(__file__).resolve().parents[1]
 cpp=(root/'src/msm2/request_presence.cpp').read_text(encoding='utf-8')
 asm=(root/'src/msm2/request_presence.S').read_text(encoding='utf-8')
 surface=(root/'include/msm2/surface_source.hpp').read_text(encoding='utf-8')
+telemetry=(root/'src/msm2/telemetry.cpp').read_text(encoding='utf-8')
 scalar=(root/'include/wallrun_scalar_observation.hpp').read_text(encoding='utf-8')
 scalar_test=(root/'src/wallrun_scalar_observation_tests.cpp').read_text(encoding='utf-8')
 plan=(root/'include/static_observation_plan.hpp').read_text(encoding='utf-8')
@@ -46,37 +47,48 @@ assert 'cmp eax, 16' in asm and 'cmp eax, 131072' not in asm
 assert asm.count('.seh_proc')==10 and asm.count('.seh_endproc')==10
 assert 'jmp QWORD PTR ws_request_presence_original[rip]' in asm
 
-# c46 active contract: no Gravity presence hook; reuse verified WallRun observation only.
+# c47 active contract: no Gravity presence hook; verified WallRun lifecycle remains the gate.
 for ini in (default_ini,preset):
     assert 'REQUEST_PRESENCE_DIAGNOSTIC=0' in ini
     assert 'WALLRUN_HOOK_DIAGNOSTIC=1' in ini
     assert 'WALLRUN_OBJECT_DIAGNOSTIC=1' in ini
     for needle in ('WALLSPRINT_ENABLE=0','WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0','WALLSPRINT_ORIENTATION_WRITE=0','WALLSPRINT_ADHESION_WRITE=0','WALLSPRINT_MOVEMENT_WRITE=0'): assert needle in ini
-assert 'v0.1c46' in default_ini
+assert 'v0.1c47' in default_ini
 
 UPDATE_SHA='e5c08bcdbc98e28f2b07aebb6a141b317ca740ee1a6a8f6da70752f98b98e40f'
 assert UPDATE_SHA in scalar
 assert f'{{"Update","{UPDATE_SHA}",422,89}}' in plan
 for needle in ('0x208','0x220','0x238','0x250','0x40c','0x3ecccccdU','0x41400000U','0x42960000U','0x42c80000U','0x42480000U','wallrun_update_scalar_sample','wallrun_update_scalar_summary','semantic_mapping=UNPROVEN','game_write=0','pointer_dereference=0'):
     assert needle in scalar, needle
-for needle in ('#include "wallrun_scalar_observation.hpp"','ws::scalar_fields::Observer scalarObserver','scalarObserver.reset()','scalarObserver.begin','scalarObserver.observe','scalarObserver.finish','wallrun_update_scalar_plan','pointer_dereference=0 game_write=0'):
+for needle in ('#include "wallrun_scalar_observation.hpp"','ws::scalar_fields::Observer scalarObserver','scalarObserver.reset()','scalarObserver.begin','scalarObserver.observe','scalarObserver.finish','wallrun_update_scalar_plan','wallrun_update_scalar_session','pointer_dereference=0 game_write=0'):
     assert needle in surface, needle
 assert 'writeMemory' not in scalar
 
-# The new observer must have a real sanitizer/-Werror unit test wired into the full suite.
+# Regression for c46: legacy rich surface telemetry is intentionally disabled, but the
+# five direct scalar reads must arm/sample/finalize BEFORE that gate can return.
+assert 'result.hooks.surfaceTelemetry=false;' in telemetry
+begin=surface[surface.index('inline void begin('):surface.index('inline void observe(')]
+observe=surface[surface.index('inline void observe('):surface.index('inline void finish(')]
+finish=surface[surface.index('inline void finish('):surface.index('inline void tick(')]
+assert begin.index('scalarObserver.begin') < begin.index('if(!runtimeObservationEnabled)return;')
+assert observe.index('scalarObserver.observe') < observe.index('if(!runtimeObservationEnabled)return;')
+assert finish.index('scalarObserver.finish') < finish.index('if(!runtimeObservationEnabled)')
+assert 'for(unsigned i=0;i<ws::scalar_fields::offsets.size();++i)' in observe
+
+# The observer has a sanitizer/-Werror unit test wired into the full suite.
 for needle in ('wallrun_scalar_observation_tests.cpp','-Wall -Wextra -Werror -pedantic -fsanitize=address,undefined','./build/wallrun_scalar_observation_tests'):
     assert needle in test_script, needle
 for needle in ('phase=first','phase=changed','attempts=4 read_samples=3 changes=1 stable_bits=0','schema_numeric_hit_counts_0p4_12_75_100_50=(0,2,1,0,0)'):
     assert needle in scalar_test, needle
 
-assert 'versionLabel[]="v0.1c46"' in version
-assert 'packageVersion[]="0.1.71"' in version
-assert '"version": "0.1.71"' in info and 'WallSprint v0.1c46' in info
+assert 'versionLabel[]="v0.1c47"' in version
+assert 'packageVersion[]="0.1.72"' in version
+assert '"version": "0.1.72"' in info and 'WallSprint v0.1c47' in info
 for readme in (source_readme,project_readme):
-    for needle in ('v0.1c46','0.1.71','0x208','0x220','0x238','0x250','0x40C','REQUEST_PRESENCE_DIAGNOSTIC=0','wallrun_update_scalar_summary'):
+    for needle in ('v0.1c47','0.1.72','0x208','0x220','0x238','0x250','0x40C','REQUEST_PRESENCE_DIAGNOSTIC=0','wallrun_update_scalar_session','wallrun_update_scalar_summary'):
         assert needle in readme, needle
-for needle in ('package_mode": "wallrun_update_scalar_read_only"','"request_presence_diagnostic": False','"status": "c45_bounded_zero_hit_retired"','"extra_native_hooks": False','"captured_pointer_dereference": False','"semantic_mapping_authenticated": False','"offsets_hex": ["0x208", "0x220", "0x238", "0x250", "0x40C"]'):
+for needle in ('package_mode": "wallrun_update_scalar_read_only"','"request_presence_diagnostic": False','"status": "c45_bounded_zero_hit_retired"','"extra_native_hooks": False','"independent_of_legacy_surface_telemetry": True','"captured_pointer_dereference": False','"semantic_mapping_authenticated": False','"offsets_hex": ["0x208", "0x220", "0x238", "0x250", "0x40C"]'):
     assert needle in package_wrapper, needle
-assert 'c46' in package_wrapper
+assert 'c47' in package_wrapper
 
-print('request_presence_static: PASS (c46 dormant presence + WallRun scalar contract)')
+print('request_presence_static: PASS (c47 scalar path independent of disabled surface telemetry)')
