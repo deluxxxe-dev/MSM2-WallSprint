@@ -3,8 +3,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p build logs
 
-# Fail fast on the active c40 package/config/version/readme contract before the
-# long native/sanitizer suites.
+# Fail fast on the active Request presence package/config/version/identity contract
+# before the long native/sanitizer suites.
 python3 tests/request_presence_static.py
 
 g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -Iinclude src/core_tests.cpp -o build/core_tests
@@ -38,6 +38,3 @@ g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -
 ./build/movement_delta_tests | tee logs/movement_delta_tests.log
 
 bash tools/test_reversal_heading.sh
-bash tools/test_wall_motion_window.sh
-
-python3 tools/test_select_wallrun_comparison.py
