@@ -103,3 +103,14 @@ prefix review establish local facts; no global dominance/branch execution proof.
 `git diff --exit-code 71acd91 -- source/include source/src source/mod environment BUILD_MANIFEST.json 'MSM2-WS-v0.1c38r6*'` expected/actual exit0: native/math/INI/shared tools/artifacts unchanged.
 Wisdoms updated/pushed `15bd6349423eeeeef38edded4481a6d0470e1ec1`; remote main
 SHA matches. Source worktree/runtime/KIT on owner not updated by publication.
+
+## Publication verified — shared successor
+
+Implementation `d55d58d96853244d15ed48481b3987ed4b0fb319` pushed to
+`codex/v01c20-edi-value-provenance`. Independent GitHub fetch/FETCH_HEAD/local
+HEAD/ls-remote agree; all7 changed blobs match via
+`python3 /tmp/ws-successor-publication.py`. Follow-up changes records only, so
+focused tests/build are not repeated for unchanged executable/runtime bytes.
+Actual successor and owner Windows remain UNAVAILABLE; one new successor JSON
+bootstrap only, no repeated77 or game/update/full build. Five original untracked
+files preserved. No main merge/reset/force/clean or unrelated process mutations.

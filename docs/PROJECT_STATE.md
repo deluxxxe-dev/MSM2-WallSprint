@@ -567,3 +567,14 @@ alter tested code/runtime/artifacts, so no test/rebuild repeat needed.
 Owner complete77 acquisition remains UNAVAILABLE, not synthetic PASS. ONE new
 fragment77 bootstrap action is in CODEX_RESULT; no old41-only repeat/game test.
 Five original untracked artifacts preserved; no main merge/reset/force/clean.
+
+## Publication verified — shared successor
+
+Implementation `d55d58d96853244d15ed48481b3987ed4b0fb319` pushed to
+`codex/v01c20-edi-value-provenance`. Independent GitHub fetch/FETCH_HEAD/local
+HEAD/ls-remote agree; all7 changed blobs match via
+`python3 /tmp/ws-successor-publication.py`. Follow-up changes records only, so
+focused tests/build are not repeated for unchanged executable/runtime bytes.
+Actual successor and owner Windows remain UNAVAILABLE; one new successor JSON
+bootstrap only, no repeated77 or game/update/full build. Five original untracked
+files preserved. No main merge/reset/force/clean or unrelated process mutations.
