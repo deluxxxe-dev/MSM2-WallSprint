@@ -7,11 +7,15 @@ source publications/A-B commits yet owner-reported descent still fails. Current
 heading follows displacement and cannot independently request missing down
 motion. Standard TurnMaxDown12 vs retained -12degree slopes is correlation only;
 active selection/units/consumer and mapped-intent producer remain UNKNOWN.
-Preferred minimal design pairs a proven mapped-intent facing adapter with proven
-native steering capability, preserving current heading/native gates. Behavior
+Latest53655ba task expansion incorporated: original wall-as-ground ground Sprint
+was not tested by historical posture-only builds. A ground Sprint / B native
+surface-relative request / C WR constraints compared; A is the preferred
+evidence-gated research route, arbitrary-up feasibility UNKNOWN. First proposed
+discriminator is native ground support/up/gravity consumption. Completed mapped-
+intent design retained across all routes, current heading/native gates preserved. Behavior
 implementation BLOCKED on provenance; no runtime/version/package/config changes.
 Available bounded archive inventory did not identify WSU binaries; no fresh WSU
-disassembly claimed. ONE proposed offline reference input-producer review is
+disassembly claimed. ONE proposed ground support-frame consumer verification is
 recorded, not initiated/owner-requested. No Update-WS/game/OFF-video/scalar test
 needed for this docs-only task. CODEX_NEXT intent preserved; no later work authorized.
 

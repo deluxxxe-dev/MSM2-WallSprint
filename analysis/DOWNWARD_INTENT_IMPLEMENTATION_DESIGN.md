@@ -105,14 +105,67 @@ producer trace, DLL execution or game binary analysis was performed.** Existing
 report conclusions remain supplied static evidence; independent source/design
 work above is complete regardless of reference availability.
 
-## One preferred minimal design, conditional admission
+## Original goal and three-route architecture comparison
 
-Prefer an independently implemented **mapped-intent facing adapter paired with
-an authenticated native steering-capability policy**. Keep original native
-locomotion; do not substitute raw velocity/Position or copy wallslide's runtime
-state writes. These are two necessary proof gates, not two speculative patches:
-input can improve facing timing but cannot alone make native descent happen;
-a native downward envelope can permit movement but cannot prove input provenance.
+The task expanded during publication at remote53655ba. Read
+[recovered initial-goal review](INITIAL_WALL_AS_GROUND_REVIEW_20261031.md) and
+`docs/FEATURE_ROADMAP.md` (Final intent, movement foundation and contact sections).
+The Oct22 goal was already wall-as-ground normal Sprint. Historical posture
+writes being overwritten in10–20ms do NOT test transplantation of ground Sprint
+locomotion, arbitrary gravity or wall-relative ground admission. This route is
+**untested/UNKNOWN**, not rejected. Recovered chat summaries are historical
+statements, not new binary/controller proof.
+
+| Route | Available positive evidence | Exact missing proof / cost | Decision |
+| --- | --- | --- | --- |
+| A. Native ground Sprint with wall-relative support/up/gravity | Closest to original goal; existing validated wall normal/SurfaceFrame and orientation lifetime are reusable. Ground-style posture is a desired presentation, not proof of controller reuse | No authenticated current ground-controller admission/contact/step/slope/gravity consumers or ABI; no evidence they accept arbitrary Up rather than world-Y. Need consistent support query and acceleration frame plus native state-entry/exit ownership, not merely rotate Actor Up | Preferred architecture to investigate FIRST, conditional on discriminator below; feasibility UNKNOWN |
+| B. WS-owned tangent movement request through native collision/contact | Existing surface frame supplies geometry; shared reference Scripted Flight strings name RequestSimpleMotion, GravityOrientationOwner/SetGravityVector and mover gravity chain | Strings are search leads only; current-build request ABI, collision sweep/support handling, allowed state, threading, gravity ownership/restore and contact persistence unproven. Flight is not ground Sprint | Reserve alternative if A proves world-up-bound and B independently proves native collision/contact semantics; not currently implementable |
+| C. Modify WR steering constraints | Only route with current WR lifecycle and authenticated serialized Standard field; r7 confirms existing WR lateral/upper behavior | Downward consumer/units/resource selection UNKNOWN; WR state/animation may still forbid target despite angle change; no proof parameter remedy delivers wall-as-ground Sprint | Not selected just because r7 uses WR; retain as possible bounded remedy only if A/B evidence later favors it |
+
+**Preferred route: A, evidence-gated native ground Sprint reuse**, rather than
+selecting C prematurely. This is a research priority based on the recovered goal
+and absence of a ground-Sprint test, not a feasibility PASS or permission to
+switch states. B requires more WS controller/contact policy; C has the smallest
+known serialized lever but does not establish the desired controller semantics.
+No available evidence demonstrates arbitrary-up ground Sprint or rules it out.
+
+Exact current-source boundary: `sdk_bridge.cpp::sampleCallback` and vendor
+`game/Transform.h` expose transform observation/access, not controller gravity.
+Vendor `game/Actor.h` supplies generic component lookup/addition and Transform,
+not a typed ground-controller/support ABI; casting a component would not prove
+it. Existing `native_source_override.cpp::tick` validates a WR owner and normal,
+not ground-state owner. `Math/reversal_heading.hpp` constructs a basis, not
+contact queries. `planar_mvp.hpp`, core test fixtures and surface dryrun diagnostics
+are not native ground/collision implementations. Shared
+`MSM2-Wisdoms/docs/WALLSPRINT_REFERENCE_MODS.md`, “Higher-level movement architecture
+hint from Scripted Flight”, has reference labels only, not source/control flow
+for a current ground-state consumer. Overstrike's decoder supplies no such
+controller semantics. Consequently support query direction, grounded acceptance,
+gravity vector, slope tests and native contact retention are all UNKNOWN.
+
+Animation reuse and controller reuse are independent: a Sprint clip could change
+presentation while WR still controls motion; real ground-controller reuse could
+still need separate animation-state compatibility. Neither is solved by Actor
+Up. Do not import WSU clips, gravity writes or controller offsets.
+
+Preserve existing surface geometry, guarded Hero identity and orientation
+restore/publication work without resetting working code. WR token lifetime cannot
+be stretched into a ground-state certificate: if a future A transition exits WR,
+current Deinit/lease must close normally, with separately proven ground owner,
+state entry, support lifetime and bounded restoration. Restore actual native
+settings/state only if ownership, initial values and exit behavior are proved;
+no automatic reuse of dead WR leases. B likewise requires its own collision and
+request ownership. These are design requirements, not new production operations.
+
+## Independent intent work retained across all three routes
+
+A, B and C each require authenticated mapped intent to face before travel. The
+completed adapter/lifecycle design below is preserved. For A it would feed the
+proven native ground controller and facing; for B a proven native motion request;
+for C the native WR steering path. None can be bound without actual ABI proof.
+Do not implement a down-facing target before the selected route can sustain down
+motion. The earlier conditional WR-capability policy below is C-specific, not
+the selected architecture. No numerical tuning or motion injection is proposed.
 
 ### Future source touchpoints and contracts (proposals, not implementations)
 
@@ -166,20 +219,27 @@ Installation content, loaded/selected/consumed native configuration, mapped inte
 actual motion and visible pose each need their own evidence; none substitutes
 for the others. No unchanged r7 game run, update or test is requested now.
 
-## ONE proposed next evidence acquisition — not automatically authorized
+## ONE first discriminating verification — proposed, not initiated
 
-A bounded **offline producer-provenance review of the already privately supplied,
-SHA-matched SwingCore binary**: inspect the caller/context construction feeding
-DLL0x36770 and assignments of its context+0x8C/90/94. Produce a compact proof
-record of producer identity, coordinate frame, mapping/neutral semantics,
-thread/owner/generation lifetime and freshness; if it merely copies motion or
-another opaque field, explicitly stop with that blocker. Do not execute/install
-it, copy code or recursively resume the stopped scalar CFG. First locate the
-existing private file in the research context; no new download/capture request
-is made here.
+Perform a bounded **current-build native ground-Sprint support-frame consumer
+review** before choosing a WR-constraint remedy: authenticate the ground-Sprint
+state/controller entry identity and follow its grounded-admission/support-query
+Up direction and gravity/slope use through the first consumer. The output must
+identify whether these operations derive from a per-owner mutable support/up
+frame (and who owns it), or a world-vertical constant/constraint; an unknown
+callee/field is an exact blocker, not an arbitrary-up PASS. Require exact EXE/
+function identity and source/consumer relationship, not a posture test or a
+reference string. No live writes/state switches, binary execution, repeated
+r7/OFF capture or resumed scalar CFG. Available sources here contain no
+identifiable authenticated ground-Sprint consumer, so this verification remains
+proposed rather than a claim of performed disassembly or a request for broad
+byte capture.
 
-This single acquisition resolves whether the reference's “inputDirection” is a
-credible independent pre-displacement intent lead. It does **not** by itself
-prove current-build game ABI or native TurnMaxDown use, and cannot authorize a
-behavior patch. Current native-capability/consumer evidence remains UNKNOWN.
-The present task does not implement or initiate this acquisition.
+This ONE verification discriminates A from a possible B/C investigation. If A
+supports a coherent arbitrary-up support/gravity contract, it justifies further
+bounded ABI/lifetime work; if world-up-bound, it explains why A needs more than
+Actor rotation. It still does not prove writable ownership or authorize a
+behavior patch. Independent inputDirection producer provenance remains an
+explicit prerequisite in the retained intent design; the unavailable SwingCore
+context producer is a possible lead, not a second immediate acquisition request.
+No owner operation or acquisition is automatically requested by this task.

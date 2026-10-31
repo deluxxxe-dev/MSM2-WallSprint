@@ -22,8 +22,11 @@ is correlation, not selected native field consumption or units proof.
 Design enumerates actual runtime source touchpoints, independent intent versus
 velocity/pose/animation, file schema versus native selection, required exact-build
 ABI/ownership/frame/freshness gates, working lateral/upper fallback and repeated
-turn lifecycle. Preferred conditional route: mapped-intent facing plus proven
-native steering capability, not motion injection or WSU state copying. Includes
+turn lifecycle. Latest task expansion53655ba and owner steering incorporated: compare A native
+ground Sprint with wall-relative support/up/gravity, B WS surface-relative native
+collision/contact request, C WR constraints. Preferred evidence-gated research
+route is A, arbitrary-up UNKNOWN; historical posture tests did not reject it.
+Mapped-intent design retained across all routes, no motion injection/WSU copying. Includes
 later authorized patch's ON/default restoration and exact-version/log acceptance
 requirements. No present support claimed.
 
@@ -31,9 +34,9 @@ Accessible primary Overstrike source pinned at
 `443ec468b5a7a922771dce6bfa96396f56896dcb` establishes serialization only.
 Bounded available ZIP inventory102 found no matching WSU members; no new WSU
 disassembly performed. Existing supplied report remains a lead. ONE proposed
-next acquisition is an offline SHA-matched SwingCore input-context producer
-review, not initiated or requested automatically; it alone would not prove the
-native downward consumer. No new owner capture/download required by this task.
+first discriminator is a bounded current-build ground-Sprint support/up/gravity
+consumer review, not initiated or requested automatically. SwingCore input-context
+producer remains a missing intent prerequisite, not a second immediate request. No new owner capture/download required by this task.
 
 ## Exact checks / expected / actual
 
@@ -75,7 +78,17 @@ Counts are check groups, not assertions. Expected empty `rg` matches use exit1.
    expected whitespace clean, only three intended Markdown files, existing local
    analysis link targets and task text unchanged; actual PASS.
 
-PASS6 check groups / SKIP0 / UNAVAILABLE1 (new WSU producer trace) / BLOCKED1
+7. `cat source/vendor/SM2ScriptTemplate/game/Actor.h`;
+   `cat source/vendor/SM2ScriptTemplate/game/Transform.h`;
+   `rg -n -i 'gravity|sprint|support|requestsimplemotion|ground|contact' source/src source/include source/vendor/SM2ScriptTemplate/game -g '*.cpp' -g '*.hpp' -g '*.h'`;
+   read `analysis/INITIAL_WALL_AS_GROUND_REVIEW_20261031.md`,
+   `docs/FEATURE_ROADMAP.md` and Wisdoms reference architecture section:
+   expected distinguish typed controller proof from transform/generic component/
+   fixture/label evidence; actual no identified authenticated ground support-Up/
+   gravity consumer. Three-route comparison and first discriminator completed,
+   arbitrary-up remains UNKNOWN. PASS research check, not ground-route feasibility.
+
+PASS7 check groups / SKIP0 / UNAVAILABLE1 (new WSU producer trace) / BLOCKED1
 (behavior implementation admission, outside authorized implementation scope).
 Native consumer/active-selection proof remains UNKNOWN; static searches do not
 convert that missing proof into PASS. Native Windows/game acceptance not run:
@@ -107,6 +120,9 @@ preset-only evidence and outdated experiment sequence; accepted r7 comparison,
 input unknowns and schema/consumer separation preserved. Commit
 `f9df414c9e99c40f7d8f0d4faacf4ced6b44b9a8` pushed; independent `ls-remote` agrees.
 No raw user logs, proprietary function bodies, binaries or personal paths added.
+
+Wisdoms follow-up architecture qualification also pushed; final SHA recorded
+with readback below.
 
 WallSprint implementation/documentation commit and independent publication
 readback recorded after commit below. Runtime remains v0.1c38r7/package0.1.63;
