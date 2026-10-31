@@ -134,3 +134,19 @@ No Update-WS, Spider-Man2 launch, unchanged r7 run, OFF video or scalar/config
 probe. ONE future evidence proposal is documented, not automatically authorized.
 No current owner operation required. Future behavior remains gated on both
 independent intent and native capability evidence.
+
+### Verified publication
+
+Completed design implementation commit
+`9baca93035c0919e181152efca1c428fd66c4057` includes local initial design901a293
+and same-branch remote expansion53655ba via preserved merge, never WS main.
+`python3 /tmp/ws-intent-publication.py` fetched the branch into independent clone
+`/tmp/ws-steering-docs-publication`, required FETCH_HEAD/local HEAD/ls-remote
+agreement and byte-for-byte equality for all5 changed Markdown files versus
+02db844. Expected all identities/bytes equal; actual PASS. This adds1 publication
+check: total **PASS8 / SKIP0 / UNAVAILABLE1 / BLOCKED1**, same scopes above.
+Final documentation-only record commit follows; no runtime retest needed.
+Wisdoms final `a7ef5962ae49f2d1f654eb15df461c5d3b3b5db4`: push and fresh fetch
+HEAD/FETCH_HEAD agree. Earlier f9df414 remains its ancestor. Initial preferred
+WR-policy wording superseded by the final three-route comparison; A is conditional
+research preference, not implemented or proven arbitrary-up support.
