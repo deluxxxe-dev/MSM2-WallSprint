@@ -1,24 +1,26 @@
-# Next task — prepare ON/OFF orientation-source comparison for down steering
-Branch codex/v01c20-edi-value-provenance; no main merge.
-Read AGENTS required docs, analysis/WALLRUN_SUCCESSOR_OWNER_RESULT_20261031.md, WALLRUN_SHARED_SUCCESSOR_REVIEW.md and r6 downward evidence.
-20byte successor capture accepted; stop scalar route here. No more offline branch/callee capture tasks.
+# Next task — resolve native downward limit and independent directional intent
+Branch codex/v01c20-edi-value-provenance. No main merge.
+Read AGENTS required docs, analysis/V01C38R7_OWNER_COMPARISON_20261031.md, WSU_REFERENCE_REVIEW_20261031.md, VANILLA_WALLRUN_STEERING_CONFIG_20261029.md, existing r5/r6 heading/runtime/source reviews and relevant Wisdoms.
 
-## Purpose
-Distinguish original native down steering from interference caused by WS orientation override. No gameplay fix yet.
-Existing source/mod/WallSprint.ini has WALLSPRINT_NATIVE_SOURCE_OVERRIDE=1 and F8-latches-OFF-until-restart comment. Verify actual lifecycle/semantics, do not assume config modification path.
-Choose existing explicit source override ON/OFF control while keeping same WS script/read-only lifecycle diagnostics. Prefer restart/config boundary when F8 emergency latch alters other observations; no new toggle framework.
-R6 motion windows currently only active-source; OFF comparison needs validated equivalent observations before asking owner for another run.
+## Accepted result / objective
+R7 owner ON/OFF comparison is complete: OFF0publications/A-B commits, ordinary WR; downward failure persists in both modes. Do not repeat diagnostic acquisition or demand OFF video. Existing heading observer follows actual displacement, so it cannot independently request missing downward locomotion.
+Find a concrete evidence-backed route to downward WS and earlier input-driven facing. This task is focused source/static research and a reviewable implementation design, NOT another generic diagnostic version or blind gameplay patch.
 
-## Minimum implementation
-Reuse existing authenticated worker snapshot position/full Actor axes/surface normal and verified WallRun lifecycle for bounded comparable ON/OFF windows even when publication disabled. Keep sampling eligibility independent of ability to write; OFF must never publish/commit orientation, and no new pointer reads/hooks.
-Label treatment mode, actual admitted/override counts, session/gen/native update/monotonic time, world tangent delta/normal/Actor forward, reason for missing sample. Existing requested_heading means observer target, NOT input intent; OFF may have no valid target and must mark unavailable rather than invent one.
-Do not fabricate WS orientation basis in OFF or silently use Actor Up=wall normal (vanilla actor up may differ). Use validated existing surface normal. Capture windows use same time/caps in both modes; source-off cannot lose all evidence due early source permission return.
-If equivalent observation cannot be made using already authenticated paths, report exact blocker instead of adding unsafe reads or requesting inadequate comparison.
-Record compact test specification for Chat: same flat wall/character/camera starting orientation, identical down/lower-diagonal holds, ON vs OFF in separate fresh attempts, no angle/speed change. Owner input report is not raw mapped intent proof.
-Expose one documented safe method to select mode and restore original config via existing tooling; no hand-edit shared scripts.txt/archive or broad mod changes.
+## Work
+1. Inspect current runtime source/data flow, not unused controller helpers: enumerate current actor/normal/displacement inputs and exactly why downward heading cannot be generated independently. Identify where requested input direction could be observed before displacement. Separate final body pose, orientation source, animation, actual velocity and mapped intent.
+2. Investigate native downward restriction: retained slopes repeatedly reach about-12degrees in BOTH treatments and Standard TurnMaxDown=12, but this is correlation. Search existing authenticated callsites, config decoder/loader/reference sources for actual selection/field consumption. Document what proves or blocks units, selected resource and current-state applicability. No repeating TurnSpeedFast/Slow probes, no arbitrary parameter tuning.
+3. Use supplied WSU static findings as leads: SwingCore RVA0x36770 chooses velocityPure first, inputDirection fallback from its own context; trace context producer only if binaries are actually available. wallslide uses a runtime controller plus assets, not config alone. DLL-relative offsets are NOT game offsets. No copying code/binaries/assets into WS. Do not assume cloud has attachments from Chat; if unavailable, use report plus existing repository/accessible primary source evidence, report exact missing producer proof, and complete all independent source/design work. Do not block all work on file availability or claim disassembly not performed.
+4. Produce one preferred minimal design with exact existing source touchpoints, required field/ABI/identity/lifetime validation, how movement intent differs from orientation, and how to preserve current successful lateral/upper-direction behavior and repeated-turn lifecycle. If evidence is insufficient, state ONE concrete next evidence acquisition with why it resolves the blocker; do not implement/request it automatically, resume stopped scalar CFG, or chain byte captures. Consider whether privately supplied reference files already resolve it before requesting owner action.
 
-## Limits / completion
-Diagnostics only, not downward patch. Preserve r6 heading math/all constants/normal gate/native Deinit/stale/A-B ownership/4096/C52. No motion/input/Position/velocity/gravity/animation writes or new input API, no SF/shared loader/profile/environment edits.
-Allowed minimum native diagnostic sampling/fixture tests/version/package if changed, docs/state/result. Reuse code rather than parallel observer system.
-Test OFF sampled but0publications/commits, ON unchanged gameplay, invalid/stale/identity/session clears, equal sampling/caps and disable/emergency behavior.
-Use existing required tests for actual runtime diff; docs-only no rebuild. Commit/push verify. Reply STATUS/CHANGED/RESULT/NEED; explicitly state diagnostic-only version, exact selection mechanism and log name. Chat gives concise owner comparison after completion.
+## Scope / deliverable
+Allowed analysis documents and necessary offline analysis helpers using existing inputs; no runtime/version/package change by default. No new live pointer reads/hooks, motion/input/velocity/gravity/animation/Position writes, config stage deployment, shared updater/loader/profile/SF changes, C52 relaxation or speculative offsets.
+Record accepted comparison in PROJECT_STATE (prepend current status; do not rewrite history), supersede old comparison-pending claims explicitly, update CODEX_RESULT and add analysis/DOWNWARD_INTENT_IMPLEMENTATION_DESIGN.md. Leave CODEX_NEXT task intent intact or mark completed without inventing follow-on authorization.
+Run only relevant checks if a real helper changes; docs-only no full build/test/package. Commit/push/readback verify; concise STATUS/CHANGED/RESULT/NEED with concrete finding, not success implying gameplay fixed.
+
+## Owner test after eventual behavior implementation (include in design)
+A later authorized behavior patch must specify Update-WS -> Install mods -> Run, correct ON/default selection restoration, exact version/log, then:
+1 lateral left/right plus repeated reversal without WS release;
+2 horizontal WS -> down hold3seconds: sustained downward movement/facing, no periodic horizontal flips;
+3 lower-right/lower-left holds3seconds: visible diagonal downward travel with stable facing;
+4 upper/upper-diagonal regression and RT-held stick-neutral/reinput behavior.
+Do not ask owner to repeat unchanged r7 now. If current task is docs-only explicitly say no runtime update/test for it; the above is the later patch acceptance test, not a claim of present support.
