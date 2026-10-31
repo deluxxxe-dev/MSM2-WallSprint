@@ -67,15 +67,19 @@ C46 version `v0.1c46`, package `0.1.71`.
 
 The compiled c45 presence observer remains in source but dormant; its exact Gravity identity and assembly safety invariants continue to be checked so stale unsafe code cannot silently ship.
 
+The new scalar observer also has a sanitizer/`-Werror` unit test in the normal full test chain. It checks first/change logging, unchanged-value behavior, exact numeric-hit counting and post-finish inactivity. A separate local warning-clean compile of the new header/test logic passed; this is not a substitute for the owner full Windows/WSL pipeline.
+
 ## C46 CHANGED FILES
 
 - `source/include/wallrun_scalar_observation.hpp` (new)
 - `source/include/msm2/surface_source.hpp`
+- `source/src/wallrun_scalar_observation_tests.cpp` (new)
 - `source/include/version.hpp`
 - `source/mod/info.json`
 - `source/mod/WallSprint.ini`
 - `source/mod/presets/request_presence_read_only.ini`
 - `source/tools/package.py`
+- `source/tools/test.sh`
 - `source/tests/request_presence_static.py`
 - `README_TEST.md`
 - `source/README_TEST.md`
