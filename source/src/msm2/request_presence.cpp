@@ -19,9 +19,9 @@ constexpr std::uintptr_t kRequestEndRva = 0x11A1CA2;
 constexpr std::uintptr_t kRequestUnwindRva = 0x1154EDC;
 constexpr std::size_t kRequestSize = kRequestEndRva - kRequestRva;
 constexpr std::size_t kNativeSnapshot = 32;
-constexpr LONG kPhaseRecordCap = 16;
-constexpr unsigned kPhaseLimit = 6;
-constexpr ULONGLONG kPhaseDurationMs = 2000;
+constexpr LONG kPhaseRecordCap = 8192;
+constexpr unsigned kPhaseLimit = 1;
+constexpr ULONGLONG kPhaseDurationMs = 30000;
 constexpr char kRequestSha256[] = "2d879249c65b8074bb548e6563b5e0c2955ab672c4fd3cf080adb83b48691d64";
 constexpr unsigned char kRequestPrefix[] = {0x4c,0x8b,0xdc,0x49,0x89,0x5b,0x08};
 
@@ -45,6 +45,7 @@ volatile LONG ws_request_presence_overflow = 0;
 volatile LONG ws_request_presence_contention = 0;
 PresenceRecord ws_request_presence_records[kPhaseRecordCap]{};
 std::uintptr_t ws_request_presence_original = 0;
+std::uint64_t ws_request_presence_read_tsc();
 void ws_request_presence_observer();
 void ws_request_presence_restore0();
 void ws_request_presence_restore1();
@@ -74,17 +75,15 @@ struct Runtime {
     const char* phaseClass{};
     const char* closeReason{};
     ULONGLONG deadline{};
+    ULONGLONG captureStartTick{};
+    std::uint64_t captureStartTsc{};
     unsigned phaseId{};
-    unsigned groundIndex{};
-    unsigned wallIndex{};
     unsigned phasesStarted{};
     std::uint64_t sessionCaptured{};
     std::uint64_t sessionOverflow{};
     std::uint64_t sessionContention{};
 };
 Runtime runtime;
-constexpr const char* kGroundLabels[] = {"ground_straight","ground_reverse","ground_neutral"};
-constexpr const char* kWallLabels[] = {"wallrun_left","wallrun_right","wallrun_down"};
 
 LONG atomicRead(volatile LONG* value) {
     return InterlockedCompareExchange(value,0,0);
@@ -231,22 +230,30 @@ void beginClose(const char* reason) {
 
 void finalizePhase() {
     if(runtime.phase!=PhaseState::Closing || atomicRead(&ws_request_presence_active_callbacks)!=0) return;
+    const auto captureEndTsc=ws_request_presence_read_tsc();
+    const auto captureEndTick=GetTickCount64();
+    const auto elapsedMs=captureEndTick>=runtime.captureStartTick?captureEndTick-runtime.captureStartTick:0;
+    const auto tscSpan=captureEndTsc>runtime.captureStartTsc?captureEndTsc-runtime.captureStartTsc:0;
     LONG count=std::clamp(atomicRead(&ws_request_presence_count),0L,kPhaseRecordCap);
     LONG overflow=std::max(0L,atomicRead(&ws_request_presence_overflow));
     LONG contention=std::max(0L,atomicRead(&ws_request_presence_contention));
     runtime.sessionCaptured+=static_cast<std::uint64_t>(count);
     runtime.sessionOverflow+=static_cast<std::uint64_t>(overflow);
     runtime.sessionContention+=static_cast<std::uint64_t>(contention);
-    msm2::writeLog("REQUEST_PRESENCE_PHASE_SUMMARY phase_id=%u class=%s label=%s label_auth=manual_not_native_authenticated correlation=non_atomic retained=%ld cap=%ld overflow=%ld contention=%ld lost=%ld reason=%s duration_cap_ms=%llu zero_hit=%u",runtime.phaseId,runtime.phaseClass?runtime.phaseClass:"unknown",runtime.phaseLabel?runtime.phaseLabel:"none",count,kPhaseRecordCap,overflow,contention,overflow+contention,runtime.closeReason?runtime.closeReason:"unspecified",static_cast<unsigned long long>(kPhaseDurationMs),unsigned(count==0));
+    msm2::writeLog("REQUEST_PRESENCE_PHASE_SUMMARY phase_id=%u class=%s label=%s label_auth=video_posthoc_not_native_authenticated correlation=non_atomic retained=%ld cap=%ld overflow=%ld contention=%ld lost=%ld reason=%s duration_cap_ms=%llu actual_duration_ms=%llu zero_hit=%u",runtime.phaseId,runtime.phaseClass?runtime.phaseClass:"unknown",runtime.phaseLabel?runtime.phaseLabel:"none",count,kPhaseRecordCap,overflow,contention,overflow+contention,runtime.closeReason?runtime.closeReason:"unspecified",static_cast<unsigned long long>(kPhaseDurationMs),static_cast<unsigned long long>(elapsedMs),unsigned(count==0));
     for(LONG i=0;i<count;++i){
         const auto& record=ws_request_presence_records[i];
-        msm2::writeLog("REQUEST_PRESENCE_RECORD phase_id=%u label=%s slot=%llu rcx_bits=0x%016llx rdx_bits=0x%016llx r8_bits=0x%016llx r9_bits=0x%016llx return_pc=0x%016llx thread_token=0x%016llx tsc=%llu semantics=opaque_bits_no_dereference",runtime.phaseId,runtime.phaseLabel?runtime.phaseLabel:"none",static_cast<unsigned long long>(record.slot),static_cast<unsigned long long>(record.rcx),static_cast<unsigned long long>(record.rdx),static_cast<unsigned long long>(record.r8),static_cast<unsigned long long>(record.r9),static_cast<unsigned long long>(record.returnPc),static_cast<unsigned long long>(record.threadToken),static_cast<unsigned long long>(record.tsc));
+        const bool offsetValid=tscSpan>0 && record.tsc>=runtime.captureStartTsc && record.tsc<=captureEndTsc;
+        const double offsetMs=offsetValid?(static_cast<double>(record.tsc-runtime.captureStartTsc)*static_cast<double>(elapsedMs)/static_cast<double>(tscSpan)):0.0;
+        msm2::writeLog("REQUEST_PRESENCE_RECORD phase_id=%u label=%s slot=%llu offset_ms_est=%.3f offset_valid=%u offset_clock=tsc_linearized_to_GetTickCount64 rcx_bits=0x%016llx rdx_bits=0x%016llx r8_bits=0x%016llx r9_bits=0x%016llx return_pc=0x%016llx thread_token=0x%016llx tsc=%llu semantics=opaque_bits_no_dereference",runtime.phaseId,runtime.phaseLabel?runtime.phaseLabel:"none",static_cast<unsigned long long>(record.slot),offsetMs,unsigned(offsetValid),static_cast<unsigned long long>(record.rcx),static_cast<unsigned long long>(record.rdx),static_cast<unsigned long long>(record.r8),static_cast<unsigned long long>(record.r9),static_cast<unsigned long long>(record.returnPc),static_cast<unsigned long long>(record.threadToken),static_cast<unsigned long long>(record.tsc));
     }
     runtime.phase=PhaseState::Idle;
     runtime.phaseLabel=nullptr;
     runtime.phaseClass=nullptr;
     runtime.closeReason=nullptr;
     runtime.deadline=0;
+    runtime.captureStartTick=0;
+    runtime.captureStartTsc=0;
 }
 
 void logSession(const char* reason) {
@@ -275,12 +282,14 @@ void arm(const char* phaseClass,const char* label) {
     runtime.phaseClass=phaseClass;
     runtime.phaseLabel=label;
     runtime.closeReason=nullptr;
-    runtime.deadline=GetTickCount64()+kPhaseDurationMs;
+    runtime.captureStartTick=GetTickCount64();
+    runtime.captureStartTsc=ws_request_presence_read_tsc();
+    runtime.deadline=runtime.captureStartTick+kPhaseDurationMs;
     ++runtime.phaseId;
     ++runtime.phasesStarted;
     runtime.phase=PhaseState::Capturing;
     InterlockedExchange(&ws_request_presence_enabled,1);
-    msm2::writeLog("REQUEST_PRESENCE_PHASE_ARM phase_id=%u class=%s label=%s label_auth=manual_not_native_authenticated correlation=non_atomic max_ms=%llu max_records=%ld controls=F11_ground_F12_wallrun",runtime.phaseId,phaseClass,label,static_cast<unsigned long long>(kPhaseDurationMs),kPhaseRecordCap);
+    msm2::writeLog("REQUEST_PRESENCE_PHASE_ARM phase_id=%u class=%s label=%s label_auth=video_posthoc_not_native_authenticated correlation=non_atomic max_ms=%llu max_records=%ld controls=F11_once_auto_stop video_alignment=record_offset_ms_est",runtime.phaseId,phaseClass,label,static_cast<unsigned long long>(kPhaseDurationMs),kPhaseRecordCap);
 }
 
 } // namespace
@@ -288,7 +297,7 @@ void arm(const char* phaseClass,const char* label) {
 namespace msm2::request_presence {
 
 bool start(bool targetBuildConfirmed,Config config,std::uintptr_t moduleBase,std::size_t moduleSize) {
-    msm2::writeLog("REQUEST_PRESENCE_CONFIG requested=%u mode=read_only entry_rva=0x%llx site_size=%llu phase_ms=%llu phase_record_cap=%ld session_phase_cap=%u ground_control=F11 wallrun_control=F12",unsigned(config.enabled),static_cast<unsigned long long>(kRequestRva),static_cast<unsigned long long>(kRequestSize),static_cast<unsigned long long>(kPhaseDurationMs),kPhaseRecordCap,kPhaseLimit);
+    msm2::writeLog("REQUEST_PRESENCE_CONFIG requested=%u mode=read_only entry_rva=0x%llx site_size=%llu phase_ms=%llu phase_record_cap=%ld session_phase_cap=%u capture_control=F11_once legacy_F12=disabled",unsigned(config.enabled),static_cast<unsigned long long>(kRequestRva),static_cast<unsigned long long>(kRequestSize),static_cast<unsigned long long>(kPhaseDurationMs),kPhaseRecordCap,kPhaseLimit);
     if(runtime.created){
         InterlockedExchange(&ws_request_presence_enabled,0);
         msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=resident_hook_already_created process_restart_required=1 previous_hook_enabled=%u trampoline_retained=1 original_forward_preserved=1",unsigned(runtime.enabled));
@@ -372,15 +381,11 @@ void tick() {
 }
 
 void armNextGround() {
-    if(runtime.groundIndex>=3){msm2::writeLog("REQUEST_PRESENCE_ARM rejected=1 class=ground reason=all_ground_phases_used");return;}
-    const char* label=kGroundLabels[runtime.groundIndex++];
-    arm("ground_manual",label);
+    arm("continuous_video","video_capture");
 }
 
 void armNextWallRun() {
-    if(runtime.wallIndex>=3){msm2::writeLog("REQUEST_PRESENCE_ARM rejected=1 class=wallrun reason=all_wallrun_phases_used");return;}
-    const char* label=kWallLabels[runtime.wallIndex++];
-    arm("wallrun_manual",label);
+    msm2::writeLog("REQUEST_PRESENCE_ARM rejected=1 class=legacy_wallrun_control reason=F12_disabled_use_F11_once");
 }
 
 void closeCapture(const char* reason) {
