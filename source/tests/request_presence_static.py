@@ -56,11 +56,10 @@ for needle in ('request_presence::start','request_presence::tick','VK_F11','VK_F
     assert needle in telemetry, needle
 for needle in ('request_presence.S','request_presence.cpp','request_presence_asm.o','request_presence.o'):
     assert needle in build, needle
-assert 'REQUEST_PRESENCE_DIAGNOSTIC=0' in default_ini
-assert 'WALLSPRINT_ORIENTATION_WRITE=0' in default_ini
-assert 'REQUEST_PRESENCE_DIAGNOSTIC=1' in preset
-for needle in ('WALLSPRINT_ENABLE=0','WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0','WALLSPRINT_ORIENTATION_WRITE=0','WALLSPRINT_ADHESION_WRITE=0','WALLSPRINT_MOVEMENT_WRITE=0'):
-    assert needle in preset, needle
+for ini in (default_ini,preset):
+    assert 'REQUEST_PRESENCE_DIAGNOSTIC=1' in ini
+    for needle in ('WALLSPRINT_ENABLE=0','WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0','WALLSPRINT_ORIENTATION_WRITE=0','WALLSPRINT_ADHESION_WRITE=0','WALLSPRINT_MOVEMENT_WRITE=0'):
+        assert needle in ini, needle
 assert 'versionLabel[]="v0.1c40"' in version
 assert 'packageVersion[]="0.1.65"' in version
 print('request_presence_static: PASS')
