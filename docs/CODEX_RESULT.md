@@ -1,133 +1,114 @@
-# Codex result — current-build motion/gravity relocation operation
+# Codex result — accepted native motion/gravity contract report
 
-2026-10-31 JST. Branch `codex/v01c20-edi-value-provenance`.
-Baseline `ba979e1471cdc9eec42c9da52d4e6f48098efe30`, fetched/fast-forwarded from
-b99541d; no main merge. Five pre-existing untracked archives/bundle preserved.
+2026-10-31 JST; branch `codex/v01c20-edi-value-provenance`.
+Baseline `823e10c0ac4e03aa0a6d7d1a4edfd7b01de9528d`, fetched/fast-forwarded
+fromc288888. No main merge. Five old untracked archives/bundle preserved.
 
 ## STATUS / actual result
 
-**RELOCATION_OPERATION_READY; CURRENT_EXE_RESULT_UNAVAILABLE.**
-Accepted owner zero-shift mismatch7/7 markers,2/2 CALLs; no canonical repeat.
-Exact private ScriptedFlight still present/authenticated. Finished actual
-entry/alternative matcher and three-anchor consensus analysis. Implemented one
-bounded owner-local resolve+verify operation using actual recovered signatures
-and stricter entry/CFG boundaries. Not another name scanner or guessed common
-shift. Runtime r7/config/packages/C52/shared environment/SF unchanged.
+Accepted owner152832 current-file4 unique identities/2 reachable CALLs/7 markers.
+Setter no-.pdata leaf remains PARTIAL, not a callable safe API. Superseded old
+pending-resolution claims explicitly in PROJECT_STATE. No target/name/canonical/
+relocation acquisition repeated. Current native function bodies are absent here;
+no actual argument contract invented from reference labels or test fixtures.
 
-Actual reference method:12720 tries entry pattern first; nonempty results keep
-ambiguity. Only zero entry hits scan interior pattern, map through actual PE
-runtime containment and deduplicate.12FD0 accepts1/refuses>1;0 may use executable-
-bounded signed-shift fallback with upstream consensus. BE60 unique largest delta
-bin requires>=3 and no tie. Startup10107 supplies minimum3. Full reference uses
-more roles; owned operation uses only four supported role/signature pairings.
-No raw function body or third-party binary/code/asset vendoring.
+**OFFLINE_CONTRACT_REPORT_READY; CURRENT_NATIVE_ARGUMENT_REPORT_PENDING.**
+Implemented ONE bounded owner-local report for exactly those4 accepted full
+hashes/ranges. It validates identity/CFG/required CALLs and analyzes actual local
+instructions together: incoming register widths, memory read/write root+offset,
+copy versus incoming argument-value store candidates, outgoing call/stack origins,
+direct target PE metadata, returns and precise unknown barriers. MAY analysis,
+not a formal complete ABI/alias/retention/lifetime proof. Current frame/units/
+allocation/owner/thread/contact and safe-call permission remain UNKNOWN.
 
-If independent current-file identities/relations cannot be located, tool returns
-an exact unresolved/ambiguous/boundary/semantic/cap reason and explicitly stops
-this reference-relocation route. No adjacent-byte cycle, arbitrary shift patch,
-ground-name revival or “ground Sprint impossible” conclusion. Even a match keeps
-ABI/lifetime/contact/production_permission=false.
+Future observation-only discriminator for ground Sprint vs WR designed in analysis,
+with exact phase/record limits, entry presence, identities, admitted vector spans,
+input/frame comparison and contact/lifecycle unknown handling. DESIGN ONLY, no
+new hook/version/live reads or observation requested now. Later behavior acceptance
+requires exact assigned version/log and directional/reversal/down/RT tests.
 
-## CHANGED / outputs
+## CHANGED / output
 
-* `source/tools/motion_gravity_patterns.json`:8 reference-grounded descriptors,
-  wildcard positions/whole masked hashes/minimal8byte seeds,64 seed bytes total;
-  no wholesale signature strings or bodies. SHA-pinned profile.
-* `source/tools/resolve_motion_gravity.py`: exact WS EXE SHA/PE guard, bounded
-  pattern matching/unique selection/interior CFG mapping/three distinct proved
-  role consensus; decoded CALL and7 marker boundaries plus unchanged strict
-  comparison engine. Partial leaf explicitly marked, cannot vote/cross PE entry.
-  No CLI hash/shift/RVA bypass or raw code output.
-* `source/tools/test_resolve_motion_gravity.py`:15 positive/negative tests.
-* Windows `Resolve-Motion-Gravity.ps1` / `test_resolve_motion_gravity.ps1`: fresh
- 3 Python dependencies + pinned JSON staged from fetched commit with exact LF,
-  existing WSL Capstone5.0.6 checked;3 mock groups. Child policy Bypass command.
-* `analysis/MOTION_GRAVITY_RELOCATION_REVIEW.md`: actual reference mask/uniqueness/
-  consensus findings, proof limits/caps/stopping rule and ONE owner operation;
-  PROJECT_STATE prepended; this result. CODEX_NEXT unchanged.
+* `source/tools/motion_gravity_contract.py`: pinned accepted identities, bounded
+  CFG MAY provenance, no discovery/profile, no transitive callee traversal.
+* `source/tools/test_motion_gravity_contract.py`:14 authored synthetic tests.
+* Windows `Report-Motion-Gravity-Contract.ps1` / `test_motion_gravity_contract.ps1`:
+  stages4 Python dependencies (no pattern JSON), existing WSL decoder preflight,
+  collision-safe output,3 mock transport groups.
+* `analysis/MOTION_GRAVITY_CURRENT_CONTRACT_REPORT.md`: accepted contract boundary,
+  concrete ABI/object questions and report interpretation/caps/unknowns, future
+  runtime observation design, ONE runnable owner block; PROJECT_STATE prepended;
+  this result. CODEX_NEXT unchanged.
 
-Output `logs/MSM2-WS-motion-gravity-resolution-YYYYMMDD-HHMMSS.json`, optional
-collision suffix. No new runtime build/version/package or live reads/hooks/calls/
-Position/motion/gravity/animation/state writes. Prior7 marker hashes/2 fixed
-in-owner CALL offsets retained, applied to resolved targets only. No weakening
-of ownership/restore/C52. Old canonical helper remains unchanged for history.
+Output `logs/MSM2-WS-motion-gravity-contract-YYYYMMDD-HHMMSS.json`, optional suffix.
+No raw code/full-body/EXE output/upload; no new package/version/runtime build.
+Runtime r7/package0.1.63/config/C52/shared tools/environment/SF unchanged. No live
+pointer reads/hooks/calls/writes, Position/motion/gravity/input/animation/state edits.
 
-## Exact executed validation / expected / actual
+## Exact commands / expected / actual
 
-1. `/workspace/toolchains/analysis-python/bin/python3 source/tools/test_resolve_motion_gravity.py`
-   Expected correct uniform relocation AND independent nonuniform patterns,
-   unique three-role fallback, misleading shift rejected by unchanged semantics,
-   missing/ambiguous signatures, no nearest-entry snap, interior actual boundary
-   vs immediate-byte coincidence, CALL/marker boundary mismatch, wildcard mask,
-   signed overflow/range/tie/caps/invalid PE/profile, CLI exclusive output/no shift
-   option, partial leaf cannot vote or cross another entry. Actual **15 PASS**.
-   Repeated only for actual implementation changes; no assertion weakened.
-2. `/workspace/toolchains/analysis-python/bin/python3 source/tools/test_verify_motion_gravity.py`
-   Expected reused marker/CALL/PE/identity engine unchanged; actual **9 PASS**.
-   This is a synthetic regression test, NOT another owner fixed-RVA acquisition.
-3. `python3 source/tools/test_discover_ground_support.py`
-   Expected reused strict PE/hash/range helper unchanged; actual **18 PASS**.
-4. `XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -File source/tools/windows/test_resolve_motion_gravity.ps1`
-   Expected fresh4 files, exact JSON profile hash after LF staging, Japanese/space
-   paths, collision/old output/source/fake EXE preservation and WSL/decoder failure
-   refusal. Actual **3 PASS mock groups**, not real Windows/EXE evidence.
-5. `/workspace/toolchains/analysis-python/bin/python3 /tmp/ws-relocation-reference-proof.py`
-   Expected exact reference SHA,8 descriptor lengths/wildcards/seeds/masked hashes
-   equal actual DLL strings, primary/alternative matcher calls and consensus call.
-   Actual PASS. Private proof script uses recorded string RVAs with existing PE
-   helper/Capstone; no raw bytes/bodies emitted or added to repository.
-6. `git diff --check`: expected whitespace clean; actual PASS.
-7. `python3 /tmp/ws-resolution-scope.py`: expected exactly8 intended offline tool/
-   test/profile/docs paths, unchanged runtime/config/task/packages, valid profile
-   hash/reference identity and owner subprocess block; actual PASS. Command
-   extracted for parser; analysis references existing owner review files.
-8. `XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -Command '$t=$null; $e=$null; [void][System.Management.Automation.Language.Parser]::ParseFile("/tmp/ws-resolution-owner.ps1",[ref]$t,[ref]$e); if($e.Count){throw ($e|Out-String)}; "PASS relocation bootstrap syntax"'`
-   Expected valid new owner command; actual PASS syntax, not actual Windows test.
+1. `/workspace/toolchains/analysis-python/bin/python3 source/tools/test_motion_gravity_contract.py`
+   Expected authored instruction fixtures distinguish incoming-value stores vs
+   loaded-value copies, widths/owner chains, spill->CALL origin, volatile-clobber
+   loss, partial/extension pointer invalidation, branch join uncertainty, SIMD
+   lane limits, register-only leaf with no lifetime claim, exact function hashes/
+   required calls, setter PARTIAL, state/event/stack/use/return/output caps, TOP
+   absorption/implicit push limits and exclusive CLI/no RVA bypass. Actual
+   **14 PASS**. Rerun only for implementation refinements, no assertion weakened.
+2. `/workspace/toolchains/analysis-python/bin/python3 source/tools/test_resolve_motion_gravity.py`
+   Expected reused Image PE/CFG primitives remain stable; actual **15 PASS**.
+   Tests of library behavior only, not another owner relocation operation.
+3. `/workspace/toolchains/analysis-python/bin/python3 source/tools/test_verify_motion_gravity.py`
+   Expected import dependency/identity checks stable; actual **9 PASS**.
+4. `python3 source/tools/test_discover_ground_support.py`
+   Expected shared PE/hash/range/parser/exclusive-output guards stable;
+   actual **18 PASS**, no owner name scan.
+5. `XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -File source/tools/windows/test_motion_gravity_contract.ps1`
+   Expected fresh4 helper files, NO discovery profile staged, Japanese/space
+   layout, collision/old output/dirty source/fake EXE preserved, unavailable WSL/
+   decoder refusal. Actual **3 PASS mock groups**, Git/WSL mocked on Linux,
+   not actual Windows/current native report acceptance.
+6. `git diff --check`: expected clean whitespace; actual PASS.
+7. `python3 /tmp/ws-contract-scope.py`: expected only7 intended offline tools/tests/
+   docs changed, runtime/config/packages/task preserved, links/accepted identity
+   constants valid, new Bypass block; actual PASS; extracts command for parser.
+8. `XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -Command '$t=$null; $e=$null; [void][System.Management.Automation.Language.Parser]::ParseFile("/tmp/ws-contract-owner.ps1",[ref]$t,[ref]$e); if($e.Count){throw ($e|Out-String)}; "PASS contract bootstrap syntax"'`
+   Expected actual owner snippet valid; actual PASS syntax, not Windows runtime.
 
-**Focused tests PASS45 / SKIP0 / UNAVAILABLE1 / BLOCKED1.** Separate static/
-scope/parser/whitespace/publication checks are not fixture counts.
-UNAVAILABLE1 = current owner original EXE operation, no EXE in cloud; fixtures
-never count as real native match. BLOCKED1 = native callable ABI/lifetime/grounded
-contact/production capability, still not established even if static relocation
-matches. No unperformed native test promoted to PASS.
-Full runtime/native/Wine/portable/smoke/hooks/build/package tests not run:
-requested offline helpers only, no production change. Existing focused suites
-rerun only for new/reused helper checks above.
+**Focused tests PASS59 / SKIP0 / UNAVAILABLE1 / BLOCKED1.** Separate scope/parser/
+whitespace/publication checks not added to fixture counts. No unperformed native
+result marked PASS. UNAVAILABLE1 = actual current-native contract report, original
+EXE not in cloud. BLOCKED1 = callable API/owner/thread/lifetime/frame/contact/
+production capability, static bounded access/leaf results cannot certify it.
+Full runtime/native/Wine/portable/smoke/hooks/build/package/game tests not run:
+required offline/helper scope only; production untouched.
 
-## Reference investigation commands / reproducibility
+## Evidence / assumptions / remaining exact blockers
 
-Private DLL SHA verified again through descriptor proof. Capstone5.0.6 decoded
-12720..12FD0 (alternative collector/masked matcher),12FD0..135CC (role resolution),
-BE60 consensus prefix and D430 startup/10107 call using existing private
-flight_view helper and exact runtime identities. Commands:
-`/workspace/toolchains/analysis-python/bin/python3 /tmp/ws-flight-review/flight_view.py 12720 12fd0`;
-`... flight_view.py 12a40 12f40`;
-`... flight_view.py be60 c170`.
-Inspect incoming stack descriptors for primary vs interior, actual exception-
-directory begin/end containment, then compare individual string tokens with8
-published profile descriptors (string RVAs/lengths/masks in analysis). No generic
-all-game disassembly or native EXE slices requested. Full reference23-role shift
-algorithm not ported/claimed equivalent to our strict four-role subset.
+Accepted identity source is analysis/MOTION_GRAVITY_OWNER_RESOLUTION_20261031.md,
+not canonical hints. Three PE functions require exact accepted runtime ranges;
+setter must retain no-.pdata/no-intervening-entry/accepted RET/no-call shape and
+full hash, still PARTIAL. Both accepted call instructions must remain decoded
+and reachable. No signature search is invoked even though Image helpers reused.
+
+Windows x64 clobbers model convention only; no invented native types. Memory-load
+chains are opaque address candidates, not allocated object proof. Unknown object
+writes may alias spills; unknown callees may mutate/capture arguments; partial
+writes lose exact addresses; SIMD lanes remain MAY. A local64bit incoming-value
+store is only retention candidate, and no local store never proves no retention.
+Unknown transforms/barriers are explicit. Register-only leaf result still keeps
+allocation/lifetime uncertainty. This report resolves missing static input in one
+operation instead of serial next-byte capture; actual field semantics will be
+assessed from returned instruction-grounded JSON, not preclaimed here.
 
 ## Shared knowledge / publication / NEED
 
-Wisdoms relocation-method/zero-shift qualification pushed
-`92fcb91a3407629283bdbb9fe133eb0ef14aee3e`; ls-remote matches. WS implementation
-commit and independent readback follow below.
+Wisdoms accepted nonuniform relocation/contract evidence boundary update pushed
+`b1c057c915590cee0c9487fe25516f2e45e1922e`; ls-remote agrees. WS implementation
+commit/publication readback follows.
 
-ONE fresh owner child PowerShell block in analysis/final. Return only the new
-motion-gravity-resolution JSON, including stopped/refused results. No Update-WS,
-Install mods, game launch, reference scan/download, EXE upload or unchanged
-canonical test. All selection and relationship checks happen locally in ONE
-operation. Negative concrete method outcome means stop this reference relocation
-route, not another adjacent-byte or speculative gameplay iteration.
-
-### Verified publication
-
-Implementation `103e8c7dc46b9f43a4a2e7e0020b27ee903e2877` pushed on task branch.
-`python3 /tmp/ws-resolution-publication.py`: expected independent GitHub fetch
-FETCH_HEAD/local HEAD/ls-remote agreement plus exact bytes for8 changed files
-againstba979e1; actual PASS at103e8c7. Record-only commit follows, same readback
-repeated. No reason to rerun unchanged45 focused tests for this docs-only record;
-publication checks do not inflate fixture counts. Final branch/record SHA in
-owner handoff. No runtime release/package created.
+Owner: ONE fresh child PowerShell Bypass block in analysis/final. Return only
+motion-gravity-contract JSON (refusal also useful). No Update-WS/Install/game,
+unchanged relocation/canonical/name operation, raw body/EXE upload or new hook.
+Fetch changes refs/objects only, temp dependencies/output owned, worktree/config/
+KIT unchanged. Future observation is designed, not authorized/implemented here.

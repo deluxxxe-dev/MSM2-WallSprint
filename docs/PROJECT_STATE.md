@@ -1,3 +1,18 @@
+# Current native-contract handoff — 2026-10-31 JST
+
+Owner152832 resolution accepted:4 unique roles,2 reachable calls,7 markers;
+previous pending-resolution notes below superseded. Setter remains PARTIAL
+no-.pdata leaf, not a full method/ownership certificate. No discovery/canonical/
+relocation/name rerun. Current native bodies absent in cloud; new exact-function-
+hash offline report analyzes all4 argument/memory/call origins locally in one
+operation, with bounded MAY flow/width/offset/unknown-callee summaries, no raw
+body export. Partial writes/SIMD/unknown aliases/callees remain conservative;
+allocation/lifetime/frame/units/call safety unproved. A future ordinary ground
+Sprint vs WR observation discriminator is designed only, no new hook/read/version.
+ONE owner operation -> logs/MSM2-WS-motion-gravity-contract-*.json; no Update-WS/
+Install/game/EXE upload. Runtime/config/packages/C52/shared/SF unchanged.
+See analysis/MOTION_GRAVITY_CURRENT_CONTRACT_REPORT.md and CODEX_RESULT.
+
 # Current relocation handoff — 2026-10-31 JST
 
 Owner zero-shift canonical mismatch accepted:7/7 markers and2/2 CALLs failed;
