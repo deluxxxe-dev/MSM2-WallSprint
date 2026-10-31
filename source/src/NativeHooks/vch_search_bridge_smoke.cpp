@@ -188,7 +188,12 @@ int main(int argc,char** argv) {
   msm2::Snapshot snapshot{};assert(msm2::sample(snapshot));assert(position?msm2::trace::beginPosition(r,snapshot):msm2::trace::beginReset(r,snapshot));
   assert(SetEvent(go));assert(WaitForSingleObject(foreignHeld,2000)==WAIT_OBJECT_0);
   assert(pending==1&&wsCalls==1&&foreignCalls==1&&activeLeases()&&windows[0].hits==1&&windows[0].positionInflight==0);
-  if(timeout){const auto left=windows[0].end-now();if(left>0)Sleep(DWORD(std::ceil(left))+1);assert(now()>=windows[0].end);}
+  if(timeout){
+    const auto wallStart=GetTickCount64();
+    double reached=now();
+    while(reached<windows[0].end&&GetTickCount64()-wallStart<2000){Sleep(1);reached=now();}
+    assert(reached>=windows[0].end);
+  }
   if(killClose)msm2::trace::kill();else msm2::trace::cancelReset();cleanupRequested=true;
   // Test-owned coordinator refuses the legacy final poll while reserved debt
   // lacks a witness. Close/deadline/kill never fabricates acknowledgment.
