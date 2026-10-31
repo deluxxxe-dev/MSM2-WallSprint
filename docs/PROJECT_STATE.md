@@ -1,5 +1,10 @@
 # WallSprint project state
 
+## Current owner result — complete77 captured, scalar gate established
+
+Owner fragment77 capture verified77bytes/17instructions/SHA and prior41 consistency. See analysis/WALLRUN_FRAGMENT77_OWNER_RESULT_20261031.md. Tail sets AL predicate and clears stack byte, preserves EDX; shared next0x14246d6 still missing. No movement/input API or descending cause proven. Current CODEX_NEXT verifies predicate/provenance and local successor consumer, using existing capture first or one bounded offline window if necessary. Do not repeat77, rebuild r6 or request unchanged game test.
+
+
 ## Current handoff — fixed77 completion ready, gate interpretation only
 
 See analysis/WALLRUN_FIXED_FRAGMENT_REVIEW.md. Rechecked authentic old prefix;
