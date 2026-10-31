@@ -475,3 +475,15 @@ unavailable remains closed. Actual r6 owner game and offline native continuation
 remain UNAVAILABLE, not native causal proof. Diagnostic-only partial success;
 Chat supplies numbered comparison. No old WSL diagnostic or unchanged r5 repeat.
 Exact commands/expectations/results and artifact hashes in CODEX_RESULT/analysis.
+
+## Publication verified — r6
+
+Implementation/artifacts commit `d7a0f53f54d602f992813a0039f6043aefda4e1c` pushed to
+`codex/v01c20-edi-value-provenance`. Independent GitHub fetch/FETCH_HEAD, local HEAD
+and ls-remote match; all24 changed file blobs (including three artifacts) match
+local bytes: `python3 /tmp/ws-r6-publication.py` PASS. This final record-only commit
+changes no runtime/tested source/artifact bytes; no rebuild/test repeat needed.
+Owner installed runtime is NOT updated by Git publication. The installed Update-WS
+is the later r6 update path; numbered owner comparison comes from Chat separately.
+No unchanged r5 game run or old WSL inspection requested. Five preexisting untracked
+files remain unstaged/preserved; no main merge, force/reset/clean or process kill.
