@@ -111,3 +111,13 @@ No repeated ground-name operation, Update-WS, Install mods, game launch, EXE/
 full-binary upload, forced download or production integration. The alternate
 step reads named reference packages only. No matching private file is a useful
 explicit limitation, not permission to resume the stopped Run/scalar route.
+
+### Verified publication
+
+Implementation `ae0fd4b046447655dbcd55acdfb535bb26a1a4b9` pushed on task branch.
+`python3 /tmp/ws-reference-publication.py`: expected independent GitHub fetch
+FETCH_HEAD/local HEAD/ls-remote agreement and exact byte readback for8 changed
+files against9ed4491; actual PASS atae0fd4b. Record-only commit follows, then same
+readback repeated. Unchanged52 focused tests need no rerun for documentation-only
+publication record; separate publication checks do not inflate fixture counts.
+Final branch/record SHA in owner handoff. No new runtime package.
