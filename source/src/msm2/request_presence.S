@@ -9,6 +9,14 @@
 .extern ws_request_presence_records
 .extern ws_request_presence_original
 
+.globl ws_request_presence_read_tsc
+.def ws_request_presence_read_tsc; .scl 2; .type 32; .endef
+ws_request_presence_read_tsc:
+    rdtsc
+    shl rdx, 32
+    or rax, rdx
+    ret
+
 .globl ws_request_presence_observer
 .def ws_request_presence_observer; .scl 2; .type 32; .endef
 .seh_proc ws_request_presence_observer
@@ -36,7 +44,7 @@ ws_request_presence_observer:
     je ws_request_presence_restore0
 
     mov eax, DWORD PTR ws_request_presence_count[rip]
-    cmp eax, 16
+    cmp eax, 8192
     jae .Loverflow
     lea ecx, [rax + 1]
     lock cmpxchg DWORD PTR ws_request_presence_count[rip], ecx
