@@ -1,8 +1,8 @@
-"""Package WallSprint with the preserved historical packager plus c43 active-state normalization.
+"""Package WallSprint with the preserved historical packager plus c44 active-state normalization.
 
 package_base.py is retained as the historical monolithic implementation. This wrapper
 changes only the stale active-package policy and then rewrites current-package metadata
-so v0.1c43 cannot be published as if historical native-source/orientation writes were ON.
+so v0.1c44 cannot be published as if historical native-source/orientation writes were ON.
 """
 from pathlib import Path
 import json
@@ -54,10 +54,13 @@ manifest.update({
     "current_request_presence": {
         "read_only": True,
         "capture_control": "automatic_on_admission",
-        "capture_duration_ms": 300000,
-        "record_cap": 131072,
+        "capture_lifetime": "script_session",
+        "periodic_worker_drain_ms": 500,
+        "batch_record_cap": 16,
+        "session_record_cap": 65536,
+        "shutdown_flush_required_for_prior_batches": False,
         "manual_F11_F12_required": False,
-        "video_alignment": "offset_ms_est_approximate",
+        "video_alignment": "session_offset_ms_est_approximate",
         "authenticated_engine_state_labels": False,
     },
 })
@@ -66,10 +69,10 @@ manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
 (root / "logs/package_check.log").write_text(
     "PASS: "
     + f"{label}/{version} read-only RequestSimpleMotion presence package; "
-    + "automatic capture on admission; no F11/F12 required; "
+    + "automatic capture on admission with 500ms worker drains; no F11/F12 or post-test wait; "
     + "WALLSPRINT_ENABLE=0; NATIVE_SOURCE_OVERRIDE=0; "
     + "orientation/adhesion/movement/native-source writes OFF; "
     + "REQUEST_PRESENCE_DIAGNOSTIC=1; historical analysis retained as history only\n",
     encoding="utf-8",
 )
-print("PASS: c43 read-only automatic-capture package manifest normalized")
+print("PASS: c44 read-only streaming-capture package manifest normalized")
