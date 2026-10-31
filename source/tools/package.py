@@ -1,8 +1,8 @@
-"""Package WallSprint with the preserved historical packager plus c44 active-state normalization.
+"""Package WallSprint with the preserved historical packager plus c45 active-state normalization.
 
 package_base.py is retained as the historical monolithic implementation. This wrapper
 changes only the stale active-package policy and then rewrites current-package metadata
-so v0.1c44 cannot be published as if historical native-source/orientation writes were ON.
+so v0.1c45 cannot be published as if historical native-source/orientation writes were ON.
 """
 from pathlib import Path
 import json
@@ -32,7 +32,7 @@ manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 manifest.update({
     "version": label,
     "package_version": version,
-    "package_mode": "request_presence_read_only",
+    "package_mode": "gravity_owner_presence_read_only",
     "wall_sprint_enabled": False,
     "native_source_override_active": False,
     "native_stack_source_write_enabled": False,
@@ -51,8 +51,9 @@ manifest.update({
         "gravity": False,
         "native_source": False,
     },
-    "current_request_presence": {
+    "current_gravity_owner_presence": {
         "read_only": True,
+        "observed_role": "GravityOrientationOwner",
         "capture_control": "automatic_on_admission",
         "capture_lifetime": "script_session",
         "periodic_worker_drain_ms": 500,
@@ -62,17 +63,18 @@ manifest.update({
         "manual_F11_F12_required": False,
         "video_alignment": "session_offset_ms_est_approximate",
         "authenticated_engine_state_labels": False,
+        "setter_hooked_or_called_by_mod": False,
     },
 })
 manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
 (root / "logs/package_check.log").write_text(
     "PASS: "
-    + f"{label}/{version} read-only RequestSimpleMotion presence package; "
+    + f"{label}/{version} read-only GravityOrientationOwner presence package; "
     + "automatic capture on admission with 500ms worker drains; no F11/F12 or post-test wait; "
     + "WALLSPRINT_ENABLE=0; NATIVE_SOURCE_OVERRIDE=0; "
-    + "orientation/adhesion/movement/native-source writes OFF; "
-    + "REQUEST_PRESENCE_DIAGNOSTIC=1; historical analysis retained as history only\n",
+    + "orientation/adhesion/movement/gravity/native-source writes OFF; "
+    + "REQUEST_PRESENCE_DIAGNOSTIC=1 (legacy config key, Gravity target); historical analysis retained as history only\n",
     encoding="utf-8",
 )
-print("PASS: c44 read-only streaming-capture package manifest normalized")
+print("PASS: c45 read-only GravityOrientationOwner streaming-capture package manifest normalized")
