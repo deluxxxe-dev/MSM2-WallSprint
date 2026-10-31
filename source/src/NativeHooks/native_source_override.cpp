@@ -3,6 +3,7 @@
 #include <array>
 #include <atomic>
 #include <cstring>
+#include <cstdio>
 #include <bcrypt.h>
 #include "NativeHooks/native_source_override.hpp"
 #include "NativeHooks/source_lifecycle.hpp"
@@ -63,9 +64,11 @@ struct Shared {
  double pausedTransitionMs{},frozenTransitionMs{};
  bool positionRequested{};unsigned movementSamples{},movementEmitted{};std::uint64_t movementMs{},movementUpdate{};Vec3 movementPosition{};
  ws::heading::Reversal heading;double headingClock{};std::uint64_t headingWallMs{};unsigned headingLogs{},headingHoldLogs{},actorLogs{},countLogs{};
- ws::motion_diag::Window motionWindow;
  Adhesion adhesion{};
 } state;
+struct Comparison {ws::motion_diag::Window window;Token token{};std::uint64_t session{};std::uintptr_t hero{},transform{};Vec3 normal{};} comparison;
+bool comparisonReady{};std::atomic<bool> comparisonStopped{true};unsigned comparisonRejects{};std::uint64_t comparisonMissingTotal{},activePublications{};
+
 struct Record {
  std::uint64_t oldPublicationMs{},newPublicationMs{};unsigned oldPublicationUpdate{},newPublicationUpdate{};bool refreshIdentity{};
  unsigned kind{},gateMask{};const char* reason="none";std::uint64_t session{},ms{},generation{},nativeUpdate{},heldMs{},commitQpc{};
@@ -139,19 +142,26 @@ void adhesionSummary(const char* reason){
   (unsigned long long)state.session,a.samples,a.attempts,a.maxError,a.maxError,a.failClosed,a.maxRequested,a.maxCandidateTangent,reason);
 }
 void motionWindowLog(bool final,const char* reason){
- auto& w=state.motionWindow;if(w.finished)return;
+ auto& w=comparison.window;if(w.finished)return;
  for(unsigned i=0;i<w.count;++i){const auto& f=w.at(i);
-  writeLog("WALL_MOTION_WINDOW schema=1 session=%llu generation=%llu window=%u ms=%llu native_update=%llu native_ms=%llu clock_ms=%.3f dt_ms=%.3f event=%s last_decision=%s decision_ms=%llu decision_update=%llu delta_world=(%.9g,%.9g,%.9g) tangent_world=(%.9g,%.9g,%.9g) normal=(%.9g,%.9g,%.9g) sampled_normal=(%.9g,%.9g,%.9g) requested_heading=(%.9g,%.9g,%.9g) published_heading=(%.9g,%.9g,%.9g) actor_right=(%.9g,%.9g,%.9g) actor_up=(%.9g,%.9g,%.9g) actor_forward=(%.9g,%.9g,%.9g) actor_valid=%u input_intent=unobserved coherence=single_existing_snapshot_not_atomic_native_frame source=worker_snapshot_not_post_writer Position_writes=0",
-   (unsigned long long)state.session,(unsigned long long)state.generation,w.windows,(unsigned long long)f.ms,(unsigned long long)f.update,(unsigned long long)f.nativeMs,f.clock,f.dt,f.event,f.decision,(unsigned long long)f.decisionMs,(unsigned long long)f.decisionUpdate,f.delta.x,f.delta.y,f.delta.z,f.tangent.x,f.tangent.y,f.tangent.z,f.normal.x,f.normal.y,f.normal.z,f.sampledNormal.x,f.sampledNormal.y,f.sampledNormal.z,f.requested.x,f.requested.y,f.requested.z,f.published.x,f.published.y,f.published.z,f.actor.right.x,f.actor.right.y,f.actor.right.z,f.actor.up.x,f.actor.up.y,f.actor.up.z,f.actor.forward.x,f.actor.forward.y,f.actor.forward.z,unsigned(f.actor.valid));
+  char requested[128]="unavailable",published[128]="unavailable";
+  if(f.targetValid){std::snprintf(requested,sizeof(requested),"(%.9g,%.9g,%.9g)",f.requested.x,f.requested.y,f.requested.z);std::snprintf(published,sizeof(published),"(%.9g,%.9g,%.9g)",f.published.x,f.published.y,f.published.z);}
+  writeLog("WALL_MOTION_WINDOW schema=2 mode=%s source_admitted=%u publication_active=%u publications=%llu a_commits=%u b_commits=%u target_valid=%u session=%llu generation=%llu window=%u ms=%llu native_update=%llu native_ms=%llu native_init_ms=%llu clock_ms=%.3f dt_ms=%.3f event=%s last_decision=%s decision_ms=%llu decision_update=%llu delta_world=(%.9g,%.9g,%.9g) tangent_world=(%.9g,%.9g,%.9g) normal=(%.9g,%.9g,%.9g) sampled_normal=(%.9g,%.9g,%.9g) requested_heading=%s published_heading=%s actor_right=(%.9g,%.9g,%.9g) actor_up=(%.9g,%.9g,%.9g) actor_forward=(%.9g,%.9g,%.9g) actor_valid=%u input_intent=unobserved coherence=single_existing_snapshot_not_atomic_native_frame source=worker_snapshot_not_post_writer Position_writes=0",
+   config.sourceOverride?"ON":"OFF",unsigned(f.sourceAdmitted),unsigned(f.publicationActive),(unsigned long long)f.publications,f.aCommits,f.bCommits,unsigned(f.targetValid),(unsigned long long)comparison.session,(unsigned long long)comparison.token.generation,w.windows,(unsigned long long)f.ms,(unsigned long long)f.update,(unsigned long long)f.nativeMs,(unsigned long long)f.nativeInitMs,f.clock,f.dt,f.event,f.decision,(unsigned long long)f.decisionMs,(unsigned long long)f.decisionUpdate,f.delta.x,f.delta.y,f.delta.z,f.tangent.x,f.tangent.y,f.tangent.z,f.normal.x,f.normal.y,f.normal.z,f.sampledNormal.x,f.sampledNormal.y,f.sampledNormal.z,requested,published,f.actor.right.x,f.actor.right.y,f.actor.right.z,f.actor.up.x,f.actor.up.y,f.actor.up.z,f.actor.forward.x,f.actor.forward.y,f.actor.forward.z,unsigned(f.actor.valid));
  }
- writeLog("WALL_MOTION_WINDOW_SUMMARY session=%llu window=%u retained=%u overwritten_total=%llu throttled_total=%llu budget_suppressed_total=%llu capacity=16 window_cap=16 final=%u reason=%s lifecycle_state=%u observation_only=1",
-  (unsigned long long)state.session,w.windows,w.count,(unsigned long long)w.overwritten,(unsigned long long)w.throttled,(unsigned long long)w.suppressed,unsigned(final),reason,unsigned(state.ownership));
+ writeLog("WALL_MOTION_WINDOW_SUMMARY mode=%s session=%llu window=%u retained=%u overwritten_total=%llu throttled_total=%llu budget_suppressed_total=%llu capacity=16 window_cap=16 final=%u reason=%s lifecycle_state=%u missing_total_process=%llu missing_emitted_process=%u observation_only=1",
+  config.sourceOverride?"ON":"OFF",(unsigned long long)comparison.session,w.windows,w.count,(unsigned long long)w.overwritten,(unsigned long long)w.throttled,(unsigned long long)w.suppressed,unsigned(final),reason,unsigned(state.ownership),(unsigned long long)comparisonMissingTotal,comparisonRejects);
  if(w.count)w.flushed();
  if(final)w.finished=true;
 }
+void comparisonMissing(const char* why,bool close){
+ ++comparisonMissingTotal;
+ if(comparison.session){comparison.window.baseline=false;if(close)motionWindowLog(true,why);}
+ if(comparisonRejects<64){++comparisonRejects;writeLog("WALL_MOTION_MISSING mode=%s session=%llu reason=%s source_admitted=%u a_commits=%u b_commits=%u reject_cap=64",config.sourceOverride?"ON":"OFF",(unsigned long long)comparison.session,why,unsigned(admitted),pathAWrites.load(),pathBWrites.load());}
+}
 void latchCause(const char*,const char*,const ws::observed::VerifiedWallContext* =nullptr) noexcept;
 void end(const char* reason,std::uint64_t now){
- if(state.entered)motionWindowLog(true,reason);
+ if(comparison.session)motionWindowLog(true,reason);
  state.heading.clearObservation();state.headingWallMs=0;
  if(state.entered&&state.transition.active&&std::strcmp(reason,"verified_native_Deinit")&&std::strcmp(reason,"new_native_session"))latchCause(reason,"worker");
  if(state.ownership==Ownership::StaleSuspended&&now>=state.staleStart)state.maxStaleMs=std::max(state.maxStaleMs,now-state.staleStart);
@@ -225,7 +235,7 @@ void drainCause(){
   unsigned(g.input),unsigned(g.copy),unsigned(g.compact),unsigned(g.callerRead),unsigned(g.callerMatch),g.callerDifference,g.failedGate(),
   unsigned(g.hooks[0].readOk),unsigned(g.hooks[0].match),g.hooks[0].firstDifference,unsigned(g.hooks[1].readOk),unsigned(g.hooks[1].match),g.hooks[1].firstDifference,unsigned(g.hooks[2].readOk),unsigned(g.hooks[2].match),g.hooks[2].firstDifference,unsigned(g.hooks[3].readOk),unsigned(g.hooks[3].match),g.hooks[3].firstDifference,(unsigned long long)c.token.owner,(unsigned long long)p.generation,(unsigned long long)p.acceptedEpoch,(unsigned long long)c.token.initMs,(unsigned long long)p.initMs,c.token.phase,c.token.lastKind,(unsigned long long)c.entry.rcx,(unsigned long long)c.entry.rdx,(unsigned long long)c.entry.rsp,(unsigned long long)c.entry.ret);
 }
-void disableRuntime() noexcept{msm2::path_b::kill();killed=true;lifecycleOpen=false;++lifecycleEpoch;ws_native_source_enabled=0;isActive=false;publishInactive();ws::native_source::armLifecycle(false);}
+void disableRuntime() noexcept{comparisonStopped=true;msm2::path_b::kill();killed=true;lifecycleOpen=false;++lifecycleEpoch;ws_native_source_enabled=0;isActive=false;publishInactive();ws::native_source::armLifecycle(false);}
 void prearmPublished(const Token& token,std::uint64_t now){
  Published p{};if(!publication.read(p)||p.generation!=token.generation||p.owner!=token.owner||p.thread!=token.thread)return;
  if(now<token.initMs||now-token.initMs<600||now-token.initMs>=1100)return;
@@ -260,6 +270,7 @@ bool secondaryContext(const Published& p,const char*& reason){
  return true;
 }
 bool suspendStale(const Token& t,std::uint64_t detected){
+ comparisonMissing("stale_native_update",false);
  if(state.ownership!=Ownership::Active)return state.ownership==Ownership::StaleSuspended;
  // Only our own soft close can advance the permission epoch. Never adopt a
  // concurrent native Deinit/invalid sequence epoch as permission to resume.
@@ -364,16 +375,18 @@ bool observe(const msm2::Snapshot& s,const Token& token,std::uint64_t now,bool m
 extern "C" {std::atomic<unsigned> ws_native_source_enabled{0};}
 namespace msm2::native_source {
 void configure(Config c,bool verified,std::uintptr_t base,std::size_t size,const std::array<msm2::writer::Patch,4>& patches){
- disableRuntime();if(configured){writeLog("native_source_rearm_refused full_game_restart_required=1");return;}configured=true;config=c;lifecyclePatches=patches;imageBase=base;
+ disableRuntime();if(configured){writeLog("native_source_rearm_refused full_game_restart_required=1");return;}configured=true;config=c;comparison={};comparisonRejects=0;comparisonMissingTotal=0;activePublications=0;comparisonReady=false;comparisonStopped=true;lifecyclePatches=patches;imageBase=base;
  bool callerVerified=verified&&base&&size>callReturn&&callerAuthenticated();
  configurePositionEvidence(verified,callerVerified);
- admitted=verified&&c.enabled&&c.sourceOverride&&callerVerified&&std::isfinite(c.delay)&&c.delay>=.7f&&c.delay<=5&&std::isfinite(c.rotateTime)&&c.rotateTime>=.2f&&c.rotateTime<=1&&currentGuards()&&(!c.dualSource||msm2::reset_copy::compactProofAuthenticated());
+ comparisonReady=verified&&c.enabled&&callerVerified&&std::isfinite(c.delay)&&c.delay>=.7f&&c.delay<=5&&std::isfinite(c.rotateTime)&&c.rotateTime>=.2f&&c.rotateTime<=1&&currentGuards()&&(!c.dualSource||msm2::reset_copy::compactProofAuthenticated());
+ admitted=comparisonReady&&c.sourceOverride;comparisonStopped=!comparisonReady;
  writeLog("native_source_config enabled=%u requested_override=%u admitted=%u direct_actor_transform_write=0 adhesion=0 movement=0 camera=0 animation=0 source_write_range=[0x00,0x30) position_write=0 caller_rva=0x2cfc8f3 caller_body_hash_verified=%u source_stack_relation=writer_entry_RSP+0x28 delay=%.3f rotate_time=%.3f",unsigned(c.enabled),unsigned(c.sourceOverride),unsigned(admitted),unsigned(callerVerified),c.delay,c.rotateTime);
  writeLog("DUAL_SOURCE_ADMISSION admitted=%u dual_source_required=%u common_caller=0x2cfc8f3 copy_caller=0x2cfc84b copy_hook_authenticated=%u",unsigned(admitted),unsigned(c.dualSource),unsigned(msm2::reset_copy::authenticated()));
  writeLog("NATIVE_SOURCE_GUARD_STATUS admitted=%u first_cause=none first_cause_scope=process source_code_integrity_required=1 diagnostic_field_plan_runtime_required=0 normal_Deinit_is_session_close=1",unsigned(admitted));
  writeLog("SOURCE_LIFECYCLE_CONTRACT readers_lock_native_events=0 native_event_collision_fail_closed=1 native_update_freshness_ms=100 worker_publication_freshness_ms=100 stale_policy=suspend_until_same_identity_real_Update transition_recovery=freeze_last_published_progress stale_episode_log_cap=16 clock_sample=after_token_acquisition verified_Deinit_summary=1 diagnostic_window_limits_source_ownership=0");
  path_b::configure(admitted,true);
- if(!admitted)return;
+ writeLog("WALL_MOTION_COMPARISON mode=%s observation_admitted=%u source_admitted=%u selection=INI_at_startup F8_invalidates_comparison=1",c.sourceOverride?"ON":"OFF",unsigned(comparisonReady),unsigned(admitted));
+ if(!admitted){if(comparisonReady&&!c.sourceOverride){state={};pathAWrites=0;pathBWrites=0;pathBReservations=0;publishInactive();ws::native_source::armLifecycle(true);}return;}
  state={};pathAWrites=0;pathBWrites=0;pathBReservations=0;pathARejects=0;pathBRejects=0;resetRequested=false;lifecycleOpen=false;publishInactive();killed=false;ws::native_source::armLifecycle(true);ws_native_source_enabled=1;
 }
 bool diagnosticIdentity(const msm2::reset_trace::Request& r) noexcept {
@@ -393,7 +406,7 @@ void lifecycleClosed(const Token& t) noexcept {
 }
 void kill(const char* reason,const char* origin,const ws::observed::VerifiedWallContext* ctx) noexcept {
  // Never leave source permission open while collecting a fault record.
- killed=true;lifecycleOpen=false;isActive=false;latchCause(reason,origin,ctx);disableRuntime();
+ comparisonStopped=true;killed=true;lifecycleOpen=false;isActive=false;latchCause(reason,origin,ctx);disableRuntime();
 }
 bool workerGuards(const ws::observed::VerifiedWallContext& ctx,const guards::ObservationStatus& status){
  WorkerEvidence evidence{};evidence.context=ctx;evidence.observation=status;evidence.available=true;evidence.inputAuthenticated=msm2::input::authenticated();workerEvidence.publish(evidence);
@@ -407,11 +420,36 @@ bool workerGuards(const ws::observed::VerifiedWallContext& ctx,const guards::Obs
 bool active() noexcept{return !killed.load()&&isActive.load();}
 bool observationGuardsAuthenticated() noexcept{return !killed.load()&&admitted&&currentGuards();}
 bool entryOverridden() noexcept{return didOverride;}
+void comparisonSample(const ws::observed::VerifiedWallContext& ctx,const Token& token,const msm2::Snapshot& s,Vec3 n,std::uint64_t now,bool targetValid,Vec3 target,Vec3 published,const char* event){
+ if(!comparisonReady||comparisonStopped.load()){comparisonMissing("disabled_or_emergency",true);return;}
+ if(!ctx.lifecycleVerified||!ctx.wallRunActive||!ctx.wallRunSessionId||!token.thread||ctx.wallRunOwner!=token.owner||!freshToken(token,now)||token.acceptedEventEpoch!=token.collisionEpoch){comparisonMissing("invalid_or_stale_lifecycle",false);return;}
+ if(comparison.session!=ctx.wallRunSessionId){if(comparison.session)motionWindowLog(true,"new_native_session");comparison={};comparison.session=ctx.wallRunSessionId;comparison.token=token;comparison.hero=s.hero;comparison.transform=s.transform;}
+ if(token.owner!=comparison.token.owner||token.generation!=comparison.token.generation||token.thread!=comparison.token.thread||token.initMs!=comparison.token.initMs||token.acceptedEventEpoch!=comparison.token.acceptedEventEpoch||s.hero!=comparison.hero||s.transform!=comparison.transform){comparisonMissing("identity_changed",true);return;}
+ float length=ws::finite(n)?std::sqrt(ws::dot(n,n)):0;Vec3 unit{};auto actor=ws::diag::actorAxes(s.prefix);
+ if(length<.95f||length>1.05f||std::abs(n.y)>length*.20f||!ws::unit(n,unit)||!actor.valid){comparisonMissing("normal_or_actor_basis_invalid",true);return;}
+ if(ws::dot(comparison.normal,comparison.normal)==0)comparison.normal=unit;
+ if(ws::dot(unit,comparison.normal)<.995f){comparisonMissing("surface_changed",true);return;}
+ ws::motion_diag::Frame frame{};frame.ms=now;frame.update=token.updates;frame.nativeMs=token.updateMs;frame.nativeInitMs=token.initMs;frame.clock=double(now);frame.normal=comparison.normal;frame.sampledNormal=n;frame.actor=actor;frame.event=event;
+ frame.targetValid=config.sourceOverride&&targetValid;frame.requested=target;frame.published=published;frame.sourceAdmitted=admitted;frame.aCommits=pathAWrites.load();frame.bCommits=pathBWrites.load();frame.publications=activePublications;Published current{};frame.publicationActive=publication.read(current)&&current.active;
+ if(comparison.window.sample(frame,{s.position[0],s.position[1],s.position[2]}))motionWindowLog(false,"periodic");
+}
+void comparisonOff(const ws::observed::VerifiedWallContext& ctx,bool authenticated){
+ if(!comparisonReady||comparisonStopped.load()||!authenticated){comparisonMissing("disabled_or_emergency",true);return;}
+ if(!ctx.lifecycleVerified||!ctx.wallRunActive){if(comparison.session&&!comparison.window.finished)comparisonMissing("native_inactive_or_Deinit",true);return;}
+ if(comparison.session==ctx.wallRunSessionId&&comparison.window.finished){comparisonMissing("session_diagnostic_closed",true);return;}
+ Token t{};auto now=GetTickCount64();if(!ws::native_source::lifecycle(t)||!freshToken(t,now)||t.owner!=ctx.wallRunOwner||t.acceptedEventEpoch!=t.collisionEpoch){comparisonMissing("invalid_or_stale_lifecycle",false);return;}
+ if(comparison.session==ctx.wallRunSessionId&&(t.owner!=comparison.token.owner||t.generation!=comparison.token.generation||t.thread!=comparison.token.thread||t.acceptedEventEpoch!=comparison.token.acceptedEventEpoch)){comparisonMissing("identity_changed",true);return;}
+ if(!currentGuards()||!msm2::input::authenticated()){comparisonMissing("code_integrity_lost",true);comparisonStopped=true;return;}
+ msm2::Snapshot s{};Vec3 n{};if(!msm2::sample(s)||t.owner>UINTPTR_MAX-0x3a4||!msm2::readMemory(t.owner+0x398,&n,12)){comparisonMissing("snapshot_or_normal_unreadable",true);return;}
+ Token after{};now=GetTickCount64();if(!ws::native_source::lifecycle(after)||!freshToken(after,now)||after.owner!=t.owner||after.generation!=t.generation||after.thread!=t.thread||after.initMs!=t.initMs||after.acceptedEventEpoch!=t.acceptedEventEpoch||after.collisionEpoch!=t.collisionEpoch){comparisonMissing("lifecycle_changed_during_snapshot",false);return;}
+ comparisonSample(ctx,t,s,n,now,false,{}, {},"source_override_OFF");
+}
 void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool authenticated){
  (void)reason;
  if(!authenticated){kill("worker_tick_auth_lost","worker",&ctx);}
  if(stateLock.test_and_set(std::memory_order_acquire))return;
  auto now=GetTickCount64();drainVerifiedDeinit();auto epoch=lifecycleEpoch.load();
+ if(!config.sourceOverride){comparisonOff(ctx,authenticated);stateLock.clear(std::memory_order_release);return;}
  if(killed.load()&&causeState.load(std::memory_order_acquire)<2){publishInactive();stateLock.clear(std::memory_order_release);return;}
  if(killed.load()||!admitted){end(causeState.load(std::memory_order_acquire)>=2?firstCause.reason:!admitted?"source_not_admitted":"disabled_before_cause_ready",now);state.published=0;stateLock.clear(std::memory_order_release);return;}
  Token token{};bool native=ws::native_source::lifecycle(token);now=GetTickCount64(); // Age is measured AFTER acquiring the token, never before a concurrent Update.
@@ -485,8 +523,7 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
    auto heading=state.heading.sample({s.position[0],s.position[1],s.position[2]},token.updates,double(now),state.headingClock);
    if(!heading.basis.valid){end("invalid_reversal_heading",now);p.active=false;}
    else {p.basis=heading.basis;
-    ws::motion_diag::Frame frame{};frame.ms=now;frame.update=token.updates;frame.nativeMs=token.updateMs;frame.clock=state.headingClock;frame.normal=p.surface;frame.sampledNormal=n;frame.requested=heading.target;frame.published=p.basis.forward;frame.actor=ws::diag::actorAxes(s.prefix);frame.event=heading.event;
-    if(state.motionWindow.sample(frame,{s.position[0],s.position[1],s.position[2]}))motionWindowLog(false,"periodic");
+
     const bool held=std::strcmp(heading.event,"low_speed_hold")==0||std::strcmp(heading.event,"deadband_hold")==0;
     if(state.headingLogs<64&&std::strcmp(heading.event,"hold")!=0&&(!held||state.headingHoldLogs<8)){++state.headingLogs;if(held)++state.headingHoldLogs;writeLog("WALL_PLANE_HEADING schema=2 session=%llu native_update=%u ms=%llu clock_ms=%.3f event=%s delta_estimate=(%.9g,%.9g,%.9g) tangent_speed_estimate=%.9g candidate_forward=(%.9g,%.9g,%.9g) candidate_angle_rad=%.9g turn_angle_rad=%.9g target_forward=(%.9g,%.9g,%.9g) published_forward=(%.9g,%.9g,%.9g) reason=bounded_displacement_following_not_input_intent Position_writes=0",(unsigned long long)p.session,token.updates,(unsigned long long)now,state.headingClock,heading.event,heading.delta.x,heading.delta.y,heading.delta.z,heading.speed,heading.candidate.x,heading.candidate.y,heading.candidate.z,heading.candidateAngle,heading.turnAngle,heading.target.x,heading.target.y,heading.target.z,p.basis.forward.x,p.basis.forward.y,p.basis.forward.z);}
    }
@@ -496,7 +533,9 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
  // A synchronous native close racing this worker must win. Its epoch cannot
  // be adopted for a token acquired before the close, even on first entry.
  if(killed.load()||lifecycleEpoch.load()!=epoch){publishInactive();isActive=false;stateLock.clear(std::memory_order_release);return;}
- identityPublication.publish(p);publication.publish(p);
+ identityPublication.publish(p);publication.publish(p);if(p.active)++activePublications;
+ if(normalOk)comparisonSample(ctx,token,s,n,now,p.active&&p.t>=1&&state.heading.ready,state.heading.forward,p.basis.forward,"worker_snapshot");
+ else comparisonMissing("normal_unreadable",false);
  // Retention is sampled only from a fresh verified lifecycle update after both
  // source paths have committed. Distinct native updates cannot be inflated by calls.
  state.commonWrites=pathAWrites.load();state.copyWrites=pathBWrites.load();state.writes=state.commonWrites+state.copyWrites;
@@ -666,5 +705,5 @@ void drainLogs(){
   else if(r.kind==4)writeLog("NATIVE_SOURCE_OTHER_WRITER session=%llu caller_return_rva=0x%llx source_up=(%.9g,%.9g,%.9g) override=0",static_cast<unsigned long long>(r.session),static_cast<unsigned long long>(r.caller),r.original.v[4],r.original.v[5],r.original.v[6]);
  }
 }
-void stop(){kill("script_stop","shutdown");if(!stateLock.test_and_set(std::memory_order_acquire)){drainVerifiedDeinit();end("script_stop",GetTickCount64());lifecycleSummary(GetTickCount64(),false,false);stateLock.clear(std::memory_order_release);}drainLogs();secondarySummary(state.session,true);writeLog("PATH_A_OVERRIDE_COUNT=%u PATH_A_REJECT_COUNT=%u PATH_A_STATE_LOCK_CONTENTION=0 PATH_B_OVERRIDE_COUNT=%u PATH_B_REJECT_COUNT=%u final=1",pathAWrites.load(),pathARejects.load(),pathBWrites.load(),pathBRejects.load());writeLog("native_source_stop source_override=OFF direct_actor_transform_write=0 vanilla_passthrough=1");}
+void stop(){kill("script_stop","shutdown");if(!stateLock.test_and_set(std::memory_order_acquire)){drainVerifiedDeinit();if(comparison.session)motionWindowLog(true,"script_stop");end("script_stop",GetTickCount64());lifecycleSummary(GetTickCount64(),false,false);stateLock.clear(std::memory_order_release);}drainLogs();secondarySummary(state.session,true);writeLog("PATH_A_OVERRIDE_COUNT=%u PATH_A_REJECT_COUNT=%u PATH_A_STATE_LOCK_CONTENTION=0 PATH_B_OVERRIDE_COUNT=%u PATH_B_REJECT_COUNT=%u final=1",pathAWrites.load(),pathARejects.load(),pathBWrites.load(),pathBRejects.load());writeLog("native_source_stop source_override=OFF direct_actor_transform_write=0 vanilla_passthrough=1");}
 }

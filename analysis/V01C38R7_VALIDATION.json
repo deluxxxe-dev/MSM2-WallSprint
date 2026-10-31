@@ -1,0 +1,62 @@
+{
+  "baseline": "64056d4",
+  "version": "v0.1c38r7",
+  "package_version": "0.1.63",
+  "purpose": "diagnostic_only_ON_OFF_not_down_fix",
+  "final": [
+    {
+      "command": "bash source/tools/smoke_windows.sh",
+      "exit": 0,
+      "seconds": 12.48,
+      "counts": {
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0
+      }
+    },
+    {
+      "command": "bash source/tools/test_hooks_windows.sh",
+      "exit": 0,
+      "seconds": 392.14,
+      "counts": {
+        "PASS": 907,
+        "SKIP": 5,
+        "UNAVAILABLE": 17
+      }
+    }
+  ],
+  "portable": {
+    "emitted_PASS": 36,
+    "additional_selector_unittest_PASS": 4,
+    "SKIP": 0,
+    "UNAVAILABLE": 0
+  },
+  "window_focused_PASS": 6,
+  "selector_focused_PASS": 4,
+  "preliminary_native_PASS": 15,
+  "first_full": {
+    "exit": 3,
+    "PASS": 84,
+    "SKIP": 4,
+    "UNAVAILABLE": 0,
+    "reason": "unchanged_reset_fixture_capture_assert_after_Sleep120",
+    "cause": "UNKNOWN_no_assertion_modified"
+  },
+  "reset_recheck": {
+    "exit": 0,
+    "PASS": 12,
+    "SKIP": 1
+  },
+  "external_retry": {
+    "exit": 0,
+    "PASS": 952,
+    "SKIP": 32,
+    "UNAVAILABLE": 17,
+    "final_idle_refinement_included": false
+  },
+  "final_source_all_standard_commands_pass": true,
+  "owner_windows_and_game": "UNAVAILABLE",
+  "BLOCKED": 0,
+  "OFF_scope": "0active_orientation_publications_0WS_A_B_commits",
+  "gameplay_math_changed": false
+}

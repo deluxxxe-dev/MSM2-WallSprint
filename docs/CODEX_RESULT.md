@@ -1,116 +1,163 @@
-# Codex result — accepted77 / one shared-successor consumer
+# Codex result — r7 diagnostic-only ON/OFF source comparison
 
-2026-10-31 JST; branch codex/v01c20-edi-value-provenance; baseline71acd91.
-STATUS: gate relation/provenance verified locally; missing shared-consumer offline
-mode ready. Actual successor acquisition UNAVAILABLE, no down fix/return claim.
+2026-10-31 JST; branch codex/v01c20-edi-value-provenance, baseline64056d4.
+Task: equivalent safe observations with source override OFF, NOT a down fix.
+Scalar successor20 bytes accepted; no more captures/callee traversal requested.
 
-## CHANGED / decision
+## CHANGED / mode semantics
 
-See analysis/WALLRUN_SHARED_SUCCESSOR_REVIEW.md. Owner complete77 accepted, never
-requested again. Known gate paths give AL=!P||(C&&R); authenticated prefix defines
-R9B via owner byte and comparison R8B. All8 combinations checked. No global field/
-dominance/typed function return claim. EDX from gate is preserved by77, but alternate
-prefix route clears only DL, so shared state is path-dependent. Complete77 is
-scalar/state gating, not motion vector/API; stop looking for movement inside it.
+See analysis/V01C38R7_SOURCE_COMPARISON.md and source copy. Existing INI startup
+key is the treatment. F8 stops input/lifecycle/other observations, so not a valid
+OFF control. Readiness separated from source admission; OFF arms only existing
+lifecycle observation while source enabled0/killed=true/PathB admission false.
+One existing Window receives same authenticated token/snapshot/N398/Actor values
+in both modes, even before ON source entry. Same100ms/16 samples/2s/16-window caps;
+missing/stale/identity/normal/Deinit/emergency reasons bounded and explicit.
+OFF never constructs a source basis; target/published headings are unavailable,
+Actor Up is independently observed, not set to wall normal. Actual active basis
+publication count/A-B commits/admission logged with session/gen/native+monotonic
+clocks. Active publication counter excludes empty permission revocations.
+ON epoch guard/store adjacency preserved; comparison runs after publication stores.
+No new game pointers/hooks/fields/API/write types. R6 heading math/all constants,
+entry/native Deinit/stale/A-B/scales/metadata/Position-W/4096/C52 stay unchanged.
 
-Existing helper adds only fixed --shared-successor0x14246d6/max128, authenticates
-old prefix SHA/runtime tuple, actual successor runtime/unwind/file bounds; no
-missing-entry guess. Captures a coherent local block through first control or cap,
-reports register overlaps/edge without following or declaring value flow. Existing
-legacy/fixed77 retained. Windows entrypoint selects new mode and new successor
-JSON name; existing outputs and dirty local source remain intact. No runtime
-version/build/package/native/INI/game/shared tools change.
-Files: existing helper/test and PS entrypoint/mock test; new analysis; state/result.
-No authenticated successor/EXE found among current supplied/local captures; prefix
-ends at target and accepted77 does not cover it. ONE acquisition genuinely needed.
-After this single local task stop the scalar route. Supported future alternative:
-controlled A/B source-override ON/OFF frame-feedback comparison with existing r6
-observations, under separate authorization; no such game test requested here.
+New narrow selector reuses workspace layout/process quiet/OS ownership, validates
+r7 package+installed DLL and sole config key, changes installed WS INI only,
+backs up/restores exact bytes; refuses other edits/foreign files. No archive,
+scripts.txt/profile/source/shared loader/environment code edits. Selector is used
+after Install mods, game/manager closed, then fresh restart + Run only; Install
+mods after selection would reset ON. Actual loaded INI path/mode/admissions logged.
 
-## Exact validation / expected / actual
+Version v0.1c38r7/package0.1.63, logs MSM2-WS-v0.1c38r7-YYYYMMDD-HHMMSS.log.
+Chat compact spec: same wall/character/camera/start, identical reported down/lower-
+diagonal holds, separate ON/OFF fresh attempts. Owner report is not raw mapped
+intent. Startup/mode/counters/packets must validate before comparison is accepted.
+ON source-dependent ancillary traces remain existing behavior; common comparison
+packets are not final animation/physics or zero-overhead causal proof.
 
-`/workspace/toolchains/analysis-python/bin/python3 source/tools/test_wallrun_continuation.py`
-Expected prior12 cases plus successor consumers/control, absent prefix/covering
-metadata, wrong prefix SHA/chain/unwind/raw extent, actual metadata cap,128 cap,
-mode conflict and actual CLI output/EXE preservation. Actual17 PASS /0 SKIP /
-0 UNAVAILABLE, exit0. Synthetic acceptance patches SHA ONLY in tests, not CLI.
+Exact selector commands/spec and RESTORE in analysis. Actual Windows config path/
+selector/loader/ON-OFF directional result UNAVAILABLE pending owner comparison.
+No improvement claim. Do not repeat scalar extraction or unchanged r6 game test.
 
-```bash
-XDG_CACHE_HOME=/tmp/ws-lock-xdg-cache XDG_CONFIG_HOME=/tmp/ws-lock-xdg-config XDG_DATA_HOME=/tmp/ws-lock-xdg-data DOTNET_CLI_HOME=/tmp/ws-lock-dotnet /tmp/ws-proxy-pwsh/pwsh -NoProfile -File source/tools/windows/test_capture_wallrun_continuation.ps1
-```
-Expected Unicode/space-derived paths/fresh Git helper/output collision preservation
-and WSL failure refusal, now --shared-successor. Actual2 PASS groups /0 SKIP /
-0 UNAVAILABLE, mock transport only. Actual Windows/WSL is NOT inferred PASS.
+## Files / validation in progress
 
-Private prefix422/89/SHA + R9B/DL/AL definitions and8 truth cases:1 PASS group.
-Exact reproducible verification command follows. Raw input stays private.
-Actual successor capture and owner Windows transport: UNAVAILABLE (2 evidence
-groups), not PASS. BLOCKED0; SKIP0 focused. No test failure in this task.
-Native/portable/smoke/hooks/build/release NOT RUN: offline-only diff, no runtime
-bytes changed; task forbids rebuild/game test. No new package or version.
+Native source worker comparison/config readiness/log/counters, shared value-only
+Frame and existing native fixture, telemetry config-path line, parser, narrow
+selector/tests, portable wiring, version/info/package/release/README/BUILD;
+analysis/state/result. Final targeted/full validation and publication follow.
+Initial warning-as-error cross-build found misplaced comparisonMissing declaration
+in anonymous namespace versus definition in native-source namespace. Moved its
+worker-owned implementation to the existing anonymous scope; retained Werror and
+assertions, subsequent build/targeted native passed. No native assertion weakened.
 
-## NEED — ONE exact offline successor action, not complete77 again
+## Targeted validation / expected / actual
 
-The following fetches refs/stages current helpers only; source worktree/local
-changes/runtime/KIT and existing reports stay intact. Uses existing default WSL
-analysis Python with Capstone5.0.6. No install/repair/full test/build/game launch.
-Return only new small successor JSON (or explicit REFUSED report).
+Counts below are cases/groups, not unique assertions across repeated suites.
+`bash source/tools/test_wall_motion_window.sh`: expected old5 contracts plus equal
+ON/OFF cadence/caps/suppression; actual6 PASS/0 SKIP/0 UNAVAILABLE, exit0. The new
+case initially reused local names from an earlier case and failed compilation;
+scoped its locals without weakening asserts, rerun6 PASS.
+`python3 source/tools/test_select_wallrun_comparison.py`: expected exact ON/OFF/
+RESTORE, CRLF/other keys/source/foreign-file preservation, running process/DLL/
+config/backup/extra script refusals; actual4 unittest PASS/0 SKIP/0 UNAVAILABLE.
+`bash source/tools/test_native_source.sh`: expected original ABI/lifecycle/native
+writes plus OFF real owned snapshots0active-publications/0WS-A-B-commits, vanilla
+Up independent of wall normal, stale baseline reset, identity close, Deinit/F8;
+actual15 PASS/0 SKIP/0 UNAVAILABLE, exit0. Same command repeats inside final hooks
+with final idle-budget case. No real game/Windows acceptance inferred.
+`python3 source/tools/test_wall_motion_log.py source/logs/windows_native_source_synthetic.log`:
+expected actual owned vectors/projection/late windows/caps/target-unavailable and
+zero OFF counters; actual1 PASS/0 SKIP/0 UNAVAILABLE.
 
-```powershell
-$game = "C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2"
-$repo = Join-Path $game 'Mods Library\Mods-Developing\MSM2-WS\_source'
-$branch = 'codex/v01c20-edi-value-provenance'
-git -C $repo fetch origin $branch
-if ($LASTEXITCODE -ne 0) { throw 'Fetch failed' }
-$body = @(git -C $repo show ("origin/$branch" + ':source/tools/windows/Capture-WallRun-Continuation.ps1'))
-if ($LASTEXITCODE -ne 0) { throw 'Offline entrypoint unavailable' }
-$temp = Join-Path $env:TEMP ('WS-continuation-' + [guid]::NewGuid().ToString('N') + '.ps1')
-[IO.File]::WriteAllText($temp, ($body -join "`n"), (New-Object Text.UTF8Encoding($false)))
-try { & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $temp -SourceRoot $repo -GameRoot $game }
-finally { Remove-Item -LiteralPath $temp -Force }
-```
+First complete external pipeline attempted via `python3 /tmp/ws-r7-full.py`
+invoking `bash source/tools/windows/workspace-build.sh /workspace/WallSprint /tmp/ws-r7-full-result`
+with fresh generated token, synthetic WSL_DISTRO_NAME=OwnedCloud and pinned-decoder
+PATH. Actual exit3 in191.93s,84 PASS/4 SKIP/0 UNAVAILABLE, hooks:line34 receipt.
+Unchanged immediate_reset_smoke.cpp line161 expected capture inactive after a
+fixed120ms Sleep; assertion failed. That fixture and production reset/restore
+engine are byte-unchanged from task baseline and do not link r7 comparison code.
+No exact cause established; scheduling/timing is a hypothesis, not proof.
+`bash source/tools/test_reset_trace.sh` rerun unchanged:12 PASS/1 optional-private-
+replay SKIP/0 UNAVAILABLE, exit0. No Sleep/assert/deadline/production code modified.
+Full pipeline then retried; final result below, not hidden by completion check.
 
-Output: `Mods Library\Mods-Developing\MSM2-WS\logs\MSM2-WS-wallrun-successor-YYYYMMDD-HHMMSS.json`
-(or -01..-99), NOT prior fragment77 JSON. No whole EXE/raw function upload.
+Final diagnostic-only refinement prevents OFF's pre-WallRun idle loop from using
+all64 rejection log slots. Native fixture adds80 idle polls with0budget consumed.
+No source/permission/math changes in that refinement. Final build/native/hooks
+repeated after it; earlier pipeline artifacts are not used as final release.
 
-## Static prefix verification / final checks
+## Final standard validation / results
 
-Exact private-input command (1 PASS group; no raw body output/commit):
-```bash
-/workspace/toolchains/analysis-python/bin/python3 - <<'PY'
-from pathlib import Path
-import capstone,hashlib
-b=Path('/tmp/ws-lateral-update-review/Update.bin').read_bytes()
-assert len(b)==422 and hashlib.sha256(b).hexdigest()=='e5c08bcdbc98e28f2b07aebb6a141b317ca740ee1a6a8f6da70752f98b98e40f'
-m=capstone.Cs(capstone.CS_ARCH_X86,capstone.CS_MODE_64)
-d={i.address:(i.mnemonic,i.op_str) for i in m.disasm(b,0x1424530)}
-assert len(d)==89
-for site,op in {0x142466e:('setb','r8b'),0x1424672:('cmp','byte ptr [rsi + 0x420], 0'),0x142467b:('test','r8b, r8b'),0x1424680:('mov','r9b, 1'),0x1424685:('xor','r9b, r9b'),0x14246c0:('xor','dl, dl'),0x14246d4:('xor','al, 1')}.items():assert d[site]==op
-for P in [False,True]:
- for C in [False,True]:
-  for R in [False,True]:
-   tail=not P or R
-   actual=tail if C else not P
-   assert actual==(not P or (C and R))
-print('PASS: prefix definitions and8 predicate combinations, not gameplay/return semantics')
-PY
-```
-The private input is not part of Git. Compact accepted owner77 analysis plus this
-prefix review establish local facts; no global dominance/branch execution proof.
+`python3 /tmp/ws-r7-retry.py` invoked full external
+`bash source/tools/windows/workspace-build.sh /workspace/WallSprint /tmp/ws-r7-retry-result`
+with a fresh private operation token, synthetic OwnedCloud distro label and
+PATH=/workspace/toolchains/analysis-python/bin:$PATH. Exit0 in475.14s;
+952 emitted PASS/32 SKIP/17 UNAVAILABLE; completed0 stage_payload receipt.
+This validates the entire pipeline but precedes the final idle-rejection-budget
+refinement; these staged artifacts are NOT published as final runtime bytes.
 
-`python3 -m py_compile source/tools/capture_wallrun_continuation.py source/tools/test_wallrun_continuation.py` expected/actual exit0.
+Final source subsequently executed with unchanged original assertions:
+| Exact command | Expected | Actual |
+|---|---|---|
+| `bash source/tools/build_windows.sh` | warnings-as-errors final DLL/PE build | exit0; native object/link newer than final source |
+| `bash source/tools/test.sh` | original portable + shared ON/OFF cadence/caps + selector | 36 emitted PASS +4 unittest cases PASS /0 SKIP /0 UNAVAILABLE; exit0 |
+| `bash source/tools/smoke_windows.sh` | Windows/Wine enable/disable/log and exports | 7 PASS /0 SKIP /0 UNAVAILABLE; exit0 in12.48s |
+| `PATH=/workspace/toolchains/analysis-python/bin:$PATH bash source/tools/test_hooks_windows.sh` | all required old native/regressions + OFF zero-permission/lifetime/idle case + payload checker | 907 PASS /5 SKIP /17 UNAVAILABLE; exit0 in392.14s |
+
+Final smoke/hooks controller `python3 /tmp/ws-r7-final-tests.py` serially invokes
+those exact commands with pinned-decoder PATH. Final DLL includes idle refinement;
+source/native guards/gameplay math did not change during subsequent test execution.
+Final hooks includes actual `bash tools/test_native_source.sh`:80 pre-session idle
+polls preserve rejection budget, OFF zero positive pubs/WS commits, vanilla Up,
+late snapshots, stale baseline, identity block/no further reads, Deinit and F8.
+The original deadline assert that failed initially also passes in both full retry
+and final hooks; no Sleep/deadline/reset/restore/ownership code changed.
+
+SKIP5 final hooks = preexisting optional private captures/replays not distributed.
+External pipeline32 SKIP additionally includes27 optional historical maintainer
+logs absent in clean staging. UNAVAILABLE17 = preexisting native VCH/bridge evidence
+boundaries; remain closed, not PASS. Additional owner evidence groups UNAVAILABLE:
+actual Windows selector/loader/config path and ON/OFF directional comparison.
+BLOCKED0. No further scalar capture, unchanged r6 test or movement patch requested.
+
+`python3 -m py_compile source/tools/select_wallrun_comparison.py source/tools/test_select_wallrun_comparison.py source/tools/test_wall_motion_log.py` expected/actual exit0.
 `git diff --check` expected/actual exit0.
-`git diff --exit-code 71acd91 -- source/include source/src source/mod environment BUILD_MANIFEST.json 'MSM2-WS-v0.1c38r6*'` expected/actual exit0: native/math/INI/shared tools/artifacts unchanged.
-Wisdoms updated/pushed `15bd6349423eeeeef38edded4481a6d0470e1ec1`; remote main
-SHA matches. Source worktree/runtime/KIT on owner not updated by publication.
+`git diff --exit-code 64056d4 -- source/include/Math/reversal_heading.hpp source/include/Math/source_orientation.hpp source/src/GameInterop/stack_source.cpp source/mod/WallSprint.ini environment source/src/NativeHooks/immediate_reset_smoke.cpp source/src/msm2/orientation_trace.cpp source/src/NativeHooks/immediate_reset_trace.cpp` expected/actual exit0.
+R6 math/default INI/stack writes/reset engine/shared tools unchanged; no test gate
+weakened. Native diagnostic code/version differs as explicitly authorized.
 
-## Publication verified — shared successor
+Shared Wisdoms note published/readback matched
+490538c43805807d366e5d9abc8827a10737e676. Actual game cause/acceptance stays UNKNOWN.
+Release/CRC/source audit and publication recorded after generation.
 
-Implementation `d55d58d96853244d15ed48481b3987ed4b0fb319` pushed to
-`codex/v01c20-edi-value-provenance`. Independent GitHub fetch/FETCH_HEAD/local
-HEAD/ls-remote agree; all7 changed blobs match via
-`python3 /tmp/ws-successor-publication.py`. Follow-up changes records only, so
-focused tests/build are not repeated for unchanged executable/runtime bytes.
-Actual successor and owner Windows remain UNAVAILABLE; one new successor JSON
-bootstrap only, no repeated77 or game/update/full build. Five original untracked
-files preserved. No main merge/reset/force/clean or unrelated process mutations.
+## Final release / source audit
+
+`PATH=/workspace/toolchains/analysis-python/bin:$PATH python3 source/tools/package.py`:
+expected DLL/version/INI/source/license/PE/import/CRC contracts; actual1 PASS,
+exit0,0 SKIP/UNAVAILABLE.
+`PATH=/workspace/toolchains/analysis-python/bin:$PATH python3 source/tools/release.py`:
+expected install/source archives and disabled script/manifest; actual1 PASS,
+exit0,0 SKIP/UNAVAILABLE. No unvalidated external retry artifact reused.
+`python3 /tmp/ws-r7-audit.py`: expected both ZIP CRCs, sole virtual install script,
+disabled-script exact equality, source archive matches final CPP/headers/tests/
+selector bytes, unchanged r6 heading/stack/INI and r7 diagnostic manifest; actual
+1 PASS. Version/byte sizes/SHA256 in analysis/V01C38R7_RELEASE.json.
+Outputs: MSM2-WS-v0.1c38r7.zip, MSM2-WS-v0.1c38r7-source.zip,
+MSM2-WS-v0.1c38r7.script.disabled, BUILD_MANIFEST.json.
+Root result/publication records may be newer than packaged pre-publication docs;
+validated runtime/source bytes match final implementation. No owner deployment.
+
+## NEED / exact treatment / log
+
+Diagnostic-only r7. Update/install current WS once using normal updater/manager;
+Chat supplies concise numbered comparison. With game AND Overstrike fully closed,
+use `py -3 <_source>/source/tools/select_wallrun_comparison.py --game-root <game> --mode ON`
+or OFF for separate fresh processes; RESTORE restores exact original bytes.
+No F8 control, archive/scripts.txt/profile edit, changed speed/angle or new scalar
+capture. Select AFTER Install mods and Run only afterward, because reinstall
+rewrites default ON. Actual startup ini_path/mode/observation admission/source
+admission/counters must confirm selection before accepting comparison. Detailed
+one-method commands/spec in analysis/V01C38R7_SOURCE_COMPARISON.md.
+Return separate MSM2-WS-v0.1c38r7-YYYYMMDD-HHMMSS.log files in WS/logs with mode
+inside, plus compact owner report as requested by Chat. Still no raw mapped intent
+or downward fix/causal acceptance. Publication follows after push/readback.

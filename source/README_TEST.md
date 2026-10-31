@@ -1,3 +1,17 @@
+# v0.1c38r7 / package0.1.63 — diagnostic-only source ON/OFF comparison
+
+Heading/math/timing remain r6. WALL_MOTION_WINDOW schema2 now observes the same
+validated worker snapshot/wall normal/native lifecycle independently of source
+permission, including OFF. Same100ms baseline/16 sample ring/2s/16-window caps;
+missing/stale/invalid/close/emergency reasons explicit (64 rejection records cap).
+Target is unavailable in OFF; Actor Up is observed, never substituted wall normal.
+Mode/admission/actual A-B commits and active publication count are recorded.
+F8 stops observation too; it is not the comparison switch. Select existing INI
+WALLSPRINT_NATIVE_SOURCE_OVERRIDE via select_wallrun_comparison.py after Install
+mods, with game/manager closed, then fresh game restart. RESTORE restores exact
+original bytes; never hand-edit scripts.txt or archives. Chat supplies comparison
+sequence. This is not a descent patch. See V01C38R7_SOURCE_COMPARISON.md.
+
 # v0.1c38r6 / package0.1.62 — downward-motion diagnostics only
 
 R5 heading math, thresholds and source write permissions are unchanged. Existing

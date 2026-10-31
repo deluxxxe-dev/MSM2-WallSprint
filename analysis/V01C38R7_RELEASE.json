@@ -1,0 +1,29 @@
+{
+  "version": "v0.1c38r7",
+  "package_version": "0.1.63",
+  "artifacts": [
+    {
+      "artifact": "MSM2-WS-v0.1c38r7.zip",
+      "bytes": 5692268,
+      "sha256": "5e6508f1ef67f0af19d573de29f90875057fddfcd335fa6972527bbebbf28d1b"
+    },
+    {
+      "artifact": "MSM2-WS-v0.1c38r7-source.zip",
+      "bytes": 2088859,
+      "sha256": "4dd56e7862920daab7d5f834b769228d8b107c46fc8b0905f1851a41582d0153"
+    },
+    {
+      "artifact": "MSM2-WS-v0.1c38r7.script.disabled",
+      "bytes": 2567864,
+      "sha256": "0abc19b2b2e343d118982691ee47a047dafdfab7c4511af0d05e320e453e94fb"
+    },
+    {
+      "artifact": "BUILD_MANIFEST.json",
+      "bytes": 73762,
+      "sha256": "bc5380be638d30c5d7a1f8db8bd713320a338548566593232e189ac3fa8ded30"
+    }
+  ],
+  "CRC_source_DLL_metadata_audit": "PASS",
+  "owner_game_acceptance": "UNAVAILABLE_pending_numbered_comparison",
+  "descending_cause": "UNKNOWN_no_movement_fix_claimed"
+}

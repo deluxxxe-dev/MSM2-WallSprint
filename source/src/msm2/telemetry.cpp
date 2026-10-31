@@ -72,6 +72,7 @@ Settings settings(){
  result.source.debug=GetPrivateProfileIntW(L"WallSprint",L"DEBUG_LOG",1,path.c_str())==1;
  result.source.enabled=GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_ENABLE",0,path.c_str())==1;
  result.source.sourceOverride=GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_NATIVE_SOURCE_OVERRIDE",0,path.c_str())==1;
+ msm2::writeLog("WALL_MOTION_CONFIG ini_path=%ls requested_override=%u selection=restart_required",path.c_str(),unsigned(result.source.sourceOverride));
  result.source.delay=number(L"WALLSPRINT_ENTRY_DELAY",L"0.70");result.source.rotateTime=number(L"WALLSPRINT_ROTATE_TIME",L"0.25");
  result.input.observe=GetPrivateProfileIntW(L"Diagnostics",L"SOURCE_ARGUMENT_CAPTURE",0,path.c_str())==1;
  result.input.enabled=GetPrivateProfileIntW(L"Diagnostics",L"ORIENTATION_SOURCE_DISCOVERY",1,path.c_str())==1;

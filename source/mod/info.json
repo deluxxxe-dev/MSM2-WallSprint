@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.62",
-  "description": "WallSprint v0.1c38r6: bounded downward-motion/orientation diagnostics only. R5 heading thresholds/timing, source writes and native safety unchanged; no movement/input/animation changes.",
+  "version": "0.1.63",
+  "description": "WallSprint v0.1c38r7: diagnostic-only comparable ON/OFF native-source windows, unchanged r6 heading math and all gameplay write gates. OFF never publishes orientation or commits A/B.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1

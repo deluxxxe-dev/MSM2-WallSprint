@@ -66,7 +66,7 @@ static void prepare(ws::Vec3 normal,bool full=true,unsigned backdate=800){
  secondary.refreshSeen=0;secondary.refreshAdmitted=0;secondary.refreshIdentity=0;secondary.refreshStale=0;secondary.refreshIntegrity=0;secondary.refreshOther=0;firstSecondaryRefresh.ready=0;
  firstSecondaryOverride.ready=0;firstSecondaryReject.ready=0;pathBReservations=0;compactAuth=true;
  causeState=0;killCalls=0;workerEvidence.publish({});identityPublication.publish({});firstCause={};
- killed=false;admitted=true;ws_native_source_enabled=1;config={};config.dualSource=true;state={};pathAWrites=0;pathBWrites=0;pathARejects=0;pathBRejects=0;resetRequested=false;publishInactive();
+ comparisonReady=true;comparisonStopped=false;comparison={};activePublications=0;comparisonRejects=0;killed=false;admitted=true;ws_native_source_enabled=1;config={};config.dualSource=true;state={};pathAWrites=0;pathBWrites=0;pathARejects=0;pathBRejects=0;resetRequested=false;publishInactive();
  ws::native_source::armLifecycle(true);ws::native_source::event(0,owner);ws::native_source::event(1,owner);token.initMs=GetTickCount64()-backdate;ws::native_source::event(2,owner);
  context={};context.lifecycleVerified=context.wallRunActive=true;context.wallRunOwner=owner;context.wallRunSessionId=++session;context.elapsed=.8;
  vanilla=identity();vanilla.v[0]=0;vanilla.v[2]=-1;vanilla.v[8]=1;vanilla.v[10]=0;
@@ -489,18 +489,34 @@ int main(){
   if(wasTurning&&!state.heading.turning)++completed;
  }
  assert(straightChecked&&completed>=20&&double(GetTickCount64())-longEntry>30000);
- assert(state.motionWindow.windows>=10&&state.motionWindow.windows<=16&&state.motionWindow.overwritten>0);
- assert(output.find("WALL_MOTION_WINDOW schema=1")!=std::string::npos&&output.find("actor_forward=(")!=std::string::npos&&output.find("sampled_normal=(")!=std::string::npos&&output.find("decision_ms=")!=std::string::npos&&output.find("PATH_B_INCOMING_BASIS schema=1")!=std::string::npos);
+ assert(comparison.window.windows>=10&&comparison.window.windows<=16&&comparison.window.overwritten>0);
+ assert(output.find("WALL_MOTION_WINDOW schema=2")!=std::string::npos&&output.find("actor_forward=(")!=std::string::npos&&output.find("sampled_normal=(")!=std::string::npos&&output.find("decision_ms=")!=std::string::npos&&output.find("PATH_B_INCOMING_BASIS schema=1")!=std::string::npos);
  assert(state.headingLogs==64&&state.actorLogs==256&&state.countLogs<=64&&state.movementSamples==40);
  assert(pathAWrites>0&&pathBWrites>0&&pathAWrites<4096&&pathBWrites<4096);
  ws::native_source::event(3,owner);context.wallRunActive=false;workerTick(false);auto longA=pathAWrites.load(),longB=pathBWrites.load();callA();callB();
  assert(!state.transition.active&&state.summaryEmitted&&pathAWrites==longA&&pathBWrites==longB);
- assert(state.motionWindow.finished&&state.motionWindow.count==0);
+ assert(comparison.window.finished&&comparison.window.count==0);
  puts("PASS: r6 production worker retains bounded late motion/actor windows beyond old hold cap, original B axes use captured copy, final Deinit flush does not alter A/B writes");
  context.wallRunActive=true;workerTick(false);assert(!state.transition.active); // Closed generation cannot re-enter.
  prepare({0,0,1});assert(state.session!=longSession&&ws::dot(state.heading.forward,state.heading.f0)>.99999f&&state.headingLogs==0&&state.actorLogs==0);
  msm2::native_source::kill("long_session_disable","shutdown");workerTick(false);callA();callB();assert(!state.transition.active&&pathAWrites==0&&pathBWrites==0);
  puts("PASS: r4 real31s same-session A/B continuation, straight beyond5s and >=20 completed reversals without entry/generation reset; bounded diagnostic caps do not close source; Deinit/closed-generation/new-session/disable gates preserved");
+ // OFF observation uses the same Window and authenticated owned native events,
+ // while original hook calls pass through and never get source permission.
+ prepare({0,0,1});config.sourceOverride=false;admitted=false;killed=true;ws_native_source_enabled=0;publishInactive();state={};comparison={};comparisonReady=true;comparisonStopped=false;activePublications=0;
+ context.wallRunActive=false;comparisonRejects=0;
+ for(unsigned idle=0;idle<80;++idle)workerTick(false);
+ assert(comparisonRejects==0&&comparison.session==0);context.wallRunActive=true;
+ auto offStart=GetTickCount64();
+ while(GetTickCount64()-offStart<2500){waitMs(16);fakeHero.position[1]-=.05f;workerTick();callA();callB();msm2::native_source::drainLogs();Published off{};assert(publication.read(off)&&!off.active);assert(!ws_native_source_enabled&&pathAWrites==0&&pathBWrites==0&&activePublications==0);}
+ assert(comparison.window.windows>=1&&!comparison.window.finished);auto& offFrame=comparison.window.at(0);assert(!offFrame.targetValid&&offFrame.actor.up.y>.99f&&std::abs(ws::dot(offFrame.actor.up,comparison.normal))<.01f);
+ waitMs(120);workerTick(false);assert(!comparison.window.baseline);workerTick();assert(comparison.window.baseline);
+ auto originalTransform=fakeHero.transform;fakeHero.transform+=16;workerTick();assert(comparison.window.finished);fakeHero.transform=originalTransform;
+ auto closedReads=planeReads;workerTick();assert(planeReads==closedReads); // closed same-session observer cannot revive or keep reading
+ context.wallRunActive=false;workerTick(false);assert(!activePublications&&pathAWrites==0&&pathBWrites==0);
+ auto beforeOffStop=planeReads;msm2::native_source::kill("F8_kill_switch","shutdown");workerTick(false);assert(planeReads==beforeOffStop&&comparisonStopped);
+ config.sourceOverride=true;
+ puts("PASS: r7 OFF same bounded native windows preserve vanilla Actor Up, zero active publications/A-B commits; stale rebase, identity block, Deinit and emergency stop; no game evidence");
  assert(MH_DisableHook(reinterpret_cast<void*>(&ws_test_copy_writer))==MH_OK);assert(MH_RemoveHook(reinterpret_cast<void*>(&ws_test_copy_writer))==MH_OK);assert(MH_DisableHook(reinterpret_cast<void*>(&ws_test_native_source_writer))==MH_OK);assert(MH_RemoveHook(reinterpret_cast<void*>(&ws_test_native_source_writer))==MH_OK);assert(MH_Uninitialize()==MH_OK);assert(VirtualFree(mem,0,MEM_RELEASE));
  auto f=std::fopen("logs/windows_native_source_synthetic.log","wb");assert(f);std::fwrite(output.data(),1,output.size(),f);std::fclose(f);
  puts("PASS: lock-free coherent A/B shared basis, A exact stack source, B compact36-only scale/metadata preservation, contended worker lock cannot reject hooks, A/E retention, identity/thread/lifecycle/auth/kill/degenerate gates; independent MinHook fixtures only");

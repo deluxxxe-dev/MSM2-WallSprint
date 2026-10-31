@@ -6,9 +6,10 @@
 namespace ws::motion_diag {
 // Worker-owned, value-only ring. No memory access or source permission authority.
 struct Frame {
- std::uint64_t ms{},update{},nativeMs{};double clock{},dt{};
+ std::uint64_t ms{},update{},nativeMs{},nativeInitMs{};double clock{},dt{};
  Vec3 delta{},tangent{},normal{},sampledNormal{},requested{},published{};
  std::uint64_t decisionMs{},decisionUpdate{};const char* decision="none";
+ bool targetValid{},sourceAdmitted{},publicationActive{};unsigned aCommits{},bCommits{};std::uint64_t publications{};
  diag::ActorAxes actor{};const char* event="none";
 };
 struct Window {

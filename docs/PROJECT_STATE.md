@@ -1,5 +1,20 @@
 # WallSprint project state
 
+## Current handoff — r7 diagnostic-only ON/OFF comparison prepared
+
+Scalar successor accepted, no more byte/callee capture. R7/package0.1.63 reuses
+one bounded Window for validated snapshots/native lifecycle in ON AND OFF without
+source permission in OFF. OFF target unavailable, Actor Up remains observed;
+active basis publications/A-B commits0. F8 stops observations, not comparison.
+Select existing installed INI key via select_wallrun_comparison.py ON/OFF/RESTORE,
+with game/manager closed after Install mods, then fresh restart/Run only. No
+archive/profile/source edits; validated DLL match, exact original config backup.
+Heading math/entry/stale/native/ownership/4096/C52 gates preserved, no motion fix.
+See analysis/V01C38R7_SOURCE_COMPARISON.md for config/path/caps/compact Chat spec.
+Owner r7 Windows/game acceptance unknown; Chat supplies numbered comparison after
+publication. Exact validation/publication in CODEX_RESULT.
+
+
 ## Current decision — successor received; stop scalar traversal
 
 20byte owner successor verified: saveR13/loadscalar/TEST DL/JNE, no motion API/descending cause. See analysis/WALLRUN_SUCCESSOR_OWNER_RESULT_20261031.md. No more byte requests on this scalar route. CODEX_NEXT prepares controlled source override ON/OFF comparison with equivalent safe read-only OFF observation; current r6 active-only windows insufficient. This is diagnostic, not descending behavior fix. Preserve heading/native safety and0writes in OFF.
@@ -583,3 +598,14 @@ focused tests/build are not repeated for unchanged executable/runtime bytes.
 Actual successor and owner Windows remain UNAVAILABLE; one new successor JSON
 bootstrap only, no repeated77 or game/update/full build. Five original untracked
 files preserved. No main merge/reset/force/clean or unrelated process mutations.
+
+
+## R7 validation completed
+
+Final build, portable36 emitted groups+selector4 unittest cases, smoke7,
+canonical907 PASS/5 SKIP/17 UNAVAILABLE, package/release/source/CRC audit passed.
+First unchanged reset fixture assertion failed once; unchanged isolated12 PASS/
+1 SKIP and full retry+final canonical pass, no reset/restore/test deadline change.
+Final idle-budget refinement tested by80 native idle polls before OFF attempt.
+Owner Windows selector/loader/actual ON-OFF down comparison remains UNAVAILABLE.
+No descending fix claim; Chat supplies numbered comparison after publication.

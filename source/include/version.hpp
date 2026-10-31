@@ -1,5 +1,5 @@
 #pragma once
 namespace ws {
-inline constexpr char versionLabel[]="v0.1c38r6";
-inline constexpr char packageVersion[]="0.1.62";
+inline constexpr char versionLabel[]="v0.1c38r7";
+inline constexpr char packageVersion[]="0.1.63";
 }

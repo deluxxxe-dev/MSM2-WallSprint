@@ -21,6 +21,11 @@ int main(){
  std::puts("PASS: sub-sample low-speed rejection survives throttling with separate decision timestamp/update, never mislabeled as current input");
  w.windows=w.maxWindows;assert(!w.sample(f,{}));assert(w.suppressed==1);w.finished=true;assert(!w.sample(f,{}));assert(w.suppressed==1);
  std::puts("PASS: session budget and final close bound total logging; suppression remains explicit");
+ {motion_diag::Window on,off;motion_diag::Frame a{},b{};a.normal=b.normal={1,0,0};a.targetValid=a.sourceAdmitted=true;
+ for(unsigned i=0;i<600;++i){a.ms=b.ms=i*100;a.update=b.update=i;bool x=on.sample(a,{0,float(i),0}),y=off.sample(b,{0,float(i),0});assert(x==y);if(x){on.flushed();off.flushed();}}
+ assert(on.windows==16&&on.windows==off.windows&&on.suppressed==off.suppressed&&on.overwritten==off.overwritten);
+ std::puts("PASS: ON/OFF treatment/permission flags cannot change sample cadence, window cap or suppression");
+ }
  // Owner session4 values: normal X, full horizontal observations are NOT tiny noise.
  heading::Reversal h;diag::ActorAxes e{{0,-1,0},{1,0,0},{0,0,1},true};assert(h.enter(e));
  h.sample({},1,0,0);auto a=h.sample({0,0,-.161712646f},2,47,47);assert(a.speed>3&&a.candidate.z<-.99f);

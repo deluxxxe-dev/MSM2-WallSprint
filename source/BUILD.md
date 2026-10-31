@@ -294,3 +294,13 @@ v0.1c38r6/package0.1.62 adds value-only bounded worker windows and full incoming
 B axes from its existing validated copy; no r5 heading/math/timing change. See
 analysis/V01C38R6_DOWNWARD_INTERACTION.md. `bash source/tools/test_wall_motion_window.sh`
 is part of portable validation. Owner cause and game acceptance remain pending.
+
+## r7 comparable source ON/OFF observation
+
+v0.1c38r7/package0.1.63 is diagnostics only; fixed r6 heading math remains.
+Common Window/caps receive validated lifecycle/snapshot/normal values even with
+source override disabled. OFF source guards never enable A/B or positive source
+publication. Selection is installed WallSprint.ini at restart, through
+`py -3 <_source>/source/tools/select_wallrun_comparison.py --mode ON|OFF|RESTORE`.
+Run only after installing current package with game/manager closed. Details and
+configuration-path/restore proof: analysis/V01C38R7_SOURCE_COMPARISON.md.
