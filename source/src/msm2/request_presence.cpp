@@ -19,9 +19,10 @@ constexpr std::uintptr_t kRequestEndRva = 0x11A1CA2;
 constexpr std::uintptr_t kRequestUnwindRva = 0x94697E0;
 constexpr std::size_t kRequestSize = kRequestEndRva - kRequestRva;
 constexpr std::size_t kNativeSnapshot = 32;
-constexpr LONG kPhaseRecordCap = 131072;
-constexpr unsigned kPhaseLimit = 1;
-constexpr ULONGLONG kPhaseDurationMs = 300000;
+constexpr LONG kBatchRecordCap = 16;
+constexpr ULONGLONG kDrainIntervalMs = 500;
+constexpr ULONGLONG kQuiesceWaitMs = 250;
+constexpr std::uint64_t kSessionRecordCap = 65536;
 constexpr char kRequestSha256[] = "2d8792492c8b89d4e9885d55fa45fb2c6b4126b4ae992f854f6d687522163d0c";
 constexpr unsigned char kRequestPrefix[] = {0x4c,0x8b,0xdc,0x49,0x89,0x5b,0x08};
 
@@ -43,7 +44,7 @@ volatile LONG ws_request_presence_active_callbacks = 0;
 volatile LONG ws_request_presence_count = 0;
 volatile LONG ws_request_presence_overflow = 0;
 volatile LONG ws_request_presence_contention = 0;
-PresenceRecord ws_request_presence_records[kPhaseRecordCap]{};
+PresenceRecord ws_request_presence_records[kBatchRecordCap]{};
 std::uintptr_t ws_request_presence_original = 0;
 std::uint64_t ws_request_presence_read_tsc();
 void ws_request_presence_observer();
@@ -58,7 +59,7 @@ void ws_request_presence_restore7();
 void ws_request_presence_restore8();
 }
 
-enum class PhaseState { Idle, Capturing, Closing, Stopped };
+enum class PhaseState { Idle, Capturing, Stopped };
 struct Runtime {
     bool requested{};
     bool started{};
@@ -71,14 +72,12 @@ struct Runtime {
     std::array<unsigned char,kNativeSnapshot> native{};
     std::array<unsigned char,kNativeSnapshot> patch{};
     PhaseState phase{PhaseState::Idle};
-    const char* phaseLabel{};
-    const char* phaseClass{};
-    const char* closeReason{};
-    ULONGLONG deadline{};
-    ULONGLONG captureStartTick{};
-    std::uint64_t captureStartTsc{};
-    unsigned phaseId{};
-    unsigned phasesStarted{};
+    ULONGLONG sessionStartTick{};
+    ULONGLONG batchStartTick{};
+    ULONGLONG nextDrainTick{};
+    std::uint64_t sessionStartTsc{};
+    std::uint64_t batchStartTsc{};
+    unsigned batchId{};
     std::uint64_t sessionCaptured{};
     std::uint64_t sessionOverflow{};
     std::uint64_t sessionContention{};
@@ -220,76 +219,83 @@ bool nativeRestored() {
     return copyCode(runtime.target,current.data(),current.size()) && current==runtime.native;
 }
 
-void beginClose(const char* reason) {
-    if(runtime.phase!=PhaseState::Capturing) return;
-    InterlockedExchange(&ws_request_presence_enabled,0);
-    runtime.phase=PhaseState::Closing;
-    runtime.closeReason=reason;
-    msm2::writeLog("REQUEST_PRESENCE_PHASE_CLOSE_PENDING phase_id=%u label=%s reason=%s active_callbacks=%ld",runtime.phaseId,runtime.phaseLabel?runtime.phaseLabel:"none",reason?reason:"unspecified",atomicRead(&ws_request_presence_active_callbacks));
+void resetBatch() {
+    InterlockedExchange(&ws_request_presence_count,0);
+    InterlockedExchange(&ws_request_presence_overflow,0);
+    InterlockedExchange(&ws_request_presence_contention,0);
+    std::memset(ws_request_presence_records,0,sizeof(ws_request_presence_records));
 }
 
-void finalizePhase() {
-    if(runtime.phase!=PhaseState::Closing || atomicRead(&ws_request_presence_active_callbacks)!=0) return;
-    const auto captureEndTsc=ws_request_presence_read_tsc();
-    const auto captureEndTick=GetTickCount64();
-    const auto elapsedMs=captureEndTick>=runtime.captureStartTick?captureEndTick-runtime.captureStartTick:0;
-    const auto tscSpan=captureEndTsc>runtime.captureStartTsc?captureEndTsc-runtime.captureStartTsc:0;
-    LONG count=std::clamp(atomicRead(&ws_request_presence_count),0L,kPhaseRecordCap);
+bool waitForCallbacks() {
+    const auto start=GetTickCount64();
+    while(atomicRead(&ws_request_presence_active_callbacks)!=0 && GetTickCount64()-start<kQuiesceWaitMs) Sleep(1);
+    return atomicRead(&ws_request_presence_active_callbacks)==0;
+}
+
+bool drainBatch(const char* reason,bool rearm) {
+    if(runtime.phase!=PhaseState::Capturing) return true;
+    InterlockedExchange(&ws_request_presence_enabled,0);
+    if(!waitForCallbacks()){
+        msm2::writeLog("REQUEST_PRESENCE_DRAIN deferred=1 reason=%s active_callbacks=%ld wait_cap_ms=%llu records_preserved=1",reason?reason:"unspecified",atomicRead(&ws_request_presence_active_callbacks),static_cast<unsigned long long>(kQuiesceWaitMs));
+        if(rearm && runtime.admitted && runtime.enabled) InterlockedExchange(&ws_request_presence_enabled,1);
+        runtime.nextDrainTick=GetTickCount64()+kDrainIntervalMs;
+        return false;
+    }
+
+    const auto endTsc=ws_request_presence_read_tsc();
+    const auto endTick=GetTickCount64();
+    LONG count=std::clamp(atomicRead(&ws_request_presence_count),0L,kBatchRecordCap);
     LONG overflow=std::max(0L,atomicRead(&ws_request_presence_overflow));
     LONG contention=std::max(0L,atomicRead(&ws_request_presence_contention));
+    const auto batchMs=endTick>=runtime.batchStartTick?endTick-runtime.batchStartTick:0;
+    const auto sessionMs=endTick>=runtime.sessionStartTick?endTick-runtime.sessionStartTick:0;
+    const auto sessionTscSpan=endTsc>runtime.sessionStartTsc?endTsc-runtime.sessionStartTsc:0;
+    ++runtime.batchId;
     runtime.sessionCaptured+=static_cast<std::uint64_t>(count);
     runtime.sessionOverflow+=static_cast<std::uint64_t>(overflow);
     runtime.sessionContention+=static_cast<std::uint64_t>(contention);
-    msm2::writeLog("REQUEST_PRESENCE_PHASE_SUMMARY phase_id=%u class=%s label=%s label_auth=video_posthoc_not_native_authenticated correlation=non_atomic retained=%ld cap=%ld overflow=%ld contention=%ld lost=%ld reason=%s duration_cap_ms=%llu actual_duration_ms=%llu zero_hit=%u",runtime.phaseId,runtime.phaseClass?runtime.phaseClass:"unknown",runtime.phaseLabel?runtime.phaseLabel:"none",count,kPhaseRecordCap,overflow,contention,overflow+contention,runtime.closeReason?runtime.closeReason:"unspecified",static_cast<unsigned long long>(kPhaseDurationMs),static_cast<unsigned long long>(elapsedMs),unsigned(count==0));
+
+    msm2::writeLog("REQUEST_PRESENCE_BATCH_SUMMARY batch_id=%u retained=%ld batch_cap=%ld overflow=%ld contention=%ld lost=%ld reason=%s actual_batch_ms=%llu periodic_worker_drain_ms=%llu session_retained=%llu session_record_cap=%llu",runtime.batchId,count,kBatchRecordCap,overflow,contention,overflow+contention,reason?reason:"unspecified",static_cast<unsigned long long>(batchMs),static_cast<unsigned long long>(kDrainIntervalMs),static_cast<unsigned long long>(runtime.sessionCaptured),static_cast<unsigned long long>(kSessionRecordCap));
     for(LONG i=0;i<count;++i){
         const auto& record=ws_request_presence_records[i];
-        const bool offsetValid=tscSpan>0 && record.tsc>=runtime.captureStartTsc && record.tsc<=captureEndTsc;
-        const double offsetMs=offsetValid?(static_cast<double>(record.tsc-runtime.captureStartTsc)*static_cast<double>(elapsedMs)/static_cast<double>(tscSpan)):0.0;
-        msm2::writeLog("REQUEST_PRESENCE_RECORD phase_id=%u label=%s slot=%llu offset_ms_est=%.3f offset_valid=%u offset_clock=tsc_linearized_to_GetTickCount64 rcx_bits=0x%016llx rdx_bits=0x%016llx r8_bits=0x%016llx r9_bits=0x%016llx return_pc=0x%016llx thread_token=0x%016llx tsc=%llu semantics=opaque_bits_no_dereference",runtime.phaseId,runtime.phaseLabel?runtime.phaseLabel:"none",static_cast<unsigned long long>(record.slot),offsetMs,unsigned(offsetValid),static_cast<unsigned long long>(record.rcx),static_cast<unsigned long long>(record.rdx),static_cast<unsigned long long>(record.r8),static_cast<unsigned long long>(record.r9),static_cast<unsigned long long>(record.returnPc),static_cast<unsigned long long>(record.threadToken),static_cast<unsigned long long>(record.tsc));
+        const bool offsetValid=sessionTscSpan>0 && record.tsc>=runtime.sessionStartTsc && record.tsc<=endTsc;
+        const double offsetMs=offsetValid?(static_cast<double>(record.tsc-runtime.sessionStartTsc)*static_cast<double>(sessionMs)/static_cast<double>(sessionTscSpan)):0.0;
+        msm2::writeLog("REQUEST_PRESENCE_RECORD batch_id=%u slot=%llu session_offset_ms_est=%.3f offset_valid=%u offset_clock=tsc_linearized_to_GetTickCount64 rcx_bits=0x%016llx rdx_bits=0x%016llx r8_bits=0x%016llx r9_bits=0x%016llx return_pc=0x%016llx thread_token=0x%016llx tsc=%llu semantics=opaque_bits_no_dereference",runtime.batchId,static_cast<unsigned long long>(record.slot),offsetMs,unsigned(offsetValid),static_cast<unsigned long long>(record.rcx),static_cast<unsigned long long>(record.rdx),static_cast<unsigned long long>(record.r8),static_cast<unsigned long long>(record.r9),static_cast<unsigned long long>(record.returnPc),static_cast<unsigned long long>(record.threadToken),static_cast<unsigned long long>(record.tsc));
     }
-    runtime.phase=PhaseState::Idle;
-    runtime.phaseLabel=nullptr;
-    runtime.phaseClass=nullptr;
-    runtime.closeReason=nullptr;
-    runtime.deadline=0;
-    runtime.captureStartTick=0;
-    runtime.captureStartTsc=0;
+
+    resetBatch();
+    if(runtime.sessionCaptured>=kSessionRecordCap){
+        runtime.phase=PhaseState::Idle;
+        msm2::writeLog("REQUEST_PRESENCE_SESSION_CAP_REACHED retained=%llu cap=%llu capture_gate_closed=1 hook_forwarding_preserved=1",static_cast<unsigned long long>(runtime.sessionCaptured),static_cast<unsigned long long>(kSessionRecordCap));
+        return true;
+    }
+    if(rearm && runtime.admitted && runtime.enabled){
+        runtime.batchStartTick=endTick;
+        runtime.batchStartTsc=endTsc;
+        runtime.nextDrainTick=endTick+kDrainIntervalMs;
+        InterlockedExchange(&ws_request_presence_enabled,1);
+    }else{
+        runtime.phase=PhaseState::Idle;
+    }
+    return true;
 }
 
 void logSession(const char* reason) {
     if(runtime.sessionLogged) return;
     runtime.sessionLogged=true;
-    msm2::writeLog("REQUEST_PRESENCE_SESSION_SUMMARY phases=%u phase_cap=%u per_phase_record_cap=%ld session_record_cap=%u retained=%llu overflow=%llu contention=%llu lost=%llu reason=%s",runtime.phasesStarted,kPhaseLimit,kPhaseRecordCap,kPhaseLimit*static_cast<unsigned>(kPhaseRecordCap),static_cast<unsigned long long>(runtime.sessionCaptured),static_cast<unsigned long long>(runtime.sessionOverflow),static_cast<unsigned long long>(runtime.sessionContention),static_cast<unsigned long long>(runtime.sessionOverflow+runtime.sessionContention),reason?reason:"unspecified");
+    msm2::writeLog("REQUEST_PRESENCE_SESSION_SUMMARY batches=%u batch_record_cap=%ld periodic_worker_drain_ms=%llu session_record_cap=%llu retained=%llu overflow=%llu contention=%llu lost=%llu reason=%s",runtime.batchId,kBatchRecordCap,static_cast<unsigned long long>(kDrainIntervalMs),static_cast<unsigned long long>(kSessionRecordCap),static_cast<unsigned long long>(runtime.sessionCaptured),static_cast<unsigned long long>(runtime.sessionOverflow),static_cast<unsigned long long>(runtime.sessionContention),static_cast<unsigned long long>(runtime.sessionOverflow+runtime.sessionContention),reason?reason:"unspecified");
 }
 
-void arm(const char* phaseClass,const char* label) {
-    if(!runtime.admitted || !runtime.enabled){
-        msm2::writeLog("REQUEST_PRESENCE_ARM rejected=1 class=%s label=%s reason=diagnostic_not_admitted",phaseClass,label);
-        return;
-    }
-    if(runtime.phase!=PhaseState::Idle){
-        msm2::writeLog("REQUEST_PRESENCE_ARM rejected=1 class=%s label=%s reason=phase_busy current_phase=%u",phaseClass,label,runtime.phaseId);
-        return;
-    }
-    if(runtime.phasesStarted>=kPhaseLimit){
-        msm2::writeLog("REQUEST_PRESENCE_ARM rejected=1 class=%s label=%s reason=session_phase_cap cap=%u",phaseClass,label,kPhaseLimit);
-        return;
-    }
-    InterlockedExchange(&ws_request_presence_count,0);
-    InterlockedExchange(&ws_request_presence_overflow,0);
-    InterlockedExchange(&ws_request_presence_contention,0);
-    std::memset(ws_request_presence_records,0,sizeof(ws_request_presence_records));
-    runtime.phaseClass=phaseClass;
-    runtime.phaseLabel=label;
-    runtime.closeReason=nullptr;
-    runtime.captureStartTick=GetTickCount64();
-    runtime.captureStartTsc=ws_request_presence_read_tsc();
-    runtime.deadline=runtime.captureStartTick+kPhaseDurationMs;
-    ++runtime.phaseId;
-    ++runtime.phasesStarted;
+void startCapture() {
+    resetBatch();
+    runtime.sessionStartTick=GetTickCount64();
+    runtime.sessionStartTsc=ws_request_presence_read_tsc();
+    runtime.batchStartTick=runtime.sessionStartTick;
+    runtime.batchStartTsc=runtime.sessionStartTsc;
+    runtime.nextDrainTick=runtime.sessionStartTick+kDrainIntervalMs;
     runtime.phase=PhaseState::Capturing;
     InterlockedExchange(&ws_request_presence_enabled,1);
-    msm2::writeLog("REQUEST_PRESENCE_PHASE_ARM phase_id=%u class=%s label=%s label_auth=video_posthoc_not_native_authenticated correlation=non_atomic max_ms=%llu max_records=%ld controls=automatic_on_admission video_alignment=record_offset_ms_est",runtime.phaseId,phaseClass,label,static_cast<unsigned long long>(kPhaseDurationMs),kPhaseRecordCap);
+    msm2::writeLog("REQUEST_PRESENCE_CAPTURE_START class=automatic label=auto_admission capture_lifetime=script_session periodic_worker_drain_ms=%llu batch_record_cap=%ld session_record_cap=%llu shutdown_flush=best_effort_not_required_for_prior_batches manual_F11_F12_required=0",static_cast<unsigned long long>(kDrainIntervalMs),kBatchRecordCap,static_cast<unsigned long long>(kSessionRecordCap));
 }
 
 } // namespace
@@ -297,7 +303,7 @@ void arm(const char* phaseClass,const char* label) {
 namespace msm2::request_presence {
 
 bool start(bool targetBuildConfirmed,Config config,std::uintptr_t moduleBase,std::size_t moduleSize) {
-    msm2::writeLog("REQUEST_PRESENCE_CONFIG requested=%u mode=read_only entry_rva=0x%llx site_size=%llu phase_ms=%llu phase_record_cap=%ld session_phase_cap=%u capture_control=automatic_on_admission legacy_manual_controls=disabled",unsigned(config.enabled),static_cast<unsigned long long>(kRequestRva),static_cast<unsigned long long>(kRequestSize),static_cast<unsigned long long>(kPhaseDurationMs),kPhaseRecordCap,kPhaseLimit);
+    msm2::writeLog("REQUEST_PRESENCE_CONFIG requested=%u mode=read_only entry_rva=0x%llx site_size=%llu capture_control=automatic_on_admission capture_lifetime=script_session periodic_worker_drain_ms=%llu batch_record_cap=%ld session_record_cap=%llu legacy_manual_controls=disabled",unsigned(config.enabled),static_cast<unsigned long long>(kRequestRva),static_cast<unsigned long long>(kRequestSize),static_cast<unsigned long long>(kDrainIntervalMs),kBatchRecordCap,static_cast<unsigned long long>(kSessionRecordCap));
     if(runtime.created){
         InterlockedExchange(&ws_request_presence_enabled,0);
         msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=resident_hook_already_created process_restart_required=1 previous_hook_enabled=%u trampoline_retained=1 original_forward_preserved=1",unsigned(runtime.enabled));
@@ -307,9 +313,7 @@ bool start(bool targetBuildConfirmed,Config config,std::uintptr_t moduleBase,std
     runtime.requested=config.enabled;
     InterlockedExchange(&ws_request_presence_enabled,0);
     InterlockedExchange(&ws_request_presence_active_callbacks,0);
-    InterlockedExchange(&ws_request_presence_count,0);
-    InterlockedExchange(&ws_request_presence_overflow,0);
-    InterlockedExchange(&ws_request_presence_contention,0);
+    resetBatch();
     ws_request_presence_original=0;
     if(!config.enabled){
         msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=config_disabled");
@@ -370,39 +374,31 @@ bool start(bool targetBuildConfirmed,Config config,std::uintptr_t moduleBase,std
     }
     runtime.admitted=true;
     msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=1 target=0x%llx relay=0x%llx observer=0x%llx trampoline=0x%llx whole_site_sha=verified pdata=exact observer_unwind=split_verified callback_io=0 callback_locks=0 callback_allocations=0 captured_pointer_dereference=0 argument_writes=0 request_suppression=0 original_forward=tail_trampoline retention=process_exit",static_cast<unsigned long long>(target),static_cast<unsigned long long>(relay),static_cast<unsigned long long>(reinterpret_cast<std::uintptr_t>(&ws_request_presence_observer)),static_cast<unsigned long long>(reinterpret_cast<std::uintptr_t>(original)));
-    arm("automatic","auto_admission");
+    startCapture();
     return true;
 }
 
 void tick() {
-    if(runtime.phase==PhaseState::Capturing){
-        auto now=GetTickCount64();
-        if(atomicRead(&ws_request_presence_count)>=kPhaseRecordCap) beginClose("record_cap");
-        else if(now>=runtime.deadline) beginClose("deadline");
-    }
-    finalizePhase();
+    if(runtime.phase==PhaseState::Capturing && GetTickCount64()>=runtime.nextDrainTick) drainBatch("periodic_worker",true);
 }
 
 void armNextGround() {
-    msm2::writeLog("REQUEST_PRESENCE_ARM rejected=1 class=legacy_manual_control reason=F11_disabled_capture_auto_arms_on_admission");
+    msm2::writeLog("REQUEST_PRESENCE_ARM rejected=1 class=legacy_manual_control reason=F11_disabled_capture_auto_starts_on_admission");
 }
 
 void armNextWallRun() {
-    msm2::writeLog("REQUEST_PRESENCE_ARM rejected=1 class=legacy_manual_control reason=F12_disabled_capture_auto_arms_on_admission");
+    msm2::writeLog("REQUEST_PRESENCE_ARM rejected=1 class=legacy_manual_control reason=F12_disabled_capture_auto_starts_on_admission");
 }
 
 void closeCapture(const char* reason) {
-    (void)reason;
     InterlockedExchange(&ws_request_presence_enabled,0);
+    msm2::writeLog("REQUEST_PRESENCE_CAPTURE_GATE closed=1 reason=%s prior_periodic_batches_already_persisted=1",reason?reason:"unspecified");
 }
 
 void stop(const char* reason) {
     if(runtime.phase==PhaseState::Stopped){logSession(reason);return;}
     InterlockedExchange(&ws_request_presence_enabled,0);
-    if(runtime.phase==PhaseState::Capturing) beginClose(reason?reason:"stop");
-    ULONGLONG startWait=GetTickCount64();
-    while(atomicRead(&ws_request_presence_active_callbacks)!=0 && GetTickCount64()-startWait<250) Sleep(1);
-    finalizePhase();
+    if(runtime.phase==PhaseState::Capturing) drainBatch(reason?reason:"stop",false);
     LONG active=atomicRead(&ws_request_presence_active_callbacks);
     if(runtime.enabled && runtime.target){
         std::array<unsigned char,kNativeSnapshot> current{};
