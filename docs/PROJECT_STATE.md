@@ -2,7 +2,7 @@
 
 ## Current next action — r6 owner diagnostic accepted; exact offline continuation
 
-Owner r6 left/right/up passes, down/down-diagonal remains broken. R6 only added logs; no behavior improvement expected. See analysis/R6_OWNER_DOWNWARD_RESULT_20261031.md. Session2 still accepts alternating purely horizontal displacement; some negative vertical window samples held within12deg, not complete movement cause. No stale/timeout closure in cited14s session. Video unavailable.
+Owner r6 left/right/up passes, down/down-diagonal remains broken. R6 only added logs; no behavior improvement expected. See analysis/R6_OWNER_DOWNWARD_RESULT_20261031.md. Session2 still accepts alternating purely horizontal displacement; some negative vertical window samples held within12deg, not complete movement cause. No stale/timeout closure in cited14s session. Later31.5s compressed12-04-10(2).mp4 inspected: visible repeated facing/horizontal-body issue persists; camera/input/log alignment limits remain. See runtime analysis follow-up.
 Current CODEX_NEXT prepares bounded original EXE continuation0x14248f9/max128 offline acquisition with provenance. Do not add more generic motion diagnostics or request unchanged game test; no runtime change this task. Native steering/frame-feedback cause remains UNKNOWN.
 
 
