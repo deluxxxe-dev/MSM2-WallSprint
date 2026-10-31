@@ -112,3 +112,12 @@ JSON. No unchanged contract/r7 game test, runtime update, phase test or new conf
 Then resolve actual prologue/unwind agreement and prove new-site relocation/
 forwarding/continuation on owned native fixtures before implementing/releasing
 observation. The task's runtime goal remains BLOCKED, not declared completed.
+
+### Verified audit publication
+
+Audit/tool commit `de40cb44accd6fee49159e5635ff26c48db37033` pushed on task branch.
+`python3 /tmp/ws-presence-publication.py`: expected independent GitHub fetch
+FETCH_HEAD/local HEAD/ls-remote equality and exact8-file bytes againstfc55924;
+actual PASS atde40cb4. Record-only commit follows, then same readback repeated.
+Unchanged audit tests need no rerun for this docs-only record. Publication PASS
+is not runtime diagnostic completion/admission. Final branch/record SHA in handoff.
