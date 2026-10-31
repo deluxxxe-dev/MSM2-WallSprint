@@ -112,3 +112,13 @@ motion-gravity-contract JSON (refusal also useful). No Update-WS/Install/game,
 unchanged relocation/canonical/name operation, raw body/EXE upload or new hook.
 Fetch changes refs/objects only, temp dependencies/output owned, worktree/config/
 KIT unchanged. Future observation is designed, not authorized/implemented here.
+
+### Verified publication
+
+Implementation `8298ca4abc7b2e535f64b7efb42c4c6d367230ae` pushed on task branch.
+`python3 /tmp/ws-contract-publication.py`: expected independent GitHub fetch
+FETCH_HEAD/local HEAD/ls-remote agreement and exact bytes for7 changed files
+against823e10c; actual PASS at8298ca4. Record-only commit follows, same readback
+repeated. Unchanged59 focused tests need no rerun for documentation-only record;
+publication checks not counted as fixtures. Final branch/record SHA in owner
+handoff. No runtime release/package produced.
