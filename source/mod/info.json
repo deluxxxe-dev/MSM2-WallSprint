@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.63",
-  "description": "WallSprint v0.1c38r7: diagnostic-only comparable ON/OFF native-source windows, unchanged r6 heading math and all gameplay write gates. OFF never publishes orientation or commits A/B.",
+  "version": "0.1.64",
+  "description": "WallSprint v0.1c39: read-only RequestSimpleMotion presence diagnostic with exact-build/site admission, bounded manual ground/WallRun phases, and existing gameplay write gates unchanged.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1
