@@ -11,6 +11,9 @@ pe=resolution.pe
 SITES={
  'RequestSimpleMotion':(18488272,18488482,'2d8792492c8b89d4e9885d55fa45fb2c6b4126b4ae992f854f6d687522163d0c'),
  'GravityOrientationOwner':(20246272,20246459,'bc9e1a75a4d45f4dc1a1baf99b704778714e83353d58688dce82bab901514a53')}
+# Accepted owner audit 2026-10-31-161445 and c42 actual runtime both report this
+# exact RequestSimpleMotion .pdata UnwindData RVA for the pinned executable.
+EXPECTED_REQUEST_UNWIND_RVA=155621344  # 0x94697E0
 
 
 def unwind(image,rva):
@@ -83,6 +86,8 @@ def audit(data,*,expected_sha=pe.EXPECTED_SHA,sites=SITES):
   if hashlib.sha256(code).hexdigest()!=digest:raise pe.Refusal('accepted_function_hash_changed_'+name)
   runtime=image.covering(b)
   if not runtime or tuple(runtime[:2])!=(b,e):raise pe.Refusal('exact_runtime_entry_changed_'+name)
+  if name=='RequestSimpleMotion' and runtime[2]!=EXPECTED_REQUEST_UNWIND_RVA:
+   raise pe.Refusal('accepted_unwind_rva_changed_RequestSimpleMotion')
   u=unwind(image,runtime[2]);p=prefix_audit(image,b,e)
   if u['prologue_size']>e-b or p['stolen_bytes']>u['prologue_size']:raise pe.Refusal('prefix_outside_declared_prologue_'+name)
   rows[name]=dict(begin_rva=b,end_rva=e,sha256=digest,unwind=u,prefix=p,
