@@ -9,6 +9,7 @@ telemetry=(root/'src/msm2/telemetry.cpp').read_text(encoding='utf-8')
 build=(root/'tools/build_windows.sh').read_text(encoding='utf-8')
 default_ini=(root/'mod/WallSprint.ini').read_text(encoding='utf-8')
 preset=(root/'mod/presets/request_presence_read_only.ini').read_text(encoding='utf-8')
+info=(root/'mod/info.json').read_text(encoding='utf-8')
 version=(root/'include/version.hpp').read_text(encoding='utf-8')
 source_readme=(root/'README_TEST.md').read_text(encoding='utf-8')
 project_readme=(root.parent/'README_TEST.md').read_text(encoding='utf-8')
@@ -91,9 +92,13 @@ for ini in (default_ini,preset):
         assert needle in ini, needle
     assert 'No F11/F12 input is required' in ini or 'no F11/F12 input is required' in ini
     assert '131072' in ini
+assert 'v0.1c43' in default_ini
 
 assert 'versionLabel[]="v0.1c43"' in version
 assert 'packageVersion[]="0.1.68"' in version
+assert '"version": "0.1.68"' in info
+assert 'WallSprint v0.1c43' in info
+assert '131072' in info and '5 minutes' in info
 
 for readme in (source_readme, project_readme):
     assert 'v0.1c43' in readme
