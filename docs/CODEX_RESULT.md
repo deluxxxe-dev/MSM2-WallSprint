@@ -103,3 +103,14 @@ analysis rather than invent bytes. No full body/executable requested/committed.
 `git diff --exit-code c224f17 -- source/include source/src source/mod environment BUILD_MANIFEST.json 'MSM2-WS-v0.1c38r6*'` PASS exit0.
 Wisdoms updated/pushed `1f298026f2caeb464853306763e5805704df0bd6`; remote main
 SHA matches. Confirmed split association/static gating is not motion semantics.
+
+## Publication verified — fixed77
+
+Implementation `4d277d83a676b364da7a4d90feb643f244341ae6` pushed to
+`codex/v01c20-edi-value-provenance`. Independent GitHub fetch/FETCH_HEAD/local
+HEAD/ls-remote agree; all7 changed blobs match local bytes with
+`python3 /tmp/ws-fixed77-publication.py`. Subsequent record-only change does not
+alter tested code/runtime/artifacts, so no test/rebuild repeat needed.
+Owner complete77 acquisition remains UNAVAILABLE, not synthetic PASS. ONE new
+fragment77 bootstrap action is in CODEX_RESULT; no old41-only repeat/game test.
+Five original untracked artifacts preserved; no main merge/reset/force/clean.

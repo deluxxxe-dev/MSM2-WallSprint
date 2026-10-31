@@ -536,3 +536,14 @@ no executable/tested bytes changed. Five original untracked files preserved,
 no main merge/reset/force/clean. Owner actual extraction still UNAVAILABLE.
 Chat's ONE fresh-bootstrap block in CODEX_RESULT obtains only small private JSON;
 no Update-WS/full rebuild or unchanged game test required by this task.
+
+## Publication verified — fixed77
+
+Implementation `4d277d83a676b364da7a4d90feb643f244341ae6` pushed to
+`codex/v01c20-edi-value-provenance`. Independent GitHub fetch/FETCH_HEAD/local
+HEAD/ls-remote agree; all7 changed blobs match local bytes with
+`python3 /tmp/ws-fixed77-publication.py`. Subsequent record-only change does not
+alter tested code/runtime/artifacts, so no test/rebuild repeat needed.
+Owner complete77 acquisition remains UNAVAILABLE, not synthetic PASS. ONE new
+fragment77 bootstrap action is in CODEX_RESULT; no old41-only repeat/game test.
+Five original untracked artifacts preserved; no main merge/reset/force/clean.
