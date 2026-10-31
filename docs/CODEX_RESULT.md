@@ -75,12 +75,15 @@ Unchanged / required:
 - both INIs/READMEs/info/package metadata identify c45 / 0.1.70 / GravityOrientationOwner;
 - all gameplay write gates remain OFF.
 
+`source/tools/audit_presence_hook_sites.py` now also pins `EXPECTED_GRAVITY_UNWIND_RVA=155851960 (0x94A1CB8)`. The c45 static test reads that accepted-audit constant and requires exact equality with the production begin/end/unwind/SHA tuple, preventing a one-sided UnwindData transcription error.
+
 `source/tools/package.py` now emits package mode `gravity_owner_presence_read_only` and explicitly records `setter_hooked_or_called_by_mod=false`.
 
 ## CHANGED FOR C45
 
 - `source/src/msm2/request_presence.cpp`
 - `source/tests/request_presence_static.py`
+- `source/tools/audit_presence_hook_sites.py`
 - `source/include/version.hpp`
 - `source/mod/info.json`
 - `source/mod/WallSprint.ini`
