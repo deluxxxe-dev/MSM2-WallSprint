@@ -161,3 +161,22 @@ one-method commands/spec in analysis/V01C38R7_SOURCE_COMPARISON.md.
 Return separate MSM2-WS-v0.1c38r7-YYYYMMDD-HHMMSS.log files in WS/logs with mode
 inside, plus compact owner report as requested by Chat. Still no raw mapped intent
 or downward fix/causal acceptance. Publication follows after push/readback.
+
+## Publication verified — r7
+
+Implementation/artifacts commit `0cd1ed7e94e4633d3ba4817e02f548a780c85490`.
+Initial push correctly rejected because remote gained documentation-only262e95b
+(WSU_REFERENCE_REVIEW_20261031.md) during validation. Read/retained that parallel
+reference research, which explicitly leaves current task unchanged. Merged ONLY
+same development branch, not main; merge `f82d42a14574f479d60011acf2eb8417572c1a3e`
+pushed successfully. No rebase/force/reset or source/artifact change from merge.
+`git diff --exit-code 0cd1ed7 HEAD -- source BUILD_MANIFEST.json 'MSM2-WS-v0.1c38r7*'`
+exit0. No rebuild needed for this documentation-only merge/record.
+Independent GitHub fetch/FETCH_HEAD/local HEAD/ls-remote agree; all26 changed blobs
+including three new runtime/source artifacts and parallel note match checkout
+bytes: `python3 /tmp/ws-r7-publication.py` PASS. Subsequent record commit changes
+only this result/state, not tested bytes. Five old untracked artifacts preserved.
+Owner runtime is not deployed by publication; normal Update-WS -> Install mods
+is the later owner installation step. Chat supplies numbered ON/OFF comparison;
+selection uses installed WS INI through the dedicated tool, full restart, Run
+only after selection; RESTORE exact original bytes. No improvement claim.
