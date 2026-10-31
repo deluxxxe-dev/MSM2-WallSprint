@@ -97,3 +97,13 @@ if generated. No Update-WS, Install mods, game launch/full EXE upload, names-onl
 repeat or adjacent-byte requests. Working source/index stays unchanged; Git
 fetch updates refs/objects and own temp/JSON files only. Unknown consumer/ABI/
 ownership remains fail closed; no follow-on gameplay changes authorized.
+
+### Verified publication
+
+Implementation commit `30e75c648e83e69df411511267b9f6478316cc53` pushed on task
+branch. `python3 /tmp/ws-ground-code-publication.py`: expected independently
+fetched GitHub FETCH_HEAD = local HEAD = ls-remote and byte equality for all7
+changed files against f95dce5; actual PASS at30e75c6. Record-only commit follows
+and same independent readback repeated. Unchanged helper tests need no repeat
+for this documentation-only record. Fixture counts remain41 PASS, not increased
+by publication checks. Final branch/record SHA appears in owner handoff.
