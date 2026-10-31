@@ -9,12 +9,14 @@
 #include "surface_calibration.hpp"
 #include "this_access.hpp"
 #include "static_field_observation.hpp"
+#include "wallrun_scalar_observation.hpp"
 namespace msm2::source {
 struct PointerEvidence {unsigned offset{},reads{},vectors{},maxChildEnd{};std::uintptr_t instruction{};};
 struct Channel {PointerEvidence evidence;std::uintptr_t previousChild{},child{};std::uint64_t previousSession{};std::uint64_t objectId{};ws::discovery::Candidates data;ws::calibration::Tracker tracker;};
 inline std::map<unsigned,PointerEvidence> evidence;
 inline std::array<Channel,4> channels;
 inline ws::fields::Observer fieldObserver;
+inline ws::scalar_fields::Observer scalarObserver;
 inline std::array<bool,4> planAdmitted{};inline bool fieldPlanEnabled{};
 inline bool runtimeObservationEnabled=true;
 inline unsigned count{};inline int loggingChannel=-1;inline bool enabled{};inline std::uint64_t nextId{},session{},epoch{};inline std::uintptr_t hero{},transform{};
@@ -61,11 +63,12 @@ inline void analyzeNative(const char* name,std::uintptr_t address){
   writeLog("wallrun_direct_callee function=%s call_rva=0x%llx target=0x%llx semantic_identity=UNVERIFIED_SURFACE_FUNCTION hook_installed=0 no_call_from_mod=1",name,static_cast<unsigned long long>(address+pc-game),static_cast<unsigned long long>(target));
  }
 }
-inline void reset(const char* reason){fieldObserver.reset();for(unsigned i=0;i<count;++i){loggingChannel=int(i);channels[i].tracker.reset(reason,childLog);channels[i].data={};channels[i].child=channels[i].previousChild=0;channels[i].previousSession=0;channels[i].objectId=0;}loggingChannel=-1;session=0;}
+inline void reset(const char* reason){fieldObserver.reset();scalarObserver.reset();for(unsigned i=0;i<count;++i){loggingChannel=int(i);channels[i].tracker.reset(reason,childLog);channels[i].data={};channels[i].child=channels[i].previousChild=0;channels[i].previousSession=0;channels[i].objectId=0;}loggingChannel=-1;session=0;}
 inline void prepare(){reset("restart");enabled=fieldPlanEnabled=false;planAdmitted={};for(auto& c:channels){c.previousChild=0;c.previousSession=0;}count=0;evidence.clear();}
 inline void finalize(bool verified,bool requested){
  fieldPlanEnabled=verified&&requested&&std::all_of(planAdmitted.begin(),planAdmitted.end(),[](bool v){return v;});
  writeLog("static_field_plan enabled=%u selected_root_fields=%u root_range_cap=0x480 runtime_code_hash_gate=all_four_original_bodies blind_root_scan=0 unknown_game_call=0",unsigned(fieldPlanEnabled),ws::fields::roots);
+ writeLog("wallrun_update_scalar_plan enabled=%u offsets=0x208,0x220,0x238,0x250,0x40c width=4 update_sha256=%s source=exact_Update_direct_this_reads offline_static_evidence=1 runtime_semantics=UNPROVEN pointer_dereference=0 game_write=0",unsigned(fieldPlanEnabled),ws::scalar_fields::updateFunctionSha);
  enabled=verified&&requested;if(!enabled){writeLog("surface_source_discovery enabled=0 reason=full_build_hook_gate_or_INI_off");return;}
  std::vector<PointerEvidence> sorted;for(auto& item:evidence)sorted.push_back(item.second);std::sort(sorted.begin(),sorted.end(),[](const auto& a,const auto& b){if(a.vectors!=b.vectors)return a.vectors>b.vectors;if(a.reads!=b.reads)return a.reads>b.reads;return a.offset<b.offset;});
  count=std::min(unsigned(sorted.size()),unsigned(channels.size()));for(unsigned i=0;i<count;++i){channels[i].evidence=sorted[i];writeLog("surface_pointer_plan source_path=WallRun.this+0x%x->child static_native_dereference_evidence=1 max_native_child_access=0x%x observation_bytes=0x%x depth=1 instruction=0x%llx",sorted[i].offset,sorted[i].maxChildEnd,fieldPlanEnabled&&sorted[i].offset==0x128?0x300:0x200,static_cast<unsigned long long>(sorted[i].instruction));}
@@ -86,7 +89,7 @@ inline bool readable(std::uintptr_t address,void* out,std::size_t size,bool chil
 inline void begin(std::uint64_t id,std::uintptr_t h,std::uintptr_t t,std::uint64_t e){
  if(!runtimeObservationEnabled)return;
  session=id;hero=h;transform=t;epoch=e;
- if(fieldPlanEnabled)fieldObserver.begin(id,h,t,e,GetTickCount64());
+ if(fieldPlanEnabled){auto now=GetTickCount64();fieldObserver.begin(id,h,t,e,now);scalarObserver.begin(id,now);}
  char offsets[128]{};unsigned length=0;for(unsigned i=0;i<count;++i){int n=std::snprintf(offsets+length,sizeof(offsets)-length,"%s0x%x",i?",":"",channels[i].evidence.offset);if(n>0)length=std::min(unsigned(sizeof(offsets)-1),length+unsigned(n));}
  writeLog("surface_source_session wallrun_session=%llu wallrun_this_accessed_offsets=%s offset_list_scope=selected_statically_dereferenced_pointer_fields candidate_child_pointer_count=%u face_candidate_group=unassigned_until_crawl",static_cast<unsigned long long>(id),count?offsets:"none",count);
  for(unsigned i=0;i<count;++i){auto& c=channels[i];c.child=0;c.objectId=0;c.data={};loggingChannel=int(i);c.tracker.begin(id,h,t,e,childLog);}loggingChannel=-1;
@@ -94,7 +97,11 @@ inline void begin(std::uint64_t id,std::uintptr_t h,std::uintptr_t t,std::uint64
 inline void observe(std::uintptr_t owner,const Snapshot& snapshot,const ws::diag::Motion& motion,std::uint64_t now){
  if(!runtimeObservationEnabled||!enabled||!session){return;}
  ws::Vec3 position{snapshot.position[0],snapshot.position[1],snapshot.position[2]};
- if(fieldPlanEnabled){fieldObserver.motion(motion.velocity,motion.valid);for(unsigned i=0;i<ws::fields::roots;++i){ws::Vec3 value;auto off=ws::fields::offset(i);bool ok=owner<=UINTPTR_MAX-off&&readable(owner+off,&value,sizeof(value),false);fieldObserver.observe(i,ok?&value:nullptr,position,now,0,writeLog);}}
+ if(fieldPlanEnabled){
+  fieldObserver.motion(motion.velocity,motion.valid);
+  for(unsigned i=0;i<ws::fields::roots;++i){ws::Vec3 value;auto off=ws::fields::offset(i);bool ok=owner<=UINTPTR_MAX-off&&readable(owner+off,&value,sizeof(value),false);fieldObserver.observe(i,ok?&value:nullptr,position,now,0,writeLog);}
+  for(unsigned i=0;i<ws::scalar_fields::offsets.size();++i){std::uint32_t bits=0;auto off=ws::scalar_fields::offsets[i];bool ok=owner<=UINTPTR_MAX-off&&readable(owner+off,&bits,sizeof(bits),false);scalarObserver.observe(i,ok,bits,now,writeLog);}
+ }
  if(fieldPlanEnabled)fieldObserver.endBatch(position,motion.velocity,motion.valid,now,writeLog);
  unsigned valid=0;bool focusObserved=false;
  for(unsigned i=0;i<count;++i){auto& c=channels[i];std::uintptr_t pointer=0,confirm=0;auto off=c.evidence.offset;
@@ -116,7 +123,7 @@ inline void observe(std::uintptr_t owner,const Snapshot& snapshot,const ws::diag
 }
 inline void finish(std::uint64_t id,double deinit){
  if(!runtimeObservationEnabled||!enabled||id!=session)return;
- if(fieldPlanEnabled)fieldObserver.finish(id,deinit,writeLog);
+ if(fieldPlanEnabled){fieldObserver.finish(id,deinit,writeLog);scalarObserver.finish(id,writeLog);}
  for(unsigned i=0;i<count;++i){auto& c=channels[i];loggingChannel=int(i);childLog("child_source_session session=%llu candidate_child_pointer_count=%u observed_samples=%u depth=1",static_cast<unsigned long long>(id),count,c.data.count());if(c.data.count()){c.tracker.summarize(c.data,id,"verified_deinit",childLog);c.tracker.finish(c.data,id,deinit,childLog);}c.data={};}
  loggingChannel=-1;session=0;
 }
