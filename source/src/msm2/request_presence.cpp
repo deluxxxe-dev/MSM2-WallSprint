@@ -8,7 +8,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <string>
 #include <vector>
 #include "msm2/request_presence.hpp"
 #include "msm2/sdk_bridge.hpp"
@@ -99,7 +98,7 @@ bool regionReadable(const void* address,std::size_t size) {
     auto begin=reinterpret_cast<std::uintptr_t>(address);
     auto regionBegin=reinterpret_cast<std::uintptr_t>(mbi.BaseAddress);
     auto regionEnd=regionBegin+mbi.RegionSize;
-    return begin>=regionBegin && begin<=regionEnd && size<=regionEnd-begin;
+    return begin>=regionBegin && begin<regionEnd && size<=regionEnd-begin;
 }
 
 bool copyCode(const void* address,void* output,std::size_t size) {
@@ -289,6 +288,12 @@ void arm(const char* phaseClass,const char* label) {
 namespace msm2::request_presence {
 
 bool start(bool targetBuildConfirmed,Config config,std::uintptr_t moduleBase,std::size_t moduleSize) {
+    msm2::writeLog("REQUEST_PRESENCE_CONFIG requested=%u mode=read_only entry_rva=0x%llx site_size=%llu phase_ms=%llu phase_record_cap=%ld session_phase_cap=%u ground_control=F11 wallrun_control=F12",unsigned(config.enabled),static_cast<unsigned long long>(kRequestRva),static_cast<unsigned long long>(kRequestSize),static_cast<unsigned long long>(kPhaseDurationMs),kPhaseRecordCap,kPhaseLimit);
+    if(runtime.created){
+        InterlockedExchange(&ws_request_presence_enabled,0);
+        msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=resident_hook_already_created process_restart_required=1 previous_hook_enabled=%u trampoline_retained=1 original_forward_preserved=1",unsigned(runtime.enabled));
+        return false;
+    }
     runtime=Runtime{};
     runtime.requested=config.enabled;
     InterlockedExchange(&ws_request_presence_enabled,0);
@@ -297,7 +302,6 @@ bool start(bool targetBuildConfirmed,Config config,std::uintptr_t moduleBase,std
     InterlockedExchange(&ws_request_presence_overflow,0);
     InterlockedExchange(&ws_request_presence_contention,0);
     ws_request_presence_original=0;
-    msm2::writeLog("REQUEST_PRESENCE_CONFIG requested=%u mode=read_only entry_rva=0x%llx site_size=%llu phase_ms=%llu phase_record_cap=%ld session_phase_cap=%u ground_control=F11 wallrun_control=F12",unsigned(config.enabled),static_cast<unsigned long long>(kRequestRva),static_cast<unsigned long long>(kRequestSize),static_cast<unsigned long long>(kPhaseDurationMs),kPhaseRecordCap,kPhaseLimit);
     if(!config.enabled){
         msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=config_disabled");
         return false;
@@ -380,8 +384,8 @@ void armNextWallRun() {
 }
 
 void closeCapture(const char* reason) {
-    if(runtime.phase==PhaseState::Capturing) beginClose(reason?reason:"manual_close");
-    finalizePhase();
+    (void)reason;
+    InterlockedExchange(&ws_request_presence_enabled,0);
 }
 
 void stop(const char* reason) {
