@@ -1,21 +1,18 @@
-# Next task — acquire exact missing original WallRun continuation offline
-Branch codex/v01c20-edi-value-provenance; no main merge.
-Read AGENTS required docs, analysis/R6_OWNER_DOWNWARD_RESULT_20261031.md, analysis/V01C38R6_DOWNWARD_INTERACTION.md and analysis/FLAT_WALL_LATERAL_ROUTE_REVIEW.md.
-R6 owner evidence supplied. No further diagnostic runtime rebuild or unchanged game test.
+# Next task — interpret captured WallRun fragment, complete its fixed remainder only if needed
+Branch codex/v01c20-edi-value-provenance; no main merge. Read AGENTS docs, analysis/WALLRUN_CONTINUATION_OWNER_RESULT_20261031.md and FLAT_WALL_LATERAL_ROUTE_REVIEW.
+Owner offline acquisition succeeded; do NOT repeat old missing0x14248f9 request or claim down fix.
 
-## Goal
-Advance actual descending steering investigation beyond repeated position/axis logging.
-Missing current-build original code is specifically RVA0x14248f9/max128 bytes, bounded by original executable/file-backed section and runtime/unwind coverage and first relevant control boundary per prior analysis.
-Prepare one read-only offline extraction action using existing PE/range/decoder primitives. Reuse exact-build SHA/known capture authentication in repository; do not guess hash or broaden unknown range.
-If matching authenticated original EXE/capture is already available to environment, perform bounded extraction and analysis directly; otherwise create minimal CLI + Windows entrypoint with explicit game/source paths auto-derived from existing layout and ONE owner copy-paste/double-click action.
-No whole EXE upload or broad scan. Output compact JSON/report + bounded byte evidence suitable for Chat analysis, source EXE SHA, section file-backed/executable/range mapping, block SHA and covering runtime/unwind metadata. Original on-disk bytes, not hook-patched live process.
-Unsupported build/truncation/nonfile-backed/range/metadata conflicts must report specific refusal; do not silently expand to fallthrough/recursive functions. Treat no unwind entry as fact, not fabricated boundary.
-Do not automatically interpret untyped calls as movement/input APIs or issue write certificate.
-No new runtime diagnostic/version, game hooks/reads/writes, token/WSL repair, Position/input/velocity/animation patch, c73 or unrelated repository work.
+## Supplied facts
+41bytes/7instructions0x14248f9..0x1424922, hash verified; covering runtime0x14248f9..0x1424946, explicit chain to old authenticated422byte prefix0x1424530..0x14246d6.
+Use compact analysis references; do not commit raw proprietary bodies. Exact seven decoded operations in owner-result analysis. Conditional JE returns0x14246d4; fallthrough36bytes remains missing.
+Caller/data/control meaning UNKNOWN. No arbitrary field read/write or API signature inferred.
 
-## Scope / validation / owner handoff
-Allowed narrow offline helper/wrapper if missing, focused parser/range tests and docs, PROJECT_STATE/CODEX_RESULT. Existing primitives preferred over new framework.
-Test wrong SHA/build, invalid RVA, truncated/non-backed section, bounded output cap and metadata boundaries. Never redistribute full proprietary function/executable or raw user log.
-One concrete action must work on owner Windows without full WS build/test/package cycle; identify exact generated output path and which small file to return. Preserve unrelated files and git source/local changes.
-If extraction cannot be prepared due to a specific missing primitive/authentication fact, report that exact prerequisite rather than repeating broad investigation.
-Commit/push verify; response STATUS/CHANGED/RESULT/NEED. Chat supplies owner instructions. r6 runtime bytes unchanged.
+## Bounded work
+Review these operations with existing authenticated prefix for CL/RSI/AL/EDX provenance and return branch relation. Report whether this fragment is state/decision gating vs actual motion consumer using static facts only; untyped helper calls remain untyped.
+If full continuation still necessary, minimally extend EXISTING offline helper to collect only fixed remainder0x1424922..0x1424946 (36bytes), or complete fixed77byte fragment in one output if consistency requires. This specifically supersedes first-control stop ONLY inside that authenticated same77byte metadata span.
+Bound whole-fragment decoding to known section/file/raw/runtime/unwind, pinned EXE SHA and chain identity. Record branch edges but DO NOT follow them recursively/read guessed targets. RET/unsupported/truncation/metadata mismatch specific refusal; no whole binary scan/new configurable extractor.
+Do not incrementally ask owner for one instruction/branch at a time; one fixed remainder action should complete this known fragment.
+If matching bytes already available, analyze directly and avoid owner acquisition.
+No runtime version/change/build/game test, hooks/pointer/value reads, Position/velocity/input/animation writes, c73, new framework, other MOD/shared tooling change.
+Use existing PE/Capstone helpers and targeted negative tests if modified; docs-only needs no build.
+Update analysis/PROJECT_STATE/CODEX_RESULT. Commit/push verify. Give one exact owner action/output only if remaining original bytes genuinely needed. Reply STATUS/CHANGED/RESULT/NEED.
