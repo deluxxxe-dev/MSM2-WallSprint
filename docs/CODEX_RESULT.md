@@ -116,3 +116,13 @@ EXE slice chain, reference scan/download, EXE upload, Update-WS, Install mods or
 game launch. Original EXE read-only; source worktree/config/KIT unchanged, Git
 fetch updates refs/objects and own temporary/output files only. Matching checks
 still do not authorize gameplay integration; partial/no runtime entry explicit.
+
+### Verified publication
+
+Implementation `8e6ecc40928a406945ad22fbc2369a3028fc8711` pushed on task branch.
+`python3 /tmp/ws-flight-publication.py`: expected independent fetched FETCH_HEAD,
+local HEAD and GitHub ls-remote agreement plus exact bytes of8 changed files
+against5685d98; actual PASS at8e6ecc4. Record-only commit follows and same readback
+repeated. Unchanged30 focused tests need no rerun for this documentation-only
+publication record; publication checks do not inflate fixture counts. Final
+branch/record SHA in owner handoff. No runtime release produced.
