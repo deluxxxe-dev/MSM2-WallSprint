@@ -1,5 +1,10 @@
 # WallSprint project state
 
+## Latest owner offline result —41byte continuation captured
+
+Pinned original0x14248f9..0x1424922 captured/hash verified. Covering77byte fragment ends0x1424946 and CHAININFO links prior Update prefix0x1424530..0x14246d6. Seven operations end JE0x14246d4; no motion/input semantics or down fix proven. See analysis/WALLRUN_CONTINUATION_OWNER_RESULT_20261031.md. Current CODEX_NEXT reviews this with prefix and, only if necessary, completes fixed36byte remainder in one offline acquisition; no unchanged game test/rebuild.
+
+
 ## Current handoff — exact offline acquisition ready, no r6 rebuild
 
 New capture_wallrun_continuation.py + Capture-WallRun-Continuation.ps1 prepare
