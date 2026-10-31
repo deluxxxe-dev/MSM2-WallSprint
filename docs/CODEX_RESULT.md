@@ -1,128 +1,123 @@
-# Codex result — direct Scripted Flight resolver/motion/gravity trace
+# Codex result — current-build motion/gravity relocation operation
 
-2026-10-31 JST; branch `codex/v01c20-edi-value-provenance`.
-Baseline `5685d9819ce5f8daebc73fc31a0359c2e5f3c097`, fetched/fast-forwarded from
-d0f03cc. No main merge. Five pre-existing untracked old archives/bundle preserved.
+2026-10-31 JST. Branch `codex/v01c20-edi-value-provenance`.
+Baseline `ba979e1471cdc9eec42c9da52d4e6f48098efe30`, fetched/fast-forwarded from
+b99541d; no main merge. Five pre-existing untracked archives/bundle preserved.
 
-## STATUS / findings
+## STATUS / actual result
 
-**REFERENCE_TRACE_COMPLETED; CURRENT_GAME_RELATION_VERIFICATION_PENDING.**
-Actually opened attached nested ZIP and authenticated DLL SHA7330c68f...b7662.
-No reference locator/name scan repeated; ground-name route remains STOPPED.
-Direct analysis recovered individual resolver uniqueness/three-anchor shift
-fallback, verifier's two signed-rel32 CALL comparisons/semantic checks, stored
-result slots, actual native-target/trampoline uses and vector/mode/scalar capture/
-restore.16920 is diagnostic formatter, not request or setter. Motion hook forwards
-original second argument and supplies cached third/facing argument; gravity wrapper
-performs real indirect target call. Actual facts/limits/locations are in analysis.
-No claim of an independently authenticated current native ABI or grounded contact.
+**RELOCATION_OPERATION_READY; CURRENT_EXE_RESULT_UNAVAILABLE.**
+Accepted owner zero-shift mismatch7/7 markers,2/2 CALLs; no canonical repeat.
+Exact private ScriptedFlight still present/authenticated. Finished actual
+entry/alternative matcher and three-anchor consensus analysis. Implemented one
+bounded owner-local resolve+verify operation using actual recovered signatures
+and stricter entry/CFG boundaries. Not another name scanner or guessed common
+shift. Runtime r7/config/packages/C52/shared environment/SF unchanged.
 
-One new tightly grounded read-only current-EXE verifier checks FOUR recovered
-canonical hints, TWO CALL relations and SEVEN marker hashes, exact WS EXE SHA.
-No scanning/shift fallback/raw code export. Explicit zero-shift subset of reference
-method, not a copy of its resolver or a production certificate. Native callable
-ABI/lifetime/contact/production_permission all remain false even on match.
+Actual reference method:12720 tries entry pattern first; nonempty results keep
+ambiguity. Only zero entry hits scan interior pattern, map through actual PE
+runtime containment and deduplicate.12FD0 accepts1/refuses>1;0 may use executable-
+bounded signed-shift fallback with upstream consensus. BE60 unique largest delta
+bin requires>=3 and no tie. Startup10107 supplies minimum3. Full reference uses
+more roles; owned operation uses only four supported role/signature pairings.
+No raw function body or third-party binary/code/asset vendoring.
+
+If independent current-file identities/relations cannot be located, tool returns
+an exact unresolved/ambiguous/boundary/semantic/cap reason and explicitly stops
+this reference-relocation route. No adjacent-byte cycle, arbitrary shift patch,
+ground-name revival or “ground Sprint impossible” conclusion. Even a match keeps
+ABI/lifetime/contact/production_permission=false.
 
 ## CHANGED / outputs
 
-* `analysis/SCRIPTED_FLIGHT_RESOLVER_MOTION_GRAVITY_REVIEW.md`: direct actual trace,
-  resolver/argument/compare/store/use/save/restore evidence and exact blockers;
-  one owner bootstrap. `analysis/SCRIPTED_FLIGHT_FUNCTION_IDENTITIES.json`:
- 9 function ranges/hashes only, no bodies.
-* `source/tools/verify_motion_gravity.py`, `test_verify_motion_gravity.py`:
-  bounded exact-EXE metadata/hash/CALL checks,9 positive/negative fixture tests.
-* Windows `Verify-Motion-Gravity.ps1` / `test_verify_motion_gravity.ps1`:
-  existing fresh dependency staging/WSL decoder checks, exclusive timestamp JSON,
- 3 mock groups, child powershell Bypass owner command.
-* PROJECT_STATE prepended accepted attachment/direct-trace status; this result.
-  CODEX_NEXT unchanged. All production/runtime/version/config/packages/C52/shared
-  loader/environment/SF untouched. No live reads/hooks/calls/writes, Position/
-  gravity/animation/state changes. Runtime remains r7/package0.1.63, no new package.
+* `source/tools/motion_gravity_patterns.json`:8 reference-grounded descriptors,
+  wildcard positions/whole masked hashes/minimal8byte seeds,64 seed bytes total;
+  no wholesale signature strings or bodies. SHA-pinned profile.
+* `source/tools/resolve_motion_gravity.py`: exact WS EXE SHA/PE guard, bounded
+  pattern matching/unique selection/interior CFG mapping/three distinct proved
+  role consensus; decoded CALL and7 marker boundaries plus unchanged strict
+  comparison engine. Partial leaf explicitly marked, cannot vote/cross PE entry.
+  No CLI hash/shift/RVA bypass or raw code output.
+* `source/tools/test_resolve_motion_gravity.py`:15 positive/negative tests.
+* Windows `Resolve-Motion-Gravity.ps1` / `test_resolve_motion_gravity.ps1`: fresh
+ 3 Python dependencies + pinned JSON staged from fetched commit with exact LF,
+  existing WSL Capstone5.0.6 checked;3 mock groups. Child policy Bypass command.
+* `analysis/MOTION_GRAVITY_RELOCATION_REVIEW.md`: actual reference mask/uniqueness/
+  consensus findings, proof limits/caps/stopping rule and ONE owner operation;
+  PROJECT_STATE prepended; this result. CODEX_NEXT unchanged.
 
-Output `MSM2-WS-motion-gravity-verification-YYYYMMDD-HHMMSS.json` under WS logs,
-optional suffix. It contains metadata/marker booleans/hashes, not code fragments.
-DLL/disassembly/raw function bodies stayed private /tmp, not Git or release inputs.
+Output `logs/MSM2-WS-motion-gravity-resolution-YYYYMMDD-HHMMSS.json`, optional
+collision suffix. No new runtime build/version/package or live reads/hooks/calls/
+Position/motion/gravity/animation/state writes. Prior7 marker hashes/2 fixed
+in-owner CALL offsets retained, applied to resolved targets only. No weakening
+of ownership/restore/C52. Old canonical helper remains unchanged for history.
 
-## Executed static analysis / expected / actual
+## Exact executed validation / expected / actual
 
-1. Python zipfile in-memory nested inspection; `sha256sum` original attached ZIP.
-   Expected accepted identities; actual archive
-   c1f43885f6138143ad54cf0d6d3be86b1e51b0abc27cc51155bb9de6e93794f7;
-   DLL162816bytes SHA7330c68fa87da58a50a6ee4c477d17339e5deb28a82cf77f7b16c3c2092b7662.
-   PASS. No DLL executed, extracted only to task-private /tmp for static tools.
-2. `objdump -h /tmp/ws-flight-review/ScriptedFlight.dll`;
-   `objdump -d -M intel --start-address=0x1800137b0 --stop-address=0x1800155aa /tmp/ws-flight-review/ScriptedFlight.dll`;
-   private xref index `objdump -d -M intel /tmp/ws-flight-review/ScriptedFlight.dll`;
-   `objdump -p /tmp/ws-flight-review/ScriptedFlight.dll` imports.
-   Expected actual verifier/call/data flow; actual reviewed initializer and
-   relevant startup/resolver/formatter/hooks/restore paths, reference text~110KiB
-   indexed privately to locate exact target-slot uses. Not an all-game scan.
-3. Pinned Capstone5.0.6 PE-runtime-range inspection of D430,12FD0,137B0,16920,
-   3C60,3410,6C70,A380,8770 using existing PE helper; private
-   `/workspace/toolchains/analysis-python/bin/python3 /tmp/ws-flight-review/check_findings.py`.
-   Expected exact range/hash and instruction checks; actual PASS9 identities,
-   4 resolver calls,2 formatter calls, real signed-CALL decoders, motion/gravity
-   use and restore edges. Derived range/hash-only JSON committed. Two disassemblers
-   corroborate instructions; no arbitrary mid-instruction decode promoted to fact.
-   Initial scratch utility was named inspect.py and shadowed Python inspect;
-   renamed flight_view.py before successful Capstone inspection. No source change
-   or failed preliminary decode used as evidence.
+1. `/workspace/toolchains/analysis-python/bin/python3 source/tools/test_resolve_motion_gravity.py`
+   Expected correct uniform relocation AND independent nonuniform patterns,
+   unique three-role fallback, misleading shift rejected by unchanged semantics,
+   missing/ambiguous signatures, no nearest-entry snap, interior actual boundary
+   vs immediate-byte coincidence, CALL/marker boundary mismatch, wildcard mask,
+   signed overflow/range/tie/caps/invalid PE/profile, CLI exclusive output/no shift
+   option, partial leaf cannot vote or cross another entry. Actual **15 PASS**.
+   Repeated only for actual implementation changes; no assertion weakened.
+2. `/workspace/toolchains/analysis-python/bin/python3 source/tools/test_verify_motion_gravity.py`
+   Expected reused marker/CALL/PE/identity engine unchanged; actual **9 PASS**.
+   This is a synthetic regression test, NOT another owner fixed-RVA acquisition.
+3. `python3 source/tools/test_discover_ground_support.py`
+   Expected reused strict PE/hash/range helper unchanged; actual **18 PASS**.
+4. `XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -File source/tools/windows/test_resolve_motion_gravity.ps1`
+   Expected fresh4 files, exact JSON profile hash after LF staging, Japanese/space
+   paths, collision/old output/source/fake EXE preservation and WSL/decoder failure
+   refusal. Actual **3 PASS mock groups**, not real Windows/EXE evidence.
+5. `/workspace/toolchains/analysis-python/bin/python3 /tmp/ws-relocation-reference-proof.py`
+   Expected exact reference SHA,8 descriptor lengths/wildcards/seeds/masked hashes
+   equal actual DLL strings, primary/alternative matcher calls and consensus call.
+   Actual PASS. Private proof script uses recorded string RVAs with existing PE
+   helper/Capstone; no raw bytes/bodies emitted or added to repository.
+6. `git diff --check`: expected whitespace clean; actual PASS.
+7. `python3 /tmp/ws-resolution-scope.py`: expected exactly8 intended offline tool/
+   test/profile/docs paths, unchanged runtime/config/task/packages, valid profile
+   hash/reference identity and owner subprocess block; actual PASS. Command
+   extracted for parser; analysis references existing owner review files.
+8. `XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -Command '$t=$null; $e=$null; [void][System.Management.Automation.Language.Parser]::ParseFile("/tmp/ws-resolution-owner.ps1",[ref]$t,[ref]$e); if($e.Count){throw ($e|Out-String)}; "PASS relocation bootstrap syntax"'`
+   Expected valid new owner command; actual PASS syntax, not actual Windows test.
 
-Reproducible method: authenticate DLL, parse .pdata, decode each recorded exact
-runtime range, use RIP targets to map label/context-slot edges and direct calls
-between recorded functions. Native current binding is not certified by any of
-these reference checks. Marker hashes in new verifier are independently derived
-from this initializer's minimal comparison constants; no binary fragments stored.
+**Focused tests PASS45 / SKIP0 / UNAVAILABLE1 / BLOCKED1.** Separate static/
+scope/parser/whitespace/publication checks are not fixture counts.
+UNAVAILABLE1 = current owner original EXE operation, no EXE in cloud; fixtures
+never count as real native match. BLOCKED1 = native callable ABI/lifetime/grounded
+contact/production capability, still not established even if static relocation
+matches. No unperformed native test promoted to PASS.
+Full runtime/native/Wine/portable/smoke/hooks/build/package tests not run:
+requested offline helpers only, no production change. Existing focused suites
+rerun only for new/reused helper checks above.
 
-## Focused tests / exact commands / expected / actual
+## Reference investigation commands / reproducibility
 
-* `/workspace/toolchains/analysis-python/bin/python3 source/tools/test_verify_motion_gravity.py`
-  Expected positive recovered-relation fixture, hash/marker/opcode/target mismatch,
-  partial boundary, call outside owner runtime range, malformed PE/runtime/range/
-  caps, writable code/decoder refusal, Unicode/space and exclusive CLI output,
-  no shift override. Actual **9 PASS**, synthetic marker hashes use authored NOP
-  fixtures, not copied native bytes; no real-game result inferred.
-* `python3 source/tools/test_discover_ground_support.py`
-  Expected reused PE/hash/range/string/output helper stable; actual **18 PASS**.
-* `XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -File source/tools/windows/test_verify_motion_gravity.ps1`
-  Expected fresh2 dependencies, Japanese/space paths, collision output/dirty file/
-  EXE preserved, unavailable WSL/decoder refusal. Actual **3 PASS mock groups**,
-  Git/WSL mocked, not real Windows acceptance.
-* `git diff --check`: expected clean; actual PASS.
-* `python3 /tmp/ws-flight-scope.py`: expected only8 intended offline helper/test/
-  analysis/docs paths, task/runtime/packages preserved, links/9 identity records
-  valid, Bypass command present; actual PASS; extracts owner command for parser.
-* `XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -Command '$t=$null; $e=$null; [void][System.Management.Automation.Language.Parser]::ParseFile("/tmp/ws-flight-owner.ps1",[ref]$t,[ref]$e); if($e.Count){throw ($e|Out-String)}; "PASS verifier bootstrap syntax"'`
-  Expected owner block valid; actual PASS parser, not actual Windows acquisition.
-
-**Focused tests PASS30 / SKIP0 / UNAVAILABLE1 / BLOCKED1.** Static/scope/parser/
-publication checks counted separately, not inflated into fixture PASS counts.
-UNAVAILABLE1 = current original EXE verification, no game EXE in cloud.
-BLOCKED1 = native callable ABI/lifetime/grounded-contact authorization; not proved
-by static reference trace or even an eventual canonical-relation match.
-Not run: runtime build/native/Wine/smoke/hooks/package/game tests, task is static/
-offline only and production untouched. Not equivalent to gameplay improvement.
+Private DLL SHA verified again through descriptor proof. Capstone5.0.6 decoded
+12720..12FD0 (alternative collector/masked matcher),12FD0..135CC (role resolution),
+BE60 consensus prefix and D430 startup/10107 call using existing private
+flight_view helper and exact runtime identities. Commands:
+`/workspace/toolchains/analysis-python/bin/python3 /tmp/ws-flight-review/flight_view.py 12720 12fd0`;
+`... flight_view.py 12a40 12f40`;
+`... flight_view.py be60 c170`.
+Inspect incoming stack descriptors for primary vs interior, actual exception-
+directory begin/end containment, then compare individual string tokens with8
+published profile descriptors (string RVAs/lengths/masks in analysis). No generic
+all-game disassembly or native EXE slices requested. Full reference23-role shift
+algorithm not ported/claimed equivalent to our strict four-role subset.
 
 ## Shared knowledge / publication / NEED
 
-Wisdoms direct static resolver/use/restore facts and certificate limits pushed
-`96ff78fb5691ac89610770ec466b6d802c1a263c`; ls-remote agrees. No raw reference code
-or personal paths committed. WS implementation/publication readback follows.
+Wisdoms relocation-method/zero-shift qualification pushed
+`92fcb91a3407629283bdbb9fe133eb0ef14aee3e`; ls-remote matches. WS implementation
+commit and independent readback follow below.
 
-ONE runnable owner command in analysis/final: Verify-Motion-Gravity via child
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File, no global policy edit.
-Return new motion-gravity-verification JSON including mismatch/refusal. No new
-EXE slice chain, reference scan/download, EXE upload, Update-WS, Install mods or
-game launch. Original EXE read-only; source worktree/config/KIT unchanged, Git
-fetch updates refs/objects and own temporary/output files only. Matching checks
-still do not authorize gameplay integration; partial/no runtime entry explicit.
-
-### Verified publication
-
-Implementation `8e6ecc40928a406945ad22fbc2369a3028fc8711` pushed on task branch.
-`python3 /tmp/ws-flight-publication.py`: expected independent fetched FETCH_HEAD,
-local HEAD and GitHub ls-remote agreement plus exact bytes of8 changed files
-against5685d98; actual PASS at8e6ecc4. Record-only commit follows and same readback
-repeated. Unchanged30 focused tests need no rerun for this documentation-only
-publication record; publication checks do not inflate fixture counts. Final
-branch/record SHA in owner handoff. No runtime release produced.
+ONE fresh owner child PowerShell block in analysis/final. Return only the new
+motion-gravity-resolution JSON, including stopped/refused results. No Update-WS,
+Install mods, game launch, reference scan/download, EXE upload or unchanged
+canonical test. All selection and relationship checks happen locally in ONE
+operation. Negative concrete method outcome means stop this reference relocation
+route, not another adjacent-byte or speculative gameplay iteration.

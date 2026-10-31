@@ -1,0 +1,114 @@
+{
+  "reference_sha256": "7330c68fa87da58a50a6ee4c477d17339e5deb28a82cf77f7b16c3c2092b7662",
+  "patterns": [
+    {
+      "role": "UpdateMotion",
+      "kind": "entry",
+      "length": 39,
+      "wildcards": [],
+      "seed_offset": 0,
+      "seed_hex": "488bc44889580848",
+      "masked_sha256": "440122654f7dae918b2c9791fa9d9c063232e2f40d6f982061935ba7866eb1c3",
+      "reference_string_rva": 135301
+    },
+    {
+      "role": "UpdateMotion",
+      "kind": "interior",
+      "length": 40,
+      "wildcards": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "seed_offset": 7,
+      "seed_hex": "c5f82978d8488bf9",
+      "masked_sha256": "2df80467ab0174daa1b9d362dfc1a077cd50a8331014fcad50d5bcb00bd3640b",
+      "reference_string_rva": 132324
+    },
+    {
+      "role": "SetGravityVector",
+      "kind": "entry",
+      "length": 38,
+      "wildcards": [
+        8,
+        9,
+        10,
+        11
+      ],
+      "seed_offset": 0,
+      "seed_hex": "c5fb1002c5fa1015",
+      "masked_sha256": "583167c14cc6e81cda194c2fabfab264de87daf1b148de11ea48e2f5f8f99d31",
+      "reference_string_rva": 133190
+    },
+    {
+      "role": "SetGravityVector",
+      "kind": "interior",
+      "length": 41,
+      "wildcards": [],
+      "seed_offset": 0,
+      "seed_hex": "c5fa104204c5fa10",
+      "masked_sha256": "84f9a4262c17c390adbf3b1540f90d6a889ad1ffc75486592823c06408c27ece",
+      "reference_string_rva": 133496
+    },
+    {
+      "role": "GravityOrientationOwner",
+      "kind": "entry",
+      "length": 39,
+      "wildcards": [
+        19,
+        20,
+        21,
+        22
+      ],
+      "seed_offset": 0,
+      "seed_hex": "48895c2408488974",
+      "masked_sha256": "268a24a9d7306e64bdc53314ff48b105c60b459b76ad282f4104cb5d7518d8fd",
+      "reference_string_rva": 135796
+    },
+    {
+      "role": "GravityOrientationOwner",
+      "kind": "interior",
+      "length": 41,
+      "wildcards": [
+        33,
+        34,
+        35,
+        36
+      ],
+      "seed_offset": 0,
+      "seed_hex": "89b304010000488d",
+      "masked_sha256": "e01ded0791c35c3bbcaab8223d3158c1881ddbf7f2f024d0488fb417341332b9",
+      "reference_string_rva": 131904
+    },
+    {
+      "role": "RequestSimpleMotion",
+      "kind": "entry",
+      "length": 33,
+      "wildcards": [],
+      "seed_offset": 0,
+      "seed_hex": "4c8bdc49895b0849",
+      "masked_sha256": "24bb52186f094c1357140a74302bf23d218f325190a03d9dfa93da381e62dfec",
+      "reference_string_rva": 130009
+    },
+    {
+      "role": "RequestSimpleMotion",
+      "kind": "interior",
+      "length": 38,
+      "wildcards": [
+        15,
+        16,
+        17,
+        18,
+        34,
+        35,
+        36,
+        37
+      ],
+      "seed_offset": 0,
+      "seed_hex": "41b90c000000488d",
+      "masked_sha256": "7b6f8040629ea5eba8319dc54699578e5a8a61f9e0da6cb94c1b614a6ff7db48",
+      "reference_string_rva": 130943
+    }
+  ]
+}

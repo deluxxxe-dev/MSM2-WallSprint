@@ -1,3 +1,18 @@
+# Current relocation handoff — 2026-10-31 JST
+
+Owner zero-shift canonical mismatch accepted:7/7 markers and2/2 CALLs failed;
+no repeat. Exact private ScriptedFlight used to finish entry/alternative masked
+patterns, exact .pdata containment and unique >=3 delta-mode consensus trace.
+New bounded offline resolver selects current targets by signatures/CFG, uses
+missing-role shift fallback only from3 distinct proved roles, rejects ambiguity,
+and preserves all7 marker/2 CALL checks with decoded boundary validation.
+Partial setter leaf bounds remain explicit; no ABI/lifetime/contact certificate.
+ONE new operation -> logs/MSM2-WS-motion-gravity-resolution-*.json, no Update-WS/
+Install/game/EXE upload. If concrete relocation fails, stop this reference route;
+no adjacent-byte/speculative patch cycle. Runtime/config/packages/C52/shared
+loader/SF untouched; ground-name route STOPPED, grounded Sprint still UNKNOWN.
+See analysis/MOTION_GRAVITY_RELOCATION_REVIEW.md and CODEX_RESULT.
+
 # Current direct-reference review — 2026-10-31 JST
 
 Owner Scripted Flight ZIP opened here; exact archive/DLL SHA matches accepted
