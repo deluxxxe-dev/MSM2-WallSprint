@@ -1,3 +1,19 @@
+# Current code-reference acquisition handoff — 2026-10-31 JST
+
+Owner metadata107names/243data refs accepted; previous acquisition pending claim
+below superseded. Mount/Vault labels do not identify ordinary ground Sprint.
+New ground_support_code_refs.py + Discover-Ground-Code.ps1 implement bounded
+Run/Move/Locomotion/ground/Sprint family -> decoded RIP LEA/MOV -> containing PE
+runtime identity and minimal local follow-up evidence. Proven straight-line
+instruction boundaries separate from decoder candidates; no registry/controller/
+ABI/ownership/gravity certificate. Code/target/function/output caps fail closed.
+Prior intent design preserved; no WR scalar revival or runtime/config/package
+changes. New owner command uses powershell.exe -NoProfile -ExecutionPolicy Bypass
+-File, stages both dependencies and checks existing WSL Capstone5.0.6. Return
+logs/MSM2-WS-ground-code-refs-*.json only; no Update-WS/Install/game/full EXE upload.
+See analysis/GROUND_SUPPORT_CODE_REFERENCE_ACQUISITION.md. Actual native consumer
+still UNKNOWN pending this owner-local code-reference acquisition.
+
 # Current acquisition handoff — 2026-10-31 JST
 
 Ground-Sprint support/gravity consumer investigation executed to available-input

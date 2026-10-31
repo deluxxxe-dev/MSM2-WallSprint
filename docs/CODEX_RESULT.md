@@ -1,117 +1,99 @@
-# Codex result — ground-Sprint support/gravity anchor acquisition
+# Codex result — ground locomotion actual code-reference acquisition
 
 2026-10-31 JST. Branch `codex/v01c20-edi-value-provenance`.
-Baseline `f07e4c077b9f02c70a75be322a774e63fe7d2f59` fetched/fast-forwarded from
-prior completed6347b82; WS main not merged. Five pre-existing untracked old
-archives/bundle preserved. Latest CODEX_NEXT task is acquisition/investigation,
-not another architecture comparison.
+Baseline `f95dce52e4394c2ca879ef016b1c5dd1bb32a4fb`, fetched and fast-forwarded
+fromce499b1. No WS main merge. Five pre-existing untracked old archives/bundle
+preserved; not staged/deleted.
 
 ## STATUS / RESULT
 
-Available source/authenticated-capture/reference inventory executed. Current
-cloud inputs contain no identified original EXE/reference DLL or authenticated
-ground-Sprint code anchor. No actual first support/up/gravity consumer can be
-classified yet: **UNAVAILABLE native acquisition / BLOCKED native consumer
-analysis**, not ground-Sprint feasibility failure. No invented RVA, component
-layout, callable ABI or writable ownership.
+Owner's previous exact-image107 names/243data refs accepted; no repeat of that
+names-only acquisition. Mount/Vault/Remote is not ordinary ground Sprint. No
+local owner EXE/full JSON assumed; actual native support/gravity consumer remains
+UNKNOWN. New offline next-stage helper is **ACQUISITION_READY**, not gameplay
+PASS, controller/ABI proof or a downward movement fix.
 
-Mandatory path B completed: read-only OFFLINE bounded metadata acquisition
-helper, Windows fresh-stage entrypoint and focused tests. **EVIDENCE COLLECTION
-READY**, not a gameplay test/descent fix. Names/RTTI-layout/aligned data-word
-references are candidates only. No raw code/EXE fragments exported or uploaded.
-Completed independent intent design preserved. No runtime/version/config/package,
-live hook/read/write, state switch, WR scalar traversal, C52/shared environment/
-SF/profile/loader change. Runtime remains v0.1c38r7/package0.1.63.
+Inspected old lexical coverage and available SDK/reference registry methods;
+expanded narrowly to ground/Run/RunMove/Move/Locomotion/Sprint HeroState family,
+separate ranked owner-observed diagnostic/config/event leads. Excludes unrelated
+mount/bot/vehicle/combat/animation/remote forms. Decodes targeted exact-name/one
+metadata-edge RIP references, records PE runtime range/hash and minimal first
+local memory/direct-call follow-up. Distinguishes straight-line entry boundary
+proof from candidate decoder matches; rejects known interior byte coincidence.
+No fabricated registry/first-consumer ownership. No stopped WR scalar/EDI scan.
 
 ## CHANGED
 
-* `source/tools/discover_ground_support.py`: exact existing EXE SHA, validated
-  AMD64 PE/file ranges/overlaps, fixed metadata-only lexical/type-family search,
-  optional RTTI-layout candidates and actual aligned RVA/VA data-word reference
-  candidates. No executable-section scan, instruction xrefs, bytes or arbitrary
-  RVA options. File512MiB, metadata192MiB, names128/192chars, refs512,
-  final JSON128KiB caps; ambiguity never selects, no-match/refusal explicit.
-  CLI has no build-hash override; exclusive output protects existing files.
-* `source/tools/test_discover_ground_support.py`:18 synthetic/CLI negative tests.
-* `source/tools/windows/Discover-Ground-Support.ps1`: existing clone/branch/origin
-  guards, fetch/pinned Git-show temp helper, installed `py -3`, existing logs,
-  timestamp/suffix outputs; no worktree/update/build/launch.
-* `source/tools/windows/test_discover_ground_support.ps1`:2 mock transport groups.
-* `analysis/GROUND_SPRINT_SUPPORT_ANCHOR_INVESTIGATION.md`: executed native-input
-  boundary, exact candidate/evidence limits, remaining blocker and ONE runnable
-  PowerShell bootstrap; prepend PROJECT_STATE; this result.
+* `source/tools/ground_support_code_refs.py`: bounded SHA-pinned offline
+  Capstone5.0.6 reference/candidate acquisition, fixed rank/caps, compact private
+  minimal code evidence, no full body by default/exclusive output. Reuses unchanged
+  discover_ground_support PE/string helpers. No CLI hash/target/range bypass.
+* `source/tools/test_ground_support_code_refs.py`:20 synthetic/CLI tests.
+* `source/tools/windows/Discover-Ground-Code.ps1`: fresh stages both helper files,
+  existing WSL analysis-python/decoder checks, collision-safe WS logs. Explicit
+  refusal if dependency unavailable; no auto install/build/runtime operation.
+* `source/tools/windows/test_discover_ground_code.ps1`:3 mocked transport groups.
+* `analysis/GROUND_SUPPORT_CODE_REFERENCE_ACQUISITION.md`: exact input/status,
+  executed lexical/SDK review, grounded search hypothesis vs verified symbol,
+  instruction/PE/registry evidence boundaries, aggregate caps and ONE new command.
+* `docs/PROJECT_STATE.md` prepended accepted owner result/acquisition-ready status;
+  this result. CODEX_NEXT and all production/runtime/config/package files unchanged.
 
-CODEX_NEXT unchanged. No release ZIP/new artifact; output is
-`MSM2-WS-ground-support-anchors-YYYYMMDD-HHMMSS.json` (optional collision suffix)
-in installed WS `logs`. Return the JSON only, including REFUSED/NO_ANCHOR_MATCH.
+Output `MSM2-WS-ground-code-refs-YYYYMMDD-HHMMSS.json` (optional collision suffix)
+in installed WS logs. No new runtime version/build/package; still r7/0.1.63.
+Code evidence remains private logs, never added to Git/release archives.
 
-## Validation — exact commands, expectations and actual results
+## Exact validation / expected / actual
 
-1. `python3 source/tools/test_discover_ground_support.py`
-   Expected synthetic name/RTTI-layout/ref discovery; Unicode/ASCII, ambiguity/
-   no-match, executable/writable exclusion, invalid hash/PE/ranges/overlap,
-   truncation and name/ref/scan/file/output caps, no CLI SHA bypass, no output/EXE
-   overwrite. Actual **18 PASS /0 SKIP**. Repeated only after final output-size
-   check changed to count the final pretty JSON; no test weakened. Fixtures are
-   not a real-game proof or authenticated native consumer.
-2. `XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -File source/tools/windows/test_discover_ground_support.ps1`
-   Expected derived space/Japanese layout, staged fresh helper/pinned Git reads,
-   collision-safe output, existing dirty file/EXE unchanged, Python failure
-   refusal. Actual **2 PASS groups**, mocked Git/Python, PowerShell on Linux.
-   Initial command without XDG dirs exited134 before tests because /home cache
-   is read-only; fixed execution environment by task-owned /tmp cache/config/data.
-   No HOME reassignment or permission changes. Not Windows5.1/real Git/Python proof.
-3. `git diff --check`
-   Expected whitespace clean; actual PASS.
-4. `python3 /tmp/ws-ground-scope-check.py` (local read-only check):
-   expected only helper/tests/docs touched, current task and all runtime/version/
-   package files unchanged, analysis link exists and owner snippet PowerShell
-   syntax valid. Scope/link check PASS; PowerShell snippet parser command below
-   checks actual snippet syntax separately.
+1. `/workspace/toolchains/analysis-python/bin/python3 source/tools/test_ground_support_code_refs.py`
+   Expected actual decoded RIP LEA/MOV reference/function identity, literal
+   interior-byte coincidence rejection, straight-line vs prior-control/no-runtime
+   candidates, one metadata edge, narrow lexical coverage and mount/bot exclusion,
+   ranking/ambiguity, exact SHA/malformed PE/runtime metadata/ranges, all aggregate
+   caps/exclusive output, pinned decoder refusal, first local memory/direct-call
+   relationship and tiny-full-body omission. Actual **20 PASS**. Rerun after local
+   follow-up/whole-body-omission changes; no assertions weakened. Synthetic game
+   digest injected only into test API, not CLI or runtime identity bypass.
+2. `python3 source/tools/test_discover_ground_support.py`
+   Expected reused dependency's strict PE/string/hash/caps/CLI preservation still
+   valid. Actual **18 PASS**. Not another owner metadata acquisition.
+3. `XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -File source/tools/windows/test_discover_ground_code.ps1`
+   Expected staged BOTH dependencies/pinned Git reads, Japanese/space paths,
+   collision suffix/dirty file/EXE preserved, unavailable WSL refused and wrong/
+   unavailable decoder refused without install. Actual **3 PASS groups**, mocked
+   Git/WSL; not native Windows5.1 or actual owner EXE evidence.
+4. `git diff --check`: expected clean whitespace; actual PASS.
+5. `python3 /tmp/ws-ground-code-check.py`: expected only7 new/updated intended
+   helper/test/docs paths, unchanged runtime/config/packages/CODEX_NEXT and
+   existing analysis link targets; actual PASS; extracts owner command for parser.
+6. PowerShell parser of extracted `/tmp/ws-ground-code-owner.ps1`:
+   `XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -Command '$t=$null; $e=$null; [void][System.Management.Automation.Language.Parser]::ParseFile("/tmp/ws-ground-code-owner.ps1",[ref]$t,[ref]$e); if($e.Count){throw ($e|Out-String)}; "PASS owner bootstrap syntax"'`
+   Expected valid syntax and process-specific ExecutionPolicy Bypass invocation;
+   actual PASS parser plus checked exact command text. No global policy change.
 
-Focused test total **PASS20 / SKIP0 / UNAVAILABLE1 / BLOCKED1**. Separate
-whitespace/scope/parser/publication checks are not added to fixture test totals.
-UNAVAILABLE1 = real Windows pinned-EXE acquisition, private input absent here.
-BLOCKED1 = first actual native ground support/Up/gravity consumer investigation,
-no authenticated entry yet; metadata collection is preparatory evidence.
-No unperformed real Windows/game test marked PASS.
-Full portable/native/Wine/runtime build/package suites not run: task explicitly
-requires relevant offline helper tests only, no runtime changes/dependencies.
+**Focused tests PASS41 / SKIP0 / UNAVAILABLE1 / BLOCKED1.** Separate
+scope/whitespace/parser/publication checks not included in fixture test count.
+UNAVAILABLE1: real owner Windows pinned-EXE next-stage acquisition (file not here).
+BLOCKED1: authentication of native first support/up/gravity consumer, pending
+actual candidate code evidence. Neither is proof ground Sprint fails or world-up
+is hard-coded. No unexecuted native test promoted to PASS.
 
-Research commands included:
-`rg --files /workspace /tmp -g 'Spider-Man2.exe' -g '*SwingCore*' -g '*wallslide*'`;
-`rg -n -i 'gravity|sprint|support|requestsimplemotion|ground|contact' source/src source/include source/vendor/SM2ScriptTemplate/game -g '*.cpp' -g '*.hpp' -g '*.h'`;
-`cat source/vendor/SM2ScriptTemplate/game/Actor.h` / `Transform.h` / `Native.h`.
-Expected find or bound native anchor; actual no identified binary/typed ground
-API; incidental fixture/Transform/generic component matches do not prove it.
-One unrelated /tmp subtree unreadable, so availability search not exhaustive.
-Existing supplied reference report read, no new disassembly claimed.
+Not run: full build/portable/native/Wine/smoke/hooks/package suites because task
+is offline tooling only and explicitly calls for relevant focused tests; r7 and
+C52 unchanged. No game/WSU binary executed, live reads or state/Position/input/
+gravity/animation writes; no environment/SF/profile/loader changes.
 
-## Publication / shared knowledge
+## Publication / next operation
 
-Wisdoms candidate-vs-consumer distinction updated in
-`docs/WALLSPRINT_REFERENCE_MODS.md`, pushed
-`faf8613a850e173090ae4c443e56e157dbaa05c3`; ls-remote matches.
-WallSprint helper implementation SHA and independent GitHub readback follow below.
-No private binary fragments/raw game logs committed.
+Wisdoms updated candidate/instruction-boundary/registry distinctions and accepted
+owner metadata/policy lesson; pushed `22a42b2e1755811353ff08063850d3dc9442fa39`,
+ls-remote matches. No raw private fragments or captured function bodies committed.
+Implementation SHA/push/readback recorded after commit below.
 
-## NEED / exact owner operation
-
-Run the ONE PowerShell block in the analysis document (reproduced in final
-handoff) and return generated `logs/MSM2-WS-ground-support-anchors-*.json` only.
-No Update-WS, Install mods, game launch, WSU upload or full EXE upload.
-The JSON will supply exact-image names/reference candidates for the next bounded
-identity review; it will not by itself prove gravity/support semantics or permit
-production integration. No automatic follow-on gameplay changes authorized.
-
-### Verified implementation publication
-
-Implementation `54d982ff001cea9ab3de7fa0fdad9b4d6d64e13c` pushed on the task branch.
-`python3 /tmp/ws-ground-publication.py`: expected independent clone FETCH_HEAD,
-local HEAD and GitHub ls-remote agreement plus exact bytes for all7 changed
-files against baselinef07e4c0; actual PASS at54d982f. This is a publication check,
-not an additional native/fixture PASS. Final record-only commit follows, then
-same check repeated; no reason to rerun unchanged helper suites after doc-only
-record. Whitespace/scope and actual owner snippet parser PASS. The parser used:
-`XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -Command '$tokens=$null; $errs=$null; [void][System.Management.Automation.Language.Parser]::ParseFile("/tmp/ws-ground-owner-command.ps1",[ref]$tokens,[ref]$errs); if($errs.Count){throw ($errs|Out-String)}; "PASS owner PowerShell command syntax"'`.
-Final branch/record SHA reported in owner handoff. No new release/runtime package.
+Owner: run ONE fresh PowerShell block from the acquisition document (reproduced
+in final), using `powershell.exe -NoProfile -ExecutionPolicy Bypass -File`.
+Return `logs/MSM2-WS-ground-code-refs-*.json` only, including no-relation/refusal
+if generated. No Update-WS, Install mods, game launch/full EXE upload, names-only
+repeat or adjacent-byte requests. Working source/index stays unchanged; Git
+fetch updates refs/objects and own temp/JSON files only. Unknown consumer/ABI/
+ownership remains fail closed; no follow-on gameplay changes authorized.
