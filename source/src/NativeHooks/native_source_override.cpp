@@ -18,6 +18,7 @@
 #include "Math/planar_standoff.hpp"
 #include "Math/movement_delta.hpp"
 #include "Math/reversal_heading.hpp"
+#include "Math/wall_motion_window.hpp"
 namespace {
 using ws::Vec3;using ws::source_math::Matrix;using ws::native_source::Token;using msm2::writeLog;
 constexpr std::uintptr_t callReturn=0x2cfc8f3,callBegin=0x2cfc850;constexpr unsigned callSize=168,capacity=1024;
@@ -62,6 +63,7 @@ struct Shared {
  double pausedTransitionMs{},frozenTransitionMs{};
  bool positionRequested{};unsigned movementSamples{},movementEmitted{};std::uint64_t movementMs{},movementUpdate{};Vec3 movementPosition{};
  ws::heading::Reversal heading;double headingClock{};std::uint64_t headingWallMs{};unsigned headingLogs{},headingHoldLogs{},actorLogs{},countLogs{};
+ ws::motion_diag::Window motionWindow;
  Adhesion adhesion{};
 } state;
 struct Record {
@@ -136,8 +138,20 @@ void adhesionSummary(const char* reason){
  writeLog("ADHESION_SUMMARY session=%llu position_proof_admitted=0 samples=%u sample_attempts=%u corrections_applied=0 max_abs_error_before=%.9g max_abs_error_after=%.9g error_after_semantics=unmodified_same_observation max_abs_step=0 max_abs_tangent_delta=0 source_position_writes=0 fail_closed_events=%u max_abs_requested_step=%.9g max_abs_candidate_tangent_delta=%.9g sample_cap=64 end_reason=%s mode=position_read_only",
   (unsigned long long)state.session,a.samples,a.attempts,a.maxError,a.maxError,a.failClosed,a.maxRequested,a.maxCandidateTangent,reason);
 }
+void motionWindowLog(bool final,const char* reason){
+ auto& w=state.motionWindow;if(w.finished)return;
+ for(unsigned i=0;i<w.count;++i){const auto& f=w.at(i);
+  writeLog("WALL_MOTION_WINDOW schema=1 session=%llu generation=%llu window=%u ms=%llu native_update=%llu native_ms=%llu clock_ms=%.3f dt_ms=%.3f event=%s last_decision=%s decision_ms=%llu decision_update=%llu delta_world=(%.9g,%.9g,%.9g) tangent_world=(%.9g,%.9g,%.9g) normal=(%.9g,%.9g,%.9g) sampled_normal=(%.9g,%.9g,%.9g) requested_heading=(%.9g,%.9g,%.9g) published_heading=(%.9g,%.9g,%.9g) actor_right=(%.9g,%.9g,%.9g) actor_up=(%.9g,%.9g,%.9g) actor_forward=(%.9g,%.9g,%.9g) actor_valid=%u input_intent=unobserved coherence=single_existing_snapshot_not_atomic_native_frame source=worker_snapshot_not_post_writer Position_writes=0",
+   (unsigned long long)state.session,(unsigned long long)state.generation,w.windows,(unsigned long long)f.ms,(unsigned long long)f.update,(unsigned long long)f.nativeMs,f.clock,f.dt,f.event,f.decision,(unsigned long long)f.decisionMs,(unsigned long long)f.decisionUpdate,f.delta.x,f.delta.y,f.delta.z,f.tangent.x,f.tangent.y,f.tangent.z,f.normal.x,f.normal.y,f.normal.z,f.sampledNormal.x,f.sampledNormal.y,f.sampledNormal.z,f.requested.x,f.requested.y,f.requested.z,f.published.x,f.published.y,f.published.z,f.actor.right.x,f.actor.right.y,f.actor.right.z,f.actor.up.x,f.actor.up.y,f.actor.up.z,f.actor.forward.x,f.actor.forward.y,f.actor.forward.z,unsigned(f.actor.valid));
+ }
+ writeLog("WALL_MOTION_WINDOW_SUMMARY session=%llu window=%u retained=%u overwritten_total=%llu throttled_total=%llu budget_suppressed_total=%llu capacity=16 window_cap=16 final=%u reason=%s lifecycle_state=%u observation_only=1",
+  (unsigned long long)state.session,w.windows,w.count,(unsigned long long)w.overwritten,(unsigned long long)w.throttled,(unsigned long long)w.suppressed,unsigned(final),reason,unsigned(state.ownership));
+ if(w.count)w.flushed();
+ if(final)w.finished=true;
+}
 void latchCause(const char*,const char*,const ws::observed::VerifiedWallContext* =nullptr) noexcept;
 void end(const char* reason,std::uint64_t now){
+ if(state.entered)motionWindowLog(true,reason);
  state.heading.clearObservation();state.headingWallMs=0;
  if(state.entered&&state.transition.active&&std::strcmp(reason,"verified_native_Deinit")&&std::strcmp(reason,"new_native_session"))latchCause(reason,"worker");
  if(state.ownership==Ownership::StaleSuspended&&now>=state.staleStart)state.maxStaleMs=std::max(state.maxStaleMs,now-state.staleStart);
@@ -471,6 +485,8 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
    auto heading=state.heading.sample({s.position[0],s.position[1],s.position[2]},token.updates,double(now),state.headingClock);
    if(!heading.basis.valid){end("invalid_reversal_heading",now);p.active=false;}
    else {p.basis=heading.basis;
+    ws::motion_diag::Frame frame{};frame.ms=now;frame.update=token.updates;frame.nativeMs=token.updateMs;frame.clock=state.headingClock;frame.normal=p.surface;frame.sampledNormal=n;frame.requested=heading.target;frame.published=p.basis.forward;frame.actor=ws::diag::actorAxes(s.prefix);frame.event=heading.event;
+    if(state.motionWindow.sample(frame,{s.position[0],s.position[1],s.position[2]}))motionWindowLog(false,"periodic");
     const bool held=std::strcmp(heading.event,"low_speed_hold")==0||std::strcmp(heading.event,"deadband_hold")==0;
     if(state.headingLogs<64&&std::strcmp(heading.event,"hold")!=0&&(!held||state.headingHoldLogs<8)){++state.headingLogs;if(held)++state.headingHoldLogs;writeLog("WALL_PLANE_HEADING schema=2 session=%llu native_update=%u ms=%llu clock_ms=%.3f event=%s delta_estimate=(%.9g,%.9g,%.9g) tangent_speed_estimate=%.9g candidate_forward=(%.9g,%.9g,%.9g) candidate_angle_rad=%.9g turn_angle_rad=%.9g target_forward=(%.9g,%.9g,%.9g) published_forward=(%.9g,%.9g,%.9g) reason=bounded_displacement_following_not_input_intent Position_writes=0",(unsigned long long)p.session,token.updates,(unsigned long long)now,state.headingClock,heading.event,heading.delta.x,heading.delta.y,heading.delta.z,heading.speed,heading.candidate.x,heading.candidate.y,heading.candidate.z,heading.candidateAngle,heading.turnAngle,heading.target.x,heading.target.y,heading.target.z,p.basis.forward.x,p.basis.forward.y,p.basis.forward.z);}
    }
@@ -617,7 +633,7 @@ void captureCopy(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::ui
  // The old bounded primary watch must not adopt a secondary call as its owner.
  if(!otherThread){msm2::reset_trace::Request committed{};committed.prearmed=true;committed.resetCopy=true;committed.verifyDual=true;committed.characterize=true;committed.initMs=p.initMs;committed.session=p.session;committed.generation=p.generation;committed.nativeUpdate=p.nativeUpdate;committed.commitQpc=result.commitQpc;committed.overrideBeginQpc=begin.QuadPart;committed.hero=p.hero;committed.transform=p.transform;committed.owner=p.owner;committed.thread=p.thread;committed.normal=p.surface;committed.appliedUp=p.basis.up;msm2::reset_trace::committed(committed);}
  if(otherThread){secondaryCall.event.success=true;secondaryCall.event.reason="secondary_verified";}
- Record r{};r.kind=11;r.copy=true;r.session=p.session;r.generation=p.generation;r.nativeUpdate=p.nativeUpdate;r.nativeThread=thread;r.expectedThread=p.thread;r.ms=now;r.elapsed=p.elapsed;r.source=rdx;r.rcx=rcx;r.rsp=rsp;r.stackLimit=stack.limit;r.stackBase=stack.base;r.caller=0x2cfc84b;r.n=p.surface;r.compactOriginal=incoming;r.compactApplied=applied;r.rowLengths=lengths;r.writes=count;r.commitQpc=result.commitQpc;r.positionSame=result.positionUnchanged;r.stack=true;emit(r);release();
+ Record r{};r.kind=11;r.copy=true;r.session=p.session;r.generation=p.generation;r.nativeUpdate=p.nativeUpdate;r.nativeThread=thread;r.expectedThread=p.thread;r.ms=now;r.elapsed=p.elapsed;r.source=rdx;r.rcx=rcx;r.rsp=rsp;r.stackLimit=stack.limit;r.stackBase=stack.base;r.caller=0x2cfc84b;r.n=p.surface;r.target=p.basis;r.compactOriginal=incoming;r.compactApplied=applied;r.rowLengths=lengths;r.writes=count;r.commitQpc=result.commitQpc;r.positionSame=result.positionUnchanged;r.stack=true;emit(r);release();
 }
 void drainLogs(){
  drainCause();
@@ -639,6 +655,8 @@ void drainLogs(){
     if(r.late)writeLog("LATE_COMMON_WORLDUP_OVERRIDE=1 session=%llu native_update=%llu reason=repeated_native_update_worldup_source",(unsigned long long)r.session,(unsigned long long)r.nativeUpdate);
   }
   if(r.kind==1&&r.writes==1)writeLog("PATH_A_LOCKFREE_SNAPSHOT_READ session=%llu generation=%llu coherent=1",(unsigned long long)r.session,(unsigned long long)r.generation);
+  if(r.kind==11&&r.writes<=64)writeLog("PATH_B_INCOMING_BASIS schema=1 session=%llu generation=%llu native_update=%llu ms=%llu commit_qpc=%llu original_right=(%.9g,%.9g,%.9g) original_up=(%.9g,%.9g,%.9g) original_forward=(%.9g,%.9g,%.9g) published_forward=(%.9g,%.9g,%.9g) input_intent=unobserved original_may_include_prior_WS_output=1 source=existing_validated_compact_copy",
+   (unsigned long long)r.session,(unsigned long long)r.generation,(unsigned long long)r.nativeUpdate,(unsigned long long)r.ms,(unsigned long long)r.commitQpc,r.compactOriginal.rows[0],r.compactOriginal.rows[1],r.compactOriginal.rows[2],r.compactOriginal.rows[3],r.compactOriginal.rows[4],r.compactOriginal.rows[5],r.compactOriginal.rows[6],r.compactOriginal.rows[7],r.compactOriginal.rows[8],r.target.forward.x,r.target.forward.y,r.target.forward.z);
   if(r.kind==11)writeLog("PATH_B_COMPACT3X3_OVERRIDE session=%llu generation=%llu elapsed=%.6f source_ptr=0x%llx rdx_minus_rsp=0x%llx original_row_lengths=(%.9g,%.9g,%.9g) original_up=(%.9g,%.9g,%.9g) applied_up=(%.9g,%.9g,%.9g) applied_up_dot_surface=%.9g bytes_written=0x24 metadata_untouched=1 caller_verified=1 target_verified=1 stack_verified=1 write_index=%u override_commit_qpc=%llu thread_id=%u expected_thread=%u",(unsigned long long)r.session,(unsigned long long)r.generation,r.elapsed,(unsigned long long)r.source,(unsigned long long)(r.source-r.rsp),r.rowLengths.x,r.rowLengths.y,r.rowLengths.z,r.compactOriginal.rows[3],r.compactOriginal.rows[4],r.compactOriginal.rows[5],r.compactApplied.rows[3],r.compactApplied.rows[4],r.compactApplied.rows[5],ws::dot(Vec3{r.compactApplied.rows[3],r.compactApplied.rows[4],r.compactApplied.rows[5]}*(1/r.rowLengths.y),r.n),r.writes,(unsigned long long)r.commitQpc,r.nativeThread,r.expectedThread);
   if(r.kind==1&&r.writes==1)writeLog("PREARM_STATUS session=%llu elapsed=%.6f primary_thread=%u DR0_installed=%u DR1_installed=%u trace_already_armed_before_override=%u first_override=1",(unsigned long long)r.session,r.elapsed,r.nativeThread,unsigned(r.prearmed),unsigned(r.prearmed),unsigned(r.prearmed));
   if(r.kind==1&&!r.copy)writeLog("NATIVE_SOURCE_OVERRIDE session=%llu generation=%llu native_ms=%llu native_update=%llu elapsed=%.6f caller_rva=0x%llx source_ptr=0x%llx original_right=(%.9g,%.9g,%.9g) original_up=(%.9g,%.9g,%.9g) original_forward=(%.9g,%.9g,%.9g) target_right=(%.9g,%.9g,%.9g) target_up=(%.9g,%.9g,%.9g) target_forward=(%.9g,%.9g,%.9g) applied_right=(%.9g,%.9g,%.9g) applied_up=(%.9g,%.9g,%.9g) applied_forward=(%.9g,%.9g,%.9g) t=%.6f position_unchanged=%u source_is_stack_local=%u direct_actor_transform_write=0 write_index=%u override_commit_qpc=%llu",static_cast<unsigned long long>(r.session),static_cast<unsigned long long>(r.generation),static_cast<unsigned long long>(r.ms),static_cast<unsigned long long>(r.nativeUpdate),r.elapsed,static_cast<unsigned long long>(r.caller),static_cast<unsigned long long>(r.source),r.original.v[0],r.original.v[1],r.original.v[2],r.original.v[4],r.original.v[5],r.original.v[6],r.original.v[8],r.original.v[9],r.original.v[10],r.target.right.x,r.target.right.y,r.target.right.z,r.target.up.x,r.target.up.y,r.target.up.z,r.target.forward.x,r.target.forward.y,r.target.forward.z,r.applied.v[0],r.applied.v[1],r.applied.v[2],r.applied.v[4],r.applied.v[5],r.applied.v[6],r.applied.v[8],r.applied.v[9],r.applied.v[10],r.t,unsigned(r.positionSame),unsigned(r.stack),r.writes,static_cast<unsigned long long>(r.commitQpc));

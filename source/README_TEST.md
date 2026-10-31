@@ -1,3 +1,17 @@
+# v0.1c38r6 / package0.1.62 — downward-motion diagnostics only
+
+R5 heading math, thresholds and source write permissions are unchanged. Existing
+worker snapshots feed WALL_MOTION_WINDOW: 100ms minimum/different native update,
+16-record ring, 2s windows, at most16 windows/session, final partial flush.
+Overwrites/throttles/budget suppression are explicit. Actual Actor basis is a
+worker snapshot, not post-writer/animation proof. Requested heading means the
+accepted displacement target, NOT input intent. Incoming A/B can contain prior
+WS output; B full axes now use its already-captured compact block (first64 writes).
+No new memory reads, pointers/hooks/APIs or movement/input/animation writes.
+Pure tests: `bash source/tools/test_wall_motion_window.sh`.
+Chat supplies numbered owner comparison steps after publication; no unchanged
+r5 test repeat requested by this task. Native cause remains UNKNOWN.
+
 # v0.1c38r5 / package0.1.61 — wall-plane displacement-facing experiment
 
 Orientation only: current authenticated positions projected onto the authenticated

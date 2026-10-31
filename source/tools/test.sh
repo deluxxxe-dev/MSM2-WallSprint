@@ -33,3 +33,4 @@ g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -
 ./build/movement_delta_tests | tee logs/movement_delta_tests.log
 
 bash tools/test_reversal_heading.sh
+bash tools/test_wall_motion_window.sh

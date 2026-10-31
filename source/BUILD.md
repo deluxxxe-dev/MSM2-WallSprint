@@ -287,3 +287,10 @@ checks current script/DLL/source/version/INI contracts. Source/installer ZIPs
 include current shared toolkit dependencies. Do not run build inside Mods Library;
 Update-WS stages outside it. Synthetic/Wine basis acceptance is not real-game
 body-facing, animation speed or earlier-input proof. Chat supplies owner test.
+
+## r6 downward-motion diagnostic
+
+v0.1c38r6/package0.1.62 adds value-only bounded worker windows and full incoming
+B axes from its existing validated copy; no r5 heading/math/timing change. See
+analysis/V01C38R6_DOWNWARD_INTERACTION.md. `bash source/tools/test_wall_motion_window.sh`
+is part of portable validation. Owner cause and game acceptance remain pending.

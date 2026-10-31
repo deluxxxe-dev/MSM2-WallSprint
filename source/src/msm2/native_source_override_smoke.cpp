@@ -489,10 +489,14 @@ int main(){
   if(wasTurning&&!state.heading.turning)++completed;
  }
  assert(straightChecked&&completed>=20&&double(GetTickCount64())-longEntry>30000);
+ assert(state.motionWindow.windows>=10&&state.motionWindow.windows<=16&&state.motionWindow.overwritten>0);
+ assert(output.find("WALL_MOTION_WINDOW schema=1")!=std::string::npos&&output.find("actor_forward=(")!=std::string::npos&&output.find("sampled_normal=(")!=std::string::npos&&output.find("decision_ms=")!=std::string::npos&&output.find("PATH_B_INCOMING_BASIS schema=1")!=std::string::npos);
  assert(state.headingLogs==64&&state.actorLogs==256&&state.countLogs<=64&&state.movementSamples==40);
  assert(pathAWrites>0&&pathBWrites>0&&pathAWrites<4096&&pathBWrites<4096);
  ws::native_source::event(3,owner);context.wallRunActive=false;workerTick(false);auto longA=pathAWrites.load(),longB=pathBWrites.load();callA();callB();
  assert(!state.transition.active&&state.summaryEmitted&&pathAWrites==longA&&pathBWrites==longB);
+ assert(state.motionWindow.finished&&state.motionWindow.count==0);
+ puts("PASS: r6 production worker retains bounded late motion/actor windows beyond old hold cap, original B axes use captured copy, final Deinit flush does not alter A/B writes");
  context.wallRunActive=true;workerTick(false);assert(!state.transition.active); // Closed generation cannot re-enter.
  prepare({0,0,1});assert(state.session!=longSession&&ws::dot(state.heading.forward,state.heading.f0)>.99999f&&state.headingLogs==0&&state.actorLogs==0);
  msm2::native_source::kill("long_session_disable","shutdown");workerTick(false);callA();callB();assert(!state.transition.active&&pathAWrites==0&&pathBWrites==0);

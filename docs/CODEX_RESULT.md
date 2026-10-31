@@ -1,167 +1,153 @@
-# Codex result — main exit visibility / owned child drain / ACTIVE role diagnostic
+# Codex result — r6 downward motion / orientation isolation
 
-2026-10-31 JST. STATUS: implementation/cloud validation complete; owner cause pending.
-Branch `codex/v01c20-edi-value-provenance`; baseline
-`242aa7f836e8243cd29bbd3f4d3fff543887c456`. No main merge.
-R5 native/include/INI/checked-in script/ZIP/BUILD_MANIFEST bytes unchanged.
+2026-10-31 JST. Branch codex/v01c20-edi-value-provenance, baseline
+66f203807fd2f9f5afb95bf603b5275b13433225. No main merge.
 
-## Evidence and changes
+## STATUS / causal limit
 
-Previous owner root repair succeeded; do not repeat that EACCES-only task.
-New owner420-line update stops during c48 JSON, ACTIVE6 + EACCES2, distro/UID1000
-match. No final owner pipeline/package/update success. Exact six process roles
-and main exit UNKNOWN. Token association does NOT establish active compiler.
-Fixture v0.1c20 success lines are not deployment. Original returncode was hidden
-by quiet-before-returncode and not saved; it cannot be reconstructed by guessing.
+Owner r5 run is accepted as loaded/executed; prior tooling/WSL next actions are
+superseded for this task. Session4 substantial horizontal displacement explains
+why displacement-following selects horizontal targets. Some down component also
+exists. It does NOT establish why requested down motion becomes horizontal.
+Native steering/contact vs orientation-frame feedback remains UNKNOWN; no
+pure-math/adapter defect established, no movement fix claimed.
+See analysis/V01C38R6_DOWNWARD_INTERACTION.md and supplied numbered owner evidence.
 
-Changed workspace.py: persist/flush WSL transport primary_returncode BEFORE quiet,
-separately record Linux exit from bound progress, state and last stage. Nonzero +
-quiet or live children both fail; success + live children fails. Exceptions retain
-unknown exit/class. Interrupted/pending token remains interrupted regardless of
-phase. Only fresh same-operation completed0 stage_payload receipt permits result
-reading; old artifact cannot be reused when transport0 stops mid-suite. All
-payload/hash/DLL/version/source-HEAD/environment checks still required; validated
-phase moved after actual manager payload checks. Deployment/rollback/unlock/checked
-launch ordering unchanged. No root build, controller process kill or cache bypass.
+## CHANGED
 
-New atomic source/tools/windows/build-status.py and runner/c48/hooks annotations
-preserve Linux EXIT/INT/TERM and failing line/scenario. Running stage is last
-observed, not a fault diagnosis. Receipt is build progress, not deployment proof.
-The old source archive refusal still precedes instrumentation; no assertion relaxed.
+v0.1c38r6/package0.1.62, diagnostic only:
+- worker-owned value-only16-frame ring,100ms/distinct update,2s windows,max16/session;
+  coherent position delta/tangent/normal/displacement target/published heading/
+  Actor full basis and session/generation/native update/native+monotonic clocks;
+- low-speed/diagonal/turn snapshots continue beyond old eight hold logs; explicit
+  overwritten/throttled/budget suppression and final close reason; no unlimited log;
+- original B full axes from existing validated captured compact block,first64writes;
+  A original axes already logged. Incoming axes may include prior WS output.
+No additional game-memory reads, hooks, pointers/APIs or input-intent inference.
+Actual Actor basis is worker snapshot, not atomic native frame/post-writer/animation
+proof. Worker publication is proposed heading, not A/B commit proof.
 
-Probe now includes bounded associated PID/PPID/start/state/executable NAME/process
-name/stage. At most2 departed samples keep live events visible under zombie noise;
-full category counts and32-event cap retained. Names are observation only, never
-cleanup authority. No full unrelated argv/environment/token dump.
+R5 heading math byte-identical; speed2/33ms/two samples/120ms/12deg/8deg/entry0.25s,
+A/B compact scales/metadata/Position/W, native Deinit/stale/owner/session/generation/
+4096/C52 gates preserved. No shared toolkit/SF/profile/DLL installer change.
+Vertical entry, diagonal lateral responsiveness, RT-neutral stationary stance,
+earlier START/camera/animation remain backlog. No next milestone opened.
 
-Exact-token PIDFDs may wait natural exit up to5000ms/query, same absolute deadline /
-bounded16 cohort rescans. No sleeps, executable whitelist, token erasure, wineserver
-kill, WSL shutdown or unrelated process termination. Remaining/malformed/reused
-identity preserves pending ownership. Root remains read-only with existing UID/
-distro/all-UID/privacy gates. This is the inherited-token contract, not universal
-supervision of token-erasing descendants or a native continuation certificate.
+Files: native_source_override.cpp; value-only Math/wall_motion_window.hpp;
+wall_motion_window_tests.cpp/test_wall_motion_window.sh/portable wiring; owned native
+fixture assertions; version/info/README_TEST/BUILD/package/release metadata;
+root+source analysis, PROJECT_STATE and this result. Validation finalization and
+GitHub publication recorded below after execution.
 
-Fresh DiagnoseWSL schema2 can observe ACTIVE as root without claiming/releasing
-ownership. It shows saved transport/Linux exits or not_recorded, bound receipt or
-unavailable, and current related roles. source_worktree_updated=0 /
-installed_KIT_updated=0 are explicit. Fetch changes Git refs/objects/private staging
-only; no code merge/KIT/deploy/build/launch from this diagnostic. No pending token
-but known saved exit may be reported without process inspection. Owner output is
-still needed to distinguish currently surviving compiler/test/service work.
+## NEED / exact missing fact
 
-## Owned reproduction, not owner attribution
+Chat supplies numbered owner comparison AFTER implementation; no unchanged r5 test
+repeat or old WSL diagnostic requested. Actual r6 Windows/game evidence unavailable
+in cloud; diagnostic fixture success is not downward/animation ownership proof.
+If original consumer semantics are required: ONE authenticated offline window at
+RVA0x14248f9 max128 bytes with exact EXE SHA, executable/file-backed section,
+block SHA/range and covering runtime/unwind metadata. Cap at first relevant control
+boundary/earlier metadata boundary, no recursive/sweep/c73. Existing PE primitives
+are documented in analysis/FLAT_WALL_LATERAL_ROUTE_REVIEW.md. Matching EXE/continuation
+absent here, so acquisition is UNAVAILABLE, not guessed. Separate0x14246d6 fallthrough
+also unresolved. No full EXE/raw-log upload required. More axis correlation cannot
+by itself establish native input/coordinate consumption.
 
-Unchanged c48 native C++ returns0:8 JSON cases + final checker,9 PASS. Immediate
-fresh-token /proc inspection finds6 PPID1/stateS helpers: wineserver64, services.exe,
-plugplay.exe, explorer.exe, svchost.exe, rpcss.exe. All6 naturally exit during actual
-PIDFD wait; readable associated active count becomes0. Other protected reads remain
-UNKNOWN on non-root host. This proves a cloud Wine completion-tail race, NOT the
-owner main's termination reason. c48 prints JSON BEFORE final finish/join/assert;
-partial JSON alone never proves native exit0. Native assertions/code unchanged.
+Diagnostic refinement: record both pinned projection normal and existing sampled
+owner normal. Preserve latest non-hold decision with its OWN timestamp/update,
+so100ms snapshot throttling cannot silently lose low-speed rejection reasons.
+Decision time may precede snapshot; it is not same-frame input evidence.
 
-Files: workspace/operation_lock/repair diagnostics; build status helper; runner/
-hooks/c48 script annotations; reporting/drain/inspection and related tests;
-analysis/WSL_BUILD_EXIT_AND_CHILD_DRAIN.md; individual+combined manuals/state/result.
-No SF/profile/loader/ordinary-mod/gameplay changes; five old untracked files preserved.
+## Shared reference synchronization
 
-## Exact validation / expected / actual
+Wisdoms WALLSPRINT_INTERNALS updated/pushed at
+8e1487fb83137612144ae77cfaac0e6adca5844f; remote main readback matches.
+Distinguishes measured horizontal motion from requested input, source-frame
+feedback hypothesis from native proof, and bounded diagnostics from movement
+permission. No raw private capture/body/log or personal path published.
 
-Counts are emitted cases/groups/checks, not unique assertions across repeated suites.
-All final targeted commands exited0. Cloud Linux/Wine is not actual owner WSL.
+## Exact validation (final source unless explicitly preliminary)
 
-| Exact command | Expected | Actual |
+Counts are emitted checks/groups, not unique assertions across repeated suites.
+Final DLL object/link completed AFTER the final header edit; no runtime-source
+edits followed. Standard tools run from repository root, PATH prefixed with
+/workspace/toolchains/analysis-python/bin for hooks/release where pinned decoder
+is required. No root build or owner deployment. Commands/expected/actual:
+
+| Command | Expected | Actual |
 |---|---|---|
-| `python3 source/tools/test_build_reporting.py` | nonzero+children, zero+children, transport0/Linux31, quiet failure, interruption, incomplete/malformed/stale result refusal, real fake-shell exits37/143/0 and specific stages | 13 PASS /0 SKIP /0 UNAVAILABLE |
-| `python3 environment/test_owned_child_drain.py` | actual pidfd natural exit, unrelated alive, deadline retains ACTIVE, reused fd refuses, persistent pending, ACTIVE observation no wait/claim, departed noise cannot hide matches | 6 PASS /0 SKIP /0 UNAVAILABLE |
-| `python3 environment/test_build_inspection.py` | old unknown exit not invented; bound/unbound receipts, active root role names; no source/KIT/lock/runtime mutation | 3 PASS /0 SKIP /0 UNAVAILABLE |
-| `python3 environment/test_wsl_process_probe.py` | prior identity/permission/self/distro/UID/protocol cases | 21 PASS /0 SKIP /0 UNAVAILABLE |
-| `python3 environment/test_wsl_root_recovery.py` | root failure/scope/identity/legacy/escaped cohort predicates preserved | 21 PASS /0 SKIP /0 UNAVAILABLE |
-| `python3 environment/test_operation_lock.py` | real cross-process exclusion/crash/child/legacy/PID reuse/retained pending | 14 PASS /1 SKIP /0 UNAVAILABLE |
-| `python3 source/tools/test-workspace.py` | build/test/hash/launch rollback contracts and actual concurrent owner exclusion | 20 PASS groups /0 SKIP /0 UNAVAILABLE |
-| `MSM2_WS_OPERATION_TOKEN=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa WSL_DISTRO_NAME=OwnedCloud python3 source/tools/test-workspace.py` | original archive-refusal under inherited operation environment | 20 PASS groups /0 SKIP /0 UNAVAILABLE |
-| `python3 environment/test_tooling_repair.py` | old checker, clean/dirty/divergent/reversible source/KIT/record protections | 6 PASS /0 SKIP /0 UNAVAILABLE |
-| `python3 environment/test_mod_environment.py` | backup/restore/refresh/settings/data unchanged | 28 PASS /0 SKIP /0 UNAVAILABLE |
-| `python3 environment/test_start_overstrike_preflight.py` | installer proxy accepted; misplaced loader refused unchanged | 1 PASS group /0 SKIP /0 UNAVAILABLE |
-| PowerShell mock contract below | shared launch contract unchanged | 16 PASS checks /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_wall_motion_window.sh` | late down/diagonal/low holds, ring overwrite/cap, separate decision clock, duplicate/regression reset, actual session4 value replay | 5 PASS /0 SKIP /0 UNAVAILABLE |
+| `bash source/tools/test_reversal_heading.sh` | original r5 down/diagonal/antipode/stale/confirmation/proper basis contracts | 17 PASS /0 SKIP /0 UNAVAILABLE; also included in final portable |
+| `bash source/tools/build_windows.sh` | final warning-as-error cross-build/link and PE version | exit0; final object/link newer than final header |
+| `bash source/tools/test.sh` | all portable contracts incl new ring | 35 PASS /0 SKIP /0 UNAVAILABLE, exit0 |
+| `bash source/tools/smoke_windows.sh` | existing Windows/Wine load/enable/disable/log contract | 7 PASS /0 SKIP /0 UNAVAILABLE, exit0 |
+| `python3 source/tools/test_wall_motion_log.py source/logs/windows_native_source_synthetic.log` | actual owned native vectors/projected tangent, separate timestamps, late windows/caps/input disclaimer | 1 PASS /0 SKIP /0 UNAVAILABLE |
 
-```
-XDG_CACHE_HOME=/tmp/ws-lock-xdg-cache XDG_CONFIG_HOME=/tmp/ws-lock-xdg-config XDG_DATA_HOME=/tmp/ws-lock-xdg-data DOTNET_CLI_HOME=/tmp/ws-lock-dotnet /tmp/ws-proxy-pwsh/pwsh -NoLogo -NoProfile -File environment/test_windows_contract.ps1
-```
+`bash source/tools/test_native_source.sh` was run separately before the diagnostic
+clock/normal refinement:13 PASS,0 SKIP/UNAVAILABLE, exit0. It is repeated from final
+source by the canonical hooks chain (with new standalone payload checker), retaining
+all original assertions plus actual31s late-window/final-Deinit checks. Preliminary
+success is NOT substituted for that final execution.
 
-`python3 /tmp/ws-active-c48-drain.py`: actual targeted runner
-`bash source/tools/test_production_witness_review.sh` with generated fresh operation
-token/private status dir, then probe with wait0 and5000ms; exit0/9 PASS,6 live Wine
-helpers before, owned_exits_waited6 after, no ACTIVE among readable processes.
-This harness invokes only authored Linux probe and owned native fixtures; no game.
+An initial external whole-pipeline run completed via
+`python3 /tmp/ws-r6-full.py`, invoking
+`bash source/tools/windows/workspace-build.sh /workspace/WallSprint /tmp/ws-r6-full-result`
+with generated private operation token, synthetic WSL_DISTRO_NAME=OwnedCloud and
+pinned-decoder PATH. Exit0 in456.70s;948 PASS/32 SKIP/17 UNAVAILABLE; completed0
+stage_payload receipt. It preceded final decision-clock/current-normal/refinement
+and final payload checker, so its generated artifacts are NOT published as final.
+The final build/portable/smoke/hooks/release commands validate final bytes separately.
+No repeated owner WSL diagnostic/repair or unchanged r5 game comparison requested.
 
-### Full pipeline — final corrected pass
-
-Actual controller `python3 /tmp/ws-life-full-retry.py` invokes:
-`bash source/tools/windows/workspace-build.sh /workspace/WallSprint /tmp/ws-life-full-result-retry`
-with fresh uuid4.hex MSM2_WS_OPERATION_TOKEN, synthetic WSL_DISTRO_NAME=OwnedCloud
-and PATH=/workspace/toolchains/analysis-python/bin:$PATH. Source-only equivalent:
-
-```bash
-MSM2_WS_OPERATION_TOKEN="$(python3 -c 'import uuid; print(uuid.uuid4().hex)')" WSL_DISTRO_NAME=OwnedCloud PATH=/workspace/toolchains/analysis-python/bin:$PATH bash source/tools/windows/workspace-build.sh /workspace/WallSprint /tmp/fresh-private-WS-result
-```
-
-It runs Windows cross-build, portable, smoke, full hooks/native/counterexamples,
-package/release and disabled staging. Expected all required commands pass and
-completed0 stage_payload receipt bound to current token. Actual exit0,457.36s,
-943 PASS /32 SKIP /17 UNAVAILABLE; completed/exit0/stage_payload. No owner deployment.
-Initial full attempt (same controller, original /tmp/ws-life-full-result) exit1,
-283.98s,428 PASS/5 SKIP/17 UNAVAILABLE: new instrumentation tried missing helper
-before old-bootstrap archive refusal under inherited token. Receipt correctly
-retained hooks:line91/exit1. Moved original archive preflight before instrumentation;
-kept assertion/bytes, targeted inherited-env case passes, final full retry passes.
-This task-induced regression is NOT claimed to be the original owner cause.
-Earlier isolated liveness fixture ended at its old5s sleep during new5s wait; changed
-it to owned stdin-blocked child so it genuinely remains live until cleanup, no
-production gate weakened. New fake-shell fixture path corrected to its real source
-CWD. Final affected suites rerun. No native C++ assertion skipped/changed to pass.
-
-SKIP32 full pipeline:5 preexisting optional private captures/replays unavailable,
-27 optional historical maintainer logs absent in clean external staging. Required
-native fixtures execute. Focused SKIP1: host cannot inspect full protected /proc;
-actual query fails closed. Isolated owned PIDFD evidence is separate.
-UNAVAILABLE17 full: existing c40/c49/c50/c51 native VCH/bridge evidence absent;
-all certificates remain closed. Actual Windows/owner WSL transport/current roles/
-original exit/deployment additionally UNAVAILABLE (owner acceptance group), not PASS.
-No BLOCKED code subtask; original historical exit is unrecorded, not fabricated.
-
-Other checks, expected/actual PASS:
-`python3 -m py_compile environment/operation_lock.py environment/repair_tools.py source/tools/workspace.py source/tools/windows/build-status.py`
-`bash -n source/tools/windows/workspace-build.sh source/tools/test_hooks_windows.sh source/tools/test_production_witness_review.sh`
+Other checks expected/actual exit0:
 `git diff --check`
-`git diff --exit-code 242aa7f -- source/include source/src source/mod BUILD_MANIFEST.json 'MSM2-WS-v0.1c38r5*'`
-No committed r5 binaries/packages regenerated. Full validation output stays external,
-not manually copied/deployed or offered as a new release.
+`python3 -m py_compile source/tools/package.py source/tools/release.py source/tools/test_wall_motion_log.py`
+`bash -n source/tools/test_wall_motion_window.sh source/tools/test_native_source.sh source/tools/test.sh`
+`git diff --exit-code 66f2038 -- source/include/Math/reversal_heading.hpp source/include/Math/source_orientation.hpp source/src/GameInterop/stack_source.cpp source/mod/WallSprint.ini environment 'MSM2-WS-v0.1c38r5*'`
+Unchanged r5 math/adapter/INI/shared tools/old artifacts confirmed; no assertion/gate
+weakened or fixture skipped to pass. No test failure observed in this task.
 
-## ONE owner next action
+UNAVAILABLE additional real-owner groups: r6 Windows/game numbered comparison and
+exact current-build original continuation extraction (no authenticated game EXE).
+These are NOT PASS. More incoming/Actor-axis correlation is not native causality.
+BLOCKED code tasks0; no permission/safety bypass or unauthorized movement fix.
+Final hooks/release/artifact/publication results follow after completion.
 
-Fresh bootstrap's new DiagnoseWSL schema2 role/exit observation; no identical
-EACCES repair/rebuild. Common manual has exact block runnable before old checker.
-Return output. Historical primary exit remains not_recorded if old runner lacked
-receipt; current associated names/start/PPID/state are new evidence, not guesses.
-Fetch/staging does NOT update source worktree or installed KIT, and does NOT deploy.
-Later source/KIT update and normal rebuild require a separate confirmed next step;
-no cached/unverified artifact reuse or game test requested now. Publication SHA /
-independent readback recorded after push.
+## Final required regression result
 
-## Shared knowledge synchronization
+`PATH=/workspace/toolchains/analysis-python/bin:$PATH bash source/tools/test_hooks_windows.sh`
+expected unchanged complete required regressions plus r6 native/log checks;
+actual exit0 in394.98s: **906 PASS /5 SKIP /17 UNAVAILABLE**. Includes final
+`bash tools/test_native_source.sh` (production31s/late-window/final-Deinit checks
+and actual payload checker), existing c39/c40 counterexamples and c52 closure.
+No required executable test was skipped. Five SKIP are preexisting optional
+private captures/replays absent;17 UNAVAILABLE are existing native VCH/bridge
+capability/evidence boundaries. They remain closed, never counted PASS.
+`python3 /tmp/ws-r6-final-tests.py` serially invokes final smoke/hooks with above
+PATH and records exact exits/counts; it does not use a game or owner workspace.
 
-Wisdoms operational manual updated/pushed at
-`ce7d97db095fd6f5995339c1adafb61d687b9273`; remote main readback matches.
-Corrected prior pending owner root-repair acceptance, kept later update/deployment
-unknown, and recorded primary-exit/owned PIDFD/diagnostic authority distinctions.
+`PATH=/workspace/toolchains/analysis-python/bin:$PATH python3 source/tools/package.py`
+expected version/DLL/source/license/INI/CRC/manifest checks; actual exit0,1 PASS
+for final v0.1c38r6 disabled script. Final release and standalone audit follow.
+No runtime/source edits after final cross-build; only tests/docs/package records.
+Overall result: PARTIAL SUCCESS — scoped diagnostic implemented/validated, native
+downward-motion cause UNKNOWN and no movement fix/visual acceptance claimed.
 
-## Publication verified
+## Final release / audit
 
-Implementation commit `a194f0f5e0a4f902b8b7855cd717fca69635eb8a` pushed to
-`codex/v01c20-edi-value-provenance`. Independent checkout fetched GitHub HEAD;
-local HEAD, independent FETCH_HEAD and ls-remote agree. All21 changed file blobs
-match local bytes. Verified with `python3 /tmp/ws-lifecycle-publication.py`.
-This follow-up records publication only; executable/tested bytes unchanged, so the
-completed full pipeline is not repeated for this documentation-only record.
-Owner source worktree/KIT/r5 deployment are NOT updated by this publication.
-Five preexisting untracked files remain unstaged. No main merge/force/reset/cleanup.
+`PATH=/workspace/toolchains/analysis-python/bin:$PATH python3 source/tools/release.py`
+expected complete install/source ZIPs, versioned disabled script and manifest;
+actual exit0, package1 PASS, no SKIP/UNAVAILABLE. Both ZIP CRC checks pass.
+`python3 /tmp/ws-r6-audit.py` expected sole active virtual install script, no active
+script in source archive, archive code/header/test bytes equal final checkout,
+unchanged original r5 math/adapter/INI and r6 diagnostic-only manifest; actual1 PASS.
+Temporary audit additionally compares git-show66f2038 protected files and hashes
+all outputs; reusable checks are also enforced by package.py/release.py. Exact
+artifact names/byte sizes/SHA256 are in analysis/V01C38R6_RELEASE.json:
+MSM2-WS-v0.1c38r6.zip, MSM2-WS-v0.1c38r6-source.zip,
+MSM2-WS-v0.1c38r6.script.disabled and BUILD_MANIFEST.json.
+Final runtime/source ZIPs use final validated DLL/code; only subsequent root docs/
+validation/publication records differ from packaged pre-publication handoff docs.
+No owner deployment or runtime test performed. Installed updater remains the later
+update path; Chat supplies the numbered r6 comparison, no unchanged test requested.
+Implementation publication and independent readback recorded after push.

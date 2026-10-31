@@ -1,5 +1,23 @@
 # WallSprint project state
 
+## Current handoff — r6 downward-motion diagnostics, not a movement fix
+
+Owner r5 numbered run supersedes old tooling diagnostic/deployment-unknown next
+steps below. No pure-math defect established: session4 horizontal accepted deltas
+are substantial actual travel; some negative vertical travel also exists. Native
+steering/contact versus WS frame feedback remains UNKNOWN. See
+analysis/V01C38R6_DOWNWARD_INTERACTION.md. R6/package0.1.62 adds bounded value-only
+late motion/actor windows (16 samples/window,16 windows, explicit drop/suppression)
+and original B axes from existing captured copy; no heading math/constants/write
+permission change. Incoming A/B may contain prior WS output, not input intent.
+Native original consumer proof still lacks ONE128-byte continuation0x14248f9
+(same bounded offline action as FLAT_WALL_LATERAL_ROUTE_REVIEW). No broad scan.
+Chat supplies numbered comparison after implementation; do not repeat unchanged
+r5 test/old WSL diagnostic or claim descent fixed. Vertical entry/upper diagonal
+lateral response/RT-neutral stationary stance/earlier START remain backlog.
+Validation/publication in CODEX_RESULT. Actual r6 game acceptance pending.
+
+
 ## Active task — r5 numbered game result / downward motion interaction
 
 Owner supplied numbered video+log confirms r5 loaded, horizontal/upward facing works partially; down/lower diagonals retain horizontal flipping, upper diagonal lateral response weak, RT-held neutral returns cling. See analysis/R5_NUMBERED_OWNER_RUNTIME_20261031.md. Session4 accepted flips include actual horizontal deltas with zero vertical; some other sample has negative vertical, so neither global no-down-motion nor tiny-noise/low-speed-only cause proven. Next CODEX_NEXT isolates original steering versus orientation interaction; no arbitrary movement/input patch. Upper diagonal response/vertical entry/stationary WS/earlier input START remain backlog. Older tooling/deployment-unknown tasks superseded for this actual successful r5 run, not universal tooling acceptance.
@@ -446,3 +464,14 @@ This follow-up records publication only; executable/tested bytes unchanged, so t
 completed full pipeline is not repeated for this documentation-only record.
 Owner source worktree/KIT/r5 deployment are NOT updated by this publication.
 Five preexisting untracked files remain unstaged. No main merge/force/reset/cleanup.
+
+
+## r6 validation completed — 2026-10-31 JST
+
+Final cross-build, focused5 + existing heading17, portable35, smoke7 and canonical
+hooks906 PASS/5 SKIP/17 UNAVAILABLE complete; release/package/CRC/final source-byte
+audit pass. Five optional historical captures/replays absent; native VCH evidence
+unavailable remains closed. Actual r6 owner game and offline native continuation
+remain UNAVAILABLE, not native causal proof. Diagnostic-only partial success;
+Chat supplies numbered comparison. No old WSL diagnostic or unchanged r5 repeat.
+Exact commands/expectations/results and artifact hashes in CODEX_RESULT/analysis.

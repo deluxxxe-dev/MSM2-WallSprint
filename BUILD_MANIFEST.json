@@ -1,9 +1,9 @@
 {
-  "version": "v0.1c38r5",
-  "package_version": "0.1.61",
-  "artifact": "MSM2-WS-v0.1c38r5.script.disabled",
-  "sha256": "ceda055721caad9a4fe67dda72b7f6a03397e2cb34a5827b6eadef396c95c0e1",
-  "dll_sha256": "eb1e2efb5fec2a6dabe2f9ce2595a56a7e464c1284bd8a3d6577a4eddd885ecb",
+  "version": "v0.1c38r6",
+  "package_version": "0.1.62",
+  "artifact": "MSM2-WS-v0.1c38r6.script.disabled",
+  "sha256": "ed69303d8bf12c126b513824026e28fa10dbb1c31d52a57d7432fcc5ab207707",
+  "dll_sha256": "65db0919da146063853857985d174f89752002e3794300dd8bd9514698d434c5",
   "imports": [
     "bcrypt.dll",
     "KERNEL32.dll",
@@ -662,7 +662,7 @@
   },
   "isolated_logging": {
     "directory": "game-root/Mods Library/Mods-Developing/MSM2-WS/logs",
-    "filename": "MSM2-WS-v0.1c38r5-YYYYMMDD-HHMMSS.log",
+    "filename": "MSM2-WS-v0.1c38r6-YYYYMMDD-HHMMSS.log",
     "filename_clock": "host_local_GetLocalTime",
     "line_clock": "UTC_unchanged",
     "collision_creation": "CREATE_NEW_atomic",
@@ -738,8 +738,8 @@
     "source": "_source_independent_clone",
     "archive": "_archive_disabled_only",
     "runtime_logs": "logs",
-    "active_script": "MSM2-WS-v0.1c38r5.script",
-    "artifact": "MSM2-WS-v0.1c38r5.script.disabled",
+    "active_script": "MSM2-WS-v0.1c38r6.script",
+    "artifact": "MSM2-WS-v0.1c38r6.script.disabled",
     "update_helper": "Update-WS.cmd",
     "migration_helper": "Migrate-WS.cmd",
     "overstrike": "game-root/Overstrike/Overstrike.exe",
@@ -1727,6 +1727,17 @@
     "new_hooks": 0,
     "effect_certificate": false,
     "Position_source_input_movement_writes": 0
+  },
+  "wall_motion_diagnostic": {
+    "revision": "r6",
+    "ring_capacity": 16,
+    "max_windows": 16,
+    "sample_interval_ms": 100,
+    "window_ms": 2000,
+    "explicit_overwrite_throttle_suppression_counts": true,
+    "input_intent_observed": false,
+    "actor_phase": "worker_snapshot_not_post_writer",
+    "behavior_change": false
   },
   "wall_plane_heading": {
     "revision": "r5",

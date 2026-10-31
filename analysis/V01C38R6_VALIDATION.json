@@ -1,0 +1,55 @@
+{
+  "baseline": "66f203807fd2f9f5afb95bf603b5275b13433225",
+  "version": "v0.1c38r6",
+  "package_version": "0.1.62",
+  "environment": "owned Linux cross-build and Wine, not real Windows/game",
+  "focused_window": {
+    "command": "bash source/tools/test_wall_motion_window.sh",
+    "PASS": 5,
+    "SKIP": 0,
+    "UNAVAILABLE": 0
+  },
+  "heading": {
+    "command": "bash source/tools/test_reversal_heading.sh",
+    "PASS": 17
+  },
+  "portable": {
+    "command": "bash source/tools/test.sh",
+    "PASS": 35,
+    "SKIP": 0,
+    "UNAVAILABLE": 0
+  },
+  "build": {
+    "command": "bash source/tools/build_windows.sh",
+    "exit": 0
+  },
+  "final": [
+    {
+      "command": "bash source/tools/smoke_windows.sh",
+      "exit": 0,
+      "seconds": 12.27,
+      "counts": {
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0
+      }
+    },
+    {
+      "command": "bash source/tools/test_hooks_windows.sh",
+      "exit": 0,
+      "seconds": 394.98,
+      "counts": {
+        "PASS": 906,
+        "SKIP": 5,
+        "UNAVAILABLE": 17
+      }
+    }
+  ],
+  "owner_groups_unavailable": [
+    "r6 numbered real-game comparison",
+    "authenticated original native continuation (EXE absent)"
+  ],
+  "BLOCKED": 0,
+  "result": "PARTIAL_SUCCESS_DIAGNOSTIC_READY_NATIVE_CAUSE_UNKNOWN",
+  "production_movement_permission": false
+}
