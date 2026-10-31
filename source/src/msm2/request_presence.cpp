@@ -329,8 +329,10 @@ bool start(bool targetBuildConfirmed,Config config,std::uintptr_t moduleBase,std
     bool siteHash=std::strcmp(hash,kRequestSha256)==0;
     bool prefix=std::memcmp(runtime.native.data(),kRequestPrefix,sizeof(kRequestPrefix))==0;
     msm2::writeLog("REQUEST_PRESENCE_SITE_IDENTITY whole_sha256=%s expected=%s hash_ok=%u prefix_ok=%u prefix_bytes=7 site_bytes=%llu",hash,kRequestSha256,unsigned(siteHash),unsigned(prefix),static_cast<unsigned long long>(kRequestSize));
-    if(!siteHash || !prefix || !validateInstructionSpan(reinterpret_cast<const unsigned char*>(runtime.target)) || !exactRequestUnwind(target,moduleBase)){
-        msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=site_identity_or_span_or_pdata_mismatch");return false;
+    bool spanOk=validateInstructionSpan(reinterpret_cast<const unsigned char*>(runtime.target));
+    bool pdataOk=exactRequestUnwind(target,moduleBase);
+    if(!siteHash || !prefix || !spanOk || !pdataOk){
+        msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=site_identity_or_span_or_pdata_mismatch hash_ok=%u prefix_ok=%u span_ok=%u pdata_ok=%u",unsigned(siteHash),unsigned(prefix),unsigned(spanOk),unsigned(pdataOk));return false;
     }
     if(!pinObserverAndValidateUnwind()){
         msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=observer_unwind_metadata_rejected");return false;
