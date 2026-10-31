@@ -83,6 +83,7 @@ struct Runtime {
     std::uint64_t sessionContention{};
 };
 Runtime runtime;
+volatile LONG captureCloseRequested=0;
 
 LONG atomicRead(volatile LONG* value) {
     return InterlockedCompareExchange(value,0,0);
@@ -237,7 +238,7 @@ bool drainBatch(const char* reason,bool rearm) {
     InterlockedExchange(&ws_request_presence_enabled,0);
     if(!waitForCallbacks()){
         msm2::writeLog("REQUEST_PRESENCE_DRAIN deferred=1 reason=%s active_callbacks=%ld wait_cap_ms=%llu records_preserved=1",reason?reason:"unspecified",atomicRead(&ws_request_presence_active_callbacks),static_cast<unsigned long long>(kQuiesceWaitMs));
-        if(rearm && runtime.admitted && runtime.enabled) InterlockedExchange(&ws_request_presence_enabled,1);
+        if(rearm && runtime.admitted && runtime.enabled && atomicRead(&captureCloseRequested)==0) InterlockedExchange(&ws_request_presence_enabled,1);
         runtime.nextDrainTick=GetTickCount64()+kDrainIntervalMs;
         return false;
     }
@@ -269,7 +270,7 @@ bool drainBatch(const char* reason,bool rearm) {
         msm2::writeLog("REQUEST_PRESENCE_SESSION_CAP_REACHED retained=%llu cap=%llu capture_gate_closed=1 hook_forwarding_preserved=1",static_cast<unsigned long long>(runtime.sessionCaptured),static_cast<unsigned long long>(kSessionRecordCap));
         return true;
     }
-    if(rearm && runtime.admitted && runtime.enabled){
+    if(rearm && runtime.admitted && runtime.enabled && atomicRead(&captureCloseRequested)==0){
         runtime.batchStartTick=endTick;
         runtime.batchStartTsc=endTsc;
         runtime.nextDrainTick=endTick+kDrainIntervalMs;
@@ -288,6 +289,7 @@ void logSession(const char* reason) {
 
 void startCapture() {
     resetBatch();
+    InterlockedExchange(&captureCloseRequested,0);
     runtime.sessionStartTick=GetTickCount64();
     runtime.sessionStartTsc=ws_request_presence_read_tsc();
     runtime.batchStartTick=runtime.sessionStartTick;
@@ -313,6 +315,7 @@ bool start(bool targetBuildConfirmed,Config config,std::uintptr_t moduleBase,std
     runtime.requested=config.enabled;
     InterlockedExchange(&ws_request_presence_enabled,0);
     InterlockedExchange(&ws_request_presence_active_callbacks,0);
+    InterlockedExchange(&captureCloseRequested,0);
     resetBatch();
     ws_request_presence_original=0;
     if(!config.enabled){
@@ -379,7 +382,7 @@ bool start(bool targetBuildConfirmed,Config config,std::uintptr_t moduleBase,std
 }
 
 void tick() {
-    if(runtime.phase==PhaseState::Capturing && GetTickCount64()>=runtime.nextDrainTick) drainBatch("periodic_worker",true);
+    if(runtime.phase==PhaseState::Capturing && atomicRead(&captureCloseRequested)==0 && GetTickCount64()>=runtime.nextDrainTick) drainBatch("periodic_worker",true);
 }
 
 void armNextGround() {
@@ -391,12 +394,14 @@ void armNextWallRun() {
 }
 
 void closeCapture(const char* reason) {
+    InterlockedExchange(&captureCloseRequested,1);
     InterlockedExchange(&ws_request_presence_enabled,0);
     msm2::writeLog("REQUEST_PRESENCE_CAPTURE_GATE closed=1 reason=%s prior_periodic_batches_already_persisted=1",reason?reason:"unspecified");
 }
 
 void stop(const char* reason) {
     if(runtime.phase==PhaseState::Stopped){logSession(reason);return;}
+    InterlockedExchange(&captureCloseRequested,1);
     InterlockedExchange(&ws_request_presence_enabled,0);
     if(runtime.phase==PhaseState::Capturing) drainBatch(reason?reason:"stop",false);
     LONG active=atomicRead(&ws_request_presence_active_callbacks);
