@@ -1,8 +1,8 @@
-"""Package WallSprint with the preserved historical packager plus c46 active-state normalization.
+"""Package WallSprint with the preserved historical packager plus c47 active-state normalization.
 
 package_base.py is retained as the historical monolithic implementation. This wrapper
 changes only the stale active-package policy and then rewrites current-package metadata
-so v0.1c46 cannot be published as if historical native-source/orientation writes or the
+so v0.1c47 cannot be published as if historical native-source/orientation writes or the
 retired c45 Gravity presence observer were ON.
 """
 from pathlib import Path
@@ -66,6 +66,7 @@ manifest.update({
         "offsets_hex": ["0x208", "0x220", "0x238", "0x250", "0x40C"],
         "width_bytes": 4,
         "worker_sample_interval_ms": 100,
+        "independent_of_legacy_surface_telemetry": True,
         "captured_pointer_dereference": False,
         "semantic_mapping_authenticated": False,
         "known_schema_numeric_comparison_only": [0.4, 12.0, 75.0, 100.0, 50.0],
@@ -76,10 +77,10 @@ manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
 (root / "logs/package_check.log").write_text(
     "PASS: "
     + f"{label}/{version} read-only verified-WallRun Update scalar package; "
-    + "five exact direct-this 4-byte candidates observed at worker cadence; no extra native hook; "
+    + "five exact direct-this 4-byte candidates observed at worker cadence independent of legacy surface telemetry; no extra native hook; "
     + "c45 Gravity presence hook disabled; WALLSPRINT_ENABLE=0; NATIVE_SOURCE_OVERRIDE=0; "
     + "orientation/adhesion/movement/gravity/native-source writes OFF; "
     + "REQUEST_PRESENCE_DIAGNOSTIC=0; WALLRUN_HOOK_DIAGNOSTIC=1; WALLRUN_OBJECT_DIAGNOSTIC=1\n",
     encoding="utf-8",
 )
-print("PASS: c46 read-only WallRun Update scalar package manifest normalized")
+print("PASS: c47 read-only WallRun Update scalar package manifest normalized")
