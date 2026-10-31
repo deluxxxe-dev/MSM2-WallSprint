@@ -1,5 +1,10 @@
 # WallSprint project state
 
+## Active task — r5 numbered game result / downward motion interaction
+
+Owner supplied numbered video+log confirms r5 loaded, horizontal/upward facing works partially; down/lower diagonals retain horizontal flipping, upper diagonal lateral response weak, RT-held neutral returns cling. See analysis/R5_NUMBERED_OWNER_RUNTIME_20261031.md. Session4 accepted flips include actual horizontal deltas with zero vertical; some other sample has negative vertical, so neither global no-down-motion nor tiny-noise/low-speed-only cause proven. Next CODEX_NEXT isolates original steering versus orientation interaction; no arbitrary movement/input patch. Upper diagonal response/vertical entry/stationary WS/earlier input START remain backlog. Older tooling/deployment-unknown tasks superseded for this actual successful r5 run, not universal tooling acceptance.
+
+
 ## Current handoff — preserve primary exit / scoped child drain / role observation
 
 New transport/Linux exit and bound stage receipt precede completion checking;
