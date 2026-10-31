@@ -19,9 +19,9 @@ required_cpp=[
     'kRequestRva = 0x11A1BD0',
     'kRequestEndRva = 0x11A1CA2',
     'kRequestUnwindRva = 0x1154EDC',
-    'kPhaseRecordCap = 16384',
+    'kPhaseRecordCap = 131072',
     'kPhaseLimit = 1',
-    'kPhaseDurationMs = 45000',
+    'kPhaseDurationMs = 300000',
     '2d8792492c8b89d4e9885d55fa45fb2c6b4126b4ae992f854f6d687522163d0c',
     'bool spanOk=validateInstructionSpan',
     'bool pdataOk=exactRequestUnwind',
@@ -33,8 +33,11 @@ required_cpp=[
     'request_suppression=0',
     'label_auth=video_posthoc_not_native_authenticated',
     'correlation=non_atomic',
-    'capture_control=F11_once',
-    'legacy_F12=disabled',
+    'capture_control=automatic_on_admission',
+    'legacy_manual_controls=disabled',
+    'arm("automatic","auto_admission")',
+    'F11_disabled_capture_auto_arms_on_admission',
+    'F12_disabled_capture_auto_arms_on_admission',
     'offset_ms_est=',
     'offset_clock=tsc_linearized_to_GetTickCount64',
     'trampoline_retained=1',
@@ -60,7 +63,7 @@ lower_asm=asm.lower()
 assert '\n    call ' not in lower_asm
 for reg in ('xmm','ymm','zmm'):
     assert reg not in lower_asm
-assert 'cmp eax, 16384' in asm
+assert 'cmp eax, 131072' in asm
 assert 'ws_request_presence_read_tsc:' in asm
 assert 'lock cmpxchg DWORD PTR ws_request_presence_count[rip], ecx' in asm
 assert 'lock inc DWORD PTR ws_request_presence_overflow[rip]' in asm
@@ -73,7 +76,7 @@ for reg in ('rax','rcx','rdx','r8','r9','r10','r11'):
     assert f'pop {reg}' in asm
 assert 'pushfq' in asm and 'popfq' in asm
 
-for needle in ('request_presence::start','request_presence::tick','VK_F11','VK_F12','F8_kill_switch','script_disable'):
+for needle in ('request_presence::start','request_presence::tick','F8_kill_switch','script_disable'):
     assert needle in telemetry, needle
 for needle in ('request_presence.S','request_presence.cpp','request_presence_asm.o','request_presence.o'):
     assert needle in build, needle
@@ -81,16 +84,18 @@ for ini in (default_ini,preset):
     assert 'REQUEST_PRESENCE_DIAGNOSTIC=1' in ini
     for needle in ('WALLSPRINT_ENABLE=0','WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0','WALLSPRINT_ORIENTATION_WRITE=0','WALLSPRINT_ADHESION_WRITE=0','WALLSPRINT_MOVEMENT_WRITE=0'):
         assert needle in ini, needle
+    assert 'No F11/F12 input is required' in ini or 'no F11/F12 input is required' in ini
+    assert '131072' in ini
 
-assert 'versionLabel[]="v0.1c41"' in version
-assert 'packageVersion[]="0.1.66"' in version
+assert 'versionLabel[]="v0.1c42"' in version
+assert 'packageVersion[]="0.1.67"' in version
 
 for readme in (source_readme, project_readme):
-    assert 'v0.1c41' in readme
-    assert '0.1.66' in readme
-    assert 'F11 once' in readme
-    assert '16384' in readme
-    assert '45-second' in readme or '45 seconds' in readme
+    assert 'v0.1c42' in readme
+    assert '0.1.67' in readme
+    assert 'No F11/F12 input is required' in readme
+    assert '131072' in readme
+    assert '5 minutes' in readme
 
 for needle in (
     'package_mode": "request_presence_read_only"',
@@ -98,8 +103,10 @@ for needle in (
     '"path_b_override": False',
     '"request_presence_diagnostic": True',
     '"native_source": False',
-    '"capture_duration_ms": 45000',
-    '"record_cap": 16384',
+    '"capture_control": "automatic_on_admission"',
+    '"capture_duration_ms": 300000',
+    '"record_cap": 131072',
+    '"manual_F11_F12_required": False',
 ):
     assert needle in package_wrapper, needle
 
