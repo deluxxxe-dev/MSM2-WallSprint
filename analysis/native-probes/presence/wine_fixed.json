@@ -1,0 +1,815 @@
+{
+  "schema": "WS-owned-presence-fixture-v1",
+  "environment": "Wine",
+  "production_admitted": false,
+  "pass": 201,
+  "fail": 0,
+  "native_windows_unavailable": 1,
+  "assertions": [
+    {
+      "name": "DbgHelp initialize",
+      "pass": true
+    },
+    {
+      "name": "real MinHook initialize",
+      "pass": true
+    },
+    {
+      "name": "real MinHook create 0",
+      "pass": true
+    },
+    {
+      "name": "whole actual stolen span 0",
+      "pass": true
+    },
+    {
+      "name": "real MinHook enable 0",
+      "pass": true
+    },
+    {
+      "name": "request entry normal rel32 patch",
+      "pass": true
+    },
+    {
+      "name": "request real relay absolute destination",
+      "pass": true
+    },
+    {
+      "name": "request relay zero indirect displacement",
+      "pass": true
+    },
+    {
+      "name": "request real trampoline continuation destination",
+      "pass": true
+    },
+    {
+      "name": "request continuation zero indirect displacement",
+      "pass": true
+    },
+    {
+      "name": "request actual HDE whole-instruction span",
+      "pass": true
+    },
+    {
+      "name": "request observer tail forwards actual trampoline",
+      "pass": true
+    },
+    {
+      "name": "real MinHook create 1",
+      "pass": true
+    },
+    {
+      "name": "whole actual stolen span 1",
+      "pass": true
+    },
+    {
+      "name": "real MinHook enable 1",
+      "pass": true
+    },
+    {
+      "name": "gravity entry normal rel32 patch",
+      "pass": true
+    },
+    {
+      "name": "gravity real relay absolute destination",
+      "pass": true
+    },
+    {
+      "name": "gravity relay zero indirect displacement",
+      "pass": true
+    },
+    {
+      "name": "gravity real trampoline continuation destination",
+      "pass": true
+    },
+    {
+      "name": "gravity continuation zero indirect displacement",
+      "pass": true
+    },
+    {
+      "name": "gravity actual HDE whole-instruction span",
+      "pass": true
+    },
+    {
+      "name": "gravity observer tail forwards actual trampoline",
+      "pass": true
+    },
+    {
+      "name": "equivalent original unwind version/prologue/code slots/frame 0",
+      "pass": true
+    },
+    {
+      "name": "equivalent original unwind version/prologue/code slots/frame 1",
+      "pass": true
+    },
+    {
+      "name": "original vs hooked GPR/flags/YMM0-15/return/stack/nonvolatile 0",
+      "pass": true
+    },
+    {
+      "name": "original vs hooked GPR/flags/YMM0-15/return/stack/nonvolatile 1",
+      "pass": true
+    },
+    {
+      "name": "opaque records reserved for both sites",
+      "pass": true
+    },
+    {
+      "name": "opaque RCX RDX and thread identity, no dereference",
+      "pass": true
+    },
+    {
+      "name": "bounded16 records and explicit suppressed count",
+      "pass": true
+    },
+    {
+      "name": "disabled observer forwards without reservation",
+      "pass": true
+    },
+    {
+      "name": "disable owned hook 0",
+      "pass": true
+    },
+    {
+      "name": "disable owned hook 1",
+      "pass": true
+    },
+    {
+      "name": "request original+0 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "request original+0 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "request original+0 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "request original+3 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "request original+3 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "request original+3 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "request original+7 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "request original+7 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "request original+7 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "request original+11 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "request original+11 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "request original+11 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "request original+15 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "request original+15 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "request original+15 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "request original+16 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "request original+16 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "request original+16 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "request original+23 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "request original+23 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "request original+23 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "gravity original+0 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "gravity original+0 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "gravity original+0 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "gravity original+5 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "gravity original+5 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "gravity original+5 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "gravity original+10 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "gravity original+10 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "gravity original+10 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "gravity original+11 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "gravity original+11 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "gravity original+11 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "gravity original+15 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "gravity original+15 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "gravity original+15 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "actual relay 0 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "actual relay 0 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "request trampoline after R11 assignment StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "request trampoline after R11 assignment actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "trampoline start 0 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "trampoline start 0 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "trampoline absolute continuation 0 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "trampoline absolute continuation 0 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 0+0 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 0+0 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 0+0 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer 0+1 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 0+1 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 0+1 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer 0+2 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 0+2 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 0+2 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer 0+3 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 0+3 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 0+3 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer 0+4 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 0+4 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 0+4 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer 0+6 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 0+6 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 0+6 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer 0+8 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 0+8 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 0+8 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer 0+10 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 0+10 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 0+10 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer 0+12 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 0+12 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 0+12 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "actual relay 1 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "actual relay 1 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "trampoline start 1 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "trampoline start 1 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "trampoline absolute continuation 1 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "trampoline absolute continuation 1 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 1+0 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 1+0 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 1+0 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer 1+1 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 1+1 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 1+1 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer 1+2 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 1+2 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 1+2 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer 1+3 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 1+3 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 1+3 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer 1+4 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 1+4 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 1+4 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer 1+6 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 1+6 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 1+6 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer 1+8 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 1+8 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 1+8 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer 1+10 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 1+10 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 1+10 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer 1+12 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer 1+12 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer 1+12 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step0 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step0 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step0 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step1 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step1 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step1 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step2 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step2 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step2 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step3 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step3 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step3 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step4 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step4 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step4 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step5 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step5 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step5 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step6 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step6 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step6 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step7 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step7 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step7 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step8 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step8 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 0 step8 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step0 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step0 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step0 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step1 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step1 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step1 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step2 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step2 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step2 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step3 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step3 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step3 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step4 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step4 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step4 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step5 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step5 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step5 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step6 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step6 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step6 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step7 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step7 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step7 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step8 StackWalk64 caller",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step8 actual function-table presence",
+      "pass": true
+    },
+    {
+      "name": "observer restore 1 step8 VirtualUnwind stack/nonvolatiles",
+      "pass": true
+    },
+    {
+      "name": "post-disable exact forwarding 0",
+      "pass": true
+    },
+    {
+      "name": "post-disable exact forwarding 1",
+      "pass": true
+    },
+    {
+      "name": "leaf ABI oracle create actual hook",
+      "pass": true
+    },
+    {
+      "name": "leaf ABI oracle enable",
+      "pass": true
+    },
+    {
+      "name": "leaf entry flags R11 and full ABI transparency",
+      "pass": true
+    },
+    {
+      "name": "leaf oracle disable; retain mapping",
+      "pass": true
+    },
+    {
+      "name": "armed independent zero-hit fixture starts empty, no WR lease",
+      "pass": true
+    },
+    {
+      "name": "8-thread bounded reservations plus losses account for all800 calls",
+      "pass": true
+    },
+    {
+      "name": "all race calls forward exactly once",
+      "pass": true
+    },
+    {
+      "name": "joined writers published all reserved records with thread/time",
+      "pass": true
+    },
+    {
+      "name": "concurrent close: all8000 forwarded, bounded reservations, mappings retained",
+      "pass": true
+    }
+  ],
+  "evidence_scope": "OWNED code; actual MinHook; fabricated owned stack contexts through Wine Windows APIs. Not native Windows, game exception dispatch, or production admission."
+}

@@ -1,3 +1,7 @@
+> Superseded current blocker: owner audit161445 supplied original unwind/prefix input.
+> Actual MinHook/observer OWNED execution now exists; see PRESENCE_OWNED_NATIVE_FIXTURE.md.
+> Native Windows is pending, not missing original metadata. Earlier audit below is historical.
+
 # Presence diagnostic entry-hook admission audit — BLOCKED / not implemented
 
 2026-10-31 JST; baseline `fc55924f01d730bddf0efb3346166befc6cda895`;

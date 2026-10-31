@@ -1,0 +1,58 @@
+{
+  "schema": "WS-owned-presence-validation-v1",
+  "environment": "Linux cross-build / Wine (not native Windows)",
+  "main_commands_pass": 7,
+  "fixed_owned_assertions": {
+    "pass": 201,
+    "fail": 0
+  },
+  "legacy_regression": {
+    "pass": 1,
+    "expected_failing_assertions": 32,
+    "other_assertions_pass": 169
+  },
+  "runner_unittest": {
+    "pass": 5,
+    "fail": 0
+  },
+  "current_unavailable_groups": [
+    "native Windows owned fixture/API execution",
+    "Windows PowerShell5.1 runner execution"
+  ],
+  "current_skipped_commands": {
+    "python3 source/tools/package.py": "No admitted runtime diff or release/version change; standalone EXE has separate manifest"
+  },
+  "blocked_groups": [
+    "Production observer phases/drain/F8/integration/cleanup acceptance pending native fixture review and implementation"
+  ],
+  "existing_hook_suite": {
+    "exit": 0,
+    "skip_status_messages": [
+      "SKIP: private original-byte positive replay unavailable; independent wrong-hash rejection executed; later bounded-reader admission is TEST-ONLY",
+      "SKIP: private native replay files not distributed; synthetic AVX/CFG tests above executed",
+      "SKIP: optional private game-body installer replay not redistributed; independent native tests continue",
+      "SKIP: optional private584byte game-writer normalization replay; independent synthetic decoder/source tests ran",
+      "SKIP: private accepted-build capture replay; set WALLSPRINT_PATH_B_CAPTURE to its PATH_B_FUNCTION/PATH_B_CODE log (never redistribute). Independent proof tests execute in test_dual_source.sh."
+    ],
+    "unavailable_status_messages": [
+      "UNAVAILABLE: reset registered VCH was not invoked for the actual VEH-handled hardware event before owned writer acknowledgment; no VCH retirement test or certificate claimed",
+      "UNAVAILABLE: Position registered VCH was not invoked for the actual VEH-handled hardware event before owned writer acknowledgment; no VCH retirement test or certificate claimed",
+      "UNAVAILABLE: c49 no native post-return bridge certificate; immutable reserved debt retained until owned worker exit",
+      "UNAVAILABLE: c49 no native post-return bridge certificate; immutable reserved debt retained until owned worker exit",
+      "UNAVAILABLE: c49 no native post-return bridge certificate; immutable reserved debt retained until owned worker exit",
+      "UNAVAILABLE: c49 no native post-return bridge certificate; immutable reserved debt retained until owned worker exit",
+      "UNAVAILABLE: c49 no native post-return bridge certificate; immutable reserved debt retained until owned worker exit",
+      "UNAVAILABLE: c49 no native post-return bridge certificate; immutable reserved debt retained until owned worker exit",
+      "UNAVAILABLE: c50 native exact old failing conjunct not established; no native/model evidence substituted",
+      "UNAVAILABLE: c50 native exact old failing conjunct not established; no native/model evidence substituted",
+      "UNAVAILABLE: c50 native exact old failing conjunct not established; no native/model evidence substituted",
+      "UNAVAILABLE: c50 native exact old failing conjunct not established; no native/model evidence substituted",
+      "UNAVAILABLE: c50 native exact old failing conjunct not established; no native/model evidence substituted",
+      "UNAVAILABLE: c50 native exact old failing conjunct not established; no native/model evidence substituted",
+      "UNAVAILABLE: c50 native exact old failing conjunct not established; no native/model evidence substituted",
+      "UNAVAILABLE: c51 VCH_callback_not_dispatched_no_bridge_or_cleanup_certificate; test-only; no production integration",
+      "UNAVAILABLE: c51 VCH_callback_not_dispatched_no_bridge_or_cleanup_certificate; test-only; no production integration"
+    ]
+  },
+  "production_admitted": false
+}

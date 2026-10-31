@@ -1,3 +1,21 @@
+# Current presence fixture handoff — 2026-10-31 — partial, native Windows pending
+
+Owner audit161445 resolves original prefix/unwind inputs; older missing-metadata
+notes below are superseded. Actual OWNED MinHook trampolines and a proposed
+preserving observer now execute in a standalone EXE:201 Wine assertions PASS.
+Original prologue/home-slot/delayed saves, generated transfers, GPR/flags/YMM,
+return/stack, observer unwind at every push/restore boundary and bounded/racing
+forwarding tested. Legacy single-range restore unwind fails32 assertions; retained
+counterexample and materially safer split residual-stack unwind fixture added.
+Native Windows APIs against the same owned contexts remain UNAVAILABLE in cloud;
+not a game/production certificate. ONE standalone owner operation in CODEX_RESULT,
+using fetched EXE with verified hash, no game/Update-WS/build/config change.
+Runtime observer still NOT IMPLEMENTED/admitted; v0.1c38r7/package0.1.63 unchanged.
+Next: review owned Windows JSON, then Request-only runtime integration if admitted;
+optional Gravity must not block Request. No C52/restore/ownership/slot/gameplay
+change. See analysis/PRESENCE_OWNED_NATIVE_FIXTURE.md and native-probes/presence/.
+Historical entries below describe earlier states, not current missing inputs.
+
 # Current presence-hook audit — 2026-10-31 JST — BLOCKED
 
 Owner155119 native contract accepted; no more generic MAY/identity acquisition.
