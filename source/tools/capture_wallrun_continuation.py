@@ -9,10 +9,14 @@ import slot_publication as pe
 EXPECTED_SHA=pe.EXPECTED_SHA
 TARGET=0x14248F9
 CAP=128
+FRAGMENT_END=0x1424946
+FIRST_END=0x1424922
+FIRST_SHA="c5f5f80a08fe76ed7251ec5abc4be1ed6d3ce1479eafc2b5e32038437caed0b3"
+CHAIN=(0x1424530,0x14246d6,0x94bdc14)
 class Refusal(ValueError):
     pass
 
-def extract(data,start=TARGET,limit=CAP):
+def extract(data,start=TARGET,limit=CAP,complete=False):
     if start!=TARGET:raise Refusal('invalid_rva_only_0x14248f9_allowed')
     if limit!=CAP:raise Refusal('invalid_cap_only_128_allowed')
     digest=hashlib.sha256(data).hexdigest()
@@ -55,28 +59,45 @@ def extract(data,start=TARGET,limit=CAP):
         except (ValueError,struct.error) as ex:
             if isinstance(ex,Refusal):raise
             raise Refusal('unwind_metadata_not_file_backed_or_truncated') from ex
+    if complete:
+        if not runtime or (runtime['begin_rva'],runtime['end_rva'])!=(TARGET,FRAGMENT_END) or runtime['flags']!=4:raise Refusal('fixed_fragment_runtime_identity_mismatch')
+        chain=runtime.get('chained_entry',{})
+        if tuple(chain.get(k) for k in ['begin_rva','end_rva','unwind_rva'])!=CHAIN:raise Refusal('fixed_fragment_chain_identity_mismatch')
+        if bound<FRAGMENT_END:raise Refusal('fixed_fragment_section_or_metadata_truncated')
+        bound=FRAGMENT_END
     try:window=read(start,bound-start)
     except ValueError as ex:raise Refusal('target_range_not_file_backed_or_truncated') from ex
-    md=pe.decoder();decoded=[];used=0;stop='bounded_range_end'
+    if complete and hashlib.sha256(window[:FIRST_END-TARGET]).hexdigest()!=FIRST_SHA:raise Refusal('previous_41byte_capture_identity_mismatch')
+    md=pe.decoder();decoded=[];edges=[];used=0;stop='bounded_range_end'
     while used<len(window):
         ins=next(md.disasm(window[used:],start+used,count=1),None)
         if ins is None:raise Refusal('decode_gap_before_control_boundary')
         decoded.append(dict(rva=ins.address,size=ins.size,mnemonic=ins.mnemonic,operands=ins.op_str))
         used+=ins.size
-        if pe.is_boundary(ins) or ins.mnemonic in {'hlt','int1','int3','xabort','xbegin'}:stop='first_control_boundary';break
+        boundary=pe.is_boundary(ins) or ins.mnemonic in {'hlt','int1','int3','xabort','xbegin'}
+        if complete and boundary:
+            is_ret=ins.group(pe.cs.CS_GRP_RET)
+            is_jump=ins.group(pe.cs.CS_GRP_JUMP);is_call=ins.group(pe.cs.CS_GRP_CALL)
+            if is_ret:raise Refusal('RET_in_fixed_fragment_requires_review')
+            if not (is_ret or is_jump or is_call):raise Refusal('unsupported_control_in_fixed_fragment')
+            direct=bool(ins.operands and ins.operands[0].type==pe.x.X86_OP_IMM)
+            edges.append(dict(site_rva=ins.address,kind='ret' if is_ret else 'call' if is_call else 'jump',target_rva=int(ins.operands[0].imm) if direct else None,fallthrough_rva=ins.address+ins.size if is_call or (is_jump and ins.mnemonic!='jmp') else None,followed=False))
+        elif boundary:stop='first_control_boundary';break
     if not used:raise Refusal('empty_bounded_window')
+    if complete and used!=FRAGMENT_END-TARGET:raise Refusal('incomplete_fixed_fragment_decode')
+    if complete:stop='fixed77_metadata_end_not_full_logical_function'
     code=window[:used]
-    return dict(schema=1,result='CAPTURED_ORIGINAL_OFFLINE_WINDOW',exe_sha256=digest,build='2.810.0.0_SHA_pinned',target_rva=start,cap=CAP,range_end_rva=start+used,bytes=len(code),byte_evidence_hex=code.hex(),block_sha256=hashlib.sha256(code).hexdigest(),stop=stop,section=dict(begin_rva=begin,end_rva=end,raw_offset=raw,raw_size=raw_size,flags=flags,executable=True,file_backed=True,target_file_offset=raw+start-begin),runtime_coverage='covering_entry' if runtime else 'no_covering_entry',runtime=runtime,metadata_bound_rva=bound,instructions=decoded,decoder='Capstone5.0.6',original_file_only=True,live_reads=0,recursive_follow=False,movement_API_identified=False,write_certificate=False)
+    return dict(schema=1,result='CAPTURED_ORIGINAL_OFFLINE_WINDOW',exe_sha256=digest,build='2.810.0.0_SHA_pinned',target_rva=start,cap=FRAGMENT_END-TARGET if complete else CAP,mode='complete_fixed77' if complete else 'first_control',edges=edges,previous_window_sha_verified=complete,range_end_rva=start+used,bytes=len(code),byte_evidence_hex=code.hex(),block_sha256=hashlib.sha256(code).hexdigest(),stop=stop,section=dict(begin_rva=begin,end_rva=end,raw_offset=raw,raw_size=raw_size,flags=flags,executable=True,file_backed=True,target_file_offset=raw+start-begin),runtime_coverage='covering_entry' if runtime else 'no_covering_entry',runtime=runtime,metadata_bound_rva=bound,instructions=decoded,decoder='Capstone5.0.6',original_file_only=True,live_reads=0,recursive_follow=False,movement_API_identified=False,write_certificate=False)
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('exe',type=Path);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('exe',type=Path);p.add_argument('--output',type=Path,required=True);p.add_argument('--complete-fragment',action='store_true',help='only authenticated fixed77-byte chained fragment');a=p.parse_args()
     try:
         if not a.exe.is_file() or not 0<a.exe.stat().st_size<=pe.MAX_FILE:raise Refusal('EXE_missing_or_size_capped')
         with a.exe.open('rb') as source:data=source.read(pe.MAX_FILE+1)
         if len(data)>pe.MAX_FILE:raise Refusal('EXE_size_capped')
-        report=extract(data);status=0
+        report=extract(data,complete=a.complete_fragment);status=0
     except (OSError,ValueError,struct.error) as ex:
-        report=dict(schema=1,result='REFUSED',reason=str(ex),target_rva=TARGET,cap=CAP,write_certificate=False);status=2
+        report=dict(schema=1,result='REFUSED',reason=str(ex),target_rva=TARGET,cap=FRAGMENT_END-TARGET if a.complete_fragment else CAP,mode='complete_fixed77' if a.complete_fragment else 'first_control',write_certificate=False);status=2
     # Never replace another run, the EXE, or any existing user file.
     try:
         with a.output.open('x',encoding='utf-8') as f:json.dump(report,f,indent=2);f.write('\n')

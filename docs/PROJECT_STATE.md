@@ -1,5 +1,18 @@
 # WallSprint project state
 
+## Current handoff — fixed77 completion ready, gate interpretation only
+
+See analysis/WALLRUN_FIXED_FRAGMENT_REVIEW.md. Rechecked authentic old prefix;
+CL flag bit/RSI owner/AL predicate/EDX byte and branch-to-XOR relation established
+only on known static routes, no input/movement semantics or down fix.41-byte owner
+capture accepted; CHAININFO now proves split metadata association. Missing36 bytes
+still necessary for local predicate/control continuation. Existing helper's fixed77
+mode verifies exact runtime+parent chain+accepted first41 SHA and never follows
+edges; new fragment77 JSON preserves old output. Focused12 + PS mock2 pass; actual
+owner complete fragment UNAVAILABLE. ONE exact fresh-bootstrap action in result,
+no old41 repeat/unchanged game test/runtime rebuild. R6 bytes/gates unchanged.
+
+
 ## Latest owner offline result —41byte continuation captured
 
 Pinned original0x14248f9..0x1424922 captured/hash verified. Covering77byte fragment ends0x1424946 and CHAININFO links prior Update prefix0x1424530..0x14246d6. Seven operations end JE0x14246d4; no motion/input semantics or down fix proven. See analysis/WALLRUN_CONTINUATION_OWNER_RESULT_20261031.md. Current CODEX_NEXT reviews this with prefix and, only if necessary, completes fixed36byte remainder in one offline acquisition; no unchanged game test/rebuild.

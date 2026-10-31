@@ -1,60 +1,62 @@
-# Codex result — one bounded offline WallRun continuation acquisition
+# Codex result — interpret gate / complete fixed77-byte fragment
 
-2026-10-31 JST. Branch codex/v01c20-edi-value-provenance; baseline e0b626b.
-STATUS: helper/wrapper prepared and focused checks pass; actual owner acquisition
-UNAVAILABLE (no authenticated original EXE/capture in this environment).
-No runtime version/build/gameplay change; v0.1c38r6/package0.1.62 bytes unchanged.
+2026-10-31 JST. Branch codex/v01c20-edi-value-provenance; baseline c224f17.
+STATUS: static interpretation and minimal offline completion mode ready; actual
+remaining36-byte acquisition unavailable here. No descending fix claimed.
 
-## CHANGED / result boundary
+## CHANGED / findings
 
-New source/tools/capture_wallrun_continuation.py and Windows entrypoint
-source/tools/windows/Capture-WallRun-Continuation.ps1; matching Python/PowerShell
-focused tests; analysis/WALLRUN_CONTINUATION_OFFLINE_ACQUISITION.md and PROJECT_STATE.
-Reuse existing exact-build SHA + PE/range/pinned decoder primitives. ONLY original
-file RVA0x14248f9,max128 bytes, section/runtime/file-backed bounds and first control
-boundary. Metadata/unwind conflicts refuse; no entry is a fact, not invented span.
-No scan/follow/live read, guessed API/ABI or write certificate. JSON contains only
-this bounded code window/provenance and bounded covering unwind metadata.
+See analysis/WALLRUN_FIXED_FRAGMENT_REVIEW.md. Rechecked prior private422-byte
+prefix SHA/size with pinned Capstone. RSI=original RCX owner on known routes;
+CL=one masked bit of a pointer-derived dword; fragment EDX=zero-extended byte,
+AL=comparison predicate. Frame-relative byte maps to entryRSP+0x10. JE branches
+back to XOR AL,1 at0x14246d4, NOT a verified RET. These are scalar/state decision
+gates in this41-byte span, not evidence of a motion/input API. Unknown field names,
+untyped calls and eventual AL/EDX use remain unknown. Supplied explicit unwind
+chain establishes split relation, superseding earlier plausibility-only status.
 
-Wrapper fetches/stages fresh pinned helpers before old updater checks, without
-changing source worktree/local changes/runtime/KIT. No full WS build/tests/package,
-new diagnostics/game test, token recovery, root build, source reset, dependencies
-installation or SF/profile/loader mutation. Existing output and EXE preserved.
-Output collision suffix + exclusive create; only owned TEMP staging removed.
-No owner data/raw EXE/function/log added to Git or distribution.
+Existing helper gets --complete-fragment; existing Windows wrapper selects it.
+Exactly77 bytes0x14248f9..0x1424946 in one output, first41 SHA+runtime+chain identity
+mandatory. Decode records but never follows branches, no arbitrary range or image
+scan. RET/unsupported control/decode/raw/metadata mismatch refuses. Legacy
+first-control behavior retained. New fragment77 filenames preserve old41 output.
+Files: existing Python helper/test and PowerShell entrypoint/mock test;
+new analysis, PROJECT_STATE and this result. Runtime r6 and packaged bytes unchanged.
 
-## Exact validation / expected / actual
+## Exact tests / expected / actual
 
-| Command | Expected | Actual |
-|---|---|---|
-| `/workspace/toolchains/analysis-python/bin/python3 source/tools/test_wallrun_continuation.py` | wrong SHA/build; invalid RVA/cap; executable/section edge/raw/truncated PE; covering/absent/future runtime bounds; invalid/chained unwind; bounded first-call/RET/128-byte output; decode gap; CLI refusal/EXE/output preservation | 8 PASS /0 SKIP /0 UNAVAILABLE |
-| PowerShell command below | space/Unicode layout derivation, Git-only fresh helper staging, output collision and local source/EXE preservation; unavailable WSL refusal | 2 PASS groups /0 SKIP /0 UNAVAILABLE, MOCK transport only |
-| `python3 -m py_compile source/tools/capture_wallrun_continuation.py source/tools/test_wallrun_continuation.py` | valid Python | exit0 |
-| `git diff --check` | no whitespace errors | exit0 |
+`/workspace/toolchains/analysis-python/bin/python3 source/tools/test_wallrun_continuation.py`
+Expected prior8 cases intact plus fixed77 completion across JE, exact metadata/
+chain/first41 hash guards, RET/unsupported instruction and tail decode/raw
+refusals. Actual12 PASS /0 SKIP /0 UNAVAILABLE, exit0.
+New synthetic fixture initially used too-small SizeOfImage for the accepted parent
+unwind RVA; guard correctly refused it. Corrected ONLY synthetic image extent,
+not production guard/assertions; rerun all12 passed.
 
 ```bash
 XDG_CACHE_HOME=/tmp/ws-lock-xdg-cache XDG_CONFIG_HOME=/tmp/ws-lock-xdg-config XDG_DATA_HOME=/tmp/ws-lock-xdg-data DOTNET_CLI_HOME=/tmp/ws-lock-dotnet /tmp/ws-proxy-pwsh/pwsh -NoProfile -File source/tools/windows/test_capture_wallrun_continuation.ps1
 ```
+Expected same Unicode/space layout + preservation/failure contract, now explicit
+--complete-fragment and fragment77 output. Actual2 PASS groups /0 SKIP /0 UNAVAILABLE,
+MOCK WSL/Git transport only. Real Windows owner transport not inferred.
 
-First PowerShell invocation without XDG settings failed before script parsing:
-read-only /home/agent cache. Set only task-specific XDG/DOTNET paths under /tmp;
-rerun passed. No user home/security settings changed or executable assertion skipped.
-Focused fake PE tests patch expected SHA ONLY in test process; CLI never offers
-hash/RVA/cap override. Synthetic accepted fixtures are not original-game evidence.
-Actual Windows PowerShell5.1/WSL transport + original EXE extraction UNAVAILABLE,
-not PASS. No game EXE/target capture found by bounded filename search under selected
-workspace/tmp. BLOCKED0; SKIP0 focused. Native/portable/smoke/hooks/release pipeline
-NOT RUN: offline helper/docs only, no runtime bytes changed; task explicitly forbids
-new runtime rebuild/unchanged game test. Existing PE/decoder modules unchanged.
+Prefix check command: pinned analysis Python reads ONLY private Update.bin,
+asserts422 bytes/SHA above, then Capstone disasm at0x1424530; selects definition/
+branch sites. PASS, no raw body committed. Missing target filenames/EXE search
+found none; owner41 facts accepted from compact supplied analysis, not fabricated.
 
-## NEED — ONE copy/paste action (Chat owner handoff)
+UNAVAILABLE: actual complete77/remaining36 EXE capture and owner Windows execution.
+BLOCKED0. Native/build/portable/smoke/hooks/release NOT RUN because only offline
+helper/docs changed and task forbids runtime rebuild/game test. No new package.
+Additional syntax/unchanged-byte/publication checks recorded below.
 
-This fetches Git refs/objects and stages helpers in TEMP, NOT source worktree/KIT
-update or runtime deploy. Existing WSL analysis Python/Capstone5.0.6 prerequisite
-is already established by owner setup. No full build/test/package/game launch.
-Return only newly generated small JSON at the printed WS logs path; REFUSED JSON
-also useful. Missing WSL/decoder produces explicit error, no repair/install fallback.
-Do not upload the EXE or rerun unchanged r6 game comparison.
+## NEED — ONE exact fresh offline action, NOT old41/game test
+
+Existing default WSL analysis Python5.0.6 prerequisite remains. Fetch/stage current
+helpers without pulling/resetting source/local edits or installed KIT/runtime.
+Return only the newly printed small fragment77 JSON (REFUSED report also useful).
+The same77 bytes include41-byte consistency authentication and all remaining36;
+no serial single-instruction request, target-follow or whole EXE upload.
 
 ```powershell
 $game = "C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2"
@@ -70,27 +72,34 @@ try { & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $temp -SourceRoo
 finally { Remove-Item -LiteralPath $temp -Force }
 ```
 
-Output: `Mods Library\Mods-Developing\MSM2-WS\logs\MSM2-WS-wallrun-continuation-YYYYMMDD-HHMMSS.json`
-(or -01..-99 suffix). This is the one bounded missing action, not broad investigation.
-Commit/publication verification recorded below after push.
+Output: `Mods Library\Mods-Developing\MSM2-WS\logs\MSM2-WS-wallrun-fragment77-YYYYMMDD-HHMMSS.json`
+(or -01..-99). No Update-WS/build/package/game launch. Do not resend old41 JSON.
 
-## Shared knowledge / unchanged runtime verification
+## Final checks / shared synchronization
 
-Wisdoms operational note published at
-`c6e8dd7d1abf143073a784de31e0d6c93c94f203`; remote main SHA readback matches.
-Baseline full SHA: `e0b626b01baa5e6ee89baff67bdda4e60c67487e`.
-`git diff --exit-code e0b626b -- source/include source/src source/mod environment BUILD_MANIFEST.json 'MSM2-WS-v0.1c38r6*'`
-expected unchanged native/math/INI/shared tools/runtime/artifacts; actual exit0.
-No new package/output ZIP/version: only the future private continuation JSON.
+Known-route refinement: first prefix incoming JNE carries masked CL=1, while
+three later incoming edges require CL=0; captured JE routes the latter to AL
+inversion, leaving CL=1's36-byte continuation unresolved. Not runtime outcome.
 
-## Publication verified — offline helper
+Exact private-prefix verification used (1 PASS group):
+```bash
+/workspace/toolchains/analysis-python/bin/python3 - <<'PY'
+from pathlib import Path
+import hashlib,capstone
+b=Path('/tmp/ws-lateral-update-review/Update.bin').read_bytes()
+assert len(b)==422 and hashlib.sha256(b).hexdigest()=='e5c08bcdbc98e28f2b07aebb6a141b317ca740ee1a6a8f6da70752f98b98e40f'
+m=capstone.Cs(capstone.CS_ARCH_X86,capstone.CS_MODE_64)
+d={i.address:(i.mnemonic,i.op_str) for i in m.disasm(b,0x1424530)}
+assert len(d)==89 and d[0x142455a]==('mov','rsi, rcx') and d[0x14246d4]==('xor','al, 1')
+assert d[0x1424660]==('shr','ecx, 8') and d[0x1424663]==('and','cl, 1')
+print('PASS: authenticated prefix definitions; not runtime semantics')
+PY
+```
+Private input is not distributed. Future sessions without it must use compact
+analysis rather than invent bytes. No full body/executable requested/committed.
 
-Implementation commit `2ae748985cabe49f0ca614662904d7f1a84884e3` pushed to
-`codex/v01c20-edi-value-provenance`. Independent GitHub fetch, FETCH_HEAD, local
-HEAD and ls-remote agree; all7 changed blobs match checkout bytes using
-`python3 /tmp/ws-offline-publication.py`. Runtime/artifacts remain r6 unchanged.
-This follow-up records publication only; focused tests are not repeated because
-no executable/tested bytes changed. Five original untracked files preserved,
-no main merge/reset/force/clean. Owner actual extraction still UNAVAILABLE.
-Chat's ONE fresh-bootstrap block in CODEX_RESULT obtains only small private JSON;
-no Update-WS/full rebuild or unchanged game test required by this task.
+`python3 -m py_compile source/tools/capture_wallrun_continuation.py source/tools/test_wallrun_continuation.py` PASS exit0.
+`git diff --check` PASS exit0.
+`git diff --exit-code c224f17 -- source/include source/src source/mod environment BUILD_MANIFEST.json 'MSM2-WS-v0.1c38r6*'` PASS exit0.
+Wisdoms updated/pushed `1f298026f2caeb464853306763e5805704df0bd6`; remote main
+SHA matches. Confirmed split association/static gating is not motion semantics.

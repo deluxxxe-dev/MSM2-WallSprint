@@ -22,7 +22,7 @@ function global:wsl.exe {
     $global:LASTEXITCODE=0
     if($global:wslFailed){$global:LASTEXITCODE=7;return}
     if($args[1] -eq 'wslpath') { return $args[3] }
-    if($args[1] -ne '/workspace/toolchains/analysis-python/bin/python3' -or $args[4] -ne '--output'){throw 'Unexpected WSL execution'}
+    if($args[1] -ne '/workspace/toolchains/analysis-python/bin/python3' -or $args[4] -ne '--output' -or $args[6] -ne '--complete-fragment'){throw 'Unexpected WSL execution'}
     if(-not (Test-Path -LiteralPath $args[2])){throw 'Fresh helper missing'}
     [IO.File]::WriteAllText($args[5],'{"schema":1,"result":"MOCK_TRANSPORT_ONLY"}')
 }
@@ -30,11 +30,11 @@ try {
     [IO.Directory]::CreateDirectory($source)>$null;[IO.Directory]::CreateDirectory($logs)>$null
     [IO.File]::WriteAllText((Join-Path $game 'Spider-Man2.exe'),'owned fake EXE unchanged')
     [IO.File]::WriteAllText((Join-Path $source 'dirty.txt'),'preserve local change')
-    $old=Join-Path $logs 'MSM2-WS-wallrun-continuation-20300101-000000.json'
+    $old=Join-Path $logs 'MSM2-WS-wallrun-fragment77-20300101-000000.json'
     [IO.File]::WriteAllText($old,'preserve older output')
     & $script -SourceRoot $source
     if($global:fetches -ne 1 -or (Get-Content -LiteralPath $old -Raw) -ne 'preserve older output'){throw 'Fetch/output preservation failed'}
-    if(-not (Test-Path -LiteralPath (Join-Path $logs 'MSM2-WS-wallrun-continuation-20300101-000000-01.json'))){throw 'Collision suffix missing'}
+    if(-not (Test-Path -LiteralPath (Join-Path $logs 'MSM2-WS-wallrun-fragment77-20300101-000000-01.json'))){throw 'Collision suffix missing'}
     if((Get-Content -LiteralPath (Join-Path $source 'dirty.txt') -Raw) -ne 'preserve local change'){throw 'Source changed'}
     if((Get-Content -LiteralPath (Join-Path $game 'Spider-Man2.exe') -Raw) -ne 'owned fake EXE unchanged'){throw 'EXE changed'}
     'PASS: PowerShell wrapper derives Unicode/space game layout, fresh staged helpers, pinned Git reads and collision-safe output; source/EXE preserved (mock transport)'

@@ -66,4 +66,34 @@ class Tests(unittest.TestCase):
             self.assertEqual(json.loads(out.read_text())['result'],'REFUSED');self.assertNotIn('byte_evidence_hex',out.read_text())
             with patch.object(sys,'argv',args):self.assertEqual(c.main(),2)
             self.assertEqual(exe.read_bytes(),fixture())
+class CompleteTests(unittest.TestCase):
+    def fixture77(self):
+        # Synthetic conditional branch at41 bytes, no proprietary bytes.
+        code=b'\x90'*39+b'\x74\x00'+b'\x90'*36
+        u=b'\x21\0\0\0'+struct.pack('<III',*c.CHAIN)
+        d=fixture(code=code,end=c.FRAGMENT_END,unwind=u)
+        struct.pack_into("<I",d,0x98+56,0xA000000)
+        struct.pack_into('<I',d,0x800,c.TARGET)
+        return d
+    def capture(self,d):
+        with patch.object(c,'EXPECTED_SHA',hashlib.sha256(d).hexdigest()),patch.object(c,'FIRST_SHA',hashlib.sha256(d[0x4f9:0x4f9+41]).hexdigest()):return c.extract(d,complete=True)
+    def test_whole77_across_conditional_no_follow(self):
+        r=self.capture(self.fixture77());self.assertEqual(r['bytes'],77);self.assertEqual(r['range_end_rva'],c.FRAGMENT_END);self.assertEqual(len(r['edges']),1);self.assertFalse(r['edges'][0]['followed']);self.assertTrue(r['previous_window_sha_verified'])
+    def test_metadata_identity_refusals(self):
+        for offset in [0x800,0x804,0x844,0x848,0x84c]:
+            d=self.fixture77();struct.pack_into('<I',d,offset,struct.unpack_from('<I',d,offset)[0]+1)
+            with self.assertRaises(c.Refusal):self.capture(d)
+        d=self.fixture77();d[0x840]=1
+        with self.assertRaises(c.Refusal):self.capture(d)
+    def test_first_capture_and_unsupported_ret(self):
+        d=self.fixture77()
+        with patch.object(c,'EXPECTED_SHA',hashlib.sha256(d).hexdigest()),self.assertRaisesRegex(c.Refusal,'41byte'):c.extract(d,complete=True)
+        for code,reason in [(b'\xc3','RET'),(b'\xf4','unsupported')]:
+            d=self.fixture77();d[0x4f9+41]=code[0]
+            with self.assertRaisesRegex(c.Refusal,reason):self.capture(d)
+    def test_tail_decode_and_raw_truncation(self):
+        d=self.fixture77();d[0x4f9+76]=0x0f
+        with self.assertRaisesRegex(c.Refusal,'decode_gap'):self.capture(d)
+        d=self.fixture77();struct.pack_into('<I',d,0x98+240+16,0x110)
+        with self.assertRaisesRegex(c.Refusal,'file_backed'):self.capture(d)
 if __name__=='__main__':unittest.main()
