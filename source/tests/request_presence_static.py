@@ -8,7 +8,9 @@ cpp=(root/'src/msm2/request_presence.cpp').read_text(encoding='utf-8')
 asm=(root/'src/msm2/request_presence.S').read_text(encoding='utf-8')
 surface=(root/'include/msm2/surface_source.hpp').read_text(encoding='utf-8')
 scalar=(root/'include/wallrun_scalar_observation.hpp').read_text(encoding='utf-8')
+scalar_test=(root/'src/wallrun_scalar_observation_tests.cpp').read_text(encoding='utf-8')
 plan=(root/'include/static_observation_plan.hpp').read_text(encoding='utf-8')
+test_script=(root/'tools/test.sh').read_text(encoding='utf-8')
 default_ini=(root/'mod/WallSprint.ini').read_text(encoding='utf-8')
 preset=(root/'mod/presets/request_presence_read_only.ini').read_text(encoding='utf-8')
 info=(root/'mod/info.json').read_text(encoding='utf-8')
@@ -60,6 +62,12 @@ for needle in ('0x208','0x220','0x238','0x250','0x40c','0x3ecccccdU','0x41400000
 for needle in ('#include "wallrun_scalar_observation.hpp"','ws::scalar_fields::Observer scalarObserver','scalarObserver.reset()','scalarObserver.begin','scalarObserver.observe','scalarObserver.finish','wallrun_update_scalar_plan','pointer_dereference=0 game_write=0'):
     assert needle in surface, needle
 assert 'writeMemory' not in scalar
+
+# The new observer must have a real sanitizer/-Werror unit test wired into the full suite.
+for needle in ('wallrun_scalar_observation_tests.cpp','-Wall -Wextra -Werror -pedantic -fsanitize=address,undefined','./build/wallrun_scalar_observation_tests'):
+    assert needle in test_script, needle
+for needle in ('phase=first','phase=changed','attempts=4 read_samples=3 changes=1 stable_bits=0','schema_numeric_hit_counts_0p4_12_75_100_50=(0,2,1,0,0)'):
+    assert needle in scalar_test, needle
 
 assert 'versionLabel[]="v0.1c46"' in version
 assert 'packageVersion[]="0.1.71"' in version
