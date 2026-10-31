@@ -87,20 +87,25 @@ inline bool readable(std::uintptr_t address,void* out,std::size_t size,bool chil
  return readMemory(address,out,size);
 }
 inline void begin(std::uint64_t id,std::uintptr_t h,std::uintptr_t t,std::uint64_t e){
- if(!runtimeObservationEnabled)return;
  session=id;hero=h;transform=t;epoch=e;
- if(fieldPlanEnabled){auto now=GetTickCount64();fieldObserver.begin(id,h,t,e,now);scalarObserver.begin(id,now);}
+ auto now=GetTickCount64();
+ if(fieldPlanEnabled){scalarObserver.begin(id,now);writeLog("wallrun_update_scalar_session wallrun_session=%llu state=armed cadence_ms=100 offsets=5 surface_telemetry=%u direct_owner_reads_only=1 pointer_dereference=0 game_write=0",static_cast<unsigned long long>(id),unsigned(runtimeObservationEnabled));}
+ if(!runtimeObservationEnabled)return;
+ if(fieldPlanEnabled)fieldObserver.begin(id,h,t,e,now);
  char offsets[128]{};unsigned length=0;for(unsigned i=0;i<count;++i){int n=std::snprintf(offsets+length,sizeof(offsets)-length,"%s0x%x",i?",":"",channels[i].evidence.offset);if(n>0)length=std::min(unsigned(sizeof(offsets)-1),length+unsigned(n));}
  writeLog("surface_source_session wallrun_session=%llu wallrun_this_accessed_offsets=%s offset_list_scope=selected_statically_dereferenced_pointer_fields candidate_child_pointer_count=%u face_candidate_group=unassigned_until_crawl",static_cast<unsigned long long>(id),count?offsets:"none",count);
  for(unsigned i=0;i<count;++i){auto& c=channels[i];c.child=0;c.objectId=0;c.data={};loggingChannel=int(i);c.tracker.begin(id,h,t,e,childLog);}loggingChannel=-1;
 }
 inline void observe(std::uintptr_t owner,const Snapshot& snapshot,const ws::diag::Motion& motion,std::uint64_t now){
- if(!runtimeObservationEnabled||!enabled||!session){return;}
+ if(!enabled||!session){return;}
+ if(fieldPlanEnabled){
+  for(unsigned i=0;i<ws::scalar_fields::offsets.size();++i){std::uint32_t bits=0;auto off=ws::scalar_fields::offsets[i];bool ok=owner<=UINTPTR_MAX-off&&readable(owner+off,&bits,sizeof(bits),false);scalarObserver.observe(i,ok,bits,now,writeLog);}
+ }
+ if(!runtimeObservationEnabled)return;
  ws::Vec3 position{snapshot.position[0],snapshot.position[1],snapshot.position[2]};
  if(fieldPlanEnabled){
   fieldObserver.motion(motion.velocity,motion.valid);
   for(unsigned i=0;i<ws::fields::roots;++i){ws::Vec3 value;auto off=ws::fields::offset(i);bool ok=owner<=UINTPTR_MAX-off&&readable(owner+off,&value,sizeof(value),false);fieldObserver.observe(i,ok?&value:nullptr,position,now,0,writeLog);}
-  for(unsigned i=0;i<ws::scalar_fields::offsets.size();++i){std::uint32_t bits=0;auto off=ws::scalar_fields::offsets[i];bool ok=owner<=UINTPTR_MAX-off&&readable(owner+off,&bits,sizeof(bits),false);scalarObserver.observe(i,ok,bits,now,writeLog);}
  }
  if(fieldPlanEnabled)fieldObserver.endBatch(position,motion.velocity,motion.valid,now,writeLog);
  unsigned valid=0;bool focusObserved=false;
@@ -122,8 +127,10 @@ inline void observe(std::uintptr_t owner,const Snapshot& snapshot,const ws::diag
  (void)valid;
 }
 inline void finish(std::uint64_t id,double deinit){
- if(!runtimeObservationEnabled||!enabled||id!=session)return;
- if(fieldPlanEnabled){fieldObserver.finish(id,deinit,writeLog);scalarObserver.finish(id,writeLog);}
+ if(!enabled||id!=session)return;
+ if(fieldPlanEnabled)scalarObserver.finish(id,writeLog);
+ if(!runtimeObservationEnabled){session=0;return;}
+ if(fieldPlanEnabled)fieldObserver.finish(id,deinit,writeLog);
  for(unsigned i=0;i<count;++i){auto& c=channels[i];loggingChannel=int(i);childLog("child_source_session session=%llu candidate_child_pointer_count=%u observed_samples=%u depth=1",static_cast<unsigned long long>(id),count,c.data.count());if(c.data.count()){c.tracker.summarize(c.data,id,"verified_deinit",childLog);c.tracker.finish(c.data,id,deinit,childLog);}c.data={};}
  loggingChannel=-1;session=0;
 }
