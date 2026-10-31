@@ -1,116 +1,77 @@
-# Result — WallSprint v0.1c40 continuous Request presence capture
+# Result — WallSprint v0.1c41 Request presence correction
 
 2026-10-31. Active implementation branch: `codex/v01c20-edi-value-provenance`. No main merge.
 
 ## STATUS
 
-**IMPLEMENTED / READ-ONLY CONTRACT PRESERVED / C49 OWNER WINE FIX CONFIRMED / PACKAGE CONTRACT FIXED AGAINST ACTUAL SOURCE README PATH / FULL OWNER PIPELINE STILL PENDING / ACTUAL-GAME RUNTIME PENDING.**
+**C40 RUNTIME FAILURE CAUSE VERIFIED / C41 CORRECTION PUBLISHED / READ-ONLY CONTRACT PRESERVED / FULL OWNER PIPELINE PENDING / C41 ACTUAL-GAME RUNTIME PENDING.**
 
-The former six manually armed 2-second ground/WallRun phases are replaced by one video-correlatable capture. The user starts recording, presses F11 once, performs the whole movement sequence naturally, and the diagnostic closes automatically after 30 seconds or 8192 retained records. F12 no longer arms a second phase.
+## C40 ACTUAL RUNTIME RESULT
 
-Captured `RCX/RDX/R8/R9`, return PC and thread token remain opaque bits. Ground/WallRun/action classification is performed afterward from the supplied video. `offset_ms_est` is approximate video-alignment metadata, not an authenticated engine timestamp or state label.
+The owner successfully installed and launched `v0.1c40 / package 0.1.65`, then supplied the game log and video for the one-F11 ground Sprint -> reverse -> neutral -> ordinary WallRun left -> right -> down sequence.
 
-## CURRENT C40 IMPLEMENTATION
+The target game build was accepted (`2.810.0.0`, on-disk SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`). However RequestSimpleMotion admission failed before F11 capture:
+
+- actual whole-site SHA: `2d8792492c8b89d4e9885d55fa45fb2c6b4126b4ae992f854f6d687522163d0c`;
+- c40 runtime expected SHA: `2d879249c65b8074bb548e6563b5e0c2955ab672c4fd3cf080adb83b48691d64`;
+- prefix matched, whole hash did not;
+- admission logged `admitted=0 reason=site_identity_or_span_or_pdata_mismatch`;
+- F11 then logged `reason=diagnostic_not_admitted`.
+
+Therefore c40 produced no valid RequestSimpleMotion records. The absence of Request records is not a zero-call result.
+
+The existing accepted audit source had already pinned the correct Request tuple: RVA `0x11A1BD0` to `0x11A1CA2` with SHA `2d8792492c8b89d4e9885d55fa45fb2c6b4126b4ae992f854f6d687522163d0c`. The c40 error was an implementation consistency mismatch in `kRequestSha256`.
+
+The independent WallRun hooks remained functional. WallRun session 8 recorded Init=1, Entry=1, Update=1798, Deinit=1 over 20.918701 s, so the ordinary WallRun portion did occur.
+
+The supplied video is 32.75 s. F11 was logged around `12:10:07.509Z`, while the relevant WallRun session continued until about `12:10:41.704Z`, so the old 30-second capture window was also too short for this actual sequence.
+
+Detailed evidence: `analysis/REQUEST_PRESENCE_C40_RUNTIME_FAILURE_20261031.md`.
+
+## C41 IMPLEMENTATION
+
+Version is now `v0.1c41`, package `0.1.66`.
+
+Changes are limited to the read-only presence diagnostic and its metadata/tests:
+
+- RequestSimpleMotion runtime whole-site SHA corrected to the accepted audit/runtime SHA above;
+- one F11 continuous capture retained;
+- maximum capture duration increased to 45 seconds;
+- bounded record cap increased to 16384;
+- F12 remains disabled for this capture;
+- `WALLSPRINT_ENABLE=0`;
+- `WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0`;
+- orientation/adhesion/movement writes remain OFF;
+- Request arguments remain opaque bits with no captured-pointer dereference or argument modification.
+
+## PREVENTING THE SAME ERROR
+
+`source/tests/request_presence_static.py` now parses the RequestSimpleMotion begin/end/SHA tuple from both production `request_presence.cpp` and the existing accepted `audit_presence_hook_sites.py` and requires exact equality.
+
+This directly prevents another build in which the audit identity and runtime admission constant silently diverge. The test also checks c41 version/package, 45-second duration, 16384 record cap, ASM cap, both READMEs, read-only INI state, and package manifest metadata.
+
+## FILES CHANGED FOR C41
 
 - `source/src/msm2/request_presence.cpp`
-  - one capture/session;
-  - 30-second maximum duration;
-  - 8192-record cap;
-  - F11 single start;
-  - F12 legacy second-phase control rejected;
-  - TSC/GetTickCount64 endpoint interpolation emits `offset_ms_est`.
 - `source/src/msm2/request_presence.S`
-  - exact-site preserving observer remains no-call;
-  - record cap 8192;
-  - leaf TSC reader outside the observer;
-  - ten split unwind regions retained.
+- `source/tests/request_presence_static.py`
+- `source/include/version.hpp`
+- `source/mod/info.json`
 - `source/mod/WallSprint.ini`
-  - `WALLSPRINT_ENABLE=0`;
-  - `WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0`;
-  - orientation/adhesion/movement writes OFF;
-  - `REQUEST_PRESENCE_DIAGNOSTIC=1`.
-- version: `v0.1c40`, package `0.1.65`.
+- `source/mod/presets/request_presence_read_only.ini`
+- `source/tools/package.py`
+- `README_TEST.md`
+- `source/README_TEST.md`
+- `analysis/REQUEST_PRESENCE_C40_RUNTIME_FAILURE_20261031.md`
+- `docs/CODEX_RESULT.md`
 
-## OWNER PIPELINE RESULTS
+## VALIDATION STILL REQUIRED
 
-### Run 1 — package failure
+The corrected c41 source is published, but the owner has not yet run the normal Windows/WSL `Update-WS.cmd` pipeline against these c41 changes. Do not claim c41 build/package/deployment or actual Request admission success yet.
 
-The package step failed on a stale README/version assertion. The first repair updated the project-root README and converted the historical package policy to the c40 read-only policy, but the package path was not yet traced far enough to identify which README the historical packager actually reads.
+Next action:
 
-### Run 2 — hooks failure
-
-The next run stopped at the historical c49 test-only Wine deadline fixture. The exact failure was `now() >= windows[0].end` after one calculated `Sleep`.
-
-The test-only fixture was changed to poll the same QPC-derived deadline with `Sleep(1)` and a separate 2000 ms wall-clock bound. No c49 identity/order/debt/DR/VCH assertion was relaxed and no WallSprint.dll/game hook source was changed.
-
-### Run 3 — c49 fix confirmed, package path error exposed
-
-The third owner run confirms the c49 repair: all six mixed SEARCH/downstream observations parsed and the pipeline continued through later hook/scanner suites, including c71.
-
-It then reached `stage=package` and failed at `package_base.py` line 9:
-
-`readme=(root/'README_TEST.md').read_text(); assert label in readme and version in readme`
-
-Here `root` is `source/`, because `package_base.py` is under `source/tools/`. Therefore the actual checked file is `source/README_TEST.md`, not the project-root `README_TEST.md`.
-
-The source README was still `v0.1c38r7 / package0.1.63`. This was the direct cause of the repeated package failure.
-
-## CURRENT PACKAGE FIX
-
-The canonical branch now contains all of the following:
-
-- `source/README_TEST.md` updated to `v0.1c40 / 0.1.65` and the one-F11 30-second procedure.
-- project-root `README_TEST.md` remains c40 as well.
-- `source/tools/package.py` still preserves the historical monolithic implementation in `package_base.py`, but:
-  - replaces exactly the stale active-config assertion with the c40 read-only condition;
-  - after the historical packager completes, normalizes the generated `BUILD_MANIFEST.json` so the current package cannot claim historical native-source/orientation writes are active;
-  - records `package_mode=request_presence_read_only`;
-  - records native-source/orientation/adhesion/movement/Position/direct-Actor/camera/animation/physics/gravity writes as OFF for the current package;
-  - records the one-F11/30-second/8192 Request presence diagnostic.
-- `source/tests/request_presence_static.py` now checks both root and source READMEs plus the c40 package metadata contract.
-- `source/tools/test.sh` runs that static contract before the long sanitizer/native suites, so this class of version/config/package mismatch fails immediately rather than at the final package step.
-
-The historical analysis and proof fields remain in the source/package history; only current active-package state is normalized.
-
-## SAFETY / ADMISSION
-
-Unchanged production admission requirements remain in force:
-
-- exact Spider-Man2.exe build gate;
-- RequestSimpleMotion RVA `0x11A1BD0`, exact function span and SHA256;
-- exact leading instruction span and `.pdata` identity;
-- validated MinHook trampoline and relay;
-- observer unwind metadata validation;
-- callback performs no allocation, lock, I/O, captured-pointer dereference, argument write or request suppression;
-- F8/script shutdown closes the capture gate before hook shutdown.
-
-No movement, Position, input, adhesion, animation or camera implementation was added.
-
-## VALIDATION STATUS
-
-Confirmed from owner run 3:
-
-- c49 Wine deadline stabilization passes.
-- subsequent c49/c50/c51/.../c71 suites continue and pass/produce their expected UNAVAILABLE classifications.
-- pipeline reaches package.
-- package failure is exactly the stale `source/README_TEST.md` version assertion.
-- previous active WS script is retained; no failed-run deployment occurred.
-
-Checked in Chat after the fix:
-
-- replacement `package.py` Python syntax: PASS.
-- updated `request_presence_static.py` Python syntax: PASS.
-- updated `test.sh` shell syntax (`bash -n`): PASS.
-- GitHub readback required before final handoff.
-
-A complete owner Windows/WSL run with the latest package fix has not yet completed. Do not claim deployment success until that run reaches the final full-pipeline PASS.
-
-## HUMAN RUNTIME TEST
-
-Only after a successful `Update-WS.cmd` build/deploy:
-
-1. Start video recording.
-2. Press F11 once.
-3. Within 30 seconds: ground Sprint straight -> reverse -> neutral, then ordinary WallRun left -> right -> down.
-4. Let capture close automatically. F8 is emergency stop only.
-5. Return the newest complete `MSM2-WS-v0.1c40-YYYYMMDD-HHMMSS.log` together with the video.
+1. Run `Update-WS.cmd` with the game and shared Overstrike closed.
+2. Require the complete full-pipeline PASS and c41 deployment.
+3. Only then rerun the same one-F11 video test.
+4. For c41 runtime acceptance, first verify `REQUEST_PRESENCE_ADMISSION admitted=1` before interpreting any records.
