@@ -10,3 +10,7 @@ Session2 native/source lifetime14.797/14.094s; Deinit/source_active_until_deinit
 Original native input/steering ownership not established by incoming A/B (may contain WS prior output). More correlations cannot establish cause. No supported threshold/speed-only fix established.
 
 Next bounded missing evidence already named in r6 result: original current-build continuation0x14248f9, max128 original file bytes plus EXE/section/unwind provenance; earlier range capture incomplete. Prepare safe offline acquisition with existing PE primitives, not another unchanged game test or telemetry layer. No mutation/hook/new movement scope.
+
+## Later video received and inspected
+Compressed12-04-10(2).mp4 successfully accessed,31.5s. Whole clip sampled visually. Upper/side travel is followed by prolonged horizontal-body orientation and repeated facing changes in the latter wall-running sequence, consistent with owner failure report. Camera rolls/pans strongly; screen up/down cannot be substituted for wall/world direction. No input overlay or exact log alignment; no quantitative descent-speed/latency or causal game-processing claim. Brief down-looking body during a turn is not sustained accepted down-heading. This supersedes initial video-unavailable wording only for this received copy.
+No change to next evidence choice: bounded offline original continuation acquisition; do not tune heading or add another game diagnostic solely from video appearance.
