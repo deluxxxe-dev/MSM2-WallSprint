@@ -1,0 +1,7 @@
+# Canonical motion/gravity verification — owner result 2026-10-31
+JSON151239 inspected; exact WS EXE SHA c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9 accepted; exact reference SHA7330c68f...b7662.
+REFERENCE_RELATIONS_MISMATCH. All7marker hashes false. Both fixed-offset sites are not decoded CALLs and outside proposed owner runtime ranges.
+UpdateMotion hint21248464 lies inside21248208..21249549, not entry; RequestSimpleMotion18488528 exact PE entry..18488672; GravityOrientationOwner20246528 exact entry..20246546; setter55643808 lies within55643712..55643815. PE entries are identities only, not semantics.
+Motion proposed CALL21249718 and gravity CALL20246631 don't match owner ranges; targets null. No callable ABI/lifetime/contact/production proof. No live reads/code export.
+This disproves using recovered canonical hints WITHOUT relocation on this file. It does NOT disprove full reference AOB/three-anchor fallback, or ability to control gravity/motion. Reference actual resolver first uses patterns/shift; previous zero-shift verifier deliberately omitted them. Don't ask owner to repeat canonical test or declare actual function implementations incompatible merely from this result.
+Need actual pattern-resolution review and independently authored current-file target discovery under semantic crosschecks. No arbitrary shifted pointers, nearest .pdata starts or loosened marker checks.
