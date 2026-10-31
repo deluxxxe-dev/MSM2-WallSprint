@@ -2,8 +2,8 @@
   "name": "WallSprint",
   "type": "script",
   "author": "WallSprint project",
-  "version": "0.1.69",
-  "description": "WallSprint v0.1c44: read-only RequestSimpleMotion presence diagnostic with automatic startup capture and 500 ms worker-side streaming drains (16 records per batch, 65536 retained records per script session), no F11/F12 input, and all gameplay write gates unchanged.",
+  "version": "0.1.70",
+  "description": "WallSprint v0.1c45: read-only GravityOrientationOwner presence diagnostic using the c44-proven automatic startup capture and 500 ms worker-side streaming drains (16 records per batch, 65536 retained records per script session), no F11/F12 input, and all gameplay write gates unchanged.",
   "dependencies": [],
   "game": "MSM2",
   "format_version": 1
