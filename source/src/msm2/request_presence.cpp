@@ -14,17 +14,22 @@
 
 namespace {
 
-constexpr std::uintptr_t kRequestRva = 0x11A1BD0;
-constexpr std::uintptr_t kRequestEndRva = 0x11A1CA2;
-constexpr std::uintptr_t kRequestUnwindRva = 0x94697E0;
+// c45 reuses the already runtime-proven c44 observer/streaming machinery, but the
+// observed native entry is GravityOrientationOwner rather than RequestSimpleMotion.
+// Internal request_presence symbol names are intentionally retained to minimize the
+// code delta; the active target identity below is the authoritative contract.
+constexpr std::uintptr_t kRequestRva = 0x134EF00;
+constexpr std::uintptr_t kRequestEndRva = 0x134EFBB;
+constexpr std::uintptr_t kRequestUnwindRva = 0x94A1CB8;
 constexpr std::size_t kRequestSize = kRequestEndRva - kRequestRva;
 constexpr std::size_t kNativeSnapshot = 32;
 constexpr LONG kBatchRecordCap = 16;
 constexpr ULONGLONG kDrainIntervalMs = 500;
 constexpr ULONGLONG kQuiesceWaitMs = 250;
 constexpr std::uint64_t kSessionRecordCap = 65536;
-constexpr char kRequestSha256[] = "2d8792492c8b89d4e9885d55fa45fb2c6b4126b4ae992f854f6d687522163d0c";
-constexpr unsigned char kRequestPrefix[] = {0x4c,0x8b,0xdc,0x49,0x89,0x5b,0x08};
+constexpr char kRequestSha256[] = "bc9e1a75a4d45f4dc1a1baf99b704778714e83353d58688dce82bab901514a53";
+constexpr unsigned char kRequestPrefix[] = {0x48,0x89,0x5c,0x24,0x08};
+constexpr char kObservedRole[] = "GravityOrientationOwner";
 
 struct PresenceRecord {
     std::uint64_t rcx;
@@ -129,7 +134,7 @@ bool exactRequestUnwind(std::uintptr_t target,std::uintptr_t moduleBase) {
     DWORD64 imageBase=0;
     auto* entry=RtlLookupFunctionEntry(static_cast<DWORD64>(target),&imageBase,nullptr);
     bool ok=entry && imageBase==moduleBase && entry->BeginAddress==kRequestRva && entry->EndAddress==kRequestEndRva && entry->UnwindData==kRequestUnwindRva;
-    msm2::writeLog("REQUEST_PRESENCE_SITE_PDATA ok=%u begin_rva=0x%lx end_rva=0x%lx unwind_rva=0x%lx expected_begin=0x%llx expected_end=0x%llx expected_unwind=0x%llx",unsigned(ok),entry?entry->BeginAddress:0ul,entry?entry->EndAddress:0ul,entry?entry->UnwindData:0ul,static_cast<unsigned long long>(kRequestRva),static_cast<unsigned long long>(kRequestEndRva),static_cast<unsigned long long>(kRequestUnwindRva));
+    msm2::writeLog("REQUEST_PRESENCE_SITE_PDATA target_role=%s ok=%u begin_rva=0x%lx end_rva=0x%lx unwind_rva=0x%lx expected_begin=0x%llx expected_end=0x%llx expected_unwind=0x%llx",kObservedRole,unsigned(ok),entry?entry->BeginAddress:0ul,entry?entry->EndAddress:0ul,entry?entry->UnwindData:0ul,static_cast<unsigned long long>(kRequestRva),static_cast<unsigned long long>(kRequestEndRva),static_cast<unsigned long long>(kRequestUnwindRva));
     return ok;
 }
 
@@ -138,7 +143,7 @@ bool exactObserverUnwind(void* address,std::uintptr_t expectedImageBase,const ch
     auto pc=reinterpret_cast<DWORD64>(address);
     auto* entry=RtlLookupFunctionEntry(pc,&imageBase,nullptr);
     bool ok=entry && imageBase==expectedImageBase && imageBase+entry->BeginAddress==pc && entry->EndAddress>entry->BeginAddress;
-    msm2::writeLog("REQUEST_PRESENCE_SELF_UNWIND label=%s ok=%u begin=0x%llx end=0x%llx image=0x%llx",name,unsigned(ok),static_cast<unsigned long long>(entry?imageBase+entry->BeginAddress:0),static_cast<unsigned long long>(entry?imageBase+entry->EndAddress:0),static_cast<unsigned long long>(imageBase));
+    msm2::writeLog("REQUEST_PRESENCE_SELF_UNWIND target_role=%s label=%s ok=%u begin=0x%llx end=0x%llx image=0x%llx",kObservedRole,name,unsigned(ok),static_cast<unsigned long long>(entry?imageBase+entry->BeginAddress:0),static_cast<unsigned long long>(entry?imageBase+entry->EndAddress:0),static_cast<unsigned long long>(imageBase));
     return ok;
 }
 
@@ -146,7 +151,7 @@ bool pinObserverAndValidateUnwind() {
     HMODULE observerModule=nullptr;
     auto observer=reinterpret_cast<LPCWSTR>(&ws_request_presence_observer);
     if(!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_PIN,observer,&observerModule) || !observerModule){
-        msm2::writeLog("REQUEST_PRESENCE_SELF_UNWIND admitted=0 reason=module_pin_failed win32=%lu",GetLastError());
+        msm2::writeLog("REQUEST_PRESENCE_SELF_UNWIND target_role=%s admitted=0 reason=module_pin_failed win32=%lu",kObservedRole,GetLastError());
         return false;
     }
     auto imageBase=reinterpret_cast<std::uintptr_t>(observerModule);
@@ -185,8 +190,8 @@ bool validateInstructionSpan(const unsigned char* target) {
         span+=length;
         ++instructions;
     }
-    bool ok=span==sizeof(kRequestPrefix) && instructions==2 && !relative;
-    msm2::writeLog("REQUEST_PRESENCE_STOLEN_SPAN ok=%u bytes=%u instructions=%u relative=%u expected_bytes=%u expected_instructions=2",unsigned(ok),span,instructions,unsigned(relative),unsigned(sizeof(kRequestPrefix)));
+    bool ok=span==sizeof(kRequestPrefix) && instructions==1 && !relative;
+    msm2::writeLog("REQUEST_PRESENCE_STOLEN_SPAN target_role=%s ok=%u bytes=%u instructions=%u relative=%u expected_bytes=%u expected_instructions=1",kObservedRole,unsigned(ok),span,instructions,unsigned(relative),unsigned(sizeof(kRequestPrefix)));
     return ok;
 }
 
@@ -237,7 +242,7 @@ bool drainBatch(const char* reason,bool rearm) {
     if(runtime.phase!=PhaseState::Capturing) return true;
     InterlockedExchange(&ws_request_presence_enabled,0);
     if(!waitForCallbacks()){
-        msm2::writeLog("REQUEST_PRESENCE_DRAIN deferred=1 reason=%s active_callbacks=%ld wait_cap_ms=%llu records_preserved=1",reason?reason:"unspecified",atomicRead(&ws_request_presence_active_callbacks),static_cast<unsigned long long>(kQuiesceWaitMs));
+        msm2::writeLog("REQUEST_PRESENCE_DRAIN target_role=%s deferred=1 reason=%s active_callbacks=%ld wait_cap_ms=%llu records_preserved=1",kObservedRole,reason?reason:"unspecified",atomicRead(&ws_request_presence_active_callbacks),static_cast<unsigned long long>(kQuiesceWaitMs));
         if(rearm && runtime.admitted && runtime.enabled && atomicRead(&captureCloseRequested)==0) InterlockedExchange(&ws_request_presence_enabled,1);
         runtime.nextDrainTick=GetTickCount64()+kDrainIntervalMs;
         return false;
@@ -256,18 +261,18 @@ bool drainBatch(const char* reason,bool rearm) {
     runtime.sessionOverflow+=static_cast<std::uint64_t>(overflow);
     runtime.sessionContention+=static_cast<std::uint64_t>(contention);
 
-    msm2::writeLog("REQUEST_PRESENCE_BATCH_SUMMARY batch_id=%u retained=%ld batch_cap=%ld overflow=%ld contention=%ld lost=%ld reason=%s actual_batch_ms=%llu periodic_worker_drain_ms=%llu session_retained=%llu session_record_cap=%llu",runtime.batchId,count,kBatchRecordCap,overflow,contention,overflow+contention,reason?reason:"unspecified",static_cast<unsigned long long>(batchMs),static_cast<unsigned long long>(kDrainIntervalMs),static_cast<unsigned long long>(runtime.sessionCaptured),static_cast<unsigned long long>(kSessionRecordCap));
+    msm2::writeLog("REQUEST_PRESENCE_BATCH_SUMMARY target_role=%s batch_id=%u retained=%ld batch_cap=%ld overflow=%ld contention=%ld lost=%ld reason=%s actual_batch_ms=%llu periodic_worker_drain_ms=%llu session_retained=%llu session_record_cap=%llu",kObservedRole,runtime.batchId,count,kBatchRecordCap,overflow,contention,overflow+contention,reason?reason:"unspecified",static_cast<unsigned long long>(batchMs),static_cast<unsigned long long>(kDrainIntervalMs),static_cast<unsigned long long>(runtime.sessionCaptured),static_cast<unsigned long long>(kSessionRecordCap));
     for(LONG i=0;i<count;++i){
         const auto& record=ws_request_presence_records[i];
         const bool offsetValid=sessionTscSpan>0 && record.tsc>=runtime.sessionStartTsc && record.tsc<=endTsc;
         const double offsetMs=offsetValid?(static_cast<double>(record.tsc-runtime.sessionStartTsc)*static_cast<double>(sessionMs)/static_cast<double>(sessionTscSpan)):0.0;
-        msm2::writeLog("REQUEST_PRESENCE_RECORD batch_id=%u slot=%llu session_offset_ms_est=%.3f offset_valid=%u offset_clock=tsc_linearized_to_GetTickCount64 rcx_bits=0x%016llx rdx_bits=0x%016llx r8_bits=0x%016llx r9_bits=0x%016llx return_pc=0x%016llx thread_token=0x%016llx tsc=%llu semantics=opaque_bits_no_dereference",runtime.batchId,static_cast<unsigned long long>(record.slot),offsetMs,unsigned(offsetValid),static_cast<unsigned long long>(record.rcx),static_cast<unsigned long long>(record.rdx),static_cast<unsigned long long>(record.r8),static_cast<unsigned long long>(record.r9),static_cast<unsigned long long>(record.returnPc),static_cast<unsigned long long>(record.threadToken),static_cast<unsigned long long>(record.tsc));
+        msm2::writeLog("REQUEST_PRESENCE_RECORD target_role=%s batch_id=%u slot=%llu session_offset_ms_est=%.3f offset_valid=%u offset_clock=tsc_linearized_to_GetTickCount64 rcx_bits=0x%016llx rdx_bits=0x%016llx r8_bits=0x%016llx r9_bits=0x%016llx return_pc=0x%016llx thread_token=0x%016llx tsc=%llu semantics=opaque_bits_no_dereference",kObservedRole,runtime.batchId,static_cast<unsigned long long>(record.slot),offsetMs,unsigned(offsetValid),static_cast<unsigned long long>(record.rcx),static_cast<unsigned long long>(record.rdx),static_cast<unsigned long long>(record.r8),static_cast<unsigned long long>(record.r9),static_cast<unsigned long long>(record.returnPc),static_cast<unsigned long long>(record.threadToken),static_cast<unsigned long long>(record.tsc));
     }
 
     resetBatch();
     if(runtime.sessionCaptured>=kSessionRecordCap){
         runtime.phase=PhaseState::Idle;
-        msm2::writeLog("REQUEST_PRESENCE_SESSION_CAP_REACHED retained=%llu cap=%llu capture_gate_closed=1 hook_forwarding_preserved=1",static_cast<unsigned long long>(runtime.sessionCaptured),static_cast<unsigned long long>(kSessionRecordCap));
+        msm2::writeLog("REQUEST_PRESENCE_SESSION_CAP_REACHED target_role=%s retained=%llu cap=%llu capture_gate_closed=1 hook_forwarding_preserved=1",kObservedRole,static_cast<unsigned long long>(runtime.sessionCaptured),static_cast<unsigned long long>(kSessionRecordCap));
         return true;
     }
     if(rearm && runtime.admitted && runtime.enabled && atomicRead(&captureCloseRequested)==0){
@@ -284,7 +289,7 @@ bool drainBatch(const char* reason,bool rearm) {
 void logSession(const char* reason) {
     if(runtime.sessionLogged) return;
     runtime.sessionLogged=true;
-    msm2::writeLog("REQUEST_PRESENCE_SESSION_SUMMARY batches=%u batch_record_cap=%ld periodic_worker_drain_ms=%llu session_record_cap=%llu retained=%llu overflow=%llu contention=%llu lost=%llu reason=%s",runtime.batchId,kBatchRecordCap,static_cast<unsigned long long>(kDrainIntervalMs),static_cast<unsigned long long>(kSessionRecordCap),static_cast<unsigned long long>(runtime.sessionCaptured),static_cast<unsigned long long>(runtime.sessionOverflow),static_cast<unsigned long long>(runtime.sessionContention),static_cast<unsigned long long>(runtime.sessionOverflow+runtime.sessionContention),reason?reason:"unspecified");
+    msm2::writeLog("REQUEST_PRESENCE_SESSION_SUMMARY target_role=%s batches=%u batch_record_cap=%ld periodic_worker_drain_ms=%llu session_record_cap=%llu retained=%llu overflow=%llu contention=%llu lost=%llu reason=%s",kObservedRole,runtime.batchId,kBatchRecordCap,static_cast<unsigned long long>(kDrainIntervalMs),static_cast<unsigned long long>(kSessionRecordCap),static_cast<unsigned long long>(runtime.sessionCaptured),static_cast<unsigned long long>(runtime.sessionOverflow),static_cast<unsigned long long>(runtime.sessionContention),static_cast<unsigned long long>(runtime.sessionOverflow+runtime.sessionContention),reason?reason:"unspecified");
 }
 
 void startCapture() {
@@ -297,7 +302,7 @@ void startCapture() {
     runtime.nextDrainTick=runtime.sessionStartTick+kDrainIntervalMs;
     runtime.phase=PhaseState::Capturing;
     InterlockedExchange(&ws_request_presence_enabled,1);
-    msm2::writeLog("REQUEST_PRESENCE_CAPTURE_START class=automatic label=auto_admission capture_lifetime=script_session periodic_worker_drain_ms=%llu batch_record_cap=%ld session_record_cap=%llu shutdown_flush=best_effort_not_required_for_prior_batches manual_F11_F12_required=0",static_cast<unsigned long long>(kDrainIntervalMs),kBatchRecordCap,static_cast<unsigned long long>(kSessionRecordCap));
+    msm2::writeLog("REQUEST_PRESENCE_CAPTURE_START target_role=%s class=automatic label=auto_admission capture_lifetime=script_session periodic_worker_drain_ms=%llu batch_record_cap=%ld session_record_cap=%llu shutdown_flush=best_effort_not_required_for_prior_batches manual_F11_F12_required=0",kObservedRole,static_cast<unsigned long long>(kDrainIntervalMs),kBatchRecordCap,static_cast<unsigned long long>(kSessionRecordCap));
 }
 
 } // namespace
@@ -305,10 +310,10 @@ void startCapture() {
 namespace msm2::request_presence {
 
 bool start(bool targetBuildConfirmed,Config config,std::uintptr_t moduleBase,std::size_t moduleSize) {
-    msm2::writeLog("REQUEST_PRESENCE_CONFIG requested=%u mode=read_only entry_rva=0x%llx site_size=%llu capture_control=automatic_on_admission capture_lifetime=script_session periodic_worker_drain_ms=%llu batch_record_cap=%ld session_record_cap=%llu legacy_manual_controls=disabled",unsigned(config.enabled),static_cast<unsigned long long>(kRequestRva),static_cast<unsigned long long>(kRequestSize),static_cast<unsigned long long>(kDrainIntervalMs),kBatchRecordCap,static_cast<unsigned long long>(kSessionRecordCap));
+    msm2::writeLog("REQUEST_PRESENCE_CONFIG requested=%u target_role=%s mode=read_only entry_rva=0x%llx site_size=%llu capture_control=automatic_on_admission capture_lifetime=script_session periodic_worker_drain_ms=%llu batch_record_cap=%ld session_record_cap=%llu legacy_manual_controls=disabled",unsigned(config.enabled),kObservedRole,static_cast<unsigned long long>(kRequestRva),static_cast<unsigned long long>(kRequestSize),static_cast<unsigned long long>(kDrainIntervalMs),kBatchRecordCap,static_cast<unsigned long long>(kSessionRecordCap));
     if(runtime.created){
         InterlockedExchange(&ws_request_presence_enabled,0);
-        msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=resident_hook_already_created process_restart_required=1 previous_hook_enabled=%u trampoline_retained=1 original_forward_preserved=1",unsigned(runtime.enabled));
+        msm2::writeLog("REQUEST_PRESENCE_ADMISSION target_role=%s admitted=0 reason=resident_hook_already_created process_restart_required=1 previous_hook_enabled=%u trampoline_retained=1 original_forward_preserved=1",kObservedRole,unsigned(runtime.enabled));
         return false;
     }
     runtime=Runtime{};
@@ -319,51 +324,51 @@ bool start(bool targetBuildConfirmed,Config config,std::uintptr_t moduleBase,std
     resetBatch();
     ws_request_presence_original=0;
     if(!config.enabled){
-        msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=config_disabled");
+        msm2::writeLog("REQUEST_PRESENCE_ADMISSION target_role=%s admitted=0 reason=config_disabled",kObservedRole);
         return false;
     }
     runtime.started=true;
-    if(!targetBuildConfirmed){msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=target_build_gate_rejected");return false;}
-    if(!moduleBase || moduleSize<kRequestEndRva || kRequestRva>=moduleSize){msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=module_span_invalid base=0x%llx size=0x%llx",static_cast<unsigned long long>(moduleBase),static_cast<unsigned long long>(moduleSize));return false;}
+    if(!targetBuildConfirmed){msm2::writeLog("REQUEST_PRESENCE_ADMISSION target_role=%s admitted=0 reason=target_build_gate_rejected",kObservedRole);return false;}
+    if(!moduleBase || moduleSize<kRequestEndRva || kRequestRva>=moduleSize){msm2::writeLog("REQUEST_PRESENCE_ADMISSION target_role=%s admitted=0 reason=module_span_invalid base=0x%llx size=0x%llx",kObservedRole,static_cast<unsigned long long>(moduleBase),static_cast<unsigned long long>(moduleSize));return false;}
     auto target=moduleBase+kRequestRva;
     runtime.target=reinterpret_cast<void*>(target);
-    if(!pinTarget(runtime.target)){msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=target_module_pin_failed win32=%lu",GetLastError());return false;}
-    if(!copyCode(runtime.target,runtime.native.data(),runtime.native.size())){msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=native_snapshot_unreadable");return false;}
+    if(!pinTarget(runtime.target)){msm2::writeLog("REQUEST_PRESENCE_ADMISSION target_role=%s admitted=0 reason=target_module_pin_failed win32=%lu",kObservedRole,GetLastError());return false;}
+    if(!copyCode(runtime.target,runtime.native.data(),runtime.native.size())){msm2::writeLog("REQUEST_PRESENCE_ADMISSION target_role=%s admitted=0 reason=native_snapshot_unreadable",kObservedRole);return false;}
     char hash[65]{};
     if(!regionReadable(runtime.target,kRequestSize) || !sha256(runtime.target,kRequestSize,hash)){
-        msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=whole_site_hash_unavailable");return false;
+        msm2::writeLog("REQUEST_PRESENCE_ADMISSION target_role=%s admitted=0 reason=whole_site_hash_unavailable",kObservedRole);return false;
     }
     bool siteHash=std::strcmp(hash,kRequestSha256)==0;
     bool prefix=std::memcmp(runtime.native.data(),kRequestPrefix,sizeof(kRequestPrefix))==0;
-    msm2::writeLog("REQUEST_PRESENCE_SITE_IDENTITY whole_sha256=%s expected=%s hash_ok=%u prefix_ok=%u prefix_bytes=7 site_bytes=%llu",hash,kRequestSha256,unsigned(siteHash),unsigned(prefix),static_cast<unsigned long long>(kRequestSize));
+    msm2::writeLog("REQUEST_PRESENCE_SITE_IDENTITY target_role=%s whole_sha256=%s expected=%s hash_ok=%u prefix_ok=%u prefix_bytes=%u site_bytes=%llu",kObservedRole,hash,kRequestSha256,unsigned(siteHash),unsigned(prefix),unsigned(sizeof(kRequestPrefix)),static_cast<unsigned long long>(kRequestSize));
     bool spanOk=validateInstructionSpan(reinterpret_cast<const unsigned char*>(runtime.target));
     bool pdataOk=exactRequestUnwind(target,moduleBase);
     if(!siteHash || !prefix || !spanOk || !pdataOk){
-        msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=site_identity_or_span_or_pdata_mismatch hash_ok=%u prefix_ok=%u span_ok=%u pdata_ok=%u",unsigned(siteHash),unsigned(prefix),unsigned(spanOk),unsigned(pdataOk));return false;
+        msm2::writeLog("REQUEST_PRESENCE_ADMISSION target_role=%s admitted=0 reason=site_identity_or_span_or_pdata_mismatch hash_ok=%u prefix_ok=%u span_ok=%u pdata_ok=%u",kObservedRole,unsigned(siteHash),unsigned(prefix),unsigned(spanOk),unsigned(pdataOk));return false;
     }
     if(!pinObserverAndValidateUnwind()){
-        msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=observer_unwind_metadata_rejected");return false;
+        msm2::writeLog("REQUEST_PRESENCE_ADMISSION target_role=%s admitted=0 reason=observer_unwind_metadata_rejected",kObservedRole);return false;
     }
     MH_STATUS status=MH_Initialize();
     if(status!=MH_OK && status!=MH_ERROR_ALREADY_INITIALIZED){
-        msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=minhook_initialize status=%d",int(status));return false;
+        msm2::writeLog("REQUEST_PRESENCE_ADMISSION target_role=%s admitted=0 reason=minhook_initialize status=%d",kObservedRole,int(status));return false;
     }
     void* original=nullptr;
     status=MH_CreateHook(runtime.target,reinterpret_cast<LPVOID>(&ws_request_presence_observer),&original);
     if(status!=MH_OK || !original){
-        msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=minhook_create status=%d",int(status));return false;
+        msm2::writeLog("REQUEST_PRESENCE_ADMISSION target_role=%s admitted=0 reason=minhook_create status=%d",kObservedRole,int(status));return false;
     }
     runtime.created=true;
     runtime.trampoline=original;
     ws_request_presence_original=reinterpret_cast<std::uintptr_t>(original);
     bool trampolineOk=validateTrampoline(original,target);
-    msm2::writeLog("REQUEST_PRESENCE_TRAMPOLINE ok=%u trampoline=0x%llx expected_forward=0x%llx copied_prefix=7",unsigned(trampolineOk),static_cast<unsigned long long>(reinterpret_cast<std::uintptr_t>(original)),static_cast<unsigned long long>(target+sizeof(kRequestPrefix)));
-    if(!trampolineOk){msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=trampoline_identity_rejected retained_until_process_exit=1");return false;}
+    msm2::writeLog("REQUEST_PRESENCE_TRAMPOLINE target_role=%s ok=%u trampoline=0x%llx expected_forward=0x%llx copied_prefix=%u",kObservedRole,unsigned(trampolineOk),static_cast<unsigned long long>(reinterpret_cast<std::uintptr_t>(original)),static_cast<unsigned long long>(target+sizeof(kRequestPrefix)),unsigned(sizeof(kRequestPrefix)));
+    if(!trampolineOk){msm2::writeLog("REQUEST_PRESENCE_ADMISSION target_role=%s admitted=0 reason=trampoline_identity_rejected retained_until_process_exit=1",kObservedRole);return false;}
     status=MH_EnableHook(runtime.target);
-    if(status!=MH_OK){msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=minhook_enable status=%d retained_until_process_exit=1",int(status));return false;}
+    if(status!=MH_OK){msm2::writeLog("REQUEST_PRESENCE_ADMISSION target_role=%s admitted=0 reason=minhook_enable status=%d retained_until_process_exit=1",kObservedRole,int(status));return false;}
     runtime.enabled=true;
     if(!copyCode(runtime.target,runtime.patch.data(),runtime.patch.size())){
-        MH_DisableHook(runtime.target);runtime.enabled=false;msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=patch_snapshot_unreadable disabled_after_enable=1");return false;
+        MH_DisableHook(runtime.target);runtime.enabled=false;msm2::writeLog("REQUEST_PRESENCE_ADMISSION target_role=%s admitted=0 reason=patch_snapshot_unreadable disabled_after_enable=1",kObservedRole);return false;
     }
     std::uintptr_t relay=0;
     bool relayOk=patchRelay(runtime.target,relay);
@@ -372,11 +377,11 @@ bool start(bool targetBuildConfirmed,Config config,std::uintptr_t moduleBase,std
         MH_STATUS disabled=MH_DisableHook(runtime.target);
         runtime.enabled=false;
         bool restored=nativeRestored();
-        msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=0 reason=enabled_patch_identity_rejected relay_ok=%u suffix_ok=%u disable_status=%d native_restored=%u retained_until_process_exit=1",unsigned(relayOk),unsigned(suffixOk),int(disabled),unsigned(restored));
+        msm2::writeLog("REQUEST_PRESENCE_ADMISSION target_role=%s admitted=0 reason=enabled_patch_identity_rejected relay_ok=%u suffix_ok=%u disable_status=%d native_restored=%u retained_until_process_exit=1",kObservedRole,unsigned(relayOk),unsigned(suffixOk),int(disabled),unsigned(restored));
         return false;
     }
     runtime.admitted=true;
-    msm2::writeLog("REQUEST_PRESENCE_ADMISSION admitted=1 target=0x%llx relay=0x%llx observer=0x%llx trampoline=0x%llx whole_site_sha=verified pdata=exact observer_unwind=split_verified callback_io=0 callback_locks=0 callback_allocations=0 captured_pointer_dereference=0 argument_writes=0 request_suppression=0 original_forward=tail_trampoline retention=process_exit",static_cast<unsigned long long>(target),static_cast<unsigned long long>(relay),static_cast<unsigned long long>(reinterpret_cast<std::uintptr_t>(&ws_request_presence_observer)),static_cast<unsigned long long>(reinterpret_cast<std::uintptr_t>(original)));
+    msm2::writeLog("REQUEST_PRESENCE_ADMISSION target_role=%s admitted=1 target=0x%llx relay=0x%llx observer=0x%llx trampoline=0x%llx whole_site_sha=verified pdata=exact observer_unwind=split_verified callback_io=0 callback_locks=0 callback_allocations=0 captured_pointer_dereference=0 argument_writes=0 native_game_calls=0 original_forward=tail_trampoline retention=process_exit",kObservedRole,static_cast<unsigned long long>(target),static_cast<unsigned long long>(relay),static_cast<unsigned long long>(reinterpret_cast<std::uintptr_t>(&ws_request_presence_observer)),static_cast<unsigned long long>(reinterpret_cast<std::uintptr_t>(original)));
     startCapture();
     return true;
 }
@@ -386,17 +391,17 @@ void tick() {
 }
 
 void armNextGround() {
-    msm2::writeLog("REQUEST_PRESENCE_ARM rejected=1 class=legacy_manual_control reason=F11_disabled_capture_auto_starts_on_admission");
+    msm2::writeLog("REQUEST_PRESENCE_ARM target_role=%s rejected=1 class=legacy_manual_control reason=F11_disabled_capture_auto_starts_on_admission",kObservedRole);
 }
 
 void armNextWallRun() {
-    msm2::writeLog("REQUEST_PRESENCE_ARM rejected=1 class=legacy_manual_control reason=F12_disabled_capture_auto_starts_on_admission");
+    msm2::writeLog("REQUEST_PRESENCE_ARM target_role=%s rejected=1 class=legacy_manual_control reason=F12_disabled_capture_auto_starts_on_admission",kObservedRole);
 }
 
 void closeCapture(const char* reason) {
     InterlockedExchange(&captureCloseRequested,1);
     InterlockedExchange(&ws_request_presence_enabled,0);
-    msm2::writeLog("REQUEST_PRESENCE_CAPTURE_GATE closed=1 reason=%s prior_periodic_batches_already_persisted=1",reason?reason:"unspecified");
+    msm2::writeLog("REQUEST_PRESENCE_CAPTURE_GATE target_role=%s closed=1 reason=%s prior_periodic_batches_already_persisted=1",kObservedRole,reason?reason:"unspecified");
 }
 
 void stop(const char* reason) {
@@ -411,10 +416,10 @@ void stop(const char* reason) {
         if(active==0 && currentKnown && current==runtime.patch){
             MH_STATUS disabled=MH_DisableHook(runtime.target);
             bool restored=disabled==MH_OK && nativeRestored();
-            msm2::writeLog("REQUEST_PRESENCE_DISABLE owned_patch=1 active_callbacks=0 status=%d native_restored=%u trampoline_retained=1 observer_module_pinned=1",int(disabled),unsigned(restored));
+            msm2::writeLog("REQUEST_PRESENCE_DISABLE target_role=%s owned_patch=1 active_callbacks=0 status=%d native_restored=%u trampoline_retained=1 observer_module_pinned=1",kObservedRole,int(disabled),unsigned(restored));
             if(disabled==MH_OK) runtime.enabled=false;
         }else{
-            msm2::writeLog("REQUEST_PRESENCE_DISABLE owned_patch=0_or_busy skip_disable=1 active_callbacks=%ld current_readable=%u patch_match=%u capture_gate=closed code_and_trampoline_retained=1",active,unsigned(currentKnown),unsigned(currentKnown&&current==runtime.patch));
+            msm2::writeLog("REQUEST_PRESENCE_DISABLE target_role=%s owned_patch=0_or_busy skip_disable=1 active_callbacks=%ld current_readable=%u patch_match=%u capture_gate=closed code_and_trampoline_retained=1",kObservedRole,active,unsigned(currentKnown),unsigned(currentKnown&&current==runtime.patch));
         }
     }
     runtime.admitted=false;
