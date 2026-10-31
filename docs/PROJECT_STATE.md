@@ -1,3 +1,19 @@
+# Current presence-hook audit — 2026-10-31 JST — BLOCKED
+
+Owner155119 native contract accepted; no more generic MAY/identity acquisition.
+Runtime ground/WR presence observer NOT IMPLEMENTED/admitted. Audited concrete
+Request/GravityOwner entry MOV-prefix shapes (HDE fixture7/5bytes), existing
+MinHook/WR thunk/stop gates. C52 is VCH/DR-specific, not a blanket inline ban;
+no bypass. First unresolved guarantee: actual new-site unwind/trampoline/native
+continuation/forwarding compatibility. Native UNWIND_INFO absent in cloud; no
+new-window/buffer/F8/zerohit/cleanup success claim. Setter never hooked.
+New tightly scoped offline TWO-entry hook audit obtains unwind codes/prefix
+metadata under accepted hashes, always hook_admitted=false; not another contract
+or target search. ONE command -> logs/MSM2-WS-presence-hook-audit-*.json.
+No runtime/version/package/config/game changes or game test/Update-WS requested.
+See analysis/PRESENCE_HOOK_ADMISSION_AUDIT.md and CODEX_RESULT. Later owned native
+fixture proof required before implementing/releasing runtime observation.
+
 # Current native-contract handoff — 2026-10-31 JST
 
 Owner152832 resolution accepted:4 unique roles,2 reachable calls,7 markers;
