@@ -4,7 +4,7 @@
 
 ## STATUS
 
-**IMPLEMENTED / READ-ONLY CONTRACT PRESERVED / ASSEMBLY CHECK PASS / LOCAL FULL PIPELINE REACHED PACKAGE / PACKAGE POLICY FIX PUBLISHED / ACTUAL-GAME RUNTIME PENDING.**
+**IMPLEMENTED / READ-ONLY CONTRACT PRESERVED / ASSEMBLY CHECK PASS / OWNER FULL PIPELINE CURRENTLY PENDING AFTER C49 WINE TEST STABILIZATION / ACTUAL-GAME RUNTIME PENDING.**
 
 The former six manually armed 2-second ground/WallRun phases are replaced by one video-correlatable capture. The user starts recording, presses F11 once, performs the whole movement sequence naturally, and the diagnostic closes automatically after 30 seconds or 8192 retained records. F12 no longer arms a second phase.
 
@@ -32,12 +32,11 @@ This does not establish any engine meaning for the captured arguments. `RCX/RDX/
 - `source/include/version.hpp`, `source/mod/info.json`
   - v0.1c40 / package 0.1.65.
 
-## PACKAGE FAILURE FOUND ON OWNER UPDATE-WS RUN
+## FIRST OWNER UPDATE FAILURE — PACKAGE METADATA/POLICY
 
-The owner full updater run progressed through the existing build/test suites and failed at `stage=package`.
-The direct failure was the stale root `README_TEST.md`: `package.py` requires the current `versionLabel` and `packageVersion` to occur in that file, while it still advertised v0.1c38r5 / 0.1.61.
+The first owner full updater run reached `stage=package` and failed because root `README_TEST.md` still advertised v0.1c38r5 / 0.1.61 while `package.py` requires the current `versionLabel` and `packageVersion` to occur in that file.
 
-A second stale package-policy assertion was also identified before requesting another owner rerun: the historical monolithic package implementation still required `WALLSPRINT_ENABLE=1` and `WALLSPRINT_NATIVE_SOURCE_OVERRIDE=1`, while c40 intentionally requires both values to remain 0 and presence diagnostics to be enabled.
+A second stale package-policy assertion was identified before requesting another owner rerun: the historical monolithic package implementation still required `WALLSPRINT_ENABLE=1` and `WALLSPRINT_NATIVE_SOURCE_OVERRIDE=1`, while c40 intentionally requires both values to remain 0 and presence diagnostics to be enabled.
 
 Fix:
 
@@ -47,7 +46,26 @@ Fix:
 - the new small `source/tools/package.py` wrapper fail-closed patches exactly one known historical policy assertion in memory: it now requires `WALLSPRINT_ENABLE=0`, `WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0`, and `REQUEST_PRESENCE_DIAGNOSTIC=1` before executing the otherwise unchanged package implementation;
 - if the preserved base assertion shape changes, packaging aborts rather than silently changing policy.
 
-The failed updater explicitly retained the previous active script and performed no deployment. The repaired package path still requires a fresh local `Update-WS.cmd` run before v0.1c40 is considered locally built/deployed.
+The first failed updater retained the previous active script and performed no deployment.
+
+## SECOND OWNER UPDATE FAILURE — C49 WINE DEADLINE FIXTURE
+
+The next owner updater run stopped earlier at `stage=hooks:line51` inside the historical c49 test-only VCH search bridge fixture. The failing expression was exactly:
+
+`now() >= windows[0].end`
+
+The fixture had used one calculated `Sleep(ceil(remaining)+1)` and immediately asserted that the QPC-derived deadline had been crossed. On the owner Wine run that sleep returned before the QPC-derived deadline, producing `owned_probe_assertion_failed`. The failure occurred in `vch_search_bridge_smoke.cpp`, which is explicitly TEST ONLY and is never linked into `WallSprint.dll`.
+
+Fix published in commit `03b10053dbd0a3c045840f4ef109611faeef00c1`:
+
+- the deadline scenario now samples the existing QPC-derived `now()` repeatedly with `Sleep(1)`;
+- it stops as soon as the exact existing `windows[0].end` threshold is reached;
+- a separate `GetTickCount64` wall-clock bound of 2000 ms prevents an infinite or silently skipped wait;
+- if the deadline is still not reached within that bound, the same fail-closed assertion remains;
+- no c49 identity/order/debt/DR/VCH assertions were relaxed;
+- no production/game hook source was changed.
+
+Important pipeline-order correction: `workspace-build.sh` runs `build -> portable -> smoke -> hooks -> package`. Therefore this second run does **not** prove the earlier package fix yet; hooks stopped before package. A fresh owner `Update-WS.cmd` run is still required to verify both the c49 stabilization and the package repair together.
 
 ## SAFETY / ADMISSION
 
@@ -67,12 +85,14 @@ No movement, Position, input, adhesion, animation or camera implementation was a
 
 - `request_presence.S` was cross-assembled as Windows x86-64 COFF with clang targeting `x86_64-w64-windows-gnu`: PASS.
 - Resulting object retained `.pdata` size `0x78`, i.e. ten 12-byte runtime-function records for the observer/restore split: PASS.
-- Owner `Update-WS.cmd` run reached package after the preceding build/test suites; package failed only on the stale README assertion observed in the supplied console log.
-- The package-policy repair itself has not yet completed a fresh owner Windows/WSL full pipeline; rerun is required.
+- First owner `Update-WS.cmd` run reached package and exposed the stale README/package-policy issue.
+- Second owner run reached hooks and exposed the c49 single-sleep deadline flake before package was executed.
+- c49 source readback confirms the bounded repeated deadline wait is present on the canonical branch.
+- A complete fresh owner Windows/WSL pipeline after commit `03b10053dbd0a3c045840f4ef109611faeef00c1` has not yet run; do not claim package/deployment success yet.
 
 ## REQUIRED HUMAN RUNTIME TEST
 
-After a successful `Update-WS.cmd` build/deploy:
+Only after a successful `Update-WS.cmd` build/deploy:
 
 1. Start video recording before the capture.
 2. Press F11 once.
