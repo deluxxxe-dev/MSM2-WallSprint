@@ -1,3 +1,7 @@
+# Current owner evidence — 2026-10-31 JST
+
+R7 ON/OFF comparison accepted; supersedes historical owner-comparison-UNAVAILABLE/pending entries below. OFF startup and121 retained packets confirm zero active publications/A-B commits; ON89 packets confirm enabled effects. Desired down motion fails in both per owner. Repeated -12degree slopes correlate with native downward-limit hypothesis, not proof of config consumption. No repeat ON/OFF/video/scalar request. Next task is focused downward-intent/native-limit source research and implementation design; runtime unchanged. See analysis/V01C38R7_OWNER_COMPARISON_20261031.md and current CODEX_NEXT.
+
 # WallSprint project state
 
 ## Current handoff — r7 diagnostic-only ON/OFF comparison prepared
