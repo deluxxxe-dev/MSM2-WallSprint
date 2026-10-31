@@ -208,9 +208,10 @@ def probe(token,legacy,distro,expected_uid=None,elevated=False,attempt=0,wait_ms
       identity=start(int(n))
       if identity[1] not in ('Z','X','x'):final_ids[int(n)]=identity[0]
      except FileNotFoundError:continue
-   if final_ids!=seen_ids:
+   new_or_reused={pid:start for pid,start in final_ids.items() if seen_ids.get(pid)!=start}
+   if new_or_reused:
     if attempt<2:return probe(token,legacy,distro,expected_uid,True,attempt+1,wait_ms,deadline,wait_round)
-    event(None,'inventory','inventory_unstable');unknown=True
+    event(None,'inventory','inventory_unstable',new_or_reused=len(new_or_reused),departed_only=max(0,len(seen_ids)-len(final_ids)));unknown=True
   except (OSError,ValueError,IndexError) as ex:event(None,'inventory','inventory_error',getattr(ex,'errno',None));unknown=True
  out['result']='ACTIVE' if active else 'UNKNOWN' if unknown else 'QUIET'
  return out
