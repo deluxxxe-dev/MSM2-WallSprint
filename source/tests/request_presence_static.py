@@ -20,9 +20,10 @@ required_cpp=[
     'kRequestRva = 0x11A1BD0',
     'kRequestEndRva = 0x11A1CA2',
     'kRequestUnwindRva = 0x94697E0',
-    'kPhaseRecordCap = 131072',
-    'kPhaseLimit = 1',
-    'kPhaseDurationMs = 300000',
+    'kBatchRecordCap = 16',
+    'kDrainIntervalMs = 500',
+    'kQuiesceWaitMs = 250',
+    'kSessionRecordCap = 65536',
     '2d8792492c8b89d4e9885d55fa45fb2c6b4126b4ae992f854f6d687522163d0c',
     'bool spanOk=validateInstructionSpan',
     'bool pdataOk=exactRequestUnwind',
@@ -32,15 +33,22 @@ required_cpp=[
     'captured_pointer_dereference=0',
     'argument_writes=0',
     'request_suppression=0',
-    'label_auth=video_posthoc_not_native_authenticated',
-    'correlation=non_atomic',
     'capture_control=automatic_on_admission',
-    'legacy_manual_controls=disabled',
-    'arm("automatic","auto_admission")',
-    'F11_disabled_capture_auto_arms_on_admission',
-    'F12_disabled_capture_auto_arms_on_admission',
-    'offset_ms_est=',
-    'offset_clock=tsc_linearized_to_GetTickCount64',
+    'capture_lifetime=script_session',
+    'periodic_worker_drain_ms=%llu',
+    'batch_record_cap=%ld',
+    'session_record_cap=%llu',
+    'REQUEST_PRESENCE_BATCH_SUMMARY',
+    'REQUEST_PRESENCE_RECORD batch_id=',
+    'session_offset_ms_est=',
+    'shutdown_flush=best_effort_not_required_for_prior_batches',
+    'prior_periodic_batches_already_persisted=1',
+    'volatile LONG captureCloseRequested=0',
+    'atomicRead(&captureCloseRequested)==0',
+    'drainBatch("periodic_worker",true)',
+    'drainBatch(reason?reason:"stop",false)',
+    'F11_disabled_capture_auto_starts_on_admission',
+    'F12_disabled_capture_auto_starts_on_admission',
     'trampoline_retained=1',
     'observer_module_pinned=1',
 ]
@@ -64,12 +72,15 @@ assert (runtime_begin,runtime_end,runtime_unwind,runtime_hash)==(audit_begin,aud
 )
 assert '2d879249c65b8074bb548e6563b5e0c2955ab672c4fd3cf080adb83b48691d64' not in cpp
 assert '0x1154EDC' not in cpp
+assert 'kPhaseDurationMs = 300000' not in cpp
+assert 'kPhaseRecordCap = 131072' not in cpp
 
 lower_asm=asm.lower()
 assert '\n    call ' not in lower_asm
 for reg in ('xmm','ymm','zmm'):
     assert reg not in lower_asm
-assert 'cmp eax, 131072' in asm
+assert 'cmp eax, 16' in asm
+assert 'cmp eax, 131072' not in asm
 assert 'ws_request_presence_read_tsc:' in asm
 assert 'lock cmpxchg DWORD PTR ws_request_presence_count[rip], ecx' in asm
 assert 'lock inc DWORD PTR ws_request_presence_overflow[rip]' in asm
@@ -90,23 +101,28 @@ for ini in (default_ini,preset):
     assert 'REQUEST_PRESENCE_DIAGNOSTIC=1' in ini
     for needle in ('WALLSPRINT_ENABLE=0','WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0','WALLSPRINT_ORIENTATION_WRITE=0','WALLSPRINT_ADHESION_WRITE=0','WALLSPRINT_MOVEMENT_WRITE=0'):
         assert needle in ini, needle
-    assert 'No F11/F12 input is required' in ini or 'no F11/F12 input is required' in ini
-    assert '131072' in ini
-assert 'v0.1c43' in default_ini
+    assert 'No F11/F12 input' in ini or 'no F11/F12 input' in ini
+    assert '500 ms' in ini
+    assert '16 records' in ini
+    assert 'waiting' in ini
+assert 'v0.1c44' in default_ini
 
-assert 'versionLabel[]="v0.1c43"' in version
-assert 'packageVersion[]="0.1.68"' in version
-assert '"version": "0.1.68"' in info
-assert 'WallSprint v0.1c43' in info
-assert '131072' in info and '5 minutes' in info
+assert 'versionLabel[]="v0.1c44"' in version
+assert 'packageVersion[]="0.1.69"' in version
+assert '"version": "0.1.69"' in info
+assert 'WallSprint v0.1c44' in info
+assert '500 ms' in info and '16 records' in info and '65536' in info
 
 for readme in (source_readme, project_readme):
-    assert 'v0.1c43' in readme
-    assert '0.1.68' in readme
+    assert 'v0.1c44' in readme
+    assert '0.1.69' in readme
     assert 'No F11/F12 input is required' in readme
-    assert '131072' in readme
-    assert '5 minutes' in readme
+    assert '500 ms' in readme
+    assert '16 retained records' in readme
+    assert '65536' in readme
+    assert 'No extra wait is required' in readme
     assert '0x94697E0' in readme
+    assert 'c43 proved the exact Request site' in readme
 
 for needle in (
     'package_mode": "request_presence_read_only"',
@@ -115,11 +131,16 @@ for needle in (
     '"request_presence_diagnostic": True',
     '"native_source": False',
     '"capture_control": "automatic_on_admission"',
-    '"capture_duration_ms": 300000',
-    '"record_cap": 131072',
+    '"capture_lifetime": "script_session"',
+    '"periodic_worker_drain_ms": 500',
+    '"batch_record_cap": 16',
+    '"session_record_cap": 65536',
+    '"shutdown_flush_required_for_prior_batches": False',
     '"manual_F11_F12_required": False',
 ):
     assert needle in package_wrapper, needle
-assert 'c43' in package_wrapper
+assert 'c44' in package_wrapper
+assert 'capture_duration_ms' not in package_wrapper
+assert 'record_cap": 131072' not in package_wrapper
 
 print('request_presence_static: PASS')
