@@ -1,30 +1,27 @@
-# Next task — resolve native downward limit and independent directional intent
-Branch codex/v01c20-edi-value-provenance. No main merge.
-Read AGENTS required docs, analysis/V01C38R7_OWNER_COMPARISON_20261031.md, WSU_REFERENCE_REVIEW_20261031.md, VANILLA_WALLRUN_STEERING_CONFIG_20261029.md, existing r5/r6 heading/runtime/source reviews and relevant Wisdoms.
+# Next task — execute ground-Sprint support/gravity consumer investigation
 
-## Accepted result / objective
-R7 owner ON/OFF comparison is complete: OFF0publications/A-B commits, ordinary WR; downward failure persists in both modes. Do not repeat diagnostic acquisition or demand OFF video. Existing heading observer follows actual displacement, so it cannot independently request missing downward locomotion.
-Find a concrete evidence-backed route to downward WS and earlier input-driven facing. This task is focused source/static research and a reviewable implementation design, NOT another generic diagnostic version or blind gameplay patch.
+Branch codex/v01c20-edi-value-provenance; no main merge. Previous architecture/design task is COMPLETED. Do not repeat its comparison as this task's output.
+Read AGENTS required docs, analysis/DOWNWARD_INTENT_IMPLEMENTATION_DESIGN.md, INITIAL_WALL_AS_GROUND_REVIEW_20261031.md, V01C38R7_OWNER_COMPARISON_20261031.md, WSU_REFERENCE_REVIEW_20261031.md and relevant Wisdoms.
 
-## Work
-1. Inspect current runtime source/data flow, not unused controller helpers: enumerate current actor/normal/displacement inputs and exactly why downward heading cannot be generated independently. Identify where requested input direction could be observed before displacement. Separate final body pose, orientation source, animation, actual velocity and mapped intent.
-2. Investigate native downward restriction: retained slopes repeatedly reach about-12degrees in BOTH treatments and Standard TurnMaxDown=12, but this is correlation. Search existing authenticated callsites, config decoder/loader/reference sources for actual selection/field consumption. Document what proves or blocks units, selected resource and current-state applicability. No repeating TurnSpeedFast/Slow probes, no arbitrary parameter tuning.
-3. Use supplied WSU static findings as leads: SwingCore RVA0x36770 chooses velocityPure first, inputDirection fallback from its own context; trace context producer only if binaries are actually available. wallslide uses a runtime controller plus assets, not config alone. DLL-relative offsets are NOT game offsets. No copying code/binaries/assets into WS. Do not assume cloud has attachments from Chat; if unavailable, use report plus existing repository/accessible primary source evidence, report exact missing producer proof, and complete all independent source/design work. Do not block all work on file availability or claim disassembly not performed.
-4. Produce one preferred minimal design with exact existing source touchpoints, required field/ABI/identity/lifetime validation, how movement intent differs from orientation, and how to preserve current successful lateral/upper-direction behavior and repeated-turn lifecycle. If evidence is insufficient, state ONE concrete next evidence acquisition with why it resolves the blocker; do not implement/request it automatically, resume stopped scalar CFG, or chain byte captures. Consider whether privately supplied reference files already resolve it before requesting owner action.
+## Goal and authorized work
+Execute the proposed first discriminator: identify current-build native ground-Sprint controller/state and how it decides grounded support, Up, gravity and slope. Determine which first actual consumer uses an owner-relative direction versus world vertical. Actual native evidence is required; names/reference strings are leads, never proof.
+Search existing authenticated captures, source/SDK, local privately available reference binaries and current-build EXE if present. Record exact input identities and reproducible static investigation. Reuse completed input-source work; don't rediscover the r7 displacement-only issue.
+No ground-controller experiment was previously disproven: historical posture tests did not test controller transplantation.
 
-## Scope / deliverable
-Allowed analysis documents and necessary offline analysis helpers using existing inputs; no runtime/version/package change by default. No new live pointer reads/hooks, motion/input/velocity/gravity/animation/Position writes, config stage deployment, shared updater/loader/profile/SF changes, C52 relaxation or speculative offsets.
-Record accepted comparison in PROJECT_STATE (prepend current status; do not rewrite history), supersede old comparison-pending claims explicitly, update CODEX_RESULT and add analysis/DOWNWARD_INTENT_IMPLEMENTATION_DESIGN.md. Leave CODEX_NEXT task intent intact or mark completed without inventing follow-on authorization.
-Run only relevant checks if a real helper changes; docs-only no full build/test/package. Commit/push/readback verify; concise STATUS/CHANGED/RESULT/NEED with concrete finding, not success implying gameplay fixed.
+## Mandatory concrete completion path
+A. If inputs exist: do bounded static entry/callsite/consumer analysis now, with exact-build/function identity, provenance and explicit boundary at unknown fields/callees. Output identified candidate and precise next ABI/lifetime validation, not another architectural comparison.
+B. If required native input is absent: prepare and test a read-only OFFLINE evidence acquisition helper plus ONE copy/paste Windows invocation. Reuse existing offline helper/bootstrap/layout conventions; do not require full EXE upload, game launch or runtime update. First establish a grounded discovery anchor from existing verified symbols/RTTI/state registries/references; do not invent a Sprint RVA, blindly export game regions or substitute a broad executable dump.
+The helper may inspect the owner-local EXE read-only to locate a grounded anchor and export only compact metadata/addresses/hashes and strictly necessary bounded code evidence. Validate PE/file identity/ranges/output caps, ambiguous/no-match refusal, malformed input and correct synthetic fixtures. Keep private binary fragments out of Git/release artifacts. Do not reintroduce stopped WR scalar CFG captures.
+If a reliable exact code anchor cannot yet be established, implement a compact metadata-only anchor discovery step (e.g. bounded known state/type-name and actual xref candidates) that explicitly returns candidates, NOT authenticated consumers or writable ownership. Document why that single acquisition resolves the first missing identity and exact output to return. No fake successful game proof from synthetic tests.
+Do not end with only “evidence missing / proposed not initiated” when a safe read-only helper can make the missing evidence obtainable.
 
-## Owner test after eventual behavior implementation (include in design)
-A later authorized behavior patch must specify Update-WS -> Install mods -> Run, correct ON/default selection restoration, exact version/log, then:
-1 lateral left/right plus repeated reversal without WS release;
-2 horizontal WS -> down hold3seconds: sustained downward movement/facing, no periodic horizontal flips;
-3 lower-right/lower-left holds3seconds: visible diagonal downward travel with stable facing;
-4 upper/upper-diagonal regression and RT-held stick-neutral/reinput behavior.
-Do not ask owner to repeat unchanged r7 now. If current task is docs-only explicitly say no runtime update/test for it; the above is the later patch acceptance test, not a claim of present support.
+## Boundaries
+This task authorizes offline investigation/helper implementation and its focused tests, documentation and publication. NOT live hooks/reads, state switches, motion/Position/input/gravity/animation writes, guessed component layouts, config tuning, C52 bypass or shared environment/SF/profile/loader changes.
+No new runtime version/build/game package unless separately justified by actual authorized runtime work (none expected). Preserve current r7 behavior and old successful orientation/lifecycle source.
+Do not require WSU attachments to finish independent acquisition work. No WSU binary/code/asset vendoring.
 
-## User steering — original ground-Sprint architecture review
-Read analysis/INITIAL_WALL_AS_GROUND_REVIEW_20261031.md. Original Oct22 goal already was wall-as-ground/normal Sprint stance; historical builds tested posture and its overwrite, NOT a complete native ground-Sprint locomotion transplant. Do not treat that route as tried-and-rejected.
-Expand the current design review BEFORE selecting a WR-constraint remedy: compare (A) native ground Sprint with wall-relative support/up/gravity, (B) surface-relative WS movement request through existing native collision/contact, (C) changing WR steering constraints. Distinguish animation reuse from locomotion-controller reuse. Determine from current available source/evidence whether ground-state contact/gravity/up can be surface-relative, with exact references and missing proof. Do not assume rotating Actor Up rotates gravity or ground checks. Select one preferred route based on evidence and identify the first discriminating verification; native arbitrary-up remains UNKNOWN unless proven. Reuse valid existing surface/lifecycle/restore work; do not rewrite/reset working code. Current docs/static-only scope and all runtime limitations stay unchanged. Do not interrupt/discard independent intent-source work already completed; incorporate it into the comparison.
+## Deliverables
+Update analysis with actual executed consumer/anchor investigation, evidence classification and exact remaining blocker; PROJECT_STATE and CODEX_RESULT. Include helper source/tests if needed, exact one-shot owner command, output filename/path, and no-game/no-runtime-update semantics.
+Tests only relevant helper checks if code changes; docs-only no full build. Commit/push and independently verify files.
+Final concise STATUS/CHANGED/RESULT/NEED. If owner action is necessary, provide a runnable command, not an offer to prepare it later. If only native identity acquisition is ready, call it evidence collection, NOT gameplay test or descent fix.
+User authorizes routine progression to concrete Codex instructions or a runnable owner evidence/test step without repeated confirmation. Follow-on gameplay writes still require actual evidence-backed task scope; do not use autonomy to invent ABI.
