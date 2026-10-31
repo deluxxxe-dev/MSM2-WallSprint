@@ -103,3 +103,15 @@ No Update-WS, Install mods, game launch, WSU upload or full EXE upload.
 The JSON will supply exact-image names/reference candidates for the next bounded
 identity review; it will not by itself prove gravity/support semantics or permit
 production integration. No automatic follow-on gameplay changes authorized.
+
+### Verified implementation publication
+
+Implementation `54d982ff001cea9ab3de7fa0fdad9b4d6d64e13c` pushed on the task branch.
+`python3 /tmp/ws-ground-publication.py`: expected independent clone FETCH_HEAD,
+local HEAD and GitHub ls-remote agreement plus exact bytes for all7 changed
+files against baselinef07e4c0; actual PASS at54d982f. This is a publication check,
+not an additional native/fixture PASS. Final record-only commit follows, then
+same check repeated; no reason to rerun unchanged helper suites after doc-only
+record. Whitespace/scope and actual owner snippet parser PASS. The parser used:
+`XDG_CACHE_HOME=/tmp/ws-ground-pwsh/cache XDG_CONFIG_HOME=/tmp/ws-ground-pwsh/config XDG_DATA_HOME=/tmp/ws-ground-pwsh/data /tmp/ws-proxy-pwsh/pwsh -NoProfile -Command '$tokens=$null; $errs=$null; [void][System.Management.Automation.Language.Parser]::ParseFile("/tmp/ws-ground-owner-command.ps1",[ref]$tokens,[ref]$errs); if($errs.Count){throw ($errs|Out-String)}; "PASS owner PowerShell command syntax"'`.
+Final branch/record SHA reported in owner handoff. No new release/runtime package.
