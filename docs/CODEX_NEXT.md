@@ -1,30 +1,21 @@
-# Next task — isolate downward WS motion / orientation interaction
+# Next task — acquire exact missing original WallRun continuation offline
 Branch codex/v01c20-edi-value-provenance; no main merge.
-Read AGENTS docs, analysis/R5_NUMBERED_OWNER_RUNTIME_20261031.md, r5 heading implementation analysis and current source paths. Relevant Wisdoms references only.
-Owner r5 actual game run supplied. Stop old updater/WSL diagnostics; do not repeat completed r5 general-plane implementation.
+Read AGENTS required docs, analysis/R6_OWNER_DOWNWARD_RESULT_20261031.md, analysis/V01C38R6_DOWNWARD_INTERACTION.md and analysis/FLAT_WALL_LATERAL_ROUTE_REVIEW.md.
+R6 owner evidence supplied. No further diagnostic runtime rebuild or unchanged game test.
 
-## Objective / decision
-Fix descending WS without periodic horizontal flips. First isolate why measured motion becomes horizontal during owner down-input report. Observer cannot face requested down if sampled translation becomes horizontal; blindly forcing down or reducing thresholds is not supported.
-Current up/general-plane headings execute. Preserve existing working left/right/up and r5 timing.
-Upper diagonal weak lateral movement, direct vertical entry and RT-held stationary WS are explicit later backlog, NOT solved or silently changed here.
+## Goal
+Advance actual descending steering investigation beyond repeated position/axis logging.
+Missing current-build original code is specifically RVA0x14248f9/max128 bytes, bounded by original executable/file-backed section and runtime/unwind coverage and first relevant control boundary per prior analysis.
+Prepare one read-only offline extraction action using existing PE/range/decoder primitives. Reuse exact-build SHA/known capture authentication in repository; do not guess hash or broaden unknown range.
+If matching authenticated original EXE/capture is already available to environment, perform bounded extraction and analysis directly; otherwise create minimal CLI + Windows entrypoint with explicit game/source paths auto-derived from existing layout and ONE owner copy-paste/double-click action.
+No whole EXE upload or broad scan. Output compact JSON/report + bounded byte evidence suitable for Chat analysis, source EXE SHA, section file-backed/executable/range mapping, block SHA and covering runtime/unwind metadata. Original on-disk bytes, not hook-patched live process.
+Unsupported build/truncation/nonfile-backed/range/metadata conflicts must report specific refusal; do not silently expand to fallthrough/recursive functions. Treat no unwind entry as fact, not fabricated boundary.
+Do not automatically interpret untyped calls as movement/input APIs or issue write certificate.
+No new runtime diagnostic/version, game hooks/reads/writes, token/WSL repair, Position/input/velocity/animation patch, c73 or unrelated repository work.
 
-## Narrow code/evidence task
-Trace ONLY existing authenticated native WallRun motion/steering and A/B original source vs orientation override interaction; use current known captures and review FLAT_WALL_LATERAL_ROUTE_REVIEW if needed. Do not reopen large c-series search or repeat input inventory.
-Check whether heading/source basis participates in original movement-coordinate calculation, whether original game down steering/contact behavior naturally produces horizontal oscillation, and which existing evidence can distinguish those hypotheses. Names/static interpretation not runtime causality.
-Use supplied concrete session4 delta/target evidence; do not blame low_speed gate alone or claim accepted switches were tiny lateral noise.
-If source shows a specific reproducible pure-math/adapter defect, fix ONLY that defect in separate minimal change with targeted replay tests.
-If original motion semantics unproven, implement only necessary bounded diagnostics on ALREADY authenticated values at existing hook/caller locations: coherent full tangent displacement, current surface normal, requested/published heading, actual actor basis and native lifecycle/update/monotonic clock, plus original incoming A/B axes only if existing safe reads cover them. Original incoming axes may be prior WS output; do not treat them as independent input intent. Reuse existing logs when sufficient.
-Ensure down/diagonal/low_speed rejection samples remain observable beyond first8 hold events: bounded summaries/ring windows with explicit drops, NOT unlimited logging. Preserve no new pointers/hooks/API and no generic telemetry framework.
-If exact current-build original continuation is required but absent, report ONE precise offline capture/helper action; do not fabricate function signatures or broad scan.
-
-## Strict change boundaries
-No arbitrary Position/velocity/gravity/input/animation writes; no forcing target down from unmeasured stick, screen axes or sign heuristics; no native Deinit suppression.
-No threshold/count/interval/duration changes as an unsubstantiated fix. Speed2/33ms/two samples/120ms/12deg/8deg stay unless a specific verified bug mandates change and explained.
-No simultaneous descending-speed/animation-playback/diagonal-gain/idle/camera/contact overhaul.
-Existing owner/build/lifetime/stale/A-B proper basis/4096/C52 gates remain. No SF/shared tools/profile/DLL mutation.
-Allowed minimum source/math fix IF evidenced, or scoped diagnostics; analysis/PROJECT_STATE/CODEX_RESULT and corresponding tests/version/package only if runtime bytes change.
-
-## Completion
-One causal explanation limited to established evidence, actual minimal patch or exact remaining missing fact. Synthetic fixture tests must not substitute for native game ownership proof.
-Run appropriate existing required checks for actual diff; no full native suite for docs-only. Runtime patch uses standard build/focused/portable/smoke/native/hooks/release validation and exact version/log naming.
-Commit/push verify; report STATUS/CHANGED/RESULT/NEED only. Chat supplies numbered owner comparison test after implementation. No request to repeat unchanged test now.
+## Scope / validation / owner handoff
+Allowed narrow offline helper/wrapper if missing, focused parser/range tests and docs, PROJECT_STATE/CODEX_RESULT. Existing primitives preferred over new framework.
+Test wrong SHA/build, invalid RVA, truncated/non-backed section, bounded output cap and metadata boundaries. Never redistribute full proprietary function/executable or raw user log.
+One concrete action must work on owner Windows without full WS build/test/package cycle; identify exact generated output path and which small file to return. Preserve unrelated files and git source/local changes.
+If extraction cannot be prepared due to a specific missing primitive/authentication fact, report that exact prerequisite rather than repeating broad investigation.
+Commit/push verify; response STATUS/CHANGED/RESULT/NEED. Chat supplies owner instructions. r6 runtime bytes unchanged.
