@@ -19,10 +19,10 @@ constexpr std::uintptr_t kRequestEndRva = 0x11A1CA2;
 constexpr std::uintptr_t kRequestUnwindRva = 0x1154EDC;
 constexpr std::size_t kRequestSize = kRequestEndRva - kRequestRva;
 constexpr std::size_t kNativeSnapshot = 32;
-constexpr LONG kPhaseRecordCap = 8192;
+constexpr LONG kPhaseRecordCap = 16384;
 constexpr unsigned kPhaseLimit = 1;
-constexpr ULONGLONG kPhaseDurationMs = 30000;
-constexpr char kRequestSha256[] = "2d879249c65b8074bb548e6563b5e0c2955ab672c4fd3cf080adb83b48691d64";
+constexpr ULONGLONG kPhaseDurationMs = 45000;
+constexpr char kRequestSha256[] = "2d8792492c8b89d4e9885d55fa45fb2c6b4126b4ae992f854f6d687522163d0c";
 constexpr unsigned char kRequestPrefix[] = {0x4c,0x8b,0xdc,0x49,0x89,0x5b,0x08};
 
 struct PresenceRecord {
