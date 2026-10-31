@@ -1,77 +1,79 @@
-# Result — WallSprint v0.1c41 Request presence correction
+# Result — WallSprint v0.1c43 Request presence correction
 
 2026-10-31. Active implementation branch: `codex/v01c20-edi-value-provenance`. No main merge.
 
 ## STATUS
 
-**C40 RUNTIME FAILURE CAUSE VERIFIED / C41 CORRECTION PUBLISHED / READ-ONLY CONTRACT PRESERVED / FULL OWNER PIPELINE PENDING / C41 ACTUAL-GAME RUNTIME PENDING.**
+**C42 RUNTIME FAILURE CAUSE VERIFIED / C43 CORRECTION PUBLISHED / READ-ONLY CONTRACT PRESERVED / FULL OWNER PIPELINE PENDING / C43 ACTUAL-GAME RUNTIME PENDING.**
 
-## C40 ACTUAL RUNTIME RESULT
+## C42 ACTUAL RUNTIME RESULT
 
-The owner successfully installed and launched `v0.1c40 / package 0.1.65`, then supplied the game log and video for the one-F11 ground Sprint -> reverse -> neutral -> ordinary WallRun left -> right -> down sequence.
+The owner successfully installed and launched `v0.1c42 / package 0.1.67` and supplied a game log and video for the ground Sprint -> reverse -> neutral -> ordinary WallRun left -> right -> down sequence.
 
-The target game build was accepted (`2.810.0.0`, on-disk SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`). However RequestSimpleMotion admission failed before F11 capture:
+The exact target build was accepted (`Spider-Man2.exe` 2.810.0.0, on-disk SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`). RequestSimpleMotion admission then produced:
 
-- actual whole-site SHA: `2d8792492c8b89d4e9885d55fa45fb2c6b4126b4ae992f854f6d687522163d0c`;
-- c40 runtime expected SHA: `2d879249c65b8074bb548e6563b5e0c2955ab672c4fd3cf080adb83b48691d64`;
-- prefix matched, whole hash did not;
-- admission logged `admitted=0 reason=site_identity_or_span_or_pdata_mismatch`;
-- F11 then logged `reason=diagnostic_not_admitted`.
+- whole-site SHA: correct / `hash_ok=1`;
+- seven-byte prefix: correct / `prefix_ok=1`;
+- stolen span: correct / `span_ok=1`;
+- runtime-function begin/end: correct (`0x11A1BD0..0x11A1CA2`);
+- actual `.pdata` UnwindData RVA: `0x94697E0`;
+- c42 expected UnwindData RVA: `0x1154EDC`;
+- `pdata_ok=0`;
+- final admission: `admitted=0 reason=site_identity_or_span_or_pdata_mismatch`.
 
-Therefore c40 produced no valid RequestSimpleMotion records. The absence of Request records is not a zero-call result.
+Therefore c42 auto-capture never armed and produced no valid RequestSimpleMotion records. Absence of records is not a zero-call result.
 
-The existing accepted audit source had already pinned the correct Request tuple: RVA `0x11A1BD0` to `0x11A1CA2` with SHA `2d8792492c8b89d4e9885d55fa45fb2c6b4126b4ae992f854f6d687522163d0c`. The c40 error was an implementation consistency mismatch in `kRequestSha256`.
+The prior accepted owner hook audit `MSM2-WS-presence-hook-audit-20261031-161445.json` had already recorded RequestSimpleMotion UnwindData `155621344 / 0x94697E0`, matching the c42 actual game runtime. The c42 `0x1154EDC` production constant was an implementation/transcription consistency error, not a changed game build.
 
-The independent WallRun hooks remained functional. WallRun session 8 recorded Init=1, Entry=1, Update=1798, Deinit=1 over 20.918701 s, so the ordinary WallRun portion did occur.
+The independent WallRun lifecycle hooks remained functional. The main recorded WallRun was session 5, approximately `12:45:11.548Z` to `12:45:29.926Z` (~18.38 s). The owner reports that the final down input did not produce the same immediate reversal seen in the prior run. Preserve that as observed behavior only: the c42 Request capture was rejected and the log has no authenticated keyboard-input stream, so no Request argument semantics or causal input mapping are claimed.
 
-The supplied video is 32.75 s. F11 was logged around `12:10:07.509Z`, while the relevant WallRun session continued until about `12:10:41.704Z`, so the old 30-second capture window was also too short for this actual sequence.
+Detailed evidence: `analysis/REQUEST_PRESENCE_C42_RUNTIME_FAILURE_20261031.md`.
 
-Detailed evidence: `analysis/REQUEST_PRESENCE_C40_RUNTIME_FAILURE_20261031.md`.
+## C43 IMPLEMENTATION
 
-## C41 IMPLEMENTATION
+Version is now `v0.1c43`, package `0.1.68`.
 
-Version is now `v0.1c41`, package `0.1.66`.
+Changes are limited to the read-only Request presence diagnostic identity contract and synchronized metadata/tests:
 
-Changes are limited to the read-only presence diagnostic and its metadata/tests:
-
-- RequestSimpleMotion runtime whole-site SHA corrected to the accepted audit/runtime SHA above;
-- one F11 continuous capture retained;
-- maximum capture duration increased to 45 seconds;
-- bounded record cap increased to 16384;
-- F12 remains disabled for this capture;
+- `kRequestUnwindRva` corrected to accepted/runtime `0x94697E0`;
+- production Request begin/end/SHA remain unchanged;
+- automatic capture on successful admission retained;
+- maximum capture remains 300000 ms / 5 minutes;
+- record cap remains 131072;
+- no F11/F12 input required;
 - `WALLSPRINT_ENABLE=0`;
 - `WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0`;
 - orientation/adhesion/movement writes remain OFF;
-- Request arguments remain opaque bits with no captured-pointer dereference or argument modification.
+- Request arguments remain opaque bits; no captured-pointer dereference or argument modification.
 
 ## PREVENTING THE SAME ERROR
 
-`source/tests/request_presence_static.py` now parses the RequestSimpleMotion begin/end/SHA tuple from both production `request_presence.cpp` and the existing accepted `audit_presence_hook_sites.py` and requires exact equality.
+`source/tools/audit_presence_hook_sites.py` now pins the accepted RequestSimpleMotion UnwindData RVA for the exact target build.
 
-This directly prevents another build in which the audit identity and runtime admission constant silently diverge. The test also checks c41 version/package, 45-second duration, 16384 record cap, ASM cap, both READMEs, read-only INI state, and package manifest metadata.
+`source/tests/request_presence_static.py`, executed at the start of `source/tools/test.sh`, now parses the production Request begin/end/UnwindData/SHA and the accepted audit constants and requires exact four-field equality. It explicitly rejects the old `0x1154EDC` production value and also checks c43 version/package, mod metadata, both READMEs, read-only INI state, 5-minute/131072 capture bounds and package metadata.
 
-## FILES CHANGED FOR C41
+## FILES CHANGED FOR C43
 
 - `source/src/msm2/request_presence.cpp`
-- `source/src/msm2/request_presence.S`
+- `source/tools/audit_presence_hook_sites.py`
 - `source/tests/request_presence_static.py`
 - `source/include/version.hpp`
 - `source/mod/info.json`
 - `source/mod/WallSprint.ini`
-- `source/mod/presets/request_presence_read_only.ini`
 - `source/tools/package.py`
+- `source/tools/test.sh` (comment only; full prior test sequence retained)
 - `README_TEST.md`
 - `source/README_TEST.md`
-- `analysis/REQUEST_PRESENCE_C40_RUNTIME_FAILURE_20261031.md`
+- `analysis/REQUEST_PRESENCE_C42_RUNTIME_FAILURE_20261031.md`
 - `docs/CODEX_RESULT.md`
 
 ## VALIDATION STILL REQUIRED
 
-The corrected c41 source is published, but the owner has not yet run the normal Windows/WSL `Update-WS.cmd` pipeline against these c41 changes. Do not claim c41 build/package/deployment or actual Request admission success yet.
+The corrected c43 source is published, but the normal owner Windows/WSL `Update-WS.cmd` full pipeline has not yet been run against these c43 changes. Do not claim c43 build/package/deployment or actual Request admission success yet.
 
 Next action:
 
 1. Run `Update-WS.cmd` with the game and shared Overstrike closed.
-2. Require the complete full-pipeline PASS and c41 deployment.
-3. Only then rerun the same one-F11 video test.
-4. For c41 runtime acceptance, first verify `REQUEST_PRESENCE_ADMISSION admitted=1` before interpreting any records.
+2. Require the complete full-pipeline PASS and c43 deployment.
+3. Only then rerun the same automatic-capture video sequence; no F11/F12.
+4. For c43 runtime acceptance, first verify `REQUEST_PRESENCE_ADMISSION admitted=1` and `REQUEST_PRESENCE_PHASE_ARM ... controls=automatic_on_admission` before interpreting any Request records.
