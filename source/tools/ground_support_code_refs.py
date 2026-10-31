@@ -56,7 +56,7 @@ def readonly(s):
     return s['size'] and s['flags'] & 0x40000000 and not s['flags'] & 0xa0000000
 
 
-def investigate(data, expected_sha=meta.EXPECTED_SHA):
+def investigate(data, expected_sha=meta.EXPECTED_SHA, *, needles=NEEDLES, ranker=rank):
     if len(data) > meta.MAX_FILE:
         raise meta.Refusal('file_cap')
     digest = hashlib.sha256(data).hexdigest()
@@ -81,7 +81,7 @@ def investigate(data, expected_sha=meta.EXPECTED_SHA):
     for s in metadata:
         blob = read(s['rva'], s['size'])
         for wide in (False, True):
-            for needle in NEEDLES:
+            for needle in needles:
                 token = needle.encode('utf-16le' if wide else 'ascii')
                 at = 0
                 while True:
@@ -93,7 +93,7 @@ def investigate(data, expected_sha=meta.EXPECTED_SHA):
                     if not found:
                         continue
                     start, name = found
-                    reason = rank(name)
+                    reason = ranker(name)
                     if reason is None:
                         skipped += 1
                         continue

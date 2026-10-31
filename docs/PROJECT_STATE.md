@@ -1,3 +1,20 @@
+# Current route stop / alternate evidence handoff — 2026-10-31 JST
+
+Run owner name/code acquisition accepted (GROUND_CODE_OWNER_RESULT_20261031).
+Existing WR resolver uses independent AOB/prefix/function/runtime proof, not
+state-name registration resolution. No transferable Run registry/lifecycle
+mechanism found. GROUND_NAME_REGISTRATION_ROUTE_STOPPED_NO_DEFENSIBLE_MECHANISM;
+no more Run name/CALL0x3081DB0/adjacent-byte exploration. Ground Sprint unproven,
+not impossible. Native support/gravity/ownership remain UNKNOWN.
+Concrete alternate: SHA-pinned ScriptedFlight dependency-verification evidence
+for motion request/gravity, with new offline reference_motion_evidence helper and
+Inspect-Reference-Motion Windows bootstrap. Reference DLL RVAs are NOT game RVAs;
+no native ABI inferred. Local bounded reference search returned unavailable.
+ONE owner operation scans named packages in Downloads/Mods Library read-only,
+returns logs/MSM2-WS-reference-motion-refs-*.json (unavailable result also useful).
+No Update-WS/Install/game/EXE upload. Runtime/config/packages/C52 unchanged.
+See analysis/RUN_LIFECYCLE_STOP_AND_MOVER_REFERENCE.md and CODEX_RESULT.
+
 # Current code-reference acquisition handoff — 2026-10-31 JST
 
 Owner metadata107names/243data refs accepted; previous acquisition pending claim
