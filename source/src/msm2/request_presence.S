@@ -44,7 +44,7 @@ ws_request_presence_observer:
     je ws_request_presence_restore0
 
     mov eax, DWORD PTR ws_request_presence_count[rip]
-    cmp eax, 8192
+    cmp eax, 16384
     jae .Loverflow
     lea ecx, [rax + 1]
     lock cmpxchg DWORD PTR ws_request_presence_count[rip], ecx
