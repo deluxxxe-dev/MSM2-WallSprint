@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 
 root=Path(__file__).resolve().parents[1]
 cpp=(root/'src/msm2/request_presence.cpp').read_text(encoding='utf-8')
@@ -12,15 +13,16 @@ version=(root/'include/version.hpp').read_text(encoding='utf-8')
 source_readme=(root/'README_TEST.md').read_text(encoding='utf-8')
 project_readme=(root.parent/'README_TEST.md').read_text(encoding='utf-8')
 package_wrapper=(root/'tools/package.py').read_text(encoding='utf-8')
+audit=(root/'tools/audit_presence_hook_sites.py').read_text(encoding='utf-8')
 
 required_cpp=[
     'kRequestRva = 0x11A1BD0',
     'kRequestEndRva = 0x11A1CA2',
     'kRequestUnwindRva = 0x1154EDC',
-    'kPhaseRecordCap = 8192',
+    'kPhaseRecordCap = 16384',
     'kPhaseLimit = 1',
-    'kPhaseDurationMs = 30000',
-    '2d879249c65b8074bb548e6563b5e0c2955ab672c4fd3cf080adb83b48691d64',
+    'kPhaseDurationMs = 45000',
+    '2d8792492c8b89d4e9885d55fa45fb2c6b4126b4ae992f854f6d687522163d0c',
     'whole_site_sha=verified',
     'observer_unwind=split_verified',
     'captured_pointer_dereference=0',
@@ -38,11 +40,24 @@ required_cpp=[
 for needle in required_cpp:
     assert needle in cpp, needle
 
+# Prevent another runtime/audit identity drift: the production admission tuple must
+# exactly match the already accepted RequestSimpleMotion audit tuple.
+runtime_begin=int(re.search(r'kRequestRva = 0x([0-9A-Fa-f]+)',cpp)[1],16)
+runtime_end=int(re.search(r'kRequestEndRva = 0x([0-9A-Fa-f]+)',cpp)[1],16)
+runtime_hash=re.search(r'kRequestSha256\[\] = "([0-9a-f]{64})"',cpp)[1]
+audit_match=re.search(r"'RequestSimpleMotion':\((\d+),(\d+),'([0-9a-f]{64})'\)",audit)
+assert audit_match, 'RequestSimpleMotion audit tuple missing'
+audit_begin,audit_end,audit_hash=int(audit_match[1]),int(audit_match[2]),audit_match[3]
+assert (runtime_begin,runtime_end,runtime_hash)==(audit_begin,audit_end,audit_hash), (
+    (runtime_begin,runtime_end,runtime_hash),(audit_begin,audit_end,audit_hash)
+)
+assert '2d879249c65b8074bb548e6563b5e0c2955ab672c4fd3cf080adb83b48691d64' not in cpp
+
 lower_asm=asm.lower()
 assert '\n    call ' not in lower_asm
 for reg in ('xmm','ymm','zmm'):
     assert reg not in lower_asm
-assert 'cmp eax, 8192' in asm
+assert 'cmp eax, 16384' in asm
 assert 'ws_request_presence_read_tsc:' in asm
 assert 'lock cmpxchg DWORD PTR ws_request_presence_count[rip], ecx' in asm
 assert 'lock inc DWORD PTR ws_request_presence_overflow[rip]' in asm
@@ -64,14 +79,15 @@ for ini in (default_ini,preset):
     for needle in ('WALLSPRINT_ENABLE=0','WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0','WALLSPRINT_ORIENTATION_WRITE=0','WALLSPRINT_ADHESION_WRITE=0','WALLSPRINT_MOVEMENT_WRITE=0'):
         assert needle in ini, needle
 
-assert 'versionLabel[]="v0.1c40"' in version
-assert 'packageVersion[]="0.1.65"' in version
+assert 'versionLabel[]="v0.1c41"' in version
+assert 'packageVersion[]="0.1.66"' in version
 
 for readme in (source_readme, project_readme):
-    assert 'v0.1c40' in readme
-    assert '0.1.65' in readme
+    assert 'v0.1c41' in readme
+    assert '0.1.66' in readme
     assert 'F11 once' in readme
-    assert '8192' in readme
+    assert '16384' in readme
+    assert '45-second' in readme or '45 seconds' in readme
 
 for needle in (
     'package_mode": "request_presence_read_only"',
@@ -79,6 +95,8 @@ for needle in (
     '"path_b_override": False',
     '"request_presence_diagnostic": True',
     '"native_source": False',
+    '"capture_duration_ms": 45000',
+    '"record_cap": 16384',
 ):
     assert needle in package_wrapper, needle
 
