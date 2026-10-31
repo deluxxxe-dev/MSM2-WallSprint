@@ -1,0 +1,8 @@
+# Owner current contract155119 — 2026-10-31 JST
+CURRENT_STATIC_CONTRACT_CANDIDATES; accepted exact EXE/function identities retained.4roles analyzed together. No target rediscovery needed.
+UpdateMotion->Request at21249462: RCX=entry RCX, RDX=entry stack-248, R8=entry stack-232. Both vectors are caller stack address candidates, not raw independent intent.
+RequestSimpleMotion has13memory-access candidates. Reads entry RCX+248. Calls55635440 at18488391 with R8=entry RDX,R9=12 and at18488439 with R8=entry R8,R9=12; both pass temporary request object RCX=entry stack-1096. Final57158624 call18488452 passes original owner RCX and temporary request RDX. Unknown callees prevent proving copied input/nonretention/completion semantics. MAY stack roots include questionable opaque loaded-spill addresses; not a typed ABI certificate.
+Gravity owner->setter at20246375: RCX=load64(load64(entry RCX+240)+248)+1524; RDX=entry stack-24. This is a static chain candidate only, not permission for live pointer chasing.
+Setter19instructions, no calls, partial no-pdata. Reads RDX0..11; writes RCX+24..35 and+12..23 via8+4copy candidates; additional RCX0/4/8 computed scalars have unresolved SIMD/transform semantics. No allocation/frame/units/lifetime or writable ownership certified.
+Frame/units/object owner/thread UNKNOWN; callable_API false; production false; live_reads0/no raw code.
+Decision: first runtime discriminator should only establish whether accepted entry paths execute during ordinary ground Sprint vs WR and thread/opaque owner correlation. Do not add pointer-chain/vector reads merely because static offsets exist. No further generic offline MAY reports or new per-opcode modeling chain before this discriminator.
