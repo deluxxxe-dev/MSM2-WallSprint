@@ -1,124 +1,65 @@
-# Codex result — CORRECTED valid CALL-return primary, revision3
+# Result — WallSprint v0.1c40 continuous Request presence capture
 
-2026-10-31; branch `codex/v01c20-edi-value-provenance`.
-Baseline `100a1e32259cd64290755ae66573e35c66336ab2`, fetched/fast-forwarded;
-no main merge. Five pre-existing untracked archives/bundle preserved.
-Implementation SHA `6ec63237b897a3d539d8e32cbec6067bfff37e9c`.
-Pushed canonical branch; `python3 /tmp/ws-presence-publication.py` independently
-fetched and verified exact FETCH_HEAD/ls-remote and all13 changed file blobs
-against baseline100a1e3. Final record commit follows (docs only; tested executable
-and build inputs unchanged, so focused tests need not be rerun for that record).
-Wisdoms synchronized at `2f7a4decdc90e300ceea97afd83e8417d5ef24f3`, confirmed by
-canonical ls-remote. Final WS handoff head is reported in chat after readback.
+2026-10-31. Implementation branch: `chat/request-presence-video-capture`, based directly on `codex/v01c20-edi-value-provenance` head `c6ce7ca5754a4ade92f9fa119fff09a8b894c0c9`. No main merge.
 
 ## STATUS
 
-**CORRECTED_PRIMARY_VALID_CALL_RETURN / OWNED_WINE_PASS /
-NEW_BINARY_NATIVE_ACCEPTANCE_PENDING.** Production remains false/unintegrated.
-This corrects the demonstrated synthetic caller setup, not just instrumentation.
+**IMPLEMENTED / READ-ONLY CONTRACT PRESERVED / ASSEMBLY CHECK PASS / FULL WINDOWS BUILD PENDING / ACTUAL-GAME RUNTIME PENDING.**
 
-Accepted actual Windows v2: invalid-entry primary146 PASS/55 FAIL, genuine
-CALL-return55/55 PASS, context/frame-only variants0/55. All invalid-entry failures
-returned frame.pc=expected-1, correct SP; context RIP stayed expected. This is
-observed native behavior, not a documented Windows internal cause or Windows bug.
-No PC±1 tolerance or acceptance of the erroneous primary was introduced.
+The former six manually armed 2-second ground/WallRun phases are replaced by one video-correlatable capture. The user starts recording, presses F11 once, performs the whole movement sequence naturally, and the diagnostic closes automatically after 30 seconds or 8192 retained records. F12 no longer arms a second phase.
 
-Revision3 primary is equivalent to supplied v2 genuine-return path across all55
-positions, with same exact PC/SP/nonvolatile expectations. Full new executable
-and4 new prerequisites have not run native: do not claim all-v3 native PASS.
-ONE corrected native acceptance run below; no more context-permutation loop.
+This does not establish any engine meaning for the captured arguments. `RCX/RDX/R8/R9`, return PC and thread token remain opaque captured bits. Ground/WallRun/action classification is performed afterward from the supplied video, not asserted by the hook.
 
 ## CHANGED
 
-- `fixture.cpp`: valid owned CALL-return primary for BOTH StackWalk and direct
-  VirtualUnwind; same expected PC/SP and register assertions. Original55 caller
-  checks retained. Caller shadow/frame/outer slot explicitly consistent. Old
-  invalid function-ENTRY sentinel retained as separate non-admitting diagnostic.
-- Four new hard checks: return inside exact caller RUNTIME_FUNCTION; real E8 CALL
-  target and exact after-call label;40byte unwind metadata; actual CALL/return
-  once with original return value. Caller ASM is unchanged from v2. Runtime table
-  address is used for code inspection, avoiding compiler assumptions about C++
-  object arithmetic across separately declared assembly labels.
-- `test_presence_native.sh`, `test_presence_stackwalk_diagnostics.py`: unsafe
-  legacy restore must fail exact32 named checks, not just any32. Corrected valid
-  caller observed same16 StackWalk+16 VirtualUnwind failures at steps1..8,both
-  sites. No new passing count substituted to hide bad restore metadata.
-- `test_run_presence_owned.py`: revision3/110 traces and synthetic55-failure report
-  remains FAIL. Synthetic150/55 classification is not measured Windows evidence.
-- Current EXE+source manifest, manifest-v2.json archive, derived v3 validation,
-  analysis/PRESENCE_VALID_CALLER_CORRECTION_20261031.md and current state/README.
-  Old v1/v2 hashes/results remain in Git and archived manifests/summaries.
+- `source/src/msm2/request_presence.cpp`
+  - one capture/session;
+  - 30-second maximum duration;
+  - 8192-record cap;
+  - F11 single start, F12 rejected as legacy control;
+  - capture start/end TSC plus `GetTickCount64` span used to emit `offset_ms_est` for post-hoc video alignment;
+  - zero-hit, overflow, contention and close reason remain explicit.
+- `source/src/msm2/request_presence.S`
+  - record bound increased to 8192;
+  - added a leaf TSC reader used outside the hooked callback;
+  - observer register/RFLAGS preservation, no-call callback path and ten split unwind regions remain unchanged.
+- `source/mod/WallSprint.ini`
+  - c40 is intentionally a dedicated read-only diagnostic package: WallSprint enable/native-source/orientation/adhesion/movement writes are all OFF and `REQUEST_PRESENCE_DIAGNOSTIC=1`.
+- `source/mod/presets/request_presence_read_only.ini`
+  - documents the same one-F11 capture procedure.
+- `source/tests/request_presence_static.py`
+  - asserts the new bounds, one-button/video-alignment contract and read-only package configuration.
+- `source/include/version.hpp`, `source/mod/info.json`
+  - v0.1c40 / package 0.1.65.
 
-Artifact: `analysis/native-probes/presence/presence-owned.exe`, revision3.
-SHA256 `8d529dada651c1b4c7b1aa4ffc97b3c97896a3cfaa1c534a728679278220ab08`;
-size1534133 bytes. Runtime remains v0.1c38r7/package0.1.63. No production gameplay/
-config/package/ownership/restore/slot/C52/shared environment/SF changes.
+## SAFETY / ADMISSION
 
-## Validation — exact commands, expected / actual
+Unchanged production admission requirements remain in force:
 
-| Command | Expected | Actual |
-| --- | --- | --- |
-| `bash source/tools/test_presence_native.sh` | Original strict201 checks under valid caller plus4 genuine-caller prerequisites pass | exit0;205 PASS/0 FAIL in Wine; primary55/55, new binary native unavailable |
-| `bash source/tools/test_presence_native.sh legacy-counterexample` | Corrected valid caller must still reject unsafe mid-restore metadata at exact same positions | exit0 regression;173 PASS/32 expected FAIL;16 StackWalk+16 VirtualUnwind, both sites steps1..8 |
-| `python3 source/tools/test_presence_stackwalk_diagnostics.py` | All55 primary checks tied only to valid caller;110 traces; same direct/StackWalk expectations; exact bad restore failure set | exit0;4 unittest methods PASS |
-| `WINEPREFIX=/workspace/toolchains/wine-prefix WINEDLLPATH=/workspace/toolchains/wine/usr/lib/x86_64-linux-gnu/wine WINEDEBUG=-all WINEDLLOVERRIDES='mscoree,mshtml=' python3 source/tools/test_run_presence_owned.py` | Real byte staging/hash/Unicode/cleanup/refusal, revision3 outputs, synthetic native failure preserved | exit0;6 unittest methods PASS; nested205 not counted twice |
-| `git diff --check` | No whitespace errors | exit0 |
-| Python hashlib size/SHA/source comparison to current manifest | Published EXE/build inputs exactly match tested build | PASS |
+- exact Spider-Man2.exe build gate;
+- RequestSimpleMotion RVA `0x11A1BD0`, exact function span and SHA256;
+- exact leading instruction span and `.pdata` identity;
+- validated MinHook trampoline and relay;
+- observer unwind metadata validation;
+- callback performs no allocation, lock, I/O, captured-pointer dereference, argument write or request suppression;
+- F8/script shutdown closes the capture gate before hook shutdown.
 
-PASS:4 focused command runs;205 fixed assertions,4 diagnostic test methods,
-6 runner methods and1 expected-failure regression are distinct reporting units.
-Legacy32 are expected failures with exact names, not a successful unsafe design.
-Supplied prior native55 genuine-return PASS is separately recorded; old invalid
-primary55 FAIL remains historical and is not relabeled as a pass.
+No movement, Position, input, adhesion, animation or camera implementation was added.
 
-UNAVAILABLE:2 current groups — actual native Windows execution of full corrected
-v3 binary and actual PowerShell5.1 wrapper execution. Equivalent supplied native
-path evidence is documented, but no entire-new-binary native claim or production
-certificate is issued. Legacy under corrected valid caller verified in Wine;
-no new native execution of legacy asserted.
+## AUTOMATED / STATIC VALIDATION
 
-SKIP:5 unchanged full-runtime commands (`bash source/tools/build_windows.sh`,
-`bash source/tools/test.sh`, `bash source/tools/smoke_windows.sh`,
-`bash source/tools/test_hooks_windows.sh`, `python3 source/tools/package.py`).
-CODEX_NEXT explicitly requests fixture-only validation, not unchanged pipeline.
+- `request_presence.S` was cross-assembled as Windows x86-64 COFF with clang targeting `x86_64-w64-windows-gnu`: PASS.
+- Resulting object retained `.pdata` size `0x78`, i.e. ten 12-byte runtime-function records for the observer/restore split: PASS.
+- Repository diff from the c39 presence baseline is limited to the continuous-capture implementation, diagnostic configuration, regression contract and version/result metadata.
+- Full repository Windows DLL build/test/package pipeline is unavailable in this chat execution environment because the repository's configured Windows cross-toolchain is not installed here. It must run through the existing local `Update-WS.cmd` workflow before deployment.
 
-BLOCKED: production observer integration/acceptance pending corrected native
-acceptance. No new game EXE acquisition, naming scan, attachment or gameplay test.
+## REQUIRED HUMAN RUNTIME TEST
 
-## Owner — ONE CORRECTED native acceptance invocation
+1. Run the normal WS updater/build path and install v0.1c40.
+2. Start video recording before the capture.
+3. Press F11 once.
+4. During the following 30 seconds, demonstrate the relevant ground Sprint and ordinary WallRun movements in one continuous take. No F11/F12 presses between actions.
+5. Let capture close automatically. F8 is only an emergency stop.
+6. Return the newest complete WallSprint runtime log together with the video.
 
-Same fetch/run workflow stages the NEW corrected revision3 EXE; this is not an
-unchanged v2 instrumentation rerun. No game/Update-WS/compiler/build/deploy needed.
-Paste entire block into Windows PowerShell:
-
-```powershell
-& {
-    $src = "C:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2\Mods Library\Mods-Developing\MSM2-WS\_source"
-    $branch = 'codex/v01c20-edi-value-provenance'
-    $origin = & git -C $src remote get-url origin
-    if ($LASTEXITCODE -ne 0 -or $origin -ne 'https://github.com/deluxxxe-dev/MSM2-WallSprint.git') { throw 'Wrong WS origin' }
-    & git -C $src fetch origin $branch
-    if ($LASTEXITCODE -ne 0) { throw 'Fetch failed' }
-    $rev = & git -C $src rev-parse "origin/$branch"
-    if ($LASTEXITCODE -ne 0 -or $rev -notmatch '^[0-9a-f]{40}$') { throw 'Remote head unavailable' }
-    $code = @(& git -C $src show ($rev + ':source/tools/windows/Run-Presence-Owned.ps1'))
-    if ($LASTEXITCODE -ne 0) { throw 'Owned runner unavailable' }
-    $file = Join-Path ([IO.Path]::GetTempPath()) ('WS-owned-' + [guid]::NewGuid().ToString('N') + '.ps1')
-    try {
-        [IO.File]::WriteAllText($file, (($code -join "`n") + "`n"), (New-Object Text.UTF8Encoding($false)))
-        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $file -SourceRoot $src
-        if ($LASTEXITCODE -ne 0) { throw 'Owned fixture failed/unavailable; return the JSON if generated' }
-    }
-    finally { if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file -Force } }
-}
-```
-
-Return only the new
-`Mods Library\Mods-Developing\MSM2-WS\logs\MSM2-WS-presence-owned-*.json`.
-Expected diagnostic_revision3, valid primary55/55 and full205 PASS/0 FAIL;
-production_admitted=false. Old invalid-sentinel diagnostic may fail and does not
-change the valid-primary verdict. Preserve JSON on any genuine failure.
-
-After accepted corrected native result, next task can resume Request-only
-runtime diagnostic implementation. Optional Gravity cannot block independently
-valid Request evidence. No extra game-body/name scan or current game update.
+ChatGPT should first verify `REQUEST_PRESENCE_ADMISSION admitted=1`, then correlate `REQUEST_PRESENCE_RECORD offset_ms_est=...` with visible actions in the video. `offset_ms_est` is an approximate relative alignment value derived from the capture's TSC/GetTickCount64 endpoints; it is not an authenticated engine timestamp or state label.
