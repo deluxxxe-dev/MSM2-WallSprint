@@ -44,6 +44,8 @@ mkdir -p "$stage/repository"
 # Copy sources/docs only. No legacy checkout/gitdir/reference/cache dependency.
 tar -C "$repo" --exclude=source/build --exclude=source/logs --exclude=source/output --exclude=__pycache__ -cf - AGENTS.md docs analysis source environment README.md README_TEST.md Update-WS.cmd Migrate-WS.cmd .gitattributes | tar -C "$stage/repository" -xf -
 cd "$stage/repository"
+build_stage=workspace_safety; progress running
+python environment/test_wsl_inventory_churn.py
 build_stage=build; progress running
 bash source/tools/build_windows.sh
 build_stage=portable; progress running
