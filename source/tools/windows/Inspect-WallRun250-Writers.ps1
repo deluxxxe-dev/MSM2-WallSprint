@@ -31,15 +31,23 @@ try {
         $output = Join-Path $logs ("MSM2-WS-wallrun250-writers-$stamp-{0:D2}.json" -f $i)
     }
     if (Test-Path -LiteralPath $output) { throw 'Output collision cap reached' }
+
+    $scriptPath = Join-Path $temp 'wallrun_scalar_writer_refs.py'
+    $dependencyPath = Join-Path $temp 'discover_ground_support.py'
     $converted = @()
-    foreach ($path in @((Join-Path $temp 'wallrun_scalar_writer_refs.py'),$exe,$output)) {
+    foreach ($path in @($scriptPath,$dependencyPath,$exe,$output)) {
         $value = & wsl.exe --exec wslpath -a $path
         if ($LASTEXITCODE -ne 0) { throw 'WSL path conversion unavailable; no runtime fallback' }
         $converted += $value
     }
+
     & wsl.exe --exec /workspace/toolchains/analysis-python/bin/python3 -c 'import capstone; assert tuple(map(int,capstone.__version__.split(chr(46)))) == (5,0,6)'
     if ($LASTEXITCODE -ne 0) { throw 'Pinned WSL analysis-python/Capstone5.0.6 unavailable; no automatic install or game operation' }
-    & wsl.exe --exec /workspace/toolchains/analysis-python/bin/python3 $converted[0] $converted[1] --output $converted[2]
+
+    & wsl.exe --exec /workspace/toolchains/analysis-python/bin/python3 -m py_compile $converted[0] $converted[1]
+    if ($LASTEXITCODE -ne 0) { throw 'Pinned V3 Python helper syntax preflight failed; EXE scan not started' }
+
+    & wsl.exe --exec /workspace/toolchains/analysis-python/bin/python3 $converted[0] $converted[2] --output $converted[3]
     $scanExit = $LASTEXITCODE
     if (-not (Test-Path -LiteralPath $output -PathType Leaf)) { throw 'Offline writer report missing' }
     Write-Host "Return this small JSON only: $output"
