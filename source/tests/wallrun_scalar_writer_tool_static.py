@@ -5,6 +5,7 @@ import ast
 root = Path(__file__).resolve().parents[1]
 script = (root / 'tools/wallrun_scalar_writer_refs.py').read_text(encoding='utf-8')
 wrapper = (root / 'tools/windows/Inspect-WallRun250-Writers.ps1').read_text(encoding='utf-8')
+version = (root / 'include/version.hpp').read_text(encoding='utf-8')
 ast.parse(script)
 
 for needle in (
@@ -59,4 +60,7 @@ for needle in (
 for forbidden in ('Update-WS.cmd', 'Overstrike.exe', 'taskkill', 'Stop-Process'):
     assert forbidden not in wrapper, forbidden
 
-print('wallrun_scalar_writer_tool_static: PASS (V4 owner-relative CFG provenance)')
+assert 'versionLabel[]="v0.1c47"' in version
+assert 'packageVersion[]="0.1.72"' in version
+
+print('wallrun_scalar_writer_tool_static: PASS (V4 owner-relative CFG provenance, c47 runtime unchanged)')
