@@ -1,81 +1,80 @@
-# Next task — run V7 single Path-B handoff trace for c47 `WallRun.this+0x250`
+# Next task — run V8 bounded Update-consumer trace for c47 `WallRun.this+0x250`
 
 Branch `codex/v01c20-edi-value-provenance`; no main merge.
 
-Read AGENTS required docs, `analysis/C47_WALLRUN250_RUNTIME_RESULT_20261101.md`, `analysis/WALLRUN250_V3_OWNER_CALLEE_RESULT_20261101.md`, `analysis/WALLRUN250_V6_OWNER_RESULT_20261101.md`, and current `docs/CODEX_RESULT.md`.
+Read AGENTS required docs, `analysis/C47_WALLRUN250_RUNTIME_RESULT_20261101.md`, `analysis/WALLRUN250_V6_OWNER_RESULT_20261101.md`, `analysis/WALLRUN250_V7_HANDOFF_RESULT_20261101.md`, and current `docs/CODEX_RESULT.md`.
 
 ## Accepted evidence
 
-Do not repeat c47 gameplay, RequestSimpleMotion, GravityOrientationOwner, V1/V2 global scans, or V4/V5 structural debugging.
+Do not repeat c47 gameplay, RequestSimpleMotion, GravityOrientationOwner, V1/V2 global scans, or V3-V7 producer-path traversal.
 
-V6 succeeded on the exact pinned EXE with schema 6:
+Accepted runtime:
 
-`NO_OWNER_RELATIVE_0X250_ACCESS_IN_BOUNDED_DOWNSTREAM_TRACE`
+- `WallRun.this+0x250` changes during verified WallRun;
+- changes correlate with ordinary reversals and down-hold left/right oscillation;
+- direct signed left/right-input semantics are unsupported;
+- field meaning/units/producer/writability remain UNKNOWN.
 
-Accepted V6 facts:
+Accepted producer-path result:
 
-- Path A `0x29C06F0`, entry RCX owner+`0x80`: 30 reachable instructions, contained CFG cycle, no `owner+0x250` access, no reachable direct call, no external tail jump. Do not reopen Path A without new evidence.
-- Path B `0x29C18B0`, entry RCX owner+`0x58`: no `owner+0x250` access; exactly one reachable direct call preserves unique RCX owner provenance.
-- selected handoff: `0x29C18D4 -> 0x308A0F0` with pre-call `RCX = owner+0x58` and `RDI = owner+0x58`.
-- combined V6 access/read/write/unknown counts are all zero.
+- Path A `0x29C06F0`: no `owner+0x250` access and no next direct call/tail lead;
+- Path B `0x29C18B0`: one owner-preserving call `0x29C18D4 -> 0x308A0F0`;
+- V7 target `0x308A0F0`: 8 reachable instructions, no `owner+0x250` access, no direct call/tail lead;
+- the selected authenticated RCX-owner chain is exhausted.
 
-This is a bounded no-access result only. Field meaning/units/producer/writability remain UNKNOWN.
+Do not interpret this as proof that the field has no writer.
 
-## Current V7 implementation
+## Current V8 implementation
 
-The Windows wrapper now stages:
+V8 changes question from producer to consumer.
 
-- `source/tools/wallrun_scalar_writer_refs_v7.py`;
-- V6/V5/V4 helpers;
-- `discover_ground_support.py`.
+Run:
 
-V7 re-authenticates before following the handoff:
+`source/tools/windows/Inspect-WallRun250-Consumers.ps1`
 
-- Path B target `0x29C18B0`;
-- call site `0x29C18D4`;
-- exact call bytes `E8 17 88 6C 00`;
-- decoded target `0x308A0F0`;
-- Path-B trace must reproduce exactly one call at that site with unique `RCX = owner+0x58`.
+It stages:
 
-Only then trace target `0x308A0F0` with entry RCX owner+`0x58`.
+- `source/tools/wallrun250_consumer_v8.py`;
+- `source/tools/wallrun_scalar_writer_refs.py` only for exact-image/Update authentication;
+- `source/tools/discover_ground_support.py` PE helper.
 
-Reuse existing V6 target-scope rules:
+V8 inspects exactly the two authenticated Update read sites:
 
-- complete PE runtime-function decode when `.pdata` covers the target;
-- otherwise strict max-128-byte / max-32-reachable-instruction no-`.pdata` fallback;
-- bounded contained CFG cycles allowed under monotone intersection;
-- all V5 non-call/nonvolatile/RSP/indirect-jump fallback admission rules retained;
-- no deeper callee traversal in this task.
+- `0x1424585`;
+- `0x142460E`.
 
-Expected output schema is 7.
+For each site it records:
+
+- exact read instruction;
+- six preceding Update instructions;
+- max 32 reachable Update instructions from the read;
+- register read/write metadata;
+- memory operand width/access metadata;
+- direct branch/call targets without callee traversal;
+- file-backed RIP-relative operand initial bytes and 32/64-bit numeric/float decode when available.
+
+Important: on-disk RIP-relative values are initial file bytes only, not verified live runtime values.
+
+Expected schema: 8.
+
+Output:
+
+`MSM2-WS-wallrun250-consumers-YYYYMMDD-HHMMSS.json`
 
 ## Owner action
 
 No Update-WS, build, deploy, Overstrike or game run is required.
 
-Fast-forward the branch and run only:
-
-`source/tools/windows/Inspect-WallRun250-Writers.ps1`
-
-Return the newly generated:
-
-`MSM2-WS-wallrun250-writers-YYYYMMDD-HHMMSS.json`
+Fast-forward the branch and run only `Inspect-WallRun250-Consumers.ps1`, then return the new consumer JSON.
 
 ## Result handling
 
-If V7 finds a proven `owner+0x250` writer:
+Use V8 to determine only what conditions/control flow the two authenticated reads participate in.
 
-- inspect only that writer and value source/width;
-- do not authorize a game write yet.
-
-If V7 finds only reads/no direct access:
-
-- inspect only V7's bounded reachable call/tail information for one next producer step;
-- do not reopen Path A or global scans.
-
-If V7 refuses:
-
-- accept the exact structural blocker;
-- fix only that demonstrated condition if it remains bounded.
+- If both reads feed the same kind of threshold/control decision, classify that structural consumer relation as VERIFIED-STATIC and then decide whether one minimal runtime discriminator is justified.
+- If they feed distinct consumers, keep both interpretations separate.
+- Do not infer a writer from consumer use.
+- Do not authorize a game write from V8 alone.
+- Do not return to global writer scanning merely because the producer remains unknown.
 
 Current runtime remains `v0.1c47 / 0.1.72`; no runtime rebuild or gameplay test is part of this static step.
