@@ -37,7 +37,7 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'WSL path conversion unavailable; no runtime fallback' }
         $converted += $value
     }
-    & wsl.exe --exec /workspace/toolchains/analysis-python/bin/python3 -c 'import capstone; assert capstone.__version__ == "5.0.6"'
+    & wsl.exe --exec /workspace/toolchains/analysis-python/bin/python3 -c 'import capstone; assert tuple(map(int,capstone.__version__.split(chr(46)))) == (5,0,6)'
     if ($LASTEXITCODE -ne 0) { throw 'Pinned WSL analysis-python/Capstone5.0.6 unavailable; no automatic install or game operation' }
     & wsl.exe --exec /workspace/toolchains/analysis-python/bin/python3 $converted[0] $converted[1] --output $converted[2]
     $scanExit = $LASTEXITCODE
