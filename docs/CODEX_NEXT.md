@@ -26,22 +26,26 @@ Accepted c47 runtime:
 
 Runtime `v0.1c48`, package `0.1.73`.
 
-No new native hook is added. The existing authenticated Update pre-original callback is reused only for read-only counting.
+No new native hook is added. c48 adds only a dedicated read-only gate/callback inside the existing authenticated WallRun Update thunk.
 
 Admission:
 
 - complete verified WallRun observation plan required;
 - read live threshold globals at `0x5303DE8` and `0x5337098`;
-- log whether live bits equal the V8 on-disk bits `0x3F000000` and `0x3F35C28F`.
+- log whether live bits equal the V8 on-disk bits `0x3F000000` and `0x3F35C28F`;
+- enable `ws_update_probe_enabled` only; keep `ws_write_dispatch_enabled=0`.
 
-For each post-bridge-admitted Update:
+For each admitted Update thunk invocation before original Update:
 
-- one guarded 4-byte read of `owner+0x250`;
+- native CPU state is already preserved by the existing thunk;
+- direct local `ws_update_probe_sample(owner)` callback performs one guarded 4-byte read of `owner+0x250`;
 - count read success/failure;
-- count finite vs NaN/unordered;
+- count field NaN vs non-NaN;
 - count consumer-A true condition (`field > live threshold0` or unordered);
 - count consumer-B fallthrough condition (`field > live threshold1` or unordered);
-- native callback performs no logging and always returns `0`.
+- no logging is performed on the native callback.
+
+The dedicated probe callback occurs before the separate old write-dispatch check. Since c48 never enables `ws_write_dispatch_enabled`, the writer bridge / `ws_update_prepare`, caller unwind, argument clone, old write dispatch, and post callback are not entered by c48.
 
 Worker-side `drainLogs` emits bounded cumulative/final records and rechecks live threshold globals.
 
@@ -63,11 +67,12 @@ No F11/F12, markers, post-test wait or video is required unless behavior differs
 
 Require:
 
-- `wallrun_0x250_threshold_probe_admission complete_verified=1 admitted=1`;
+- `wallrun_0x250_threshold_probe_admission complete_verified=1 admitted=1 update_probe_gate=1 write_dispatch_gate=0`;
 - `v8_expected_threshold_bits_match=1`;
 - cumulative/final `live_thresholds_unchanged_from_admission=1`;
 - `read_fail=0`;
-- exact-entry sample count compared with verified `Update=` count; any bridge refusal/coverage deficit makes result partial;
+- no `hook_queue_dropped` increase during the selected session;
+- for a run containing only the requested WallRun, compare exact-entry sample count with verified `Update=` count; a mismatch makes result partial;
 - inspect `consumer_gt_threshold0_or_unordered` and `consumer_gt_threshold1_or_unordered`.
 
 If both counters are zero with complete coverage, classify that the c47 reversal/down sequence did not activate either authenticated threshold consumer. Then stop treating the negative pulse timing alone as evidence that these gates cause reversal/down behavior.
