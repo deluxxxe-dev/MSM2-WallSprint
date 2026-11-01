@@ -20,7 +20,7 @@ if (-not (Test-Path -LiteralPath $logs -PathType Container)) { throw 'Existing W
 $temp = Join-Path ([IO.Path]::GetTempPath()) ('WS-wallrun250-' + [guid]::NewGuid().ToString('N'))
 [IO.Directory]::CreateDirectory($temp) | Out-Null
 try {
-    foreach ($name in @('wallrun_scalar_writer_refs_v5.py','wallrun_scalar_writer_refs.py','discover_ground_support.py')) {
+    foreach ($name in @('wallrun_scalar_writer_refs_v6.py','wallrun_scalar_writer_refs_v5.py','wallrun_scalar_writer_refs.py','discover_ground_support.py')) {
         $body = @(& git -C $SourceRoot show ($commit + ':source/tools/' + $name))
         if ($LASTEXITCODE -ne 0) { throw "Pinned helper unavailable: $name" }
         [IO.File]::WriteAllText((Join-Path $temp $name), ($body -join "`n"), (New-Object Text.UTF8Encoding($false)))
@@ -32,11 +32,12 @@ try {
     }
     if (Test-Path -LiteralPath $output) { throw 'Output collision cap reached' }
 
-    $scriptPath = Join-Path $temp 'wallrun_scalar_writer_refs_v5.py'
+    $scriptPath = Join-Path $temp 'wallrun_scalar_writer_refs_v6.py'
+    $v5Path = Join-Path $temp 'wallrun_scalar_writer_refs_v5.py'
     $v4Path = Join-Path $temp 'wallrun_scalar_writer_refs.py'
     $dependencyPath = Join-Path $temp 'discover_ground_support.py'
     $converted = @()
-    foreach ($path in @($scriptPath,$v4Path,$dependencyPath,$exe,$output)) {
+    foreach ($path in @($scriptPath,$v5Path,$v4Path,$dependencyPath,$exe,$output)) {
         $value = & wsl.exe --exec wslpath -a $path
         if ($LASTEXITCODE -ne 0) { throw 'WSL path conversion unavailable; no runtime fallback' }
         $converted += $value
@@ -45,10 +46,10 @@ try {
     & wsl.exe --exec /workspace/toolchains/analysis-python/bin/python3 -c 'import capstone; assert tuple(map(int,capstone.__version__.split(chr(46)))) == (5,0,6)'
     if ($LASTEXITCODE -ne 0) { throw 'Pinned WSL analysis-python/Capstone5.0.6 unavailable; no automatic install or game operation' }
 
-    & wsl.exe --exec /workspace/toolchains/analysis-python/bin/python3 -m py_compile $converted[0] $converted[1] $converted[2]
-    if ($LASTEXITCODE -ne 0) { throw 'Pinned V5 Python helper syntax preflight failed; EXE scan not started' }
+    & wsl.exe --exec /workspace/toolchains/analysis-python/bin/python3 -m py_compile $converted[0] $converted[1] $converted[2] $converted[3]
+    if ($LASTEXITCODE -ne 0) { throw 'Pinned V6 Python helper syntax preflight failed; EXE scan not started' }
 
-    & wsl.exe --exec /workspace/toolchains/analysis-python/bin/python3 $converted[0] $converted[3] --output $converted[4]
+    & wsl.exe --exec /workspace/toolchains/analysis-python/bin/python3 $converted[0] $converted[4] --output $converted[5]
     $scanExit = $LASTEXITCODE
     if (-not (Test-Path -LiteralPath $output -PathType Leaf)) { throw 'Offline owner-provenance report missing' }
     Write-Host "Return this small JSON only: $output"
