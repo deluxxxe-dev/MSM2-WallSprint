@@ -211,7 +211,7 @@ def scan(data):
             continue
         function_sha = hashlib.sha256(body).hexdigest()
         relation = ('authenticated_Update' if begin == UPDATE_BEGIN else
-                    'direct_authenticated_Update_owner_rcx_callee' if begin in KNOWN_OWNER_CALLS.values() else
+                    'direct_authenticated_Update_owner_rcx_callee_entry' if begin in KNOWN_OWNER_CALLS.values() else
                     'global_disp250_reference_function_NOT_owner_proven')
         for site in sorted(candidates_by_function.get(begin, ())):
             ins = by_site.get(site)
@@ -232,7 +232,9 @@ def scan(data):
                 'instruction_hex': ins.bytes.hex(),
                 'memory_operands': mem,
                 'instruction_boundary_proof': 'complete_PE_runtime_function_linear_decode',
-                'wallrun_owner_proven': begin in KNOWN_OWNER_CALLS.values() and any(m['base'] == 'rcx' for m in mem),
+                'entry_owner_rcx_relation': begin in KNOWN_OWNER_CALLS.values(),
+                'memory_base_is_rcx_at_instruction': any(m['base'] == 'rcx' for m in mem),
+                'wallrun_owner_proven_at_instruction': False,
                 'field_semantics_proven': False,
             }
             refs.append(row)
@@ -254,9 +256,11 @@ def scan(data):
             'call_site_rva': call_site,
             'target_rva': target,
             'target_runtime_entry_seen': any(rt[0] == target for rt in runtimes),
+            'entry_rcx_is_authenticated_WallRun_owner': True,
             'disp250_reference_count': len(matching),
             'disp250_writer_count': sum(any(m['write'] for m in r['memory_operands']) for r in matching),
-            'direct_rcx_disp250_writer_count': sum(any(m['write'] and m['base'] == 'rcx' for m in r['memory_operands']) for r in matching),
+            'memory_base_rcx_writer_count_without_path_provenance': sum(any(m['write'] and m['base'] == 'rcx' for m in r['memory_operands']) for r in matching),
+            'owner_proven_at_writer_instruction': False,
         })
 
     result = {
@@ -286,13 +290,13 @@ def scan(data):
             'computed_address_writes': 'NOT_COVERED',
             'bulk_copy_or_memcpy': 'NOT_COVERED_unless_decoded_instruction_itself_has_disp_0x250',
             'nested_pointer_fields': 'NOT_COVERED',
-            'field_owner': 'NOT_PROVEN_by_displacement_alone',
+            'field_owner': 'NOT_PROVEN_by_displacement_or_entry_RCX_alone',
             'runtime_selection': 'NOT_PROVEN',
             'field_semantics': 'UNKNOWN',
             'live_reads_or_writes': 0,
             'game_process_operation': False,
         },
-        'interpretation': 'direct x64 memory operands with displacement 0x250 only; writers are static candidates unless owner relation is separately proven',
+        'interpretation': 'direct x64 memory operands with displacement 0x250 only; even an Update-owner callee entry requires path provenance before its RCX-based writer can be called WallRun-owner+0x250',
     }
     payload = (json.dumps(result, indent=2) + '\n').encode()
     if len(payload) > MAX_OUTPUT:
