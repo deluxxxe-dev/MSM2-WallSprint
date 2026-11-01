@@ -32,13 +32,13 @@ KNOWN_CALL_PREFIXES = {
 
 MAX_CODE_BYTES = 192 * 1024 * 1024
 MAX_RAW_DISP_HITS = 200_000
-MAX_CANDIDATE_FUNCTIONS = 2048
-MAX_DECODE_FUNCTIONS = 512
+MAX_CANDIDATE_FUNCTIONS = 16_384
+MAX_DECODE_FUNCTIONS = 16_384
 MAX_FUNCTION_BYTES = 256 * 1024
-MAX_TOTAL_DECODE_BYTES = 32 * 1024 * 1024
-MAX_REFS = 512
-MAX_WRITERS = 128
-MAX_OUTPUT = 256 * 1024
+MAX_TOTAL_DECODE_BYTES = 96 * 1024 * 1024
+MAX_RETAINED_REFS = 1024
+MAX_WRITERS = 512
+MAX_OUTPUT = 512 * 1024
 
 
 class Refusal(ValueError):
@@ -135,8 +135,10 @@ def scan(data):
     if sum(s['size'] for s in executable) > MAX_CODE_BYTES:
         raise Refusal('code_scan_cap')
 
+    # Byte hits only choose containing runtime functions. Instruction boundaries are
+    # established later by one complete linear decode per candidate function.
     raw_hits = 0
-    possible_starts = set()
+    functions = set()
     needle = struct.pack('<I', FIELD_DISP)
     for sec in executable:
         blob = data[sec['raw']:sec['raw'] + sec['size']]
@@ -150,35 +152,33 @@ def scan(data):
             if raw_hits > MAX_RAW_DISP_HITS:
                 raise Refusal('raw_displacement_hit_cap')
             hit_rva = sec['rva'] + hit
-            for back in range(1, 15):
-                start = hit_rva - back
-                if start < sec['rva']:
-                    continue
-                max_len = min(15, sec['rva'] + sec['size'] - start)
-                ins = next(md.disasm(read(start, max_len), start, count=1), None)
-                if not ins or not (ins.address <= hit_rva < ins.address + ins.size):
-                    continue
-                if memory_rows(ins):
-                    possible_starts.add(start)
-                    if len(possible_starts) > MAX_REFS * 8:
-                        raise Refusal('decoded_candidate_start_cap')
+            i = bisect_right(starts, hit_rva) - 1
+            if i < 0:
+                continue
+            runtime = runtimes[i]
+            if runtime[0] <= hit_rva < runtime[1]:
+                functions.add(runtime[0])
+                if len(functions) > MAX_CANDIDATE_FUNCTIONS:
+                    raise Refusal('candidate_function_cap')
 
-    functions = set()
-    candidates_by_function = {}
-    for site in possible_starts:
-        i = bisect_right(starts, site) - 1
-        runtime = runtimes[i] if i >= 0 and site < runtimes[i][1] else None
-        if not runtime:
-            continue
-        functions.add(runtime[0])
-        candidates_by_function.setdefault(runtime[0], set()).add(site)
-    if len(functions) > MAX_CANDIDATE_FUNCTIONS:
-        raise Refusal('candidate_function_cap')
+    if UPDATE_BEGIN not in functions:
+        raise Refusal('authenticated_Update_not_in_disp250_prefilter')
 
     refs = []
     writers = []
+    reference_count = 0
+    unknown_access_count = 0
     decoded_bytes = 0
     decoded_functions = 0
+    oversize_functions = 0
+    noncontiguous_functions = 0
+    known_sites = set()
+    owner_stats = {
+        target: {'disp250_reference_count': 0, 'disp250_writer_count': 0,
+                 'memory_base_rcx_writer_count_without_path_provenance': 0}
+        for target in KNOWN_OWNER_CALLS.values()
+    }
+
     for begin in sorted(functions):
         if decoded_functions >= MAX_DECODE_FUNCTIONS:
             raise Refusal('decoded_function_cap')
@@ -188,6 +188,7 @@ def scan(data):
         end, unwind = runtime[1], runtime[2]
         size = end - begin
         if size > MAX_FUNCTION_BYTES:
+            oversize_functions += 1
             continue
         decoded_bytes += size
         if decoded_bytes > MAX_TOTAL_DECODE_BYTES:
@@ -196,31 +197,50 @@ def scan(data):
         decoded_functions += 1
         instructions = list(md.disasm(body, begin))
         if not instructions or instructions[0].address != begin:
+            noncontiguous_functions += 1
             continue
-        contiguous = True
+
         cursor = begin
-        by_site = {}
+        contiguous = True
         for ins in instructions:
             if ins.address != cursor:
                 contiguous = False
                 break
-            by_site[ins.address] = ins
             cursor += ins.size
         if not contiguous or cursor != end:
+            noncontiguous_functions += 1
             continue
+
         function_sha = hashlib.sha256(body).hexdigest()
         relation = ('authenticated_Update' if begin == UPDATE_BEGIN else
                     'direct_authenticated_Update_owner_rcx_callee_entry' if begin in KNOWN_OWNER_CALLS.values() else
                     'global_disp250_reference_function_NOT_owner_proven')
-        for site in sorted(candidates_by_function.get(begin, ())):
-            ins = by_site.get(site)
-            if not ins:
-                continue
+
+        for ins in instructions:
             mem = memory_rows(ins)
             if not mem:
                 continue
+            reference_count += 1
+            if any(not m['access_known'] for m in mem):
+                unknown_access_count += 1
+            if ins.address in KNOWN_UPDATE_READS:
+                known_sites.add(ins.address)
+            is_writer = any(m['write'] for m in mem)
+
+            if begin in owner_stats:
+                owner_stats[begin]['disp250_reference_count'] += 1
+                if is_writer:
+                    owner_stats[begin]['disp250_writer_count'] += 1
+                    owner_stats[begin]['memory_base_rcx_writer_count_without_path_provenance'] += sum(
+                        1 for m in mem if m['write'] and m['base'] == 'rcx'
+                    )
+
+            retain = is_writer or ins.address in KNOWN_UPDATE_READS or begin in KNOWN_OWNER_CALLS.values()
+            if not retain:
+                continue
+
             row = {
-                'instruction_rva': site,
+                'instruction_rva': ins.address,
                 'function_begin_rva': begin,
                 'function_end_rva': end,
                 'function_unwind_rva': unwind,
@@ -237,33 +257,32 @@ def scan(data):
                 'field_semantics_proven': False,
             }
             refs.append(row)
-            if any(m['write'] for m in mem):
+            if len(refs) > MAX_RETAINED_REFS:
+                raise Refusal('retained_reference_cap')
+            if is_writer:
                 writers.append(row)
                 if len(writers) > MAX_WRITERS:
                     raise Refusal('writer_cap')
-            if len(refs) > MAX_REFS:
-                raise Refusal('reference_cap')
 
-    found_sites = sorted(r['instruction_rva'] for r in refs if r['instruction_rva'] in KNOWN_UPDATE_READS)
+    found_sites = sorted(known_sites)
     if tuple(found_sites) != KNOWN_UPDATE_READS:
         raise Refusal('known_Update_disp250_site_selfcheck_failed')
 
     owner_callee_rows = []
     for call_site, target in KNOWN_OWNER_CALLS.items():
-        matching = [r for r in refs if r['function_begin_rva'] == target]
+        stats = owner_stats[target]
         owner_callee_rows.append({
             'call_site_rva': call_site,
             'target_rva': target,
             'target_runtime_entry_seen': any(rt[0] == target for rt in runtimes),
+            'target_was_prefilter_candidate': target in functions,
             'entry_rcx_is_authenticated_WallRun_owner': True,
-            'disp250_reference_count': len(matching),
-            'disp250_writer_count': sum(any(m['write'] for m in r['memory_operands']) for r in matching),
-            'memory_base_rcx_writer_count_without_path_provenance': sum(any(m['write'] and m['base'] == 'rcx' for m in r['memory_operands']) for r in matching),
+            **stats,
             'owner_proven_at_writer_instruction': False,
         })
 
     result = {
-        'schema': 1,
+        'schema': 2,
         'result': 'DIRECT_DISP250_WRITERS_FOUND' if writers else 'NO_DIRECT_DISP250_WRITER_IN_FIXED_SCAN',
         'exe_sha256': digest,
         'decoder': cs.__version__,
@@ -277,14 +296,17 @@ def scan(data):
         },
         'field_displacement': FIELD_DISP,
         'raw_displacement_hits': raw_hits,
-        'candidate_instruction_starts': len(possible_starts),
         'candidate_runtime_functions': len(functions),
         'decoded_runtime_functions': decoded_functions,
         'decoded_function_bytes': decoded_bytes,
-        'direct_references': refs,
+        'oversize_candidate_functions_skipped': oversize_functions,
+        'noncontiguous_candidate_functions_skipped': noncontiguous_functions,
+        'direct_reference_count': reference_count,
+        'unknown_access_reference_count': unknown_access_count,
+        'retained_reference_evidence': refs,
         'direct_writers': writers,
         'limits': {
-            'global_scan': 'executable_file_bytes_prefilter_only',
+            'global_scan': 'executable_file_bytes_prefilter_to_containing_PE_runtime_functions',
             'instruction_boundary': 'complete_PE_runtime_function_linear_decode_required',
             'computed_address_writes': 'NOT_COVERED',
             'bulk_copy_or_memcpy': 'NOT_COVERED_unless_decoded_instruction_itself_has_disp_0x250',
@@ -295,7 +317,7 @@ def scan(data):
             'live_reads_or_writes': 0,
             'game_process_operation': False,
         },
-        'interpretation': 'direct x64 memory operands with displacement 0x250 only; even an Update-owner callee entry requires path provenance before its RCX-based writer can be called WallRun-owner+0x250',
+        'interpretation': 'direct x64 memory operands with displacement 0x250 only; byte hits only choose functions, and only full runtime-function decode establishes instruction references',
     }
     payload = (json.dumps(result, indent=2) + '\n').encode()
     if len(payload) > MAX_OUTPUT:
@@ -312,14 +334,14 @@ def main():
         data = args.exe.read_bytes()
         result = scan(data)
     except (OSError, Refusal, peutil.Refusal) as exc:
-        result = {'schema': 1, 'result': 'REFUSED', 'reason': str(exc), 'live_reads_or_writes': 0, 'game_process_operation': False}
+        result = {'schema': 2, 'result': 'REFUSED', 'reason': str(exc), 'live_reads_or_writes': 0, 'game_process_operation': False}
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
         print(f'REFUSED: {exc}')
         return 2
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
-    print(f"{result['result']}: writers={len(result['direct_writers'])} refs={len(result['direct_references'])} output={args.output}")
+    print(f"{result['result']}: writers={len(result['direct_writers'])} refs={result['direct_reference_count']} output={args.output}")
     return 0
 
 
