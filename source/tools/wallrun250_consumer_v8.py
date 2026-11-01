@@ -141,7 +141,11 @@ def bounded_slice(update_info, site, read):
     visited = set()
     visits = 0
     reachable = []
+    truncated = False
     while state:
+        if len(reachable) >= MAX_REACHABLE_INSTRUCTIONS:
+            truncated = True
+            break
         address = state.pop(0)
         queued.discard(address)
         visits += 1
@@ -149,8 +153,6 @@ def bounded_slice(update_info, site, read):
             raise v4.Refusal(f'consumer_cfg_visit_cap_0x{site:x}')
         if address in visited:
             continue
-        if len(reachable) >= MAX_REACHABLE_INSTRUCTIONS:
-            raise v4.Refusal(f'consumer_reachable_instruction_cap_0x{site:x}')
         visited.add(address)
         reachable.append(address)
         ins = by_address[address]
@@ -161,12 +163,15 @@ def bounded_slice(update_info, site, read):
                 state.append(nxt)
                 queued.add(nxt)
 
+    frontier = list(dict.fromkeys(state)) if truncated else []
     return {
         'site_rva': site,
         'site_instruction': instruction_row(site_ins, read),
         'pre_context': [instruction_row(ins, read) for ins in pre],
         'reachable_instruction_count': len(reachable),
         'worklist_visits': visits,
+        'truncated_by_instruction_cap': truncated,
+        'unvisited_frontier_rvas': frontier,
         'reachable_cfg_slice': [
             instruction_row(by_address[address], read)
             for address in sorted(reachable)
@@ -216,6 +221,7 @@ def scan(data):
             'update_only': True,
             'max_pre_context_instructions': MAX_PRE_CONTEXT,
             'max_reachable_instructions_per_site': MAX_REACHABLE_INSTRUCTIONS,
+            'instruction_cap_behavior': 'TRUNCATE_AND_REPORT_FRONTIER_NOT_REFUSE',
             'direct_callee_traversal': False,
             'global_executable_scan': False,
             'adjacent_offsets_scanned': False,
