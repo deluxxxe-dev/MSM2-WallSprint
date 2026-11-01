@@ -87,7 +87,7 @@ for needle in (
 for forbidden in ('Update-WS.cmd', 'Overstrike.exe', 'taskkill', 'Stop-Process'):
     assert forbidden not in wrapper, forbidden
 
-assert 'versionLabel[]=\"v0.1c47\"' in version
-assert 'packageVersion[]=\"0.1.72\"' in version
+assert 'versionLabel[]=\"v0.1c48\"' in version
+assert 'packageVersion[]=\"0.1.73\"' in version
 
-print('wallrun_scalar_writer_tool_static: PASS (V7 single Path-B handoff trace, c47 runtime unchanged)')
+print('wallrun_scalar_writer_tool_static: PASS (V7 offline tool retained; c48 runtime active)')
