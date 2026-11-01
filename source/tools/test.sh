@@ -6,6 +6,7 @@ mkdir -p build logs
 # Fail fast on the active c47 read-only WallRun scalar/config/version/package contract
 # (including the dormant c45 presence-hook identity/safety contract) before long suites.
 python3 tests/request_presence_static.py
+python3 tests/wallrun_scalar_writer_tool_static.py
 
 g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -Iinclude src/core_tests.cpp -o build/core_tests
 ./build/core_tests | tee logs/core_tests.log
