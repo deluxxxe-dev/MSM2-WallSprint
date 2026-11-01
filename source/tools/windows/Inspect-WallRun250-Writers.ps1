@@ -45,14 +45,14 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Pinned WSL analysis-python/Capstone5.0.6 unavailable; no automatic install or game operation' }
 
     & wsl.exe --exec /workspace/toolchains/analysis-python/bin/python3 -m py_compile $converted[0] $converted[1]
-    if ($LASTEXITCODE -ne 0) { throw 'Pinned V3 Python helper syntax preflight failed; EXE scan not started' }
+    if ($LASTEXITCODE -ne 0) { throw 'Pinned V4 Python helper syntax preflight failed; EXE scan not started' }
 
     & wsl.exe --exec /workspace/toolchains/analysis-python/bin/python3 $converted[0] $converted[2] --output $converted[3]
     $scanExit = $LASTEXITCODE
-    if (-not (Test-Path -LiteralPath $output -PathType Leaf)) { throw 'Offline writer report missing' }
+    if (-not (Test-Path -LiteralPath $output -PathType Leaf)) { throw 'Offline owner-provenance report missing' }
     Write-Host "Return this small JSON only: $output"
     Write-Host "Helper source commit: $commit"
-    Write-Host 'Read-only on-disk EXE scan. No game launch, hook, build, package, deploy, or memory write.'
-    if ($scanExit -ne 0) { throw "Offline writer scan refused; return generated JSON for exact reason: $output" }
+    Write-Host 'Read-only on-disk EXE provenance trace. No game launch, hook, build, package, deploy, or memory write.'
+    if ($scanExit -ne 0) { throw "Offline owner-provenance trace refused; return generated JSON for exact reason: $output" }
 }
 finally { Remove-Item -LiteralPath $temp -Recurse -Force }
