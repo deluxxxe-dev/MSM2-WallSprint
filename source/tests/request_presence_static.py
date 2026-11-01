@@ -47,13 +47,13 @@ assert 'cmp eax, 16' in asm and 'cmp eax, 131072' not in asm
 assert asm.count('.seh_proc')==10 and asm.count('.seh_endproc')==10
 assert 'jmp QWORD PTR ws_request_presence_original[rip]' in asm
 
-# c47 active contract: no Gravity presence hook; verified WallRun lifecycle remains the gate.
+# c48 active contract: no Gravity presence hook; verified WallRun lifecycle remains the gate.
 for ini in (default_ini,preset):
     assert 'REQUEST_PRESENCE_DIAGNOSTIC=0' in ini
     assert 'WALLRUN_HOOK_DIAGNOSTIC=1' in ini
     assert 'WALLRUN_OBJECT_DIAGNOSTIC=1' in ini
     for needle in ('WALLSPRINT_ENABLE=0','WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0','WALLSPRINT_ORIENTATION_WRITE=0','WALLSPRINT_ADHESION_WRITE=0','WALLSPRINT_MOVEMENT_WRITE=0'): assert needle in ini
-assert 'v0.1c47' in default_ini
+assert 'v0.1c48' in default_ini
 
 UPDATE_SHA='e5c08bcdbc98e28f2b07aebb6a141b317ca740ee1a6a8f6da70752f98b98e40f'
 assert UPDATE_SHA in scalar
@@ -75,20 +75,20 @@ assert observe.index('scalarObserver.observe') < observe.index('if(!runtimeObser
 assert finish.index('scalarObserver.finish') < finish.index('if(!runtimeObservationEnabled)')
 assert 'for(unsigned i=0;i<ws::scalar_fields::offsets.size();++i)' in observe
 
-# The observer has a sanitizer/-Werror unit test wired into the full suite.
-for needle in ('wallrun_scalar_observation_tests.cpp','-Wall -Wextra -Werror -pedantic -fsanitize=address,undefined','./build/wallrun_scalar_observation_tests'):
+# The observer and c48 exact-entry threshold contract are wired into the full suite.
+for needle in ('wallrun_scalar_observation_tests.cpp','-Wall -Wextra -Werror -pedantic -fsanitize=address,undefined','./build/wallrun_scalar_observation_tests','wallrun250_threshold_probe_static.py'):
     assert needle in test_script, needle
 for needle in ('phase=first','phase=changed','attempts=4 read_samples=3 changes=1 stable_bits=0','schema_numeric_hit_counts_0p4_12_75_100_50=(0,2,1,0,0)'):
     assert needle in scalar_test, needle
 
-assert 'versionLabel[]="v0.1c47"' in version
-assert 'packageVersion[]="0.1.72"' in version
-assert '"version": "0.1.72"' in info and 'WallSprint v0.1c47' in info
+assert 'versionLabel[]="v0.1c48"' in version
+assert 'packageVersion[]="0.1.73"' in version
+assert '"version": "0.1.73"' in info and 'WallSprint v0.1c48' in info
 for readme in (source_readme,project_readme):
-    for needle in ('v0.1c47','0.1.72','0x208','0x220','0x238','0x250','0x40C','REQUEST_PRESENCE_DIAGNOSTIC=0','wallrun_update_scalar_session','wallrun_update_scalar_summary'):
+    for needle in ('v0.1c48','0.1.73','0x250','REQUEST_PRESENCE_DIAGNOSTIC=0','wallrun_0x250_threshold_probe_admission','wallrun_0x250_threshold_probe'):
         assert needle in readme, needle
-for needle in ('package_mode": "wallrun_update_scalar_read_only"','"request_presence_diagnostic": False','"status": "c45_bounded_zero_hit_retired"','"extra_native_hooks": False','"independent_of_legacy_surface_telemetry": True','"captured_pointer_dereference": False','"semantic_mapping_authenticated": False','"offsets_hex": ["0x208", "0x220", "0x238", "0x250", "0x40C"]'):
+for needle in ('package_mode": "wallrun_0x250_threshold_probe_read_only"','"request_presence_diagnostic": False','"status": "c45_bounded_zero_hit_retired"','"extra_native_hooks": False','"independent_of_legacy_surface_telemetry": True','"captured_pointer_dereference": False','"semantic_mapping_authenticated": False','"offsets_hex": ["0x208", "0x220", "0x238", "0x250", "0x40C"]','"current_wallrun_0x250_threshold_probe"','"exact_update_entry_counters": True','"game_write": False'):
     assert needle in package_wrapper, needle
-assert 'c47' in package_wrapper
+assert 'c48' in package_wrapper
 
-print('request_presence_static: PASS (c47 scalar path independent of disabled surface telemetry)')
+print('request_presence_static: PASS (c48 read-only exact Update-entry 0x250 threshold probe)')
