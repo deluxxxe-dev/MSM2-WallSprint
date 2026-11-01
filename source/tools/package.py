@@ -74,8 +74,10 @@ manifest.update({
     "current_wallrun_0x250_threshold_probe": {
         "read_only": True,
         "extra_native_hooks": False,
-        "source": "existing_authenticated_Update_pre_original_callback",
-        "post_bridge_admitted_only": True,
+        "source": "existing_authenticated_Update_thunk_direct_pre_original_callback",
+        "dedicated_probe_gate": True,
+        "write_dispatch_gate_enabled": False,
+        "bridge_unwind_or_argument_clone": False,
         "field_offset": 592,
         "field_offset_hex": "0x250",
         "field_read_width_bytes": 4,
@@ -96,8 +98,9 @@ manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
 (root / "logs/package_check.log").write_text(
     "PASS: "
     + f"{label}/{version} read-only verified-WallRun 0x250 threshold-probe package; "
-    + "c47 five-field worker observation retained; c48 uses the existing authenticated Update pre-original bridge for one guarded 4-byte this+0x250 read per admitted Update; "
-    + "V8 thresholds are read live at admission; no extra native hook, pointer chase, game call or gameplay write; "
+    + "c47 five-field worker observation retained; c48 uses a dedicated gate in the existing authenticated Update thunk for one guarded 4-byte this+0x250 read before original Update; "
+    + "old write dispatch remains OFF and the writer bridge/caller-unwind path is not entered; V8 thresholds are read live at admission; "
+    + "no extra native hook, pointer chase, game call or gameplay write; "
     + "c45 Gravity presence hook disabled; WALLSPRINT_ENABLE=0; NATIVE_SOURCE_OVERRIDE=0; "
     + "orientation/adhesion/movement/gravity/native-source writes OFF; "
     + "REQUEST_PRESENCE_DIAGNOSTIC=0; WALLRUN_HOOK_DIAGNOSTIC=1; WALLRUN_OBJECT_DIAGNOSTIC=1\n",
