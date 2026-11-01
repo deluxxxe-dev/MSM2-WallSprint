@@ -1,116 +1,125 @@
-# Result — WallSprint v0.1c47 verified-WallRun Update scalar diagnostic
+# Result — c47 WallRun scalar runtime accepted; 0x250 writer discovery next
 
 2026-11-01. Active implementation branch: `codex/v01c20-edi-value-provenance`. No main merge.
 
 ## STATUS
 
-**C44 REQUEST ZERO-HIT ACCEPTED / C45 GRAVITY OWNER ZERO-HIT ACCEPTED / C46 OWNER PIPELINE+DEPLOY+RUNTIME EXECUTED BUT SCALAR OBSERVER DID NOT RUN / C46 ZERO-SAMPLE RESULT REJECTED AS ENGINE EVIDENCE / C47 TELEMETRY-GATE FIX PUBLISHED / OWNER FULL PIPELINE + C47 RUNTIME PENDING.**
+**C44 REQUEST ZERO-HIT ACCEPTED / C45 GRAVITY OWNER ZERO-HIT ACCEPTED / C46 SCALAR RUN REJECTED AS INSTRUMENTATION-GATED / C47 SCALAR OBSERVATION VERIFIED-RUNTIME / `WallRun.this+0x250` SELECTED AS CORRELATED DYNAMIC CANDIDATE / NO WRITE AUTHORIZED / OFFLINE DIRECT-WRITER SCAN PUBLISHED / OWNER JSON PENDING.**
 
-## C46 ACTUAL RUNTIME RESULT
+## C47 ACTUAL-GAME RESULT
 
-The owner supplied the `v0.1c46 / package 0.1.71` runtime log and video.
+Owner supplied `MSM2-WS-v0.1c47-20261101-084650.log` plus video and identified the sequence as ordinary right WallRun -> reverse left -> reverse right -> down hold, where down produces the known short-period left/right alternation. Owner asked that visible slowdown/stutter be ignored as likely console-related.
 
-Verified runtime facts:
+Instrumentation acceptance:
 
-- exact target build accepted: Spider-Man2.exe `2.810.0.0`;
-- on-disk SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`;
-- all four verified WallRun lifecycle hooks installed and authenticated;
-- `wallrun_update_scalar_plan enabled=1` with offsets `0x208/0x220/0x238/0x250/0x40C`;
-- c45 Gravity presence hook correctly disabled (`REQUEST_PRESENCE_DIAGNOSTIC=0`);
-- one verified WallRun: Init=1 / Entry=1 / Update=1889 / Deinit=1;
-- duration about `22.273624 s`, Update rate about `84.809/s`;
-- supplied video shows sustained ordinary WallRun activity during the test.
+- exact Spider-Man2.exe 2.810.0.0 target accepted;
+- on-disk SHA256 remains `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`;
+- exact authenticated WallRun Update SHA remains `e5c08bcdbc98e28f2b07aebb6a141b317ca740ee1a6a8f6da70752f98b98e40f`;
+- `wallrun_update_scalar_plan enabled=1`;
+- `wallrun_update_scalar_session ... state=armed ... surface_telemetry=0 direct_owner_reads_only=1 pointer_dereference=0 game_write=0` exists;
+- therefore c47 successfully decoupled the five scalar reads from the disabled legacy surface telemetry gate.
 
-But c46 emitted zero:
+First direct sample at scalar elapsed 16 ms:
 
-- `wallrun_update_scalar_sample`;
-- `wallrun_update_scalar_summary`;
-- `surface_source_session`.
+- `+0x208 = 0.25`;
+- `+0x220 = 0`;
+- `+0x238 = 0`;
+- `+0x250 = 0`;
+- `+0x40C = 0`.
 
-This is **not** a five-field zero/unreadable result.
+No logged sample exactly matched the comparison-only serializer numbers `0.4 / 12 / 75 / 100 / 50`.
 
-## C46 ROOT CAUSE
+## C47 CANDIDATE CLASSIFICATION
 
-Current source inspection proves:
+`+0x208` changed once around scalar elapsed 3.516 s from `0.25` to approximately `1e30`. This is insufficient for steering semantics; sentinel/threshold/timer interpretation remains only a hypothesis.
 
-- `telemetry.cpp::settings()` intentionally initializes `result.hooks.surfaceTelemetry=false`;
-- c46 `surface_source.hpp::begin/observe/finish` returned on `!runtimeObservationEnabled` before the newly added scalar observer operations;
-- therefore the scalar observer never armed, sampled, or finalized even though the static plan was admitted and printed as enabled.
+`+0x250` repeatedly changed with the reversal/down-oscillation sequence and is the only useful dynamic candidate in this run.
+
+Bounded retained clusters before the global 64-change-log cap:
+
+- about `4.938..6.907 s`: negative pulse to about `-0.166`, returns to zero;
+- about `7.782..10.407 s`: negative pulse to about `-0.162`, returns to zero;
+- about `11.282..12.375 s`: negative pulse to about `-0.208`;
+- later short pulses around `13.141..13.250`, `14.125..14.344`, and `15.219..15.328 s`.
+
+Independent Actor-basis / position-difference evidence shows the first two ordinary direction reversals and repeated later left/right flips during the owner's down-hold interval. The `+0x250` pulses occur in temporal association with those changes.
 
 Classification:
 
-- WallRun lifecycle activity: VERIFIED-RUNTIME;
-- scalar plan admission: VERIFIED-RUNTIME;
-- actual c46 scalar values/changes: UNKNOWN / NOT OBSERVED;
-- c46 zero samples as engine behavior: REJECTED;
-- missing-observer cause: VERIFIED-STATIC.
+- `+0x250` changes during verified WallRun: **VERIFIED-RUNTIME**;
+- timing association with reversal/down oscillation: **OBSERVED-CORRELATION**;
+- direct signed left/right input interpretation: **not supported**; both reversal directions use negative-valued pulses;
+- turn/angle/transition magnitude or related internal state: **HYPOTHESIS**;
+- exact field name, units, producer, writer, ownership and writability: **UNKNOWN**.
 
-Detailed evidence: `analysis/C46_SCALAR_GATE_RUNTIME_RESULT_20261101.md`.
+`+0x220`, `+0x238`, and `+0x40C` emitted no change before the retained change-log cap. This is bounded no-change evidence only.
 
-## C47 IMPLEMENTATION
+Detailed derived evidence is in `analysis/C47_WALLRUN250_RUNTIME_RESULT_20261101.md`.
 
-Version `v0.1c47`, package `0.1.72`.
+## LIFECYCLE LIMITATION
 
-C47 changes only scalar observation wiring:
+The retained WallRun lifecycle later closed by the existing emergency Update-timeout path with `Deinit=0`, so c47 did not emit `wallrun_update_scalar_summary`. This is a scalar-finalization limitation, not a read failure. The first/change samples are valid and sufficient for the current discriminator. Do not repeat c47 solely for a summary.
 
-- scalar session begin now occurs before the legacy `runtimeObservationEnabled` early return;
-- the five direct owner+offset 4-byte reads now occur before that early return;
-- scalar session summary finalization now occurs before that early return;
-- `wallrun_update_scalar_session` is logged when the scalar observer arms;
-- existing rich vector/root/child-pointer surface observation remains behind `runtimeObservationEnabled` and remains disabled;
-- the exact five offsets and authenticated WallRun Update SHA are unchanged.
+## STATIC RELATION OF +0x250
 
-No new native hook is added.
+Exact authenticated WallRun Update `0x1424530..0x14246D6` directly reads `this+0x250` at two verified sites:
 
-## SAFETY / ACTIVE CONFIG
+- `0x1424585`;
+- `0x142460E`.
+
+Both are threshold comparisons. The authenticated Update body does not directly write `+0x250`.
+
+Two direct calls in that exact Update receive the authenticated WallRun owner in RCX at call entry:
+
+- call `0x14245C3` -> `0x367DD10`;
+- call `0x1424630` -> `0x29BD5F0`.
+
+This call-entry relation does not prove that RCX or an alias still denotes the owner at a later instruction inside either callee.
+
+## NEW OFFLINE WRITER DISCOVERY
+
+No runtime/package version bump is made. `v0.1c47 / 0.1.72` remains the current runtime package.
+
+Added:
+
+- `source/tools/wallrun_scalar_writer_refs.py`;
+- `source/tools/windows/Inspect-WallRun250-Writers.ps1`;
+- `source/tests/wallrun_scalar_writer_tool_static.py`;
+- normal `source/tools/test.sh` static-contract wiring.
+
+The offline helper:
+
+- requires the exact pinned EXE SHA;
+- requires Capstone 5.0.6;
+- authenticates the exact Update SHA and both owner-RCX call prefixes;
+- scans executable file bytes only for direct x64 memory operands with displacement `+0x250`;
+- requires complete PE runtime-function linear instruction-boundary decode before accepting a reference;
+- requires the two already-known Update `+0x250` reference sites as a self-check;
+- reports direct write candidates and whether their containing function is one of the two authenticated owner-RCX callee entries;
+- explicitly does **not** prove WallRun-owner provenance at any candidate writer instruction merely from displacement, entry RCX or numeric coincidence;
+- does not launch the game, attach to a process, hook, install, build, package, deploy, read live values or write memory.
+
+Computed-address writers, bulk-copy writers that do not encode displacement `0x250` directly, nested-pointer fields and indirect producer paths remain outside this first fixed scan.
+
+## SAFETY / ACTIVE RUNTIME
+
+No c47 gameplay implementation changed:
 
 - `WALLSPRINT_ENABLE=0`;
 - `WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0`;
 - orientation / adhesion / movement / gravity / native-source writes OFF;
 - `REQUEST_PRESENCE_DIAGNOSTIC=0`;
-- verified WallRun lifecycle/object diagnostics ON;
-- scalar reads are bounded direct `WallRun.this + {0x208,0x220,0x238,0x250,0x40C}` 4-byte reads;
-- no scalar pointer dereference;
-- no new game call;
-- no semantic field names assigned.
-
-## REGRESSION PREVENTION
-
-`source/tests/request_presence_static.py` now explicitly requires:
-
-- `telemetry.cpp` still contains `result.hooks.surfaceTelemetry=false`;
-- scalar `begin` precedes the begin-path telemetry early return;
-- scalar `observe` precedes the observe-path telemetry early return;
-- scalar `finish` precedes the finish-path telemetry early return;
-- c47 version/package/config/README/package metadata stay synchronized.
-
-The existing ASan/UBSan/`-Werror` scalar observer unit test remains in the normal full test chain.
-
-## CHANGED FOR C47
-
-- `source/include/msm2/surface_source.hpp`
-- `source/include/version.hpp`
-- `source/mod/info.json`
-- `source/mod/WallSprint.ini`
-- `source/mod/presets/request_presence_read_only.ini`
-- `source/tools/package.py`
-- `source/tests/request_presence_static.py`
-- `README_TEST.md`
-- `source/README_TEST.md`
-- `analysis/C46_SCALAR_GATE_RUNTIME_RESULT_20261101.md`
-- `docs/CODEX_RESULT.md`
-- `docs/CODEX_NEXT.md`
+- no new native hook;
+- no scalar write/A-B test authorized.
 
 No SocialFeed or other MOD repository/file was changed.
 
-## VALIDATION STILL REQUIRED
+## NEXT OWNER ACTION
 
-Run installed `MSM2-WS/Update-WS.cmd` with game/shared Overstrike closed and require the full build/test/smoke/hooks/package/deploy PASS for `v0.1c47 / 0.1.72`.
+Do **not** run another game test and do not rebuild/deploy merely for this analysis step.
 
-After PASS, actual-game validation is one ordinary WallRun only:
+Run the published offline writer scan against the local pinned Spider-Man2.exe and return only the generated:
 
-left ~3 s -> right ~3 s -> down ~5 s -> natural end.
+`MSM2-WS-wallrun250-writers-YYYYMMDD-HHMMSS.json`
 
-No F11/F12 and no post-test wait.
-
-The returned c47 log must contain `wallrun_update_scalar_session`; then `wallrun_update_scalar_sample` / `wallrun_update_scalar_summary` determine whether the five candidates are useful. No write/A-B test is authorized yet.
+Chat then decides whether a direct writer has defensible owner provenance, whether one of the two authenticated Update owner-RCX callees is involved, or whether the fixed direct-displacement scan must stop without escalating to a write test.
