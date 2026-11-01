@@ -18,23 +18,27 @@ for needle in (
     "KNOWN_UPDATE_READS = (0x1424585, 0x142460E)",
     "0x14245C3: 0x367DD10",
     "0x1424630: 0x29BD5F0",
-    "MAX_CANDIDATE_FUNCTIONS = 16_384",
-    "MAX_TOTAL_DECODE_BYTES = 96 * 1024 * 1024",
-    "authenticated_Update_not_in_disp250_prefilter",
+    "TARGET_ENTRIES = (UPDATE_BEGIN, 0x367DD10, 0x29BD5F0)",
     "known_Update_disp250_site_selfcheck_failed",
-    "complete_PE_runtime_function_linear_decode",
-    "executable_file_bytes_prefilter_to_containing_PE_runtime_functions",
-    "wallrun_owner_proven_at_instruction': False",
-    "computed_address_writes': 'NOT_COVERED'",
+    "authenticated_Update_unexpected_disp250_writer",
+    "authenticated_Update_direct_call_target_mismatch",
+    "NO_DIRECT_DISP250_WRITER_IN_AUTHENTICATED_OWNER_CALLEES",
+    "OWNER_CALLEE_DIRECT_WRITER_CANDIDATES",
+    "global_executable_scan': False",
+    "owner_at_writer_instruction': 'NOT_PROVEN_without_intra_function_provenance'",
     "game_process_operation': False",
 ):
     assert needle in script, needle
 
-# The rejected v1 byte-backtracking candidate explosion must not return.
+# V1/V2 broad/global writer enumeration must not return.
 for forbidden in (
     "decoded_candidate_start_cap",
     "possible_starts = set()",
     "for back in range(1, 15)",
+    "MAX_RAW_DISP_HITS",
+    "MAX_CANDIDATE_FUNCTIONS",
+    "writer_cap",
+    "raw_displacement_hits",
 ):
     assert forbidden not in script, forbidden
 
@@ -56,4 +60,4 @@ for needle in (
 for forbidden in ('Update-WS.cmd', 'Overstrike.exe', 'Spider-Man2.exe -', 'taskkill', 'Stop-Process'):
     assert forbidden not in wrapper, forbidden
 
-print('wallrun_scalar_writer_tool_static: PASS')
+print('wallrun_scalar_writer_tool_static: PASS (V3 targeted owner-callee scope)')
