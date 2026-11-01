@@ -1,80 +1,77 @@
-# Next task — run V8 bounded Update-consumer trace for c47 `WallRun.this+0x250`
+# Next task — build and run c48 exact Update-entry `WallRun.this+0x250` threshold discriminator
 
 Branch `codex/v01c20-edi-value-provenance`; no main merge.
 
-Read AGENTS required docs, `analysis/C47_WALLRUN250_RUNTIME_RESULT_20261101.md`, `analysis/WALLRUN250_V6_OWNER_RESULT_20261101.md`, `analysis/WALLRUN250_V7_HANDOFF_RESULT_20261101.md`, and current `docs/CODEX_RESULT.md`.
+Read AGENTS required docs, `analysis/C47_WALLRUN250_RUNTIME_RESULT_20261101.md`, `analysis/WALLRUN250_V7_HANDOFF_RESULT_20261101.md`, `analysis/WALLRUN250_V8_CONSUMER_RESULT_20261101.md`, and current `docs/CODEX_RESULT.md`.
 
 ## Accepted evidence
 
-Do not repeat c47 gameplay, RequestSimpleMotion, GravityOrientationOwner, V1/V2 global scans, or V3-V7 producer-path traversal.
+Do not repeat RequestSimpleMotion, GravityOrientationOwner, V1/V2 global scans, V3-V7 producer-path traversal, or V8 offline consumer acquisition.
 
-Accepted runtime:
+Accepted V8 static consumer facts:
 
-- `WallRun.this+0x250` changes during verified WallRun;
-- changes correlate with ordinary reversals and down-hold left/right oscillation;
-- direct signed left/right-input semantics are unsupported;
-- field meaning/units/producer/writability remain UNKNOWN.
+- authenticated read `0x1424585` compares `this+0x250` against a file-backed initial `0.5f` and stores the comparison result with `SETB`;
+- authenticated read `0x142460E` compares the same field against a file-backed initial approximately `0.71f` and `JAE` skips the following block when the finite field is <= that threshold;
+- both are threshold/control consumers: VERIFIED-STATIC;
+- field meaning, producer and writability remain UNKNOWN;
+- dot-product/alignment interpretation remains HYPOTHESIS only.
 
-Accepted producer-path result:
+Accepted c47 runtime:
 
-- Path A `0x29C06F0`: no `owner+0x250` access and no next direct call/tail lead;
-- Path B `0x29C18B0`: one owner-preserving call `0x29C18D4 -> 0x308A0F0`;
-- V7 target `0x308A0F0`: 8 reachable instructions, no `owner+0x250` access, no direct call/tail lead;
-- the selected authenticated RCX-owner chain is exhausted.
+- negative/near-zero `+0x250` pulses correlated with reversals/down oscillation;
+- every retained 100 ms sample was below both V8 thresholds;
+- short between-sample positive crossings remain unexcluded.
 
-Do not interpret this as proof that the field has no writer.
+## Current c48 implementation
 
-## Current V8 implementation
+Runtime `v0.1c48`, package `0.1.73`.
 
-V8 changes question from producer to consumer.
+No new native hook is added. The existing authenticated Update pre-original callback is reused only for read-only counting.
 
-Run:
+Admission:
 
-`source/tools/windows/Inspect-WallRun250-Consumers.ps1`
+- complete verified WallRun observation plan required;
+- read live threshold globals at `0x5303DE8` and `0x5337098`;
+- log whether live bits equal the V8 on-disk bits `0x3F000000` and `0x3F35C28F`.
 
-It stages:
+For each post-bridge-admitted Update:
 
-- `source/tools/wallrun250_consumer_v8.py`;
-- `source/tools/wallrun_scalar_writer_refs.py` only for exact-image/Update authentication;
-- `source/tools/discover_ground_support.py` PE helper.
+- one guarded 4-byte read of `owner+0x250`;
+- count read success/failure;
+- count finite vs NaN/unordered;
+- count consumer-A true condition (`field > live threshold0` or unordered);
+- count consumer-B fallthrough condition (`field > live threshold1` or unordered);
+- native callback performs no logging and always returns `0`.
 
-V8 inspects exactly the two authenticated Update read sites:
+Worker-side `drainLogs` emits bounded cumulative/final records and rechecks live threshold globals.
 
-- `0x1424585`;
-- `0x142460E`.
-
-For each site it records:
-
-- exact read instruction;
-- six preceding Update instructions;
-- max 32 reachable Update instructions from the read;
-- register read/write metadata;
-- memory operand width/access metadata;
-- direct branch/call targets without callee traversal;
-- file-backed RIP-relative operand initial bytes and 32/64-bit numeric/float decode when available.
-
-Important: on-disk RIP-relative values are initial file bytes only, not verified live runtime values.
-
-Expected schema: 8.
-
-Output:
-
-`MSM2-WS-wallrun250-consumers-YYYYMMDD-HHMMSS.json`
+All gameplay writes remain OFF. Direct Actor writer remains hard-disabled. No pointer dereference, game call, field write, gravity write or native-source write is authorized.
 
 ## Owner action
 
-No Update-WS, build, deploy, Overstrike or game run is required.
+1. Close game and shared Overstrike.
+2. Run installed `MSM2-WS\Update-WS.cmd`.
+3. Require full updater PASS for `v0.1c48 / 0.1.73` including build/tests/smoke/hooks/package/deploy.
+4. In shared Overstrike: `Install mods` -> `Run modded game`.
+5. Perform one WallRun sequence: right -> reverse left -> reverse right -> hold down until the known short left/right oscillation -> end WallRun.
+6. Close game normally.
+7. Return only newest `MSM2-WS-v0.1c48-YYYYMMDD-HHMMSS.log`.
 
-Fast-forward the branch and run only `Inspect-WallRun250-Consumers.ps1`, then return the new consumer JSON.
+No F11/F12, markers, post-test wait or video is required unless behavior differs materially from c47.
 
-## Result handling
+## Runtime acceptance
 
-Use V8 to determine only what conditions/control flow the two authenticated reads participate in.
+Require:
 
-- If both reads feed the same kind of threshold/control decision, classify that structural consumer relation as VERIFIED-STATIC and then decide whether one minimal runtime discriminator is justified.
-- If they feed distinct consumers, keep both interpretations separate.
-- Do not infer a writer from consumer use.
-- Do not authorize a game write from V8 alone.
-- Do not return to global writer scanning merely because the producer remains unknown.
+- `wallrun_0x250_threshold_probe_admission complete_verified=1 admitted=1`;
+- `v8_expected_threshold_bits_match=1`;
+- cumulative/final `live_thresholds_unchanged_from_admission=1`;
+- `read_fail=0`;
+- exact-entry sample count compared with verified `Update=` count; any bridge refusal/coverage deficit makes result partial;
+- inspect `consumer_gt_threshold0_or_unordered` and `consumer_gt_threshold1_or_unordered`.
 
-Current runtime remains `v0.1c47 / 0.1.72`; no runtime rebuild or gameplay test is part of this static step.
+If both counters are zero with complete coverage, classify that the c47 reversal/down sequence did not activate either authenticated threshold consumer. Then stop treating the negative pulse timing alone as evidence that these gates cause reversal/down behavior.
+
+If either counter is nonzero, preserve exact count/coverage and choose the next minimum discriminator; do not write the field yet.
+
+If threshold bits do not match or live values change, treat c48 as partial and resolve only that mismatch before semantic conclusions.
