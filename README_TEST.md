@@ -13,9 +13,9 @@ c47 established that `WallRun.this+0x250` changes during verified WallRun and th
 
 Every retained c47 100 ms sample was below both thresholds, but a short positive excursion between worker samples was not excluded.
 
-c48 removes only that sampling-gap ambiguity. It retains the c47 five-field worker observation and additionally uses the already-installed authenticated Update pre-original callback. For every post-bridge-admitted Update it performs one guarded 4-byte read of `this+0x250` and counts whether the value exceeds the two live threshold values captured at admission (NaN/unordered is counted separately and follows the relevant `VCOMISS` CF behavior).
+c48 removes only that sampling-gap ambiguity. It retains the c47 five-field worker observation and adds a dedicated read-only gate inside the already-authenticated WallRun Update thunk. While the thunk has the native CPU state preserved, it calls one local probe callback before original Update; that callback performs one guarded 4-byte read of `this+0x250` and counts whether the value exceeds the two live threshold values captured at admission. NaN/unordered behavior is counted according to the corresponding `VCOMISS` condition.
 
-The probe adds no native hook, no pointer dereference, no game call and no game write. It returns `0` from the existing write callback, so no old writer path is re-enabled.
+The old write-dispatch gate remains OFF. c48 does not enter the writer bridge, perform caller unwind/argument cloning, add a native hook, dereference a child pointer, call a game function, or write game state.
 
 ## Update
 
@@ -44,7 +44,8 @@ Required log keys:
 
 Interpretation gate:
 
-- first require live threshold reads to remain unchanged from admission and the V8 expected threshold bits to match;
-- compare exact pre-original sample count with verified Update count; a bridge rejection makes the exact-entry result partial;
+- first require `update_probe_gate=1`, `write_dispatch_gate=0`, live threshold values unchanged from admission, and the V8 expected threshold bits to match;
+- require `read_fail=0` and no hook queue drops;
+- for a run containing only the requested WallRun, compare exact pre-original sample count with the verified Update count; a mismatch makes coverage partial;
 - if both threshold counters remain zero with complete coverage, the c47 negative-pulse correlation did not activate either authenticated threshold consumer during this sequence;
 - any nonzero threshold count becomes the next bounded event to analyze; it does not by itself prove field semantics or authorize a write.
