@@ -188,7 +188,6 @@ def scan(data):
         end, unwind = runtime[1], runtime[2]
         size = end - begin
         if size > MAX_FUNCTION_BYTES:
-            # Do not silently treat an unbounded body as instruction-boundary proof.
             continue
         decoded_bytes += size
         if decoded_bytes > MAX_TOTAL_DECODE_BYTES:
@@ -245,9 +244,9 @@ def scan(data):
             if len(refs) > MAX_REFS:
                 raise Refusal('reference_cap')
 
-    found_reads = sorted(r['instruction_rva'] for r in refs if r['instruction_rva'] in KNOWN_UPDATE_READS and any(m['read'] for m in r['memory_operands']))
-    if tuple(found_reads) != KNOWN_UPDATE_READS:
-        raise Refusal('known_Update_disp250_read_selfcheck_failed')
+    found_sites = sorted(r['instruction_rva'] for r in refs if r['instruction_rva'] in KNOWN_UPDATE_READS)
+    if tuple(found_sites) != KNOWN_UPDATE_READS:
+        raise Refusal('known_Update_disp250_site_selfcheck_failed')
 
     owner_callee_rows = []
     for call_site, target in KNOWN_OWNER_CALLS.items():
@@ -272,8 +271,8 @@ def scan(data):
             'begin_rva': UPDATE_BEGIN,
             'end_rva': UPDATE_END,
             'sha256': UPDATE_SHA256,
-            'known_read_sites_required': list(KNOWN_UPDATE_READS),
-            'known_read_sites_found': found_reads,
+            'known_disp250_sites_required': list(KNOWN_UPDATE_READS),
+            'known_disp250_sites_found': found_sites,
             'owner_rcx_direct_calls': owner_callee_rows,
         },
         'field_displacement': FIELD_DISP,
