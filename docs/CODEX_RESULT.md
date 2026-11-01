@@ -1,12 +1,12 @@
-# Result — c47 WallRun scalar runtime accepted; V6 bounded cycle-aware owner trace ready
+# Result — c47 WallRun scalar runtime accepted; V6 owner trace succeeded; V7 single handoff ready
 
 2026-11-01. Active implementation branch: `codex/v01c20-edi-value-provenance`. No main merge.
 
 ## STATUS
 
-**C47 SCALAR OBSERVATION VERIFIED-RUNTIME / `WallRun.this+0x250` REMAINS CORRELATED DYNAMIC CANDIDATE / V3 NO-DIRECT-WRITER RESULT ACCEPTED / V4 NO-`.pdata` STRUCTURAL REFUSAL ACCEPTED / V5 REACHED A REAL BOUNDED CFG CYCLE AT `0x29C06F0` AND REFUSED BY POLICY / V6 CHANGES ONLY THAT CYCLE POLICY / NO WRITE AUTHORIZED.**
+**C47 SCALAR OBSERVATION VERIFIED-RUNTIME / `WallRun.this+0x250` REMAINS CORRELATED DYNAMIC CANDIDATE / V3 NO-DIRECT-WRITER RESULT ACCEPTED / V4/V5 STRUCTURAL BLOCKERS RESOLVED / V6 TWO-ROOT OWNER-RELATIVE TRACE SUCCEEDED WITH ZERO `owner+0x250` ACCESSES / ONE PATH-B RCX-PRESERVING DIRECT CALL SELECTED / V7 SINGLE-CALLEE TRACE IMPLEMENTED / NO WRITE AUTHORIZED.**
 
-## Accepted evidence
+## Accepted c47/V3 evidence
 
 C47 runtime remains accepted:
 
@@ -22,21 +22,49 @@ V3 accepted static result:
 - Path A: `0x367DD31 -> 0x29C06F0`, entry RCX = owner+`0x80`;
 - Path B: `0x367DD3C -> 0x29C18B0`, entry RCX = owner+`0x58`.
 
-V4 owner-local result:
+## V6 owner result — accepted
 
-`downstream_target_no_runtime_function_0x29c06f0`
+Owner returned:
 
-This established only that Path A is not covered by PE runtime-function (`.pdata`) metadata.
+`MSM2-WS-wallrun250-writers-20261101-132326.json`
 
-V5 owner-local result:
+Schema/result:
 
-`no_pdata_fallback_cfg_cycle_0x29c06f0`
+- schema 6;
+- `NO_OWNER_RELATIVE_0X250_ACCESS_IN_BOUNDED_DOWNSTREAM_TRACE`.
 
-Generated JSON:
+Path A `0x29C06F0`:
 
-`MSM2-WS-wallrun250-writers-20261101-131833.json`
+- strict no-`.pdata` bounded V6 CFG scope;
+- range `0x29C06F0..0x29C0760`;
+- 30 reachable instructions / 30 worklist visits;
+- contained CFG cycle accepted;
+- `owner+0x250` accesses: 0;
+- reachable direct calls: 0;
+- external tail jumps: 0.
 
-V5 therefore successfully entered the strict no-`.pdata` fallback and discovered a reachable CFG cycle before any writer/no-writer conclusion. This is a structural tool refusal, not an engine result.
+Path A therefore has no current next producer lead in the accepted scope and must not be reopened without new evidence.
+
+Path B `0x29C18B0`:
+
+- PE runtime-function backed;
+- range `0x29C18B0..0x29C1A6C`;
+- 136 reachable instructions / 141 worklist visits;
+- `owner+0x250` accesses: 0;
+- one reachable direct call retains unique RCX owner provenance:
+  - call site `0x29C18D4`;
+  - target `0x308A0F0`;
+  - pre-call `RCX = owner+0x58`;
+  - pre-call `RDI = owner+0x58`.
+
+Combined V6 summary:
+
+- owner-relative `+0x250` accesses 0;
+- reads 0;
+- writes 0;
+- access-unknown 0.
+
+This is a bounded no-access result, not proof that the field is never written.
 
 Detailed evidence:
 
@@ -44,39 +72,36 @@ Detailed evidence:
 - `analysis/WALLRUN250_V3_OWNER_CALLEE_RESULT_20261101.md`
 - `analysis/WALLRUN250_V4_NO_PDATA_RESULT_20261101.md`
 - `analysis/WALLRUN250_V5_CFG_CYCLE_RESULT_20261101.md`
+- `analysis/WALLRUN250_V6_OWNER_RESULT_20261101.md`
 
-## V6 implementation
+## V7 implementation
 
 Added:
 
-- `source/tools/wallrun_scalar_writer_refs_v6.py`
+- `source/tools/wallrun_scalar_writer_refs_v7.py`
 
 Updated:
 
 - `source/tools/windows/Inspect-WallRun250-Writers.ps1`
 - `source/tests/wallrun_scalar_writer_tool_static.py`
 
-V6 preserves V5's no-`.pdata` admission limits:
+V7 does not broaden the search. It replays and authenticates the accepted Path-B source before following exactly one additional call.
 
-- maximum 128-byte window;
-- maximum 32 entry-reachable instructions;
-- no CALL;
-- no Win64 nonvolatile-GPR or RSP write;
-- no indirect jump;
-- conditional branches must remain inside the bounded scope;
-- unresolved successors/exits still refuse;
-- external direct JMP is only a recorded tail exit;
-- normal PE runtime-function decoding remains unchanged when `.pdata` exists.
+Pinned handoff:
 
-The only demonstrated rule changed from V5 is CFG-cycle handling. A fully contained bounded cycle is now recorded as `cfg_cycle_present` instead of being rejected merely for existing.
+- source Path B target `0x29C18B0`;
+- call site `0x29C18D4`;
+- exact call bytes `E8 17 88 6C 00`;
+- decoded target `0x308A0F0`;
+- required pre-call unique RCX provenance `owner+0x58`.
 
-Owner-relative state still uses the existing V4 monotone merge-by-intersection worklist. At each instruction/register, provenance can only stay equal or be discarded at a merge; it cannot become more specific after disagreement. This makes contained loops convergent. V6 additionally applies a 2048-worklist-visit cap to no-`.pdata` traces and refuses if that bound is exceeded.
+If any of those conditions fail against the exact pinned EXE, V7 refuses.
 
-V6 output schema is 6.
+Only after the handoff is re-authenticated does V7 trace target `0x308A0F0` with entry `RCX = owner+0x58`, using the existing V6 PE-runtime/no-`.pdata` bounded scope handling and V4 conservative owner-relative provenance model.
 
-## Validation / safety
+V7 output schema is 7.
 
-The authored V6 helper passed Python syntax compilation before publication. Repository static-contract source now pins V6 helper/wrapper presence, schema 6, bounded-cycle handling, retained V5 safety gates, no global scan, no gameplay write, and unchanged runtime/package.
+## Safety / active runtime
 
 Current runtime remains **v0.1c47 / package 0.1.72**.
 
@@ -85,5 +110,7 @@ Current runtime remains **v0.1c47 / package 0.1.72**.
 - no new native hook/watchpoint/page guard;
 - no global executable writer scan;
 - no adjacent-field scan;
+- Path A is not reopened;
+- only one deeper callee is authorized;
 - no SocialFeed or other MOD change;
-- no Update-WS/build/deploy/game action is required for V6 acquisition.
+- no Update-WS/build/deploy/game action is required for V7 acquisition.
