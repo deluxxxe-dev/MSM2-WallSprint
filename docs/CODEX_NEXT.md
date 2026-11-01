@@ -1,8 +1,8 @@
-# Next task — run V4 owner-relative provenance trace for c47 `WallRun.this+0x250`
+# Next task — run V5 owner-relative provenance trace for c47 `WallRun.this+0x250`
 
 Branch `codex/v01c20-edi-value-provenance`; no main merge.
 
-Read AGENTS required docs, `analysis/C47_WALLRUN250_RUNTIME_RESULT_20261101.md`, `analysis/WALLRUN250_V3_OWNER_CALLEE_RESULT_20261101.md`, and current `docs/CODEX_RESULT.md`.
+Read AGENTS required docs, `analysis/C47_WALLRUN250_RUNTIME_RESULT_20261101.md`, `analysis/WALLRUN250_V3_OWNER_CALLEE_RESULT_20261101.md`, `analysis/WALLRUN250_V4_NO_PDATA_RESULT_20261101.md`, and current `docs/CODEX_RESULT.md`.
 
 ## Accepted evidence
 
@@ -18,26 +18,38 @@ Accepted runtime:
 Accepted V3 static result:
 
 - exact EXE/Update identities passed;
-- known Update `+0x250` reads rediscovered;
 - no direct encoded `+0x250` writer in Update, `0x367DD10`, or `0x29BD5F0`;
 - Path A: `0x367DD31 -> 0x29C06F0`, entry RCX = owner+`0x80`;
 - Path B: `0x367DD3C -> 0x29C18B0`, entry RCX = owner+`0x58`.
 
-## Current V4 implementation
+Accepted V4 owner result:
 
-`source/tools/wallrun_scalar_writer_refs.py` now performs bounded CFG-aware owner-relative GPR provenance from exactly those two roots.
+`downstream_target_no_runtime_function_0x29c06f0`
 
-It supports only:
+This means the first authenticated downstream call target is not covered by PE runtime-function (`.pdata`) metadata. It is not a no-function or no-writer result.
 
-- full-64-bit register MOV;
-- full-64-bit LEA of proven base + constant, no dynamic index;
-- full-64-bit ADD/SUB immediate.
+## Current V5 implementation
 
-It kills provenance on unsupported/partial writes and memory-loaded destinations, intersects state at CFG merges, kills Win64 volatile GPR provenance after calls, refuses reachable indirect jumps, and never traverses deeper callees.
+Run the Windows wrapper, which now stages:
 
-A memory access is reported only when a proven current base owner-offset plus the encoded displacement equals original owner+`0x250` exactly.
+- `source/tools/wallrun_scalar_writer_refs_v5.py`;
+- `source/tools/wallrun_scalar_writer_refs.py` (V4 authentication/provenance core);
+- `source/tools/discover_ground_support.py`.
 
-Reachable direct calls are also reported with the uniquely proven RCX owner offset, if one survives at that call site.
+V5 keeps normal PE runtime-function decoding when available. Only a pinned downstream target with no covering `.pdata` range may use the strict fallback:
+
+- one unique executable section;
+- stop before next runtime-function start;
+- max 128 bytes;
+- max 32 entry-reachable instructions;
+- no CALL;
+- no nonvolatile-GPR or RSP write;
+- no indirect JMP;
+- local conditional branches must remain inside scope;
+- no CFG cycle;
+- every reachable exit must be RET or an explicit external direct tail JMP.
+
+After that gate, the existing V4 owner-relative provenance rules apply unchanged.
 
 ## Owner action
 
@@ -51,27 +63,28 @@ Return the newly generated:
 
 `MSM2-WS-wallrun250-writers-YYYYMMDD-HHMMSS.json`
 
-Expected schema is 4.
+Expected schema is 5.
 
 ## Result handling
 
-If V4 reports a proven owner-relative `+0x250` write:
+If V5 reports a proven owner-relative `+0x250` write:
 
 - inspect only that writer and its value source/width;
 - do not authorize a write test merely from address provenance.
 
-If V4 finds only reads:
+If V5 finds only reads:
 
-- use the reachable direct-call list with proven RCX owner offsets to choose one next bounded producer step.
+- use bounded reachable call/tail information to choose one next producer step.
 
-If V4 finds no owner-relative access:
+If V5 finds no owner-relative access:
 
-- use only the bounded call list from the two roots;
-- do not return to global displacement scans or adjacent offsets.
+- use only bounded evidence from the two roots;
+- do not return to global displacement or adjacent-offset scans.
 
-If V4 refuses on a concrete decode/CFG/identity condition:
+If V5 refuses:
 
-- fix only that demonstrated condition;
-- do not broaden scope.
+- accept the exact structural blocker;
+- fix only that demonstrated condition if it can be bounded without weakening owner/runtime safety;
+- do not broaden to whole-image search or runtime watchpoints automatically.
 
 Current runtime remains `v0.1c47 / 0.1.72` and must not be rebuilt or game-tested for this offline step.
