@@ -16,6 +16,9 @@ for needle in (
     "MAX_WORKLIST_VISITS = 96",
     "consumer_site_not_unique_disp250_read_",
     "WALLRUN_0X250_AUTHENTICATED_UPDATE_CONSUMER_SLICES",
+    "'truncated_by_instruction_cap': truncated",
+    "'unvisited_frontier_rvas': frontier",
+    "TRUNCATE_AND_REPORT_FRONTIER_NOT_REFUSE",
     "'update_only': True",
     "'direct_callee_traversal': False",
     "'global_executable_scan': False",
@@ -31,6 +34,7 @@ for needle in (
 for forbidden in (
     'WriteProcessMemory', 'VirtualProtect', 'CreateRemoteThread', 'SetThreadContext',
     'MAX_RAW_DISP_HITS', 'writer_cap', 'raw_displacement_hits',
+    'consumer_reachable_instruction_cap_',
 ):
     assert forbidden not in script, forbidden
 
@@ -53,4 +57,4 @@ for forbidden in ('Update-WS.cmd', 'Overstrike.exe', 'taskkill', 'Stop-Process')
 assert 'versionLabel[]=\"v0.1c47\"' in version
 assert 'packageVersion[]=\"0.1.72\"' in version
 
-print('wallrun250_consumer_v8_static: PASS (bounded Update consumer slices, c47 runtime unchanged)')
+print('wallrun250_consumer_v8_static: PASS (bounded Update consumer slices, cap truncates, c47 runtime unchanged)')
