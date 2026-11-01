@@ -18,13 +18,25 @@ for needle in (
     "KNOWN_UPDATE_READS = (0x1424585, 0x142460E)",
     "0x14245C3: 0x367DD10",
     "0x1424630: 0x29BD5F0",
+    "MAX_CANDIDATE_FUNCTIONS = 16_384",
+    "MAX_TOTAL_DECODE_BYTES = 96 * 1024 * 1024",
+    "authenticated_Update_not_in_disp250_prefilter",
     "known_Update_disp250_site_selfcheck_failed",
     "complete_PE_runtime_function_linear_decode",
+    "executable_file_bytes_prefilter_to_containing_PE_runtime_functions",
     "wallrun_owner_proven_at_instruction': False",
     "computed_address_writes': 'NOT_COVERED'",
     "game_process_operation': False",
 ):
     assert needle in script, needle
+
+# The rejected v1 byte-backtracking candidate explosion must not return.
+for forbidden in (
+    "decoded_candidate_start_cap",
+    "possible_starts = set()",
+    "for back in range(1, 15)",
+):
+    assert forbidden not in script, forbidden
 
 for forbidden in ('WriteProcessMemory', 'VirtualProtect', 'CreateRemoteThread', 'SetThreadContext'):
     assert forbidden not in script, forbidden
