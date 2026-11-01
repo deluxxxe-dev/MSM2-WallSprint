@@ -52,6 +52,8 @@ for needle in (
     "discover_ground_support.py",
     "/workspace/toolchains/analysis-python/bin/python3",
     "tuple(map(int,capstone.__version__.split(chr(46)))) == (5,0,6)",
+    "-m py_compile $converted[0] $converted[1]",
+    "Pinned V3 Python helper syntax preflight failed; EXE scan not started",
     "MSM2-WS-wallrun250-writers-",
     "No game launch, hook, build, package, deploy, or memory write.",
 ):
