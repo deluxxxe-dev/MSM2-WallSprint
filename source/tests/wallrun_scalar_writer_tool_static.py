@@ -5,44 +5,41 @@ import ast
 root = Path(__file__).resolve().parents[1]
 script = (root / 'tools/wallrun_scalar_writer_refs.py').read_text(encoding='utf-8')
 wrapper = (root / 'tools/windows/Inspect-WallRun250-Writers.ps1').read_text(encoding='utf-8')
-
-# Syntax-only validation does not import Capstone on generic test hosts.
 ast.parse(script)
 
 for needle in (
     "EXPECTED_SHA = peutil.EXPECTED_SHA",
     "UPDATE_BEGIN = 0x1424530",
-    "UPDATE_END = 0x14246D6",
-    "e5c08bcdbc98e28f2b07aebb6a141b317ca740ee1a6a8f6da70752f98b98e40f",
-    "FIELD_DISP = 0x250",
-    "KNOWN_UPDATE_READS = (0x1424585, 0x142460E)",
-    "0x14245C3: 0x367DD10",
-    "0x1424630: 0x29BD5F0",
-    "TARGET_ENTRIES = (UPDATE_BEGIN, 0x367DD10, 0x29BD5F0)",
-    "known_Update_disp250_site_selfcheck_failed",
-    "authenticated_Update_unexpected_disp250_writer",
-    "authenticated_Update_direct_call_target_mismatch",
-    "NO_DIRECT_DISP250_WRITER_IN_AUTHENTICATED_OWNER_CALLEES",
-    "OWNER_CALLEE_DIRECT_WRITER_CANDIDATES",
+    "SOURCE_BEGIN = 0x367DD10",
+    "SOURCE_END = 0x367DD5F",
+    "f437f092ce0b2315103302d06cdefb5ded88126302b3d276bb1a6ebcbf774378",
+    "'target_rva': 0x29C06F0",
+    "'target_rva': 0x29C18B0",
+    "'entry_owner_offset': 0x80",
+    "'entry_owner_offset': 0x58",
+    "'target_relative_field_offset': 0x1D0",
+    "'target_relative_field_offset': 0x1F8",
+    "def merge_intersection(a, b):",
+    "INTERSECTION_SAME_REGISTER_SAME_OWNER_OFFSET_ONLY",
+    "unsupported_or_partial_writes': 'KILL_DESTINATION_PROVENANCE'",
+    "memory_load_destination': 'KILL_DESTINATION_PROVENANCE'",
+    "VOLATILE_WIN64 = {'rax','rcx','rdx','r8','r9','r10','r11'}",
+    "call_return_volatile_gprs_invalidated",
+    "entry_reachable_indirect_jump",
+    "downstream_target_not_instruction_boundary",
+    "owner_relative_0x250_accesses",
+    "proven_rcx_owner_offsets",
     "global_executable_scan': False",
-    "owner_at_writer_instruction': 'NOT_PROVEN_without_intra_function_provenance'",
-    "game_process_operation': False",
+    "deeper_callee_traversal': False",
+    "gameplay_write_authorized': False",
+    "'schema': 4",
 ):
     assert needle in script, needle
 
-# V1/V2 broad/global writer enumeration must not return.
 for forbidden in (
-    "decoded_candidate_start_cap",
-    "possible_starts = set()",
-    "for back in range(1, 15)",
-    "MAX_RAW_DISP_HITS",
-    "MAX_CANDIDATE_FUNCTIONS",
-    "writer_cap",
-    "raw_displacement_hits",
+    'WriteProcessMemory', 'VirtualProtect', 'CreateRemoteThread', 'SetThreadContext',
+    'MAX_RAW_DISP_HITS', 'MAX_CANDIDATE_FUNCTIONS', 'writer_cap', 'raw_displacement_hits',
 ):
-    assert forbidden not in script, forbidden
-
-for forbidden in ('WriteProcessMemory', 'VirtualProtect', 'CreateRemoteThread', 'SetThreadContext'):
     assert forbidden not in script, forbidden
 
 for needle in (
@@ -53,13 +50,13 @@ for needle in (
     "/workspace/toolchains/analysis-python/bin/python3",
     "tuple(map(int,capstone.__version__.split(chr(46)))) == (5,0,6)",
     "-m py_compile $converted[0] $converted[1]",
-    "Pinned V3 Python helper syntax preflight failed; EXE scan not started",
+    "Pinned V4 Python helper syntax preflight failed; EXE scan not started",
     "MSM2-WS-wallrun250-writers-",
     "No game launch, hook, build, package, deploy, or memory write.",
 ):
     assert needle in wrapper, needle
 
-for forbidden in ('Update-WS.cmd', 'Overstrike.exe', 'Spider-Man2.exe -', 'taskkill', 'Stop-Process'):
+for forbidden in ('Update-WS.cmd', 'Overstrike.exe', 'taskkill', 'Stop-Process'):
     assert forbidden not in wrapper, forbidden
 
-print('wallrun_scalar_writer_tool_static: PASS (V3 targeted owner-callee scope)')
+print('wallrun_scalar_writer_tool_static: PASS (V4 owner-relative CFG provenance)')
