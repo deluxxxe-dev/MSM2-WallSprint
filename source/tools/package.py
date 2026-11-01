@@ -1,8 +1,8 @@
-"""Package WallSprint with the preserved historical packager plus c47 active-state normalization.
+"""Package WallSprint with the preserved historical packager plus c48 active-state normalization.
 
 package_base.py is retained as the historical monolithic implementation. This wrapper
 changes only the stale active-package policy and then rewrites current-package metadata
-so v0.1c47 cannot be published as if historical native-source/orientation writes or the
+so v0.1c48 cannot be published as if historical native-source/orientation writes or the
 retired c45 Gravity presence observer were ON.
 """
 from pathlib import Path
@@ -33,7 +33,7 @@ manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 manifest.update({
     "version": label,
     "package_version": version,
-    "package_mode": "wallrun_update_scalar_read_only",
+    "package_mode": "wallrun_0x250_threshold_probe_read_only",
     "wall_sprint_enabled": False,
     "native_source_override_active": False,
     "native_stack_source_write_enabled": False,
@@ -71,16 +71,36 @@ manifest.update({
         "semantic_mapping_authenticated": False,
         "known_schema_numeric_comparison_only": [0.4, 12.0, 75.0, 100.0, 50.0],
     },
+    "current_wallrun_0x250_threshold_probe": {
+        "read_only": True,
+        "extra_native_hooks": False,
+        "source": "existing_authenticated_Update_pre_original_callback",
+        "post_bridge_admitted_only": True,
+        "field_offset": 592,
+        "field_offset_hex": "0x250",
+        "field_read_width_bytes": 4,
+        "consumer_threshold_rvas": [87047656, 87257240],
+        "consumer_threshold_rvas_hex": ["0x5303DE8", "0x5337098"],
+        "v8_on_disk_threshold_bits": [1056964608, 1060487823],
+        "v8_on_disk_threshold_f32": [0.5, 0.7099999785423279],
+        "live_thresholds_read_at_admission": True,
+        "exact_update_entry_counters": True,
+        "pointer_dereference": False,
+        "game_call": False,
+        "game_write": False,
+        "field_semantics_authenticated": False,
+    },
 })
 manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
 (root / "logs/package_check.log").write_text(
     "PASS: "
-    + f"{label}/{version} read-only verified-WallRun Update scalar package; "
-    + "five exact direct-this 4-byte candidates observed at worker cadence independent of legacy surface telemetry; no extra native hook; "
+    + f"{label}/{version} read-only verified-WallRun 0x250 threshold-probe package; "
+    + "c47 five-field worker observation retained; c48 uses the existing authenticated Update pre-original bridge for one guarded 4-byte this+0x250 read per admitted Update; "
+    + "V8 thresholds are read live at admission; no extra native hook, pointer chase, game call or gameplay write; "
     + "c45 Gravity presence hook disabled; WALLSPRINT_ENABLE=0; NATIVE_SOURCE_OVERRIDE=0; "
     + "orientation/adhesion/movement/gravity/native-source writes OFF; "
     + "REQUEST_PRESENCE_DIAGNOSTIC=0; WALLRUN_HOOK_DIAGNOSTIC=1; WALLRUN_OBJECT_DIAGNOSTIC=1\n",
     encoding="utf-8",
 )
-print("PASS: c47 read-only WallRun Update scalar package manifest normalized")
+print("PASS: c48 read-only WallRun 0x250 threshold-probe package manifest normalized")
