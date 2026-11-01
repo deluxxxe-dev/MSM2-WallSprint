@@ -201,6 +201,7 @@ ws_hook_update:
 9:
  mov eax,DWORD PTR ws_write_dispatch_enabled[rip]
  or eax,DWORD PTR ws_source_lifecycle_enabled[rip]
+ or eax,DWORD PTR ws_update_probe_enabled[rip]
  je .Lupdate_tail
  fxsave64 [rsp+0x1000]
  vmovdqu YMMWORD PTR [rsp+0x1200],ymm0
@@ -225,7 +226,8 @@ ws_hook_update:
  mov rdx,QWORD PTR [rsp+0x1480+40]
  call QWORD PTR ws_source_lifecycle_callback[rip]
 .Lsource_lifecycle_done:
- cmp DWORD PTR ws_write_dispatch_enabled[rip],0
+ mov eax,DWORD PTR ws_write_dispatch_enabled[rip]
+ or eax,DWORD PTR ws_update_probe_enabled[rip]
  je .Lupdate_restore_tail
  lea rax,[rsp+0x1480+72]
  mov QWORD PTR [rsp+0x1400],rax
