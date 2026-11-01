@@ -1,81 +1,99 @@
-# Next task — validate v0.1c47 verified-WallRun Update scalar observation
+# Next task — resolve direct writer provenance for c47 `WallRun.this+0x250`
 
 Branch `codex/v01c20-edi-value-provenance`; no main merge.
 
-Read AGENTS required docs, `analysis/C46_SCALAR_GATE_RUNTIME_RESULT_20261101.md`, and current `docs/CODEX_RESULT.md`.
+Read AGENTS required docs, `analysis/C47_WALLRUN250_RUNTIME_RESULT_20261101.md`, and current `docs/CODEX_RESULT.md`.
 
-## Accepted prior runtime results
+## Accepted runtime results
 
-Do not repeat RequestSimpleMotion or GravityOrientationOwner presence testing for the same ordinary locomotion / WallRun sequence.
+Do not repeat the same c47 game sequence merely to obtain more scalar samples or a summary.
 
-- c44 exact RequestSimpleMotion entry: 335 persisted 500 ms batches, all zero-hit while verified WallRun activity occurred.
-- c45 exact GravityOrientationOwner entry: 418 persisted 500 ms batches, all zero-hit while one verified WallRun ran Init=1 / Entry=1 / Update=1470 / Deinit=1 for about 16.28 s.
+Accepted c47 facts:
 
-C46 must **not** be treated as scalar zero-hit evidence. Its owner runtime had a real verified WallRun (Init=1 / Entry=1 / Update=1889 / Deinit=1, about 22.27 s), but the scalar observer was behind `surfaceTelemetry=false` and therefore never ran. Zero scalar sample/summary records are an instrumentation-gate failure, not an engine result.
+- exact target build and authenticated WallRun lifecycle/Update accepted;
+- scalar session actually armed with `surface_telemetry=0`;
+- all five direct fields were readable at first sample;
+- `+0x208` changed once from `0.25` to about `1e30`;
+- `+0x220`, `+0x238`, `+0x40C` emitted no retained change before the change-log cap;
+- `+0x250` repeatedly produced bounded negative pulses temporally associated with right/left reversals and the owner's down-hold left/right oscillation;
+- no retained scalar sample exactly matched `0.4/12/75/100/50`;
+- direct signed left/right-input semantics are not supported because both reversal directions produced negative `+0x250` pulses;
+- field meaning, units, producer/writer, owner provenance and writability remain UNKNOWN.
 
-## Current implementation
+The missing `wallrun_update_scalar_summary` is explained by the existing emergency Update-timeout lifecycle close with `Deinit=0`. Do not rerun c47 solely for summary output.
 
-`v0.1c47 / package 0.1.72` is published.
+Do not revisit c44 RequestSimpleMotion or c45 GravityOrientationOwner presence for the same ordinary locomotion/WallRun state.
 
-The exact authenticated WallRun Update body remains `0x1424530..0x14246D6`, SHA256 `e5c08bcdbc98e28f2b07aebb6a141b317ca740ee1a6a8f6da70752f98b98e40f`.
+## Static facts already accepted
 
-Observe exactly five unique direct 4-byte `WallRun.this` candidates:
+Authenticated WallRun Update:
 
-- `0x208`
-- `0x220`
-- `0x238`
-- `0x250`
-- `0x40C`
+- RVA `0x1424530..0x14246D6`;
+- SHA256 `e5c08bcdbc98e28f2b07aebb6a141b317ca740ee1a6a8f6da70752f98b98e40f`;
+- direct `this+0x250` reads at `0x1424585` and `0x142460E`;
+- no direct `+0x250` write in this exact Update body.
 
-C47 decouples only these five scalar reads from the intentionally disabled legacy rich surface telemetry. Scalar begin/read/finalize occur before the legacy telemetry early returns. Existing vector/root/child-pointer surface observation stays disabled.
+Two exact Update call sites pass the WallRun owner into entry RCX:
 
-New runtime proof key:
+- `0x14245C3 -> 0x367DD10`;
+- `0x1424630 -> 0x29BD5F0`.
 
-- `wallrun_update_scalar_session` — must appear for an actual WallRun and reports `surface_telemetry=0` while the direct scalar observer is armed.
+That proves only call-entry RCX relation. It does not prove owner provenance at a later callee instruction.
 
-Existing scalar keys:
+## Current task
 
-- `wallrun_update_scalar_sample`
-- `wallrun_update_scalar_summary`
+Run and analyze the new offline fixed-scope writer scan:
 
-For comparison only, summaries count exact numeric hits for `0.4 / 12 / 75 / 100 / 50`. Numeric equality alone is not field-semantic proof.
+- `source/tools/wallrun_scalar_writer_refs.py`;
+- Windows bootstrap `source/tools/windows/Inspect-WallRun250-Writers.ps1`.
 
-## Safety contract
+Expected owner result file:
 
-- no new native hook;
-- no pointer dereference for scalar capture;
-- no game call;
-- no scalar write;
-- no gravity/orientation/adhesion/movement/native-source write;
-- `WALLSPRINT_ENABLE=0`;
-- `WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0`;
-- `REQUEST_PRESENCE_DIAGNOSTIC=0`;
-- existing four verified WallRun lifecycle hooks remain the only required native lifecycle hooks.
+`MSM2-WS-wallrun250-writers-YYYYMMDD-HHMMSS.json`
 
-Static regression must continue to prove that `surfaceTelemetry=false` remains in telemetry settings while scalar begin/observe/finish precede the corresponding early-return gates.
+The helper must remain read-only/on-disk only and must not launch/attach to the game.
 
-## Owner validation
+## Fixed scan contract
 
-Run installed `MSM2-WS/Update-WS.cmd` with game/shared Overstrike closed and require the full build/test/smoke/hooks/package/deploy PASS for `v0.1c47 / 0.1.72`.
+The scan:
 
-After PASS, one actual-game WallRun only:
+1. requires exact Spider-Man2.exe SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`;
+2. requires pinned Capstone 5.0.6;
+3. re-authenticates exact Update SHA and the two owner-RCX direct-call prefixes;
+4. prefilters executable file bytes for direct x64 memory operands with displacement `+0x250`;
+5. accepts a reference only after complete containing PE runtime-function linear instruction-boundary decode;
+6. requires the two known Update `+0x250` sites as an internal self-check;
+7. reports direct writer candidates, containing runtime function identity/hash, memory base/index/width/access, and whether the function entry is one of the two authenticated owner-RCX callees;
+8. never promotes entry RCX or displacement coincidence into owner-at-writer proof.
 
-- left about 3 seconds;
-- right about 3 seconds;
-- down about 5 seconds;
-- end naturally;
-- no F11/F12;
-- no post-test wait.
+Explicitly outside scope:
 
-Return the c47 log and video.
+- computed-address writers without literal `+0x250` displacement;
+- bulk-copy/memcpy effects that do not directly encode the field displacement;
+- nested-pointer fields;
+- runtime value capture;
+- hooks/watchpoints/page guards/debug registers;
+- scalar writes or A/B modifications;
+- adjacent-field scans.
 
-## Acceptance question
+## Acceptance / stop rules
 
-First require `wallrun_update_scalar_session` during the verified WallRun. Then, for each of the five offsets:
+If a direct writer is found inside one of the authenticated owner-RCX callee runtime functions:
 
-1. Was it successfully read?
-2. Was the raw bit pattern stable or changing?
-3. Did it exactly equal any known comparison number `0.4/12/75/100/50`?
-4. If changing, did timing correlate with left/right/down intervals?
+- inspect its intra-function provenance only far enough to decide whether the writer's base register is still proven to derive from entry RCX on that path;
+- do not assume owner merely because the memory base register is named RCX;
+- do not write the field yet.
 
-If c47 still lacks `wallrun_update_scalar_session`, stop immediately as instrumentation failure; do not interpret engine behavior. If the session key exists but all reads fail, inspect the bounded direct-read validity path before any wider memory scan. No write/A-B test until a defensible read-only candidate is identified.
+If writers are found only in unrelated functions:
+
+- retain them as displacement-only candidates;
+- do not equate them with WallRun owner fields;
+- return to Chat for a smaller relation/provenance discriminator.
+
+If no direct writer is found:
+
+- accept that the fixed direct-displacement scan does not cover the producer;
+- stop rather than broad-scanning adjacent offsets or immediately adding a live watchpoint;
+- Chat chooses whether computed-address/bulk-copy provenance or another authenticated consumer path is the next minimum proof.
+
+No runtime/package version bump is authorized for this offline step. Current runtime remains `v0.1c47 / 0.1.72`.
