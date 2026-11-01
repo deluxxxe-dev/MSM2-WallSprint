@@ -4,7 +4,7 @@
 
 ## STATUS
 
-**C44 REQUEST ZERO-HIT ACCEPTED / C45 GRAVITY OWNER ZERO-HIT ACCEPTED / C46 SCALAR RUN REJECTED AS INSTRUMENTATION-GATED / C47 SCALAR OBSERVATION VERIFIED-RUNTIME / `WallRun.this+0x250` SELECTED AS CORRELATED DYNAMIC CANDIDATE / NO WRITE AUTHORIZED / OFFLINE DIRECT-WRITER SCAN PUBLISHED / OWNER JSON PENDING.**
+**C44 REQUEST ZERO-HIT ACCEPTED / C45 GRAVITY OWNER ZERO-HIT ACCEPTED / C46 SCALAR RUN REJECTED AS INSTRUMENTATION-GATED / C47 SCALAR OBSERVATION VERIFIED-RUNTIME / `WallRun.this+0x250` SELECTED AS CORRELATED DYNAMIC CANDIDATE / NO WRITE AUTHORIZED / OFFLINE DIRECT-WRITER SCAN V1 REFUSED ON CANDIDATE-START CAP / V2 RUNTIME-FUNCTION PREFILTER PUBLISHED / OWNER JSON RETRY PENDING.**
 
 ## C47 ACTUAL-GAME RESULT
 
@@ -76,30 +76,38 @@ Two direct calls in that exact Update receive the authenticated WallRun owner in
 
 This call-entry relation does not prove that RCX or an alias still denotes the owner at a later instruction inside either callee.
 
-## NEW OFFLINE WRITER DISCOVERY
+## OFFLINE WRITER DISCOVERY
 
 No runtime/package version bump is made. `v0.1c47 / 0.1.72` remains the current runtime package.
 
-Added:
+Files:
 
 - `source/tools/wallrun_scalar_writer_refs.py`;
 - `source/tools/windows/Inspect-WallRun250-Writers.ps1`;
 - `source/tests/wallrun_scalar_writer_tool_static.py`;
 - normal `source/tools/test.sh` static-contract wiring.
 
-The offline helper:
+The helper requires the exact pinned EXE SHA and Capstone 5.0.6, re-authenticates the exact Update SHA and both owner-RCX call prefixes, and never launches or attaches to the game.
 
-- requires the exact pinned EXE SHA;
-- requires Capstone 5.0.6;
-- authenticates the exact Update SHA and both owner-RCX call prefixes;
-- scans executable file bytes only for direct x64 memory operands with displacement `+0x250`;
-- requires complete PE runtime-function linear instruction-boundary decode before accepting a reference;
-- requires the two already-known Update `+0x250` reference sites as a self-check;
-- reports direct write candidates and whether their containing function is one of the two authenticated owner-RCX callee entries;
-- explicitly does **not** prove WallRun-owner provenance at any candidate writer instruction merely from displacement, entry RCX or numeric coincidence;
-- does not launch the game, attach to a process, hook, install, build, package, deploy, read live values or write memory.
+### Owner V1 result and correction
 
-Computed-address writers, bulk-copy writers that do not encode displacement `0x250` directly, nested-pointer fields and indirect producer paths remain outside this first fixed scan.
+The first owner-local run refused with:
+
+`REFUSED: decoded_candidate_start_cap`
+
+This is **not** an engine no-writer result. The V1 prefilter took every raw `0x00000250` byte hit and tried up to 14 possible instruction starts around each hit. False starts accumulated past the bounded candidate-start cap before the real fixed-scope function analysis completed.
+
+V2 removes byte-local instruction-start guessing entirely:
+
+1. raw literal `0x00000250` hits only select their containing PE runtime-function ranges;
+2. each selected runtime function is decoded once from its authenticated PE runtime entry to end;
+3. only instructions from a complete contiguous function decode are inspected for real memory operands with displacement `+0x250`;
+4. global ordinary read references are counted but not all exported; retained evidence is limited to writers, the two known Update sites, and references inside the two authenticated Update owner-RCX callees;
+5. candidate-function/decode-byte/writer/output caps remain fail-closed.
+
+Current V2 bounds include max 16,384 candidate functions and 96 MiB aggregate decoded candidate-function bytes; the executable-file prefilter itself remains bounded to 192 MiB and 200,000 raw displacement hits.
+
+The two already-known Update `+0x250` sites remain a mandatory self-check. Computed-address writers, bulk-copy effects without literal `+0x250`, nested pointers and indirect producer paths remain outside this fixed scan.
 
 ## SAFETY / ACTIVE RUNTIME
 
@@ -118,8 +126,8 @@ No SocialFeed or other MOD repository/file was changed.
 
 Do **not** run another game test and do not rebuild/deploy merely for this analysis step.
 
-Run the published offline writer scan against the local pinned Spider-Man2.exe and return only the generated:
+Fast-forward the current branch and rerun only `Inspect-WallRun250-Writers.ps1`. Return only the new generated:
 
 `MSM2-WS-wallrun250-writers-YYYYMMDD-HHMMSS.json`
 
-Chat then decides whether a direct writer has defensible owner provenance, whether one of the two authenticated Update owner-RCX callees is involved, or whether the fixed direct-displacement scan must stop without escalating to a write test.
+The earlier `...091919.json` contains only the V1 refusal reason and is not a writer result.
