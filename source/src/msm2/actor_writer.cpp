@@ -19,7 +19,7 @@ constexpr std::uintptr_t kConsumerThreshold1Rva=0x5337098;
 constexpr std::uint32_t kV8Threshold0Bits=0x3F000000u; // 0.5f
 constexpr std::uint32_t kV8Threshold1Bits=0x3F35C28Fu; // 0.7099999785f
 
-std::atomic<unsigned> thresholdProbeEnabled{0};
+std::atomic<unsigned> thresholdProbeEnabled{0},finalSnapshotPending{0};
 std::atomic<std::uint32_t> threshold0Bits{kV8Threshold0Bits},threshold1Bits{kV8Threshold1Bits};
 std::atomic<std::uint64_t> samples{0},readOk{0},readFail{0},finiteSamples{0},unorderedSamples{0};
 std::atomic<std::uint64_t> consumer0True{0},consumer1Fallthrough{0};
@@ -30,7 +30,7 @@ std::uint64_t lastLoggedSamples{},lastThresholdCheck{};
 float asFloat(std::uint32_t bits){float value{};std::memcpy(&value,&bits,sizeof(value));return value;}
 
 void resetProbe(){
- thresholdProbeEnabled.store(0,std::memory_order_release);
+ thresholdProbeEnabled.store(0,std::memory_order_release);finalSnapshotPending.store(0,std::memory_order_release);
  threshold0Bits.store(kV8Threshold0Bits,std::memory_order_relaxed);
  threshold1Bits.store(kV8Threshold1Bits,std::memory_order_relaxed);
  samples.store(0,std::memory_order_relaxed);readOk.store(0,std::memory_order_relaxed);readFail.store(0,std::memory_order_relaxed);
@@ -75,12 +75,17 @@ void admit(bool completeVerified,const std::array<Patch,4>&){
   unsigned(completeVerified),unsigned(thresholdsReadable),unsigned(thresholdsReadable),a,asFloat(a),b,asFloat(b),unsigned(thresholdsReadable&&a==kV8Threshold0Bits&&b==kV8Threshold1Bits));
 }
 
-void kill(const char*) noexcept{ws_write_dispatch_enabled=0;thresholdProbeEnabled.store(0,std::memory_order_release);}
+void kill(const char*) noexcept{
+ ws_write_dispatch_enabled=0;
+ if(thresholdProbeEnabled.exchange(0,std::memory_order_acq_rel))finalSnapshotPending.store(1,std::memory_order_release);
+}
 
 void drainLogs(){
- auto n=samples.load(std::memory_order_acquire);if(!n||n==lastLoggedSamples)return;
- auto now=GetTickCount64();if(lastLoggedSamples&&now-lastThresholdCheck<500)return;
- lastThresholdCheck=now;lastLoggedSamples=n;logProbeSnapshot(thresholdProbeEnabled.load(std::memory_order_acquire)?"cumulative":"final");
+ auto n=samples.load(std::memory_order_acquire);bool final=finalSnapshotPending.exchange(0,std::memory_order_acq_rel)!=0;
+ if(!n)return;
+ if(!final&&n==lastLoggedSamples)return;
+ auto now=GetTickCount64();if(!final&&lastLoggedSamples&&now-lastThresholdCheck<500)return;
+ lastThresholdCheck=now;lastLoggedSamples=n;logProbeSnapshot(final?"final":"cumulative");
 }
 
 bool active(){return false;}
@@ -95,7 +100,7 @@ extern "C" std::uint64_t ws_write_update_pre(std::uintptr_t owner) noexcept{
  std::uint32_t bits=0;if(!msm2::readMemory(owner+kWallRun250Offset,&bits,sizeof(bits))){readFail.fetch_add(1,std::memory_order_relaxed);return 0;}
  readOk.fetch_add(1,std::memory_order_relaxed);lastBits.store(bits,std::memory_order_relaxed);
  unsigned expected=0;if(firstCaptured.compare_exchange_strong(expected,1,std::memory_order_acq_rel))firstBits.store(bits,std::memory_order_release);
- float value=asFloat(bits);bool unordered=!std::isfinite(value);
+ float value=asFloat(bits);bool unordered=std::isnan(value);
  if(unordered)unorderedSamples.fetch_add(1,std::memory_order_relaxed);else finiteSamples.fetch_add(1,std::memory_order_relaxed);
  float t0=asFloat(threshold0Bits.load(std::memory_order_relaxed)),t1=asFloat(threshold1Bits.load(std::memory_order_relaxed));
  if(unordered||value>t0)consumer0True.fetch_add(1,std::memory_order_relaxed);
@@ -104,4 +109,7 @@ extern "C" std::uint64_t ws_write_update_pre(std::uintptr_t owner) noexcept{
 }
 
 extern "C" void ws_write_update_post(std::uintptr_t,std::uint64_t) noexcept{}
-extern "C" void ws_write_bridge_reject(const char*) noexcept{ws_write_dispatch_enabled=0;thresholdProbeEnabled.store(0,std::memory_order_release);}
+extern "C" void ws_write_bridge_reject(const char*) noexcept{
+ ws_write_dispatch_enabled=0;
+ if(thresholdProbeEnabled.exchange(0,std::memory_order_acq_rel))finalSnapshotPending.store(1,std::memory_order_release);
+}
