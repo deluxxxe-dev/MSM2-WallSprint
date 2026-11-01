@@ -4,7 +4,7 @@
 
 ## STATUS
 
-**C47 `WallRun.this+0x250` RUNTIME CORRELATION RETAINED / V3-V7 SELECTED OWNER-CALLEE PRODUCER CHAIN EXHAUSTED WITHOUT A DIRECT WRITER / V8 PROVES TWO AUTHENTICATED FLOAT THRESHOLD CONSUMERS (`0.5` AND APPROX `0.71`) / C48 READ-ONLY EXACT UPDATE-ENTRY THRESHOLD COUNTER IMPLEMENTED / NO WRITE AUTHORIZED.**
+**C47 `WallRun.this+0x250` RUNTIME CORRELATION RETAINED / V3-V7 SELECTED OWNER-CALLEE PRODUCER CHAIN EXHAUSTED WITHOUT A DIRECT WRITER / V8 PROVES TWO AUTHENTICATED FLOAT THRESHOLD CONSUMERS (`0.5` AND APPROX `0.71`) / C48 READ-ONLY EXACT UPDATE-ENTRY THRESHOLD COUNTER IMPLEMENTED WITH A DEDICATED NON-WRITER GATE / NO WRITE AUTHORIZED.**
 
 ## Accepted runtime evidence
 
@@ -32,9 +32,7 @@ This chain is exhausted and must not be reopened without new evidence. This does
 
 ## V8 consumer result — accepted
 
-Owner returned:
-
-`MSM2-WS-wallrun250-consumers-20261101-134046.json`
+Owner returned `MSM2-WS-wallrun250-consumers-20261101-134046.json`.
 
 Schema/result:
 
@@ -62,9 +60,7 @@ Therefore both authenticated `+0x250` reads are **VERIFIED-STATIC threshold/cont
 
 The numeric pair `0.5` / approximately `0.71` is compatible with angle/alignment/dot-product-style cutoffs, but that is only a HYPOTHESIS. V8 does not prove a dot product, angle, units, producer, or safe write semantics.
 
-Detailed analysis:
-
-- `analysis/WALLRUN250_V8_CONSUMER_RESULT_20261101.md`
+Detailed analysis: `analysis/WALLRUN250_V8_CONSUMER_RESULT_20261101.md`.
 
 ## c48 implementation
 
@@ -75,23 +71,36 @@ Runtime/package:
 
 c48 retains c47 worker scalar observation and changes no gameplay write gate.
 
-The existing authenticated Update pre-original callback `ws_write_update_pre` was previously a no-op returning `0`. c48 keeps the return value `0` and uses that existing callback only as a read-only diagnostic point.
+A pre-runtime review found that the old `ws_write_update_pre` callback is reached only through the writer bridge, which is correctly disabled when `ws_write_dispatch_enabled=0`. Enabling that writer gate merely to observe the field would have unnecessarily entered caller-unwind/argument-clone machinery and blurred the read-only boundary. That design was rejected before owner runtime use.
 
-When the complete verified WallRun observation plan is admitted:
+The final c48 design instead adds a separate atomic `ws_update_probe_enabled` gate used **only by the existing WallRun Update thunk**:
 
-1. worker-side admission reads the two live consumer-threshold globals at RVAs `0x5303DE8` and `0x5337098`;
-2. each post-bridge-admitted Update callback performs one guarded 4-byte read of `owner+0x250`;
-3. atomics count read success/failure, finite/NaN samples, and the two exact comparison conditions (`field > threshold` or unordered);
-4. no logging is performed on the native Update thread;
-5. the worker drains only cumulative/final summaries and rechecks the live threshold globals;
-6. any update-bridge rejection disables the probe fail-closed;
-7. old Actor write dispatch remains disabled, `ws_write_update_pre` still returns `0`, `ws_write_update_post` remains empty.
+1. the Update thunk's initial local-callback gate includes `ws_update_probe_enabled` so CPU state is saved even when all writers are disabled;
+2. after the existing source-lifecycle callback, the thunk checks `ws_update_probe_enabled` and directly calls local `ws_update_probe_sample(owner)` while the original native CPU state is preserved;
+3. the old `ws_write_dispatch_enabled` check remains separate and OFF, so the writer bridge / `ws_update_prepare` path is not entered by c48;
+4. the probe performs one guarded 4-byte `owner+0x250` read and updates atomics only;
+5. the worker emits cumulative/final summaries and rechecks the two live threshold globals;
+6. `ws_write_update_pre` remains the old no-op returning `0`, `ws_write_update_post` remains empty, and `ws_write_dispatch` remains empty.
 
-No extra hook, pointer dereference, game call, field write, transform write, gravity write, or native-source write was added.
+Admission reads the two live consumer-threshold globals at RVAs `0x5303DE8` and `0x5337098`, records whether they match V8's file-backed bits `0x3F000000` / `0x3F35C28F`, and enables the dedicated probe only when the complete verified WallRun observation plan is admitted and both reads succeed.
+
+Per exact pre-original Update callback, atomics count:
+
+- total samples;
+- read success/failure;
+- field NaN vs non-NaN;
+- consumer-A true condition (`field > threshold0` or unordered);
+- consumer-B fallthrough condition (`field > threshold1` or unordered).
+
+`VCOMISS` unordered handling is mirrored as NaN on either operand; infinities are not incorrectly classified as unordered.
+
+No logging occurs in the native callback. No extra hook, child-pointer dereference, game function call, caller unwind, argument clone, field write, transform write, gravity write, or native-source write was added.
 
 ## Files changed for c48
 
 - `source/src/msm2/actor_writer.cpp`
+- `source/include/msm2/actor_writer.hpp`
+- `source/src/msm2/hook_thunks.S`
 - `source/include/version.hpp`
 - `source/tests/wallrun250_threshold_probe_static.py`
 - `source/tools/test.sh`
@@ -110,12 +119,15 @@ Authored static contracts now pin:
 
 - exact field offset `0x250`;
 - exact V8 threshold RVAs and expected file bits;
+- dedicated Update-only `ws_update_probe_enabled` gate;
+- generic Init/Entry/Deinit thunks do not reference the new gate;
+- direct probe callback occurs before the separate old write-dispatch check;
 - guarded read through `msm2::readMemory`;
 - no log call on the native Update callback;
 - no `WriteProcessMemory` / remote-thread / context-write API;
-- write callback still returns `0`;
-- post callback remains empty;
-- direct Actor writer remains inactive;
+- `ws_write_dispatch_enabled` is never set to `1` by c48;
+- old `ws_write_update_pre` remains a no-op returning `0`;
+- post callback remains empty and direct Actor writer remains inactive;
 - c48/0.1.73 package/config/readme alignment.
 
 The normal installed updater must still perform the repository's full Windows/WSL build, portable tests, smoke, hooks and package validation before runtime use. Do not claim a successful c48 build until that updater passes on the owner machine.
@@ -130,11 +142,12 @@ No video is required unless behavior differs from the already documented sequenc
 
 Acceptance requires:
 
-- `wallrun_0x250_threshold_probe_admission admitted=1`;
+- `wallrun_0x250_threshold_probe_admission complete_verified=1 admitted=1 update_probe_gate=1 write_dispatch_gate=0`;
 - V8 expected threshold bits match at admission;
 - live threshold rechecks remain unchanged;
-- read failures remain zero;
-- compare `exact_update_pre_original_samples` with the verified WallRun Update count to establish coverage;
+- `read_fail=0`;
+- no hook queue drops;
+- for a run containing only the requested WallRun, compare `exact_update_pre_original_samples` with verified `Update=` count; a mismatch makes coverage partial;
 - inspect both threshold counters.
 
 If both counters are zero with complete coverage, the c47 correlated negative pulses did not activate either authenticated threshold consumer during this sequence. If either is nonzero, analyze that bounded crossing evidence next. Neither result authorizes a write by itself.
