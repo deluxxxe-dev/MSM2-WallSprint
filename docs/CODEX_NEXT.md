@@ -1,56 +1,53 @@
-# Next task — run V6 cycle-aware owner-relative provenance trace for c47 `WallRun.this+0x250`
+# Next task — run V7 single Path-B handoff trace for c47 `WallRun.this+0x250`
 
 Branch `codex/v01c20-edi-value-provenance`; no main merge.
 
-Read AGENTS required docs, `analysis/C47_WALLRUN250_RUNTIME_RESULT_20261101.md`, `analysis/WALLRUN250_V3_OWNER_CALLEE_RESULT_20261101.md`, `analysis/WALLRUN250_V4_NO_PDATA_RESULT_20261101.md`, `analysis/WALLRUN250_V5_CFG_CYCLE_RESULT_20261101.md`, and current `docs/CODEX_RESULT.md`.
+Read AGENTS required docs, `analysis/C47_WALLRUN250_RUNTIME_RESULT_20261101.md`, `analysis/WALLRUN250_V3_OWNER_CALLEE_RESULT_20261101.md`, `analysis/WALLRUN250_V6_OWNER_RESULT_20261101.md`, and current `docs/CODEX_RESULT.md`.
 
 ## Accepted evidence
 
-Do not repeat c47 gameplay, RequestSimpleMotion, GravityOrientationOwner, or V1/V2 global `+0x250` scans.
+Do not repeat c47 gameplay, RequestSimpleMotion, GravityOrientationOwner, V1/V2 global scans, or V4/V5 structural debugging.
 
-Accepted runtime:
+V6 succeeded on the exact pinned EXE with schema 6:
 
-- `WallRun.this+0x250` changes during verified WallRun;
-- changes correlate with ordinary reversals and down-hold left/right oscillation;
-- direct signed left/right-input semantics are not supported;
-- field meaning/units/producer/writability remain UNKNOWN.
+`NO_OWNER_RELATIVE_0X250_ACCESS_IN_BOUNDED_DOWNSTREAM_TRACE`
 
-Accepted V3 static result:
+Accepted V6 facts:
 
-- no direct encoded `+0x250` writer in Update, `0x367DD10`, or `0x29BD5F0`;
-- Path A: `0x367DD31 -> 0x29C06F0`, entry RCX = owner+`0x80`;
-- Path B: `0x367DD3C -> 0x29C18B0`, entry RCX = owner+`0x58`.
+- Path A `0x29C06F0`, entry RCX owner+`0x80`: 30 reachable instructions, contained CFG cycle, no `owner+0x250` access, no reachable direct call, no external tail jump. Do not reopen Path A without new evidence.
+- Path B `0x29C18B0`, entry RCX owner+`0x58`: no `owner+0x250` access; exactly one reachable direct call preserves unique RCX owner provenance.
+- selected handoff: `0x29C18D4 -> 0x308A0F0` with pre-call `RCX = owner+0x58` and `RDI = owner+0x58`.
+- combined V6 access/read/write/unknown counts are all zero.
 
-Accepted V4/V5 structural results:
+This is a bounded no-access result only. Field meaning/units/producer/writability remain UNKNOWN.
 
-- V4: `0x29C06F0` has no covering `.pdata` runtime-function range;
-- V5: strict no-`.pdata` fallback found a reachable CFG cycle at Path A and refused solely because V5 prohibited every cycle.
-
-Neither is a writer/no-writer result.
-
-## Current V6 implementation
+## Current V7 implementation
 
 The Windows wrapper now stages:
 
-- `source/tools/wallrun_scalar_writer_refs_v6.py`;
-- `source/tools/wallrun_scalar_writer_refs_v5.py`;
-- `source/tools/wallrun_scalar_writer_refs.py`;
-- `source/tools/discover_ground_support.py`.
+- `source/tools/wallrun_scalar_writer_refs_v7.py`;
+- V6/V5/V4 helpers;
+- `discover_ground_support.py`.
 
-V6 retains all V5 no-`.pdata` bounds and refusal gates except the blanket CFG-cycle rejection:
+V7 re-authenticates before following the handoff:
 
-- max 128 bytes;
-- max 32 entry-reachable instructions;
-- no CALL;
-- no nonvolatile-GPR or RSP write;
-- no indirect JMP;
-- local conditional branches remain in scope;
-- unresolved successors/exits refuse;
-- external direct JMP is only a recorded tail exit.
+- Path B target `0x29C18B0`;
+- call site `0x29C18D4`;
+- exact call bytes `E8 17 88 6C 00`;
+- decoded target `0x308A0F0`;
+- Path-B trace must reproduce exactly one call at that site with unique `RCX = owner+0x58`.
 
-Contained cycles are recorded as `cfg_cycle_present` and analyzed with V4's merge-by-intersection provenance worklist. A separate 2048-visit cap applies to no-`.pdata` traces.
+Only then trace target `0x308A0F0` with entry RCX owner+`0x58`.
 
-Expected output schema is 6.
+Reuse existing V6 target-scope rules:
+
+- complete PE runtime-function decode when `.pdata` covers the target;
+- otherwise strict max-128-byte / max-32-reachable-instruction no-`.pdata` fallback;
+- bounded contained CFG cycles allowed under monotone intersection;
+- all V5 non-call/nonvolatile/RSP/indirect-jump fallback admission rules retained;
+- no deeper callee traversal in this task.
+
+Expected output schema is 7.
 
 ## Owner action
 
@@ -66,19 +63,19 @@ Return the newly generated:
 
 ## Result handling
 
-If V6 reports a proven owner-relative `+0x250` write:
+If V7 finds a proven `owner+0x250` writer:
 
-- inspect only that writer and its value source/width;
-- do not authorize a write test merely from address provenance.
+- inspect only that writer and value source/width;
+- do not authorize a game write yet.
 
-If V6 finds only reads or no direct owner-relative access:
+If V7 finds only reads/no direct access:
 
-- use only the bounded reachable call/tail information from the two roots;
-- do not return to global displacement or adjacent-offset scans.
+- inspect only V7's bounded reachable call/tail information for one next producer step;
+- do not reopen Path A or global scans.
 
-If V6 refuses:
+If V7 refuses:
 
-- accept the exact structural blocker and fix only that demonstrated condition if it can remain bounded;
-- do not weaken unrelated admission rules or switch to runtime watchpoints automatically.
+- accept the exact structural blocker;
+- fix only that demonstrated condition if it remains bounded.
 
-Current runtime remains `v0.1c47 / 0.1.72` and must not be rebuilt or game-tested for this offline step.
+Current runtime remains `v0.1c47 / 0.1.72`; no runtime rebuild or gameplay test is part of this static step.
