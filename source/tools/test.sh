@@ -7,6 +7,7 @@ mkdir -p build logs
 # (including the dormant c45 presence-hook identity/safety contract) before long suites.
 python3 tests/request_presence_static.py
 python3 tests/wallrun_scalar_writer_tool_static.py
+python3 tests/wallrun250_consumer_v8_static.py
 
 g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -g -Iinclude src/core_tests.cpp -o build/core_tests
 ./build/core_tests | tee logs/core_tests.log
