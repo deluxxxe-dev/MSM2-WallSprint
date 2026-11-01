@@ -19,9 +19,13 @@ std::uint64_t ws_test_gprs[11],ws_test_result;
 float ws_test_returns[128];std::uint64_t ws_test_return_gprs[11],ws_test_nonvolatile[8];
 void ws_test_probe_target();void ws_test_invoke_probe(void*);
 }
-extern "C" {std::atomic<unsigned> ws_write_dispatch_enabled{0};}
-static std::atomic<unsigned> dispatchCalls{0},nativeSourceGateCalls{0};
+extern "C" {
+std::atomic<unsigned> ws_write_dispatch_enabled{0};
+std::atomic<unsigned> ws_update_probe_enabled{0};
+}
+static std::atomic<unsigned> dispatchCalls{0},nativeSourceGateCalls{0},updateProbeCalls{0};
 static void sourceGateProbe(unsigned,std::uintptr_t) noexcept {++nativeSourceGateCalls;_mm_setcsr(0x3f80);__asm__ volatile("fninit; vzeroall":::"xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7","xmm8","xmm9","xmm10","xmm11","xmm12","xmm13","xmm14","xmm15");}
+extern "C" void ws_update_probe_sample(std::uintptr_t) noexcept {++updateProbeCalls;_mm_setcsr(0x3f80);__asm__ volatile("fninit; vzeroall":::"xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7","xmm8","xmm9","xmm10","xmm11","xmm12","xmm13","xmm14","xmm15");}
 extern "C" void ws_write_dispatch(unsigned,std::uintptr_t) noexcept {
  ++dispatchCalls;
  _mm_setcsr(0x3f80); // changed rounding mode must not escape the optional bridge
@@ -82,6 +86,18 @@ int main(){
  assert(captured+ws::capture::dropped()-droppedBefore==iterations*threadCount);
  ws_hook_recording.store(0);ws_write_dispatch_enabled=0;if(avx)assert(dispatchCalls>=iterations*threadCount+4);assert(MH_DisableHook(MH_ALL_HOOKS)==MH_OK);assert(integer(reinterpret_cast<void*>(123),11,22,33,44,55)==expectedInt);assert(!ws::capture::pop(event));
  for(void* target:targets)assert(MH_RemoveHook(target)==MH_OK);
+ // c48 dedicated Update-probe path: writer/source gates OFF, probe gate ON.
+ if(avx){
+  ws_source_lifecycle_enabled=0;ws_write_dispatch_enabled=0;ws_update_probe_enabled=1;ws_hook_recording=0;
+  auto beforeProbe=updateProbeCalls.load();
+  assert(MH_CreateHook(reinterpret_cast<void*>(&vectorTarget),reinterpret_cast<void*>(ws_hook_update),&ws_hook_originals[2])==MH_OK);assert(MH_EnableHook(reinterpret_cast<void*>(&vectorTarget))==MH_OK);
+  __asm__ volatile("fldcw %0; fld1"::"m"(control));
+  _mm_storeu_ps(result,vector(x,y));assert(!std::memcmp(result,expectedVector,sizeof(result)));
+  double probeX87=0;__asm__ volatile("fstpl %0":"=m"(probeX87));assert(probeX87==1.);unsigned short probeCW=0;__asm__ volatile("fnstcw %0":"=m"(probeCW));assert(probeCW==control&&_mm_getcsr()==oldMxcsr);__asm__ volatile("fldcw %0"::"m"(originalControl));
+  assert(updateProbeCalls.load()==beforeProbe+1);assert(dispatchCalls.load()>=iterations*threadCount+4);
+  ws_update_probe_enabled=0;
+  assert(MH_DisableHook(reinterpret_cast<void*>(&vectorTarget))==MH_OK);assert(MH_RemoveHook(reinterpret_cast<void*>(&vectorTarget))==MH_OK);assert(!ws::capture::pop(event));
+ }
  // Exercise the post-original wrapper on EVERY ABI fixture, not only vector return.
  if(avx){
   for(unsigned target=0;target<4;++target){
@@ -105,7 +121,7 @@ int main(){
  }
  if(avx)extraPostAbi();
  if(avx)assert(nativeSourceGateCalls>=iterations*threadCount+4);
- ws_source_lifecycle_enabled=0;
+ ws_update_probe_enabled=0;ws_source_lifecycle_enabled=0;
  assert(MH_Uninitialize()==MH_OK);
- std::printf("PASS: 4 real MinHook detours plus post-original wrapper on integer/FP/vector/probe returns; integer/FP/vector/24-arg/variadic/sret forwarding preserved; external caller, stack args, nonvolatiles, output RAX/RDX/flags and full vector state preserved; %s; concurrent capture accounting=%u calls\n",avx?"optional local callback enabled; x87/MXCSR and YMM0-15 preserved":"AVX probe SKIPPED",iterations*threadCount);
+ std::printf("PASS: 4 real MinHook detours plus dedicated c48 Update probe and post-original wrapper; integer/FP/vector/24-arg/variadic/sret forwarding preserved; external caller, stack args, nonvolatiles, output RAX/RDX/flags and full vector state preserved; %s; concurrent capture accounting=%u calls\n",avx?"optional callbacks enabled; x87/MXCSR and YMM0-15 preserved":"AVX probe SKIPPED",iterations*threadCount);
 }
