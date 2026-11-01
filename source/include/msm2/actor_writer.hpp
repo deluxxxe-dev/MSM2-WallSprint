@@ -12,5 +12,7 @@ bool active();
 }
 extern "C" {
 extern std::atomic<unsigned> ws_write_dispatch_enabled;
+// Separate read-only Update-wrapper gate. It never enables ws_write_dispatch.
+extern std::atomic<unsigned> ws_update_probe_enabled;
 void ws_write_dispatch(unsigned kind,std::uintptr_t owner) noexcept;
 }
