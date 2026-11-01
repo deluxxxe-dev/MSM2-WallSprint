@@ -6,6 +6,7 @@ root = Path(__file__).resolve().parents[1]
 source = (root / 'src/msm2/actor_writer.cpp').read_text(encoding='utf-8')
 header = (root / 'include/msm2/actor_writer.hpp').read_text(encoding='utf-8')
 asm = (root / 'src/msm2/hook_thunks.S').read_text(encoding='utf-8')
+smoke = (root / 'src/msm2/hook_abi_smoke.cpp').read_text(encoding='utf-8')
 version = (root / 'include/version.hpp').read_text(encoding='utf-8')
 
 for needle in (
@@ -71,6 +72,18 @@ assert update.index('or eax,DWORD PTR ws_update_probe_enabled[rip]') < update.in
 assert update.index('call ws_update_probe_sample') < update.index('cmp DWORD PTR ws_write_dispatch_enabled[rip],0')
 assert update.index('cmp DWORD PTR ws_write_dispatch_enabled[rip],0') < update.index('call ws_update_prepare')
 
+# The standalone hook ABI smoke links the same thunk and must carry the new symbols.
+for needle in (
+    'std::atomic<unsigned> ws_update_probe_enabled{0};',
+    'static std::atomic<unsigned> dispatchCalls{0},nativeSourceGateCalls{0},updateProbeCalls{0};',
+    'extern "C" void ws_update_probe_sample(std::uintptr_t) noexcept',
+    'ws_source_lifecycle_enabled=0;ws_write_dispatch_enabled=0;ws_update_probe_enabled=1;',
+    'assert(updateProbeCalls.load()==beforeProbe+1)',
+    'ws_update_probe_enabled=0;',
+    'dedicated c48 Update probe',
+):
+    assert needle in smoke, needle
+
 for forbidden in (
     'WriteProcessMemory', 'CreateRemoteThread', 'SetThreadContext',
 ):
@@ -79,4 +92,4 @@ for forbidden in (
 assert 'versionLabel[]=\"v0.1c48\"' in version
 assert 'packageVersion[]=\"0.1.73\"' in version
 
-print('wallrun250_threshold_probe_static: PASS (c48 dedicated Update-thunk read-only threshold counters; writer gate stays off)')
+print('wallrun250_threshold_probe_static: PASS (c48 dedicated Update-thunk probe; ABI smoke pins state preservation; writer gate stays off)')
