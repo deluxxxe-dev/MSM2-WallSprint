@@ -54,7 +54,7 @@ for needle in (
 for forbidden in ('Update-WS.cmd', 'Overstrike.exe', 'taskkill', 'Stop-Process'):
     assert forbidden not in wrapper, forbidden
 
-assert 'versionLabel[]=\"v0.1c47\"' in version
-assert 'packageVersion[]=\"0.1.72\"' in version
+assert 'versionLabel[]=\"v0.1c48\"' in version
+assert 'packageVersion[]=\"0.1.73\"' in version
 
-print('wallrun250_consumer_v8_static: PASS (bounded Update consumer slices, cap truncates, c47 runtime unchanged)')
+print('wallrun250_consumer_v8_static: PASS (bounded Update consumer slices retained under c48 runtime)')
