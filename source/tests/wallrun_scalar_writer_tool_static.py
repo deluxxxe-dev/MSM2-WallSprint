@@ -35,7 +35,7 @@ for needle in (
     "wallrun_scalar_writer_refs.py",
     "discover_ground_support.py",
     "/workspace/toolchains/analysis-python/bin/python3",
-    "capstone.__version__ == \"5.0.6\"",
+    "tuple(map(int,capstone.__version__.split(chr(46)))) == (5,0,6)",
     "MSM2-WS-wallrun250-writers-",
     "No game launch, hook, build, package, deploy, or memory write.",
 ):
