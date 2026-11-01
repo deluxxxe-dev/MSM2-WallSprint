@@ -1,109 +1,104 @@
-# Next task — resolve c47 `WallRun.this+0x250` writer provenance in authenticated direct callees
+# Next task — trace transformed owner provenance for c47 `WallRun.this+0x250`
 
 Branch `codex/v01c20-edi-value-provenance`; no main merge.
 
-Read AGENTS required docs, `analysis/C47_WALLRUN250_RUNTIME_RESULT_20261101.md`, and current `docs/CODEX_RESULT.md`.
+Read AGENTS required docs, `analysis/C47_WALLRUN250_RUNTIME_RESULT_20261101.md`, `analysis/WALLRUN250_V3_OWNER_CALLEE_RESULT_20261101.md`, and current `docs/CODEX_RESULT.md`.
 
-## Accepted runtime facts
+## Accepted evidence
 
-Do not repeat the c47 game sequence merely for more scalar samples or a summary.
+Do not repeat c47 gameplay, RequestSimpleMotion, GravityOrientationOwner, or V1/V2 global `+0x250` scans.
 
-- exact target build and authenticated WallRun lifecycle/Update accepted;
-- scalar session actually armed with legacy surface telemetry disabled;
-- `+0x250` repeatedly changes during verified WallRun and is temporally associated with both ordinary direction reversals and the later down-hold left/right oscillation;
-- both reversal directions use negative pulses, so direct signed left/right-input semantics are not supported;
-- exact meaning, units, producer, writer, owner-at-writer provenance and writability remain UNKNOWN.
+Accepted runtime:
 
-Do not revisit c44 RequestSimpleMotion or c45 GravityOrientationOwner for the same ordinary locomotion/WallRun state.
+- `WallRun.this+0x250` changes during verified WallRun;
+- changes correlate with ordinary reversals and down-hold left/right oscillation;
+- direct signed left/right-input semantics are not supported;
+- field meaning/units/producer/writability remain UNKNOWN.
 
-## Accepted static facts
+Accepted V3 static result from owner JSON `MSM2-WS-wallrun250-writers-20261101-092733.json`:
 
-Authenticated WallRun Update:
+- exact EXE/Update identities passed;
+- known Update `+0x250` reads rediscovered;
+- V3 result `NO_DIRECT_DISP250_WRITER_IN_AUTHENTICATED_OWNER_CALLEES`;
+- no direct encoded `+0x250` writer in Update, `0x367DD10`, or `0x29BD5F0`.
 
-- RVA `0x1424530..0x14246D6`;
-- SHA256 `e5c08bcdbc98e28f2b07aebb6a141b317ca740ee1a6a8f6da70752f98b98e40f`;
-- direct `this+0x250` reads at `0x1424585` and `0x142460E`;
-- no accepted direct `+0x250` write in Update.
+This is only a bounded no-direct-writer result.
 
-Two exact direct calls pass the authenticated WallRun owner in entry RCX:
+## Exact next provenance roots
 
-- `0x14245C3 -> 0x367DD10`;
-- `0x1424630 -> 0x29BD5F0`.
+`0x367DD10` receives authenticated WallRun owner in RCX at entry.
 
-Entry RCX does not by itself prove owner provenance at later instructions.
+Path A:
 
-## Retired V1 / V2 global scans
+- at `0x367DD2D`, `sub rcx,-0x80` => RCX = owner+`0x80`;
+- call `0x367DD31 -> 0x29C06F0`;
+- original owner+`0x250` corresponds to target-entry-relative `+0x1D0` if the same provenance is preserved.
 
-V1 owner result: `decoded_candidate_start_cap` from byte-local false instruction-start explosion.
+Path B:
 
-V2 owner result: `writer_cap` from whole-image direct `+0x250` writes. This establishes only that displacement `0x250` is too common for an ownership-agnostic global writer search. Do not increase the writer cap or continue whole-EXE/adjacent-offset enumeration.
+- at `0x367DD38`, `add rcx,0x58` => RCX = owner+`0x58`;
+- call `0x367DD3C -> 0x29C18B0`;
+- original owner+`0x250` corresponds to target-entry-relative `+0x1F8` if provenance is preserved.
 
-Neither refusal is an engine no-writer result.
+Do not pursue `0x29BD5F0`'s later linear call list as an owner path without new reachability evidence; the V3 context crosses a `ret` and then replaces RCX with RIP-relative state.
 
-## Current V3 task
+## Implementation task
 
-Fast-forward and run only:
+Extend the existing offline helper `source/tools/wallrun_scalar_writer_refs.py` only enough to perform control-flow-aware owner-relative GPR provenance in the two roots above.
 
-- `source/tools/wallrun_scalar_writer_refs.py`;
-- Windows bootstrap `source/tools/windows/Inspect-WallRun250-Writers.ps1`.
+Required behavior:
 
-Expected result:
+1. retain exact Spider-Man2.exe SHA guard and Capstone 5.0.6 guard;
+2. retain authentication of WallRun Update and `0x367DD10` source relation;
+3. pin/verify the exact Path A and Path B instruction bytes/call targets from the accepted V3 result before tracing downstream;
+4. locate the PE runtime function containing each downstream call target; target may be an exact runtime entry or an interior instruction boundary;
+5. require complete contiguous decode of each containing runtime function and require each call target to be an exact decoded instruction boundary;
+6. start trace A with `RCX = owner+0x80` at `0x29C06F0`;
+7. start trace B with `RCX = owner+0x58` at `0x29C18B0`;
+8. follow only entry-reachable CFG instructions within the containing runtime function;
+9. support provenance only for:
+   - full-64-bit register-to-register MOV;
+   - full-64-bit LEA of `known_base + constant` with no dynamic index;
+   - full-64-bit ADD/SUB immediate;
+10. kill destination provenance on partial-width writes, memory loads, unsupported transforms, or other writes;
+11. merge CFG states by intersection: retain a register only when all merged incoming states prove the same owner-relative offset;
+12. before a CALL, report current RCX owner-relative offset if uniquely proven; after CALL, invalidate volatile Win64 GPR provenance (`RAX/RCX/RDX/R8-R11`) unless separately proved;
+13. report a memory access only when current path provenance proves `base_owner_offset + displacement == 0x250` with no dynamic index;
+14. distinguish read/write/access-unknown from decoder metadata;
+15. report direct calls reachable from each root with the set of proven RCX owner offsets seen at that call site, so a no-writer result still provides the next bounded lead.
 
-`MSM2-WS-wallrun250-writers-YYYYMMDD-HHMMSS.json`
+## Safety / scope
 
-No Update-WS, build, deploy, Overstrike or game run is required.
+Do not:
 
-## V3 fixed scope
+- scan the whole executable for offsets/writers;
+- scan adjacent WallRun fields;
+- infer pointer provenance through memory loads;
+- treat indexed/computed addresses as proven;
+- follow deeper callees in the same task;
+- add hooks/watchpoints/page guards;
+- write `+0x250` or any gameplay value;
+- bump runtime/package version;
+- modify runtime c47 code/config;
+- modify SocialFeed or any other MOD.
 
-Decode exactly these three PE runtime-function entries:
+The Windows bootstrap may remain `Inspect-WallRun250-Writers.ps1`; update its preflight text/tests only if necessary. Keep Python syntax preflight before EXE analysis.
 
-1. `0x1424530` — authenticated WallRun Update;
-2. `0x367DD10` — authenticated Update direct callee receiving WallRun owner in RCX at entry;
-3. `0x29BD5F0` — authenticated Update direct callee receiving WallRun owner in RCX at entry.
+## Automated validation
 
-Required checks:
+Update `source/tests/wallrun_scalar_writer_tool_static.py` to pin:
 
-- exact Spider-Man2.exe SHA256 `c9b912eff96facb746a705ac8b0b83c29faa7bbe53d984a0c5eb45efd0b738c9`;
-- Capstone 5.0.6;
-- exact Update SHA/range;
-- exact two direct-call prefixes and decoded targets;
-- both callee targets must be exact PE runtime-function entries;
-- complete contiguous entry-to-end linear decode for all three functions;
-- both known Update `+0x250` sites must be rediscovered;
-- unexpected direct Update `+0x250` writer must refuse.
+- both downstream roots;
+- entry owner offsets `0x80` and `0x58`;
+- corresponding effective direct offsets `0x1D0` and `0x1F8`;
+- conservative CFG merge/invalidation behavior being present in source;
+- volatile-call clobber behavior;
+- no global scan / no process write APIs / no runtime package change.
 
-For each of the two callees, report:
+Run the normal portable/static automated checks available to Codex. No owner game test is part of this task.
 
-- function range/unwind/SHA;
-- direct memory operands with displacement `+0x250`;
-- any direct writer candidates and bounded local context;
-- direct call sites/targets from the callee, so a no-direct-writer result still supplies bounded next provenance leads.
+## Completion
 
-Do not promote entry-RCX relation into owner-at-writer proof.
+Return the normal short Codex result only. If implementation/build/static checks succeed, Chat will give one offline owner command to produce a new `MSM2-WS-wallrun250-writers-*.json`.
 
-## Explicitly outside V3
-
-- whole-EXE direct-writer enumeration;
-- adjacent-field scanning;
-- computed-address writers without direct `+0x250` displacement;
-- bulk-copy/memcpy effects;
-- nested-pointer fields;
-- deeper call traversal;
-- runtime watchpoints/hooks/page guards;
-- any scalar write/A-B modification.
-
-## Acceptance / stop rules
-
-If a direct `+0x250` writer exists in either authenticated owner-entry callee:
-
-- inspect only enough intra-function provenance to determine whether its memory base is still definitely derived from entry RCX on the writer path;
-- do not write the field yet.
-
-If neither callee directly writes `+0x250`:
-
-- use only the returned bounded direct-call list to select the next smallest producer/provenance step;
-- do not return to global displacement scanning.
-
-If V3 refuses on exact identity/runtime/decode checks, fix only that concrete failure. Do not broaden scope.
-
-Current runtime remains `v0.1c47 / 0.1.72`.
+No Update-WS, Overstrike, install, or game run is required for this implementation task. Current runtime remains `v0.1c47 / 0.1.72`.
