@@ -17,6 +17,8 @@ for needle in (
     'consumer0True',
     'consumer1Fallthrough',
     'std::isnan(value)',
+    'unordered0=fieldNan||std::isnan(t0)',
+    'unordered1=fieldNan||std::isnan(t1)',
     'wallrun_0x250_threshold_probe_admission',
     'wallrun_0x250_threshold_probe phase=',
     'exact_update_pre_original=1',
