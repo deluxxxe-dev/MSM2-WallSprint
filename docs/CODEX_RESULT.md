@@ -201,3 +201,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-05: M3c accepted (diagonal-up travel); M3d stick/WASD drive added (XInput dynamic load, wall-relative mapping, once-per-owner lateral calibration).
 - 2026-11-05: XInput now loaded only inside Spider-Man2.exe; loading it in the Wine actor_writer_smoke left the process hanging (cloud hooks run timed out after that smoke).
 - 2026-11-05: M3d accepted; drive write cap changed to per WallRun session. M4 acceptance sweep defined (CODEX_NEXT).
+- 2026-11-05: cloud hooks run after the cap change failed once in native_source_override_smoke.cpp:238 (c10 real-thread diagonal race timing; smoke does not link actor_writer). Reran test_native_source.sh 3x: PASS 3/3. Known intermittent timing test; if the owner updater hits it, rerun Update-WS.
