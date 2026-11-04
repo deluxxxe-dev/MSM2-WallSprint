@@ -54,3 +54,19 @@ Log key: `wallrun_m3c_heading_tilt`.
 | travel unchanged, counter > 0 | field is a mode/label, not the travel vector; look at +0x274/+0x280 or the Update locals |
 | counter 0 | shape gate never met; read skip counters |
 | unstable / crash | F8, revert |
+
+## M3c result (owner + log `MSM2-WS-v0.1c48-20261105-013952.log`, not committed) — VERIFIED-RUNTIME
+Owner: sideways WS travelled diagonally upward. Log: writes=112, skipped_not_horizontal=2211 -> once written, the game kept the tilted
+value (it does not recompute the pair every frame; it changes it on its own events). So +0x240/+0x24C is the WallRun travel direction
+and is writable state (VERIFIED-RUNTIME for this build, bounded experiment). Reversal-from-stop downward pull still present (not caused by M3a).
+
+## M3d (one change): stick/WASD-driven direction
+Every pre-original Update with a non-neutral stick (XInput pad 0, deadzone 0.35) or WASD: d = normalize(sx*k*lateral + sy*wallUp), wallUp =
+world up projected on the wall normal (+0x398), lateral = wallUp x normal; k (screen-right sign) calibrated once per WallRun owner from
+vanilla's own horizontal choice for a clearly sideways input. Neutral input: no write. Same gate/cap/F8 as M3c. Log: `wallrun_m3d_stick_drive`.
+| Observation | Next |
+| --- | --- |
+| travel follows stick in any direction, reversal ok | M3 core done; then facing/animation for diagonals, tuning |
+| follows only while stick held steady | game overwrites on stick changes -> also write after original Update |
+| lateral mirrored | calibration sign wrong: inspect lateral_sign / uncalibrated counters |
+| unstable | F8, revert |

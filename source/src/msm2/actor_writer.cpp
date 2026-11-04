@@ -2,6 +2,7 @@
 // a verified caller-local source; it does not use this legacy Actor adapter.
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <xinput.h>
 #include <atomic>
 #include <cmath>
 #include <cstdint>
@@ -28,11 +29,21 @@ std::atomic<unsigned> thresholdProbeEnabled{0},finalSnapshotPending{0};
 // the existing pre-original Update callback to test whether WallRun travel follows a non-axis direction.
 // Bounds: verified WallRun Update only, same gate as the c48 probe (F8/script disable stop it), per-process write cap,
 // only an exact matching unit horizontal pair is ever replaced; the game recomputes its own value once writes stop.
-constexpr bool kM3cHeadingTilt=true;
+constexpr bool kM3cHeadingTilt=false; // M3c accepted 2026-11-05 (travel followed the tilt); superseded by M3d
 constexpr std::uintptr_t kHeadingOffsetA=0x240,kHeadingOffsetB=0x24c;
 constexpr float kTiltSin=0.342020143f,kTiltCos=0.939692621f; // 20deg
 constexpr std::uint64_t kTiltWriteCap=200000;
 std::atomic<std::uint64_t> tiltWrites{0},tiltSkippedShape{0},tiltSkippedVertical{0},tiltRefusedWritable{0};
+// M3d (2026-11-05): drive the same direction pair from the player's stick/WASD in wall-relative space.
+// up = world up projected on the wall (normal at WallRun.this+0x398, |y|<=0.2), lateral sign calibrated once per WallRun
+// owner from vanilla's own first horizontal choice for a clearly sideways stick. Neutral stick: no write (game keeps value).
+constexpr bool kM3dStickDrive=true;
+constexpr std::uintptr_t kWallNormalOffset=0x398;
+constexpr float kStickDeadzone=0.35f;
+std::atomic<std::uint64_t> driveWrites{0},driveNoInput{0},driveUncalibrated{0},driveBadNormal{0},driveCalibrations{0};
+using XInputGetStateFn=DWORD (WINAPI*)(DWORD,XINPUT_STATE*);
+std::atomic<XInputGetStateFn> xinputGetState{nullptr};
+std::uintptr_t driveOwner{};int driveLateralSign{};
 std::atomic<std::uint32_t> threshold0Bits{kV8Threshold0Bits},threshold1Bits{kV8Threshold1Bits};
 std::atomic<std::uint64_t> samples{0},readOk{0},readFail{0},fieldNonNanSamples{0},fieldNanSamples{0};
 std::atomic<std::uint64_t> consumer0True{0},consumer1Fallthrough{0};
@@ -85,6 +96,11 @@ void admit(bool completeVerified,const std::array<Patch,4>&){
  ws_update_probe_enabled.store(0,std::memory_order_release);
  thresholdProbeEnabled.store(0,std::memory_order_release);
  std::uint32_t a=0,b=0;bool thresholdsReadable=completeVerified&&readLiveThresholds(a,b);
+ if(kM3dStickDrive&&!xinputGetState.load()){
+  HMODULE x=LoadLibraryW(L"xinput1_4.dll");if(!x)x=LoadLibraryW(L"xinput9_1_0.dll");
+  if(x)xinputGetState.store(reinterpret_cast<XInputGetStateFn>(reinterpret_cast<void*>(GetProcAddress(x,"XInputGetState"))));
+  writeLog("wallrun_m3d_stick_drive_admission xinput=%u keyboard=WASD offsets=0x240,0x24c normal=0x398 deadzone=%.2f",unsigned(xinputGetState.load()!=nullptr),kStickDeadzone);
+ }
  if(thresholdsReadable){
   threshold0Bits.store(a,std::memory_order_relaxed);threshold1Bits.store(b,std::memory_order_relaxed);
   thresholdProbeEnabled.store(1,std::memory_order_release);
@@ -107,6 +123,7 @@ void drainLogs(){
  if(!final&&n==lastLoggedSamples)return;
  auto now=GetTickCount64();if(!final&&lastLoggedSamples&&now-lastThresholdCheck<500)return;
  lastThresholdCheck=now;lastLoggedSamples=n;logProbeSnapshot(final?"final":"cumulative");
+ writeLog("wallrun_m3d_stick_drive phase=%s enabled=%u writes=%llu cap=%llu no_input=%llu uncalibrated=%llu calibrations=%llu bad_normal=%llu lateral_sign=%d game_write=1",final?"final":"cumulative",unsigned(kM3dStickDrive),static_cast<unsigned long long>(driveWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(driveNoInput.load()),static_cast<unsigned long long>(driveUncalibrated.load()),static_cast<unsigned long long>(driveCalibrations.load()),static_cast<unsigned long long>(driveBadNormal.load()),driveLateralSign);
  writeLog("wallrun_m3c_heading_tilt phase=%s enabled=%u offsets=0x240,0x24c tilt_deg=20 writes=%llu cap=%llu skipped_shape=%llu skipped_not_horizontal=%llu refused_not_writable=%llu game_write=1 restore=game_recomputes_after_stop",final?"final":"cumulative",unsigned(kM3cHeadingTilt),static_cast<unsigned long long>(tiltWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(tiltSkippedShape.load()),static_cast<unsigned long long>(tiltSkippedVertical.load()),static_cast<unsigned long long>(tiltRefusedWritable.load()));
 }
 
@@ -134,6 +151,40 @@ void tiltHeading(std::uintptr_t owner){
  std::memcpy(reinterpret_cast<void*>(owner+kHeadingOffsetB),v,sizeof(v));
  tiltWrites.fetch_add(1,std::memory_order_relaxed);
 }
+bool readStick(float& sx,float& sy){
+ sx=sy=0;
+ if(auto get=xinputGetState.load()){XINPUT_STATE st{};if(get(0,&st)==ERROR_SUCCESS){
+  float x=st.Gamepad.sThumbLX/32767.f,y=st.Gamepad.sThumbLY/32767.f;
+  if(x*x+y*y>=kStickDeadzone*kStickDeadzone){sx=std::fmax(-1.f,std::fmin(1.f,x));sy=std::fmax(-1.f,std::fmin(1.f,y));return true;}}}
+ float kx=float((GetAsyncKeyState('D')<0)-(GetAsyncKeyState('A')<0)),ky=float((GetAsyncKeyState('W')<0)-(GetAsyncKeyState('S')<0));
+ if(kx!=0||ky!=0){sx=kx;sy=ky;return true;}
+ return false;
+}
+void driveHeading(std::uintptr_t owner){
+ if(!kM3dStickDrive||driveWrites.load(std::memory_order_relaxed)>=kTiltWriteCap||owner>UINTPTR_MAX-0x3a4)return;
+ if(owner!=driveOwner){driveOwner=owner;driveLateralSign=0;}
+ float sx,sy;if(!readStick(sx,sy)){driveNoInput.fetch_add(1,std::memory_order_relaxed);return;}
+ float h[6]{},n[3]{};
+ if(!msm2::readMemory(owner+kHeadingOffsetA,h,sizeof(h))||!msm2::readMemory(owner+kWallNormalOffset,n,sizeof(n))){driveBadNormal.fetch_add(1,std::memory_order_relaxed);return;}
+ for(float v:h)if(!std::isfinite(v))return;
+ float nn=n[0]*n[0]+n[1]*n[1]+n[2]*n[2];
+ if(!std::isfinite(nn)||nn<0.9f||nn>1.1f||std::fabs(n[1])>0.2f){driveBadNormal.fetch_add(1,std::memory_order_relaxed);return;}
+ float u[3]{-n[0]*n[1],1.f-n[1]*n[1],-n[2]*n[1]};float un=std::sqrt(u[0]*u[0]+u[1]*u[1]+u[2]*u[2]);for(float& c:u)c/=un;
+ float l[3]{u[1]*n[2]-u[2]*n[1],u[2]*n[0]-u[0]*n[2],u[0]*n[1]-u[1]*n[0]};float ln=std::sqrt(l[0]*l[0]+l[1]*l[1]+l[2]*l[2]);if(ln<0.5f)return;for(float& c:l)c/=ln;
+ if(!driveLateralSign){
+  // Calibrate screen-right once: vanilla picked a horizontal axis direction for a clearly sideways input.
+  float hl=h[0]*l[0]+h[1]*l[1]+h[2]*l[2];
+  if(std::fabs(sx)>0.5f&&std::fabs(sy)<0.3f&&std::fabs(h[1])<0.1f&&std::fabs(hl)>0.9f){driveLateralSign=(hl>0)==(sx>0)?1:-1;driveCalibrations.fetch_add(1,std::memory_order_relaxed);}
+  else{driveUncalibrated.fetch_add(1,std::memory_order_relaxed);return;}
+ }
+ float d[3];for(int i=0;i<3;++i)d[i]=sx*float(driveLateralSign)*l[i]+sy*u[i];
+ float dn=std::sqrt(d[0]*d[0]+d[1]*d[1]+d[2]*d[2]);if(dn<1e-3f)return;for(float& c:d)c/=dn;
+ if(std::fabs(d[0]-h[0])+std::fabs(d[1]-h[1])+std::fabs(d[2]-h[2])<1e-4f&&std::fabs(d[0]-h[3])+std::fabs(d[1]-h[4])+std::fabs(d[2]-h[5])<1e-4f)return;
+ if(!writableRange(owner+kHeadingOffsetA,24)){tiltRefusedWritable.fetch_add(1,std::memory_order_relaxed);return;}
+ std::memcpy(reinterpret_cast<void*>(owner+kHeadingOffsetA),d,sizeof(d));
+ std::memcpy(reinterpret_cast<void*>(owner+kHeadingOffsetB),d,sizeof(d));
+ driveWrites.fetch_add(1,std::memory_order_relaxed);
+}
 }
 
 extern "C" void ws_update_probe_sample(std::uintptr_t owner) noexcept{
@@ -150,6 +201,7 @@ extern "C" void ws_update_probe_sample(std::uintptr_t owner) noexcept{
  if(unordered0||value>t0)consumer0True.fetch_add(1,std::memory_order_relaxed);
  if(unordered1||value>t1)consumer1Fallthrough.fetch_add(1,std::memory_order_relaxed);
  tiltHeading(owner);
+ driveHeading(owner);
 }
 
 extern "C" void ws_write_dispatch(unsigned,std::uintptr_t) noexcept{}
