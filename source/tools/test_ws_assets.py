@@ -20,7 +20,7 @@ steer[start:start + len(blob)] = blob
 steer = bytes(steer)
 b.STEER_SHA = hashlib.sha256(steer).hexdigest()
 
-a.TURN_GAINS = None; a.MOD_NAME = f"WallSprint - WallRun TurnMaxDown {a.TURN_MAX_DOWN}"
+a.TURN_GAINS = None; a.TURN_SPEEDS = None; a.MOD_NAME = f"WallSprint - WallRun TurnMaxDown {a.TURN_MAX_DOWN}"
 
 def fails(fn):
     try: fn()
@@ -63,4 +63,7 @@ with tempfile.TemporaryDirectory() as t:                       # M2a clip swaps
     assert "SprintClip" in z.read("info.json").decode()
     (inp / a.CLIP_SWAPS[1][0]).write_bytes(b"x" * 10)          # implausible size -> refuse, previous stage kept
     before = out.read_bytes(); fails(lambda: a.deploy(ws, game)); assert out.read_bytes() == before
+sp, rep = b.patch_steering(steer, 90, (0.0, 0.0), (255, 255))
+assert sp[0x218] == 255 and sp[0x219] == 255 and rep["turn_speeds"] == {"TurnSpeedFast": 255, "TurnSpeedSlow": 255}
+fails(lambda: b.patch_steering(steer, 90, None, (0, 255)))
 print("test_ws_assets: PASS")

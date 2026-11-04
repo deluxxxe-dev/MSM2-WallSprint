@@ -18,7 +18,12 @@ STAGE_NAME = "MSM2-WS-WallRunSteering.stage"
 # Experiment M1c (2026-11-04): sideways WR drifts to straight down after a while at TurnMaxDown 90.
 # HYPOTHESIS: negative TurnGainFast/Slow drive that automatic downward pull. None = vanilla gains.
 TURN_GAINS: tuple[float, float] | None = (0.0, 0.0)
-MOD_NAME = f"WallSprint - WallRun TurnMaxDown {TURN_MAX_DOWN}" + ("" if TURN_GAINS is None else f" Gain {TURN_GAINS[0]:g}/{TURN_GAINS[1]:g}")
+# Experiment M3a (2026-11-05): diagonal stick snaps to the nearest axis once WS is active. HYPOTHESIS: the WallRun
+# heading turn rate (vanilla TurnSpeedFast/Slow 100/75) limits turning toward a diagonal stick. None = vanilla.
+TURN_SPEEDS: tuple[int, int] | None = (255, 255)
+MOD_NAME = (f"WallSprint - WallRun TurnMaxDown {TURN_MAX_DOWN}"
+            + ("" if TURN_GAINS is None else f" Gain {TURN_GAINS[0]:g}/{TURN_GAINS[1]:g}")
+            + ("" if TURN_SPEEDS is None else f" TurnSpeed {TURN_SPEEDS[0]}/{TURN_SPEEDS[1]}"))
 # Experiment M2a (2026-11-04): play the ground sprint loop during WallRun by placing the owner-extracted vanilla
 # sprint clip at the WallRun loop clip path. Each pair is optional (input file absent -> skipped). HYPOTHESIS: these
 # are the sideways WallRun loop clips. See analysis/M2_ANIMATION_PLAN_20261104.md.
@@ -61,7 +66,7 @@ def clip_members(inputs: Path) -> dict[str, bytes]:
 
 
 def stage_bytes(steering: bytes, clips: dict[str, bytes] | None = None) -> bytes:
-    patched, _ = b.patch_steering(steering, TURN_MAX_DOWN, TURN_GAINS)
+    patched, _ = b.patch_steering(steering, TURN_MAX_DOWN, TURN_GAINS, TURN_SPEEDS)
     members = {f"0/{b.STEER_PATH}": patched, **(clips or {})}
     return b.make_stage(members, MOD_NAME + (" + SprintClip" if clips else ""))
 
