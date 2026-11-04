@@ -2,7 +2,8 @@
 
 Working: WS orientation substitution on WallRun (body Up = wall normal), r4 lifetime (no 5 s cap), heading follows travel (r5; ~0.3 s reversal lag).
 Working (2026-11-04, M1): straight-down WallRun and no automatic down-drift via auto-deployed steering stage (TurnMaxDown 90, TurnGain 0).
-Not working: animation stays the sideways WallRun clip (M2); movement is vanilla WallRun.
+Working (2026-11-05): sprint clip on the wall (M2) and stick-driven 360-degree direction (M3, writes WallRun+0x240/+0x24C).
+Open: natural turning (sliding feel), stage-1 acceptance items (stop/detach/other walls/corners/reload), camera.
 Runtime v0.1c48/0.1.73 builds and deploys (hooks link fix pushed). Owner decisions and plan: `docs/CODEX_NEXT.md` (M1 asset-only experiment) and `AGENTS.md` (2026-11-04 section).
 Everything below this line is history; older "Current ..." entries are superseded by this section and by `docs/CODEX_NEXT.md`.
 

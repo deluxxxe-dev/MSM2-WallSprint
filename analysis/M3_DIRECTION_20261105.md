@@ -70,3 +70,11 @@ vanilla's own horizontal choice for a clearly sideways input. Neutral input: no 
 | follows only while stick held steady | game overwrites on stick changes -> also write after original Update |
 | lateral mirrored | calibration sign wrong: inspect lateral_sign / uncalibrated counters |
 | unstable | F8, revert |
+
+## M3d result (owner + log `MSM2-WS-v0.1c48-20261105-024606.log`, not committed) — VERIFIED-RUNTIME
+Owner: travel follows the stick in all directions including diagonals, left/right correct, reversal-from-stop no longer pulls down.
+Log: writes=6828 over 4 sessions, calibrations=3, lateral_sign=+1, bad_normal=0.
+M3 (free direction) core DONE. Fix after acceptance: the write cap was per process (would stop after ~50 min of steering); now per WallRun
+session (gap >500 ms), lateral calibration kept per owner.
+Polish backlog (owner, not now): turning/facing changes are instant, so it feels like sliding; target is ground-sprint-like turning
+(turn animation / smoothed heading) — see docs/FEATURE_ROADMAP.md.

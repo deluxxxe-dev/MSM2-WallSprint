@@ -39,6 +39,12 @@ Do not automatically resume c56–c72/c73 low-level publisher scans. Return ther
 - Ground-sprint-like posture is visually verified. If required animation changes are unproven, mark that gap; do not label movement milestone complete.
 - Only then begin the camera milestone. ModSettings exposes stable controls/values incrementally, not before their meanings exist.
 
+## Polish backlog recorded 2026-11-05 (owner)
+
+- Natural sprint turning on the wall: today direction and facing change instantly (sliding feel). Target: ground-sprint-like turns
+  (smoothed heading toward the stick, turn/pivot animation, lean). Not blocking the current milestone.
+- Fine facing, standoff distance from the wall, WR->WS transition jitter (M2b notes).
+
 ## Deferred feature: manual surface-stance hold
 
 Goal: allow the player to remain oriented perpendicular to the current wall/surface even when not sprinting, so WallSprint is not limited to dash-only maintenance of the surface stance.

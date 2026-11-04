@@ -43,7 +43,7 @@ constexpr float kStickDeadzone=0.35f;
 std::atomic<std::uint64_t> driveWrites{0},driveNoInput{0},driveUncalibrated{0},driveBadNormal{0},driveCalibrations{0};
 using XInputGetStateFn=DWORD (WINAPI*)(DWORD,XINPUT_STATE*);
 std::atomic<XInputGetStateFn> xinputGetState{nullptr};
-std::uintptr_t driveOwner{};int driveLateralSign{};
+std::uintptr_t driveOwner{};int driveLateralSign{};std::uint64_t driveOwnerWrites{},driveLastCallMs{}; // cap is per WallRun session (gap >500 ms), not per process
 std::atomic<std::uint32_t> threshold0Bits{kV8Threshold0Bits},threshold1Bits{kV8Threshold1Bits};
 std::atomic<std::uint64_t> samples{0},readOk{0},readFail{0},fieldNonNanSamples{0},fieldNanSamples{0};
 std::atomic<std::uint64_t> consumer0True{0},consumer1Fallthrough{0};
@@ -162,8 +162,10 @@ bool readStick(float& sx,float& sy){
  return false;
 }
 void driveHeading(std::uintptr_t owner){
- if(!kM3dStickDrive||driveWrites.load(std::memory_order_relaxed)>=kTiltWriteCap||owner>UINTPTR_MAX-0x3a4)return;
- if(owner!=driveOwner){driveOwner=owner;driveLateralSign=0;}
+ if(!kM3dStickDrive||owner>UINTPTR_MAX-0x3a4)return;
+ if(owner!=driveOwner){driveOwner=owner;driveLateralSign=0;driveOwnerWrites=0;}
+ {auto now=GetTickCount64();if(now-driveLastCallMs>500)driveOwnerWrites=0;driveLastCallMs=now;}
+ if(driveOwnerWrites>=kTiltWriteCap)return;
  float sx,sy;if(!readStick(sx,sy)){driveNoInput.fetch_add(1,std::memory_order_relaxed);return;}
  float h[6]{},n[3]{};
  if(!msm2::readMemory(owner+kHeadingOffsetA,h,sizeof(h))||!msm2::readMemory(owner+kWallNormalOffset,n,sizeof(n))){driveBadNormal.fetch_add(1,std::memory_order_relaxed);return;}
@@ -184,7 +186,7 @@ void driveHeading(std::uintptr_t owner){
  if(!writableRange(owner+kHeadingOffsetA,24)){tiltRefusedWritable.fetch_add(1,std::memory_order_relaxed);return;}
  std::memcpy(reinterpret_cast<void*>(owner+kHeadingOffsetA),d,sizeof(d));
  std::memcpy(reinterpret_cast<void*>(owner+kHeadingOffsetB),d,sizeof(d));
- driveWrites.fetch_add(1,std::memory_order_relaxed);
+ driveWrites.fetch_add(1,std::memory_order_relaxed);++driveOwnerWrites;
 }
 }
 
