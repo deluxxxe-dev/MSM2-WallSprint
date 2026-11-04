@@ -199,3 +199,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-05: M3a rejected/reverted; M3b read-only WallRun.this direction-field scanner added (unit test + full cloud Windows build/hooks/package PASS). Version label unchanged.
 - 2026-11-05: M3b found WallRun+0x240/+0x24C direction; M3c bounded tilt write added in pre-original Update callback (cloud full Windows build/hooks/package PASS). Not game-tested.
 - 2026-11-05: M3c accepted (diagonal-up travel); M3d stick/WASD drive added (XInput dynamic load, wall-relative mapping, once-per-owner lateral calibration).
+- 2026-11-05: XInput now loaded only inside Spider-Man2.exe; loading it in the Wine actor_writer_smoke left the process hanging (cloud hooks run timed out after that smoke).

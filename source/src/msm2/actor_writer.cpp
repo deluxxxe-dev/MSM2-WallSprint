@@ -96,7 +96,8 @@ void admit(bool completeVerified,const std::array<Patch,4>&){
  ws_update_probe_enabled.store(0,std::memory_order_release);
  thresholdProbeEnabled.store(0,std::memory_order_release);
  std::uint32_t a=0,b=0;bool thresholdsReadable=completeVerified&&readLiveThresholds(a,b);
- if(kM3dStickDrive&&!xinputGetState.load()){
+ // Load XInput only inside the real game process; test hosts (Wine smokes in Update-WS) must not load input stacks.
+ if(kM3dStickDrive&&!xinputGetState.load()&&GetModuleHandleW(L"Spider-Man2.exe")){
   HMODULE x=LoadLibraryW(L"xinput1_4.dll");if(!x)x=LoadLibraryW(L"xinput9_1_0.dll");
   if(x)xinputGetState.store(reinterpret_cast<XInputGetStateFn>(reinterpret_cast<void*>(GetProcAddress(x,"XInputGetState"))));
   writeLog("wallrun_m3d_stick_drive_admission xinput=%u keyboard=WASD offsets=0x240,0x24c normal=0x398 deadzone=%.2f",unsigned(xinputGetState.load()!=nullptr),kStickDeadzone);
