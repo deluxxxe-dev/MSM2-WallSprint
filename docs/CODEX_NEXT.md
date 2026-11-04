@@ -1,4 +1,8 @@
-# Next task — M1: lift the WallRun downward limit (asset-only), c48 observed in the same run
+# Next task — M1b: TurnMaxDown 90 only (M1 result: down movement works, see analysis/C48_M1_RUNTIME_RESULT_20261104.md)
+
+Status: M1 run done 2026-11-04 (speed changed, down possible but diagonal). M1b package: steering TurnMaxDown 90, no speed change. Owner replaces the M1 stage with M1b, one WallRun (same sequence), reports whether travel is straight down / angle. Then M2 (animation/posture). Text below is the original M1 spec.
+
+# (original) M1
 
 Branch `codex/v01c20-edi-value-provenance`; no main merge. Previous c48 task text: `analysis/C48_CODEX_NEXT_ARCHIVE_20261104.md`.
 

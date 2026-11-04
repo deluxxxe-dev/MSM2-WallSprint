@@ -85,7 +85,9 @@ stage = zipfile.ZipFile(io.BytesIO(outer.read("MSM2-WS-M1-DownLimit.stage")))
 assert sorted(stage.namelist()) == sorted(["0/" + b.STEER_PATH, "0/" + b.SPEED_PATH, "info.json"])
 assert pkg == b.build(steer, sp, 60)[0]    # deterministic
 pkg2, _ = b.build(steer, None, 60)
-assert len(zipfile.ZipFile(io.BytesIO(zipfile.ZipFile(io.BytesIO(pkg2)).read("MSM2-WS-M1-DownLimit.stage"))).namelist()) == 2
+o2 = zipfile.ZipFile(io.BytesIO(pkg2))
+assert o2.namelist() == ["MSM2-WS-M1b-TurnMaxDown60.stage"]
+assert len(zipfile.ZipFile(io.BytesIO(o2.read(o2.namelist()[0]))).namelist()) == 2
 
 # real owner speed extract, when available locally (not stored in Git)
 real = os.environ.get("WS_TEST_SPEED_CONFIG")

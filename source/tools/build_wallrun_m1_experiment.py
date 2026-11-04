@@ -118,13 +118,17 @@ def build(steering: bytes, speed: bytes | None, turn_max_down: int) -> tuple[byt
         members[f"0/{SPEED_PATH}"] = sp
         report["speed_edits"] = sp_edits
         report["speed_sha256"] = sha(sp)
-    info = {"game": "MSM2", "name": MOD_NAME, "author": AUTHOR, "format_version": 2}
+    if speed is None:
+        mod_name = f"WS Experiment M1b - TurnMaxDown {turn_max_down}"
+        stage_name = f"MSM2-WS-M1b-TurnMaxDown{turn_max_down}.stage"
+    else:
+        mod_name, stage_name = MOD_NAME, "MSM2-WS-M1-DownLimit.stage"
+    info = {"game": "MSM2", "name": mod_name, "author": AUTHOR, "format_version": 2}
     stage = io.BytesIO()
     with zipfile.ZipFile(stage, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
         for n, b in members.items():
             z.writestr(_zi(n), b)
         z.writestr(_zi("info.json"), (json.dumps(info, indent=2) + "\n").encode())
-    stage_name = "MSM2-WS-M1-DownLimit.stage"
     outer = io.BytesIO()
     with zipfile.ZipFile(outer, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
         z.writestr(_zi(stage_name), stage.getvalue())
