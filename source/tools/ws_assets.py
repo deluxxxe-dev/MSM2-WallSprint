@@ -15,7 +15,10 @@ INPUT_DIR = "_inputs"
 INPUT_NAME = "hero_WallRunSteeringSetup_Standard.config"
 ASSET_DIR = "MSM2-WS-Assets"
 STAGE_NAME = "MSM2-WS-WallRunSteering.stage"
-MOD_NAME = f"WallSprint - WallRun TurnMaxDown {TURN_MAX_DOWN}"
+# Experiment M1c (2026-11-04): sideways WR drifts to straight down after a while at TurnMaxDown 90.
+# HYPOTHESIS: negative TurnGainFast/Slow drive that automatic downward pull. None = vanilla gains.
+TURN_GAINS: tuple[float, float] | None = (0.0, 0.0)
+MOD_NAME = f"WallSprint - WallRun TurnMaxDown {TURN_MAX_DOWN}" + ("" if TURN_GAINS is None else f" Gain {TURN_GAINS[0]:g}/{TURN_GAINS[1]:g}")
 
 
 def _linked(p: Path) -> bool:
@@ -34,7 +37,7 @@ def _is_ours(path: Path) -> bool:
 
 
 def stage_bytes(steering: bytes) -> bytes:
-    patched, _ = b.patch_steering(steering, TURN_MAX_DOWN)
+    patched, _ = b.patch_steering(steering, TURN_MAX_DOWN, TURN_GAINS)
     return b.make_stage({f"0/{b.STEER_PATH}": patched}, MOD_NAME)
 
 

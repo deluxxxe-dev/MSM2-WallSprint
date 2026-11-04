@@ -20,6 +20,8 @@ steer[start:start + len(blob)] = blob
 steer = bytes(steer)
 b.STEER_SHA = hashlib.sha256(steer).hexdigest()
 
+a.TURN_GAINS = None; a.MOD_NAME = f"WallSprint - WallRun TurnMaxDown {a.TURN_MAX_DOWN}"
+
 def fails(fn):
     try: fn()
     except ValueError: return
@@ -44,6 +46,9 @@ with tempfile.TemporaryDirectory() as t:
     out.write_bytes(first); a.TURN_MAX_DOWN, saved = 80, a.TURN_MAX_DOWN   # our older stage -> replaced
     a.MOD_NAME = "WallSprint - WallRun TurnMaxDown 80"; a.deploy(ws, game)
     assert out.read_bytes() != first and zipfile.ZipFile(io.BytesIO(out.read_bytes())).read("0/" + b.STEER_PATH)[0x213] == 80
+    a.TURN_GAINS = (0.0, 0.0); a.MOD_NAME += " Gain 0/0"; a.deploy(ws, game)   # gain variant replaces our stage
+    pg = zipfile.ZipFile(io.BytesIO(out.read_bytes())).read("0/" + b.STEER_PATH)
+    assert sum(x != y for x, y in zip(steer, pg)) == 5 and pg[0x213] == 80   # 1 TurnMaxDown byte + 2+2 gain float bytes
     (ws / a.INPUT_DIR / a.INPUT_NAME).write_bytes(steer[:-1] + b"\1")   # wrong SHA -> refuse
     fails(lambda: a.deploy(ws, game))
 print("test_ws_assets: PASS")

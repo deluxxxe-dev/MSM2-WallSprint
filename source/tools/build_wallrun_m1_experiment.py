@@ -53,7 +53,7 @@ def _need(data: bytes, size: int, digest: str, label: str) -> None:
         raise ValueError(f"{label}: unexpected size/SHA256 ({len(data)}, {sha(data)})")
 
 
-def patch_steering(data: bytes, turn_max_down: int) -> tuple[bytes, dict]:
+def patch_steering(data: bytes, turn_max_down: int, gains: tuple[float, float] | None = None) -> tuple[bytes, dict]:
     _need(data, STEER_SIZE, STEER_SHA, "steering")
     if not 13 <= turn_max_down <= 255:
         raise ValueError("turn_max_down must be 13..255")
@@ -72,10 +72,19 @@ def patch_steering(data: bytes, turn_max_down: int) -> tuple[bytes, dict]:
         raise ValueError("steering float self-check failed: TurnSpeedSpeedScaleMax != 0.72")
     out = bytearray(data)
     out[off["TurnMaxDown"]] = turn_max_down
+    allowed = {off["TurnMaxDown"]}
+    report = {"offset": off["TurnMaxDown"], "from": 12, "to": turn_max_down}
+    if gains is not None:
+        for name, want, new in (("TurnGainFast", -3.5, gains[0]), ("TurnGainSlow", -2.25, gains[1])):
+            if struct.unpack_from("<f", data, off[name])[0] != want:
+                raise ValueError(f"steering float self-check failed: {name} != {want}")
+            struct.pack_into("<f", out, off[name], new)
+            allowed.update(range(off[name], off[name] + 4))
+        report["gains"] = {"TurnGainFast": gains[0], "TurnGainSlow": gains[1]}
     changed = [i for i, (a, b) in enumerate(zip(data, out)) if a != b]
-    if changed != [off["TurnMaxDown"]]:
+    if not changed or not set(changed) <= allowed:
         raise ValueError(f"steering unexpected delta {changed}")
-    return bytes(out), {"offset": off["TurnMaxDown"], "from": 12, "to": turn_max_down}
+    return bytes(out), report
 
 
 def patch_speed(data: bytes, factor: int = 2) -> tuple[bytes, list[dict]]:

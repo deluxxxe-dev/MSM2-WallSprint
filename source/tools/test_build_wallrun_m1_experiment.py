@@ -61,6 +61,13 @@ blob = make_struct([0.35, 0.15, 16, 0xD8, 0xEC, -3.5, -2.25, 12, 2.5, 100, 75, 0
 shifted[0x100:0x100 + len(blob)] = blob; shifted = bytes(shifted); pin(shifted, "STEER")
 must_fail(b.patch_steering, shifted, 60)
 pin(steer, "STEER")
+g, rep = b.patch_steering(steer, 90, (0.0, 0.0))
+assert rep["gains"] == {"TurnGainFast": 0.0, "TurnGainSlow": 0.0}
+assert g[0x213] == 90 and struct.unpack_from("<f", g, 0x218 - 24 + 4 + 4 + 1 + 1 + 1)[0] == 0.0
+assert 1 < sum(x != y for x, y in zip(steer, g)) <= 9
+badg = bytearray(steer); struct.pack_into("<f", badg, 0x218 - 24 + 11, -1.0); badg = bytes(badg); pin(badg, "STEER")
+must_fail(b.patch_steering, badg, 90, (0.0, 0.0))
+pin(steer, "STEER")
 
 # speed: two synthetic 16-field structs
 f16 = [U8] * 7 + [F32] * 4 + [U8] * 5

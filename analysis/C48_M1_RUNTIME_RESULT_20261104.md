@@ -27,3 +27,16 @@ Units: 12 -> ~-12deg observed earlier, 60 -> diagonal, 90 -> straight down: cons
 
 ## Deployment
 `Update-WS.cmd` now deploys the steering stage automatically (`source/tools/ws_assets.py`): put the vanilla `hero_WallRunSteeringSetup_Standard.config` in `MSM2-WS\_inputs\`; stage is written to `Mods Library\Mods-Developing\MSM2-WS-Assets\MSM2-WS-WallRunSteering.stage` (TurnMaxDown 90). Engine runs pre-pull code, so the first Update-WS after this commit only pulls; run it twice.
+
+## Auto-deployed TurnMaxDown 90 run (log `MSM2-WS-v0.1c48-20261104-222544.log`, not committed)
+Owner: straight down works; but plain sideways WallRun also turns into straight-down travel after some time (VERIFIED-RUNTIME, owner report).
+Log (position-difference heuristic, NOT physics velocity): 14 WR sessions; e.g. sessions with sideways travel h~20/v=0 for 3-4 s, others switch to v~20/h=0 after 1.5-3 s. Inputs not logged, so onset time cannot be tied to stick state.
+Reading (HYPOTHESIS): TurnMaxDown is the cap of a heading drift toward down that also happens without input; vanilla 12 hid it (<=12deg slide).
+## M1c (one change, auto-deployed): TurnGainFast/Slow -3.5/-2.25 -> 0 (with TurnMaxDown 90)
+Basis for the guess: Gain/Damp fields are the only negative steering values (HYPOTHESIS only).
+| Owner observation | Meaning | Next |
+| --- | --- | --- |
+| sideways no longer drifts down, stick-down still goes down | TurnGain is the drift source | done; tune |
+| drift gone but stick-down stops working | Gain also drives stick steering | try TurnDamp (-40/-20 -> 0) instead |
+| drift persists | not Gain | revert gains, try TurnDamp |
+| WallRun becomes unstable | revert | gains vanilla |

@@ -8,7 +8,7 @@ except ModuleNotFoundError:
  sys.path.insert(0,str(Path(__file__).resolve().parents[2]/"environment"))
  import operation_lock
 import contextlib
-import argparse,hashlib,json,os,re,shutil,stat,subprocess,sys,zipfile
+import argparse,hashlib,importlib,json,os,re,shutil,stat,subprocess,sys,zipfile
 REMOTE='https://github.com/deluxxxe-dev/MSM2-WallSprint.git'
 WS_NAME='MSM2-WS'
 ACTIVE=re.compile(r'MSM2-WS-v[0-9A-Za-z.]+\.script\Z')
@@ -333,6 +333,9 @@ class Manager:
    retired_probes.retire(workspace,game,tracked)
    prepare_source_checkout(source)
    git(source,'pull','--ff-only')
+   # Engine code ran pre-pull; reload only the asset modules so a pulled constant takes effect in this same run.
+   try:importlib.reload(ws_assets.b.dat1);importlib.reload(ws_assets.b);importlib.reload(ws_assets)
+   except Exception as ex:raise WorkspaceError('Pulled asset tooling failed to load (nothing deployed): '+str(ex)) from ex
    independent_clone(source,self.remote);expected_branch(source,branch)
    disable_legacy_build_archives(workspace)
    assert_layout(workspace)

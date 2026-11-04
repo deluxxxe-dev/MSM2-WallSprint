@@ -1,6 +1,6 @@
 # Next task — M1b: TurnMaxDown 90 only (M1 result: down movement works, see analysis/C48_M1_RUNTIME_RESULT_20261104.md)
 
-Status: M1b DONE 2026-11-04 (straight-down works). Steering stage now auto-deployed by Update-WS (docs/LOCAL_WORKSPACE.md). Next: M2 animation/posture discovery. Earlier: M1 run done 2026-11-04 (speed changed, down possible but diagonal). M1b package: steering TurnMaxDown 90, no speed change. Owner replaces the M1 stage with M1b, one WallRun (same sequence), reports whether travel is straight down / angle. Then M2 (animation/posture). Text below is the original M1 spec.
+Status: M1c ACTIVE (TurnGain 0 + TurnMaxDown 90 via ws_assets.py; decision table in analysis/C48_M1_RUNTIME_RESULT_20261104.md). Sideways WR drifts to straight-down with TurnMaxDown 90. M1b DONE 2026-11-04 (straight-down works). Steering stage now auto-deployed by Update-WS (docs/LOCAL_WORKSPACE.md). Next: M2 animation/posture discovery. Earlier: M1 run done 2026-11-04 (speed changed, down possible but diagonal). M1b package: steering TurnMaxDown 90, no speed change. Owner replaces the M1 stage with M1b, one WallRun (same sequence), reports whether travel is straight down / angle. Then M2 (animation/posture). Text below is the original M1 spec.
 
 # (original) M1
 
