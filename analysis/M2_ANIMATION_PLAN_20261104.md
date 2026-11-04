@@ -34,3 +34,8 @@ so WS's accepted orientation substitution was OFF. The vanilla WR clip carries i
 | feet on wall, sprinting sideways | M2 core works; then swap up/down/45 clips |
 | body tilted wrong way / upside down | adjust orientation source mapping (sign/axis) |
 | no change | check log `native_source_config enabled=1 admitted=1` |
+
+## M2b result (owner, 2026-11-04) — VERIFIED-RUNTIME (owner report + 3 screenshots)
+With the orientation override ON and the sprint clip swap, sideways / upward / diagonal WallSprint show a sprint pose with the body roughly
+perpendicular to the wall. Remaining polish (not blockers): fine facing, standoff distance from the wall, WR->WS transition jitter.
+Movement directions are limited to up/down/left/right; free 360-degree direction like ground sprint is the next movement goal (roadmap stage 1 diagonals).
