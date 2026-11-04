@@ -40,3 +40,9 @@ Basis for the guess: Gain/Damp fields are the only negative steering values (HYP
 | drift gone but stick-down stops working | Gain also drives stick steering | try TurnDamp (-40/-20 -> 0) instead |
 | drift persists | not Gain | revert gains, try TurnDamp |
 | WallRun becomes unstable | revert | gains vanilla |
+
+## M1c result (owner, 2026-11-04) — VERIFIED-RUNTIME (owner report)
+TurnMaxDown 90 + TurnGainFast/Slow 0: sideways WallRun continues >10 s without drifting down, and stick-down moves straight down.
+Classification: TurnGain* drives the automatic downward heading drift (OBSERVED, single A/B: drift with vanilla gain, none with 0); TurnMaxDown caps downward heading (degrees, OBSERVED-CORRELATION). Field names otherwise UNKNOWN.
+M1 (downward movement / no unwanted drift) is DONE. Current auto-deployed stage: `WallSprint - WallRun TurnMaxDown 90 Gain 0/0`.
+Wisdoms sync pending (cross-repo edit not in task scope).
