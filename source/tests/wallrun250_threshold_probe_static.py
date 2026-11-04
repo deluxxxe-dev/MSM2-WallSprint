@@ -89,6 +89,17 @@ for forbidden in (
 ):
     assert forbidden not in source, forbidden
 
+# actor_writer_smoke.cpp includes actor_writer.cpp directly (without sdk_bridge.cpp);
+# it must supply its own test-only msm2::readMemory or the Windows hooks link fails.
+actor_smoke = (root / 'src/msm2/actor_writer_smoke.cpp').read_text(encoding='utf-8')
+assert '#include "actor_writer.cpp"' in actor_smoke
+_ns = actor_smoke.find('namespace msm2 {')
+_rm = actor_smoke.find('bool readMemory(std::uintptr_t p,void* out,std::size_t n){')
+assert 0 <= _ns < _rm, 'actor_writer_smoke must define test-only msm2::readMemory'
+assert 'ReadProcessMemory(GetCurrentProcess()' in actor_smoke
+for forbidden in ('WriteProcessMemory', 'ws_write_dispatch_enabled=1', 'ws_update_probe_enabled=1'):
+    assert forbidden not in actor_smoke, forbidden
+
 assert 'versionLabel[]=\"v0.1c48\"' in version
 assert 'packageVersion[]=\"0.1.73\"' in version
 
