@@ -3,7 +3,7 @@
 Layout inferred from owner-supplied vanilla configs (HYPOTHESIS until runtime-confirmed):
   [00 00 00 00] 44 00 15 03 | count:u32 | size:u32 | count*(hash:u32, flags:u32)
   | count*u32 (opaque) | packed data, one slot per field in entry order.
-Field width: flags 0x08000010 -> 4 bytes (float), flags 0x10 -> 1 byte (u8/i8).
+Field width: flags 0x08000010 -> 4 bytes (float), flags 0x10 / 0x04000010 -> 1 byte (u8 / i8).
 Anything else is not treated as a field struct. Field NAMES are not decoded: callers
 must pin identity by count/width pattern, known values and (optionally) hash equality.
 """
@@ -13,6 +13,7 @@ from dataclasses import dataclass
 
 TYPE_TAG = bytes.fromhex("44001503")
 FLAG_U8 = 0x10
+FLAG_I8 = 0x04000010  # signed byte (seen in steering TurnDampFast/Slow)
 FLAG_F32 = 0x08000010
 MAX_FIELDS = 64
 
@@ -48,7 +49,7 @@ def walk(data: bytes) -> list[FieldStruct]:
             continue
         entries = [struct.unpack_from("<II", data, i + 12 + 8 * k) for k in range(count)]
         flags = tuple(f for _, f in entries)
-        if any(f not in (FLAG_U8, FLAG_F32) for f in flags):
+        if any(f not in (FLAG_U8, FLAG_I8, FLAG_F32) for f in flags):
             continue
         widths = [4 if f == FLAG_F32 else 1 for f in flags]
         data_off = i + 12 + fixed

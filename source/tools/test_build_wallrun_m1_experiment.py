@@ -6,7 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build_wallrun_m1_experiment as b
 import dat1_config_fields as dat1
 
-F32, U8 = dat1.FLAG_F32, dat1.FLAG_U8
+F32, U8, I8 = dat1.FLAG_F32, dat1.FLAG_U8, dat1.FLAG_I8
 
 def make_struct(values, widths_flags, data_off_target=None, total=None, start=None):
     n = len(widths_flags)
@@ -22,6 +22,7 @@ def make_struct(values, widths_flags, data_off_target=None, total=None, start=No
 
 def synth_steering():
     flags = [F32 if w == 4 else U8 for w in b.STEER_WIDTHS]
+    flags[3] = flags[4] = I8  # as in the real file
     vals = [0.35, 0.15, 16, 0xD8, 0xEC, -3.5, -2.25, 12, 2.5, 100, 75, 0.72]
     blob = make_struct(vals, flags)
     data_off_in_blob = 4 + 12 + 12 * len(flags)
