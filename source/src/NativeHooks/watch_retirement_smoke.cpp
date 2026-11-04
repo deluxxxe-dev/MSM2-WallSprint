@@ -146,7 +146,8 @@ int main(int argc,char** argv) {
  // No production deadline is extended. Close through the real coordinator path
  // while the thread is stopped in the OS exception-return interval.
  if(timeout) {
-  const auto remaining=windows[0].end-now();if(remaining>0)Sleep(DWORD(std::ceil(remaining))+1);
+  // Sleep granularity may return slightly before the QPC-based deadline (seen under Wine); wait for the real deadline, bounded to 200ms.
+  for(unsigned waits=0;waits<200&&now()<windows[0].end;++waits)Sleep(1);
   assert(now()>=windows[0].end);assert(!msm2::trace::pollReset(true));
   assert(!std::strcmp(windows[0].stopReason.load(),"deadline"));
  }else if(killClose) {
