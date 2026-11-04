@@ -2,7 +2,14 @@
 
 # Claude Code: WallSprint (WS) handoff
 
-This repository is `deluxxxe-dev/MSM2-WallSprint` only. The canonical implementation branch is `codex/v01c20-edi-value-provenance`, **not** `main`. Do not merge `main` or reset a newer branch to a historical snapshot.
+This file governs WallSprint changes in `deluxxxe-dev/MSM2-WallSprint`. The canonical implementation branch is `codex/v01c20-edi-value-provenance`, **not** `main`. Do not merge `main` or reset a newer branch to a historical snapshot.
+
+## Multi-repository sessions (deluxxxe-dev)
+- Claude Code cloud sessions may include `MSM2-WallSprint`, `MSM2-Wisdoms`, `MSM2-SocialFeed`, and other explicitly selected `deluxxxe-dev` repositories. Read across them when relevant, using each repository's current branch and `AGENTS.md` as its own source of truth.
+- For WS tasks, consult `MSM2-Wisdoms` for reusable engine findings and shared development procedures. If the task explicitly authorizes preserving newly verified shared knowledge, update Wisdoms on its own appropriate branch, commit/publish there independently, and report its GitHub handoff separately.
+- Reading other repositories does **not** authorize editing them. Cross-repository edits require an explicit task scope; do not silently modify SF, CI, shared workspace, or other mods.
+- `Update-WS.cmd` fetches/deploys **WallSprint only**; it does not synchronize Wisdoms, SocialFeed, or other repositories. Never claim cross-repo changes deployed via Update-WS.
+
 
 ## Before any work
 1. Follow `AGENTS.md` and the documents it requires, especially `docs/DEVELOPMENT_MANUAL.md`, `docs/DEV_RULES.md`, `docs/LOCAL_WORKSPACE.md`, `docs/PROJECT_STATE.md`, `docs/CODEX_NEXT.md`, and referenced `analysis/` evidence.
