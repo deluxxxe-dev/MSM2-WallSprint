@@ -73,7 +73,7 @@ int main(int argc,char** argv){
  assert(usedLeases==1);assert(SetEvent(go));assert(WaitForSingleObject(foreignHeld,2000)==WAIT_OBJECT_0);
  assert(passedSearch==1&&foreignEvents==1&&debugContextPresent&&contextUnchanged.load()==foreignOnly&&armedSavedContext&&stores==0);
  assert(windows[0].positionInflight==0&&windows[0].hits==unsigned(!foreignOnly)&&activeLeases());
- if(deadline){const auto left=windows[0].end-now();if(left>0)Sleep(DWORD(std::ceil(left))+1);assert(now()>=windows[0].end);assert(!msm2::trace::pollReset(true));}
+ if(deadline){{const auto waitStart=GetTickCount64();while(now()<windows[0].end&&GetTickCount64()-waitStart<5000){const auto left=windows[0].end-now();Sleep(left>1?DWORD(std::ceil(left)):1);}}assert(now()>=windows[0].end);assert(!msm2::trace::pollReset(true));}
  else {if(kill)msm2::trace::kill();assert(!msm2::trace::pollReset(false,"c48_owned_foreign_return_hold"));}
  assert(!activeLeases()&&current==-1);const auto before=debug(thread);assert(sameSlots(saved,before));
  assert(SetEvent(allowReturn));assert(WaitForSingleObject(done,2000)==WAIT_OBJECT_0);const auto after=debug(thread);

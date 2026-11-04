@@ -333,7 +333,7 @@ int main(int argc,char** argv){
   const auto deadline=GetTickCount64()+2000;while(!acknowledged(t)&&GetTickCount64()<deadline)SwitchToThread();assert(acknowledged(t)&&!acknowledged(outer)&&!canRetire());
  }
  assert(WaitForSingleObject(outer.held,2000)==WAIT_OBJECT_0);assert(windows[0].hits==1&&windows[0].positionInflight==0&&load(outer.marker)==0);
- if(timeout){const auto left=windows[0].end-now();if(left>0)Sleep(DWORD(std::ceil(left))+1);assert(now()>=windows[0].end);}
+ if(timeout){{const auto waitStart=GetTickCount64();while(now()<windows[0].end&&GetTickCount64()-waitStart<5000){const auto left=windows[0].end-now();Sleep(left>1?DWORD(std::ceil(left)):1);}}assert(now()>=windows[0].end);}
  if(killClose)msm2::trace::kill();else msm2::trace::cancelReset();
  assert(!canRetire()&&activeLeases()&&pending()>=1);assert(!freeStorage());
  // Test-owned coordinator deliberately REFUSES the legacy final release while
