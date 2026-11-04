@@ -2,7 +2,7 @@
 
 Runtime **v0.1c48**, package **0.1.73**.
 
-This is a read-only diagnostic build. `WALLSPRINT_ENABLE=0`, `WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0`, and orientation/adhesion/movement/gravity/native-source writes are all OFF. The retired c45 `GravityOrientationOwner` presence hook remains disabled (`REQUEST_PRESENCE_DIAGNOSTIC=0`).
+M2b (2026-11-04): `WALLSPRINT_ENABLE=1` and `WALLSPRINT_NATIVE_SOURCE_OVERRIDE=1` re-enable the accepted r4/r5 caller-local orientation source substitution (body Up = wall normal). Actor orientation/adhesion/movement/gravity writes stay OFF. The retired c45 `GravityOrientationOwner` presence hook remains disabled (`REQUEST_PRESENCE_DIAGNOSTIC=0`).
 
 ## Why c48
 

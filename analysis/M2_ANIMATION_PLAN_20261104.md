@@ -22,3 +22,15 @@ HYPOTHESIS: which clip is the sideways loop; whether a ground clip is compatible
 - Miles: `characters/hero/hero_spiderman_milesmorales/animation/base/stand_sprint_fwd_spiderman_miles.animclip` (20.1 KB) -> `.../animation/wall_run_spiderman_miles.animclip` (20.1 KB)
 Implemented as optional entries in `source/tools/ws_assets.py` (`CLIP_SWAPS`); the owner places the extracted sprint clips in `MSM2-WS\_inputs\`.
 No hash pin (files not yet seen); size sanity only; the deploy log prints each clip SHA256 prefix.
+
+## M2a result (owner, 2026-11-04) — VERIFIED-RUNTIME (owner report + screenshot)
+Sideways WallRun plays the sprint cycle for Peter and Miles; no detach/collapse. But the body stays world-upright (feet not on the wall);
+upward WallRun keeps the vanilla clip (different clip, not swapped).
+Cause found in config: the shipped c46-c48 INI had `WALLSPRINT_ENABLE=0` / `NATIVE_SOURCE_OVERRIDE=0` (log: `native_source_config enabled=0`),
+so WS's accepted orientation substitution was OFF. The vanilla WR clip carries its own sideways body pose; the sprint clip does not.
+## M2b (one change): default INI ENABLE=1 + NATIVE_SOURCE_OVERRIDE=1
+| Observation | Next |
+| --- | --- |
+| feet on wall, sprinting sideways | M2 core works; then swap up/down/45 clips |
+| body tilted wrong way / upside down | adjust orientation source mapping (sign/axis) |
+| no change | check log `native_source_config enabled=1 admitted=1` |

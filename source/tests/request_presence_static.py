@@ -52,7 +52,10 @@ for ini in (default_ini,preset):
     assert 'REQUEST_PRESENCE_DIAGNOSTIC=0' in ini
     assert 'WALLRUN_HOOK_DIAGNOSTIC=1' in ini
     assert 'WALLRUN_OBJECT_DIAGNOSTIC=1' in ini
-    for needle in ('WALLSPRINT_ENABLE=0','WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0','WALLSPRINT_ORIENTATION_WRITE=0','WALLSPRINT_ADHESION_WRITE=0','WALLSPRINT_MOVEMENT_WRITE=0'): assert needle in ini
+    for needle in ('WALLSPRINT_ORIENTATION_WRITE=0','WALLSPRINT_ADHESION_WRITE=0','WALLSPRINT_MOVEMENT_WRITE=0'): assert needle in ini
+# M2b: default INI re-enables only the accepted native source override; the read-only preset keeps it OFF.
+for needle in ('WALLSPRINT_ENABLE=1','WALLSPRINT_NATIVE_SOURCE_OVERRIDE=1'): assert needle in default_ini
+for needle in ('WALLSPRINT_ENABLE=0','WALLSPRINT_NATIVE_SOURCE_OVERRIDE=0'): assert needle in preset
 assert 'v0.1c48' in default_ini
 
 UPDATE_SHA='e5c08bcdbc98e28f2b07aebb6a141b317ca740ee1a6a8f6da70752f98b98e40f'

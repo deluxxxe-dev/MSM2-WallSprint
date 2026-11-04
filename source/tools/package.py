@@ -101,8 +101,8 @@ manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
     + "c47 five-field worker observation retained; c48 uses a dedicated gate in the existing authenticated Update thunk for one guarded 4-byte this+0x250 read before original Update; "
     + "old write dispatch remains OFF and the writer bridge/caller-unwind path is not entered; V8 thresholds are read live at admission; "
     + "no extra native hook, pointer chase, game call or gameplay write; "
-    + "c45 Gravity presence hook disabled; WALLSPRINT_ENABLE=0; NATIVE_SOURCE_OVERRIDE=0; "
-    + "orientation/adhesion/movement/gravity/native-source writes OFF; "
+    + "c45 Gravity presence hook disabled; M2b WALLSPRINT_ENABLE=1; NATIVE_SOURCE_OVERRIDE=1 (caller-local orientation source only); "
+    + "Actor orientation/adhesion/movement/gravity writes OFF; "
     + "REQUEST_PRESENCE_DIAGNOSTIC=0; WALLRUN_HOOK_DIAGNOSTIC=1; WALLRUN_OBJECT_DIAGNOSTIC=1\n",
     encoding="utf-8",
 )
