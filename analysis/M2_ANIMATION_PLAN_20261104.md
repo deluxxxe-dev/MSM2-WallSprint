@@ -16,3 +16,9 @@ ground-sprint loop clip (path to be chosen from a `sprint` search). Observe side
 | no visible change | WR uses another clip / animset | try `wall_run_idle` or animset route |
 | broken pose / T-pose / crash | incompatible clip format | revert; animset route |
 HYPOTHESIS: which clip is the sideways loop; whether a ground clip is compatible with the WR state.
+
+## Chosen pairs (owner `sprint` search, 2026-11-04)
+- Peter: `characters/hero/hero_spiderman/animations/stand_sprint_fwd_spiderman.animclip` (20.8 KB) -> `.../animations/wall_run_spiderman.animclip` (17.5 KB)
+- Miles: `characters/hero/hero_spiderman_milesmorales/animation/base/stand_sprint_fwd_spiderman_miles.animclip` (20.1 KB) -> `.../animation/wall_run_spiderman_miles.animclip` (20.1 KB)
+Implemented as optional entries in `source/tools/ws_assets.py` (`CLIP_SWAPS`); the owner places the extracted sprint clips in `MSM2-WS\_inputs\`.
+No hash pin (files not yet seen); size sanity only; the deploy log prints each clip SHA256 prefix.

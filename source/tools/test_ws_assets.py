@@ -51,4 +51,16 @@ with tempfile.TemporaryDirectory() as t:
     assert sum(x != y for x, y in zip(steer, pg)) == 5 and pg[0x213] == 80   # 1 TurnMaxDown byte + 2+2 gain float bytes
     (ws / a.INPUT_DIR / a.INPUT_NAME).write_bytes(steer[:-1] + b"\1")   # wrong SHA -> refuse
     fails(lambda: a.deploy(ws, game))
+
+with tempfile.TemporaryDirectory() as t:                       # M2a clip swaps
+    a.TURN_GAINS = None; a.TURN_MAX_DOWN = 90; a.MOD_NAME = "WallSprint - WallRun TurnMaxDown 90"
+    b.STEER_SHA = hashlib.sha256(steer).hexdigest()
+    game = Path(t) / "game"; ws = game / "Mods Library" / "Mods-Developing" / "MSM2-WS"; inp = ws / a.INPUT_DIR
+    inp.mkdir(parents=True); (inp / a.INPUT_NAME).write_bytes(steer)
+    clip = os.urandom(4096); (inp / a.CLIP_SWAPS[0][0]).write_bytes(clip)
+    out = a.deploy(ws, game); z = zipfile.ZipFile(io.BytesIO(out.read_bytes()))
+    assert z.read("0/" + a.CLIP_SWAPS[0][1]) == clip and ("0/" + a.CLIP_SWAPS[1][1]) not in z.namelist()
+    assert "SprintClip" in z.read("info.json").decode()
+    (inp / a.CLIP_SWAPS[1][0]).write_bytes(b"x" * 10)          # implausible size -> refuse, previous stage kept
+    before = out.read_bytes(); fails(lambda: a.deploy(ws, game)); assert out.read_bytes() == before
 print("test_ws_assets: PASS")

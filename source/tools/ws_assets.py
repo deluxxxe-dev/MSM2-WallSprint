@@ -19,6 +19,14 @@ STAGE_NAME = "MSM2-WS-WallRunSteering.stage"
 # HYPOTHESIS: negative TurnGainFast/Slow drive that automatic downward pull. None = vanilla gains.
 TURN_GAINS: tuple[float, float] | None = (0.0, 0.0)
 MOD_NAME = f"WallSprint - WallRun TurnMaxDown {TURN_MAX_DOWN}" + ("" if TURN_GAINS is None else f" Gain {TURN_GAINS[0]:g}/{TURN_GAINS[1]:g}")
+# Experiment M2a (2026-11-04): play the ground sprint loop during WallRun by placing the owner-extracted vanilla
+# sprint clip at the WallRun loop clip path. Each pair is optional (input file absent -> skipped). HYPOTHESIS: these
+# are the sideways WallRun loop clips. See analysis/M2_ANIMATION_PLAN_20261104.md.
+CLIP_SWAPS = (
+    ("stand_sprint_fwd_spiderman.animclip", "characters/hero/hero_spiderman/animations/wall_run_spiderman.animclip"),
+    ("stand_sprint_fwd_spiderman_miles.animclip", "characters/hero/hero_spiderman_milesmorales/animation/wall_run_spiderman_miles.animclip"),
+)
+CLIP_MIN, CLIP_MAX = 1024, 1024 * 1024
 
 
 def _linked(p: Path) -> bool:
@@ -36,9 +44,26 @@ def _is_ours(path: Path) -> bool:
         return False
 
 
-def stage_bytes(steering: bytes) -> bytes:
+def clip_members(inputs: Path) -> dict[str, bytes]:
+    members = {}
+    for name, target in CLIP_SWAPS:
+        src = inputs / name
+        if not src.is_file():
+            continue
+        if _linked(src):
+            raise ValueError(f"reparse/symlink clip input refused: {name}")
+        data = src.read_bytes()
+        if not CLIP_MIN <= len(data) <= CLIP_MAX:
+            raise ValueError(f"clip input {name} has implausible size {len(data)}")
+        members[f"0/{target}"] = data
+        print(f"WallRun clip swap: {name} ({len(data)} bytes, sha256 {b.sha(data)[:16]}) -> {target}")
+    return members
+
+
+def stage_bytes(steering: bytes, clips: dict[str, bytes] | None = None) -> bytes:
     patched, _ = b.patch_steering(steering, TURN_MAX_DOWN, TURN_GAINS)
-    return b.make_stage({f"0/{b.STEER_PATH}": patched}, MOD_NAME)
+    members = {f"0/{b.STEER_PATH}": patched, **(clips or {})}
+    return b.make_stage(members, MOD_NAME + (" + SprintClip" if clips else ""))
 
 
 def deploy(workspace: Path, game: Path) -> Path | None:
@@ -48,7 +73,7 @@ def deploy(workspace: Path, game: Path) -> Path | None:
         return None
     if _linked(src) or _linked(src.parent):
         raise ValueError("reparse/symlink input refused")
-    stage = stage_bytes(src.read_bytes())
+    stage = stage_bytes(src.read_bytes(), clip_members(src.parent))
     parent = game / "Mods Library" / "Mods-Developing"
     if not parent.is_dir() or _linked(parent):
         raise ValueError("Mods-Developing missing or reparse")
