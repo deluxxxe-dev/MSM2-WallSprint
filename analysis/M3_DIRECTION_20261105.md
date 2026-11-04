@@ -19,3 +19,17 @@ WSU also raised TurnSpeedFast (200) in its wall-slide stage (reference only). Ea
 | diagonal stick now turns travel diagonal | config route works; tune values |
 | no change | turn rate is not the limit -> native route (direct heading/velocity control in WR Update, bounded write rules) |
 | WR unstable | revert |
+
+## M3a result (owner, 2 runs, 2026-11-05) — VERIFIED-RUNTIME (owner report)
+TurnSpeed 255/255: at most a slight upward drift while running sideways with an up-diagonal stick; far from free turning.
+New regression: sideways WS -> stop on wall -> opposite direction produced a wrong body orientation and a strong downward pull.
+Decision: config turn rate is not the limit; TurnSpeed reverted to vanilla (ws_assets.TURN_SPEEDS=None). Next is the native route.
+
+## M3b (read-only, one run): locate the WallRun travel-direction field
+`include/wallrun_direction_scan.hpp`: every 100 ms worker sample copies WallRun.this+[0,0x800) with guarded reads and, for each
+4-byte-aligned float3 that is a unit vector and changes during the session, accumulates its dot product with the observed travel
+direction (speed > 3). At WallRun end it logs the top aligned/opposite offsets (`wallrun_direction_scan_candidate`). No writes.
+| Observation | Next |
+| --- | --- |
+| an offset with mean_dot >= 0.95 over varied directions | M3c: bounded write of that field toward a wall-relative stick direction |
+| none | widen to the WallRun child objects already sampled (+0x128 child) or the Update locals |

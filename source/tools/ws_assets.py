@@ -20,7 +20,7 @@ STAGE_NAME = "MSM2-WS-WallRunSteering.stage"
 TURN_GAINS: tuple[float, float] | None = (0.0, 0.0)
 # Experiment M3a (2026-11-05): diagonal stick snaps to the nearest axis once WS is active. HYPOTHESIS: the WallRun
 # heading turn rate (vanilla TurnSpeedFast/Slow 100/75) limits turning toward a diagonal stick. None = vanilla.
-TURN_SPEEDS: tuple[int, int] | None = (255, 255)
+TURN_SPEEDS: tuple[int, int] | None = None  # M3a result: only slight diagonal, reversal pulled strongly down -> reverted
 MOD_NAME = (f"WallSprint - WallRun TurnMaxDown {TURN_MAX_DOWN}"
             + ("" if TURN_GAINS is None else f" Gain {TURN_GAINS[0]:g}/{TURN_GAINS[1]:g}")
             + ("" if TURN_SPEEDS is None else f" TurnSpeed {TURN_SPEEDS[0]}/{TURN_SPEEDS[1]}"))

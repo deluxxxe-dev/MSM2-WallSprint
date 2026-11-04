@@ -196,3 +196,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-04: M2a accepted (sprint clip plays, body upright). M2b: default INI re-enables native source override. Tests PASS. Version label unchanged (v0.1c48/0.1.73) to avoid touching version contracts.
 - 2026-11-04: package.py policy/manifest aligned with M2b (ENABLE=1/OVERRIDE=1, native_source write true). package.py + release.py run in cloud on full Windows build: PASS.
 - 2026-11-05: M3 data analysed; M3a TurnSpeedFast/Slow 255 added to ws_assets (TURN_SPEEDS). Tests PASS. Not game-tested.
+- 2026-11-05: M3a rejected/reverted; M3b read-only WallRun.this direction-field scanner added (unit test + full cloud Windows build/hooks/package PASS). Version label unchanged.
