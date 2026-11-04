@@ -173,3 +173,14 @@ Acceptance requires:
 - inspect both threshold counters.
 
 If both counters are zero with complete coverage, the c47 correlated negative pulses did not activate either authenticated threshold consumer during this sequence. If either is nonzero, analyze that bounded crossing evidence next. Neither result authorizes a write by itself.
+
+## 2026-11-04 — M1 experiment tooling prepared (no runtime change)
+
+- Added `source/tools/dat1_config_fields.py` (read-only DAT1 field-struct walker) and `source/tools/build_wallrun_m1_experiment.py` with
+  `source/tools/test_build_wallrun_m1_experiment.py` (synthetic tests, wired into `source/tools/test.sh`).
+- Layout of owner speed config decoded: 10 field structs, packed data in entry order, u8 or float per flag; SettleSpeedMax/Min identified by
+  alphabetical position (HYPOTHESIS). Verified against real owner file: 20 edits, Max>=Min in every pair.
+- Steering builder self-checks against known offsets 0x218/0x219 and values; the owner steering file was not available in cloud, so the real
+  steering package is not built yet.
+- Docs: `DISTRIBUTION_RISKS.md` (new), `DEV_RULES.md`, `AGENTS.md` owner decisions, `CODEX_NEXT.md` rewritten (old copy archived), `PROJECT_STATE.md` current-position header.
+- Not game-tested. Runtime v0.1c48/0.1.73 unchanged.

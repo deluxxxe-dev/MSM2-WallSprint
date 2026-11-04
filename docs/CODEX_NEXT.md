@@ -1,82 +1,42 @@
-# Next task — build and run c48 exact Update-entry `WallRun.this+0x250` threshold discriminator
+# Next task — M1: lift the WallRun downward limit (asset-only), c48 observed in the same run
 
-Branch `codex/v01c20-edi-value-provenance`; no main merge.
+Branch `codex/v01c20-edi-value-provenance`; no main merge. Previous c48 task text: `analysis/C48_CODEX_NEXT_ARCHIVE_20261104.md`.
 
-Read AGENTS required docs, `analysis/C47_WALLRUN250_RUNTIME_RESULT_20261101.md`, `analysis/WALLRUN250_V7_HANDOFF_RESULT_20261101.md`, `analysis/WALLRUN250_V8_CONSUMER_RESULT_20261101.md`, and current `docs/CODEX_RESULT.md`.
+## Direction (owner-approved 2026-11-04)
 
-## Accepted evidence
+Extend vanilla WallRun instead of replacing it. Current blocker: pressing down yields ~-12° and left/right oscillation, also with WS OFF
+(`TurnMaxDown=12` correlation only). Stop adding diagnostics that do not change which route is chosen. One hypothesis, one change, one game run.
 
-Do not repeat RequestSimpleMotion, GravityOrientationOwner, V1/V2 global scans, V3-V7 producer-path traversal, or V8 offline consumer acquisition.
+Owner decisions: reversible/bounded gameplay writes are permitted; modified vanilla configs may be distributed
+(record concerns in `docs/DISTRIBUTION_RISKS.md`); logs are returned in the Claude Code session, not via ChatGPT.
+Frozen: RequestSimpleMotion/GravityOrientationOwner, ground-Sprint name route, c36-c43 CFG/slot/DR6 ownership proofs.
 
-Accepted V8 static consumer facts:
+## Experiment
 
-- authenticated read `0x1424585` compares `this+0x250` against a file-backed initial `0.5f` and stores the comparison result with `SETB`;
-- authenticated read `0x142460E` compares the same field against a file-backed initial approximately `0.71f` and `JAE` skips the following block when the finite field is <= that threshold;
-- both are threshold/control consumers: VERIFIED-STATIC;
-- field meaning, producer and writability remain UNKNOWN;
-- dot-product/alignment interpretation remains HYPOTHESIS only.
+Package `MSM2-WS-M1-DownLimit` built by `source/tools/build_wallrun_m1_experiment.py` from owner-extracted vanilla files:
 
-Accepted c47 runtime:
+- steering Standard: `TurnMaxDown` 12 -> 60 (the only steering change);
+- speed Standard (positive control): `SettleSpeedMax/Min` x2 in all 10 field structs. Field names are inferred (HYPOTHESIS).
 
-- negative/near-zero `+0x250` pulses correlated with reversals/down oscillation;
-- every retained 100 ms sample was below both V8 thresholds;
-- short between-sample positive crossings remain unexcluded.
+Pins: steering SHA256 `32418c21...b7b`, speed SHA256 `cc07f41b...90c`. The builder fails closed on layout/value self-checks.
+c48 (read-only) runs unchanged in the same session. Package stays out of Git.
 
-## Current c48 implementation
+## Owner run (one session, WS ON)
 
-Runtime `v0.1c48`, package `0.1.73`.
+Install package + WS via Overstrike, WallRun: right -> reverse left -> reverse right -> hold down -> end. Return the newest
+`MSM2-WS-v0.1c48-*.log` and say (a) did WallRun speed visibly change, (b) could Spider-Man move downward / what angle.
 
-No new native hook is added. c48 adds only a dedicated read-only gate/callback inside the existing authenticated WallRun Update thunk.
+## Decision table (predeclared)
 
-Admission:
+| Observation | Meaning | Next |
+| --- | --- | --- |
+| speed changed AND down works | config loaded, TurnMaxDown is the limit | M1 done; tune value; then repo cleanup |
+| speed changed, down unchanged | config loaded, TurnMaxDown not the limit | route B: bounded write of the `+0x250` threshold inputs from the existing Update thunk (see c48 counters) |
+| speed unchanged | config not loaded/selected | fix install path or choose another field; no native work |
+| c48 counters both 0 | `+0x250` thresholds not active in reversal/down | close the +0x250 branch |
 
-- complete verified WallRun observation plan required;
-- read live threshold globals at `0x5303DE8` and `0x5337098`;
-- log whether live bits equal the V8 on-disk bits `0x3F000000` and `0x3F35C28F`;
-- enable `ws_update_probe_enabled` only; keep `ws_write_dispatch_enabled=0`.
+Route B (if reached) needs: single field, WallRun session only, hard count cap, automatic restore, default OFF, F8 stop, one test.
 
-For each admitted Update thunk invocation before original Update:
+## Do not
 
-- native CPU state is already preserved by the existing thunk;
-- direct local `ws_update_probe_sample(owner)` callback performs one guarded 4-byte read of `owner+0x250`;
-- count read success/failure;
-- count field NaN vs non-NaN;
-- count consumer-A true condition (`field > live threshold0` or unordered);
-- count consumer-B fallthrough condition (`field > live threshold1` or unordered);
-- no logging is performed on the native callback.
-
-The dedicated probe callback occurs before the separate old write-dispatch check. Since c48 never enables `ws_write_dispatch_enabled`, the writer bridge / `ws_update_prepare`, caller unwind, argument clone, old write dispatch, and post callback are not entered by c48.
-
-Worker-side `drainLogs` emits bounded cumulative/final records and rechecks live threshold globals.
-
-All gameplay writes remain OFF. Direct Actor writer remains hard-disabled. No pointer dereference, game call, field write, gravity write or native-source write is authorized.
-
-## Owner action
-
-1. Close game and shared Overstrike.
-2. Run installed `MSM2-WS\Update-WS.cmd`.
-3. Require full updater PASS for `v0.1c48 / 0.1.73` including build/tests/smoke/hooks/package/deploy.
-4. In shared Overstrike: `Install mods` -> `Run modded game`.
-5. Perform one WallRun sequence: right -> reverse left -> reverse right -> hold down until the known short left/right oscillation -> end WallRun.
-6. Close game normally.
-7. Return only newest `MSM2-WS-v0.1c48-YYYYMMDD-HHMMSS.log`.
-
-No F11/F12, markers, post-test wait or video is required unless behavior differs materially from c47.
-
-## Runtime acceptance
-
-Require:
-
-- `wallrun_0x250_threshold_probe_admission complete_verified=1 admitted=1 update_probe_gate=1 write_dispatch_gate=0`;
-- `v8_expected_threshold_bits_match=1`;
-- cumulative/final `live_thresholds_unchanged_from_admission=1`;
-- `read_fail=0`;
-- no `hook_queue_dropped` increase during the selected session;
-- for a run containing only the requested WallRun, compare exact-entry sample count with verified `Update=` count; a mismatch makes result partial;
-- inspect `consumer_gt_threshold0_or_unordered` and `consumer_gt_threshold1_or_unordered`.
-
-If both counters are zero with complete coverage, classify that the c47 reversal/down sequence did not activate either authenticated threshold consumer. Then stop treating the negative pulse timing alone as evidence that these gates cause reversal/down behavior.
-
-If either counter is nonzero, preserve exact count/coverage and choose the next minimum discriminator; do not write the field yet.
-
-If threshold bits do not match or live values change, treat c48 as partial and resolve only that mismatch before semantic conclusions.
+Do not repeat TurnSpeed probes, c73, ON/OFF comparisons, or add observers beyond what the decision table needs.

@@ -1,3 +1,10 @@
+# CURRENT POSITION (read this first) — 2026-11-04
+
+Working: WS orientation substitution on WallRun (body Up = wall normal), r4 lifetime (no 5 s cap), heading follows travel (r5; ~0.3 s reversal lag).
+Not working: moving DOWN on a wall (limit ~-12deg, also WS OFF); animation stays WallRun; movement is vanilla WallRun.
+Runtime v0.1c48/0.1.73 builds and deploys (hooks link fix pushed). Owner decisions and plan: `docs/CODEX_NEXT.md` (M1 asset-only experiment) and `AGENTS.md` (2026-11-04 section).
+Everything below this line is history; older "Current ..." entries are superseded by this section and by `docs/CODEX_NEXT.md`.
+
 # Current valid caller CORRECTION — revision3 — 2026-10-31
 
 Supplied Windows v2 proves genuine CALL-return55/55 PASS; invalid entry sentinel
