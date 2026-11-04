@@ -186,3 +186,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - Not game-tested. Runtime v0.1c48/0.1.73 unchanged.
 - 2026-11-04: real steering file (SHA matches vanilla pin) parsed; layout self-check passed (TurnSpeedFast/Slow at 0x218/0x219, values 100/75, TurnMaxDown=12 at 0x213; signed bytes use flag 0x04000010). Package `MSM2-WS-M1-DownLimit.zip` built (steering SHA256 `e12f8153...2d04`), delivered to owner outside Git. Field-order hypothesis now VERIFIED-STATIC for steering; speed names still HYPOTHESIS.
 - 2026-11-04 runtime: M1 run accepted (see analysis/C48_M1_RUNTIME_RESULT_20261104.md); M1b package TurnMaxDown 90 only prepared (builder names stage by variant).
+- 2026-11-04: M1b accepted (TurnMaxDown 90 only -> straight down). Added ws_assets.py + Update-WS hook (tests: test_ws_assets.py, test-workspace.py PASS). Not Windows-tested.

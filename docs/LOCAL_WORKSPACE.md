@@ -329,3 +329,11 @@ TOKEN_ABSENTは配置完了ではなく、後のUpdate-WSは再ビルドしま�
 共通mod-tools README「現在のACTIVE停止」のschema2役割診断がONE next actionです。
 この新診断はsource/KITを更新せず、ビルドもせず、ACTIVEでもrootで関連PIDだけ観測します。
 旧mainの未記録終了コードは復元しません。元の実機中断原因/配置はまだ未確認です。
+
+## WallRun steering stage auto-deploy — 2026-11-04
+
+Owner-extracted vanilla `hero_WallRunSteeringSetup_Standard.config` (SHA256 pinned in `source/tools/build_wallrun_m1_experiment.py`) goes in
+`MSM2-WS\_inputs\` (`.config` is not an Overstrike-scanned type). `Update-WS` then writes one loose stage,
+`<game>\Mods Library\Mods-Developing\MSM2-WS-Assets\MSM2-WS-WallRunSteering.stage`, atomically; only a file that is already this stage is replaced;
+missing input skips; wrong hash/layout/reparse/foreign file aborts the update before any script deploy. The stage is OUTSIDE `MSM2-WS`, where stages stay refused.
+After the first deploy, enable it once in Overstrike (Install mods). Remove manually installed experiment stages (M1/M1b) to avoid double edits.

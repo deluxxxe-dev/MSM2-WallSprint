@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+"""Fail-closed tests for ws_assets (synthetic steering file, temp dirs)."""
+import hashlib, struct, sys, tempfile, zipfile, io, os
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import build_wallrun_m1_experiment as b
+import dat1_config_fields as dat1
+import ws_assets as a
+
+F32, U8, I8 = dat1.FLAG_F32, dat1.FLAG_U8, dat1.FLAG_I8
+flags = [F32 if w == 4 else U8 for w in b.STEER_WIDTHS]; flags[3] = flags[4] = I8
+vals = [0.35, 0.15, 16, 0xD8, 0xEC, -3.5, -2.25, 12, 2.5, 100, 75, 0.72]
+data = b"".join(struct.pack("<f", v) if f == F32 else bytes([v & 255]) for v, f in zip(vals, flags))
+n = len(flags)
+blob = b"\0\0\0\0" + bytes.fromhex("44001503") + struct.pack("<II", n, 12 * n + len(data))
+blob += b"".join(struct.pack("<II", 0x1000 + k, f) for k, f in enumerate(flags)) + b"\0" * (4 * n) + data
+steer = bytearray(b.STEER_SIZE)
+start = 0x218 - 24 - (16 + 12 * n)
+steer[start:start + len(blob)] = blob
+steer = bytes(steer)
+b.STEER_SHA = hashlib.sha256(steer).hexdigest()
+
+def fails(fn):
+    try: fn()
+    except ValueError: return
+    raise AssertionError("expected ValueError")
+
+with tempfile.TemporaryDirectory() as t:
+    game = Path(t) / "game"; ws = game / "Mods Library" / "Mods-Developing" / "MSM2-WS"
+    ws.mkdir(parents=True)
+    assert a.deploy(ws, game) is None                         # no input -> skip, nothing created
+    assert not (ws.parent / a.ASSET_DIR).exists()
+    (ws / a.INPUT_DIR).mkdir(); (ws / a.INPUT_DIR / a.INPUT_NAME).write_bytes(steer)
+    out = a.deploy(ws, game)
+    assert out == ws.parent / a.ASSET_DIR / a.STAGE_NAME and out.is_file()
+    z = zipfile.ZipFile(io.BytesIO(out.read_bytes()))
+    assert sorted(z.namelist()) == ["0/" + b.STEER_PATH, "info.json"]
+    patched = z.read("0/" + b.STEER_PATH)
+    assert sum(x != y for x, y in zip(steer, patched)) == 1 and patched[0x213] == a.TURN_MAX_DOWN
+    first = out.read_bytes(); assert a.deploy(ws, game) == out and out.read_bytes() == first   # idempotent
+    assert not list(out.parent.glob("*.tmp")) and [p.name for p in out.parent.iterdir()] == [a.STAGE_NAME]
+    out.write_bytes(b"foreign")                                # foreign file never overwritten
+    fails(lambda: a.deploy(ws, game)); assert out.read_bytes() == b"foreign"
+    out.write_bytes(first); a.TURN_MAX_DOWN, saved = 80, a.TURN_MAX_DOWN   # our older stage -> replaced
+    a.MOD_NAME = "WallSprint - WallRun TurnMaxDown 80"; a.deploy(ws, game)
+    assert out.read_bytes() != first and zipfile.ZipFile(io.BytesIO(out.read_bytes())).read("0/" + b.STEER_PATH)[0x213] == 80
+    (ws / a.INPUT_DIR / a.INPUT_NAME).write_bytes(steer[:-1] + b"\1")   # wrong SHA -> refuse
+    fails(lambda: a.deploy(ws, game))
+print("test_ws_assets: PASS")

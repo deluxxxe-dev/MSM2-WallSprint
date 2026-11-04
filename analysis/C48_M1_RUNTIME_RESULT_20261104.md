@@ -20,3 +20,10 @@ Log `MSM2-WS-v0.1c48-20261104-214321.log` (not committed). Conditions: WS ON + p
 
 ## Next (one change): M1b = TurnMaxDown 90 only, speed vanilla
 Tests attribution (speed removed) and whether a larger limit gives straight-down travel. Animation/posture remain a separate milestone (M2).
+
+## M1b result (owner, 2026-11-04) — VERIFIED-RUNTIME (owner report)
+TurnMaxDown 90 only (speed vanilla): WallRun now moves straight down. Animation unchanged (sideways WallRun clip). So `TurnMaxDown` alone lifts the down limit; the speed change was not needed.
+Units: 12 -> ~-12deg observed earlier, 60 -> diagonal, 90 -> straight down: consistent with degrees (OBSERVED-CORRELATION). Remaining gap: animation/posture (M2).
+
+## Deployment
+`Update-WS.cmd` now deploys the steering stage automatically (`source/tools/ws_assets.py`): put the vanilla `hero_WallRunSteeringSetup_Standard.config` in `MSM2-WS\_inputs\`; stage is written to `Mods Library\Mods-Developing\MSM2-WS-Assets\MSM2-WS-WallRunSteering.stage` (TurnMaxDown 90). Engine runs pre-pull code, so the first Update-WS after this commit only pulls; run it twice.

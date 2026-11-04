@@ -109,6 +109,16 @@ def _zi(name: str) -> zipfile.ZipInfo:
     return z
 
 
+def make_stage(members: dict[str, bytes], mod_name: str) -> bytes:
+    info = {"game": "MSM2", "name": mod_name, "author": AUTHOR, "format_version": 2}
+    stage = io.BytesIO()
+    with zipfile.ZipFile(stage, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+        for n, b in members.items():
+            z.writestr(_zi(n), b)
+        z.writestr(_zi("info.json"), (json.dumps(info, indent=2) + "\n").encode())
+    return stage.getvalue()
+
+
 def build(steering: bytes, speed: bytes | None, turn_max_down: int) -> tuple[bytes, dict]:
     st, st_edit = patch_steering(steering, turn_max_down)
     members = {f"0/{STEER_PATH}": st}
@@ -123,15 +133,10 @@ def build(steering: bytes, speed: bytes | None, turn_max_down: int) -> tuple[byt
         stage_name = f"MSM2-WS-M1b-TurnMaxDown{turn_max_down}.stage"
     else:
         mod_name, stage_name = MOD_NAME, "MSM2-WS-M1-DownLimit.stage"
-    info = {"game": "MSM2", "name": mod_name, "author": AUTHOR, "format_version": 2}
-    stage = io.BytesIO()
-    with zipfile.ZipFile(stage, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
-        for n, b in members.items():
-            z.writestr(_zi(n), b)
-        z.writestr(_zi("info.json"), (json.dumps(info, indent=2) + "\n").encode())
+    stage_bytes = make_stage(members, mod_name)
     outer = io.BytesIO()
     with zipfile.ZipFile(outer, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
-        z.writestr(_zi(stage_name), stage.getvalue())
+        z.writestr(_zi(stage_name), stage_bytes)
     report["package_sha256"] = sha(outer.getvalue())
     return outer.getvalue(), report
 

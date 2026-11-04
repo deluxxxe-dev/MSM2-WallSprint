@@ -393,6 +393,7 @@ for folder in [out/'tools/shared',source/'tools/shared']:
  for name in KIT:shutil.copy2(kit_source/name,folder/name)
 shutil.copy2(kit_source/'operation_lock.py',source/'tools/operation_lock.py')
 shutil.copy2(root/'tools/retired_probes.py',out/'tools/retired_probes.py')
+for name in ['ws_assets.py','build_wallrun_m1_experiment.py','dat1_config_fields.py']:shutil.copy2(root/'tools'/name,out/'tools'/name)
 shutil.copy2(root/'tools/windows/stop-processes.ps1',out/'tools/windows/stop-processes.ps1')
 for name in ['Migrate-WS.cmd','Update-WS.cmd']:
  shutil.copy2(root/'tools/windows'/name,source/name)

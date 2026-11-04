@@ -1,6 +1,7 @@
 """Fail-closed WS-only Windows migration/update; platform-neutral core is fixture-tested."""
 from pathlib import Path
 import retired_probes
+import ws_assets
 try:import operation_lock
 except ModuleNotFoundError:
  import sys
@@ -349,6 +350,8 @@ class Manager:
    require(git(source,'rev-parse','HEAD')==head,'Source changed during validation')
    operation_lock.phase('validated')
    game_preflight(game);previous=assert_layout(workspace)
+   try:ws_assets.deploy(workspace,game)
+   except (ValueError,OSError) as ex:raise WorkspaceError('WallRun steering asset refused (nothing deployed): '+str(ex)) from ex
    if hasattr(self.system,'refresh'):self.system.refresh(source,game)
    helper=source/'source/tools/windows/Update-WS.cmd'
    require(helper.is_file(),'Validated checkout lacks Update-WS.cmd')
