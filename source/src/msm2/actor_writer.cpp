@@ -23,6 +23,16 @@ constexpr std::uint32_t kV8Threshold0Bits=0x3F000000u; // 0.5f
 constexpr std::uint32_t kV8Threshold1Bits=0x3F35C28Fu; // 0.7099999785f
 
 std::atomic<unsigned> thresholdProbeEnabled{0},finalSnapshotPending{0};
+// M3c (2026-11-05, owner-authorized bounded write experiment): WallRun.this+0x240 and +0x24C hold the same unit
+// travel-direction vector (M3b scan, OBSERVED-CORRELATION). When it is horizontal, tilt it 20deg toward world up in
+// the existing pre-original Update callback to test whether WallRun travel follows a non-axis direction.
+// Bounds: verified WallRun Update only, same gate as the c48 probe (F8/script disable stop it), per-process write cap,
+// only an exact matching unit horizontal pair is ever replaced; the game recomputes its own value once writes stop.
+constexpr bool kM3cHeadingTilt=true;
+constexpr std::uintptr_t kHeadingOffsetA=0x240,kHeadingOffsetB=0x24c;
+constexpr float kTiltSin=0.342020143f,kTiltCos=0.939692621f; // 20deg
+constexpr std::uint64_t kTiltWriteCap=200000;
+std::atomic<std::uint64_t> tiltWrites{0},tiltSkippedShape{0},tiltSkippedVertical{0},tiltRefusedWritable{0};
 std::atomic<std::uint32_t> threshold0Bits{kV8Threshold0Bits},threshold1Bits{kV8Threshold1Bits};
 std::atomic<std::uint64_t> samples{0},readOk{0},readFail{0},fieldNonNanSamples{0},fieldNanSamples{0};
 std::atomic<std::uint64_t> consumer0True{0},consumer1Fallthrough{0};
@@ -97,9 +107,33 @@ void drainLogs(){
  if(!final&&n==lastLoggedSamples)return;
  auto now=GetTickCount64();if(!final&&lastLoggedSamples&&now-lastThresholdCheck<500)return;
  lastThresholdCheck=now;lastLoggedSamples=n;logProbeSnapshot(final?"final":"cumulative");
+ writeLog("wallrun_m3c_heading_tilt phase=%s enabled=%u offsets=0x240,0x24c tilt_deg=20 writes=%llu cap=%llu skipped_shape=%llu skipped_not_horizontal=%llu refused_not_writable=%llu game_write=1 restore=game_recomputes_after_stop",final?"final":"cumulative",unsigned(kM3cHeadingTilt),static_cast<unsigned long long>(tiltWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(tiltSkippedShape.load()),static_cast<unsigned long long>(tiltSkippedVertical.load()),static_cast<unsigned long long>(tiltRefusedWritable.load()));
 }
 
 bool active(){return false;}
+}
+
+namespace {
+bool writableRange(std::uintptr_t p,std::size_t n){
+ MEMORY_BASIC_INFORMATION m{};if(!VirtualQuery(reinterpret_cast<void*>(p),&m,sizeof(m)))return false;
+ auto base=reinterpret_cast<std::uintptr_t>(m.BaseAddress);
+ return m.State==MEM_COMMIT&&!(m.Protect&(PAGE_GUARD|PAGE_NOACCESS))&&((m.Protect&0xff)==PAGE_READWRITE)&&p>=base&&p-base+n<=m.RegionSize;
+}
+void tiltHeading(std::uintptr_t owner){
+ if(!kM3cHeadingTilt||tiltWrites.load(std::memory_order_relaxed)>=kTiltWriteCap||owner>UINTPTR_MAX-0x258)return;
+ float h[6]{};if(!msm2::readMemory(owner+kHeadingOffsetA,h,sizeof(h))){tiltSkippedShape.fetch_add(1,std::memory_order_relaxed);return;}
+ for(float v:h)if(!std::isfinite(v)){tiltSkippedShape.fetch_add(1,std::memory_order_relaxed);return;}
+ float n=std::sqrt(h[0]*h[0]+h[1]*h[1]+h[2]*h[2]);
+ float same=h[0]*h[3]+h[1]*h[4]+h[2]*h[5];
+ if(n<0.98f||n>1.02f||same<0.999f){tiltSkippedShape.fetch_add(1,std::memory_order_relaxed);return;}
+ if(std::fabs(h[1])>0.1f){tiltSkippedVertical.fetch_add(1,std::memory_order_relaxed);return;}
+ float hx=h[0],hz=h[2],hn=std::sqrt(hx*hx+hz*hz);if(hn<0.9f){tiltSkippedShape.fetch_add(1,std::memory_order_relaxed);return;}
+ float v[3]{hx/hn*kTiltCos,kTiltSin,hz/hn*kTiltCos};
+ if(!writableRange(owner+kHeadingOffsetA,24)){tiltRefusedWritable.fetch_add(1,std::memory_order_relaxed);return;}
+ std::memcpy(reinterpret_cast<void*>(owner+kHeadingOffsetA),v,sizeof(v));
+ std::memcpy(reinterpret_cast<void*>(owner+kHeadingOffsetB),v,sizeof(v));
+ tiltWrites.fetch_add(1,std::memory_order_relaxed);
+}
 }
 
 extern "C" void ws_update_probe_sample(std::uintptr_t owner) noexcept{
@@ -115,6 +149,7 @@ extern "C" void ws_update_probe_sample(std::uintptr_t owner) noexcept{
  bool unordered0=fieldNan||std::isnan(t0),unordered1=fieldNan||std::isnan(t1);
  if(unordered0||value>t0)consumer0True.fetch_add(1,std::memory_order_relaxed);
  if(unordered1||value>t1)consumer1Fallthrough.fetch_add(1,std::memory_order_relaxed);
+ tiltHeading(owner);
 }
 
 extern "C" void ws_write_dispatch(unsigned,std::uintptr_t) noexcept{}

@@ -33,3 +33,24 @@ direction (speed > 3). At WallRun end it logs the top aligned/opposite offsets (
 | --- | --- |
 | an offset with mean_dot >= 0.95 over varied directions | M3c: bounded write of that field toward a wall-relative stick direction |
 | none | widen to the WallRun child objects already sampled (+0x128 child) or the Update locals |
+
+## M3b result (log `MSM2-WS-v0.1c48-20261105-011724.log`, not committed) — VERIFIED-RUNTIME scan output
+In 5 of 7 sessions the top aligned candidate is WallRun.this+0x240 (identical copy at +0x24C): unit vector, mean dot with observed
+travel 0.72-0.84, values are axis-aligned world vectors ((0,0,-1),(0,1,0),(1,0,0),(0,0,1)), only 2-11 value changes per session.
+min_dot -1 at reversals = lag between the stored direction and finite-difference travel.
+Consequences (OBSERVED-CORRELATION / static consistency):
+- +0x250 (c47/c48 scalar) is the Y component of the +0x24C vector; V8 consumers `y > 0.5` / `y > 0.71` therefore read as
+  "direction mostly upward" thresholds, consistent with separate up vs sideways WallRun behaviour (HYPOTHESIS).
+- the vanilla direction is quantized to axes, matching the owner's "only 4 directions" report.
+A second pair at +0x274/+0x280 behaves similarly with fewer unit samples (not used).
+
+## M3c (bounded write, one change): tilt a horizontal +0x240/+0x24C direction 20deg toward world up
+In the existing pre-original Update callback (same gate as c48: verified WallRun only, F8/script-disable stop it). Writes only when
+both copies are the same unit horizontal vector; cap 200000 writes per process; the game's own value resumes after writes stop.
+Log key: `wallrun_m3c_heading_tilt`.
+| Observation | Next |
+| --- | --- |
+| sideways WS travels ~20deg upward | direction field controls travel: next drive it from the stick (wall-relative) |
+| travel unchanged, counter > 0 | field is a mode/label, not the travel vector; look at +0x274/+0x280 or the Update locals |
+| counter 0 | shape gate never met; read skip counters |
+| unstable / crash | F8, revert |
