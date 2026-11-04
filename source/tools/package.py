@@ -15,7 +15,7 @@ base = wrapper.with_name("package_base.py")
 source = base.read_text(encoding="utf-8")
 
 old = "assert ini.getint('WallSprint','WALLSPRINT_ENABLE')==1 and ini.getint('WallSprint','WALLSPRINT_NATIVE_SOURCE_OVERRIDE')==1"
-new = "assert ini.getint('WallSprint','WALLSPRINT_ENABLE')==0 and ini.getint('WallSprint','WALLSPRINT_NATIVE_SOURCE_OVERRIDE')==0 and ini.getint('Diagnostics','REQUEST_PRESENCE_DIAGNOSTIC')==0 and ini.getint('Diagnostics','WALLRUN_HOOK_DIAGNOSTIC')==1 and ini.getint('Diagnostics','WALLRUN_OBJECT_DIAGNOSTIC')==1"
+new = "assert ini.getint('WallSprint','WALLSPRINT_ENABLE')==1 and ini.getint('WallSprint','WALLSPRINT_NATIVE_SOURCE_OVERRIDE')==1 and ini.getint('Diagnostics','REQUEST_PRESENCE_DIAGNOSTIC')==0 and ini.getint('Diagnostics','WALLRUN_HOOK_DIAGNOSTIC')==1 and ini.getint('Diagnostics','WALLRUN_OBJECT_DIAGNOSTIC')==1"
 
 if source.count(old) != 1:
     raise RuntimeError("package_base.py policy shape changed; refuse implicit package-policy rewrite")
@@ -34,9 +34,10 @@ manifest.update({
     "version": label,
     "package_version": version,
     "package_mode": "wallrun_0x250_threshold_probe_read_only",
-    "wall_sprint_enabled": False,
-    "native_source_override_active": False,
-    "native_stack_source_write_enabled": False,
+    # M2b (2026-11-04): accepted r4/r5 caller-local orientation source substitution re-enabled by default INI.
+    "wall_sprint_enabled": True,
+    "native_source_override_active": True,
+    "native_stack_source_write_enabled": True,
     "path_b_override": False,
     "path_b_characterization_active": False,
     "request_presence_diagnostic": False,
@@ -50,7 +51,7 @@ manifest.update({
         "animation": False,
         "physics": False,
         "gravity": False,
-        "native_source": False,
+        "native_source": True,
     },
     "current_gravity_owner_presence": {
         "enabled": False,

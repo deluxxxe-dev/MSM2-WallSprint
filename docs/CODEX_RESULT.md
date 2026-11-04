@@ -194,3 +194,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-04: M1c accepted by owner; M1 done. Next M2 (animation) step 1 = owner asset listing.
 - 2026-11-04: M2a clip swap (sprint -> WallRun loop clip, Peter+Miles) added to ws_assets as optional inputs. Tests PASS. Not game-tested.
 - 2026-11-04: M2a accepted (sprint clip plays, body upright). M2b: default INI re-enables native source override. Tests PASS. Version label unchanged (v0.1c48/0.1.73) to avoid touching version contracts.
+- 2026-11-04: package.py policy/manifest aligned with M2b (ENABLE=1/OVERRIDE=1, native_source write true). package.py + release.py run in cloud on full Windows build: PASS.
