@@ -50,11 +50,12 @@ std::atomic<std::uint64_t> tiltWrites{0},tiltSkippedShape{0},tiltSkippedVertical
 constexpr bool kM3dStickDrive=true;
 constexpr std::uintptr_t kWallNormalOffset=0x398;
 constexpr float kStickDeadzone=0.35f;
-std::atomic<std::uint64_t> driveWrites{0},driveNoInput{0},driveUncalibrated{0},driveBadNormal{0},driveCalibrations{0},driveCameraMapped{0};
+std::atomic<std::uint64_t> driveWrites{0},driveNoInput{0},driveUncalibrated{0},driveBadNormal{0},driveCalibrations{0},driveCameraMapped{0},driveHeldForward{0},driveSnapSeq{0};
+std::atomic<float> driveSnap[16]{};std::uint64_t driveSnapLogged{};
 using XInputGetStateFn=DWORD (WINAPI*)(DWORD,XINPUT_STATE*);
 std::atomic<XInputGetStateFn> xinputGetState{nullptr};
 std::uintptr_t driveOwner{};int driveLateralSign{};
-bool driveLatched{};float driveLatchP[3]{},driveLatchSx{},driveLatchSy{}; // camera forward latched at stick press (avoids camera<->heading feedback)
+bool driveLatched{};float driveLatchP[3]{}; // last valid wall-plane screen-forward (used only when the camera looks straight at the wall)
 std::uint64_t driveOwnerWrites{},driveLastCallMs{}; // cap is per WallRun session (gap >500 ms), not per process
 std::atomic<std::uint32_t> threshold0Bits{kV8Threshold0Bits},threshold1Bits{kV8Threshold1Bits};
 std::atomic<std::uint64_t> samples{0},readOk{0},readFail{0},fieldNonNanSamples{0},fieldNanSamples{0};
@@ -137,6 +138,8 @@ void drainLogs(){
  auto now=GetTickCount64();if(!final&&lastLoggedSamples&&now-lastThresholdCheck<500)return;
  lastThresholdCheck=now;lastLoggedSamples=n;logProbeSnapshot(final?"final":"cumulative");
  writeLog("wallrun_m3d_stick_drive phase=%s enabled=%u writes=%llu cap=%llu no_input=%llu uncalibrated=%llu calibrations=%llu bad_normal=%llu lateral_sign=%d camera_mapped=%llu handedness=%d game_write=1",final?"final":"cumulative",unsigned(kM3dStickDrive),static_cast<unsigned long long>(driveWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(driveNoInput.load()),static_cast<unsigned long long>(driveUncalibrated.load()),static_cast<unsigned long long>(driveCalibrations.load()),static_cast<unsigned long long>(driveBadNormal.load()),driveLateralSign,static_cast<unsigned long long>(driveCameraMapped.load()),ws_camera_handedness.load());
+ if(auto q=driveSnapSeq.load(std::memory_order_acquire);q!=driveSnapLogged){driveSnapLogged=q;float v[16];for(int i=0;i<16;++i){v[i]=driveSnap[i].load(std::memory_order_relaxed);}
+  writeLog("wallrun_m5c_map cam=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f stick=%.2f,%.2f out=%.3f,%.3f,%.3f heading=%.3f,%.3f,%.3f proj=%.3f mode=%d held=%llu",v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],int(v[15]),static_cast<unsigned long long>(driveHeldForward.load()));}
  writeLog("wallrun_m3c_heading_tilt phase=%s enabled=%u offsets=0x240,0x24c tilt_deg=20 writes=%llu cap=%llu skipped_shape=%llu skipped_not_horizontal=%llu refused_not_writable=%llu game_write=1 restore=game_recomputes_after_stop",final?"final":"cumulative",unsigned(kM3cHeadingTilt),static_cast<unsigned long long>(tiltWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(tiltSkippedShape.load()),static_cast<unsigned long long>(tiltSkippedVertical.load()),static_cast<unsigned long long>(tiltRefusedWritable.load()));
 }
 
@@ -191,25 +194,27 @@ void driveHeading(std::uintptr_t owner){
  bool cameraMapped=false;float d[3]{};
  unsigned camOff=ws_camera_forward_offset.load(std::memory_order_relaxed);
  if(int hand=ws_camera_handedness.load(std::memory_order_relaxed);hand&&camOff&&ws_camref_this&&ws_camref_this<=UINTPTR_MAX-0x1010){
+  // M5c-r5: live camera forward every frame (no latch). Near-singular view (camera looking straight at the wall)
+  // keeps the last valid screen-forward instead of falling back to the world-up mapping.
   float f[3]{};
-  bool haveF=false;
-  // Re-latch when: camera roll transition still running (first 1 s after engage), or the stick direction changed >45 deg.
-  {float sl=std::sqrt(sx*sx+sy*sy),ll=std::sqrt(driveLatchSx*driveLatchSx+driveLatchSy*driveLatchSy);
-   bool turned=sl>0&&ll>0&&(sx*driveLatchSx+sy*driveLatchSy)/(sl*ll)<0.7071f;
-   auto eng=ws_camera_engage_ms.load(std::memory_order_relaxed);bool rolling=eng&&GetTickCount64()-eng<1000;
-   if(turned||rolling)driveLatched=false;}
-  if(driveLatched){std::memcpy(f,driveLatchP,sizeof(f));haveF=true;}
-  else if(msm2::readMemory(ws_camref_this+camOff,f,sizeof(f))&&std::isfinite(f[0])&&std::isfinite(f[1])&&std::isfinite(f[2])){
+  if(msm2::readMemory(ws_camref_this+camOff,f,sizeof(f))&&std::isfinite(f[0])&&std::isfinite(f[1])&&std::isfinite(f[2])){
    float fl=std::sqrt(f[0]*f[0]+f[1]*f[1]+f[2]*f[2]);
-   if(fl>0.95f&&fl<1.05f){float fs=float(ws_camera_forward_sign.load(std::memory_order_relaxed));for(float& c:f)c*=fs/fl;std::memcpy(driveLatchP,f,sizeof(f));driveLatchSx=sx;driveLatchSy=sy;driveLatched=true;haveF=true;}
-  }
-  if(haveF){
-   float fn=f[0]*n[0]+f[1]*n[1]+f[2]*n[2];float p[3]{f[0]-fn*n[0],f[1]-fn*n[1],f[2]-fn*n[2]};
-   float pn=std::sqrt(p[0]*p[0]+p[1]*p[1]+p[2]*p[2]);
-   if(pn>0.2f){for(float& c:p)c/=pn;
-    float r[3]{p[1]*n[2]-p[2]*n[1],p[2]*n[0]-p[0]*n[2],p[0]*n[1]-p[1]*n[0]};for(float& c:r)c*=float(hand);
-    for(int i=0;i<3;++i){d[i]=sx*r[i]+sy*p[i];}
-    cameraMapped=true;}
+   if(fl>0.95f&&fl<1.05f){
+    float fs=float(ws_camera_forward_sign.load(std::memory_order_relaxed));for(float& c:f)c*=fs/fl;
+    float fn=f[0]*n[0]+f[1]*n[1]+f[2]*n[2];float p[3]{f[0]-fn*n[0],f[1]-fn*n[1],f[2]-fn*n[2]};
+    float pn=std::sqrt(p[0]*p[0]+p[1]*p[1]+p[2]*p[2]);
+    int mode=0;
+    if(pn>0.2f){for(float& c:p)c/=pn;std::memcpy(driveLatchP,p,sizeof(p));driveLatched=true;mode=1;}
+    else if(driveLatched){float q=driveLatchP[0]*n[0]+driveLatchP[1]*n[1]+driveLatchP[2]*n[2];
+     for(int i=0;i<3;++i){p[i]=driveLatchP[i]-q*n[i];}float qn=std::sqrt(p[0]*p[0]+p[1]*p[1]+p[2]*p[2]);
+     if(qn>0.5f){for(float& c:p)c/=qn;mode=2;}}
+    if(mode){
+     float r[3]{p[1]*n[2]-p[2]*n[1],p[2]*n[0]-p[0]*n[2],p[0]*n[1]-p[1]*n[0]};for(float& c:r)c*=float(hand);
+     for(int i=0;i<3;++i){d[i]=sx*r[i]+sy*p[i];}
+     cameraMapped=true;if(mode==2)driveHeldForward.fetch_add(1,std::memory_order_relaxed);}
+    float snap[16]{f[0],f[1],f[2],n[0],n[1],n[2],sx,sy,d[0],d[1],d[2],h[0],h[1],h[2],pn,float(mode)};
+    for(int i=0;i<16;++i){driveSnap[i].store(snap[i],std::memory_order_relaxed);}driveSnapSeq.fetch_add(1,std::memory_order_release);
+   }
   }
  }
  if(!cameraMapped){

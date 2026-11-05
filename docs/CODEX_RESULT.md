@@ -213,3 +213,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-05: camera forward +0xD34 accepted and hardcoded; camera forward latched per stick press. Build PASS; hooks run in progress at commit.
 - 2026-11-05: M5c-r4: camera-forward latch dropped for 1 s after WS camera engage and re-taken on >45 deg stick change. Build PASS; hooks run in progress at commit.
 - 2026-11-05: M5c-r4 cloud hooks run PASS (exit 0) and package PASS.
+- 2026-11-05: M5c-r5: camera-forward latch removed (live +0xD34), singular-view hold, wallrun_m5c_map 2 Hz diagnostic. Build PASS; hooks run in progress at commit.
