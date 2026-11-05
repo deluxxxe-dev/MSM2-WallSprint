@@ -51,11 +51,14 @@ std::atomic<std::uint64_t> tiltWrites{0},tiltSkippedShape{0},tiltSkippedVertical
 constexpr bool kM3dStickDrive=true;
 constexpr std::uintptr_t kWallNormalOffset=0x398;
 constexpr float kStickDeadzone=0.35f;
-std::atomic<std::uint64_t> driveWrites{0},driveNoInput{0},driveUncalibrated{0},driveBadNormal{0},driveCalibrations{0},driveCameraMapped{0},driveHeldForward{0},driveSnapSeq{0};
+std::atomic<std::uint64_t> driveWrites{0},driveNoInput{0},driveUncalibrated{0},driveBadNormal{0},driveCalibrations{0},driveCameraMapped{0},driveHeldForward{0},driveSnapSeq{0},driveUpAssist{0};
+constexpr bool kCameraUpAssist=true;
 std::atomic<float> driveSnap[16]{};std::uint64_t driveSnapLogged{};
 // M5c-r6 diagnostics: vanilla reversal events (heading read back opposite to our previous write) and camera axis scan.
 std::atomic<std::uint64_t> driveFlips{0};std::atomic<float> driveFlipSnap[11]{};std::uint64_t driveFlipsLogged{};
 float driveLastOut[3]{};bool driveLastOutValid{};
+constexpr unsigned kStateSpan=0x600;float statePrev[kStateSpan/4]{},stateCur[kStateSpan/4]{};bool statePrevValid{};std::uintptr_t stateOwner{};
+std::atomic<unsigned> flipDiffPending{0};unsigned flipDiffsLogged{};char flipDiffText[1400]{};
 unsigned camAxisScans{};std::uint64_t camAxisLastMs{};
 using XInputGetStateFn=DWORD (WINAPI*)(DWORD,XINPUT_STATE*);
 std::atomic<XInputGetStateFn> xinputGetState{nullptr};
@@ -144,7 +147,7 @@ void drainLogs(){
  lastThresholdCheck=now;lastLoggedSamples=n;logProbeSnapshot(final?"final":"cumulative");
  writeLog("wallrun_m3d_stick_drive phase=%s enabled=%u writes=%llu cap=%llu no_input=%llu uncalibrated=%llu calibrations=%llu bad_normal=%llu lateral_sign=%d camera_mapped=%llu handedness=%d game_write=1",final?"final":"cumulative",unsigned(kM3dStickDrive),static_cast<unsigned long long>(driveWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(driveNoInput.load()),static_cast<unsigned long long>(driveUncalibrated.load()),static_cast<unsigned long long>(driveCalibrations.load()),static_cast<unsigned long long>(driveBadNormal.load()),driveLateralSign,static_cast<unsigned long long>(driveCameraMapped.load()),ws_camera_handedness.load());
  if(auto q=driveSnapSeq.load(std::memory_order_acquire);q!=driveSnapLogged){driveSnapLogged=q;float v[16];for(int i=0;i<16;++i){v[i]=driveSnap[i].load(std::memory_order_relaxed);}
-  writeLog("wallrun_m5c_map cam=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f stick=%.2f,%.2f out=%.3f,%.3f,%.3f heading=%.3f,%.3f,%.3f proj=%.3f mode=%d held=%llu",v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],int(v[15]),static_cast<unsigned long long>(driveHeldForward.load()));}
+  writeLog("wallrun_m5c_map cam=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f stick=%.2f,%.2f out=%.3f,%.3f,%.3f heading=%.3f,%.3f,%.3f proj=%.3f mode=%d held=%llu up_assist=%llu",v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],int(v[15]),static_cast<unsigned long long>(driveHeldForward.load()),static_cast<unsigned long long>(driveUpAssist.load()));}
  if(auto q=driveFlips.load(std::memory_order_acquire);q!=driveFlipsLogged){driveFlipsLogged=q;float v[11];for(int i=0;i<11;++i){v[i]=driveFlipSnap[i].load(std::memory_order_relaxed);}
   writeLog("wallrun_m5c_vanilla_reversal count=%llu stick=%.2f,%.2f our_last=%.3f,%.3f,%.3f vanilla=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f",static_cast<unsigned long long>(q),v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10]);}
  // Camera axis scan (read-only): unit vectors orthogonal to the camera forward near +0xD34, at most 6 scans, >=3 s apart, only while mapping is live.
@@ -164,6 +167,7 @@ void drainLogs(){
      if(len>0&&len<int(sizeof(line))-80)len+=std::snprintf(line+len,sizeof(line)-len,"%s0x%x:%.3f,%.3f,%.3f/n%.2f",found?";":"",0xC00+o,v[0],v[1],v[2],dn);
      ++found;}
     writeLog("%s count=%d",line,found);}}}
+ if(flipDiffPending.load(std::memory_order_acquire)){writeLog("wallrun_m5c_reversal_state %s",flipDiffText);flipDiffPending.store(0,std::memory_order_release);}
  writeLog("wallrun_m3c_heading_tilt phase=%s enabled=%u offsets=0x240,0x24c tilt_deg=20 writes=%llu cap=%llu skipped_shape=%llu skipped_not_horizontal=%llu refused_not_writable=%llu game_write=1 restore=game_recomputes_after_stop",final?"final":"cumulative",unsigned(kM3cHeadingTilt),static_cast<unsigned long long>(tiltWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(tiltSkippedShape.load()),static_cast<unsigned long long>(tiltSkippedVertical.load()),static_cast<unsigned long long>(tiltRefusedWritable.load()));
 }
 
@@ -205,10 +209,22 @@ void driveHeading(std::uintptr_t owner){
  if(owner!=driveOwner){driveOwner=owner;driveLateralSign=0;driveOwnerWrites=0;driveLatched=false;}
  {auto now=GetTickCount64();if(now-driveLastCallMs>500)driveOwnerWrites=0;driveLastCallMs=now;}
  if(driveOwnerWrites>=kTiltWriteCap)return;
- float sx,sy;if(!readStick(sx,sy)){driveLatched=false;driveLastOutValid=false;driveNoInput.fetch_add(1,std::memory_order_relaxed);return;}
+ float sx,sy;if(!readStick(sx,sy)){driveLatched=false;driveLastOutValid=false;statePrevValid=false;driveNoInput.fetch_add(1,std::memory_order_relaxed);return;}
  float h[6]{},n[3]{};
  if(!msm2::readMemory(owner+kHeadingOffsetA,h,sizeof(h))||!msm2::readMemory(owner+kWallNormalOffset,n,sizeof(n))){driveBadNormal.fetch_add(1,std::memory_order_relaxed);return;}
  for(float v:h)if(!std::isfinite(v))return;
+ // M5c-r7 diagnostic: keep the previous frame's WallRun state so a reversal frame can be compared with the frame before.
+ {bool okState=owner<=UINTPTR_MAX-kStateSpan&&msm2::readMemory(owner,stateCur,sizeof(stateCur));
+  if(okState&&statePrevValid&&stateOwner==owner&&driveLastOutValid&&flipDiffsLogged<8&&!flipDiffPending.load(std::memory_order_acquire)
+     &&h[0]*driveLastOut[0]+h[1]*driveLastOut[1]+h[2]*driveLastOut[2]<-0.5f){
+   // list unit vec3 slots aligned with the vanilla reversal target now (cur) and one frame earlier (prev)
+   int len=std::snprintf(flipDiffText,sizeof(flipDiffText),"target=%.3f,%.3f,%.3f",h[0],h[1],h[2]);
+   for(int pass=0;pass<2;++pass){const float* b=pass?statePrev:stateCur;len+=std::snprintf(flipDiffText+len,sizeof(flipDiffText)-len,pass?" prev_frame=":" this_frame=");int k=0;
+    for(unsigned o=0;o+12<=kStateSpan&&k<20;o+=4){const float* v=&b[o/4];if(!std::isfinite(v[0])||!std::isfinite(v[1])||!std::isfinite(v[2]))continue;
+     float l=v[0]*v[0]+v[1]*v[1]+v[2]*v[2];if(l<0.9f||l>1.1f)continue;float dt=(v[0]*h[0]+v[1]*h[1]+v[2]*h[2])/std::sqrt(l);if(std::fabs(dt)<0.97f)continue;
+     if(len<int(sizeof(flipDiffText))-40){len+=std::snprintf(flipDiffText+len,sizeof(flipDiffText)-len,"%s0x%x:%+.2f",k?";":"",o,dt);}++k;}}
+   ++flipDiffsLogged;flipDiffPending.store(1,std::memory_order_release);}
+  if(okState){std::memcpy(statePrev,stateCur,sizeof(statePrev));statePrevValid=true;stateOwner=owner;}else statePrevValid=false;}
  if(driveLastOutValid&&h[0]*driveLastOut[0]+h[1]*driveLastOut[1]+h[2]*driveLastOut[2]<-0.5f){
   float e[11]{sx,sy,driveLastOut[0],driveLastOut[1],driveLastOut[2],h[0],h[1],h[2],n[0],n[1],n[2]};
   for(int i=0;i<11;++i){driveFlipSnap[i].store(e[i],std::memory_order_relaxed);}driveFlips.fetch_add(1,std::memory_order_release);}
@@ -228,6 +244,12 @@ void driveHeading(std::uintptr_t owner){
    float fl=std::sqrt(f[0]*f[0]+f[1]*f[1]+f[2]*f[2]);
    if(fl>0.95f&&fl<1.05f){
     float fs=float(ws_camera_forward_sign.load(std::memory_order_relaxed));for(float& c:f)c*=fs/fl;
+    // M5c-r7: camera up is the next matrix row (+0x10 after forward; runtime scan, orthonormal in 5/5 scans).
+    // Projections of forward and up onto the wall point the same screen-forward way, so their sum stays large
+    // when the camera looks straight at the wall.
+    {float u[3]{};if(kCameraUpAssist&&msm2::readMemory(ws_camref_this+camOff+0x10,u,sizeof(u))&&std::isfinite(u[0])&&std::isfinite(u[1])&&std::isfinite(u[2])){
+      float ul=u[0]*u[0]+u[1]*u[1]+u[2]*u[2],fu=f[0]*u[0]+f[1]*u[1]+f[2]*u[2];
+      if(ul>0.9f&&ul<1.1f&&std::fabs(fu)<0.08f){for(int i=0;i<3;++i){f[i]+=fs*u[i];}driveUpAssist.fetch_add(1,std::memory_order_relaxed);}}}
     float fn=f[0]*n[0]+f[1]*n[1]+f[2]*n[2];float p[3]{f[0]-fn*n[0],f[1]-fn*n[1],f[2]-fn*n[2]};
     float pn=std::sqrt(p[0]*p[0]+p[1]*p[1]+p[2]*p[2]);
     int mode=0;
