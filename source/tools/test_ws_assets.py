@@ -20,7 +20,7 @@ steer[start:start + len(blob)] = blob
 steer = bytes(steer)
 b.STEER_SHA = hashlib.sha256(steer).hexdigest()
 
-a.TURN_GAINS = None; a.TURN_SPEEDS = None; a.MOD_NAME = f"WallSprint - WallRun TurnMaxDown {a.TURN_MAX_DOWN}"
+a.TURN_GAINS = None; a.TURN_SPEEDS = None; a.MOVE_SPEED_FAST = None; a.MOD_NAME = f"WallSprint - WallRun TurnMaxDown {a.TURN_MAX_DOWN}"
 
 def fails(fn):
     try: fn()
@@ -66,6 +66,9 @@ with tempfile.TemporaryDirectory() as t:                       # M2a clip swaps
 sp, rep = b.patch_steering(steer, 90, (0.0, 0.0), (255, 255))
 assert sp[0x218] == 255 and sp[0x219] == 255 and rep["turn_speeds"] == {"TurnSpeedFast": 255, "TurnSpeedSlow": 255}
 fails(lambda: b.patch_steering(steer, 90, None, (0, 255)))
+ms, rep = b.patch_steering(steer, 90, None, None, 9)              # M6h MoveSpeedFast
+assert rep["move_speed_fast"] == 9 and sum(x != y for x, y in zip(steer, ms)) == 2 and 9 in ms[0x200:0x213]
+fails(lambda: b.patch_steering(steer, 90, None, None, 0))
 # M6d camera framing patch (synthetic file with the vanilla values at the pinned offsets)
 cam = bytearray(532)
 for off, kind, old, new in a.CAMERA_PATCH: struct.pack_into("<" + kind, cam, off, old)

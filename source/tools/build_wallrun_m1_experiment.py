@@ -54,7 +54,7 @@ def _need(data: bytes, size: int, digest: str, label: str) -> None:
 
 
 def patch_steering(data: bytes, turn_max_down: int, gains: tuple[float, float] | None = None,
-                   turn_speeds: tuple[int, int] | None = None) -> tuple[bytes, dict]:
+                   turn_speeds: tuple[int, int] | None = None, move_speed_fast: int | None = None) -> tuple[bytes, dict]:
     _need(data, STEER_SIZE, STEER_SHA, "steering")
     if not 13 <= turn_max_down <= 255:
         raise ValueError("turn_max_down must be 13..255")
@@ -89,6 +89,12 @@ def patch_steering(data: bytes, turn_max_down: int, gains: tuple[float, float] |
             out[off[name]] = new
             allowed.add(off[name])
         report["turn_speeds"] = {"TurnSpeedFast": turn_speeds[0], "TurnSpeedSlow": turn_speeds[1]}
+    if move_speed_fast is not None:
+        if not 1 <= move_speed_fast <= 255:
+            raise ValueError("MoveSpeedFast must be 1..255")
+        out[off["MoveSpeedFast"]] = move_speed_fast
+        allowed.add(off["MoveSpeedFast"])
+        report["move_speed_fast"] = move_speed_fast
     changed = [i for i, (a, b) in enumerate(zip(data, out)) if a != b]
     if not changed or not set(changed) <= allowed:
         raise ValueError(f"steering unexpected delta {changed}")

@@ -20,10 +20,14 @@ STAGE_NAME = "MSM2-WS-WallRunSteering.stage"
 TURN_GAINS: tuple[float, float] | None = (0.0, 0.0)
 # Experiment M3a (2026-11-05): diagonal stick snaps to the nearest axis once WS is active. HYPOTHESIS: the WallRun
 # heading turn rate (vanilla TurnSpeedFast/Slow 100/75) limits turning toward a diagonal stick. None = vanilla.
+# M6h (2026-11-06): WS speed parity. Measured WS travel ~16 m/s mean (vanilla MoveSpeedFast 16) vs ground sprint
+# ~9-10 m/s; the camera lags at the higher speed (uneven distance). HYPOTHESIS: MoveSpeedFast is the WR speed.
+MOVE_SPEED_FAST: int | None = 9
 TURN_SPEEDS: tuple[int, int] | None = None  # M3a result: only slight diagonal, reversal pulled strongly down -> reverted
 MOD_NAME = (f"WallSprint - WallRun TurnMaxDown {TURN_MAX_DOWN}"
             + ("" if TURN_GAINS is None else f" Gain {TURN_GAINS[0]:g}/{TURN_GAINS[1]:g}")
-            + ("" if TURN_SPEEDS is None else f" TurnSpeed {TURN_SPEEDS[0]}/{TURN_SPEEDS[1]}"))
+            + ("" if TURN_SPEEDS is None else f" TurnSpeed {TURN_SPEEDS[0]}/{TURN_SPEEDS[1]}")
+            + ("" if MOVE_SPEED_FAST is None else f" Speed {MOVE_SPEED_FAST}"))
 # Experiment M2a (2026-11-04): play the ground sprint loop during WallRun by placing the owner-extracted vanilla
 # sprint clip at the WallRun loop clip path. Each pair is optional (input file absent -> skipped). HYPOTHESIS: these
 # are the sideways WallRun loop clips. See analysis/M2_ANIMATION_PLAN_20261104.md.
@@ -44,10 +48,12 @@ CAMERA_PATCH = (  # (offset, kind, vanilla, new)  kind B=u8 f=float32
     # WS camera (with Traversal* 2-2.5 m) 2.9-3.8 m and ~1 m. OffsetUp Y is a u8 slot: 0.5 cannot be stored, kept 0.
     # M6g: the Down/Level/Up offsets are chosen by camera pitch. On a wall, running up makes the camera "look up"
     # (2 m), sideways is "level" (4.5 m), so the distance changed with travel direction. All three = Level.
-    (388, "B", 1, 0), (389, "f", -0.3, 0.0), (393, "f", -2.75, -4.5),     # OffsetDown  (0,0,-4.5)
-    (452, "f", 1.25, 0.0), (456, "B", 0, 0), (457, "f", -2.25, -4.5),     # OffsetLevel (0,0,-4.5)
-    (516, "f", 0.5, 0.0), (520, "B", 0, 0), (521, "f", -3.25, -4.5),      # OffsetUp    (0,0,-4.5)
-    (528, "f", 1.35, 1.35),                                               # PivotHeight 1.35
+    # M6h: camera height. Ground camera measured ~2.3 m above the ground, WS ~0.9-1.6 m above the wall. Y is
+    # a u8 slot for Level/Up (integers only): Y = 1 m on all three, pivot 1.55 (standard Traversal pivot).
+    (388, "B", 1, 0), (389, "f", -0.3, 1.0), (393, "f", -2.75, -4.5),     # OffsetDown  (0,1,-4.5)
+    (452, "f", 1.25, 0.0), (456, "B", 0, 1), (457, "f", -2.25, -4.5),     # OffsetLevel (0,1,-4.5)
+    (516, "f", 0.5, 0.0), (520, "B", 0, 1), (521, "f", -3.25, -4.5),      # OffsetUp    (0,1,-4.5)
+    (528, "f", 1.35, 1.55),                                               # PivotHeight 1.55
 )
 
 
@@ -102,12 +108,12 @@ def camera_members(inputs: Path) -> dict[str, bytes]:
     if _linked(src):
         raise ValueError("reparse/symlink camera input refused")
     data = patch_camera(src.read_bytes())
-    print(f"WS camera framing: {CAMERA_INPUT} -> uniform ground standard level offset (4.5 m behind for every pitch, pivot 1.35)")
+    print(f"WS camera framing: {CAMERA_INPUT} -> uniform 4.5 m behind, 1 m up for every pitch, pivot 1.55")
     return {f"0/{CAMERA_PATH}": data}
 
 
 def stage_bytes(steering: bytes, clips: dict[str, bytes] | None = None, camera: dict[str, bytes] | None = None) -> bytes:
-    patched, _ = b.patch_steering(steering, TURN_MAX_DOWN, TURN_GAINS, TURN_SPEEDS)
+    patched, _ = b.patch_steering(steering, TURN_MAX_DOWN, TURN_GAINS, TURN_SPEEDS, MOVE_SPEED_FAST)
     members = {f"0/{b.STEER_PATH}": patched, **(clips or {}), **(camera or {})}
     return b.make_stage(members, MOD_NAME + (" + SprintClip" if clips else "") + (" + GroundCam" if camera else ""))
 
