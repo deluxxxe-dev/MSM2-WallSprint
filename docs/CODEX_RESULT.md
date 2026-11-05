@@ -204,3 +204,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-05: cloud hooks run after the cap change failed once in native_source_override_smoke.cpp:238 (c10 real-thread diagonal race timing; smoke does not link actor_writer). Reran test_native_source.sh 3x: PASS 3/3. Known intermittent timing test; if the owner updater hits it, rerun Update-WS.
 - 2026-11-05: M4 acceptance sweep all pass; stage 1 accepted. Next M5 camera (config decode first).
 - 2026-11-05: M5 step 1 camera config decode: no roll field; next reference/scan.
+- 2026-11-05: ActorRelativeCamera strings reviewed (research only); M5a combined owner test defined.
