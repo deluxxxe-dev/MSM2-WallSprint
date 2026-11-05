@@ -6,6 +6,7 @@
 #include <atomic>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include "msm2/actor_writer.hpp"
 #include "msm2/update_bridge.hpp"
@@ -52,6 +53,10 @@ constexpr std::uintptr_t kWallNormalOffset=0x398;
 constexpr float kStickDeadzone=0.35f;
 std::atomic<std::uint64_t> driveWrites{0},driveNoInput{0},driveUncalibrated{0},driveBadNormal{0},driveCalibrations{0},driveCameraMapped{0},driveHeldForward{0},driveSnapSeq{0};
 std::atomic<float> driveSnap[16]{};std::uint64_t driveSnapLogged{};
+// M5c-r6 diagnostics: vanilla reversal events (heading read back opposite to our previous write) and camera axis scan.
+std::atomic<std::uint64_t> driveFlips{0};std::atomic<float> driveFlipSnap[11]{};std::uint64_t driveFlipsLogged{};
+float driveLastOut[3]{};bool driveLastOutValid{};
+unsigned camAxisScans{};std::uint64_t camAxisLastMs{};
 using XInputGetStateFn=DWORD (WINAPI*)(DWORD,XINPUT_STATE*);
 std::atomic<XInputGetStateFn> xinputGetState{nullptr};
 std::uintptr_t driveOwner{};int driveLateralSign{};
@@ -140,6 +145,25 @@ void drainLogs(){
  writeLog("wallrun_m3d_stick_drive phase=%s enabled=%u writes=%llu cap=%llu no_input=%llu uncalibrated=%llu calibrations=%llu bad_normal=%llu lateral_sign=%d camera_mapped=%llu handedness=%d game_write=1",final?"final":"cumulative",unsigned(kM3dStickDrive),static_cast<unsigned long long>(driveWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(driveNoInput.load()),static_cast<unsigned long long>(driveUncalibrated.load()),static_cast<unsigned long long>(driveCalibrations.load()),static_cast<unsigned long long>(driveBadNormal.load()),driveLateralSign,static_cast<unsigned long long>(driveCameraMapped.load()),ws_camera_handedness.load());
  if(auto q=driveSnapSeq.load(std::memory_order_acquire);q!=driveSnapLogged){driveSnapLogged=q;float v[16];for(int i=0;i<16;++i){v[i]=driveSnap[i].load(std::memory_order_relaxed);}
   writeLog("wallrun_m5c_map cam=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f stick=%.2f,%.2f out=%.3f,%.3f,%.3f heading=%.3f,%.3f,%.3f proj=%.3f mode=%d held=%llu",v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],int(v[15]),static_cast<unsigned long long>(driveHeldForward.load()));}
+ if(auto q=driveFlips.load(std::memory_order_acquire);q!=driveFlipsLogged){driveFlipsLogged=q;float v[11];for(int i=0;i<11;++i){v[i]=driveFlipSnap[i].load(std::memory_order_relaxed);}
+  writeLog("wallrun_m5c_vanilla_reversal count=%llu stick=%.2f,%.2f our_last=%.3f,%.3f,%.3f vanilla=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f",static_cast<unsigned long long>(q),v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10]);}
+ // Camera axis scan (read-only): unit vectors orthogonal to the camera forward near +0xD34, at most 6 scans, >=3 s apart, only while mapping is live.
+ if(auto cam=ws_camref_this;cam&&cam<=UINTPTR_MAX-0x1000&&driveSnap[15].load(std::memory_order_relaxed)>0.5f&&camAxisScans<6&&GetTickCount64()-camAxisLastMs>3000){
+  float blk[0x400/4];float f[3];
+  if(msm2::readMemory(cam+0xC00,blk,sizeof(blk))){std::memcpy(f,&blk[(0xD34-0xC00)/4],sizeof(f));
+   float fl=std::sqrt(f[0]*f[0]+f[1]*f[1]+f[2]*f[2]);
+   if(std::isfinite(fl)&&fl>0.95f&&fl<1.05f){camAxisLastMs=GetTickCount64();++camAxisScans;
+    float nx=driveSnap[3].load(),ny=driveSnap[4].load(),nz=driveSnap[5].load();
+    char line[1600];int len=std::snprintf(line,sizeof(line),"wallrun_m5c_camera_axes scan=%u cam=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f ortho_units=",camAxisScans,f[0],f[1],f[2],nx,ny,nz);
+    int found=0;
+    for(unsigned o=0;o+12<=sizeof(blk)&&found<16;o+=4){float* v=&blk[o/4];
+     if(!std::isfinite(v[0])||!std::isfinite(v[1])||!std::isfinite(v[2]))continue;
+     float l=v[0]*v[0]+v[1]*v[1]+v[2]*v[2];if(l<0.96f||l>1.04f)continue;
+     float df=(v[0]*f[0]+v[1]*f[1]+v[2]*f[2])/fl;if(std::fabs(df)>0.05f)continue;
+     float dn=v[0]*nx+v[1]*ny+v[2]*nz;
+     if(len>0&&len<int(sizeof(line))-80)len+=std::snprintf(line+len,sizeof(line)-len,"%s0x%x:%.3f,%.3f,%.3f/n%.2f",found?";":"",0xC00+o,v[0],v[1],v[2],dn);
+     ++found;}
+    writeLog("%s count=%d",line,found);}}}
  writeLog("wallrun_m3c_heading_tilt phase=%s enabled=%u offsets=0x240,0x24c tilt_deg=20 writes=%llu cap=%llu skipped_shape=%llu skipped_not_horizontal=%llu refused_not_writable=%llu game_write=1 restore=game_recomputes_after_stop",final?"final":"cumulative",unsigned(kM3cHeadingTilt),static_cast<unsigned long long>(tiltWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(tiltSkippedShape.load()),static_cast<unsigned long long>(tiltSkippedVertical.load()),static_cast<unsigned long long>(tiltRefusedWritable.load()));
 }
 
@@ -181,10 +205,13 @@ void driveHeading(std::uintptr_t owner){
  if(owner!=driveOwner){driveOwner=owner;driveLateralSign=0;driveOwnerWrites=0;driveLatched=false;}
  {auto now=GetTickCount64();if(now-driveLastCallMs>500)driveOwnerWrites=0;driveLastCallMs=now;}
  if(driveOwnerWrites>=kTiltWriteCap)return;
- float sx,sy;if(!readStick(sx,sy)){driveLatched=false;driveNoInput.fetch_add(1,std::memory_order_relaxed);return;}
+ float sx,sy;if(!readStick(sx,sy)){driveLatched=false;driveLastOutValid=false;driveNoInput.fetch_add(1,std::memory_order_relaxed);return;}
  float h[6]{},n[3]{};
  if(!msm2::readMemory(owner+kHeadingOffsetA,h,sizeof(h))||!msm2::readMemory(owner+kWallNormalOffset,n,sizeof(n))){driveBadNormal.fetch_add(1,std::memory_order_relaxed);return;}
  for(float v:h)if(!std::isfinite(v))return;
+ if(driveLastOutValid&&h[0]*driveLastOut[0]+h[1]*driveLastOut[1]+h[2]*driveLastOut[2]<-0.5f){
+  float e[11]{sx,sy,driveLastOut[0],driveLastOut[1],driveLastOut[2],h[0],h[1],h[2],n[0],n[1],n[2]};
+  for(int i=0;i<11;++i){driveFlipSnap[i].store(e[i],std::memory_order_relaxed);}driveFlips.fetch_add(1,std::memory_order_release);}
  float nn=n[0]*n[0]+n[1]*n[1]+n[2]*n[2];
  if(!std::isfinite(nn)||nn<0.9f||nn>1.1f||std::fabs(n[1])>0.2f){driveBadNormal.fetch_add(1,std::memory_order_relaxed);return;}
  float u[3]{-n[0]*n[1],1.f-n[1]*n[1],-n[2]*n[1]};float un=std::sqrt(u[0]*u[0]+u[1]*u[1]+u[2]*u[2]);for(float& c:u)c/=un;
@@ -231,6 +258,7 @@ void driveHeading(std::uintptr_t owner){
  if(!writableRange(owner+kHeadingOffsetA,24)){tiltRefusedWritable.fetch_add(1,std::memory_order_relaxed);return;}
  std::memcpy(reinterpret_cast<void*>(owner+kHeadingOffsetA),d,sizeof(d));
  std::memcpy(reinterpret_cast<void*>(owner+kHeadingOffsetB),d,sizeof(d));
+ std::memcpy(driveLastOut,d,sizeof(d));driveLastOutValid=true;
  driveWrites.fetch_add(1,std::memory_order_relaxed);++driveOwnerWrites;
 }
 }
