@@ -205,3 +205,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-05: M4 acceptance sweep all pass; stage 1 accepted. Next M5 camera (config decode first).
 - 2026-11-05: M5 step 1 camera config decode: no roll field; next reference/scan.
 - 2026-11-05: ActorRelativeCamera strings reviewed (research only); M5a combined owner test defined.
+- 2026-11-05: M5a result recorded; offline find_camera_refs.py locator added (self-tested on synthetic PE).
