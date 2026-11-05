@@ -28,6 +28,7 @@ std::atomic<unsigned> ws_update_probe_enabled{0};
 }
 
 namespace {
+void logInputStack();
 constexpr std::uintptr_t kWallRun250Offset=0x250;
 constexpr std::uintptr_t kConsumerThreshold0Rva=0x5303DE8;
 constexpr std::uintptr_t kConsumerThreshold1Rva=0x5337098;
@@ -56,7 +57,8 @@ constexpr bool kCameraUpAssist=true,kCameraSideAxis=true;
 std::atomic<std::uint64_t> driveSideAxis{0};
 std::atomic<float> driveSnap[16]{};std::uint64_t driveSnapLogged{};
 // M5c-r6 diagnostics: vanilla reversal events (heading read back opposite to our previous write) and camera axis scan.
-std::atomic<std::uint64_t> driveFlips{0};std::atomic<float> driveFlipSnap[11]{};std::uint64_t driveFlipsLogged{};
+std::atomic<std::uint64_t> driveFlips{0};std::atomic<float> driveFlipSnap[17]{};std::uint64_t driveFlipsLogged{};
+std::atomic<std::uint64_t> driveOverrides{0};std::atomic<float> driveOverrideSnap[17]{};std::uint64_t driveOverridesLogged{};
 float driveLastOut[3]{};bool driveLastOutValid{};
 constexpr unsigned kStateSpan=0x600;float statePrev[kStateSpan/4]{},stateCur[kStateSpan/4]{};bool statePrevValid{};std::uintptr_t stateOwner{};
 std::atomic<unsigned> flipDiffPending{0};unsigned flipDiffsLogged{};char flipDiffText[1400]{};
@@ -120,6 +122,7 @@ void admit(bool completeVerified,const std::array<Patch,4>&){
  std::uint32_t a=0,b=0;bool thresholdsReadable=completeVerified&&readLiveThresholds(a,b);
  // Load XInput only inside the real game process; test hosts (Wine smokes in Update-WS) must not load input stacks.
  if(kM3dStickDrive&&!xinputGetState.load()&&GetModuleHandleW(L"Spider-Man2.exe")){
+  logInputStack();
   HMODULE x=LoadLibraryW(L"xinput1_4.dll");if(!x)x=LoadLibraryW(L"xinput9_1_0.dll");
   if(x)xinputGetState.store(reinterpret_cast<XInputGetStateFn>(reinterpret_cast<void*>(GetProcAddress(x,"XInputGetState"))));
   writeLog("wallrun_m3d_stick_drive_admission xinput=%u keyboard=WASD offsets=0x240,0x24c normal=0x398 deadzone=%.2f",unsigned(xinputGetState.load()!=nullptr),kStickDeadzone);
@@ -149,8 +152,10 @@ void drainLogs(){
  writeLog("wallrun_m3d_stick_drive phase=%s enabled=%u writes=%llu cap=%llu no_input=%llu uncalibrated=%llu calibrations=%llu bad_normal=%llu lateral_sign=%d camera_mapped=%llu handedness=%d game_write=1",final?"final":"cumulative",unsigned(kM3dStickDrive),static_cast<unsigned long long>(driveWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(driveNoInput.load()),static_cast<unsigned long long>(driveUncalibrated.load()),static_cast<unsigned long long>(driveCalibrations.load()),static_cast<unsigned long long>(driveBadNormal.load()),driveLateralSign,static_cast<unsigned long long>(driveCameraMapped.load()),ws_camera_handedness.load());
  if(auto q=driveSnapSeq.load(std::memory_order_acquire);q!=driveSnapLogged){driveSnapLogged=q;float v[16];for(int i=0;i<16;++i){v[i]=driveSnap[i].load(std::memory_order_relaxed);}
   writeLog("wallrun_m5c_map cam=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f stick=%.2f,%.2f out=%.3f,%.3f,%.3f heading=%.3f,%.3f,%.3f proj=%.3f mode=%d held=%llu up_assist=%llu side_axis=%llu",v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],int(v[15]),static_cast<unsigned long long>(driveHeldForward.load()),static_cast<unsigned long long>(driveUpAssist.load()),static_cast<unsigned long long>(driveSideAxis.load()));}
- if(auto q=driveFlips.load(std::memory_order_acquire);q!=driveFlipsLogged){driveFlipsLogged=q;float v[11];for(int i=0;i<11;++i){v[i]=driveFlipSnap[i].load(std::memory_order_relaxed);}
-  writeLog("wallrun_m5c_vanilla_reversal count=%llu stick=%.2f,%.2f our_last=%.3f,%.3f,%.3f vanilla=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f",static_cast<unsigned long long>(q),v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10]);}
+ if(auto q=driveFlips.load(std::memory_order_acquire);q!=driveFlipsLogged){driveFlipsLogged=q;float v[17];for(int i=0;i<17;++i){v[i]=driveFlipSnap[i].load(std::memory_order_relaxed);}
+  writeLog("wallrun_m5c_vanilla_reversal count=%llu stick=%.2f,%.2f our_last=%.3f,%.3f,%.3f vanilla=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f cam_f=%.3f,%.3f,%.3f cam_u=%.3f,%.3f,%.3f",static_cast<unsigned long long>(q),v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],v[15],v[16]);}
+ if(auto q=driveOverrides.load(std::memory_order_acquire);q!=driveOverridesLogged){driveOverridesLogged=q;float v[17];for(int i=0;i<17;++i){v[i]=driveOverrideSnap[i].load(std::memory_order_relaxed);}
+  writeLog("wallrun_m5d_vanilla_override count=%llu stick=%.2f,%.2f our_last=%.3f,%.3f,%.3f vanilla=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f cam_f=%.3f,%.3f,%.3f cam_u=%.3f,%.3f,%.3f",static_cast<unsigned long long>(q),v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],v[15],v[16]);}
  // Camera axis scan (read-only): unit vectors orthogonal to the camera forward near +0xD34, at most 6 scans, >=3 s apart, only while mapping is live.
  if(auto cam=ws_camref_this;cam&&cam<=UINTPTR_MAX-0x1000&&driveSnap[15].load(std::memory_order_relaxed)>0.5f&&camAxisScans<6&&GetTickCount64()-camAxisLastMs>3000){
   float blk[0x400/4];float f[3];
@@ -196,6 +201,27 @@ void tiltHeading(std::uintptr_t owner){
  std::memcpy(reinterpret_cast<void*>(owner+kHeadingOffsetB),v,sizeof(v));
  tiltWrites.fetch_add(1,std::memory_order_relaxed);
 }
+
+// M5d read-only diagnostic: which input libraries the game itself uses (before WS loads XInput).
+void logInputStack(){
+ const wchar_t* mods[]={L"xinput1_4.dll",L"xinput1_3.dll",L"xinput9_1_0.dll",L"xinputuap.dll",L"GameInput.dll",L"dinput8.dll",L"hid.dll",L"SDL2.dll",L"SDL3.dll",L"libScePad.dll",L"Windows.Gaming.Input.dll",L"setupapi.dll"};
+ char loaded[512]{};int len=0;
+ for(auto m:mods){if(GetModuleHandleW(m)){len+=std::snprintf(loaded+len,sizeof(loaded)-len,"%s%ls",len?",":"",m);if(len>=int(sizeof(loaded))-40)break;}}
+ char imports[1400]{};int il=0;
+ auto base=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
+ auto addName=[&](std::uintptr_t rva,const char* tag){if(!rva)return;const char* name=reinterpret_cast<const char*>(base+rva);char low[64]{};
+  for(int i=0;i<63&&name[i];++i){char c=name[i];low[i]=char(c>='A'&&c<='Z'?c+32:c);}
+  if(std::strstr(low,"xinput")||std::strstr(low,"gameinput")||std::strstr(low,"dinput")||std::strstr(low,"hid")||std::strstr(low,"sdl")||std::strstr(low,"pad")||std::strstr(low,"gaming")||std::strstr(low,"input"))
+   if(il<int(sizeof(imports))-80)il+=std::snprintf(imports+il,sizeof(imports)-il,"%s%s:%s",il?",":"",tag,name);};
+ if(base){auto dos=reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
+  if(dos->e_magic==IMAGE_DOS_SIGNATURE){auto nt=reinterpret_cast<const IMAGE_NT_HEADERS64*>(base+dos->e_lfanew);
+   if(nt->Signature==IMAGE_NT_SIGNATURE){
+    auto& id=nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+    if(id.VirtualAddress&&id.Size){for(auto d=reinterpret_cast<const IMAGE_IMPORT_DESCRIPTOR*>(base+id.VirtualAddress);d->Name;++d)addName(d->Name,"import");}
+    auto& dd=nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT];
+    if(dd.VirtualAddress&&dd.Size){for(auto d=reinterpret_cast<const IMAGE_DELAYLOAD_DESCRIPTOR*>(base+dd.VirtualAddress);d->DllNameRVA;++d)addName(d->DllNameRVA,"delay");}}}}
+ msm2::writeLog("wallrun_m5d_input_stack loaded=%s exe_input_imports=%s read_only=1",len?loaded:"none",il?imports:"none");
+}
 bool readStick(float& sx,float& sy){
  sx=sy=0;
  if(auto get=xinputGetState.load()){XINPUT_STATE st{};if(get(0,&st)==ERROR_SUCCESS){
@@ -226,9 +252,13 @@ void driveHeading(std::uintptr_t owner){
      if(len<int(sizeof(flipDiffText))-40){len+=std::snprintf(flipDiffText+len,sizeof(flipDiffText)-len,"%s0x%x:%+.2f",k?";":"",o,dt);}++k;}}
    ++flipDiffsLogged;flipDiffPending.store(1,std::memory_order_release);}
   if(okState){std::memcpy(statePrev,stateCur,sizeof(statePrev));statePrevValid=true;stateOwner=owner;}else statePrevValid=false;}
- if(driveLastOutValid&&h[0]*driveLastOut[0]+h[1]*driveLastOut[1]+h[2]*driveLastOut[2]<-0.5f){
-  float e[11]{sx,sy,driveLastOut[0],driveLastOut[1],driveLastOut[2],h[0],h[1],h[2],n[0],n[1],n[2]};
-  for(int i=0;i<11;++i){driveFlipSnap[i].store(e[i],std::memory_order_relaxed);}driveFlips.fetch_add(1,std::memory_order_release);}
+ // M5d diagnostic: whenever the game's own update replaced our previous direction, record stick, camera
+ // forward/up, our value and the game's value, to fit the game's stick->direction mapping offline.
+ if(driveLastOutValid){float dl=h[0]*driveLastOut[0]+h[1]*driveLastOut[1]+h[2]*driveLastOut[2];
+  if(dl<0.98f){float cam[8]{};bool camOk=ws_camref_this&&ws_camref_this<=UINTPTR_MAX-0x1000&&msm2::readMemory(ws_camref_this+0xD34,cam,sizeof(cam));
+   float e[17]{sx,sy,driveLastOut[0],driveLastOut[1],driveLastOut[2],h[0],h[1],h[2],n[0],n[1],n[2],camOk?cam[0]:0.f,camOk?cam[1]:0.f,camOk?cam[2]:0.f,camOk?cam[4]:0.f,camOk?cam[5]:0.f,camOk?cam[6]:0.f};
+   auto& snap=dl<-0.5f?driveFlipSnap:driveOverrideSnap;for(int i=0;i<17;++i){snap[i].store(e[i],std::memory_order_relaxed);}
+   (dl<-0.5f?driveFlips:driveOverrides).fetch_add(1,std::memory_order_release);}}
  float nn=n[0]*n[0]+n[1]*n[1]+n[2]*n[2];
  if(!std::isfinite(nn)||nn<0.9f||nn>1.1f||std::fabs(n[1])>0.2f){driveBadNormal.fetch_add(1,std::memory_order_relaxed);return;}
  float u[3]{-n[0]*n[1],1.f-n[1]*n[1],-n[2]*n[1]};float un=std::sqrt(u[0]*u[0]+u[1]*u[1]+u[2]*u[2]);for(float& c:u)c/=un;
