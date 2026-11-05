@@ -32,7 +32,7 @@ CLIP_SWAPS = (
     ("stand_sprint_fwd_spiderman_miles.animclip", "characters/hero/hero_spiderman_milesmorales/animation/wall_run_spiderman_miles.animclip"),
 )
 CLIP_MIN, CLIP_MAX = 1024, 1024 * 1024
-# M6d (2026-11-05): frame the WS camera like the ground traversal camera. Vanilla camera_wallrun_aimcontext
+# M6d (2026-11-05): frame the WS camera like the ground camera (M6f: standard Offset* values, see CAMERA_PATCH). Vanilla camera_wallrun_aimcontext
 # (CameraAimContextConfig, owner-extracted, sha pinned) gets the TraversalOffset*/TraversalPivotHeight values of
 # vanilla cameraaimcontextstandard (Down (0,0,-2.5), Level (0,0,-2), Up (0,0,-2.5), pivot 1.55). FOV (72) unchanged.
 # Each slot keeps its stored width (u8 or float); every original value is checked before writing.
@@ -40,10 +40,12 @@ CAMERA_INPUT = "camera_wallrun_aimcontext.config"
 CAMERA_PATH = "configs/camera/camera_wallrun_aimcontext.config"
 CAMERA_SHA = "2c21f777386943996e6f1418ca46699fe355f1205c60fa772d66a989c8e6919c"
 CAMERA_PATCH = (  # (offset, kind, vanilla, new)  kind B=u8 f=float32
-    (388, "B", 1, 0), (389, "f", -0.3, 0.0), (393, "f", -2.75, -2.5),     # OffsetDown
-    (452, "f", 1.25, 0.0), (456, "B", 0, 0), (457, "f", -2.25, -2.0),     # OffsetLevel
-    (516, "f", 0.5, 0.0), (520, "B", 0, 0), (521, "f", -3.25, -2.5),      # OffsetUp
-    (528, "f", 1.35, 1.55),                                               # PivotHeight
+    # M6f: standard Offset* (ground) values. M6e measured the ground camera 4.4-7.8 m away and ~2.3 m high, the
+    # WS camera (with Traversal* 2-2.5 m) 2.9-3.8 m and ~1 m. OffsetUp Y is a u8 slot: 0.5 cannot be stored, kept 0.
+    (388, "B", 1, 0), (389, "f", -0.3, 0.75), (393, "f", -2.75, -3.75),   # OffsetDown  (0,0.75,-3.75)
+    (452, "f", 1.25, 0.0), (456, "B", 0, 0), (457, "f", -2.25, -4.5),     # OffsetLevel (0,0,-4.5)
+    (516, "f", 0.5, 0.0), (520, "B", 0, 0), (521, "f", -3.25, -2.0),      # OffsetUp    (0,0[0.5],-2)
+    (528, "f", 1.35, 1.35),                                               # PivotHeight 1.35
 )
 
 
@@ -98,7 +100,7 @@ def camera_members(inputs: Path) -> dict[str, bytes]:
     if _linked(src):
         raise ValueError("reparse/symlink camera input refused")
     data = patch_camera(src.read_bytes())
-    print(f"WS camera framing: {CAMERA_INPUT} -> ground traversal offsets (Down/Up 2.5 m, Level 2 m, pivot 1.55)")
+    print(f"WS camera framing: {CAMERA_INPUT} -> ground standard offsets (Level 4.5 m, Down 3.75 m +0.75 up, Up 2 m, pivot 1.35)")
     return {f"0/{CAMERA_PATH}": data}
 
 

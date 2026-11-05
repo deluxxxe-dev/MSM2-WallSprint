@@ -43,7 +43,7 @@ Do not automatically resume c56–c72/c73 low-level publisher scans. Return ther
 
 - Natural sprint turning on the wall: today direction and facing change instantly (sliding feel). Target: ground-sprint-like turns
   (smoothed heading toward the stick, turn/pivot animation, lean). Not blocking the current milestone.
-- Fine facing, standoff distance from the wall, WR->WS transition jitter (M2b notes).
+- Fine facing, standoff distance from the wall, WR->WS transition jitter (M2b notes). Owner 2026-11-06: feet float off the wall, body pitched slightly up (deferred).
 
 ## Deferred feature: manual surface-stance hold
 
