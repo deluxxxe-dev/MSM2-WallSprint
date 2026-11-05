@@ -30,3 +30,8 @@ Owner: turn-arounds now happen less often than before.
 - HYPOTHESIS: the game keeps its own left/right run direction for the WallRun and reasserts it. A turn-around plays when our direction opposes it. Not stick-driven, so the stick-rotation route is dropped for now.
 M5d-2 diagnostic (no behavior change): `wallrun_m5d_direction_slots`. On every frame where the game replaced our direction with a pure horizontal axis, each WallRun this+0..0x600 unit slot within 0.97 of that axis is counted as same sign / opposite sign, and as same sign one frame earlier.
 Decision: a slot with same=all and opposite=0 over both event signs (events_pos and events_neg > 0) -> the game's run-direction state. Next one change: keep that slot's sign equal to our lateral sign during WS. No such slot -> the state lies outside this+0x600 (widen the range or use a write watch).
+
+## M5d-2 result (log `MSM2-WS-v0.1c48-20261105-211927.log`, not committed) — M5d DEFERRED
+Owner: tried to provoke it, only ~2 occurrences. Owner allows deferring.
+- `wallrun_m5d_direction_slots events_pos=0 events_neg=100`: all 100 replacement frames had the same lateral sign. With one sign only, a run-direction slot cannot be told apart from a fixed wall-axis slot. 23 slots matched in every frame (s100/o0); 0x2c8 was always opposite.
+- Decision: M5d deferred (low frequency after r5-r11). Diagnostics stay in the build; resume with a run that has both lateral signs (events_pos>0 and events_neg>0).

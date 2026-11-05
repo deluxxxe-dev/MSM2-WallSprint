@@ -11,6 +11,7 @@
 #include <MinHook.h>
 #include <atomic>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 #include "NativeHooks/camera_ref.hpp"
 extern "C" { void ws_camref_thunk(); void* ws_camref_original{}; extern std::uintptr_t ws_camref_this; extern std::atomic<void(*)()> ws_wallsprint_update_listener;
@@ -29,6 +30,8 @@ std::atomic<std::uint64_t> lastWsMs{0}, engages{0}, restores{0}, refusedWritable
 struct Slot { unsigned fn{}, sn{}; double fsum{}, sdot{}, scross{}; };
 Slot slots[kScanSlots];
 unsigned scanSamples{}; std::uint64_t lastScanLog{};
+// M5e diagnostic (read-only): camera-to-hero distance during WS entry, to locate the "camera too close" cause.
+unsigned distOffsets[8]{}; unsigned distCount{}; std::uint64_t distLastMs{}, distEngageSeen{}; unsigned distBaselineLogs{}, distEntryLogs{};
 
 
 bool sha256(const unsigned char* data, unsigned count, char (&text)[65]) {
@@ -63,6 +66,38 @@ void restore(const char* reason) {
 }
 }
 
+namespace {
+void m5eDistance(const msm2::Snapshot& hero, std::uint64_t now) {
+  auto manager = ws_camref_this;
+  if (!manager || manager > UINTPTR_MAX - 0x1000 || !hero.hero || killed.load()) return;
+  float blk[0x400 / 4];
+  if (!msm2::readMemory(manager + 0xC00, blk, sizeof blk)) return;
+  const float* p = hero.position;
+  if (!std::isfinite(p[0]) || !std::isfinite(p[1]) || !std::isfinite(p[2]) || std::fabs(p[0]) + std::fabs(p[1]) + std::fabs(p[2]) < 1.f) return;
+  auto dist = [&](unsigned o) { const float* v = &blk[(o - 0xC00) / 4]; float dx = v[0] - p[0], dy = v[1] - p[1], dz = v[2] - p[2]; return std::sqrt(dx * dx + dy * dy + dz * dz); };
+  if (!distCount) { // pick position-like slots once: 0.5..20 m from the hero, not unit vectors
+    for (unsigned o = 0xC00; o + 12 <= 0x1000 && distCount < 8; o += 4) {
+      const float* v = &blk[(o - 0xC00) / 4];
+      if (!std::isfinite(v[0]) || !std::isfinite(v[1]) || !std::isfinite(v[2])) continue;
+      float l = std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]); if (l < 2.f) continue;
+      float d = dist(o); if (d < 0.5f || d > 20.f) continue;
+      if (distCount && o - distOffsets[distCount - 1] < 12) continue;
+      distOffsets[distCount++] = o;
+    }
+    if (!distCount) return;
+  }
+  auto eng = ws_camera_engage_ms.load();
+  bool entry = eng && now - eng < 3000;
+  if (entry && eng != distEngageSeen) { distEngageSeen = eng; distEntryLogs = 0; }
+  if (entry ? (now - distLastMs < 100 || distEntryLogs >= 30 || engages.load() > 12) : (now - distLastMs < 3000 || distBaselineLogs >= 20 || now - lastWsMs.load() < 1000)) return;
+  distLastMs = now; if (entry) ++distEntryLogs; else ++distBaselineLogs;
+  char t[700]; int len = 0;
+  for (unsigned i = 0; i < distCount && len < int(sizeof t) - 30; ++i) len += std::snprintf(t + len, sizeof t - len, "%s0x%x:%.2f", i ? ";" : "", distOffsets[i], dist(distOffsets[i]));
+  unsigned char st[4]{}; float bl[2]{}; msm2::readMemory(manager + 0x305, st, 4); msm2::readMemory(manager + 0x2fc, bl, 8);
+  msm2::writeLog("WS_CAMERA_DISTANCE phase=%s t_ms=%llu engage=%llu distances=%s f2fc=%.3f f300=%.3f b305=%u,%u,%u,%u read_only=1", entry ? "entry" : "baseline",
+    (unsigned long long)(entry ? now - eng : 0), (unsigned long long)engages.load(), t, bl[0], bl[1], st[0], st[1], st[2], st[3]);
+}
+}
 namespace msm2::camera_ref {
 void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
   if (!verified || !image || imageSize <= kEntryRva + 64) { writeLog("WS_CAMERA_REF admitted=0 reason=build_or_image_unverified"); return; }
@@ -96,13 +131,14 @@ void onWallSprintUpdate() noexcept {
   engagedManager.store(manager); engages.fetch_add(1); ws_camera_engage_ms.store(GetTickCount64());
 }
 
-void tick(const msm2::Snapshot&, const ws::diag::Motion& motion, bool available, float sx, float sy, bool stick) noexcept {
+void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool available, float sx, float sy, bool stick) noexcept {
   auto now = GetTickCount64();
   if (engagedManager.load() && now - lastWsMs.load() > 300) restore("wallsprint_ended");
   // (Disabled by default: actor_writer.cpp now starts with the accepted offset 0xD34, so the guard below returns at once.)
   // Read-only scan on the ground (no WS in the last second), moving: the camera forward is the unit vector whose
   // horizontal part is parallel to travel for a forward stick and perpendicular for a sideways stick
   // (travel = sign(sx) * h * cross(forward, up)). Accepted once per process; then used for camera-relative WS input.
+  m5eDistance(snapshot, now);
   auto manager = ws_camref_this;
   (void)available;
   if (ws_camera_forward_offset.load() || !manager || !motion.valid || now - lastWsMs.load() < 1000 || !stick) return;
