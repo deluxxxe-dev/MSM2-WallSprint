@@ -223,3 +223,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-05: M5c-r8 cloud hooks run PASS (exit 0) and package PASS.
 - 2026-11-05: M5c-r9: short ctx_wallrun_inactive gaps (<=3 s, identical native WallRun identity) hold instead of hard-closing orientation. Build PASS; hooks run in progress at commit.
 - 2026-11-05: M5c-r9 cloud hooks run PASS (exit 0) and package PASS.
+- 2026-11-05: M5c-r10: WallRun observer resumes a timeout-closed session on same-owner Update (game stall); ctx-gap hold 10 s. Build PASS; unit/hooks run in progress at commit.

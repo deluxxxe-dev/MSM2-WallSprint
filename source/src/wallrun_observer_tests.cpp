@@ -43,5 +43,12 @@ int main(int argc,char**){
   assert(ends==6&&updates>10);
   std::cout<<"PASS: real v0.1a4 thinned event replay: six Init/Entry/Update/Deinit sessions (not reconstructed frame counts)\n";
  }
+ { // stall longer than the timeout: same-owner Update resumes the same session; Init/Deinit/other owner do not
+  ws::observed::Observer r;r.configure(true);assert(r.event(0,300,1000));auto id=r.context(1000).wallRunSessionId;assert(r.event(2,300,1100));
+  r.expire(7000);assert(!r.context(7000).wallRunActive);assert(!r.event(2,301,7100));assert(!r.context(7100).wallRunActive);
+  assert(r.event(0,300,9000));assert(r.context(9000).wallRunSessionId!=id); // Init after timeout = new session
+  ws::observed::Observer q;q.configure(true);assert(q.event(0,400,1000));auto qid=q.context(1000).wallRunSessionId;q.expire(7000);
+  assert(q.event(2,400,7200));assert(q.takeResumed()&&q.context(7200).wallRunActive&&q.context(7200).wallRunSessionId==qid&&q.context(7200).wallRunOwner==400);
+  assert(!q.takeResumed());assert(q.event(3,400,7300));assert(!q.context(7300).wallRunActive);q.expire(20000);assert(!q.event(2,400,20100));}
  std::cout<<"PASS: build admission, owner/lifecycle/elapsed, short gap vs emergency timeout, reset, crawl isolation, bounded vector filters/sign correlation\n";
 }

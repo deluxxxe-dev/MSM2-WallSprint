@@ -50,7 +50,7 @@ enum class Ownership {Dormant,Active,StaleSuspended,HardClosed};
 struct NativeClose {Token token{};Published source{};bool wasOpen{},sourceRead{};};
 ws::interop::AtomicPublication<NativeClose> deinitPublication;
 constexpr unsigned kSessionWriteCap=262144;
-constexpr unsigned kCtxGapHoldMs=3000; bool ctxGapActive{}; std::uint64_t ctxGapStartMs{}; unsigned ctxGapEpisodes{}; // per WallRun session orientation write cap (~58 min at 75 Hz); was 4096 (~55 s)
+constexpr unsigned kCtxGapHoldMs=10000; bool ctxGapActive{}; std::uint64_t ctxGapStartMs{}; unsigned ctxGapEpisodes{}; // per WallRun session orientation write cap (~58 min at 75 Hz); was 4096 (~55 s)
 std::atomic<unsigned> pathAWrites{0},pathBWrites{0},pathARejects{0},pathBRejects{0},pathBReservations{0};
 std::atomic<bool> resetRequested{false},lifecycleOpen{false};std::atomic<std::uint64_t> lifecycleEpoch{0};
 ws::position_proof::Result positionProof;

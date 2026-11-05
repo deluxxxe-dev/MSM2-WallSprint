@@ -187,7 +187,9 @@ void drain(const Snapshot* snapshot,const ws::diag::Motion& motion,std::uint64_t
   if(!observer.event(e.kind,e.self,when))continue;
   if(e.thread&&e.kind==2)lastNativeThread=e.thread;
   auto ctx=observer.context(when);
-  if(e.kind==0){objectFields={};lastObjectSample=0;Session s{};s.id=ctx.wallRunSessionId;s.first=when;sessions[e.self]=s;surfaceTracker.begin(ctx.wallRunSessionId,snapshot->hero,snapshot->transform,motion.epoch,writeLog);msm2::source::begin(ctx.wallRunSessionId,snapshot->hero,snapshot->transform,motion.epoch);}
+  bool resumed=observer.takeResumed();
+  if(resumed)writeLog("WALLRUN_SESSION_RESUMED wallrun_session=%llu this=0x%llx reason=update_after_emergency_timeout_same_owner_no_deinit",static_cast<unsigned long long>(ctx.wallRunSessionId),static_cast<unsigned long long>(e.self));
+  if(e.kind==0||resumed){objectFields={};lastObjectSample=0;Session s{};s.id=ctx.wallRunSessionId;s.first=when;sessions[e.self]=s;surfaceTracker.begin(ctx.wallRunSessionId,snapshot->hero,snapshot->transform,motion.epoch,writeLog);msm2::source::begin(ctx.wallRunSessionId,snapshot->hero,snapshot->transform,motion.epoch);}
   auto it=sessions.find(e.self);if(it==sessions.end())continue;auto& s=it->second;
   ++s.calls[e.kind];s.last=std::max(s.last,when);videoSample(s,*snapshot,motion,snapshotMs);
   if(e.kind!=2||when-s.lastSample>=500){s.lastSample=when;
