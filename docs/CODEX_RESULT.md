@@ -245,3 +245,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-05: M5e-3c camera selection accepted; M5e-3d pitch scan uses camera->hero view line and reports row/view-line dots. Build PASS; unit/hooks run in progress at commit.
 - 2026-11-05: M5e-3d cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
 - 2026-11-05: M5e deferred (+0xD24..+0xD54 likely the actor-relative reference frame, not the rendered camera). M6a natural turning: 600 deg/s in-plane turn rate. Build PASS; unit/hooks run in progress at commit.
+- 2026-11-05: M6a cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
