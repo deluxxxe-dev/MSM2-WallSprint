@@ -218,3 +218,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-05: M5c-r6 diagnostics: vanilla reversal event log and read-only camera axis scan near +0xD34. Build PASS; hooks run in progress at commit.
 - 2026-11-05: M5c-r6 cloud hooks run PASS (exit 0) and package PASS.
 - 2026-11-05: M5c-r7: camera up (+0xD44) assists wall-plane forward; reversal-frame WallRun state diagnostic. Build PASS; hooks run in progress at commit.
+- 2026-11-05: M5c-r7 cloud hooks run PASS (exit 0) and package PASS.
