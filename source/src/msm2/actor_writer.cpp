@@ -17,8 +17,9 @@ std::atomic<void(*)()> ws_wallsprint_update_listener{nullptr};
 // Storage for camera_ref.cpp (kept here so smokes that include only this file link): manager `this` recorded by the
 // camera thunk, and the proven camera handedness (0 = unknown).
 std::uintptr_t ws_camref_this{};
-std::atomic<int> ws_camera_handedness{0};
-std::atomic<unsigned> ws_camera_forward_offset{0}; // 0 = not yet proven (M5c ground scan; +0x1E0 rejected: it follows hero travel)
+// M5c accepted values (owner run 2026-11-05: forward_dot 0.985, side_cross 0.991). Used from the start; the ground scan no longer runs.
+std::atomic<int> ws_camera_handedness{1};
+std::atomic<unsigned> ws_camera_forward_offset{0xd34}; // +0x1E0 rejected: it follows hero travel
 std::atomic<int> ws_camera_forward_sign{1};
 std::atomic<unsigned> ws_write_dispatch_enabled{0};
 std::atomic<unsigned> ws_update_probe_enabled{0};
@@ -51,7 +52,9 @@ constexpr float kStickDeadzone=0.35f;
 std::atomic<std::uint64_t> driveWrites{0},driveNoInput{0},driveUncalibrated{0},driveBadNormal{0},driveCalibrations{0},driveCameraMapped{0};
 using XInputGetStateFn=DWORD (WINAPI*)(DWORD,XINPUT_STATE*);
 std::atomic<XInputGetStateFn> xinputGetState{nullptr};
-std::uintptr_t driveOwner{};int driveLateralSign{};std::uint64_t driveOwnerWrites{},driveLastCallMs{}; // cap is per WallRun session (gap >500 ms), not per process
+std::uintptr_t driveOwner{};int driveLateralSign{};
+bool driveLatched{};float driveLatchP[3]{}; // camera forward latched at stick press (avoids camera<->heading feedback)
+std::uint64_t driveOwnerWrites{},driveLastCallMs{}; // cap is per WallRun session (gap >500 ms), not per process
 std::atomic<std::uint32_t> threshold0Bits{kV8Threshold0Bits},threshold1Bits{kV8Threshold1Bits};
 std::atomic<std::uint64_t> samples{0},readOk{0},readFail{0},fieldNonNanSamples{0},fieldNanSamples{0};
 std::atomic<std::uint64_t> consumer0True{0},consumer1Fallthrough{0};
@@ -171,10 +174,10 @@ bool readStick(float& sx,float& sy){
 }
 void driveHeading(std::uintptr_t owner){
  if(!kM3dStickDrive||owner>UINTPTR_MAX-0x3a4)return;
- if(owner!=driveOwner){driveOwner=owner;driveLateralSign=0;driveOwnerWrites=0;}
+ if(owner!=driveOwner){driveOwner=owner;driveLateralSign=0;driveOwnerWrites=0;driveLatched=false;}
  {auto now=GetTickCount64();if(now-driveLastCallMs>500)driveOwnerWrites=0;driveLastCallMs=now;}
  if(driveOwnerWrites>=kTiltWriteCap)return;
- float sx,sy;if(!readStick(sx,sy)){driveNoInput.fetch_add(1,std::memory_order_relaxed);return;}
+ float sx,sy;if(!readStick(sx,sy)){driveLatched=false;driveNoInput.fetch_add(1,std::memory_order_relaxed);return;}
  float h[6]{},n[3]{};
  if(!msm2::readMemory(owner+kHeadingOffsetA,h,sizeof(h))||!msm2::readMemory(owner+kWallNormalOffset,n,sizeof(n))){driveBadNormal.fetch_add(1,std::memory_order_relaxed);return;}
  for(float v:h)if(!std::isfinite(v))return;
@@ -188,8 +191,13 @@ void driveHeading(std::uintptr_t owner){
  unsigned camOff=ws_camera_forward_offset.load(std::memory_order_relaxed);
  if(int hand=ws_camera_handedness.load(std::memory_order_relaxed);hand&&camOff&&ws_camref_this&&ws_camref_this<=UINTPTR_MAX-0x1010){
   float f[3]{};
-  if(msm2::readMemory(ws_camref_this+camOff,f,sizeof(f))&&std::isfinite(f[0])&&std::isfinite(f[1])&&std::isfinite(f[2])){
-   {float fs=float(ws_camera_forward_sign.load(std::memory_order_relaxed));for(float& c:f)c*=fs;}
+  bool haveF=false;
+  if(driveLatched){std::memcpy(f,driveLatchP,sizeof(f));haveF=true;}
+  else if(msm2::readMemory(ws_camref_this+camOff,f,sizeof(f))&&std::isfinite(f[0])&&std::isfinite(f[1])&&std::isfinite(f[2])){
+   float fl=std::sqrt(f[0]*f[0]+f[1]*f[1]+f[2]*f[2]);
+   if(fl>0.95f&&fl<1.05f){float fs=float(ws_camera_forward_sign.load(std::memory_order_relaxed));for(float& c:f)c*=fs/fl;std::memcpy(driveLatchP,f,sizeof(f));driveLatched=true;haveF=true;}
+  }
+  if(haveF){
    float fn=f[0]*n[0]+f[1]*n[1]+f[2]*n[2];float p[3]{f[0]-fn*n[0],f[1]-fn*n[1],f[2]-fn*n[2]};
    float pn=std::sqrt(p[0]*p[0]+p[1]*p[1]+p[2]*p[2]);
    if(pn>0.2f){for(float& c:p)c/=pn;

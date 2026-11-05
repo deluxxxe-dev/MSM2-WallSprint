@@ -99,6 +99,7 @@ void onWallSprintUpdate() noexcept {
 void tick(const msm2::Snapshot&, const ws::diag::Motion& motion, bool available, float sx, float sy, bool stick) noexcept {
   auto now = GetTickCount64();
   if (engagedManager.load() && now - lastWsMs.load() > 300) restore("wallsprint_ended");
+  // (Disabled by default: actor_writer.cpp now starts with the accepted offset 0xD34, so the guard below returns at once.)
   // Read-only scan on the ground (no WS in the last second), moving: the camera forward is the unit vector whose
   // horizontal part is parallel to travel for a forward stick and perpendicular for a sideways stick
   // (travel = sign(sx) * h * cross(forward, up)). Accepted once per process; then used for camera-relative WS input.
