@@ -105,15 +105,20 @@ namespace {
 // compare each float in manager +0..0x1000 with the pitch of the camera forward (+0xD34): +-radians, +-degrees.
 struct PitchSlot { double e[4]{}; };
 PitchSlot pitchSlots[0x1000 / 4]; unsigned pitchSamples{}; float pitchMin{10}, pitchMax{-10}; std::uint64_t pitchLastMs{}, pitchLastLog{}; unsigned pitchLogs{};
-void m5ePitch(std::uint64_t now) {
+double rowDot[3]{};
+void m5ePitch(const msm2::Snapshot& hero, std::uint64_t now) {
   auto manager = ws_camref_this;
   if (!manager || manager > UINTPTR_MAX - 0x1000 || killed.load() || engagedManager.load() || now - lastWsMs.load() < 1000 || now - pitchLastMs < 50 || pitchLogs >= 8) return;
   pitchLastMs = now;
   static float blk[0x1000 / 4];
   if (!msm2::readMemory(manager, blk, sizeof blk)) return;
-  const float* f = &blk[0xD34 / 4];
-  float fl = std::sqrt(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]); if (!std::isfinite(fl) || fl < 0.95f || fl > 1.05f) return;
-  float pitch = std::asin(std::fmax(-1.f, std::fmin(1.f, f[1] / fl)));
+  // M5e-3d: pitch of the actual view line camera position (+0xD54) -> hero (the matrix row naming is unproven).
+  const float* c = &blk[0xD54 / 4];
+  float lx = hero.position[0] - c[0], ly = hero.position[1] + 1.0f - c[1], lz = hero.position[2] - c[2];
+  float ll = std::sqrt(lx * lx + ly * ly + lz * lz); if (!hero.hero || !std::isfinite(ll) || ll < 0.5f || ll > 30.f) return;
+  lx /= ll; ly /= ll; lz /= ll;
+  for (int r = 0; r < 3; ++r) { const float* v = &blk[(0xD24 + 0x10 * r) / 4]; rowDot[r] += v[0] * lx + v[1] * ly + v[2] * lz; }
+  float pitch = std::asin(std::fmax(-1.f, std::fmin(1.f, ly)));
   pitchMin = std::fmin(pitchMin, pitch); pitchMax = std::fmax(pitchMax, pitch); ++pitchSamples;
   const double unit[4] = {1, -1, 57.29577951, -57.29577951};
   for (unsigned i = 0; i < 0x1000 / 4; ++i) { double v = blk[i]; if (!std::isfinite(v) || std::fabs(v) > 1e4) v = 1e4;
@@ -123,11 +128,11 @@ void m5ePitch(std::uint64_t now) {
   char t[900]; int len = 0, k2 = 0;
   const char* names[4] = {"rad", "-rad", "deg", "-deg"};
   for (unsigned i = 0; i < 0x1000 / 4 && k2 < 12; ++i) for (int k = 0; k < 4; ++k) {
-    double rms = std::sqrt(pitchSlots[i].e[k] / pitchSamples); if (rms > 0.12) continue;
-    if (i * 4 >= 0xD34 && i * 4 < 0xD40) continue; // the forward vector itself
+    double rms = std::sqrt(pitchSlots[i].e[k] / pitchSamples); if (rms > 0.15) continue;
+    if (i * 4 >= 0xD24 && i * 4 < 0xD60) continue; // the matrix rows and position themselves
     if (len < int(sizeof t) - 40) { len += std::snprintf(t + len, sizeof t - len, "%s0x%x:%s:%.3f", k2 ? ";" : "", i * 4, names[k], rms); }
     ++k2; }
-  msm2::writeLog("WS_CAMERA_PITCH_SCAN samples=%u pitch_range=%.2f..%.2f candidates=%s read_only=1", pitchSamples, pitchMin, pitchMax, k2 ? t : "none");
+  msm2::writeLog("WS_CAMERA_PITCH_SCAN samples=%u pitch_range=%.2f..%.2f view_line_dot_D24=%.3f D34=%.3f D44=%.3f candidates=%s read_only=1 rev=m5e3d", pitchSamples, pitchMin, pitchMax, rowDot[0] / pitchSamples, rowDot[1] / pitchSamples, rowDot[2] / pitchSamples, k2 ? t : "none");
 }
 }
 namespace {
@@ -206,7 +211,7 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   // (travel = sign(sx) * h * cross(forward, up)). Accepted once per process; then used for camera-relative WS input.
   selectCamera(snapshot, now);
   m5eDistance(snapshot, now);
-  m5ePitch(now);
+  m5ePitch(snapshot, now);
   if (now - statusLastMs >= 5000 && statusLogs < 40) { statusLastMs = now; ++statusLogs;
     float f[3]{}; bool fOk = ws_camref_this && ws_camref_this <= UINTPTR_MAX - 0x1000 && msm2::readMemory(ws_camref_this + 0xD34, f, sizeof f);
     msm2::writeLog("WS_CAMERA_DIAG_STATUS installed=%u killed=%u manager=0x%llx raw=0x%llx callers_seq=%llu hero=0x%llx pos=%.1f,%.1f,%.1f cam_f_read=%u cam_f=%.3f,%.3f,%.3f dist_slots=%u pitch_samples=%u pitch_range=%.2f..%.2f pitch_logs=%u engaged=%u",

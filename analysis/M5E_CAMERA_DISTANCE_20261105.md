@@ -50,3 +50,9 @@ Change (M5e-3c):
 - Worker (100 ms): selects the live manager among the distinct recent callers: unit forward +0xD34 and position +0xD54 within 30 m of the hero, nearest wins. The current choice is kept while it stays valid. `WS_CAMERA_SELECT` is logged on each change. If the engaged manager is replaced, +0x304 is restored first.
 - `ws_camref_this` is now this selected manager, so all existing consumers (stick mapping, roll, diagnostics) use the live camera.
 Owner test unchanged: ground camera pitch sweep, no WS.
+
+## M5e-3c run (log `MSM2-WS-v0.1c48-20261105-231634.log`, not committed) — camera selection accepted
+- `WS_CAMERA_SELECT` picked 0x273d8360aa0 (one distinct caller in this session) once its forward became valid. Distance diagnostics resumed, and WS stick mapping ran (24 map lines). VERIFIED-RUNTIME.
+- Entry dive persists: 0.38-0.40 m at 0.88-1.0 s (entry 1). Entry 2 stayed at ~0.4 m until the end of the 3 s window.
+- Pitch scan: 106 samples, "pitch" range 0.71..1.43 rad from +0xD34 y, no candidate. A full up/down sweep giving only +41..+82 deg means +0xD34 y behaves like cos(pitch). HYPOTHESIS: +0xD34 is the camera up row and +0xD44 the forward row; the earlier ground correlation cannot tell them apart. The WS mapping uses proj(+0xD34 + +0xD44) and their cross product with an owner-validated handedness, so it is unaffected by the naming.
+Change (M5e-3d): the pitch reference is now the real view line, camera position +0xD54 -> hero + 1 m. `WS_CAMERA_PITCH_SCAN` also reports the mean dot of rows +0xD24/+0xD34/+0xD44 with that view line, which settles the row naming. The rows and position are excluded from the candidates; threshold 0.15 rad. Tag `rev=m5e3d`.
