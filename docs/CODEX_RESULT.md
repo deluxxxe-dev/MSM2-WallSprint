@@ -211,3 +211,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-05: M5c calibration relaxed (handedness never completed in first run); build+package PASS.
 - 2026-11-05: +0x1E0 rejected as camera forward; combined forward/sideways ground scan with auto-accept added.
 - 2026-11-05: camera forward +0xD34 accepted and hardcoded; camera forward latched per stick press. Build PASS; hooks run in progress at commit.
+- 2026-11-05: M5c-r4: camera-forward latch dropped for 1 s after WS camera engage and re-taken on >45 deg stick change. Build PASS; hooks run in progress at commit.

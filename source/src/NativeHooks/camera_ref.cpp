@@ -15,7 +15,7 @@
 #include "NativeHooks/camera_ref.hpp"
 extern "C" { void ws_camref_thunk(); void* ws_camref_original{}; extern std::uintptr_t ws_camref_this; extern std::atomic<void(*)()> ws_wallsprint_update_listener;
 // M5c: +1/-1 once ground samples prove manager+0x1E0 is the camera forward and give the right = sign*cross(forward, up) handedness.
-extern std::atomic<int> ws_camera_handedness; extern std::atomic<unsigned> ws_camera_forward_offset; extern std::atomic<int> ws_camera_forward_sign; }
+extern std::atomic<int> ws_camera_handedness; extern std::atomic<unsigned> ws_camera_forward_offset; extern std::atomic<int> ws_camera_forward_sign; extern std::atomic<std::uint64_t> ws_camera_engage_ms; }
 namespace {
 constexpr std::uintptr_t kEntryRva = 0x1065680;
 constexpr char kEntrySha[] = "04c49502901d0740a191ec0d821bf8b5ed269b0c1936030028491f9c701e91e6";
@@ -93,7 +93,7 @@ void onWallSprintUpdate() noexcept {
   if (!writableByte(manager + kActorRelativeFlag) || !readMemory(manager + kActorRelativeFlag, &current, 1)) { refusedWritable.fetch_add(1); return; }
   savedFlag.store(current);
   *reinterpret_cast<volatile unsigned char*>(manager + kActorRelativeFlag) = 1;
-  engagedManager.store(manager); engages.fetch_add(1);
+  engagedManager.store(manager); engages.fetch_add(1); ws_camera_engage_ms.store(GetTickCount64());
 }
 
 void tick(const msm2::Snapshot&, const ws::diag::Motion& motion, bool available, float sx, float sy, bool stick) noexcept {

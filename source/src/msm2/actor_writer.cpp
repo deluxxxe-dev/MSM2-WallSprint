@@ -21,6 +21,7 @@ std::uintptr_t ws_camref_this{};
 std::atomic<int> ws_camera_handedness{1};
 std::atomic<unsigned> ws_camera_forward_offset{0xd34}; // +0x1E0 rejected: it follows hero travel
 std::atomic<int> ws_camera_forward_sign{1};
+std::atomic<std::uint64_t> ws_camera_engage_ms{0}; // set by camera_ref when the WS camera reference engages
 std::atomic<unsigned> ws_write_dispatch_enabled{0};
 std::atomic<unsigned> ws_update_probe_enabled{0};
 }
@@ -53,7 +54,7 @@ std::atomic<std::uint64_t> driveWrites{0},driveNoInput{0},driveUncalibrated{0},d
 using XInputGetStateFn=DWORD (WINAPI*)(DWORD,XINPUT_STATE*);
 std::atomic<XInputGetStateFn> xinputGetState{nullptr};
 std::uintptr_t driveOwner{};int driveLateralSign{};
-bool driveLatched{};float driveLatchP[3]{}; // camera forward latched at stick press (avoids camera<->heading feedback)
+bool driveLatched{};float driveLatchP[3]{},driveLatchSx{},driveLatchSy{}; // camera forward latched at stick press (avoids camera<->heading feedback)
 std::uint64_t driveOwnerWrites{},driveLastCallMs{}; // cap is per WallRun session (gap >500 ms), not per process
 std::atomic<std::uint32_t> threshold0Bits{kV8Threshold0Bits},threshold1Bits{kV8Threshold1Bits};
 std::atomic<std::uint64_t> samples{0},readOk{0},readFail{0},fieldNonNanSamples{0},fieldNanSamples{0};
@@ -192,10 +193,15 @@ void driveHeading(std::uintptr_t owner){
  if(int hand=ws_camera_handedness.load(std::memory_order_relaxed);hand&&camOff&&ws_camref_this&&ws_camref_this<=UINTPTR_MAX-0x1010){
   float f[3]{};
   bool haveF=false;
+  // Re-latch when: camera roll transition still running (first 1 s after engage), or the stick direction changed >45 deg.
+  {float sl=std::sqrt(sx*sx+sy*sy),ll=std::sqrt(driveLatchSx*driveLatchSx+driveLatchSy*driveLatchSy);
+   bool turned=sl>0&&ll>0&&(sx*driveLatchSx+sy*driveLatchSy)/(sl*ll)<0.7071f;
+   auto eng=ws_camera_engage_ms.load(std::memory_order_relaxed);bool rolling=eng&&GetTickCount64()-eng<1000;
+   if(turned||rolling)driveLatched=false;}
   if(driveLatched){std::memcpy(f,driveLatchP,sizeof(f));haveF=true;}
   else if(msm2::readMemory(ws_camref_this+camOff,f,sizeof(f))&&std::isfinite(f[0])&&std::isfinite(f[1])&&std::isfinite(f[2])){
    float fl=std::sqrt(f[0]*f[0]+f[1]*f[1]+f[2]*f[2]);
-   if(fl>0.95f&&fl<1.05f){float fs=float(ws_camera_forward_sign.load(std::memory_order_relaxed));for(float& c:f)c*=fs/fl;std::memcpy(driveLatchP,f,sizeof(f));driveLatched=true;haveF=true;}
+   if(fl>0.95f&&fl<1.05f){float fs=float(ws_camera_forward_sign.load(std::memory_order_relaxed));for(float& c:f)c*=fs/fl;std::memcpy(driveLatchP,f,sizeof(f));driveLatchSx=sx;driveLatchSy=sy;driveLatched=true;haveF=true;}
   }
   if(haveF){
    float fn=f[0]*n[0]+f[1]*n[1]+f[2]*n[2];float p[3]{f[0]-fn*n[0],f[1]-fn*n[1],f[2]-fn*n[2]};
