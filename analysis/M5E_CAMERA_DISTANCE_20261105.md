@@ -36,3 +36,8 @@ Owner: still wrong.
 - HYPOTHESIS C: the camera's pitch angle carries over unchanged into the actor-relative frame. "Looking up the wall" in world space becomes a steep upward look in the wall-as-floor frame. The orbit then places the camera below the floor (inside the wall), and collision pushes it in to ~0.8 m. Auto re-centering of the pitch brings the distance back.
 Change (M5e-3): the engage delay is reverted to 0 (the 1 s variant is kept in code as `kEngageDelayMs`). Read-only `WS_CAMERA_PITCH_SCAN`: on the ground (no WS for 1 s), every 50 ms, each float in manager +0..0x1000 is compared with the pitch of +0xD34 (radians/degrees, both signs). Candidates with rms < 0.12 rad are listed, given a pitch range > 0.6 rad and at least 60 samples (max 8 logs).
 Decision: a pitch slot found -> M5e-4: set it to level (0) at engage (one change). None -> the pitch is stored in another form (e.g. a quaternion); widen the search.
+
+## M5e-3 run (log `MSM2-WS-v0.1c48-20261105-223600.log`, not committed) — no camera diagnostic output
+- 2.5 min session, ground only (no WS), hero available 13:37:05-13:38:29. `WS_CAMERA_REF admitted=1`.
+- Zero `WS_CAMERA_PITCH_SCAN` lines and zero `WS_CAMERA_DISTANCE` lines. The ground baseline distance had logged in the two earlier runs. The log does not show the cause (the camera manager pointer is not logged without WS). It also does not show whether the deployed script was this build.
+Change (M5e-3b): `WS_CAMERA_DIAG_STATUS` every 5 s (max 40): installed/killed, recorded manager pointer, hero pointer/position, camera forward read, number of distance slots, pitch samples/range/logs, engaged. The new key also proves which build is deployed.

@@ -32,6 +32,7 @@ struct Slot { unsigned fn{}, sn{}; double fsum{}, sdot{}, scross{}; };
 Slot slots[kScanSlots];
 unsigned scanSamples{}; std::uint64_t lastScanLog{};
 // M5e diagnostic (read-only): camera-to-hero distance during WS entry, to locate the "camera too close" cause.
+std::uint64_t statusLastMs{}; unsigned statusLogs{};
 unsigned distOffsets[8]{}; unsigned distCount{}; std::uint64_t distLastMs{}, distEngageSeen{}; unsigned distBaselineLogs{}, distEntryLogs{};
 
 
@@ -177,6 +178,11 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   // (travel = sign(sx) * h * cross(forward, up)). Accepted once per process; then used for camera-relative WS input.
   m5eDistance(snapshot, now);
   m5ePitch(now);
+  if (now - statusLastMs >= 5000 && statusLogs < 40) { statusLastMs = now; ++statusLogs;
+    float f[3]{}; bool fOk = ws_camref_this && ws_camref_this <= UINTPTR_MAX - 0x1000 && msm2::readMemory(ws_camref_this + 0xD34, f, sizeof f);
+    msm2::writeLog("WS_CAMERA_DIAG_STATUS installed=%u killed=%u manager=0x%llx hero=0x%llx pos=%.1f,%.1f,%.1f cam_f_read=%u cam_f=%.3f,%.3f,%.3f dist_slots=%u pitch_samples=%u pitch_range=%.2f..%.2f pitch_logs=%u engaged=%u",
+      unsigned(installed.load()), unsigned(killed.load()), (unsigned long long)ws_camref_this, (unsigned long long)snapshot.hero, snapshot.position[0], snapshot.position[1], snapshot.position[2],
+      unsigned(fOk), f[0], f[1], f[2], distCount, pitchSamples, pitchMin, pitchMax, pitchLogs, unsigned(engagedManager.load() != 0)); }
   auto manager = ws_camref_this;
   (void)available;
   if (ws_camera_forward_offset.load() || !manager || !motion.valid || now - lastWsMs.load() < 1000 || !stick) return;
