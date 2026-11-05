@@ -14,6 +14,10 @@
 extern "C" {
 // M5b: set by camera_ref::configure; called on the game thread from the verified WallRun Update pre-original callback.
 std::atomic<void(*)()> ws_wallsprint_update_listener{nullptr};
+// Storage for camera_ref.cpp (kept here so smokes that include only this file link): manager `this` recorded by the
+// camera thunk, and the proven camera handedness (0 = unknown).
+std::uintptr_t ws_camref_this{};
+std::atomic<int> ws_camera_handedness{0};
 std::atomic<unsigned> ws_write_dispatch_enabled{0};
 std::atomic<unsigned> ws_update_probe_enabled{0};
 }
@@ -42,7 +46,7 @@ std::atomic<std::uint64_t> tiltWrites{0},tiltSkippedShape{0},tiltSkippedVertical
 constexpr bool kM3dStickDrive=true;
 constexpr std::uintptr_t kWallNormalOffset=0x398;
 constexpr float kStickDeadzone=0.35f;
-std::atomic<std::uint64_t> driveWrites{0},driveNoInput{0},driveUncalibrated{0},driveBadNormal{0},driveCalibrations{0};
+std::atomic<std::uint64_t> driveWrites{0},driveNoInput{0},driveUncalibrated{0},driveBadNormal{0},driveCalibrations{0},driveCameraMapped{0};
 using XInputGetStateFn=DWORD (WINAPI*)(DWORD,XINPUT_STATE*);
 std::atomic<XInputGetStateFn> xinputGetState{nullptr};
 std::uintptr_t driveOwner{};int driveLateralSign{};std::uint64_t driveOwnerWrites{},driveLastCallMs{}; // cap is per WallRun session (gap >500 ms), not per process
@@ -126,7 +130,7 @@ void drainLogs(){
  if(!final&&n==lastLoggedSamples)return;
  auto now=GetTickCount64();if(!final&&lastLoggedSamples&&now-lastThresholdCheck<500)return;
  lastThresholdCheck=now;lastLoggedSamples=n;logProbeSnapshot(final?"final":"cumulative");
- writeLog("wallrun_m3d_stick_drive phase=%s enabled=%u writes=%llu cap=%llu no_input=%llu uncalibrated=%llu calibrations=%llu bad_normal=%llu lateral_sign=%d game_write=1",final?"final":"cumulative",unsigned(kM3dStickDrive),static_cast<unsigned long long>(driveWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(driveNoInput.load()),static_cast<unsigned long long>(driveUncalibrated.load()),static_cast<unsigned long long>(driveCalibrations.load()),static_cast<unsigned long long>(driveBadNormal.load()),driveLateralSign);
+ writeLog("wallrun_m3d_stick_drive phase=%s enabled=%u writes=%llu cap=%llu no_input=%llu uncalibrated=%llu calibrations=%llu bad_normal=%llu lateral_sign=%d camera_mapped=%llu handedness=%d game_write=1",final?"final":"cumulative",unsigned(kM3dStickDrive),static_cast<unsigned long long>(driveWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(driveNoInput.load()),static_cast<unsigned long long>(driveUncalibrated.load()),static_cast<unsigned long long>(driveCalibrations.load()),static_cast<unsigned long long>(driveBadNormal.load()),driveLateralSign,static_cast<unsigned long long>(driveCameraMapped.load()),ws_camera_handedness.load());
  writeLog("wallrun_m3c_heading_tilt phase=%s enabled=%u offsets=0x240,0x24c tilt_deg=20 writes=%llu cap=%llu skipped_shape=%llu skipped_not_horizontal=%llu refused_not_writable=%llu game_write=1 restore=game_recomputes_after_stop",final?"final":"cumulative",unsigned(kM3cHeadingTilt),static_cast<unsigned long long>(tiltWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(tiltSkippedShape.load()),static_cast<unsigned long long>(tiltSkippedVertical.load()),static_cast<unsigned long long>(tiltRefusedWritable.load()));
 }
 
@@ -176,13 +180,29 @@ void driveHeading(std::uintptr_t owner){
  if(!std::isfinite(nn)||nn<0.9f||nn>1.1f||std::fabs(n[1])>0.2f){driveBadNormal.fetch_add(1,std::memory_order_relaxed);return;}
  float u[3]{-n[0]*n[1],1.f-n[1]*n[1],-n[2]*n[1]};float un=std::sqrt(u[0]*u[0]+u[1]*u[1]+u[2]*u[2]);for(float& c:u)c/=un;
  float l[3]{u[1]*n[2]-u[2]*n[1],u[2]*n[0]-u[0]*n[2],u[0]*n[1]-u[1]*n[0]};float ln=std::sqrt(l[0]*l[0]+l[1]*l[1]+l[2]*l[2]);if(ln<0.5f)return;for(float& c:l)c/=ln;
+
+ // M5c: camera-relative mapping once the camera forward (+0x1E0 of the camera manager) and handedness are proven.
+ bool cameraMapped=false;float d[3]{};
+ if(int hand=ws_camera_handedness.load(std::memory_order_relaxed);hand&&ws_camref_this&&ws_camref_this<=UINTPTR_MAX-0x1ec){
+  float f[3]{};
+  if(msm2::readMemory(ws_camref_this+0x1e0,f,sizeof(f))&&std::isfinite(f[0])&&std::isfinite(f[1])&&std::isfinite(f[2])){
+   float fn=f[0]*n[0]+f[1]*n[1]+f[2]*n[2];float p[3]{f[0]-fn*n[0],f[1]-fn*n[1],f[2]-fn*n[2]};
+   float pn=std::sqrt(p[0]*p[0]+p[1]*p[1]+p[2]*p[2]);
+   if(pn>0.2f){for(float& c:p)c/=pn;
+    float r[3]{p[1]*n[2]-p[2]*n[1],p[2]*n[0]-p[0]*n[2],p[0]*n[1]-p[1]*n[0]};for(float& c:r)c*=float(hand);
+    for(int i=0;i<3;++i){d[i]=sx*r[i]+sy*p[i];}
+    cameraMapped=true;}
+  }
+ }
+ if(!cameraMapped){
  if(!driveLateralSign){
   // Calibrate screen-right once: vanilla picked a horizontal axis direction for a clearly sideways input.
   float hl=h[0]*l[0]+h[1]*l[1]+h[2]*l[2];
   if(std::fabs(sx)>0.5f&&std::fabs(sy)<0.3f&&std::fabs(h[1])<0.1f&&std::fabs(hl)>0.9f){driveLateralSign=(hl>0)==(sx>0)?1:-1;driveCalibrations.fetch_add(1,std::memory_order_relaxed);}
   else{driveUncalibrated.fetch_add(1,std::memory_order_relaxed);return;}
  }
- float d[3];for(int i=0;i<3;++i)d[i]=sx*float(driveLateralSign)*l[i]+sy*u[i];
+ for(int i=0;i<3;++i)d[i]=sx*float(driveLateralSign)*l[i]+sy*u[i];
+ }else driveCameraMapped.fetch_add(1,std::memory_order_relaxed);
  float dn=std::sqrt(d[0]*d[0]+d[1]*d[1]+d[2]*d[2]);if(dn<1e-3f)return;for(float& c:d)c/=dn;
  if(std::fabs(d[0]-h[0])+std::fabs(d[1]-h[1])+std::fabs(d[2]-h[2])<1e-4f&&std::fabs(d[0]-h[3])+std::fabs(d[1]-h[4])+std::fabs(d[2]-h[5])<1e-4f)return;
  if(!writableRange(owner+kHeadingOffsetA,24)){tiltRefusedWritable.fetch_add(1,std::memory_order_relaxed);return;}

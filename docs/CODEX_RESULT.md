@@ -207,3 +207,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-05: ActorRelativeCamera strings reviewed (research only); M5a combined owner test defined.
 - 2026-11-05: M5a result recorded; offline find_camera_refs.py locator added (self-tested on synthetic PE).
 - 2026-11-05: M5b own camera hook (entry record thunk, WS-only +0x304) + camera-forward scan added. Cloud build OK; hooks/package run in progress at commit.
+- 2026-11-05: M5b accepted; M5c camera-relative stick mapping with ground handedness calibration added.

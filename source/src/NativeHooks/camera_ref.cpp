@@ -13,7 +13,9 @@
 #include <cmath>
 #include <cstring>
 #include "NativeHooks/camera_ref.hpp"
-extern "C" { void ws_camref_thunk(); void* ws_camref_original{}; std::uintptr_t ws_camref_this{}; extern std::atomic<void(*)()> ws_wallsprint_update_listener; }
+extern "C" { void ws_camref_thunk(); void* ws_camref_original{}; extern std::uintptr_t ws_camref_this; extern std::atomic<void(*)()> ws_wallsprint_update_listener;
+// M5c: +1/-1 once ground samples prove manager+0x1E0 is the camera forward and give the right = sign*cross(forward, up) handedness.
+extern std::atomic<int> ws_camera_handedness; }
 namespace {
 constexpr std::uintptr_t kEntryRva = 0x1065680;
 constexpr char kEntrySha[] = "04c49502901d0740a191ec0d821bf8b5ed269b0c1936030028491f9c701e91e6";
@@ -27,6 +29,8 @@ std::atomic<std::uint64_t> lastWsMs{0}, engages{0}, restores{0}, refusedWritable
 struct Slot { unsigned n{}; double sum{}; };
 Slot slots[kScanSlots];
 unsigned scanSamples{}; std::uint64_t lastScanLog{};
+constexpr std::uintptr_t kCameraForward = 0x1e0; // M5b scan: mean_dot 0.91-0.92 with forward-stick ground travel
+unsigned sideSamples{}; double sideDot{}, sideCross{};
 
 bool sha256(const unsigned char* data, unsigned count, char (&text)[65]) {
   BCRYPT_ALG_HANDLE alg = nullptr; BCRYPT_HASH_HANDLE hash = nullptr; unsigned char object[512]{}, result[32]{}; DWORD size = 0, done = 0;
@@ -96,13 +100,35 @@ void onWallSprintUpdate() noexcept {
 void tick(const msm2::Snapshot&, const ws::diag::Motion& motion, bool available, float sx, float sy, bool stick) noexcept {
   auto now = GetTickCount64();
   if (engagedManager.load() && now - lastWsMs.load() > 300) restore("wallsprint_ended");
-  // Read-only scan: ground (no WS in the last second), stick held straight forward, moving.
+  // Read-only scans on the ground (no WS in the last second), moving.
   auto manager = ws_camref_this;
   (void)available;
-  if (!manager || !motion.valid || now - lastWsMs.load() < 1000 || !stick || sy < 0.8f || std::fabs(sx) > 0.25f) return;
+  if (!manager || !motion.valid || now - lastWsMs.load() < 1000 || !stick) return;
   float vx = motion.velocity.x, vz = motion.velocity.z, sp = std::sqrt(vx * vx + vz * vz);
   if (!std::isfinite(sp) || sp < 3.f) return;
   vx /= sp; vz /= sp;
+  if (std::fabs(sx) > 0.8f && std::fabs(sy) < 0.25f && !ws_camera_handedness.load()) {
+    // Sideways stick: camera forward must be perpendicular to travel; travel = sign(sx)*s*cross(forward, up).
+    float f[3];
+    if (readMemory(manager + kCameraForward, f, sizeof f) && std::isfinite(f[0]) && std::isfinite(f[2])) {
+      float h = std::sqrt(f[0] * f[0] + f[2] * f[2]);
+      if (h > 0.3f) {
+        float fx = f[0] / h, fz = f[2] / h;
+        // cross(f,(0,1,0)) = (-fz, 0, fx)
+        sideDot += fx * vx + fz * vz; sideCross += (sx > 0 ? 1.f : -1.f) * (-fz * vx + fx * vz); ++sideSamples;
+        if (sideSamples >= 20) {
+          double d = sideDot / sideSamples, x = sideCross / sideSamples;
+          bool ok = std::fabs(d) < 0.35 && std::fabs(x) > 0.8;
+          if (ok) ws_camera_handedness.store(x > 0 ? 1 : -1);
+          writeLog("WS_CAMERA_HANDEDNESS samples=%u forward_dot_travel=%.4f signed_cross_dot=%.4f accepted=%u handedness=%d offset=0x1e0",
+                   sideSamples, d, x, unsigned(ok), ws_camera_handedness.load());
+          if (!ok) { sideSamples = 0; sideDot = sideCross = 0; }
+        }
+      }
+    }
+    return;
+  }
+  if (sy < 0.8f || std::fabs(sx) > 0.25f) return;
   unsigned char span[kScanSpan];
   if (!readMemory(manager, span, 0x400) || !readMemory(manager + 0x400, span + 0x400, 0x400)) return;
   ++scanSamples;
