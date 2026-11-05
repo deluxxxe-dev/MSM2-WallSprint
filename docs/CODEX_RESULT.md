@@ -233,3 +233,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-05: M5d-1 analysed (no stick/camera formula fits; game holds a lateral run direction). M5d-2 direction-slot sign counters added. Build PASS; unit/hooks run in progress at commit.
 - 2026-11-05: M5d-2 cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
 - 2026-11-05: M5d deferred (one-sign events only). M5e-1 camera-distance diagnostic at WS entry added. Build PASS; unit/hooks run in progress at commit.
+- 2026-11-05: M5e-1 cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
