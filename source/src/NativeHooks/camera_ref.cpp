@@ -107,7 +107,7 @@ void tick(const msm2::Snapshot&, const ws::diag::Motion& motion, bool available,
   float vx = motion.velocity.x, vz = motion.velocity.z, sp = std::sqrt(vx * vx + vz * vz);
   if (!std::isfinite(sp) || sp < 3.f) return;
   vx /= sp; vz /= sp;
-  if (std::fabs(sx) > 0.8f && std::fabs(sy) < 0.25f && !ws_camera_handedness.load()) {
+  if (std::fabs(sx) > 0.7f && std::fabs(sy) < 0.35f && !ws_camera_handedness.load()) {
     // Sideways stick: camera forward must be perpendicular to travel; travel = sign(sx)*s*cross(forward, up).
     float f[3];
     if (readMemory(manager + kCameraForward, f, sizeof f) && std::isfinite(f[0]) && std::isfinite(f[2])) {
@@ -116,9 +116,10 @@ void tick(const msm2::Snapshot&, const ws::diag::Motion& motion, bool available,
         float fx = f[0] / h, fz = f[2] / h;
         // cross(f,(0,1,0)) = (-fz, 0, fx)
         sideDot += fx * vx + fz * vz; sideCross += (sx > 0 ? 1.f : -1.f) * (-fz * vx + fx * vz); ++sideSamples;
-        if (sideSamples >= 20) {
+        if (sideSamples % 5 == 0 && sideSamples < 10) writeLog("WS_CAMERA_HANDEDNESS progress samples=%u", sideSamples);
+        if (sideSamples >= 10) {
           double d = sideDot / sideSamples, x = sideCross / sideSamples;
-          bool ok = std::fabs(d) < 0.35 && std::fabs(x) > 0.8;
+          bool ok = std::fabs(d) < 0.5 && std::fabs(x) > 0.6;
           if (ok) ws_camera_handedness.store(x > 0 ? 1 : -1);
           writeLog("WS_CAMERA_HANDEDNESS samples=%u forward_dot_travel=%.4f signed_cross_dot=%.4f accepted=%u handedness=%d offset=0x1e0",
                    sideSamples, d, x, unsigned(ok), ws_camera_handedness.load());
