@@ -252,3 +252,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M6e: WS turn rate 400 deg/s (ground measured); read-only camera framing comparison (ground vs WS). +0xD44 = camera forward. Build PASS; unit/hooks run in progress at commit.
 - 2026-11-06: M6e cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
 - 2026-11-06: M6e framing measured (WS camera closer/lower, not following travel). M6f: WS camera config uses standard Offset* values. test_ws_assets PASS; real-file patch verified. Python-only.
+- 2026-11-06: M6g: uniform WS camera offset (4.5 m any pitch); bounded camera yaw-follow experiment (rows rotate toward travel, 90 deg/s). Build PASS; unit/hooks run in progress at commit.

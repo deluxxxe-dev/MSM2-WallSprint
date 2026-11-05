@@ -42,9 +42,11 @@ CAMERA_SHA = "2c21f777386943996e6f1418ca46699fe355f1205c60fa772d66a989c8e6919c"
 CAMERA_PATCH = (  # (offset, kind, vanilla, new)  kind B=u8 f=float32
     # M6f: standard Offset* (ground) values. M6e measured the ground camera 4.4-7.8 m away and ~2.3 m high, the
     # WS camera (with Traversal* 2-2.5 m) 2.9-3.8 m and ~1 m. OffsetUp Y is a u8 slot: 0.5 cannot be stored, kept 0.
-    (388, "B", 1, 0), (389, "f", -0.3, 0.75), (393, "f", -2.75, -3.75),   # OffsetDown  (0,0.75,-3.75)
+    # M6g: the Down/Level/Up offsets are chosen by camera pitch. On a wall, running up makes the camera "look up"
+    # (2 m), sideways is "level" (4.5 m), so the distance changed with travel direction. All three = Level.
+    (388, "B", 1, 0), (389, "f", -0.3, 0.0), (393, "f", -2.75, -4.5),     # OffsetDown  (0,0,-4.5)
     (452, "f", 1.25, 0.0), (456, "B", 0, 0), (457, "f", -2.25, -4.5),     # OffsetLevel (0,0,-4.5)
-    (516, "f", 0.5, 0.0), (520, "B", 0, 0), (521, "f", -3.25, -2.0),      # OffsetUp    (0,0[0.5],-2)
+    (516, "f", 0.5, 0.0), (520, "B", 0, 0), (521, "f", -3.25, -4.5),      # OffsetUp    (0,0,-4.5)
     (528, "f", 1.35, 1.35),                                               # PivotHeight 1.35
 )
 
@@ -100,7 +102,7 @@ def camera_members(inputs: Path) -> dict[str, bytes]:
     if _linked(src):
         raise ValueError("reparse/symlink camera input refused")
     data = patch_camera(src.read_bytes())
-    print(f"WS camera framing: {CAMERA_INPUT} -> ground standard offsets (Level 4.5 m, Down 3.75 m +0.75 up, Up 2 m, pivot 1.35)")
+    print(f"WS camera framing: {CAMERA_INPUT} -> uniform ground standard level offset (4.5 m behind for every pitch, pivot 1.35)")
     return {f"0/{CAMERA_PATH}": data}
 
 

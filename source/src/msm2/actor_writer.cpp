@@ -57,7 +57,7 @@ constexpr float kStickDeadzone=0.35f;
 std::atomic<std::uint64_t> driveWrites{0},driveNoInput{0},driveUncalibrated{0},driveBadNormal{0},driveCalibrations{0},driveCameraMapped{0},driveHeldForward{0},driveSnapSeq{0},driveUpAssist{0};
 constexpr bool kCameraUpAssist=true,kCameraSideAxis=true;
 constexpr bool kSmoothTurn=true;// M6e: ground sprint measured max ~470, large turns 270-360 deg/s
-constexpr double kTurnRateDegPerSec=400.;double turnLastT{};std::atomic<std::uint64_t> turnLimited{0};
+constexpr double kTurnRateDegPerSec=400.;std::atomic<std::uint64_t> followWrites{0},followManualSkips{0},followNoHero{0};double turnLastT{};std::atomic<std::uint64_t> turnLimited{0};
 std::atomic<std::uint64_t> driveSideAxis{0};
 std::atomic<float> driveSnap[16]{};std::uint64_t driveSnapLogged{};
 // M5c-r6 diagnostics: vanilla reversal events (heading read back opposite to our previous write) and camera axis scan.
@@ -157,7 +157,7 @@ void drainLogs(){
  lastThresholdCheck=now;lastLoggedSamples=n;logProbeSnapshot(final?"final":"cumulative");
  writeLog("wallrun_m3d_stick_drive phase=%s enabled=%u writes=%llu cap=%llu no_input=%llu uncalibrated=%llu calibrations=%llu bad_normal=%llu lateral_sign=%d camera_mapped=%llu handedness=%d game_write=1",final?"final":"cumulative",unsigned(kM3dStickDrive),static_cast<unsigned long long>(driveWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(driveNoInput.load()),static_cast<unsigned long long>(driveUncalibrated.load()),static_cast<unsigned long long>(driveCalibrations.load()),static_cast<unsigned long long>(driveBadNormal.load()),driveLateralSign,static_cast<unsigned long long>(driveCameraMapped.load()),ws_camera_handedness.load());
  if(auto q=driveSnapSeq.load(std::memory_order_acquire);q!=driveSnapLogged){driveSnapLogged=q;float v[16];for(int i=0;i<16;++i){v[i]=driveSnap[i].load(std::memory_order_relaxed);}
-  writeLog("wallrun_m5c_map cam=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f stick=%.2f,%.2f out=%.3f,%.3f,%.3f heading=%.3f,%.3f,%.3f proj=%.3f mode=%d held=%llu up_assist=%llu side_axis=%llu turn_limited=%llu turn_rate=%.0f",v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],int(v[15]),static_cast<unsigned long long>(driveHeldForward.load()),static_cast<unsigned long long>(driveUpAssist.load()),static_cast<unsigned long long>(driveSideAxis.load()),static_cast<unsigned long long>(turnLimited.load()),kTurnRateDegPerSec);}
+  writeLog("wallrun_m5c_map cam=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f stick=%.2f,%.2f out=%.3f,%.3f,%.3f heading=%.3f,%.3f,%.3f proj=%.3f mode=%d held=%llu up_assist=%llu side_axis=%llu turn_limited=%llu turn_rate=%.0f cam_follow_writes=%llu cam_follow_manual_skips=%llu cam_follow_no_hero=%llu",v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],int(v[15]),static_cast<unsigned long long>(driveHeldForward.load()),static_cast<unsigned long long>(driveUpAssist.load()),static_cast<unsigned long long>(driveSideAxis.load()),static_cast<unsigned long long>(turnLimited.load()),kTurnRateDegPerSec,static_cast<unsigned long long>(followWrites.load()),static_cast<unsigned long long>(followManualSkips.load()),static_cast<unsigned long long>(followNoHero.load()));}
  if(auto q=driveFlips.load(std::memory_order_acquire);q!=driveFlipsLogged){driveFlipsLogged=q;float v[17];for(int i=0;i<17;++i){v[i]=driveFlipSnap[i].load(std::memory_order_relaxed);}
   writeLog("wallrun_m5c_vanilla_reversal count=%llu stick=%.2f,%.2f our_last=%.3f,%.3f,%.3f vanilla=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f cam_f=%.3f,%.3f,%.3f cam_u=%.3f,%.3f,%.3f",static_cast<unsigned long long>(q),v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],v[15],v[16]);}
  if(auto q=driveOverrides.load(std::memory_order_acquire);q!=driveOverridesLogged){driveOverridesLogged=q;float v[17];for(int i=0;i<17;++i){v[i]=driveOverrideSnap[i].load(std::memory_order_relaxed);}
@@ -232,6 +232,10 @@ void logInputStack(){
     if(dd.VirtualAddress&&dd.Size){for(auto d=reinterpret_cast<const IMAGE_DELAYLOAD_DESCRIPTOR*>(base+dd.VirtualAddress);d->DllNameRVA;++d)addName(d->DllNameRVA,"delay");}}}}
  msm2::writeLog("wallrun_m5d_input_stack loaded=%s exe_input_imports=%s read_only=1",len?loaded:"none",il?imports:"none");
 }
+bool readRightStick(float& rx,float& ry){
+ rx=ry=0;if(auto get=xinputGetState.load()){XINPUT_STATE st{};if(get(0,&st)==ERROR_SUCCESS){rx=st.Gamepad.sThumbRX/32767.f;ry=st.Gamepad.sThumbRY/32767.f;return true;}}
+ return false;
+}
 bool readStick(float& sx,float& sy){
  sx=sy=0;
  if(auto get=xinputGetState.load()){XINPUT_STATE st{};if(get(0,&st)==ERROR_SUCCESS){
@@ -240,6 +244,37 @@ bool readStick(float& sx,float& sy){
  float kx=float((GetAsyncKeyState('D')<0)-(GetAsyncKeyState('A')<0)),ky=float((GetAsyncKeyState('W')<0)-(GetAsyncKeyState('S')<0));
  if(kx!=0||ky!=0){sx=kx;sy=ky;return true;}
  return false;
+}
+
+// M6g experiment: WS-only camera yaw follow. The ground camera turns behind the travel direction; on the wall it does
+// not (M6e: travel vs view 60-130 deg). Rotate the selected camera manager's rows (+0xD24 right, +0xD34 up, +0xD44
+// forward) and position (+0xD54) about the wall normal through the hero toward the commanded travel, <=90 deg/s,
+// 10 deg deadband. Never while the right stick moves the camera or for 1 s after. If the game recomputes these
+// rows from its own state the write has no effect (observable in WS_CAMERA_FRAMING travel_vs_view).
+constexpr bool kCameraFollow=true;constexpr double kCameraFollowDegPerSec=90.,kCameraFollowDeadbandDeg=10.;
+double followLastT{};std::uint64_t followManualMs{};
+void rotN(const float* n,float* v,float ca,float sa){float nv=n[0]*v[0]+n[1]*v[1]+n[2]*v[2];float c[3]{n[1]*v[2]-n[2]*v[1],n[2]*v[0]-n[0]*v[2],n[0]*v[1]-n[1]*v[0]};
+ for(int i=0;i<3;++i){v[i]=v[i]*ca+c[i]*sa+n[i]*nv*(1-ca);}}
+void cameraFollow(const float* n,const float* d){
+ LARGE_INTEGER q{},fr{};QueryPerformanceCounter(&q);QueryPerformanceFrequency(&fr);double t=double(q.QuadPart)/double(fr.QuadPart),dt=followLastT>0?t-followLastT:0.;followLastT=t;
+ if(!kCameraFollow||!(dt>0.)||dt>0.1)return;
+ auto now=GetTickCount64();float rx,ry;if(readRightStick(rx,ry)&&rx*rx+ry*ry>0.25f*0.25f)followManualMs=now;
+ if(followManualMs&&now-followManualMs<1000){followManualSkips.fetch_add(1,std::memory_order_relaxed);return;}
+ auto m=ws_camref_this;if(!m||m>UINTPTR_MAX-0x1000)return;
+ auto hm=ws::drive::heroMs.load(std::memory_order_acquire);if(!hm||now<hm||now-hm>200){followNoHero.fetch_add(1,std::memory_order_relaxed);return;}
+ float R[16];if(!msm2::readMemory(m+0xD24,R,sizeof(R)))return;for(float v:R)if(!std::isfinite(v))return;
+ float* f=R+8;float fl=std::sqrt(f[0]*f[0]+f[1]*f[1]+f[2]*f[2]);if(fl<0.9f||fl>1.1f)return;
+ float fn=f[0]*n[0]+f[1]*n[1]+f[2]*n[2];float fp[3]{f[0]-fn*n[0],f[1]-fn*n[1],f[2]-fn*n[2]};float fpl=std::sqrt(fp[0]*fp[0]+fp[1]*fp[1]+fp[2]*fp[2]);if(fpl<0.3f)return;
+ float x[3]{fp[1]*d[2]-fp[2]*d[1],fp[2]*d[0]-fp[0]*d[2],fp[0]*d[1]-fp[1]*d[0]};
+ float err=std::atan2(x[0]*n[0]+x[1]*n[1]+x[2]*n[2],fp[0]*d[0]+fp[1]*d[1]+fp[2]*d[2]);
+ if(std::fabs(err)<float(kCameraFollowDeadbandDeg*3.14159265358979/180.))return;
+ float mx=float(kCameraFollowDegPerSec*3.14159265358979/180.*dt),a=err>0?std::fmin(err,mx):std::fmax(err,-mx),ca=std::cos(a),sa=std::sin(a);
+ float hp[3]{ws::drive::heroPos[0].load(std::memory_order_relaxed),ws::drive::heroPos[1].load(std::memory_order_relaxed),ws::drive::heroPos[2].load(std::memory_order_relaxed)};
+ float rel[3]{R[12]-hp[0],R[13]-hp[1],R[14]-hp[2]};float rl=std::sqrt(rel[0]*rel[0]+rel[1]*rel[1]+rel[2]*rel[2]);if(!std::isfinite(rl)||rl>30.f)return;
+ rotN(n,R,ca,sa);rotN(n,R+4,ca,sa);rotN(n,R+8,ca,sa);rotN(n,rel,ca,sa);for(int i=0;i<3;++i){R[12+i]=hp[i]+rel[i];}
+ if(!writableRange(m+0xD24,sizeof(R)))return;
+ for(int row=0;row<4;++row){std::memcpy(reinterpret_cast<void*>(m+0xD24+0x10*row),R+4*row,12);}
+ followWrites.fetch_add(1,std::memory_order_relaxed);
 }
 void driveHeading(std::uintptr_t owner){
  if(!kM3dStickDrive||owner>UINTPTR_MAX-0x3a4)return;
@@ -361,6 +396,7 @@ void driveHeading(std::uintptr_t owner){
  std::memcpy(reinterpret_cast<void*>(owner+kHeadingOffsetA),d,sizeof(d));
  std::memcpy(reinterpret_cast<void*>(owner+kHeadingOffsetB),d,sizeof(d));
  std::memcpy(driveLastOut,d,sizeof(d));driveLastOutValid=true;
+  cameraFollow(n,d);
  for(int i=0;i<3;++i){ws::drive::dir[i].store(d[i],std::memory_order_relaxed);}ws::drive::owner.store(owner,std::memory_order_relaxed);ws::drive::ms.store(GetTickCount64(),std::memory_order_release);
  driveWrites.fetch_add(1,std::memory_order_relaxed);++driveOwnerWrites;
 }

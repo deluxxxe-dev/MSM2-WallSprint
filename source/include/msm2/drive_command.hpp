@@ -8,4 +8,7 @@ namespace ws::drive {
 inline std::atomic<float> dir[3]{};
 inline std::atomic<std::uint64_t> ms{0};
 inline std::atomic<std::uintptr_t> owner{0};
+// M6g: hero position published by the orientation worker (pivot for the WS camera follow experiment).
+inline std::atomic<float> heroPos[3]{};
+inline std::atomic<std::uint64_t> heroMs{0};
 }

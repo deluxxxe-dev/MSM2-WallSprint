@@ -22,3 +22,4 @@ Rows are concerns, not accusations: say what is known and what is unknown.
 | D13 | 2026-11-05 | New code hook | WS now hooks the camera reference update entry (0x1065680). Conflicts with other camera mods (e.g. ActorRelativeCamera hooking the same function) are likely; release notes must say not to combine. | OPEN |
 | D14 | 2026-11-05 | Write cap | Orientation override per-session write cap raised 4096 -> 262144 (~58 min). Still bounded; if a report mentions problems after very long wall runs, check this cap first. | OPEN |
 | D15 | 2026-11-05 | Modified vanilla config | WS stage ships a modified camera_wallrun_aimcontext.config (offsets/pivot from vanilla standard traversal). Same policy/risk as the steering config. | OPEN |
+| D16 | 2026-11-06 | Camera write | WS writes the camera manager rows +0xD24..+0xD54 (yaw follow toward travel) during WS only. Interaction with other camera mods likely; release notes must say not to combine. | OPEN |

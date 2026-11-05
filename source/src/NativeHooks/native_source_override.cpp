@@ -540,6 +540,7 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
    if(state.headingWallMs&&now>=state.headingWallMs)state.headingClock+=double(now-state.headingWallMs);
    state.headingWallMs=now;
    auto heading=state.heading.sample({s.position[0],s.position[1],s.position[2]},token.updates,double(now),state.headingClock);
+   for(int i=0;i<3;++i){ws::drive::heroPos[i].store(s.position[i],std::memory_order_relaxed);}ws::drive::heroMs.store(now,std::memory_order_release);
    // M6b: while the WS stick drive is commanding this WallRun (fresh <=150 ms), face the commanded travel
    // direction directly (it is already turn-rate limited). Falls back to the displacement heading otherwise.
    if(kFaceCommand&&heading.basis.valid){auto cmdMs=ws::drive::ms.load(std::memory_order_acquire);
