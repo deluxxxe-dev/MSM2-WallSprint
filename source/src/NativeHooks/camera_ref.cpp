@@ -14,7 +14,7 @@
 #include <cstdio>
 #include <cstring>
 #include "NativeHooks/camera_ref.hpp"
-extern "C" { void ws_camref_thunk(); void* ws_camref_original{}; extern std::uintptr_t ws_camref_this; extern std::atomic<void(*)()> ws_wallsprint_update_listener;
+extern "C" { void ws_camref_thunk(); void* ws_camref_original{}; extern std::uintptr_t ws_camref_this; extern std::uintptr_t ws_camref_raw, ws_camref_seq, ws_camref_ring[8]; extern std::atomic<void(*)()> ws_wallsprint_update_listener;
 // M5c: +1/-1 once ground samples prove manager+0x1E0 is the camera forward and give the right = sign*cross(forward, up) handedness.
 extern std::atomic<int> ws_camera_handedness; extern std::atomic<unsigned> ws_camera_forward_offset; extern std::atomic<int> ws_camera_forward_sign; extern std::atomic<std::uint64_t> ws_camera_engage_ms; }
 namespace {
@@ -130,6 +130,34 @@ void m5ePitch(std::uint64_t now) {
   msm2::writeLog("WS_CAMERA_PITCH_SCAN samples=%u pitch_range=%.2f..%.2f candidates=%s read_only=1", pitchSamples, pitchMin, pitchMax, k2 ? t : "none");
 }
 }
+namespace {
+// M5e-3c: choose the live camera manager among recent callers: unit forward (+0xD34) and camera position
+// (+0xD54) within 30 m of the hero; nearest wins. Keeps the previous choice while it stays valid.
+std::uint64_t selectLastLog{}; unsigned selectChanges{};
+bool liveCamera(std::uintptr_t m, const msm2::Snapshot& hero, float& distance) {
+  if (!m || m > UINTPTR_MAX - 0x1000) return false;
+  float v[8]{}; if (!msm2::readMemory(m + 0xD34, v, sizeof v)) return false; // forward D34..D3F, up D44, position D54 via second read
+  float fl = v[0] * v[0] + v[1] * v[1] + v[2] * v[2]; if (!std::isfinite(fl) || fl < 0.9f || fl > 1.1f) return false;
+  float p[3]{}; if (!msm2::readMemory(m + 0xD54, p, sizeof p) || !std::isfinite(p[0]) || !std::isfinite(p[1]) || !std::isfinite(p[2])) return false;
+  if (!hero.hero) { distance = 0; return true; }
+  float dx = p[0] - hero.position[0], dy = p[1] - hero.position[1], dz = p[2] - hero.position[2];
+  distance = std::sqrt(dx * dx + dy * dy + dz * dz); return std::isfinite(distance) && distance < 30.f;
+}
+void selectCamera(const msm2::Snapshot& hero, std::uint64_t now) {
+  std::uintptr_t seen[9]{}; unsigned n = 0;
+  auto add = [&](std::uintptr_t m) { if (!m) return; for (unsigned i = 0; i < n; ++i) if (seen[i] == m) return; seen[n++] = m; };
+  for (auto m : ws_camref_ring) { add(m); }
+  add(ws_camref_raw);
+  std::uintptr_t best = 0; float bestD = 1e9f, curD = 0; bool curOk = liveCamera(ws_camref_this, hero, curD);
+  for (unsigned i = 0; i < n; ++i) { float d; if (liveCamera(seen[i], hero, d) && d < bestD) { bestD = d; best = seen[i]; } }
+  std::uintptr_t pick = curOk ? ws_camref_this : best;
+  if (pick != ws_camref_this) { ++selectChanges;
+    msm2::writeLog("WS_CAMERA_SELECT manager=0x%llx previous=0x%llx distinct_callers=%u distance=%.2f changes=%u", (unsigned long long)pick, (unsigned long long)ws_camref_this, n, pick ? bestD : 0.f, selectChanges);
+    if (engagedManager.load() && engagedManager.load() != pick) restore("camera_manager_changed");
+    ws_camref_this = pick; }
+  (void)now; (void)selectLastLog;
+}
+}
 namespace msm2::camera_ref {
 void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
   if (!verified || !image || imageSize <= kEntryRva + 64) { writeLog("WS_CAMERA_REF admitted=0 reason=build_or_image_unverified"); return; }
@@ -176,12 +204,13 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   // Read-only scan on the ground (no WS in the last second), moving: the camera forward is the unit vector whose
   // horizontal part is parallel to travel for a forward stick and perpendicular for a sideways stick
   // (travel = sign(sx) * h * cross(forward, up)). Accepted once per process; then used for camera-relative WS input.
+  selectCamera(snapshot, now);
   m5eDistance(snapshot, now);
   m5ePitch(now);
   if (now - statusLastMs >= 5000 && statusLogs < 40) { statusLastMs = now; ++statusLogs;
     float f[3]{}; bool fOk = ws_camref_this && ws_camref_this <= UINTPTR_MAX - 0x1000 && msm2::readMemory(ws_camref_this + 0xD34, f, sizeof f);
-    msm2::writeLog("WS_CAMERA_DIAG_STATUS installed=%u killed=%u manager=0x%llx hero=0x%llx pos=%.1f,%.1f,%.1f cam_f_read=%u cam_f=%.3f,%.3f,%.3f dist_slots=%u pitch_samples=%u pitch_range=%.2f..%.2f pitch_logs=%u engaged=%u",
-      unsigned(installed.load()), unsigned(killed.load()), (unsigned long long)ws_camref_this, (unsigned long long)snapshot.hero, snapshot.position[0], snapshot.position[1], snapshot.position[2],
+    msm2::writeLog("WS_CAMERA_DIAG_STATUS installed=%u killed=%u manager=0x%llx raw=0x%llx callers_seq=%llu hero=0x%llx pos=%.1f,%.1f,%.1f cam_f_read=%u cam_f=%.3f,%.3f,%.3f dist_slots=%u pitch_samples=%u pitch_range=%.2f..%.2f pitch_logs=%u engaged=%u",
+      unsigned(installed.load()), unsigned(killed.load()), (unsigned long long)ws_camref_this, (unsigned long long)ws_camref_raw, (unsigned long long)ws_camref_seq, (unsigned long long)snapshot.hero, snapshot.position[0], snapshot.position[1], snapshot.position[2],
       unsigned(fOk), f[0], f[1], f[2], distCount, pitchSamples, pitchMin, pitchMax, pitchLogs, unsigned(engagedManager.load() != 0)); }
   auto manager = ws_camref_this;
   (void)available;

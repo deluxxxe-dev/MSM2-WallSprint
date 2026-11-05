@@ -41,3 +41,12 @@ Decision: a pitch slot found -> M5e-4: set it to level (0) at engage (one change
 - 2.5 min session, ground only (no WS), hero available 13:37:05-13:38:29. `WS_CAMERA_REF admitted=1`.
 - Zero `WS_CAMERA_PITCH_SCAN` lines and zero `WS_CAMERA_DISTANCE` lines. The ground baseline distance had logged in the two earlier runs. The log does not show the cause (the camera manager pointer is not logged without WS). It also does not show whether the deployed script was this build.
 Change (M5e-3b): `WS_CAMERA_DIAG_STATUS` every 5 s (max 40): installed/killed, recorded manager pointer, hero pointer/position, camera forward read, number of distance slots, pitch samples/range/logs, engaged. The new key also proves which build is deployed.
+
+## M5e-3b run (log `MSM2-WS-v0.1c48-20261105-225547.log`, not committed) — wrong camera instance recorded
+VERIFIED-RUNTIME: `WS_CAMERA_DIAG_STATUS` showed that the recorded manager (last caller of the camera entry) had +0xD34 = (0,0,0) the whole session, across two manager addresses after a reload. The hero was valid. So the recorded `this` was not the live camera, and every camera diagnostic and use stayed silent.
+Consequence: the camera entry is called by more than one manager instance. The single "last caller" pointer only works when the live camera happens to call last (as in earlier runs). The same pointer also drives the WS +0x304 roll and the camera-relative stick mapping. It is a latent bug for those too.
+Change (M5e-3c):
+- Thunk: still a leaf tail-jump. It records every caller into an 8-slot ring and a raw pointer, using only volatile R10/R11, no stack.
+- Worker (100 ms): selects the live manager among the distinct recent callers: unit forward +0xD34 and position +0xD54 within 30 m of the hero, nearest wins. The current choice is kept while it stays valid. `WS_CAMERA_SELECT` is logged on each change. If the engaged manager is replaced, +0x304 is restored first.
+- `ws_camref_this` is now this selected manager, so all existing consumers (stick mapping, roll, diagnostics) use the live camera.
+Owner test unchanged: ground camera pitch sweep, no WS.

@@ -17,7 +17,8 @@ extern "C" {
 std::atomic<void(*)()> ws_wallsprint_update_listener{nullptr};
 // Storage for camera_ref.cpp (kept here so smokes that include only this file link): manager `this` recorded by the
 // camera thunk, and the proven camera handedness (0 = unknown).
-std::uintptr_t ws_camref_this{};
+std::uintptr_t ws_camref_this{}; // selected live camera manager (camera_ref worker); 0 = none
+std::uintptr_t ws_camref_raw{},ws_camref_seq{},ws_camref_ring[8]{}; // written by the camera thunk
 // M5c accepted values (owner run 2026-11-05: forward_dot 0.985, side_cross 0.991). Used from the start; the ground scan no longer runs.
 std::atomic<int> ws_camera_handedness{1};
 std::atomic<unsigned> ws_camera_forward_offset{0xd34}; // +0x1E0 rejected: it follows hero travel

@@ -240,3 +240,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-05: M5e-3 cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
 - 2026-11-05: M5e-3 run produced no camera diagnostics; M5e-3b status line added. Build PASS; unit/hooks run in progress at commit.
 - 2026-11-05: M5e-3b cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
+- 2026-11-05: M5e-3b found the recorded camera manager was a non-live instance (+0xD34 zero). M5e-3c: thunk caller ring + worker live-camera selection. Build PASS; unit/hooks run in progress at commit.
