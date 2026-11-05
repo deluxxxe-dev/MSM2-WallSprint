@@ -61,6 +61,8 @@ std::atomic<std::uint64_t> driveFlips{0};std::atomic<float> driveFlipSnap[17]{};
 std::atomic<std::uint64_t> driveOverrides{0};std::atomic<float> driveOverrideSnap[17]{};std::uint64_t driveOverridesLogged{};
 float driveLastOut[3]{};bool driveLastOutValid{};
 constexpr unsigned kStateSpan=0x600;float statePrev[kStateSpan/4]{},stateCur[kStateSpan/4]{};bool statePrevValid{};std::uintptr_t stateOwner{};
+// M5d-2 diagnostic: which WallRun slots carry the game's left/right run direction (sign follows the game's lateral target).
+std::atomic<unsigned> slotSame[0x600/4]{},slotOpp[0x600/4]{},slotPrevSame[0x600/4]{};std::atomic<unsigned> slotEventsPos{0},slotEventsNeg{0};unsigned slotEventsLogged{};
 std::atomic<unsigned> flipDiffPending{0};unsigned flipDiffsLogged{};char flipDiffText[1400]{};
 unsigned camAxisScans{};std::uint64_t camAxisLastMs{};
 using XInputGetStateFn=DWORD (WINAPI*)(DWORD,XINPUT_STATE*);
@@ -173,6 +175,10 @@ void drainLogs(){
      if(len>0&&len<int(sizeof(line))-80)len+=std::snprintf(line+len,sizeof(line)-len,"%s0x%x:%.3f,%.3f,%.3f/n%.2f",found?";":"",0xC00+o,v[0],v[1],v[2],dn);
      ++found;}
     writeLog("%s count=%d",line,found);}}}
+ if(auto ev=slotEventsPos.load()+slotEventsNeg.load();ev!=slotEventsLogged){slotEventsLogged=ev;char t[1500];int len=std::snprintf(t,sizeof(t),"events_pos=%u events_neg=%u slots=",slotEventsPos.load(),slotEventsNeg.load());int k=0;
+  for(unsigned i=0;i<0x600/4&&k<40;++i){unsigned a=slotSame[i].load(),b=slotOpp[i].load(),c=slotPrevSame[i].load();if(a+b<3)continue;
+   if(len<int(sizeof(t))-40){len+=std::snprintf(t+len,sizeof(t)-len,"%s0x%x:s%u/o%u/p%u",k?";":"",i*4,a,b,c);}++k;}
+  writeLog("wallrun_m5d_direction_slots %s",k?t:"none");}
  if(flipDiffPending.load(std::memory_order_acquire)){writeLog("wallrun_m5c_reversal_state %s",flipDiffText);flipDiffPending.store(0,std::memory_order_release);}
  writeLog("wallrun_m3c_heading_tilt phase=%s enabled=%u offsets=0x240,0x24c tilt_deg=20 writes=%llu cap=%llu skipped_shape=%llu skipped_not_horizontal=%llu refused_not_writable=%llu game_write=1 restore=game_recomputes_after_stop",final?"final":"cumulative",unsigned(kM3cHeadingTilt),static_cast<unsigned long long>(tiltWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(tiltSkippedShape.load()),static_cast<unsigned long long>(tiltSkippedVertical.load()),static_cast<unsigned long long>(tiltRefusedWritable.load()));
 }
@@ -251,6 +257,15 @@ void driveHeading(std::uintptr_t owner){
      float l=v[0]*v[0]+v[1]*v[1]+v[2]*v[2];if(l<0.9f||l>1.1f)continue;float dt=(v[0]*h[0]+v[1]*h[1]+v[2]*h[2])/std::sqrt(l);if(std::fabs(dt)<0.97f)continue;
      if(len<int(sizeof(flipDiffText))-40){len+=std::snprintf(flipDiffText+len,sizeof(flipDiffText)-len,"%s0x%x:%+.2f",k?";":"",o,dt);}++k;}}
    ++flipDiffsLogged;flipDiffPending.store(1,std::memory_order_release);}
+  if(okState&&statePrevValid&&stateOwner==owner&&driveLastOutValid&&h[0]*driveLastOut[0]+h[1]*driveLastOut[1]+h[2]*driveLastOut[2]<0.98f){
+   float lat[3]{n[2],0.f,-n[0]};float ll=std::sqrt(lat[0]*lat[0]+lat[2]*lat[2]); // world-up x normal, horizontal wall axis
+   if(ll>0.5f){float hl=(h[0]*lat[0]+h[2]*lat[2])/ll;
+    if(std::fabs(hl)>0.97f){(hl>0?slotEventsPos:slotEventsNeg).fetch_add(1,std::memory_order_relaxed);
+     for(unsigned o=0;o+12<=kStateSpan;o+=4){for(int pass=0;pass<2;++pass){const float* v=&(pass?statePrev:stateCur)[o/4];
+       if(!std::isfinite(v[0])||!std::isfinite(v[1])||!std::isfinite(v[2])){continue;}
+       float l=v[0]*v[0]+v[1]*v[1]+v[2]*v[2];if(l<0.9f||l>1.1f){continue;}
+       float dt=(v[0]*h[0]+v[1]*h[1]+v[2]*h[2])/std::sqrt(l);if(std::fabs(dt)<0.97f){continue;}
+       if(pass){if(dt>0)slotPrevSame[o/4].fetch_add(1,std::memory_order_relaxed);}else (dt>0?slotSame:slotOpp)[o/4].fetch_add(1,std::memory_order_relaxed);}}}}}
   if(okState){std::memcpy(statePrev,stateCur,sizeof(statePrev));statePrevValid=true;stateOwner=owner;}else statePrevValid=false;}
  // M5d diagnostic: whenever the game's own update replaced our previous direction, record stick, camera
  // forward/up, our value and the game's value, to fit the game's stick->direction mapping offline.

@@ -230,3 +230,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-05: M5c-r11 accepted (10/10 sessions verified Deinit exit; no upright after swing entry).
 - 2026-11-05: M5d-1 turn-around diagnostics: input stack/PE import scan, game override samples with camera axes. Build PASS; unit/hooks run in progress at commit.
 - 2026-11-05: M5d-1 cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
+- 2026-11-05: M5d-1 analysed (no stick/camera formula fits; game holds a lateral run direction). M5d-2 direction-slot sign counters added. Build PASS; unit/hooks run in progress at commit.
