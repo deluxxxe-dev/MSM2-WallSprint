@@ -19,6 +19,7 @@
 #include "Math/planar_standoff.hpp"
 #include "Math/movement_delta.hpp"
 #include "Math/reversal_heading.hpp"
+#include "msm2/drive_command.hpp"
 #include "Math/wall_motion_window.hpp"
 namespace {
 using ws::Vec3;using ws::source_math::Matrix;using ws::native_source::Token;using msm2::writeLog;
@@ -50,6 +51,7 @@ enum class Ownership {Dormant,Active,StaleSuspended,HardClosed};
 struct NativeClose {Token token{};Published source{};bool wasOpen{},sourceRead{};};
 ws::interop::AtomicPublication<NativeClose> deinitPublication;
 constexpr unsigned kSessionWriteCap=262144;
+constexpr bool kFaceCommand=true; unsigned long long faceCommandUpdates{};
 constexpr unsigned kCtxGapHoldMs=10000; bool ctxGapActive{}; std::uint64_t ctxGapStartMs{}; unsigned ctxGapEpisodes{}; // per WallRun session orientation write cap (~58 min at 75 Hz); was 4096 (~55 s)
 std::atomic<unsigned> pathAWrites{0},pathBWrites{0},pathARejects{0},pathBRejects{0},pathBReservations{0};
 std::atomic<bool> resetRequested{false},lifecycleOpen{false};std::atomic<std::uint64_t> lifecycleEpoch{0};
@@ -334,8 +336,8 @@ void lifecycleSummary(std::uint64_t finish,bool verifiedDeinit,bool untilDeinit)
  state.summaryEmitted=true;secondarySummary(state.session,false);
  writeLog("MOVEMENT_DELTA_SUMMARY session=%llu emitted=%u attempts=%u sample_cap=40 Position_writes=0 velocity_semantics=finite_difference_only",(unsigned long long)state.session,state.movementEmitted,state.movementSamples);
  if(!state.positionRequested)writeLog("POSITION_WRITER_SUMMARY session=%llu watch_armed=0 unique_writers=0 cleanup_restored=1 reason=retention_start_window_or_helper_not_available Position_writes_by_mod=0",(unsigned long long)state.session);
- writeLog("ORIENTATION_LIFECYCLE_SUMMARY session=%llu wallrun_duration_ms=%llu source_entry_elapsed=%.6f source_exit_reason=%s source_active_until_deinit=%u verified_deinit=%u path_a_writes=%u path_b_writes=%u retention_pass=%u max_held_ms=%llu max_held_updates=%u last_actor_up_dot_surface=%.9g last_actor_observation_valid=%u last_actor_observation_ms=%llu last_actor_observation_scope=active_source_worker_snapshot stale_suspend_count=%u stale_resume_count=%u max_stale_duration_ms=%llu stale_log_pair_cap=16 first_hard_kill=%s hard_kill_calls=%u",
-  (unsigned long long)state.session,(unsigned long long)(finish>=state.initMs?finish-state.initMs:0),double(state.transition.entryMs-state.initMs)/1000.,state.exitReason,unsigned(verifiedDeinit&&untilDeinit),unsigned(verifiedDeinit),pathAWrites.load(),pathBWrites.load(),unsigned(state.pass),(unsigned long long)state.maxHeldMs,state.maxHeldUpdates,state.lastActorDot,unsigned(state.lastActorValid),(unsigned long long)state.lastObserveMs,state.staleSuspends,state.staleResumes,(unsigned long long)state.maxStaleMs,causeState.load(std::memory_order_acquire)>=2?firstCause.reason:"none",killCalls.load());
+ writeLog("ORIENTATION_LIFECYCLE_SUMMARY session=%llu wallrun_duration_ms=%llu source_entry_elapsed=%.6f source_exit_reason=%s source_active_until_deinit=%u verified_deinit=%u path_a_writes=%u path_b_writes=%u retention_pass=%u max_held_ms=%llu max_held_updates=%u last_actor_up_dot_surface=%.9g last_actor_observation_valid=%u last_actor_observation_ms=%llu last_actor_observation_scope=active_source_worker_snapshot stale_suspend_count=%u stale_resume_count=%u max_stale_duration_ms=%llu stale_log_pair_cap=16 first_hard_kill=%s hard_kill_calls=%u face_command_updates=%llu",
+  (unsigned long long)state.session,(unsigned long long)(finish>=state.initMs?finish-state.initMs:0),double(state.transition.entryMs-state.initMs)/1000.,state.exitReason,unsigned(verifiedDeinit&&untilDeinit),unsigned(verifiedDeinit),pathAWrites.load(),pathBWrites.load(),unsigned(state.pass),(unsigned long long)state.maxHeldMs,state.maxHeldUpdates,state.lastActorDot,unsigned(state.lastActorValid),(unsigned long long)state.lastObserveMs,state.staleSuspends,state.staleResumes,(unsigned long long)state.maxStaleMs,causeState.load(std::memory_order_acquire)>=2?firstCause.reason:"none",killCalls.load(),faceCommandUpdates);
 }
 void drainVerifiedDeinit(){
  if(!state.entered||state.summaryEmitted)return;
@@ -538,6 +540,13 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
    if(state.headingWallMs&&now>=state.headingWallMs)state.headingClock+=double(now-state.headingWallMs);
    state.headingWallMs=now;
    auto heading=state.heading.sample({s.position[0],s.position[1],s.position[2]},token.updates,double(now),state.headingClock);
+   // M6b: while the WS stick drive is commanding this WallRun (fresh <=150 ms), face the commanded travel
+   // direction directly (it is already turn-rate limited). Falls back to the displacement heading otherwise.
+   if(kFaceCommand&&heading.basis.valid){auto cmdMs=ws::drive::ms.load(std::memory_order_acquire);
+    if(cmdMs&&now>=cmdMs&&now-cmdMs<=150&&ws::drive::owner.load(std::memory_order_relaxed)==state.owner){
+     Vec3 c{ws::drive::dir[0].load(std::memory_order_relaxed),ws::drive::dir[1].load(std::memory_order_relaxed),ws::drive::dir[2].load(std::memory_order_relaxed)};
+     c=c-state.heading.normal*dot(c,state.heading.normal);ws::diag::ActorAxes faced{};Vec3 cu{};
+     if(unit(c,cu)&&state.heading.basis(cu,faced)){heading.basis=faced;state.heading.forward=cu;++faceCommandUpdates;}}}
    if(!heading.basis.valid){end("invalid_reversal_heading",now);p.active=false;}
    else {p.basis=heading.basis;
 

@@ -1,0 +1,11 @@
+#pragma once
+#include <atomic>
+#include <cstdint>
+// M6b: the WS stick-driven travel direction, written on the game thread by the WallRun pre-original callback
+// (actor_writer) and read by the orientation worker (native_source_override) so the facing follows the
+// commanded travel instead of a lagging displacement estimate. C++17 inline variables: one object program-wide.
+namespace ws::drive {
+inline std::atomic<float> dir[3]{};
+inline std::atomic<std::uint64_t> ms{0};
+inline std::atomic<std::uintptr_t> owner{0};
+}

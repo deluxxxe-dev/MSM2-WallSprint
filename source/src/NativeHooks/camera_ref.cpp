@@ -163,6 +163,27 @@ void selectCamera(const msm2::Snapshot& hero, std::uint64_t now) {
   (void)now; (void)selectLastLog;
 }
 }
+namespace {
+// M6c diagnostic (read-only): ground sprint facing turn rate, to copy the ground behavior onto the wall.
+// Samples (100 ms worker) on the ground (no WS for 1 s) with the stick held and horizontal speed > 5 m/s.
+const float kTurnBins[] = {45, 90, 180, 270, 360, 540, 720, 900, 1200};
+unsigned turnHist[10]{}; unsigned turnSamples{}; float turnMax{}; double turnSpeedSum{}; float prevYaw{}; std::uint64_t prevYawMs{}, turnLastLog{}; unsigned turnLogs{}; bool prevYawOk{};
+void m6GroundTurn(const msm2::Snapshot& hero, const ws::diag::Motion& motion, bool stick, std::uint64_t now) {
+  auto axes = ws::diag::actorAxes(hero.prefix);
+  float sp = motion.valid ? std::sqrt(motion.velocity.x * motion.velocity.x + motion.velocity.z * motion.velocity.z) : 0.f;
+  bool ok = hero.hero && axes.valid && std::fabs(axes.up.y) > 0.95f && now - lastWsMs.load() > 1000 && stick && std::isfinite(sp) && sp > 5.f;
+  float yaw = std::atan2(axes.forward.x, axes.forward.z);
+  if (ok && prevYawOk && now > prevYawMs && now - prevYawMs <= 250) {
+    float d = yaw - prevYaw; while (d > 3.14159265f) d -= 6.2831853f; while (d < -3.14159265f) d += 6.2831853f;
+    float rate = std::fabs(d) * 57.29578f * 1000.f / float(now - prevYawMs);
+    unsigned b = 0; while (b < 9 && rate >= kTurnBins[b]) ++b; ++turnHist[b]; ++turnSamples; turnMax = std::fmax(turnMax, rate); turnSpeedSum += sp;
+  }
+  prevYaw = yaw; prevYawMs = now; prevYawOk = ok;
+  if (turnSamples >= 30 && now - turnLastLog >= 10000 && turnLogs < 20) { turnLastLog = now; ++turnLogs;
+    msm2::writeLog("WS_GROUND_TURN_RATE samples=%u mean_speed=%.2f max_deg_s=%.0f hist_deg_s=<45:%u,<90:%u,<180:%u,<270:%u,<360:%u,<540:%u,<720:%u,<900:%u,<1200:%u,>=1200:%u read_only=1",
+      turnSamples, turnSpeedSum / turnSamples, turnMax, turnHist[0], turnHist[1], turnHist[2], turnHist[3], turnHist[4], turnHist[5], turnHist[6], turnHist[7], turnHist[8], turnHist[9]); }
+}
+}
 namespace msm2::camera_ref {
 void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
   if (!verified || !image || imageSize <= kEntryRva + 64) { writeLog("WS_CAMERA_REF admitted=0 reason=build_or_image_unverified"); return; }
@@ -210,6 +231,7 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   // horizontal part is parallel to travel for a forward stick and perpendicular for a sideways stick
   // (travel = sign(sx) * h * cross(forward, up)). Accepted once per process; then used for camera-relative WS input.
   selectCamera(snapshot, now);
+  m6GroundTurn(snapshot, motion, stick, now);
   m5eDistance(snapshot, now);
   m5ePitch(snapshot, now);
   if (now - statusLastMs >= 5000 && statusLogs < 40) { statusLastMs = now; ++statusLogs;

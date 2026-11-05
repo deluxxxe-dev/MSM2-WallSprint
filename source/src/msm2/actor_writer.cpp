@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstring>
 #include "msm2/actor_writer.hpp"
+#include "msm2/drive_command.hpp"
 #include "msm2/update_bridge.hpp"
 #include "msm2/sdk_bridge.hpp"
 
@@ -359,6 +360,7 @@ void driveHeading(std::uintptr_t owner){
  std::memcpy(reinterpret_cast<void*>(owner+kHeadingOffsetA),d,sizeof(d));
  std::memcpy(reinterpret_cast<void*>(owner+kHeadingOffsetB),d,sizeof(d));
  std::memcpy(driveLastOut,d,sizeof(d));driveLastOutValid=true;
+ for(int i=0;i<3;++i){ws::drive::dir[i].store(d[i],std::memory_order_relaxed);}ws::drive::owner.store(owner,std::memory_order_relaxed);ws::drive::ms.store(GetTickCount64(),std::memory_order_release);
  driveWrites.fetch_add(1,std::memory_order_relaxed);++driveOwnerWrites;
 }
 }
