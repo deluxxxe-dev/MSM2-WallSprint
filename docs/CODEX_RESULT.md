@@ -256,3 +256,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M6g cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
 - 2026-11-06: M6h: WS speed parity MoveSpeedFast 16->9 (measured WS 16 m/s vs ground 9-10) and camera height Y=1 m, pivot 1.55. Python tests PASS. Config-only.
 - 2026-11-06: M6i steady straight-line speed diagnostic (ground vs WS). Build PASS; unit/hooks run in progress at commit.
+- 2026-11-06: M6h/M6i cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
