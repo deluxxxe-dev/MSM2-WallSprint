@@ -66,4 +66,17 @@ with tempfile.TemporaryDirectory() as t:                       # M2a clip swaps
 sp, rep = b.patch_steering(steer, 90, (0.0, 0.0), (255, 255))
 assert sp[0x218] == 255 and sp[0x219] == 255 and rep["turn_speeds"] == {"TurnSpeedFast": 255, "TurnSpeedSlow": 255}
 fails(lambda: b.patch_steering(steer, 90, None, (0, 255)))
+# M6d camera framing patch (synthetic file with the vanilla values at the pinned offsets)
+cam = bytearray(532)
+for off, kind, old, new in a.CAMERA_PATCH: struct.pack_into("<" + kind, cam, off, old)
+cam = bytes(cam); a.CAMERA_SHA = hashlib.sha256(cam).hexdigest()
+pc = a.patch_camera(cam)
+for off, kind, old, new in a.CAMERA_PATCH: assert abs(struct.unpack_from("<" + kind, pc, off)[0] - new) < 1e-6
+assert len(pc) == len(cam) and sum(x != y for x, y in zip(cam, pc)) > 0
+fails(lambda: a.patch_camera(cam[:-1] + b"\1"))                  # wrong SHA -> refuse
+with tempfile.TemporaryDirectory() as t:
+    game = Path(t) / "game"; ws = game / "Mods Library" / "Mods-Developing" / "MSM2-WS"; inp = ws / a.INPUT_DIR
+    inp.mkdir(parents=True); (inp / a.INPUT_NAME).write_bytes(steer); (inp / a.CAMERA_INPUT).write_bytes(cam)
+    out = a.deploy(ws, game); z = zipfile.ZipFile(io.BytesIO(out.read_bytes()))
+    assert z.read("0/" + a.CAMERA_PATH) == pc and "GroundCam" in z.read("info.json").decode()
 print("test_ws_assets: PASS")

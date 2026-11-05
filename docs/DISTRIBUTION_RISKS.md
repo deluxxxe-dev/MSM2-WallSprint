@@ -21,3 +21,4 @@ Rows are concerns, not accusations: say what is known and what is unknown.
 | D12 | 2026-11-05 | Reference mod | ActorRelativeCamera (ButtersTM) used only as a research hint/test companion. WS must not bundle, require or copy it; own implementation must be independently derived. | OPEN |
 | D13 | 2026-11-05 | New code hook | WS now hooks the camera reference update entry (0x1065680). Conflicts with other camera mods (e.g. ActorRelativeCamera hooking the same function) are likely; release notes must say not to combine. | OPEN |
 | D14 | 2026-11-05 | Write cap | Orientation override per-session write cap raised 4096 -> 262144 (~58 min). Still bounded; if a report mentions problems after very long wall runs, check this cap first. | OPEN |
+| D15 | 2026-11-05 | Modified vanilla config | WS stage ships a modified camera_wallrun_aimcontext.config (offsets/pivot from vanilla standard traversal). Same policy/risk as the steering config. | OPEN |

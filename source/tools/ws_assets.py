@@ -32,6 +32,19 @@ CLIP_SWAPS = (
     ("stand_sprint_fwd_spiderman_miles.animclip", "characters/hero/hero_spiderman_milesmorales/animation/wall_run_spiderman_miles.animclip"),
 )
 CLIP_MIN, CLIP_MAX = 1024, 1024 * 1024
+# M6d (2026-11-05): frame the WS camera like the ground traversal camera. Vanilla camera_wallrun_aimcontext
+# (CameraAimContextConfig, owner-extracted, sha pinned) gets the TraversalOffset*/TraversalPivotHeight values of
+# vanilla cameraaimcontextstandard (Down (0,0,-2.5), Level (0,0,-2), Up (0,0,-2.5), pivot 1.55). FOV (72) unchanged.
+# Each slot keeps its stored width (u8 or float); every original value is checked before writing.
+CAMERA_INPUT = "camera_wallrun_aimcontext.config"
+CAMERA_PATH = "configs/camera/camera_wallrun_aimcontext.config"
+CAMERA_SHA = "2c21f777386943996e6f1418ca46699fe355f1205c60fa772d66a989c8e6919c"
+CAMERA_PATCH = (  # (offset, kind, vanilla, new)  kind B=u8 f=float32
+    (388, "B", 1, 0), (389, "f", -0.3, 0.0), (393, "f", -2.75, -2.5),     # OffsetDown
+    (452, "f", 1.25, 0.0), (456, "B", 0, 0), (457, "f", -2.25, -2.0),     # OffsetLevel
+    (516, "f", 0.5, 0.0), (520, "B", 0, 0), (521, "f", -3.25, -2.5),      # OffsetUp
+    (528, "f", 1.35, 1.55),                                               # PivotHeight
+)
 
 
 def _linked(p: Path) -> bool:
@@ -65,10 +78,34 @@ def clip_members(inputs: Path) -> dict[str, bytes]:
     return members
 
 
-def stage_bytes(steering: bytes, clips: dict[str, bytes] | None = None) -> bytes:
+def patch_camera(data: bytes) -> bytes:
+    import struct
+    if b.sha(data) != CAMERA_SHA:
+        raise ValueError("camera_wallrun_aimcontext input is not the pinned vanilla file")
+    out = bytearray(data)
+    for off, kind, old, new in CAMERA_PATCH:
+        cur = struct.unpack_from("<" + kind, out, off)[0]
+        if abs(cur - old) > 1e-5:
+            raise ValueError(f"camera config layout mismatch at {off}: {cur} != {old}")
+        struct.pack_into("<" + kind, out, off, new)
+    return bytes(out)
+
+
+def camera_members(inputs: Path) -> dict[str, bytes]:
+    src = inputs / CAMERA_INPUT
+    if not src.is_file():
+        return {}
+    if _linked(src):
+        raise ValueError("reparse/symlink camera input refused")
+    data = patch_camera(src.read_bytes())
+    print(f"WS camera framing: {CAMERA_INPUT} -> ground traversal offsets (Down/Up 2.5 m, Level 2 m, pivot 1.55)")
+    return {f"0/{CAMERA_PATH}": data}
+
+
+def stage_bytes(steering: bytes, clips: dict[str, bytes] | None = None, camera: dict[str, bytes] | None = None) -> bytes:
     patched, _ = b.patch_steering(steering, TURN_MAX_DOWN, TURN_GAINS, TURN_SPEEDS)
-    members = {f"0/{b.STEER_PATH}": patched, **(clips or {})}
-    return b.make_stage(members, MOD_NAME + (" + SprintClip" if clips else ""))
+    members = {f"0/{b.STEER_PATH}": patched, **(clips or {}), **(camera or {})}
+    return b.make_stage(members, MOD_NAME + (" + SprintClip" if clips else "") + (" + GroundCam" if camera else ""))
 
 
 def deploy(workspace: Path, game: Path) -> Path | None:
@@ -78,7 +115,7 @@ def deploy(workspace: Path, game: Path) -> Path | None:
         return None
     if _linked(src) or _linked(src.parent):
         raise ValueError("reparse/symlink input refused")
-    stage = stage_bytes(src.read_bytes(), clip_members(src.parent))
+    stage = stage_bytes(src.read_bytes(), clip_members(src.parent), camera_members(src.parent))
     parent = game / "Mods Library" / "Mods-Developing"
     if not parent.is_dir() or _linked(parent):
         raise ValueError("Mods-Developing missing or reparse")
