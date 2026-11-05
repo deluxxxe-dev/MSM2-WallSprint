@@ -49,7 +49,8 @@ ws::interop::AtomicPublication<StaleSignal> stalePublication;
 enum class Ownership {Dormant,Active,StaleSuspended,HardClosed};
 struct NativeClose {Token token{};Published source{};bool wasOpen{},sourceRead{};};
 ws::interop::AtomicPublication<NativeClose> deinitPublication;
-constexpr unsigned kSessionWriteCap=262144; // per WallRun session orientation write cap (~58 min at 75 Hz); was 4096 (~55 s)
+constexpr unsigned kSessionWriteCap=262144;
+constexpr unsigned kCtxGapHoldMs=3000; bool ctxGapActive{}; std::uint64_t ctxGapStartMs{}; unsigned ctxGapEpisodes{}; // per WallRun session orientation write cap (~58 min at 75 Hz); was 4096 (~55 s)
 std::atomic<unsigned> pathAWrites{0},pathBWrites{0},pathARejects{0},pathBRejects{0},pathBReservations{0};
 std::atomic<bool> resetRequested{false},lifecycleOpen{false};std::atomic<std::uint64_t> lifecycleEpoch{0};
 ws::position_proof::Result positionProof;
@@ -463,10 +464,25 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
  const char* failed=!ctx.lifecycleVerified?"ctx_lifecycle_unverified":!ctx.wallRunActive?"ctx_wallrun_inactive":!native?ws::native_source::lifecycleReadName(token.readStatus):
   token.phase!=3?"fresh_phase":!token.owner?"fresh_owner":!token.updates?"fresh_updates":now<token.initMs||now<token.updateMs?"fresh_time_order":token.owner!=ctx.wallRunOwner?"owner_matches_ctx":nullptr;
  auto hardClose=[&](const char* gate){exitDiagnostic(ctx,token,native,now,gate);end(gate,now);state.published=0;stateLock.clear(std::memory_order_release);};
- if(failed){hardClose(failed);return;}
+ // M5c-r9: a frame-drop can make the worker context report WallRun inactive for a moment while the native
+ // token is still the same coherent active WallRun. Hold (publication expires, no writes) for up to 3 s
+ // instead of closing the whole session; resume only with identical native owner/generation/thread/init.
+ if(failed&&!std::strcmp(failed,"ctx_wallrun_inactive")&&native&&token.phase==3&&state.owner&&token.owner==state.owner
+    &&token.generation==state.generation&&token.thread==state.expectedThread&&token.initMs==state.initMs&&state.ownership!=Ownership::HardClosed){
+  if(!ctxGapActive){ctxGapActive=true;ctxGapStartMs=now;++ctxGapEpisodes;writeLog("NATIVE_SOURCE_CTX_GAP_HOLD session=%llu owner=0x%llx generation=%u episode=%u limit_ms=%u",(unsigned long long)state.session,(unsigned long long)token.owner,unsigned(token.generation),ctxGapEpisodes,kCtxGapHoldMs);}
+  if(now-ctxGapStartMs<=kCtxGapHoldMs){state.published=0;stateLock.clear(std::memory_order_release);return;}
+ }
+ if(failed){ctxGapActive=false;hardClose(failed);return;}
  msm2::Snapshot s{};
  if(!msm2::sample(s)){hardClose("hero_snapshot_invalid");return;}
  if(state.session&&state.session==ctx.wallRunSessionId&&(state.generation!=token.generation||state.owner!=token.owner)){hardClose("same_session_native_generation_or_owner_changed");return;}
+ if(ctxGapActive){
+  ctxGapActive=false;
+  if(state.session&&state.session!=ctx.wallRunSessionId&&state.generation==token.generation&&state.owner==token.owner&&token.thread==state.expectedThread&&token.initMs==state.initMs){
+   writeLog("NATIVE_SOURCE_CTX_GAP_RESUME old_session=%llu new_session=%llu gap_ms=%llu owner_match=1 generation_match=1",(unsigned long long)state.session,(unsigned long long)ctx.wallRunSessionId,(unsigned long long)(now-ctxGapStartMs));
+   state.session=ctx.wallRunSessionId;}
+  else writeLog("NATIVE_SOURCE_CTX_GAP_RESUME session=%llu gap_ms=%llu same_session=%u",(unsigned long long)ctx.wallRunSessionId,(unsigned long long)(now-ctxGapStartMs),unsigned(state.session==ctx.wallRunSessionId));
+ }
  if(state.session&&state.session!=ctx.wallRunSessionId&&state.generation==token.generation){hardClose("worker_session_changed_without_native_generation");return;}
  if(state.session!=ctx.wallRunSessionId){
   end("new_native_session",now);++epoch;lifecycleSummary(now,false,false);state={};
