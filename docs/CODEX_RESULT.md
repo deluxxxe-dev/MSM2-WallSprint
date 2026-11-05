@@ -226,3 +226,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-05: M5c-r10: WallRun observer resumes a timeout-closed session on same-owner Update (game stall); ctx-gap hold 10 s. Build PASS; unit/hooks run in progress at commit.
 - 2026-11-05: M5c-r10 cloud unit tests (tools/test.sh) PASS, hooks run PASS (exit 0), package PASS.
 - 2026-11-05: M5c-r11: orientation entry forward falls back to projected actor up/right (head-on swing into wall refused entry). Unit tests updated; build PASS; unit/hooks run in progress at commit.
+- 2026-11-05: M5c-r11 cloud unit tests (test.sh, test_reversal_heading.sh) PASS, hooks run PASS (exit 0), package PASS.
