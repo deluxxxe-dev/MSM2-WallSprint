@@ -1,6 +1,6 @@
 # Next task — M1b: TurnMaxDown 90 only (M1 result: down movement works, see analysis/C48_M1_RUNTIME_RESULT_20261104.md)
 
-Status: M4 PASSED 2026-11-05 (analysis/M4_ACCEPTANCE_20261105.md); stage 1 accepted. Next: M5 camera — step 1 decode the vanilla WallRun camera config (configs/camera/camera_wallrun_aimcontext.config) with the existing DAT1 walker before any native camera work. Default target: camera rolls so the wall reads as the floor, smooth entry/exit. Earlier: M3 DONE.
+Status: M4 PASSED 2026-11-05 (analysis/M4_ACCEPTANCE_20261105.md); stage 1 accepted. Next: M5 camera — step 1 done (configs have offsets/FOV only, no roll; analysis/M5_CAMERA_20261105.md). Step 2: ActorRelativeCamera reference strings, else runtime camera-matrix scan. Default target: camera rolls so the wall reads as the floor, smooth entry/exit. Earlier: M3 DONE.
 
 ## M4 acceptance sweep (one owner session, no code change)
 1 stop: release stick on the wall for ~5 s. 2 detach: jump off and end WR normally (body upright again?). 3 another wall facing a different compass direction: directions and left/right correct? 4 reach a wall edge/corner (just observe). 5 ground sprint after WS still normal. 6 fast travel or reload after WS (no leftover effects).
