@@ -19,3 +19,4 @@ Rows are concerns, not accusations: say what is known and what is unknown.
 | D10 | 2026-11-04 | Vanilla animation clips | M2a stage ships copies of vanilla sprint animclips under WallRun clip paths (game data). Same rules as D1/D4; conflicts with other mods replacing these clips. | OPEN |
 | D11 | 2026-11-05 | Native gameplay write | M3c writes WallRun.this+0x240/+0x24C (heap, not code). Experimental; offsets are build-specific (2.810.0.0). Must not ship enabled without stick-driven logic and a user toggle. | OPEN |
 | D12 | 2026-11-05 | Reference mod | ActorRelativeCamera (ButtersTM) used only as a research hint/test companion. WS must not bundle, require or copy it; own implementation must be independently derived. | OPEN |
+| D13 | 2026-11-05 | New code hook | WS now hooks the camera reference update entry (0x1065680). Conflicts with other camera mods (e.g. ActorRelativeCamera hooking the same function) are likely; release notes must say not to combine. | OPEN |

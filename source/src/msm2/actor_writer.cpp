@@ -12,6 +12,8 @@
 #include "msm2/sdk_bridge.hpp"
 
 extern "C" {
+// M5b: set by camera_ref::configure; called on the game thread from the verified WallRun Update pre-original callback.
+std::atomic<void(*)()> ws_wallsprint_update_listener{nullptr};
 std::atomic<unsigned> ws_write_dispatch_enabled{0};
 std::atomic<unsigned> ws_update_probe_enabled{0};
 }
@@ -190,6 +192,8 @@ void driveHeading(std::uintptr_t owner){
 }
 }
 
+namespace msm2::writer{bool readStickInput(float& x,float& y){return readStick(x,y);}}
+
 extern "C" void ws_update_probe_sample(std::uintptr_t owner) noexcept{
  if(!thresholdProbeEnabled.load(std::memory_order_acquire)||!ws_update_probe_enabled.load(std::memory_order_acquire))return;
  samples.fetch_add(1,std::memory_order_relaxed);
@@ -205,6 +209,7 @@ extern "C" void ws_update_probe_sample(std::uintptr_t owner) noexcept{
  if(unordered1||value>t1)consumer1Fallthrough.fetch_add(1,std::memory_order_relaxed);
  tiltHeading(owner);
  driveHeading(owner);
+ if(auto listener=ws_wallsprint_update_listener.load(std::memory_order_acquire))listener();
 }
 
 extern "C" void ws_write_dispatch(unsigned,std::uintptr_t) noexcept{}

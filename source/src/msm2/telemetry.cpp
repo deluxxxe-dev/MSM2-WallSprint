@@ -21,6 +21,8 @@
 #include "NativeHooks/native_source_override.hpp"
 #include "NativeHooks/immediate_reset_trace.hpp"
 #include "NativeHooks/reset_copy_source.hpp"
+#include "NativeHooks/camera_ref.hpp"
+#include "msm2/actor_writer.hpp"
 #include <cstdlib>
 #include <limits>
 #include <algorithm>
@@ -118,6 +120,7 @@ void run(){
  msm2::trace::configure(config.trace,targetConfirmed&&ready&&traceImage&&msm2::hooks::observationPlanAuthenticated(),image,traceImage?traceNt.OptionalHeader.SizeOfImage:0);
  msm2::input::configure(config.input,targetConfirmed&&ready&&traceImage&&msm2::hooks::observationPlanAuthenticated(),image,traceImage?traceNt.OptionalHeader.SizeOfImage:0);
  msm2::reset_copy::configure(targetConfirmed&&ready&&msm2::input::authenticated()&&msm2::hooks::observationPlanAuthenticated(),image,traceImage?traceNt.OptionalHeader.SizeOfImage:0);
+ msm2::camera_ref::configure(targetConfirmed&&ready&&traceImage&&msm2::hooks::observationPlanAuthenticated(),image,traceImage?traceNt.OptionalHeader.SizeOfImage:0);
  msm2::native_source::configure(config.source,targetConfirmed&&ready&&msm2::input::authenticated()&&msm2::hooks::observationPlanAuthenticated(),image,traceImage?traceNt.OptionalHeader.SizeOfImage:0,msm2::hooks::patchSnapshot());
  auto proofStatus=msm2::reset_copy::proofStatus();
  msm2::writeLog("ORIENTATION_ADMISSION exe_build_verified=%u path_a_writer_verified=%u path_b_writer_verified=%u path_b_caller_verified=%u path_b_map_verified=%u dual_source_admitted=%u",unsigned(targetConfirmed),unsigned(msm2::input::authenticated()),unsigned(proofStatus.writer),unsigned(proofStatus.caller),unsigned(proofStatus.map),unsigned(msm2::native_source::observationGuardsAuthenticated()));
@@ -133,7 +136,7 @@ void run(){
  // Frequent key polling; game memory reads remain interval-bound or explicit snapshots.
  while(WaitForSingleObject(stopEvent,10)==WAIT_TIMEOUT){
   msm2::request_presence::tick();
-  if(pressed(VK_F8,f8)){msm2::request_presence::closeCapture("F8_kill_switch");msm2::request_presence::stop("F8_kill_switch");msm2::native_source::kill("F8_kill_switch","shutdown");msm2::reset_trace::kill();msm2::trace::kill();msm2::input::kill();msm2::writer::kill("kill_switch_F8");msm2::writeLog("F8 ORIENTATION_TRACE_STOP=1 ALL_WRITES_DISABLED=1 REQUEST_PRESENCE_CAPTURE_CLOSED=1 latched_until_restart=1");}
+  if(pressed(VK_F8,f8)){msm2::request_presence::closeCapture("F8_kill_switch");msm2::request_presence::stop("F8_kill_switch");msm2::native_source::kill("F8_kill_switch","shutdown");msm2::reset_trace::kill();msm2::trace::kill();msm2::input::kill();msm2::writer::kill("kill_switch_F8");msm2::camera_ref::kill();msm2::writeLog("F8 ORIENTATION_TRACE_STOP=1 ALL_WRITES_DISABLED=1 REQUEST_PRESENCE_CAPTURE_CLOSED=1 latched_until_restart=1");}
   if(pressed(VK_F11,f11))msm2::request_presence::armNextGround();
   if(pressed(VK_F12,f12))msm2::request_presence::armNextWallRun();
   auto ownershipContext=msm2::hooks::context(GetTickCount64());
@@ -154,6 +157,7 @@ void run(){
   lastSample=now;++id;msm2::Snapshot sample{};bool available=ready&&msm2::sample(sample);
   auto motion=history.update(available,sample.hero,sample.transform,{sample.position[0],sample.position[1],sample.position[2]},now);
   recent=sample;recentMotion=motion;recentAvailable=available;
+  {float sx=0,sy=0;bool stick=msm2::writer::readStickInput(sx,sy);msm2::camera_ref::tick(sample,motion,available,sx,sy,stick);}
   msm2::hooks::drain(available?&sample:nullptr,motion,now);
   if(motion.changed){
    msm2::writeLog("Hero/Transform identity changed available=%u hero=0x%llx transform=0x%llx hero_epoch=%llu; cache_reset=(transform,components,wallrun_observation,surface_query,velocity) wallrun_reset=Hero_or_Transform_changed",unsigned(available),static_cast<unsigned long long>(available?sample.hero:0),static_cast<unsigned long long>(available?sample.transform:0),static_cast<unsigned long long>(motion.epoch));
@@ -176,13 +180,13 @@ void run(){
   }
  }
  msm2::request_presence::stop("TelemetryStopped");
- msm2::reset_trace::stop();msm2::native_source::stop();msm2::reset_copy::stop();msm2::input::stop();msm2::trace::stop();
+ msm2::reset_trace::stop();msm2::native_source::stop();msm2::reset_copy::stop();msm2::camera_ref::stop();msm2::input::stop();msm2::trace::stop();
  msm2::hooks::stop();
  msm2::writeLog("WallSprint exited reason=TelemetryStopped future_writes_disabled=1 no_forced_ground_restore=1");
  closeLog();
 }
 DWORD WINAPI worker(void*){
- try{run();}catch(const std::exception& e){msm2::request_presence::stop("exception");msm2::reset_trace::stop();msm2::native_source::stop();msm2::reset_copy::stop();msm2::input::stop();msm2::trace::stop();msm2::hooks::stop();msm2::writeLog("exception=%s; telemetry stopped; game overrides=none",e.what());closeLog();}catch(...){msm2::request_presence::stop("exception_unknown");msm2::reset_trace::stop();msm2::native_source::stop();msm2::reset_copy::stop();msm2::input::stop();msm2::trace::stop();msm2::hooks::stop();msm2::writeLog("exception=unknown; telemetry stopped; game overrides=none");closeLog();}
+ try{run();}catch(const std::exception& e){msm2::request_presence::stop("exception");msm2::reset_trace::stop();msm2::native_source::stop();msm2::reset_copy::stop();msm2::camera_ref::stop();msm2::input::stop();msm2::trace::stop();msm2::hooks::stop();msm2::writeLog("exception=%s; telemetry stopped; game overrides=none",e.what());closeLog();}catch(...){msm2::request_presence::stop("exception_unknown");msm2::reset_trace::stop();msm2::native_source::stop();msm2::reset_copy::stop();msm2::camera_ref::stop();msm2::input::stop();msm2::trace::stop();msm2::hooks::stop();msm2::writeLog("exception=unknown; telemetry stopped; game overrides=none");closeLog();}
  auto self=instance;FreeLibraryAndExitThread(self,0);
 }
 }
