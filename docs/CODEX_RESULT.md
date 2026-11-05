@@ -220,3 +220,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-05: M5c-r7: camera up (+0xD44) assists wall-plane forward; reversal-frame WallRun state diagnostic. Build PASS; hooks run in progress at commit.
 - 2026-11-05: M5c-r7 cloud hooks run PASS (exit 0) and package PASS.
 - 2026-11-05: M5c-r8: orientation per-session write cap 4096 -> 262144 (long WS turned upright); camera side axis for screen-forward during camera roll. Build PASS; hooks run in progress at commit.
+- 2026-11-05: M5c-r8 cloud hooks run PASS (exit 0) and package PASS.
