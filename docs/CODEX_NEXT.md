@@ -1,6 +1,6 @@
 # Next task — M1b: TurnMaxDown 90 only (M1 result: down movement works, see analysis/C48_M1_RUNTIME_RESULT_20261104.md)
 
-Status: M5c ACCEPTED 2026-11-05. M5d (vanilla turn-around) DEFERRED, low frequency (analysis/M5D_TURNAROUND_20261105.md). M5e ACTIVE: camera too close at WS entry (analysis/M5E_CAMERA_DISTANCE_20261105.md). Later: natural turning. Earlier: M3, M4 DONE.
+Status: M5c ACCEPTED. M5d (turn-around) and M5e (entry camera dive) DEFERRED (analysis/M5D_TURNAROUND_20261105.md, analysis/M5E_CAMERA_DISTANCE_20261105.md). M6 ACTIVE: natural turning (analysis/M6_TURNING_20261105.md). Earlier: M3, M4 DONE.
 
 ## M4 acceptance sweep (one owner session, no code change)
 1 stop: release stick on the wall for ~5 s. 2 detach: jump off and end WR normally (body upright again?). 3 another wall facing a different compass direction: directions and left/right correct? 4 reach a wall edge/corner (just observe). 5 ground sprint after WS still normal. 6 fast travel or reload after WS (no leftover effects).

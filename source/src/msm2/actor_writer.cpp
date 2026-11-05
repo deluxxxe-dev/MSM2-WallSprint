@@ -55,6 +55,7 @@ constexpr std::uintptr_t kWallNormalOffset=0x398;
 constexpr float kStickDeadzone=0.35f;
 std::atomic<std::uint64_t> driveWrites{0},driveNoInput{0},driveUncalibrated{0},driveBadNormal{0},driveCalibrations{0},driveCameraMapped{0},driveHeldForward{0},driveSnapSeq{0},driveUpAssist{0};
 constexpr bool kCameraUpAssist=true,kCameraSideAxis=true;
+constexpr bool kSmoothTurn=true;constexpr double kTurnRateDegPerSec=600.;double turnLastT{};std::atomic<std::uint64_t> turnLimited{0};
 std::atomic<std::uint64_t> driveSideAxis{0};
 std::atomic<float> driveSnap[16]{};std::uint64_t driveSnapLogged{};
 // M5c-r6 diagnostics: vanilla reversal events (heading read back opposite to our previous write) and camera axis scan.
@@ -154,7 +155,7 @@ void drainLogs(){
  lastThresholdCheck=now;lastLoggedSamples=n;logProbeSnapshot(final?"final":"cumulative");
  writeLog("wallrun_m3d_stick_drive phase=%s enabled=%u writes=%llu cap=%llu no_input=%llu uncalibrated=%llu calibrations=%llu bad_normal=%llu lateral_sign=%d camera_mapped=%llu handedness=%d game_write=1",final?"final":"cumulative",unsigned(kM3dStickDrive),static_cast<unsigned long long>(driveWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(driveNoInput.load()),static_cast<unsigned long long>(driveUncalibrated.load()),static_cast<unsigned long long>(driveCalibrations.load()),static_cast<unsigned long long>(driveBadNormal.load()),driveLateralSign,static_cast<unsigned long long>(driveCameraMapped.load()),ws_camera_handedness.load());
  if(auto q=driveSnapSeq.load(std::memory_order_acquire);q!=driveSnapLogged){driveSnapLogged=q;float v[16];for(int i=0;i<16;++i){v[i]=driveSnap[i].load(std::memory_order_relaxed);}
-  writeLog("wallrun_m5c_map cam=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f stick=%.2f,%.2f out=%.3f,%.3f,%.3f heading=%.3f,%.3f,%.3f proj=%.3f mode=%d held=%llu up_assist=%llu side_axis=%llu",v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],int(v[15]),static_cast<unsigned long long>(driveHeldForward.load()),static_cast<unsigned long long>(driveUpAssist.load()),static_cast<unsigned long long>(driveSideAxis.load()));}
+  writeLog("wallrun_m5c_map cam=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f stick=%.2f,%.2f out=%.3f,%.3f,%.3f heading=%.3f,%.3f,%.3f proj=%.3f mode=%d held=%llu up_assist=%llu side_axis=%llu turn_limited=%llu turn_rate=%.0f",v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],int(v[15]),static_cast<unsigned long long>(driveHeldForward.load()),static_cast<unsigned long long>(driveUpAssist.load()),static_cast<unsigned long long>(driveSideAxis.load()),static_cast<unsigned long long>(turnLimited.load()),kTurnRateDegPerSec);}
  if(auto q=driveFlips.load(std::memory_order_acquire);q!=driveFlipsLogged){driveFlipsLogged=q;float v[17];for(int i=0;i<17;++i){v[i]=driveFlipSnap[i].load(std::memory_order_relaxed);}
   writeLog("wallrun_m5c_vanilla_reversal count=%llu stick=%.2f,%.2f our_last=%.3f,%.3f,%.3f vanilla=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f cam_f=%.3f,%.3f,%.3f cam_u=%.3f,%.3f,%.3f",static_cast<unsigned long long>(q),v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],v[15],v[16]);}
  if(auto q=driveOverrides.load(std::memory_order_acquire);q!=driveOverridesLogged){driveOverridesLogged=q;float v[17];for(int i=0;i<17;++i){v[i]=driveOverrideSnap[i].load(std::memory_order_relaxed);}
@@ -334,6 +335,25 @@ void driveHeading(std::uintptr_t owner){
  for(int i=0;i<3;++i)d[i]=sx*float(driveLateralSign)*l[i]+sy*u[i];
  }else driveCameraMapped.fetch_add(1,std::memory_order_relaxed);
  float dn=std::sqrt(d[0]*d[0]+d[1]*d[1]+d[2]*d[2]);if(dn<1e-3f)return;for(float& c:d)c/=dn;
+ // M6a: natural turning. Rotate the written direction toward the stick target inside the wall plane at a capped
+ // rate instead of snapping, starting from our previous output (or the current travel when the stick was neutral).
+ if(kSmoothTurn){
+  LARGE_INTEGER qpc{},freq{};QueryPerformanceCounter(&qpc);QueryPerformanceFrequency(&freq);
+  double t=double(qpc.QuadPart)/double(freq.QuadPart),dt=turnLastT>0?t-turnLastT:0.;turnLastT=t;
+  if(!(dt>0.)||dt>0.1)dt=0.1;
+  float cur[3];if(driveLastOutValid)std::memcpy(cur,driveLastOut,sizeof(cur));else std::memcpy(cur,h,sizeof(cur));
+  float cn=cur[0]*n[0]+cur[1]*n[1]+cur[2]*n[2];for(int i=0;i<3;++i){cur[i]-=cn*n[i];}
+  float cl=std::sqrt(cur[0]*cur[0]+cur[1]*cur[1]+cur[2]*cur[2]);
+  float dnn=d[0]*n[0]+d[1]*n[1]+d[2]*n[2];
+  if(cl>0.5f&&std::fabs(dnn)<0.2f){for(float& c:cur)c/=cl;
+   float x[3]{cur[1]*d[2]-cur[2]*d[1],cur[2]*d[0]-cur[0]*d[2],cur[0]*d[1]-cur[1]*d[0]};
+   float ang=std::atan2(x[0]*n[0]+x[1]*n[1]+x[2]*n[2],cur[0]*d[0]+cur[1]*d[1]+cur[2]*d[2]);
+   float maxA=float(kTurnRateDegPerSec*3.14159265358979/180.*dt);
+   if(std::fabs(ang)>maxA){float a=ang>0?maxA:-maxA,ca=std::cos(a),sa=std::sin(a);
+    float nc[3]{n[1]*cur[2]-n[2]*cur[1],n[2]*cur[0]-n[0]*cur[2],n[0]*cur[1]-n[1]*cur[0]};
+    for(int i=0;i<3;++i){d[i]=cur[i]*ca+nc[i]*sa;}
+    float l2=std::sqrt(d[0]*d[0]+d[1]*d[1]+d[2]*d[2]);for(float& c:d)c/=l2;turnLimited.fetch_add(1,std::memory_order_relaxed);}}
+ }
  if(std::fabs(d[0]-h[0])+std::fabs(d[1]-h[1])+std::fabs(d[2]-h[2])<1e-4f&&std::fabs(d[0]-h[3])+std::fabs(d[1]-h[4])+std::fabs(d[2]-h[5])<1e-4f)return;
  if(!writableRange(owner+kHeadingOffsetA,24)){tiltRefusedWritable.fetch_add(1,std::memory_order_relaxed);return;}
  std::memcpy(reinterpret_cast<void*>(owner+kHeadingOffsetA),d,sizeof(d));
