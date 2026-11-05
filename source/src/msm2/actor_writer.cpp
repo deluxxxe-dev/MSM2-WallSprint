@@ -18,6 +18,8 @@ std::atomic<void(*)()> ws_wallsprint_update_listener{nullptr};
 // camera thunk, and the proven camera handedness (0 = unknown).
 std::uintptr_t ws_camref_this{};
 std::atomic<int> ws_camera_handedness{0};
+std::atomic<unsigned> ws_camera_forward_offset{0}; // 0 = not yet proven (M5c ground scan; +0x1E0 rejected: it follows hero travel)
+std::atomic<int> ws_camera_forward_sign{1};
 std::atomic<unsigned> ws_write_dispatch_enabled{0};
 std::atomic<unsigned> ws_update_probe_enabled{0};
 }
@@ -183,9 +185,11 @@ void driveHeading(std::uintptr_t owner){
 
  // M5c: camera-relative mapping once the camera forward (+0x1E0 of the camera manager) and handedness are proven.
  bool cameraMapped=false;float d[3]{};
- if(int hand=ws_camera_handedness.load(std::memory_order_relaxed);hand&&ws_camref_this&&ws_camref_this<=UINTPTR_MAX-0x1ec){
+ unsigned camOff=ws_camera_forward_offset.load(std::memory_order_relaxed);
+ if(int hand=ws_camera_handedness.load(std::memory_order_relaxed);hand&&camOff&&ws_camref_this&&ws_camref_this<=UINTPTR_MAX-0x1010){
   float f[3]{};
-  if(msm2::readMemory(ws_camref_this+0x1e0,f,sizeof(f))&&std::isfinite(f[0])&&std::isfinite(f[1])&&std::isfinite(f[2])){
+  if(msm2::readMemory(ws_camref_this+camOff,f,sizeof(f))&&std::isfinite(f[0])&&std::isfinite(f[1])&&std::isfinite(f[2])){
+   {float fs=float(ws_camera_forward_sign.load(std::memory_order_relaxed));for(float& c:f)c*=fs;}
    float fn=f[0]*n[0]+f[1]*n[1]+f[2]*n[2];float p[3]{f[0]-fn*n[0],f[1]-fn*n[1],f[2]-fn*n[2]};
    float pn=std::sqrt(p[0]*p[0]+p[1]*p[1]+p[2]*p[2]);
    if(pn>0.2f){for(float& c:p)c/=pn;
