@@ -247,3 +247,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-05: M5e deferred (+0xD24..+0xD54 likely the actor-relative reference frame, not the rendered camera). M6a natural turning: 600 deg/s in-plane turn rate. Build PASS; unit/hooks run in progress at commit.
 - 2026-11-05: M6a cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
 - 2026-11-05: M6b facing follows commanded travel; M6c ground sprint turn-rate histogram (read-only). Build PASS; unit/hooks run in progress at commit.
+- 2026-11-05: M6b/M6c cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
