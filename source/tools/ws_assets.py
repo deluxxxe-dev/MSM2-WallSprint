@@ -21,7 +21,8 @@ TURN_GAINS: tuple[float, float] | None = (0.0, 0.0)
 # Experiment M3a (2026-11-05): diagonal stick snaps to the nearest axis once WS is active. HYPOTHESIS: the WallRun
 # heading turn rate (vanilla TurnSpeedFast/Slow 100/75) limits turning toward a diagonal stick. None = vanilla.
 # M6h (2026-11-06): WS speed parity. Measured WS travel ~16 m/s mean (vanilla MoveSpeedFast 16) vs ground sprint
-# ~9-10 m/s; the camera lags at the higher speed (uneven distance). HYPOTHESIS: MoveSpeedFast is the WR speed.
+# ~9-10 m/s. M6i result: with 9 the WS steady speed was 21-24 m/s (faster), so MoveSpeedFast is NOT the WR speed
+# (REJECTED as speed; meaning UNKNOWN). Owner: current speed is fine -> kept at 9 for now.
 MOVE_SPEED_FAST: int | None = 9
 TURN_SPEEDS: tuple[int, int] | None = None  # M3a result: only slight diagonal, reversal pulled strongly down -> reverted
 MOD_NAME = (f"WallSprint - WallRun TurnMaxDown {TURN_MAX_DOWN}"
@@ -50,9 +51,11 @@ CAMERA_PATCH = (  # (offset, kind, vanilla, new)  kind B=u8 f=float32
     # (2 m), sideways is "level" (4.5 m), so the distance changed with travel direction. All three = Level.
     # M6h: camera height. Ground camera measured ~2.3 m above the ground, WS ~0.9-1.6 m above the wall. Y is
     # a u8 slot for Level/Up (integers only): Y = 1 m on all three, pivot 1.55 (standard Traversal pivot).
-    (388, "B", 1, 0), (389, "f", -0.3, 1.0), (393, "f", -2.75, -4.5),     # OffsetDown  (0,1,-4.5)
-    (452, "f", 1.25, 0.0), (456, "B", 0, 1), (457, "f", -2.25, -4.5),     # OffsetLevel (0,1,-4.5)
-    (516, "f", 0.5, 0.0), (520, "B", 0, 1), (521, "f", -3.25, -4.5),      # OffsetUp    (0,1,-4.5)
+    # M6j: measured steady distance ground 4.0 m vs WS 5.8-6.4 m with Z -4.5 (camera lag at WS ~2x ground speed).
+    # Z -3.0 targets ~4 m in WS.
+    (388, "B", 1, 0), (389, "f", -0.3, 1.0), (393, "f", -2.75, -3.0),     # OffsetDown  (0,1,-3)
+    (452, "f", 1.25, 0.0), (456, "B", 0, 1), (457, "f", -2.25, -3.0),     # OffsetLevel (0,1,-3)
+    (516, "f", 0.5, 0.0), (520, "B", 0, 1), (521, "f", -3.25, -3.0),      # OffsetUp    (0,1,-3)
     (528, "f", 1.35, 1.55),                                               # PivotHeight 1.55
 )
 
@@ -108,7 +111,7 @@ def camera_members(inputs: Path) -> dict[str, bytes]:
     if _linked(src):
         raise ValueError("reparse/symlink camera input refused")
     data = patch_camera(src.read_bytes())
-    print(f"WS camera framing: {CAMERA_INPUT} -> uniform 4.5 m behind, 1 m up for every pitch, pivot 1.55")
+    print(f"WS camera framing: {CAMERA_INPUT} -> uniform 3 m behind, 1 m up for every pitch, pivot 1.55")
     return {f"0/{CAMERA_PATH}": data}
 
 
