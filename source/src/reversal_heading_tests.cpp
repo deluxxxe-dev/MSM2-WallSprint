@@ -81,7 +81,7 @@ int main(){
  auto regressed=ready();regressed.sample({-.132f,0,0},2,33,33);regressed.sample({-.264f,0,0},1,66,66);assert(!regressed.pendingCount&&!regressed.turning);
  auto seenRegression=ready();seenRegression.sample({-.132f,0,0},2,33,33);seenRegression.sample({-.2f,0,0},3,33,33);seenRegression.sample({-.3f,0,0},2,66,66);assert(!seenRegression.pendingCount&&!seenRegression.turning);
  puts("PASS: B two33ms observations accept at66ms; equal-time update cannot add vote; no early completion and exact120ms proper turn and native regression remain closed");
- source_math::Matrix m{};m.v[0]=m.v[5]=m.v[10]=m.v[15]=1;m.v[12]=12;m.v[13]=34;m.v[14]=56;source_math::Transition t;assert(t.enter(m,{0,0,1},0)==false); // parallel forward cannot define an entry heading
+ source_math::Matrix m{};m.v[0]=m.v[5]=m.v[10]=m.v[15]=1;m.v[12]=12;m.v[13]=34;m.v[14]=56;source_math::Transition t;assert(t.enter(m,{0,0,1},0)); // parallel forward: entry heading falls back to the projected actor up
  m.v[0]=0;m.v[2]=-1;m.v[8]=1;m.v[10]=0;assert(t.enter(m,{0,0,1},0));source_math::Matrix a{};float progress{};assert(t.sample(m,{0,0,1},125,.25f,a,progress)&&progress==.5f);assert(!std::memcmp(a.v+12,m.v+12,16));
  puts("PASS: unchanged entry interpolation and Position/W preservation");
  auto h=ready();for(unsigned i=2;i<10;++i){auto r=h.sample({float(i)*.4f,0,0},i,(i-1)*100,(i-1)*100);check(r);assert(!h.turning&&dot(h.forward,entry.forward)>.99999f);}puts("PASS: straight displacement holds exact entry sign");

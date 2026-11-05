@@ -20,7 +20,12 @@ struct Transition {
  bool enter(const Matrix& original,Vec3 rawNormal,double now){
   active=false;if(!valid(original)||!finite(rawNormal)||!std::isfinite(now))return false;
   float len=std::sqrt(dot(rawNormal,rawNormal));if(len<.95f||len>1.05f)return false;surface=rawNormal*(1/len);if(std::abs(surface.y)>.2f)return false;
-  auto basis=diag::actorAxes(original.v);Vec3 f,r;if(!unit(basis.forward-surface*dot(basis.forward,surface),f)||!unit(cross(surface,f),r)||!unit(cross(r,surface),f))return false;
+  auto basis=diag::actorAxes(original.v);Vec3 f,r;
+  // The actor forward can point straight into the wall (fast swing head-on into a wall), leaving no
+  // in-plane remainder. Fall back to the actor up, then right, projected onto the wall.
+  auto planar=[&](Vec3 v,Vec3& out){Vec3 p=v-surface*dot(v,surface);return dot(p,p)>.04f&&unit(p,out);};
+  if(!planar(basis.forward,f)&&!planar(basis.up,f)&&!planar(basis.right,f))return false;
+  if(!unit(cross(surface,f),r)||!unit(cross(r,surface),f))return false;
   target={r,surface,f,true};if(!diag::measure({r,surface,f}).properRotation)return false;
   entryQ=quaternion(basis);targetQ=quaternion(target);entryMs=now;active=true;return true;
  }

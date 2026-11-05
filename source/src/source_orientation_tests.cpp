@@ -16,7 +16,8 @@ int main(){
   assert(dot(diag::actorAxes(out.v).up,n)>.9999f);assert(a.sample(original,n,2000,.25f,out,t)&&t==1); // No world-Up restart.
   assert(!a.sample(original,n*-1,2010,.25f,out,t));assert(!a.sample(original,{0,1,0},2010,.25f,out,t));
  }
- Transition bad;assert(!bad.enter(base,{0,1,0},0));assert(!bad.enter(base,{0,0,2},0));assert(!bad.enter(base,{0,0,1},0)); // projected forward degenerates
+ Transition bad;assert(!bad.enter(base,{0,1,0},0));assert(!bad.enter(base,{0,0,2},0));// forward straight into the wall: entry falls back to the actor up projected onto the wall
+ {Transition head;assert(head.enter(base,{0,0,1},0));assert(dot(head.target.forward,Vec3{0,1,0})>.9999f&&dot(head.target.up,Vec3{0,0,1})>.9999f);Matrix o{};float tt{};assert(head.sample(base,{0,0,1},250,.25f,o,tt)&&tt==1&&dot(diag::actorAxes(o.v).up,Vec3{0,0,1})>.9999f);}
  auto corrupt=base;corrupt.v[0]=std::numeric_limits<float>::quiet_NaN();assert(!valid(corrupt));corrupt=base;corrupt.v[15]=0;assert(!valid(corrupt));corrupt=base;corrupt.v[4]=1;assert(!valid(corrupt));
  CompactBlock compact{};compact.rows[0]=2;compact.rows[4]=1.5f;compact.rows[8]=.75f;for(unsigned i=0;i<compact.metadata.size();++i)compact.metadata[i]=static_cast<unsigned char>(i+1);
  CompactBlock replacement{};Vec3 scales{};diag::ActorAxes rotated{{0,0,-1},{0,1,0},{1,0,0},true};assert(compactReplacement(compact,rotated,replacement,scales));
