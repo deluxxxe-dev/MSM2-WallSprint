@@ -26,7 +26,8 @@ std::uintptr_t target{};
 std::atomic<bool> installed{false}, killed{false};
 std::atomic<std::uintptr_t> engagedManager{0};
 std::atomic<unsigned char> savedFlag{0};
-std::atomic<std::uint64_t> lastWsMs{0}, engages{0}, restores{0}, refusedWritable{0};
+std::atomic<std::uint64_t> lastWsMs{0}, engages{0}, restores{0}, refusedWritable{0}, wsSessionStartMs{0}, delayedUpdates{0};
+constexpr std::uint64_t kEngageDelayMs = 1000;
 struct Slot { unsigned fn{}, sn{}; double fsum{}, sdot{}, scross{}; };
 Slot slots[kScanSlots];
 unsigned scanSamples{}; std::uint64_t lastScanLog{};
@@ -60,9 +61,9 @@ void restore(const char* reason) {
     *reinterpret_cast<volatile unsigned char*>(manager + kActorRelativeFlag) = savedFlag.load();
   }
   restores.fetch_add(1);
-  msm2::writeLog("WS_CAMERA_REF restore reason=%s manager=0x%llx restored_value=%u engages=%llu restores=%llu", reason,
+  msm2::writeLog("WS_CAMERA_REF restore reason=%s manager=0x%llx restored_value=%u engages=%llu restores=%llu engage_delay_ms=%llu delayed_updates=%llu", reason,
                  static_cast<unsigned long long>(manager), unsigned(savedFlag.load()), static_cast<unsigned long long>(engages.load()),
-                 static_cast<unsigned long long>(restores.load()));
+                 static_cast<unsigned long long>(restores.load()), static_cast<unsigned long long>(kEngageDelayMs), static_cast<unsigned long long>(delayedUpdates.load()));
 }
 }
 
@@ -121,8 +122,14 @@ void onWallSprintUpdate() noexcept {
   if (!installed.load() || killed.load()) return;
   auto manager = ws_camref_this;
   if (!manager || manager > UINTPTR_MAX - 0x400) return;
-  lastWsMs.store(GetTickCount64());
+  auto nowMs = GetTickCount64();
+  // M5e-2: a new WS session starts after a >300 ms gap. Engage the actor-relative camera only once the
+  // orientation override has rotated the hero onto the wall (entry 0.70 s + 0.25 s rotation), so the camera
+  // blend starts from the final frame instead of following the rotating actor axes (camera dived to the feet).
+  if (nowMs - lastWsMs.load() > 300) wsSessionStartMs.store(nowMs);
+  lastWsMs.store(nowMs);
   if (engagedManager.load() == manager) return;
+  if (nowMs - wsSessionStartMs.load() < kEngageDelayMs) { delayedUpdates.fetch_add(1); return; }
   if (engagedManager.load()) restore("manager_changed");
   unsigned char current = 0;
   if (!writableByte(manager + kActorRelativeFlag) || !readMemory(manager + kActorRelativeFlag, &current, 1)) { refusedWritable.fetch_add(1); return; }
