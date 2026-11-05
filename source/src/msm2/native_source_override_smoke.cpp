@@ -342,10 +342,10 @@ int main(){
  // The common atomic B attempt budget cannot be oversubscribed by threads.
  prepare({0,0,1});std::array<SecondaryJob,8> contenders{};std::array<HANDLE,8> threads{},ready{};auto go=CreateEventW(nullptr,TRUE,FALSE,nullptr);assert(go);
  for(unsigned i=0;i<8;++i){auto& c=contenders[i];c.target=fakeHero.transform;c.mode=6;c.before=compact;c.go=go;c.ready=ready[i]=CreateEventW(nullptr,TRUE,FALSE,nullptr);assert(c.ready);threads[i]=CreateThread(nullptr,0,secondaryJob,&c,0,nullptr);assert(threads[i]);}
- assert(WaitForMultipleObjects(8,ready.data(),TRUE,2000)==WAIT_OBJECT_0);workerTick();pathBReservations=4095;SetEvent(go);
+ assert(WaitForMultipleObjects(8,ready.data(),TRUE,2000)==WAIT_OBJECT_0);workerTick();pathBReservations=kSessionWriteCap-1;SetEvent(go);
  assert(WaitForMultipleObjects(8,threads.data(),TRUE,2000)==WAIT_OBJECT_0);unsigned winners=0;for(unsigned i=0;i<8;++i){winners+=unsigned(contenders[i].changed);CloseHandle(threads[i]);CloseHandle(ready[i]);}CloseHandle(go);
  unsigned uniqueThreads=0;for(auto& id:secondary.threads)if(id.load())++uniqueThreads;assert(uniqueThreads==8&&secondary.inflight==0);
- assert(winners==1&&pathBReservations==4096&&pathBWrites==1&&secondary.overridden==1&&secondary.rejected==7&&causeState==0);callB();assert(pathBWrites==1);
+ assert(winners==1&&pathBReservations==kSessionWriteCap&&pathBWrites==1&&secondary.overridden==1&&secondary.rejected==7&&causeState==0);callB();assert(pathBWrites==1);
  prepare({0,0,1});auto sustainedSession=state.session;std::atomic<bool> readerDone{false};
  auto reader=CreateThread(nullptr,0,[](void* raw)->DWORD{auto& done=*static_cast<std::atomic<bool>*>(raw);while(!done.load()){Token t{};ws::native_source::lifecycle(t);Sleep(0);}return 0;},&readerDone,0,nullptr);assert(reader);
  unsigned atTwoSeconds=0;do {
@@ -492,7 +492,7 @@ int main(){
  assert(comparison.window.windows>=10&&comparison.window.windows<=16&&comparison.window.overwritten>0);
  assert(output.find("WALL_MOTION_WINDOW schema=2")!=std::string::npos&&output.find("actor_forward=(")!=std::string::npos&&output.find("sampled_normal=(")!=std::string::npos&&output.find("decision_ms=")!=std::string::npos&&output.find("PATH_B_INCOMING_BASIS schema=1")!=std::string::npos);
  assert(state.headingLogs==64&&state.actorLogs==256&&state.countLogs<=64&&state.movementSamples==40);
- assert(pathAWrites>0&&pathBWrites>0&&pathAWrites<4096&&pathBWrites<4096);
+ assert(pathAWrites>0&&pathBWrites>0&&pathAWrites<kSessionWriteCap&&pathBWrites<kSessionWriteCap);
  ws::native_source::event(3,owner);context.wallRunActive=false;workerTick(false);auto longA=pathAWrites.load(),longB=pathBWrites.load();callA();callB();
  assert(!state.transition.active&&state.summaryEmitted&&pathAWrites==longA&&pathBWrites==longB);
  assert(comparison.window.finished&&comparison.window.count==0);

@@ -52,7 +52,8 @@ constexpr bool kM3dStickDrive=true;
 constexpr std::uintptr_t kWallNormalOffset=0x398;
 constexpr float kStickDeadzone=0.35f;
 std::atomic<std::uint64_t> driveWrites{0},driveNoInput{0},driveUncalibrated{0},driveBadNormal{0},driveCalibrations{0},driveCameraMapped{0},driveHeldForward{0},driveSnapSeq{0},driveUpAssist{0};
-constexpr bool kCameraUpAssist=true;
+constexpr bool kCameraUpAssist=true,kCameraSideAxis=true;
+std::atomic<std::uint64_t> driveSideAxis{0};
 std::atomic<float> driveSnap[16]{};std::uint64_t driveSnapLogged{};
 // M5c-r6 diagnostics: vanilla reversal events (heading read back opposite to our previous write) and camera axis scan.
 std::atomic<std::uint64_t> driveFlips{0};std::atomic<float> driveFlipSnap[11]{};std::uint64_t driveFlipsLogged{};
@@ -147,7 +148,7 @@ void drainLogs(){
  lastThresholdCheck=now;lastLoggedSamples=n;logProbeSnapshot(final?"final":"cumulative");
  writeLog("wallrun_m3d_stick_drive phase=%s enabled=%u writes=%llu cap=%llu no_input=%llu uncalibrated=%llu calibrations=%llu bad_normal=%llu lateral_sign=%d camera_mapped=%llu handedness=%d game_write=1",final?"final":"cumulative",unsigned(kM3dStickDrive),static_cast<unsigned long long>(driveWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(driveNoInput.load()),static_cast<unsigned long long>(driveUncalibrated.load()),static_cast<unsigned long long>(driveCalibrations.load()),static_cast<unsigned long long>(driveBadNormal.load()),driveLateralSign,static_cast<unsigned long long>(driveCameraMapped.load()),ws_camera_handedness.load());
  if(auto q=driveSnapSeq.load(std::memory_order_acquire);q!=driveSnapLogged){driveSnapLogged=q;float v[16];for(int i=0;i<16;++i){v[i]=driveSnap[i].load(std::memory_order_relaxed);}
-  writeLog("wallrun_m5c_map cam=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f stick=%.2f,%.2f out=%.3f,%.3f,%.3f heading=%.3f,%.3f,%.3f proj=%.3f mode=%d held=%llu up_assist=%llu",v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],int(v[15]),static_cast<unsigned long long>(driveHeldForward.load()),static_cast<unsigned long long>(driveUpAssist.load()));}
+  writeLog("wallrun_m5c_map cam=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f stick=%.2f,%.2f out=%.3f,%.3f,%.3f heading=%.3f,%.3f,%.3f proj=%.3f mode=%d held=%llu up_assist=%llu side_axis=%llu",v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],int(v[15]),static_cast<unsigned long long>(driveHeldForward.load()),static_cast<unsigned long long>(driveUpAssist.load()),static_cast<unsigned long long>(driveSideAxis.load()));}
  if(auto q=driveFlips.load(std::memory_order_acquire);q!=driveFlipsLogged){driveFlipsLogged=q;float v[11];for(int i=0;i<11;++i){v[i]=driveFlipSnap[i].load(std::memory_order_relaxed);}
   writeLog("wallrun_m5c_vanilla_reversal count=%llu stick=%.2f,%.2f our_last=%.3f,%.3f,%.3f vanilla=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f",static_cast<unsigned long long>(q),v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10]);}
  // Camera axis scan (read-only): unit vectors orthogonal to the camera forward near +0xD34, at most 6 scans, >=3 s apart, only while mapping is live.
@@ -247,11 +248,22 @@ void driveHeading(std::uintptr_t owner){
     // M5c-r7: camera up is the next matrix row (+0x10 after forward; runtime scan, orthonormal in 5/5 scans).
     // Projections of forward and up onto the wall point the same screen-forward way, so their sum stays large
     // when the camera looks straight at the wall.
+    bool haveSide=false;float sideP[3]{},sideLen=0;(void)sideLen;
     {float u[3]{};if(kCameraUpAssist&&msm2::readMemory(ws_camref_this+camOff+0x10,u,sizeof(u))&&std::isfinite(u[0])&&std::isfinite(u[1])&&std::isfinite(u[2])){
       float ul=u[0]*u[0]+u[1]*u[1]+u[2]*u[2],fu=f[0]*u[0]+f[1]*u[1]+f[2]*u[2];
-      if(ul>0.9f&&ul<1.1f&&std::fabs(fu)<0.08f){for(int i=0;i<3;++i){f[i]+=fs*u[i];}driveUpAssist.fetch_add(1,std::memory_order_relaxed);}}}
+      if(ul>0.9f&&ul<1.1f&&std::fabs(fu)<0.08f){
+       // M5c-r8: camera side axis c=f x u. Its wall projection is the screen-horizontal line on the wall, so
+       // screen-forward = proj(c) x n. Stays defined while the camera rolls onto the wall (f and u both tilted
+       // 45 deg into the wall make proj(f+u) vanish). Sign: equals the proj(f+u) direction on unrolled frames.
+       float c[3]{f[1]*u[2]-f[2]*u[1],f[2]*u[0]-f[0]*u[2],f[0]*u[1]-f[1]*u[0]};
+       float cn=c[0]*n[0]+c[1]*n[1]+c[2]*n[2];float pc[3]{c[0]-cn*n[0],c[1]-cn*n[1],c[2]-cn*n[2]};
+       float pcl=std::sqrt(pc[0]*pc[0]+pc[1]*pc[1]+pc[2]*pc[2]);
+       if(kCameraSideAxis&&pcl>0.3f){haveSide=true;sideLen=pcl;
+        sideP[0]=pc[1]*n[2]-pc[2]*n[1];sideP[1]=pc[2]*n[0]-pc[0]*n[2];sideP[2]=pc[0]*n[1]-pc[1]*n[0];for(float& v:sideP)v/=pcl;}
+       for(int i=0;i<3;++i){f[i]+=fs*u[i];}driveUpAssist.fetch_add(1,std::memory_order_relaxed);}}}
     float fn=f[0]*n[0]+f[1]*n[1]+f[2]*n[2];float p[3]{f[0]-fn*n[0],f[1]-fn*n[1],f[2]-fn*n[2]};
     float pn=std::sqrt(p[0]*p[0]+p[1]*p[1]+p[2]*p[2]);
+    if(haveSide){std::memcpy(p,sideP,sizeof(p));pn=1.f;driveSideAxis.fetch_add(1,std::memory_order_relaxed);}
     int mode=0;
     if(pn>0.2f){for(float& c:p)c/=pn;std::memcpy(driveLatchP,p,sizeof(p));driveLatched=true;mode=1;}
     else if(driveLatched){float q=driveLatchP[0]*n[0]+driveLatchP[1]*n[1]+driveLatchP[2]*n[2];

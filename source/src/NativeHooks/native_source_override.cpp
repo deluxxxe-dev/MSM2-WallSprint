@@ -49,6 +49,7 @@ ws::interop::AtomicPublication<StaleSignal> stalePublication;
 enum class Ownership {Dormant,Active,StaleSuspended,HardClosed};
 struct NativeClose {Token token{};Published source{};bool wasOpen{},sourceRead{};};
 ws::interop::AtomicPublication<NativeClose> deinitPublication;
+constexpr unsigned kSessionWriteCap=262144; // per WallRun session orientation write cap (~58 min at 75 Hz); was 4096 (~55 s)
 std::atomic<unsigned> pathAWrites{0},pathBWrites{0},pathARejects{0},pathBRejects{0},pathBReservations{0};
 std::atomic<bool> resetRequested{false},lifecycleOpen{false};std::atomic<std::uint64_t> lifecycleEpoch{0};
 ws::position_proof::Result positionProof;
@@ -134,7 +135,7 @@ struct SecondaryCall {
   --secondary.inflight;
  }
 };
-bool reservePathB(){auto n=pathBReservations.load();while(n<4096){if(pathBReservations.compare_exchange_strong(n,n+1))return true;}return false;}
+bool reservePathB(){auto n=pathBReservations.load();while(n<kSessionWriteCap){if(pathBReservations.compare_exchange_strong(n,n+1))return true;}return false;}
 void publishInactive() noexcept {Published p{};publication.publish(p);}
 void adhesionSummary(const char* reason){
  auto& a=state.adhesion;if(!state.entered||a.finished)return;a.finished=true;
@@ -565,7 +566,7 @@ void capturePath(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::ui
  if(p.thread!=GetCurrentThreadId()){kill("path_a_wrong_thread","path_a");release();return;}
  if(!entryToken(p,"path_a")){++pathARejects;release();return;}
  if(p.lifecycleEpoch!=lifecycleEpoch.load()||now<p.publishedMs||now-p.publishedMs>100){++pathARejects;release();return;}
- if(pathAWrites.load()>=4096){rejectEntry("path_A_write_budget_exhausted",1|16|32);release();return;}
+ if(pathAWrites.load()>=kSessionWriteCap){rejectEntry("path_A_write_budget_exhausted",1|16|32);release();return;}
  if(rcx!=p.transform){rejectEntry("current_Hero_target_mismatch",1|16|32);release();return;}
  if(r8!=0){kill("path_a_unexpected_R8","path_a");rejectEntry("unexpected_R8_not_null",1|2|16|32);release();return;}
  msm2::Snapshot hero{};if(!msm2::sample(hero)||hero.hero!=p.hero||hero.transform!=p.transform){kill("path_a_hero_transform_mismatch","path_a");rejectEntry("fresh_Hero_identity_unavailable_or_changed",1|2|16|32);release();return;}
@@ -623,7 +624,7 @@ void captureCopy(std::uintptr_t rcx,std::uintptr_t rdx,std::uintptr_t r8,std::ui
   if(current.lifecycleEpoch!=lifecycleEpoch.load()||!lifecycleOpen.load()||killed.load()){rejectEntry("secondary_source_inactive");return false;}
   if(clock<current.publishedMs||clock-current.publishedMs>100){rejectEntry("secondary_publication_stale");return false;}
   if(!msm2::reset_copy::compactProofAuthenticated()||!currentGuards()){integrityLost();return false;}
-  if(pathBWrites.load()>=4096){rejectEntry("secondary_write_budget_exhausted");return false;}
+  if(pathBWrites.load()>=kSessionWriteCap){rejectEntry("secondary_write_budget_exhausted");return false;}
   if(ret!=imageBase+0x2cfc84b||rcx!=current.transform){rejectEntry("secondary_wrong_target_or_caller");return false;}
   if(!msm2::sample(hero)||hero.hero!=current.hero||hero.transform!=current.transform){const char* why=otherThread?"secondary_identity_epoch_mismatch":"path_b_hero_transform_mismatch";kill(why,"path_b");rejectEntry(why);return false;}
   if(otherThread)secondaryCall.event.tokenIdentity=true;
