@@ -27,3 +27,12 @@ VERIFIED-RUNTIME (this build/session):
 Conclusion: HYPOTHESIS B supported (OBSERVED-CORRELATION). The dive comes from the actor-relative camera following the actor axes as they rotate; the blend itself (A) does not cause it.
 Change (M5e-2): the +0x304 engage is delayed to 1000 ms after the WS session start (a new session = >300 ms since the last WS update), so the camera switches after the rotation has finished. The camera is upright (vanilla) for the first second. Restore/F8/300 ms end rule unchanged. `WS_CAMERA_REF restore` now logs `engage_delay_ms` and `delayed_updates`. Distance diagnostic kept.
 Decision: no dive and roll still smooth -> keep (maybe tune the delay). Dive remains, later than 1 s -> the camera smooths in actor space; next hold the camera position during the switch.
+
+## M5e-2 result (log `MSM2-WS-v0.1c48-20261105-220802.log` + 12 s video, not committed) — REJECTED
+Owner: still wrong.
+- With the 1 s delay, the engage happened after the rotation. The distance still fell with the blend: 2.8 -> 0.82 m at 0.53-0.58 s after engage. It then recovered to ~3.4 m over ~1.5 s (2 entries).
+- Hypothesis B is REJECTED: the dive does not depend on the actor rotating.
+- Video: during the delayed first second the vanilla camera looks steeply up the wall. After the engage, the camera goes under the hero and looks out at the sky. It returns behind the hero while it re-centers.
+- HYPOTHESIS C: the camera's pitch angle carries over unchanged into the actor-relative frame. "Looking up the wall" in world space becomes a steep upward look in the wall-as-floor frame. The orbit then places the camera below the floor (inside the wall), and collision pushes it in to ~0.8 m. Auto re-centering of the pitch brings the distance back.
+Change (M5e-3): the engage delay is reverted to 0 (the 1 s variant is kept in code as `kEngageDelayMs`). Read-only `WS_CAMERA_PITCH_SCAN`: on the ground (no WS for 1 s), every 50 ms, each float in manager +0..0x1000 is compared with the pitch of +0xD34 (radians/degrees, both signs). Candidates with rms < 0.12 rad are listed, given a pitch range > 0.6 rad and at least 60 samples (max 8 logs).
+Decision: a pitch slot found -> M5e-4: set it to level (0) at engage (one change). None -> the pitch is stored in another form (e.g. a quaternion); widen the search.

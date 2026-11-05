@@ -236,3 +236,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-05: M5e-1 cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
 - 2026-11-05: M5e-1 analysed (+0xD54 camera position; dive at end of 0.25 s orientation rotation). M5e-2: WS camera engage delayed 1000 ms. Build PASS; unit/hooks run in progress at commit.
 - 2026-11-05: M5e-2 cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
+- 2026-11-05: M5e-2 rejected (dive independent of rotation; pitch carry-over hypothesis). M5e-3: delay reverted, read-only camera pitch-slot scan. Build PASS; unit/hooks run in progress at commit.

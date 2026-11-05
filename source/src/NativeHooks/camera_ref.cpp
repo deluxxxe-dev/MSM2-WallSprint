@@ -27,7 +27,7 @@ std::atomic<bool> installed{false}, killed{false};
 std::atomic<std::uintptr_t> engagedManager{0};
 std::atomic<unsigned char> savedFlag{0};
 std::atomic<std::uint64_t> lastWsMs{0}, engages{0}, restores{0}, refusedWritable{0}, wsSessionStartMs{0}, delayedUpdates{0};
-constexpr std::uint64_t kEngageDelayMs = 1000;
+constexpr std::uint64_t kEngageDelayMs = 0; // M5e-2 tried 1000 ms: did not stop the dive (REJECTED), reverted
 struct Slot { unsigned fn{}, sn{}; double fsum{}, sdot{}, scross{}; };
 Slot slots[kScanSlots];
 unsigned scanSamples{}; std::uint64_t lastScanLog{};
@@ -99,6 +99,36 @@ void m5eDistance(const msm2::Snapshot& hero, std::uint64_t now) {
     (unsigned long long)(entry ? now - eng : 0), (unsigned long long)engages.load(), t, bl[0], bl[1], st[0], st[1], st[2], st[3]);
 }
 }
+namespace {
+// M5e-3 diagnostic (read-only): find the camera pitch angle slot. On the ground (no WS for 1 s) every 50 ms,
+// compare each float in manager +0..0x1000 with the pitch of the camera forward (+0xD34): +-radians, +-degrees.
+struct PitchSlot { double e[4]{}; };
+PitchSlot pitchSlots[0x1000 / 4]; unsigned pitchSamples{}; float pitchMin{10}, pitchMax{-10}; std::uint64_t pitchLastMs{}, pitchLastLog{}; unsigned pitchLogs{};
+void m5ePitch(std::uint64_t now) {
+  auto manager = ws_camref_this;
+  if (!manager || manager > UINTPTR_MAX - 0x1000 || killed.load() || engagedManager.load() || now - lastWsMs.load() < 1000 || now - pitchLastMs < 50 || pitchLogs >= 8) return;
+  pitchLastMs = now;
+  static float blk[0x1000 / 4];
+  if (!msm2::readMemory(manager, blk, sizeof blk)) return;
+  const float* f = &blk[0xD34 / 4];
+  float fl = std::sqrt(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]); if (!std::isfinite(fl) || fl < 0.95f || fl > 1.05f) return;
+  float pitch = std::asin(std::fmax(-1.f, std::fmin(1.f, f[1] / fl)));
+  pitchMin = std::fmin(pitchMin, pitch); pitchMax = std::fmax(pitchMax, pitch); ++pitchSamples;
+  const double unit[4] = {1, -1, 57.29577951, -57.29577951};
+  for (unsigned i = 0; i < 0x1000 / 4; ++i) { double v = blk[i]; if (!std::isfinite(v) || std::fabs(v) > 1e4) v = 1e4;
+    for (int k = 0; k < 4; ++k) { double d = (v - unit[k] * pitch) / std::fabs(unit[k]); pitchSlots[i].e[k] += d * d; } }
+  if (pitchSamples < 60 || pitchMax - pitchMin < 0.6f || now - pitchLastLog < 5000) return;
+  pitchLastLog = now; ++pitchLogs;
+  char t[900]; int len = 0, k2 = 0;
+  const char* names[4] = {"rad", "-rad", "deg", "-deg"};
+  for (unsigned i = 0; i < 0x1000 / 4 && k2 < 12; ++i) for (int k = 0; k < 4; ++k) {
+    double rms = std::sqrt(pitchSlots[i].e[k] / pitchSamples); if (rms > 0.12) continue;
+    if (i * 4 >= 0xD34 && i * 4 < 0xD40) continue; // the forward vector itself
+    if (len < int(sizeof t) - 40) { len += std::snprintf(t + len, sizeof t - len, "%s0x%x:%s:%.3f", k2 ? ";" : "", i * 4, names[k], rms); }
+    ++k2; }
+  msm2::writeLog("WS_CAMERA_PITCH_SCAN samples=%u pitch_range=%.2f..%.2f candidates=%s read_only=1", pitchSamples, pitchMin, pitchMax, k2 ? t : "none");
+}
+}
 namespace msm2::camera_ref {
 void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
   if (!verified || !image || imageSize <= kEntryRva + 64) { writeLog("WS_CAMERA_REF admitted=0 reason=build_or_image_unverified"); return; }
@@ -146,6 +176,7 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   // horizontal part is parallel to travel for a forward stick and perpendicular for a sideways stick
   // (travel = sign(sx) * h * cross(forward, up)). Accepted once per process; then used for camera-relative WS input.
   m5eDistance(snapshot, now);
+  m5ePitch(now);
   auto manager = ws_camref_this;
   (void)available;
   if (ws_camera_forward_offset.load() || !manager || !motion.valid || now - lastWsMs.load() < 1000 || !stick) return;
