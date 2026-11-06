@@ -196,3 +196,9 @@ Do not let this roadmap expand the current bounded task. Until the movement foun
 - no camera/animation work.
 
 The roadmap is a reminder of the intended end-state, not permission to skip the current proof sequence.
+
+## Owner requirement 2026-11-06: player-tunable presets (ModSettings)
+- Camera distance/height/pivot/FOV, travel speed, turn rate, camera follow rate/delay and similar values must later be adjustable per player in ModSettings, with savable presets.
+- Current work (M6) only searches for the DEFAULT preset values (ground-sprint parity). Record each chosen default with its measurement in analysis/M6_TURNING_20261105.md.
+- Design note: today the camera values come from a config file baked into the Overstrike stage at Update-WS time. They cannot change while the game runs. A live ModSettings preset needs one of two routes: (a) the native side writes the loaded config values in memory (needs the loaded-asset location), or (b) the native side applies the offsets/speed itself. Native-side values (turn rate 400 deg/s, camera follow 90 deg/s / 10 deg / 1 s) are already single constants and are easy to expose.
+- Speed: steering MoveSpeedFast is NOT the travel speed (M6i). The real speed control is still UNKNOWN.

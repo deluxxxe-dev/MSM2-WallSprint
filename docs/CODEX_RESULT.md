@@ -259,3 +259,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M6h/M6i cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
 - 2026-11-06: M6i: MoveSpeedFast rejected as WR speed (WS faster at 9). M6j: WS camera distance Z -3.0 (measured WS 6 m vs ground 4 m). test_ws_assets PASS. Config-only.
 - 2026-11-06: M6k WS camera Z -2.5 (measured WS ~4.5 m vs ground ~4.0 m). test_ws_assets PASS. Config-only.
+- 2026-11-06: owner requirement recorded: per-player ModSettings presets for distance/speed etc.; M6 searches defaults (FEATURE_ROADMAP).
