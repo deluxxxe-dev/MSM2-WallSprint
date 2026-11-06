@@ -299,3 +299,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M8c cloud full suites PASS on tree 152a3c6512f6c3f3d6d2673d0962c809fd73f72f (listed).
 - 2026-11-06: M8c scan timed out (no write). M8c-r2 faster scan; cloud full suites PASS on tree ae64bb50177898f6e121f6c0c0f2d0c563c5c378 (listed).
 - 2026-11-06: M8c-r2 scan timed out again; M8c-r3 linear resident-only scan, cloud full suites PASS on tree 7e9c56f2170927140ab7f9ef46b98cef54661fa9 (listed).
+- 2026-11-06: M8c-r3 scan finished, no raw block. M8c-r4 mapped/readonly + float-pair dump; cloud full suites PASS on tree a98077cd1719e503356d479aa62ac3d331f6dc74 (listed).
