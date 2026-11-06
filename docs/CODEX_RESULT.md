@@ -264,3 +264,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M6l cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
 - 2026-11-06: M6l: off-center 36-44 deg only when running down (speed similar) -> M6m camera aim correction toward hero pivot (90 deg/s, 5 deg deadband). Build PASS; unit/hooks run in progress at commit.
 - 2026-11-06: M6m cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
+- 2026-11-06: M6n: WS camera PivotHeight 0 (world-up pivot made distance depend on travel direction), Z -3.5. test_ws_assets PASS. Config-only.

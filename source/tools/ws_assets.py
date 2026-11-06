@@ -53,10 +53,13 @@ CAMERA_PATCH = (  # (offset, kind, vanilla, new)  kind B=u8 f=float32
     # a u8 slot for Level/Up (integers only): Y = 1 m on all three, pivot 1.55 (standard Traversal pivot).
     # M6j: measured steady distance ground 4.0 m vs WS 5.8-6.4 m with Z -4.5 (camera lag at WS ~2x ground speed).
     # Z -3.0 gave WS 3.9-4.9 m (mean ~4.5) vs ground ~4.0; M6k: Z -2.5.
-    (388, "B", 1, 0), (389, "f", -0.3, 1.0), (393, "f", -2.75, -2.5),     # OffsetDown  (0,1,-2.5)
-    (452, "f", 1.25, 0.0), (456, "B", 0, 1), (457, "f", -2.25, -2.5),     # OffsetLevel (0,1,-2.5)
-    (516, "f", 0.5, 0.0), (520, "B", 0, 1), (521, "f", -3.25, -2.5),      # OffsetUp    (0,1,-2.5)
-    (528, "f", 1.35, 1.55),                                               # PivotHeight 1.55
+    # M6n: PivotHeight is added along WORLD up: running up the wall the pivot moves 1.55 m ahead of the hero (camera
+    # near, 2.4 m), running down it moves toward the camera (far, 2.8-4.1 m). Pivot 0 removes the direction
+    # dependence; height comes only from the camera-frame Y = 1. Z -3.5 targets the ground ~4 m.
+    (388, "B", 1, 0), (389, "f", -0.3, 1.0), (393, "f", -2.75, -3.5),     # OffsetDown  (0,1,-3.5)
+    (452, "f", 1.25, 0.0), (456, "B", 0, 1), (457, "f", -2.25, -3.5),     # OffsetLevel (0,1,-3.5)
+    (516, "f", 0.5, 0.0), (520, "B", 0, 1), (521, "f", -3.25, -3.5),      # OffsetUp    (0,1,-3.5)
+    (528, "f", 1.35, 0.0),                                                # PivotHeight 0
 )
 
 
@@ -111,7 +114,7 @@ def camera_members(inputs: Path) -> dict[str, bytes]:
     if _linked(src):
         raise ValueError("reparse/symlink camera input refused")
     data = patch_camera(src.read_bytes())
-    print(f"WS camera framing: {CAMERA_INPUT} -> uniform 2.5 m behind, 1 m up for every pitch, pivot 1.55")
+    print(f"WS camera framing: {CAMERA_INPUT} -> uniform 3.5 m behind, 1 m up for every pitch, pivot 0")
     return {f"0/{CAMERA_PATH}": data}
 
 
