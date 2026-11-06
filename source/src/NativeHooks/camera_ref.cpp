@@ -640,20 +640,25 @@ DWORD WINAPI m9Launch(void* arg) {
   auto t0 = GetTickCount64();
   while (!killed.load() && GetTickCount64() - t0 < 400) { auto now = GetTickCount64(), last = lastWsMs.load(); if (last < now && now - last > 30) break; Sleep(2); }
   auto hero = m9Hero.load(); float n[3] = {m9N[0].load(), m9N[1].load(), m9N[2].load()};
-  unsigned writes = 0, refused = 0; float before[2] = {-99, -99}, after[2] = {-99, -99};
+  unsigned writes = 0, refused = 0, why[2] = {0, 0}, wslot[2] = {0, 0}; std::uintptr_t ptrSeen[2] = {0, 0}; float before[2] = {-99, -99}, after[2] = {-99, -99};
   for (int i = 0; i < 6 && !killed.load() && hero; ++i) {
     for (int k = 0; k < 2; ++k) {
-      std::uintptr_t obj = 0; if (!msm2::readMemory(hero + kVelSlot[k], &obj, 8) || !velReadable(obj)) { ++refused; continue; }
-      auto a = obj + kVelField[k]; float v[3]; if (!msm2::readMemory(a, v, 12) || !std::isfinite(v[0]) || !std::isfinite(v[1]) || !std::isfinite(v[2])) { ++refused; continue; }
+      std::uintptr_t obj = 0; if (!msm2::readMemory(hero + kVelSlot[k], &obj, 8)) { ++refused; why[k] = 1; continue; }
+      auto a = obj + kVelField[k];
+      // M9c: M9b refused slot 0 every time (velReadable needs 4 KiB after the object start). Check only the 12 bytes.
+      MEMORY_BASIC_INFORMATION mb{}; if (!obj || !VirtualQuery(reinterpret_cast<void*>(a), &mb, sizeof mb) || mb.State != MEM_COMMIT || (mb.Protect & 0xff) != PAGE_READWRITE ||
+          (mb.Protect & PAGE_GUARD) || reinterpret_cast<std::uintptr_t>(mb.BaseAddress) + mb.RegionSize < a + 12) { ++refused; why[k] = 2; ptrSeen[k] = obj; continue; }
+      ptrSeen[k] = obj;
+      float v[3]; if (!msm2::readMemory(a, v, 12) || !std::isfinite(v[0]) || !std::isfinite(v[1]) || !std::isfinite(v[2])) { ++refused; why[k] = 3; continue; }
       float vn = v[0] * n[0] + v[1] * n[1] + v[2] * n[2]; if (i == 0) before[k] = vn;
-      if (std::fabs(v[0]) > 150 || std::fabs(v[1]) > 150 || std::fabs(v[2]) > 150) { ++refused; continue; }
-      if (vn < target) { auto* f = reinterpret_cast<volatile float*>(a); float d = target - vn; f[0] = v[0] + n[0] * d; f[1] = v[1] + n[1] * d; f[2] = v[2] + n[2] * d; ++writes; }
+      if (std::fabs(v[0]) > 150 || std::fabs(v[1]) > 150 || std::fabs(v[2]) > 150) { ++refused; why[k] = 4; continue; }
+      if (vn < target) { auto* f = reinterpret_cast<volatile float*>(a); float d = target - vn; f[0] = v[0] + n[0] * d; f[1] = v[1] + n[1] * d; f[2] = v[2] + n[2] * d; ++writes; ++wslot[k]; }
       after[k] = vn;
     }
     Sleep(8);
   }
-  msm2::writeLog("WS_VEL_WRITE target_vn=%.1f writes=%u refused=%u vn_before=%.2f/%.2f vn_last_read=%.2f/%.2f wait_ms=%llu n=%.3f,%.3f,%.3f",
-    target, writes, refused, before[0], before[1], after[0], after[1], (unsigned long long)(GetTickCount64() - t0), n[0], n[1], n[2]);
+  msm2::writeLog("WS_VEL_WRITE target_vn=%.1f writes=%u writes_slot=%u/%u refused=%u refuse_reason=%u/%u ptr=0x%llx/0x%llx vn_before=%.2f/%.2f vn_last_read=%.2f/%.2f wait_ms=%llu n=%.3f,%.3f,%.3f",
+    target, writes, wslot[0], wslot[1], refused, why[0], why[1], (unsigned long long)ptrSeen[0], (unsigned long long)ptrSeen[1], before[0], before[1], after[0], after[1], (unsigned long long)(GetTickCount64() - t0), n[0], n[1], n[2]);
   return 0;
 }
 enum : int { kChIdle, kChHold, kChGive, kChSwallow };
@@ -668,6 +673,11 @@ float chargeK(std::uint64_t ms) {
 bool wsActiveNow(std::uint64_t now) {
   auto last = lastWsMs.load(); return engagedManager.load() != 0 && last && (last >= now || now - last < 150);
 }
+// M9c: vanilla charge jumps are launched by releasing RT and A together. RT also holds the WR/WS, so releasing it
+// ended the WS while A was charging and the charge was swallowed. While charging (and during the give-back) the game
+// keeps seeing RT at its value from the charge start if that was >= 0.5.
+std::atomic<double> chRt{0};
+void chargeHoldRt(WgiReading* r) { double rt = chRt.load(); if (rt >= 0.5 && r->rt < rt) r->rt = rt; }
 void wsChargeStep(WgiReading* r, bool a) {
   if (!ws::drive::wsChargeJump.load() || killed.load()) { chState.store(kChIdle); return; }
   auto now = GetTickCount64(); bool ws = wsActiveNow(now);
@@ -675,10 +685,10 @@ void wsChargeStep(WgiReading* r, bool a) {
   static std::atomic<bool> prevA{false}; bool was = prevA.exchange(a); bool edge = a && !was;   // rising edge only
   switch (chState.load()) {
     case kChIdle:
-      if (edge && ws) { chState.store(kChHold); chStart.store(now); r->buttons &= ~0x4u; }
+      if (edge && ws) { chState.store(kChHold); chStart.store(now); chRt.store(r->rt); r->buttons &= ~0x4u; }
       break;
     case kChHold:
-      r->buttons &= ~0x4u;
+      r->buttons &= ~0x4u; chargeHoldRt(r);
       if (!ws) { chState.store(kChSwallow); if (chLogs++ < 60) msm2::writeLog("WS_CHARGE_JUMP event=ws_ended_while_held hold_ms=%llu", (unsigned long long)(now - chStart.load())); break; }
       if (!a) { auto hold = now - chStart.load(); float k = chargeK(hold); bool set = false;
         if (k > 1.f && ws::drive::wsVelocityWrite.load() && m9Launches.fetch_add(1) < 200) {
@@ -689,10 +699,10 @@ void wsChargeStep(WgiReading* r, bool a) {
         chState.store(kChGive); chGiveUntil.store(now + 60); r->buttons |= 0x4u; }
       break;
     case kChGive:
-      if (now < chGiveUntil.load()) r->buttons |= 0x4u; else { chState.store(kChIdle); r->buttons &= ~0x4u; }
+      if (now < chGiveUntil.load()) { r->buttons |= 0x4u; chargeHoldRt(r); } else { chState.store(kChIdle); chRt.store(0); r->buttons &= ~0x4u; }
       break;
     case kChSwallow:
-      if (a) r->buttons &= ~0x4u; else { chState.store(kChIdle); }
+      if (a) r->buttons &= ~0x4u; else { chState.store(kChIdle); chRt.store(0); }
       break;
   }
 }

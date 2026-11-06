@@ -321,3 +321,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M9a cloud full suites PASS on tree 943fc4010241dd1390c458f977ff7d6b6a1802a0 (listed).
 - 2026-11-07: M9a velocity candidates [hero+0xBA0]+0x7FC / [hero+0xAE8]+0x1E0 (0.92/0.90). M9b bounded velocity write on WS charge release.
 - 2026-11-07: M9b cloud full suites PASS on tree b63f07b3cbffe0593270d7982ed258393cae74f0 (listed).
+- 2026-11-07: M9b: slot 1 is not the velocity source; slot 0 untested (check too strict). M9c: slot 0 test + RT held during charge (vanilla-like release).
