@@ -271,3 +271,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M6p rejected/disabled; M6q WS camera yaw hold when auto-centering is off. Build PASS; unit/hooks run in progress at commit.
 - 2026-11-06: M6q cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
 - 2026-11-06: M6q rejected (camera rows are recomputed output; M6g/M6m effect reinterpreted as vanilla). M6r read-only reference-setter capture hook (0x3350220). Build PASS; unit/hooks run in progress at commit.
+- 2026-11-06: M6r cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
