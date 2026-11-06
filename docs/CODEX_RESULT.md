@@ -310,3 +310,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M8f: XInput polled ~16/s, no XInput rumble; charge curve refined. M8g: hide A from XInput during WS (route test).
 - 2026-11-06: M8g cloud full suites PASS on tree 681ba54acabf8720552979b1985acd03d24f338d (listed).
 - 2026-11-07: M8g: XInput is not the gameplay pad path (VERIFIED). M8h: WGI Gamepad reading/vibration hooks + A hold-back test.
+- 2026-11-07: M8h cloud full suites PASS on tree eb4ac4e1ec3fa17bd68e7a4d3b4666909ae2e7b6 (listed).
