@@ -202,3 +202,4 @@ The roadmap is a reminder of the intended end-state, not permission to skip the 
 - Current work (M6) only searches for the DEFAULT preset values (ground-sprint parity). Record each chosen default with its measurement in analysis/M6_TURNING_20261105.md.
 - Design note: today the camera values come from a config file baked into the Overstrike stage at Update-WS time. They cannot change while the game runs. A live ModSettings preset needs one of two routes: (a) the native side writes the loaded config values in memory (needs the loaded-asset location), or (b) the native side applies the offsets/speed itself. Native-side values (turn rate 400 deg/s, camera follow 90 deg/s / 10 deg / 1 s) are already single constants and are easy to expose.
 - Speed: steering MoveSpeedFast is NOT the travel speed (M6i). The real speed control is still UNKNOWN.
+- Camera auto-centering during WS: default OFF (owner), INI WALLSPRINT_CAMERA_AUTOCENTER now, ModSettings toggle later.

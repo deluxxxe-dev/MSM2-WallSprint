@@ -257,7 +257,7 @@ void rotN(const float* n,float* v,float ca,float sa){float nv=n[0]*v[0]+n[1]*v[1
  for(int i=0;i<3;++i){v[i]=v[i]*ca+c[i]*sa+n[i]*nv*(1-ca);}}
 void cameraFollow(const float* n,const float* d){
  LARGE_INTEGER q{},fr{};QueryPerformanceCounter(&q);QueryPerformanceFrequency(&fr);double t=double(q.QuadPart)/double(fr.QuadPart),dt=followLastT>0?t-followLastT:0.;followLastT=t;
- if(!kCameraFollow||!(dt>0.)||dt>0.1)return;
+ if(!kCameraFollow||!ws::drive::cameraAutoCenter.load(std::memory_order_relaxed)||!(dt>0.)||dt>0.1)return;
  auto now=GetTickCount64();float rx,ry;if(readRightStick(rx,ry)&&rx*rx+ry*ry>0.25f*0.25f)followManualMs=now;
  if(followManualMs&&now-followManualMs<1000){followManualSkips.fetch_add(1,std::memory_order_relaxed);return;}
  auto m=ws_camref_this;if(!m||m>UINTPTR_MAX-0x1000)return;

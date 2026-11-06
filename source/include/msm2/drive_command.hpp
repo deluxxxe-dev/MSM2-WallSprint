@@ -11,4 +11,7 @@ inline std::atomic<std::uintptr_t> owner{0};
 // M6g: hero position published by the orientation worker (pivot for the WS camera follow experiment).
 inline std::atomic<float> heroPos[3]{};
 inline std::atomic<std::uint64_t> heroMs{0};
+// M6o: WS camera auto-centering (yaw follow + aim correction). Default OFF like the owner's ground camera setting;
+// WallSprint.ini WALLSPRINT_CAMERA_AUTOCENTER=1 turns it on (ModSettings later).
+inline std::atomic<bool> cameraAutoCenter{false};
 }
