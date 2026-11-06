@@ -288,3 +288,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M7a accepted (mouse look). M6x WS-exit camera diagnostic added.
 - 2026-11-06: M6x cloud full suites PASS on tree 8dc46c192ffc404b328109897c8e0bce035668b8 (listed). Wisdoms updated: MSM2-Wisdoms main 97cb80d (camera/config/input engine facts, WS milestone).
 - 2026-11-06: M6x analysed (camera follows the hero's fast upright return); M6y 700 ms exit blend of the camera reference up.
+- 2026-11-06: M6y cloud full suites PASS on tree 5b7aa310078a69be3e8c51b00ff45769392cf978 (listed).
