@@ -261,7 +261,9 @@ void rotN(const float* n,float* v,float ca,float sa){float nv=n[0]*v[0]+n[1]*v[1
 // +0xD34/+0xD44 and position +0xD54 rotated about n through the hero), unless the right stick turns the camera.
 // Pitch, roll onto the wall and position follow stay with the game.
 float holdPrev[3]{};bool holdValid{};std::uint64_t holdLastMs{};
+constexpr bool kCameraYawHold=false; // M6q REJECTED: rows are recomputed output (writes had no effect)
 void cameraYawHold(const float* n){
+ if(!kCameraYawHold)return;
  auto now=GetTickCount64();if(now-holdLastMs>150)holdValid=false;holdLastMs=now;
  auto m=ws_camref_this;if(!m||m>UINTPTR_MAX-0x1000){holdValid=false;return;}
  auto hm=ws::drive::heroMs.load(std::memory_order_acquire);if(!hm||now<hm||now-hm>200){holdValid=false;return;}

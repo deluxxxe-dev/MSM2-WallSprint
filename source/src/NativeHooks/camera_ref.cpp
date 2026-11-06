@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <cstring>
 #include "NativeHooks/camera_ref.hpp"
+extern "C" { void ws_camset_thunk(); void* ws_camset_original{}; void ws_camset_record(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r8) noexcept; }
 extern "C" { void ws_camref_thunk(); void* ws_camref_original{}; extern std::uintptr_t ws_camref_this; extern std::uintptr_t ws_camref_raw, ws_camref_seq, ws_camref_ring[8]; extern std::atomic<void(*)()> ws_wallsprint_update_listener;
 // M5c: +1/-1 once ground samples prove manager+0x1E0 is the camera forward and give the right = sign*cross(forward, up) handedness.
 extern std::atomic<int> ws_camera_handedness; extern std::atomic<unsigned> ws_camera_forward_offset; extern std::atomic<int> ws_camera_forward_sign; extern std::atomic<std::uint64_t> ws_camera_engage_ms; }
@@ -230,6 +231,34 @@ void m6Framing(const msm2::Snapshot& hero, const ws::diag::Motion& motion, std::
     framing[0] = {}; framing[1] = {}; }
 }
 }
+namespace {
+// M6r: setter capture (game thread). Copies 64 bytes behind rdx and r8 when they are readable.
+constexpr std::uintptr_t kSetterRva = 0x3350220;
+std::atomic<std::uint64_t> setCalls{0}; std::atomic<std::uintptr_t> setRcx{0}, setRdx{0}, setR8{0};
+std::atomic<float> setM[2][16]{}; std::atomic<unsigned> setMOk{0}; std::atomic<bool> setInstalled{false}; std::uintptr_t setTarget{};
+unsigned setLogs{}; std::uint64_t setLastLog{};
+void m6SetterLog(const msm2::Snapshot& hero, std::uint64_t now) {
+  if (!setInstalled.load() || now - setLastLog < 500 || setLogs >= 120) return;
+  bool wsNow = engagedManager.load() != 0 && now - lastWsMs.load() < 300; if (!wsNow && setLogs % 4) { if (now - setLastLog < 5000) return; }
+  setLastLog = now; ++setLogs;
+  auto axes = ws::diag::actorAxes(hero.prefix);
+  char t[900]; int len = 0; unsigned ok = setMOk.load();
+  for (int k = 0; k < 2; ++k) { if (!(ok & (1u << k))) { len += std::snprintf(t + len, sizeof t - len, " m%d=unreadable", k); continue; }
+    float m[16]; for (int i = 0; i < 16; ++i) m[i] = setM[k][i].load(std::memory_order_relaxed);
+    ws::Vec3 r0{m[0], m[1], m[2]}, r1{m[4], m[5], m[6]}, r2{m[8], m[9], m[10]};
+    len += std::snprintf(t + len, sizeof t - len, " m%d=[%.3f,%.3f,%.3f|%.3f,%.3f,%.3f|%.3f,%.3f,%.3f|%.2f,%.2f,%.2f,%.2f] dots_vs_hero r0.right=%.2f r1.up=%.2f r2.fwd=%.2f",
+      k, m[0], m[1], m[2], m[4], m[5], m[6], m[8], m[9], m[10], m[12], m[13], m[14], m[15],
+      axes.valid ? ws::dot(r0, axes.right) : 0.f, axes.valid ? ws::dot(r1, axes.up) : 0.f, axes.valid ? ws::dot(r2, axes.forward) : 0.f); }
+  msm2::writeLog("WS_CAMERA_SETTER calls=%llu ws=%u rcx=0x%llx rdx=0x%llx r8=0x%llx manager=0x%llx%s read_only=1", (unsigned long long)setCalls.load(), unsigned(wsNow),
+    (unsigned long long)setRcx.load(), (unsigned long long)setRdx.load(), (unsigned long long)setR8.load(), (unsigned long long)ws_camref_this, t);
+}
+}
+extern "C" void ws_camset_record(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r8) noexcept {
+  setCalls.fetch_add(1, std::memory_order_relaxed); setRcx.store(rcx, std::memory_order_relaxed); setRdx.store(rdx, std::memory_order_relaxed); setR8.store(r8, std::memory_order_relaxed);
+  unsigned ok = 0; std::uintptr_t ptr[2]{rdx, r8};
+  for (int k = 0; k < 2; ++k) { float m[16]; if (ptr[k] > 0x10000 && ptr[k] < UINTPTR_MAX - 64 && msm2::readMemory(ptr[k], m, sizeof m)) { ok |= 1u << k; for (int i = 0; i < 16; ++i) setM[k][i].store(m[i], std::memory_order_relaxed); } }
+  setMOk.store(ok, std::memory_order_relaxed);
+}
 namespace msm2::camera_ref {
 void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
   if (!verified || !image || imageSize <= kEntryRva + 64) { writeLog("WS_CAMERA_REF admitted=0 reason=build_or_image_unverified"); return; }
@@ -245,6 +274,14 @@ void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
   if (MH_CreateHook(reinterpret_cast<void*>(target), reinterpret_cast<void*>(&ws_camref_thunk), &ws_camref_original) != MH_OK) return;
   installed = MH_EnableHook(reinterpret_cast<void*>(target)) == MH_OK;
   if (installed.load()) ws_wallsprint_update_listener.store(&onWallSprintUpdate, std::memory_order_release);
+  if (installed.load() && imageSize > kSetterRva + 64) {
+    setTarget = image + kSetterRva; DWORD64 sb = 0; auto* sf = RtlLookupFunctionEntry(setTarget, &sb, nullptr);
+    unsigned char se[64]{}; char sh[65]{};
+    bool sok = sf && sb == image && sf->BeginAddress == kSetterRva && readMemory(setTarget, se, sizeof se) && sha256(se, sizeof se, sh);
+    if (sok && MH_CreateHook(reinterpret_cast<void*>(setTarget), reinterpret_cast<void*>(&ws_camset_thunk), &ws_camset_original) == MH_OK)
+      setInstalled = MH_EnableHook(reinterpret_cast<void*>(setTarget)) == MH_OK;
+    writeLog("WS_CAMERA_SETTER admitted=%u rva=0x3350220 pdata_begin=%u entry_sha256=%s mode=read_only_capture", unsigned(setInstalled.load()), unsigned(sf && sf->BeginAddress == kSetterRva), sh[0] ? sh : "none");
+  }
   writeLog("WS_CAMERA_REF admitted=%u entry_rva=0x1065680 entry_sha256=%s flag_offset=0x304 mode=actor_relative_only_during_WS thunk=record_rcx_tailjump",
            unsigned(installed.load()), kEntrySha);
 }
@@ -279,6 +316,7 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   selectCamera(snapshot, now);
   m6GroundTurn(snapshot, motion, stick, now);
   m6Framing(snapshot, motion, now);
+  m6SetterLog(snapshot, now);
   m5eDistance(snapshot, now);
   m5ePitch(snapshot, now);
   if (now - statusLastMs >= 5000 && statusLogs < 40) { statusLastMs = now; ++statusLogs;
@@ -334,6 +372,7 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
 void kill() noexcept { killed = true; ws_wallsprint_update_listener.store(nullptr); restore("kill"); }
 void stop() noexcept {
   killed = true; ws_wallsprint_update_listener.store(nullptr); restore("stop");
+  if (setInstalled.exchange(false)) MH_DisableHook(reinterpret_cast<void*>(setTarget));
   if (installed.exchange(false)) MH_DisableHook(reinterpret_cast<void*>(target));
 }
 }
