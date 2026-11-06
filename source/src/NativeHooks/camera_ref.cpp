@@ -30,6 +30,7 @@ std::uintptr_t target{};
 std::atomic<bool> installed{false}, killed{false};
 std::atomic<std::uintptr_t> engagedManager{0};
 std::atomic<unsigned char> savedFlag{0};
+std::atomic<std::uint64_t> exitRestoreMs{0}, exitEpisode{0};
 std::atomic<std::uint64_t> lastWsMs{0}, engages{0}, restores{0}, refusedWritable{0}, wsSessionStartMs{0}, delayedUpdates{0};
 constexpr std::uint64_t kEngageDelayMs = 0; // M5e-2 tried 1000 ms: did not stop the dive (REJECTED), reverted
 struct Slot { unsigned fn{}, sn{}; double fsum{}, sdot{}, scross{}; };
@@ -61,6 +62,7 @@ bool writableByte(std::uintptr_t p) {
 void restore(const char* reason) {
   auto manager = engagedManager.exchange(0);
   if (!manager) return;
+  exitRestoreMs.store(GetTickCount64()); exitEpisode.fetch_add(1);
   unsigned char current = 0;
   if (writableByte(manager + kActorRelativeFlag) && msm2::readMemory(manager + kActorRelativeFlag, &current, 1) && current == 1) {
     *reinterpret_cast<volatile unsigned char*>(manager + kActorRelativeFlag) = savedFlag.load();
@@ -318,6 +320,38 @@ extern "C" std::uintptr_t ws_camset_record(std::uintptr_t rcx, std::uintptr_t rd
   setMOk.store(ok, std::memory_order_relaxed);
   return outR9;
 }
+namespace {
+// M6x diagnostic (read-only): the camera jump on leaving WS. For each exit (restore of +0x304), log ~1.5 s at the
+// 100 ms worker rate: mover (setter rcx) reference matrix +0x210 (3 rows), view angles +0x2CC/+0x2D0, manager +0x304,
+// camera forward +0xD44 (world) and hero up. Also the last 3 samples before the exit. Max 6 exits.
+struct ExitSample { std::uint64_t ms; float ref[9], yaw, pitch, fwd[3], up[3]; unsigned char flag; bool ok; };
+ExitSample exitRing[3]{}; unsigned exitRingN{}; std::uint64_t exitLoggedEpisode{}, exitLastMs{}; unsigned exitLines{}, exitEpisodesLogged{};
+bool exitSample(ExitSample& e, const msm2::Snapshot& hero, std::uint64_t now) {
+  e = {}; e.ms = now; auto mover = setRcx.load(); auto m = ws_camref_this;
+  if (!mover || mover > UINTPTR_MAX - 0x400 || !msm2::readMemory(mover + 0x210, e.ref, sizeof e.ref)) return false;
+  float a[2]; if (!msm2::readMemory(mover + 0x2CC, a, sizeof a)) return false; e.yaw = a[0]; e.pitch = a[1];
+  if (m && m <= UINTPTR_MAX - 0x1000) { msm2::readMemory(m + 0xD44, e.fwd, 12); msm2::readMemory(m + kActorRelativeFlag, &e.flag, 1); }
+  auto ax = ws::diag::actorAxes(hero.prefix); if (ax.valid) { e.up[0] = ax.up.x; e.up[1] = ax.up.y; e.up[2] = ax.up.z; }
+  e.ok = true; return true;
+}
+void exitLog(const char* phase, const ExitSample& e, std::uint64_t ep, std::uint64_t t0) {
+  msm2::writeLog("WS_CAMERA_EXIT episode=%llu phase=%s t_ms=%lld flag304=%u yaw=%.4f pitch=%.4f ref_r0=%.3f,%.3f,%.3f ref_r1=%.3f,%.3f,%.3f ref_r2=%.3f,%.3f,%.3f view=%.3f,%.3f,%.3f hero_up=%.3f,%.3f,%.3f read_only=1",
+    (unsigned long long)ep, phase, (long long)e.ms - (long long)t0, unsigned(e.flag), e.yaw, e.pitch, e.ref[0], e.ref[1], e.ref[2], e.ref[3], e.ref[4], e.ref[5], e.ref[6], e.ref[7], e.ref[8],
+    e.fwd[0], e.fwd[1], e.fwd[2], e.up[0], e.up[1], e.up[2]);
+}
+void m6Exit(const msm2::Snapshot& hero, std::uint64_t now) {
+  if (now - exitLastMs < 90) { return; }
+  exitLastMs = now;
+  auto ep = exitEpisode.load(), t0 = exitRestoreMs.load();
+  ExitSample e; bool ok = exitSample(e, hero, now);
+  if (engagedManager.load()) { if (ok) { exitRing[exitRingN % 3] = e; ++exitRingN; } return; }
+  if (!ep || now - t0 > 1500 || exitEpisodesLogged > 6) return;
+  if (ep != exitLoggedEpisode) { exitLoggedEpisode = ep; exitLines = 0; ++exitEpisodesLogged; if (exitEpisodesLogged > 6) return;
+    for (unsigned k = exitRingN > 3 ? exitRingN - 3 : 0; k < exitRingN; ++k) { exitLog("before", exitRing[k % 3], ep, t0); }
+    exitRingN = 0; }
+  if (ok && exitLines < 18) { ++exitLines; exitLog("after", e, ep, t0); }
+}
+}
 namespace msm2::camera_ref {
 void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
   if (!verified || !image || imageSize <= kEntryRva + 64) { writeLog("WS_CAMERA_REF admitted=0 reason=build_or_image_unverified"); return; }
@@ -377,6 +411,7 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   m6GroundTurn(snapshot, motion, stick, now);
   m6Framing(snapshot, motion, now);
   m6SetterLog(snapshot, now);
+  m6Exit(snapshot, now);
   m5eDistance(snapshot, now);
   m5ePitch(snapshot, now);
   if (now - statusLastMs >= 5000 && statusLogs < 40) { statusLastMs = now; ++statusLogs;

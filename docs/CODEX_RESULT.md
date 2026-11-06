@@ -285,3 +285,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: cloud full suites incl. smoke_windows.sh PASS on source tree 261c554503a9aa11c256b23fa21ca4cd0db1cd0d (cloud env needed a UTF-8 locale and wine path links; no repo change). Listed in docs/CLOUD_VERIFIED.txt.
 - 2026-11-06: M7a mouse look detection (WH_MOUSE_LL, physical moves) for the camera angle hold; M7 prep: ws_settings.hpp + WallSprint.ini [WallSprintSettings] + docs/SETTINGS.md (turn rate, mouse/stick manual thresholds). Build in progress.
 - 2026-11-06: M7a/M7-prep cloud full suites PASS (test.sh, smoke, hooks, package) on source tree dfd7e04ec6f653e46deb364fac18273c96b63477; listed in CLOUD_VERIFIED.
+- 2026-11-06: M7a accepted (mouse look). M6x WS-exit camera diagnostic added.
