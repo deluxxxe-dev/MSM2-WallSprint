@@ -637,7 +637,8 @@ bool wsActiveNow(std::uint64_t now) {
 void wsChargeStep(WgiReading* r, bool a) {
   if (!ws::drive::wsChargeJump.load() || killed.load()) { chState.store(kChIdle); return; }
   auto now = GetTickCount64(); bool ws = wsActiveNow(now);
-  static std::atomic<bool> prevA{false}; bool edge = a && !prevA.exchange(a);   // rising edge only
+  // M8j-r3: `a && !prevA.exchange(a)` skipped the exchange while A was up, so prevA stayed true after the first press.
+  static std::atomic<bool> prevA{false}; bool was = prevA.exchange(a); bool edge = a && !was;   // rising edge only
   switch (chState.load()) {
     case kChIdle:
       if (edge && ws) { chState.store(kChHold); chStart.store(now); r->buttons &= ~0x4u; }
