@@ -533,7 +533,7 @@ using XGetFn = DWORD (WINAPI*)(DWORD, XINPUT_STATE*); using XSetFn = DWORD (WINA
 constexpr const wchar_t* kXMods[4] = {L"xinput1_4.dll", L"xinput1_3.dll", L"xinput9_1_0.dll", L"xinputuap.dll"};
 XGetFn xgOrig[4]{}; XSetFn xsOrig[4]{}; void* xgTarget[4]{}; void* xsTarget[4]{}; std::atomic<bool> xTried[4]{};
 std::atomic<std::uint64_t> xgCalls[4]{}, xgPresses[4]{}, xsCalls[4]{}, xgPress{0}; std::atomic<bool> xgA[4]{};
-std::atomic<unsigned> xsLogs{0}, xsLast{0xffffffffu}, xaLogs{0};
+std::atomic<unsigned> xsLogs{0}, xsLast{0xffffffffu}, xaLogs{0}; std::atomic<std::uint64_t> xhBlocked{0};
 std::uintptr_t selfLo{}, selfHi{};
 bool fromSelf(void* ret) { auto r = reinterpret_cast<std::uintptr_t>(ret); return r >= selfLo && r < selfHi; }
 template <int M> DWORD WINAPI xgDetour(DWORD i, XINPUT_STATE* st) {
@@ -542,6 +542,11 @@ template <int M> DWORD WINAPI xgDetour(DWORD i, XINPUT_STATE* st) {
   xgCalls[M].fetch_add(1, std::memory_order_relaxed);
   if (r == ERROR_SUCCESS && st && i == 0) {
     bool a = (st->Gamepad.wButtons & XINPUT_GAMEPAD_A) != 0;
+    // M8g experiment: while WS is active, the game does not see A from XInput. If the WS jump still fires, the game's
+    // gameplay pad path is not XInput. INI WALLSPRINT_JUMP_HOLDBACK_TEST (default 0, shipped 1), F8 stops it.
+    if (a && ws::drive::jumpHoldbackTest.load() && !killed.load() && engagedManager.load() != 0 && GetTickCount64() - lastWsMs.load() < 150) {
+      st->Gamepad.wButtons = WORD(st->Gamepad.wButtons & ~XINPUT_GAMEPAD_A);
+      if (xhBlocked.fetch_add(1) < 40) msm2::writeLog("WS_JUMP_HOLDBACK module=%ls a_hidden=1 blocked=%llu", kXMods[M], (unsigned long long)xhBlocked.load()); }
     if (a && !xgA[M].exchange(true)) { auto now = GetTickCount64(); xgPress.store(now); xgPresses[M].fetch_add(1);
       if (xaLogs.fetch_add(1) < 40) { auto kp = jiPress.load(); msm2::writeLog("WS_INPUT_GAME_A module=%ls since_ws_seen_press_ms=%lld read_only=1", kXMods[M], kp ? (long long)(now - kp) : -1ll); } }
     else if (!a) xgA[M].store(false); }

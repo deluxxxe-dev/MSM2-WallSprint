@@ -16,4 +16,6 @@ inline std::atomic<std::uint64_t> heroMs{0};
 inline std::atomic<bool> cameraAutoCenter{false};
 // M8c: WS-only in-memory jump config write (YBoost 0 during WS). WallSprint.ini WALLSPRINT_JUMP_CONFIG_WRITE, default 0.
 inline std::atomic<bool> jumpConfigWrite{false};
+// M8g: hide the XInput A button from the game while WS is active (input-route test). WALLSPRINT_JUMP_HOLDBACK_TEST, default 0.
+inline std::atomic<bool> jumpHoldbackTest{false};
 }
