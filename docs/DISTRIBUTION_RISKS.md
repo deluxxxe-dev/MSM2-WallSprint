@@ -24,3 +24,4 @@ Rows are concerns, not accusations: say what is known and what is unknown.
 | D15 | 2026-11-05 | Modified vanilla config | WS stage ships a modified camera_wallrun_aimcontext.config (offsets/pivot from vanilla standard traversal). Same policy/risk as the steering config. | OPEN |
 | D16 | 2026-11-06 | Camera write | WS writes the camera manager rows +0xD24..+0xD54 (yaw follow toward travel) during WS only. Interaction with other camera mods likely; release notes must say not to combine. | OPEN |
 | D17 | 2026-11-06 | Modified vanilla config (global) | M6p experiment herofollowcamconfig VelocityFollowData.Enabled=false (would change ground camera). Rejected and disabled (FOLLOW_ENABLED=False); nothing shipped. | CLOSED |
+| D18 | 2026-11-06 | New code hook | WS hooks LookCameraMover reference setter (RVA 0x3350220, pinned entry SHA) and rewrites one argument vector during WS (auto-centering off). Conflicts with other camera mods are likely. | OPEN |
