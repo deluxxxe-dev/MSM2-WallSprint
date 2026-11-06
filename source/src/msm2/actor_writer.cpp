@@ -445,7 +445,7 @@ void driveHeading(std::uintptr_t owner){
 }
 }
 
-namespace msm2::writer{bool readStickInput(float& x,float& y){return readStick(x,y);}}
+namespace msm2::writer{bool readStickInput(float& x,float& y){return readStick(x,y);}bool readRightStickInput(float& x,float& y){return readRightStick(x,y);}}
 
 extern "C" void ws_update_probe_sample(std::uintptr_t owner) noexcept{
  if(!thresholdProbeEnabled.load(std::memory_order_acquire)||!ws_update_probe_enabled.load(std::memory_order_acquire))return;

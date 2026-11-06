@@ -9,6 +9,7 @@ void admit(bool completeVerified,const std::array<Patch,4>&);
 void kill(const char* reason) noexcept;
 void drainLogs();
 bool active();
+bool readRightStickInput(float& x,float& y); // XInput pad 0 right stick; false when unavailable
 bool readStickInput(float& x,float& y); // XInput pad 0 (in-game only) or WASD; false when neutral
 }
 extern "C" {

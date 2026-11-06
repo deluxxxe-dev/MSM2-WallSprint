@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <cstring>
 #include "NativeHooks/camera_ref.hpp"
+#include "msm2/actor_writer.hpp"
 #include "msm2/drive_command.hpp"
 extern "C" { void ws_camset_thunk(); void* ws_camset_original{}; std::uintptr_t ws_camset_record(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r8, std::uintptr_t r9) noexcept; }
 extern "C" { void ws_camref_thunk(); void* ws_camref_original{}; extern std::uintptr_t ws_camref_this; extern std::uintptr_t ws_camref_raw, ws_camref_seq, ws_camref_ring[8]; extern std::atomic<void(*)()> ws_wallsprint_update_listener;
@@ -237,6 +238,7 @@ namespace {
 constexpr std::uintptr_t kSetterRva = 0x3350220;
 std::atomic<bool> setYawLock{false}; std::atomic<std::uint64_t> lockWrites{0}, lockSkips{0};
 std::atomic<std::uint64_t> flagWrites{0}; std::atomic<std::uintptr_t> setR9{0};
+std::atomic<std::uint64_t> angleHoldWrites{0}, angleManual{0};
 std::atomic<std::uint64_t> setCalls{0}; std::atomic<std::uintptr_t> setRcx{0}, setRdx{0}, setR8{0};
 std::atomic<float> setM[2][16]{}; std::atomic<unsigned> setMOk{0}; std::atomic<bool> setInstalled{false}; std::uintptr_t setTarget{};
 unsigned setLogs{}; std::uint64_t setLastLog{};
@@ -252,7 +254,7 @@ void m6SetterLog(const msm2::Snapshot& hero, std::uint64_t now) {
     len += std::snprintf(t + len, sizeof t - len, " m%d=[%.3f,%.3f,%.3f|%.3f,%.3f,%.3f|%.3f,%.3f,%.3f|%.2f,%.2f,%.2f,%.2f] dots_vs_hero r0.right=%.2f r1.up=%.2f r2.fwd=%.2f",
       k, m[0], m[1], m[2], m[4], m[5], m[6], m[8], m[9], m[10], m[12], m[13], m[14], m[15],
       axes.valid ? ws::dot(r0, axes.right) : 0.f, axes.valid ? ws::dot(r1, axes.up) : 0.f, axes.valid ? ws::dot(r2, axes.forward) : 0.f); }
-  msm2::writeLog("WS_CAMERA_SETTER flag_writes=%llu r9_in=0x%llx yaw_lock_writes=%llu skips=%llu calls=%llu ws=%u rcx=0x%llx rdx=0x%llx r8=0x%llx manager=0x%llx%s read_only=1", (unsigned long long)flagWrites.load(), (unsigned long long)setR9.load(), (unsigned long long)lockWrites.load(), (unsigned long long)lockSkips.load(), (unsigned long long)setCalls.load(), unsigned(wsNow),
+  msm2::writeLog("WS_CAMERA_SETTER angle_hold_writes=%llu manual=%llu flag_writes=%llu r9_in=0x%llx yaw_lock_writes=%llu skips=%llu calls=%llu ws=%u rcx=0x%llx rdx=0x%llx r8=0x%llx manager=0x%llx%s read_only=1", (unsigned long long)angleHoldWrites.load(), (unsigned long long)angleManual.load(), (unsigned long long)flagWrites.load(), (unsigned long long)setR9.load(), (unsigned long long)lockWrites.load(), (unsigned long long)lockSkips.load(), (unsigned long long)setCalls.load(), unsigned(wsNow),
     (unsigned long long)setRcx.load(), (unsigned long long)setRdx.load(), (unsigned long long)setR8.load(), (unsigned long long)ws_camref_this, t);
 }
 }
@@ -280,8 +282,29 @@ void yawLock(std::uintptr_t rdx) noexcept {
 // current view" and the vanilla actor-relative call passes R9 = 0. HYPOTHESIS: flag bits 0/1 keep the current view
 // yaw/pitch when the reference changes, i.e. no re-aim (no auto-centering). Auto-centering OFF -> R9 |= 3.
 constexpr bool kSetterPreserveFlags = true, kSetterYawLock = false; // M6s yaw lock REJECTED (centering unchanged)
+// M6v: angle hold. Disassembly of the setter (owner camera_code.json, cloud decode, not committed): rdx = forward input,
+// r8 = up input, r9 = flags; the camera's view angles are the mover's floats +0x2CC (yaw) and +0x2D0 (pitch, negated)
+// in the reference frame; flag 1/2 recompute them so the world view is kept when the reference changes. The WS input
+// forward (+0x00 of the block) is constant, so the reference does not turn with the hero; the centering is the follow
+// logic moving +0x2CC/+0x2D0 toward the travel. Auto-centering OFF: while neither the right stick nor keyboard/mouse
+// input is active, undo any change of the two angles since the previous setter call.
+constexpr bool kAngleHold = true; float holdYaw{}, holdPitch{}; bool holdAngles{}; std::uintptr_t holdMover{}; std::uint64_t holdMs{};
+void angleHold(std::uintptr_t mover) noexcept {
+  auto now = GetTickCount64(); if (now - holdMs > 300 || mover != holdMover) holdAngles = false; holdMs = now; holdMover = mover;
+  if (!kAngleHold || !setYawLock.load(std::memory_order_relaxed) || ws::drive::cameraAutoCenter.load(std::memory_order_relaxed) || !engagedManager.load() || killed.load()) { holdAngles = false; return; }
+  if (!mover || mover > UINTPTR_MAX - 0x400) return;
+  float a[2]; if (!msm2::readMemory(mover + 0x2CC, a, sizeof a) || !std::isfinite(a[0]) || !std::isfinite(a[1]) || std::fabs(a[0]) > 100.f || std::fabs(a[1]) > 10.f) { holdAngles = false; return; }
+  float rx = 0, ry = 0; bool stick = msm2::writer::readRightStickInput(rx, ry) && rx * rx + ry * ry > 0.2f * 0.2f;
+  LASTINPUTINFO li{}; li.cbSize = sizeof li; bool kbm = GetLastInputInfo(&li) && GetTickCount() - li.dwTime < 150;
+  if (!holdAngles || stick || kbm) { holdYaw = a[0]; holdPitch = a[1]; holdAngles = true; if (stick || kbm) angleManual.fetch_add(1, std::memory_order_relaxed); return; }
+  if (a[0] == holdYaw && a[1] == holdPitch) return;
+  MEMORY_BASIC_INFORMATION mi{}; if (!VirtualQuery(reinterpret_cast<void*>(mover + 0x2CC), &mi, sizeof mi) || mi.State != MEM_COMMIT || !(mi.Protect & (PAGE_READWRITE | PAGE_EXECUTE_READWRITE))) return;
+  float w[2]{holdYaw, holdPitch}; std::memcpy(reinterpret_cast<void*>(mover + 0x2CC), w, sizeof w);
+  angleHoldWrites.fetch_add(1, std::memory_order_relaxed);
+}
 extern "C" std::uintptr_t ws_camset_record(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r8, std::uintptr_t r9) noexcept {
   if (kSetterYawLock) yawLock(rdx);
+  angleHold(rcx);
   setR9.store(r9, std::memory_order_relaxed);
   std::uintptr_t outR9 = r9;
   if (kSetterPreserveFlags && setYawLock.load(std::memory_order_relaxed) && !ws::drive::cameraAutoCenter.load(std::memory_order_relaxed) && engagedManager.load() && !killed.load()) {
