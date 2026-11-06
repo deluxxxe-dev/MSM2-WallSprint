@@ -24,3 +24,4 @@ c91f417c46a76e0e27dcedbac0324602301e7ba6 2026-11-07 build+test.sh+smoke+hooks+pa
 5e16a623b9087f972a7fb875c5add88ce59bf8b6 2026-11-07 build+test.sh+smoke+hooks+package PASS (M8j-r2 charge diagnostics)
 0bb089ace31c160bfe0f740252ef2ad4ed3de37e 2026-11-07 build+test.sh+smoke+hooks+package PASS (M8j-r3 charge edge fix)
 943fc4010241dd1390c458f977ff7d6b6a1802a0 2026-11-07 build+test.sh+smoke+hooks+package PASS (M9a velocity field search)
+b63f07b3cbffe0593270d7982ed258393cae74f0 2026-11-07 build+test.sh+smoke+hooks+package PASS (M9b velocity write test)
