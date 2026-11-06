@@ -274,3 +274,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M6r cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
 - 2026-11-06: M6r: setter block = [start right, wall normal, current hero right]; M6s yaw lock replaces current right with the session-start right (pinned SHA). Build PASS; unit/hooks run in progress at commit.
 - 2026-11-06: M6s cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
+- 2026-11-06: M6s rejected; M6t setter preserve flags (R9|=3) for auto-centering off. Build PASS; unit/hooks run in progress at commit.

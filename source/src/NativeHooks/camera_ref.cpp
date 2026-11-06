@@ -15,7 +15,7 @@
 #include <cstring>
 #include "NativeHooks/camera_ref.hpp"
 #include "msm2/drive_command.hpp"
-extern "C" { void ws_camset_thunk(); void* ws_camset_original{}; void ws_camset_record(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r8) noexcept; }
+extern "C" { void ws_camset_thunk(); void* ws_camset_original{}; std::uintptr_t ws_camset_record(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r8, std::uintptr_t r9) noexcept; }
 extern "C" { void ws_camref_thunk(); void* ws_camref_original{}; extern std::uintptr_t ws_camref_this; extern std::uintptr_t ws_camref_raw, ws_camref_seq, ws_camref_ring[8]; extern std::atomic<void(*)()> ws_wallsprint_update_listener;
 // M5c: +1/-1 once ground samples prove manager+0x1E0 is the camera forward and give the right = sign*cross(forward, up) handedness.
 extern std::atomic<int> ws_camera_handedness; extern std::atomic<unsigned> ws_camera_forward_offset; extern std::atomic<int> ws_camera_forward_sign; extern std::atomic<std::uint64_t> ws_camera_engage_ms; }
@@ -236,6 +236,7 @@ namespace {
 // M6r: setter capture (game thread). Copies 64 bytes behind rdx and r8 when they are readable.
 constexpr std::uintptr_t kSetterRva = 0x3350220;
 std::atomic<bool> setYawLock{false}; std::atomic<std::uint64_t> lockWrites{0}, lockSkips{0};
+std::atomic<std::uint64_t> flagWrites{0}; std::atomic<std::uintptr_t> setR9{0};
 std::atomic<std::uint64_t> setCalls{0}; std::atomic<std::uintptr_t> setRcx{0}, setRdx{0}, setR8{0};
 std::atomic<float> setM[2][16]{}; std::atomic<unsigned> setMOk{0}; std::atomic<bool> setInstalled{false}; std::uintptr_t setTarget{};
 unsigned setLogs{}; std::uint64_t setLastLog{};
@@ -251,7 +252,7 @@ void m6SetterLog(const msm2::Snapshot& hero, std::uint64_t now) {
     len += std::snprintf(t + len, sizeof t - len, " m%d=[%.3f,%.3f,%.3f|%.3f,%.3f,%.3f|%.3f,%.3f,%.3f|%.2f,%.2f,%.2f,%.2f] dots_vs_hero r0.right=%.2f r1.up=%.2f r2.fwd=%.2f",
       k, m[0], m[1], m[2], m[4], m[5], m[6], m[8], m[9], m[10], m[12], m[13], m[14], m[15],
       axes.valid ? ws::dot(r0, axes.right) : 0.f, axes.valid ? ws::dot(r1, axes.up) : 0.f, axes.valid ? ws::dot(r2, axes.forward) : 0.f); }
-  msm2::writeLog("WS_CAMERA_SETTER yaw_lock_writes=%llu skips=%llu calls=%llu ws=%u rcx=0x%llx rdx=0x%llx r8=0x%llx manager=0x%llx%s read_only=1", (unsigned long long)lockWrites.load(), (unsigned long long)lockSkips.load(), (unsigned long long)setCalls.load(), unsigned(wsNow),
+  msm2::writeLog("WS_CAMERA_SETTER flag_writes=%llu r9_in=0x%llx yaw_lock_writes=%llu skips=%llu calls=%llu ws=%u rcx=0x%llx rdx=0x%llx r8=0x%llx manager=0x%llx%s read_only=1", (unsigned long long)flagWrites.load(), (unsigned long long)setR9.load(), (unsigned long long)lockWrites.load(), (unsigned long long)lockSkips.load(), (unsigned long long)setCalls.load(), unsigned(wsNow),
     (unsigned long long)setRcx.load(), (unsigned long long)setRdx.load(), (unsigned long long)setR8.load(), (unsigned long long)ws_camref_this, t);
 }
 }
@@ -275,12 +276,21 @@ void yawLock(std::uintptr_t rdx) noexcept {
   std::memcpy(reinterpret_cast<void*>(rdx + 0x20), r, 12);
   lockWrites.fetch_add(1, std::memory_order_relaxed);
 }
-extern "C" void ws_camset_record(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r8) noexcept {
-  yawLock(rdx);
+// M6t: setter flags. The ActorRelativeCamera reference (research hint) calls this setter with R9 = 3 to "preserve the
+// current view" and the vanilla actor-relative call passes R9 = 0. HYPOTHESIS: flag bits 0/1 keep the current view
+// yaw/pitch when the reference changes, i.e. no re-aim (no auto-centering). Auto-centering OFF -> R9 |= 3.
+constexpr bool kSetterPreserveFlags = true, kSetterYawLock = false; // M6s yaw lock REJECTED (centering unchanged)
+extern "C" std::uintptr_t ws_camset_record(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r8, std::uintptr_t r9) noexcept {
+  if (kSetterYawLock) yawLock(rdx);
+  setR9.store(r9, std::memory_order_relaxed);
+  std::uintptr_t outR9 = r9;
+  if (kSetterPreserveFlags && setYawLock.load(std::memory_order_relaxed) && !ws::drive::cameraAutoCenter.load(std::memory_order_relaxed) && engagedManager.load() && !killed.load()) {
+    outR9 = r9 | 3; if (outR9 != r9) flagWrites.fetch_add(1, std::memory_order_relaxed); }
   setCalls.fetch_add(1, std::memory_order_relaxed); setRcx.store(rcx, std::memory_order_relaxed); setRdx.store(rdx, std::memory_order_relaxed); setR8.store(r8, std::memory_order_relaxed);
   unsigned ok = 0; std::uintptr_t ptr[2]{rdx, r8};
   for (int k = 0; k < 2; ++k) { float m[16]; if (ptr[k] > 0x10000 && ptr[k] < UINTPTR_MAX - 64 && msm2::readMemory(ptr[k], m, sizeof m)) { ok |= 1u << k; for (int i = 0; i < 16; ++i) setM[k][i].store(m[i], std::memory_order_relaxed); } }
   setMOk.store(ok, std::memory_order_relaxed);
+  return outR9;
 }
 namespace msm2::camera_ref {
 void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
@@ -304,7 +314,7 @@ void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
     setYawLock = sok && !std::strcmp(sh, "8960cb933fa8809c7afd629212b2a7952230658ec7471a7279504d7a866ff55f");
     if (sok && MH_CreateHook(reinterpret_cast<void*>(setTarget), reinterpret_cast<void*>(&ws_camset_thunk), &ws_camset_original) == MH_OK)
       setInstalled = MH_EnableHook(reinterpret_cast<void*>(setTarget)) == MH_OK;
-    writeLog("WS_CAMERA_SETTER admitted=%u rva=0x3350220 pdata_begin=%u entry_sha256=%s mode=capture_plus_ws_yaw_lock yaw_lock_admitted=%u", unsigned(setInstalled.load()), unsigned(sf && sf->BeginAddress == kSetterRva), sh[0] ? sh : "none", unsigned(setYawLock.load()));
+    writeLog("WS_CAMERA_SETTER admitted=%u rva=0x3350220 pdata_begin=%u entry_sha256=%s mode=capture_plus_ws_preserve_flags pinned_sha_admitted=%u", unsigned(setInstalled.load()), unsigned(sf && sf->BeginAddress == kSetterRva), sh[0] ? sh : "none", unsigned(setYawLock.load()));
   }
   writeLog("WS_CAMERA_REF admitted=%u entry_rva=0x1065680 entry_sha256=%s flag_offset=0x304 mode=actor_relative_only_during_WS thunk=record_rcx_tailjump",
            unsigned(installed.load()), kEntrySha);
