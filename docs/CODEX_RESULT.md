@@ -312,3 +312,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M8g: XInput is not the gameplay pad path (VERIFIED). M8h: WGI Gamepad reading/vibration hooks + A hold-back test.
 - 2026-11-07: M8h cloud full suites PASS on tree eb4ac4e1ec3fa17bd68e7a4d3b4666909ae2e7b6 (listed).
 - 2026-11-07: M8h: WGI hook not installed (no gamepad visible to our query); jump still fires without XInput A. M8i: Raw Input / hid.dll call counting.
+- 2026-11-07: M8i cloud full suites PASS on tree fff9e62801385868a68da52e3476ed2d3a093ff1 (listed).
