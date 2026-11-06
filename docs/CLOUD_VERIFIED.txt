@@ -8,3 +8,4 @@ dfd7e04ec6f653e46deb364fac18273c96b63477 2026-11-06 build+test.sh+smoke+hooks+pa
 5b7aa310078a69be3e8c51b00ff45769392cf978 2026-11-06 build+test.sh+smoke+hooks+package PASS (M6y exit blend)
 a98075fe490354e09e9fff64f70e2d6f7355e596 2026-11-06 build+test.sh+smoke+hooks+package PASS (M6z camera up rate limit)
 17a3e13322b8e252f4a1b288069a6e5bb2b2c50c 2026-11-06 build+test.sh+smoke+hooks+package PASS (M8a jump clip swap)
+2d004a93f4f24554563c4e511ba3612bb1d018ba 2026-11-06 build+test.sh+smoke+hooks+package PASS (M8b jump YBoost 0 + jump trace)
