@@ -296,3 +296,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M8a accepted (sprint jump clip plays for Peter/Miles). M8b: WR jump config YBoost 0 + read-only WS_JUMP_TRACE (analysis/M8_JUMP_PLAN_20261106.md, risk D21).
 - 2026-11-06: M8b cloud full suites PASS on tree 2d004a93f4f24554563c4e511ba3612bb1d018ba (listed).
 - 2026-11-06: M8b A/B: YBoost = world-up boost at WR jump-off (VERIFIED-RUNTIME). M8c: WS-only in-memory YBoost 0 (scan + restore), file patch disabled (D21 closed, D22).
+- 2026-11-06: M8c cloud full suites PASS on tree 152a3c6512f6c3f3d6d2673d0962c809fd73f72f (listed).
