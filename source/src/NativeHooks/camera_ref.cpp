@@ -421,7 +421,7 @@ std::atomic<int> jcState{0};             // 0 idle, 1 scanning, 2 accepted, 3 re
 std::uintptr_t jcAddr[4]{}; unsigned jcCount{}; bool jcApplied{}; std::uint64_t jcWrites{}, jcRestores{}, jcConflicts{};
 bool jcGroupsEqual(const float (&cur)[3][9], bool patched) {
   for (unsigned k = 0; k < 3; ++k) for (unsigned j = 0; j < 9; ++j) {
-    if (patched && j < 2) continue;   // M8j: SpeedMin/Max may hold a charge value while patched
+    if (patched && j < 5) continue;   // M8j/M9d: Speed* and GenBoost* may hold a charge value while patched
     float want = (patched && (j == kYMin || j == kYMax)) ? 0.f : kJumpF[k][j];
     if (std::memcmp(&cur[k][j], &want, 4)) return false; }
   return true;
@@ -493,6 +493,11 @@ DWORD WINAPI jcScan(void*) {
   jcState.store(ok ? 2 : 3);
   return 0;
 }
+// M9d: M8j-r3 showed the jump-off capped near ReleaseData.InSpeedMax 22. Charge now scales Speed*, GenBoost* (incl. Cap)
+// of every group and InSpeedMax. Runtime ReleaseData (M8c-r4 float context): {InSpeedMax 22, TimeToPeakMin 0.45,
+// TimeToPeakMax 0.8} at group_00 - 32; identity checked (InSpeedMax may hold the charge value while patched).
+constexpr float kRelease[3] = {22.f, 0.45f, 0.8f}; constexpr int kReleaseOff = -32;
+bool jcReleaseOk(std::uintptr_t a) { float r[3]; if (!msm2::readMemory(a + kReleaseOff, r, 12)) return false; return !std::memcmp(&r[1], &kRelease[1], 8) && std::isfinite(r[0]) && r[0] >= 22.f && r[0] <= 22.f * 5.f; }
 std::atomic_flag jcLock = ATOMIC_FLAG_INIT;   // tick vs F8/stop restore
 void jcWriteAll(bool patch) {
   while (jcLock.test_and_set(std::memory_order_acquire)) Sleep(0);
@@ -504,7 +509,8 @@ void jcWriteAll(bool patch) {
     if (!w) { ++conflict; continue; }
     for (unsigned k = 0; k < 3; ++k) { auto* f = reinterpret_cast<volatile float*>(a + k * kJumpStride);
       f[kYMin] = patch ? 0.f : kJumpF[k][kYMin]; f[kYMax] = patch ? 0.f : kJumpF[k][kYMax];
-      if (!patch) { f[0] = kJumpF[k][0]; f[1] = kJumpF[k][1]; } }
+      if (!patch) { for (unsigned j = 0; j < 5; ++j) f[j] = kJumpF[k][j]; } }
+    if (!patch && jcReleaseOk(a) && writableByte(a + kReleaseOff)) *reinterpret_cast<volatile float*>(a + kReleaseOff) = kRelease[0];
     ++done;
   }
   jcConflicts += conflict; (patch ? jcWrites : jcRestores) += done;
@@ -519,8 +525,9 @@ bool jcSetSpeed(float k) {
   while (jcLock.test_and_set(std::memory_order_acquire)) Sleep(0);
   unsigned done = 0;
   for (unsigned i = 0; i < jcCount; ++i) { auto a = jcAddr[i];
-    if (!jcMatches(a, true) || !writableByte(a) || !writableByte(a + 2 * kJumpStride + 7)) continue;
-    for (unsigned g = 0; g < 3; ++g) { auto* f = reinterpret_cast<volatile float*>(a + g * kJumpStride); f[0] = kJumpF[g][0] * k; f[1] = kJumpF[g][1] * k; }
+    if (!jcMatches(a, true) || !jcReleaseOk(a) || !writableByte(a + kReleaseOff) || !writableByte(a + 2 * kJumpStride + 35)) continue;
+    for (unsigned g = 0; g < 3; ++g) { auto* f = reinterpret_cast<volatile float*>(a + g * kJumpStride); for (unsigned j = 0; j < 5; ++j) f[j] = kJumpF[g][j] * k; }
+    *reinterpret_cast<volatile float*>(a + kReleaseOff) = kRelease[0] * k;
     ++done; }
   jcLock.clear(std::memory_order_release);
   return done > 0;
@@ -695,7 +702,7 @@ void wsChargeStep(WgiReading* r, bool a) {
           float h = 15.f + 24.f * std::fmin(1.f, float(hold - 500) / 600.f); float v = std::sqrt(2.f * 32.f * h);
           if (HANDLE th = CreateThread(nullptr, 0, m9Launch, reinterpret_cast<void*>(std::uintptr_t(v * 100.f)), 0, nullptr)) { CloseHandle(th); set = true; } }
         else if (k > 1.f && !ws::drive::wsVelocityWrite.load()) set = jcSetSpeed(k);   // M8j fallback
-        if (chLogs++ < 60) msm2::writeLog("WS_CHARGE_JUMP event=release hold_ms=%llu mode=%s k=%.2f velocity_launch=%u", (unsigned long long)hold, k > 1.f ? "charge" : "normal", k, unsigned(set));
+        if (chLogs++ < 60) msm2::writeLog("WS_CHARGE_JUMP event=release hold_ms=%llu mode=%s k=%.2f strength_written=%u", (unsigned long long)hold, k > 1.f ? "charge" : "normal", k, unsigned(set));
         chState.store(kChGive); chGiveUntil.store(now + 60); r->buttons |= 0x4u; }
       break;
     case kChGive:
