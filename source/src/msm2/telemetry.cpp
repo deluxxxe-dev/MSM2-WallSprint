@@ -10,6 +10,7 @@
 #include <vector>
 #include <exception>
 #include "msm2/drive_command.hpp"
+#include "msm2/ws_settings.hpp"
 #include "msm2/sdk_bridge.hpp"
 #include "msm2/orientation_log.hpp"
 #include "msm2/wallrun_hooks.hpp"
@@ -77,6 +78,11 @@ Settings settings(){
  result.source.enabled=GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_ENABLE",0,path.c_str())==1;
  result.source.sourceOverride=GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_NATIVE_SOURCE_OVERRIDE",0,path.c_str())==1;
  msm2::writeLog("WALL_MOTION_CONFIG ini_path=%ls requested_override=%u selection=restart_required",path.c_str(),unsigned(result.source.sourceOverride));
+ {auto f=[&](const wchar_t* key,float def){wchar_t t[64]{};GetPrivateProfileStringW(L"WallSprintSettings",key,L"",t,64,path.c_str());wchar_t* e=nullptr;float v=std::wcstof(t,&e);return (t[0]&&e&&*e==0&&std::isfinite(v))?v:def;};
+  ws::settings::turnRateDegPerSec.store(std::clamp(f(L"TURN_RATE_DEG_PER_SEC",400.f),30.f,2000.f));
+  ws::settings::mouseManualMs.store(unsigned(std::clamp(f(L"MOUSE_MANUAL_MS",150.f),0.f,2000.f)));
+  ws::settings::stickManualThreshold.store(std::clamp(f(L"STICK_MANUAL_THRESHOLD",0.2f),0.05f,0.9f));
+  msm2::writeLog("WS_SETTINGS turn_rate_deg_s=%.0f mouse_manual_ms=%u stick_manual_threshold=%.2f camera_autocenter=%u source=WallSprint.ini[WallSprintSettings]",ws::settings::turnRateDegPerSec.load(),ws::settings::mouseManualMs.load(),ws::settings::stickManualThreshold.load(),unsigned(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_CAMERA_AUTOCENTER",0,path.c_str())==1));}
  ws::drive::cameraAutoCenter.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_CAMERA_AUTOCENTER",0,path.c_str())==1);
  msm2::writeLog("WS_CAMERA_AUTOCENTER enabled=%u key=WALLSPRINT_CAMERA_AUTOCENTER default=0",unsigned(ws::drive::cameraAutoCenter.load()));
  result.source.delay=number(L"WALLSPRINT_ENTRY_DELAY",L"0.70");result.source.rotateTime=number(L"WALLSPRINT_ROTATE_TIME",L"0.25");

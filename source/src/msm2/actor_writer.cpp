@@ -10,6 +10,7 @@
 #include <cstring>
 #include "msm2/actor_writer.hpp"
 #include "msm2/drive_command.hpp"
+#include "msm2/ws_settings.hpp"
 #include "msm2/update_bridge.hpp"
 #include "msm2/sdk_bridge.hpp"
 
@@ -31,6 +32,7 @@ std::atomic<unsigned> ws_update_probe_enabled{0};
 
 namespace {
 void logInputStack();
+void startMouseHook();
 constexpr std::uintptr_t kWallRun250Offset=0x250;
 constexpr std::uintptr_t kConsumerThreshold0Rva=0x5303DE8;
 constexpr std::uintptr_t kConsumerThreshold1Rva=0x5337098;
@@ -57,7 +59,7 @@ constexpr float kStickDeadzone=0.35f;
 std::atomic<std::uint64_t> driveWrites{0},driveNoInput{0},driveUncalibrated{0},driveBadNormal{0},driveCalibrations{0},driveCameraMapped{0},driveHeldForward{0},driveSnapSeq{0},driveUpAssist{0};
 constexpr bool kCameraUpAssist=true,kCameraSideAxis=true;
 constexpr bool kSmoothTurn=true;// M6e: ground sprint measured max ~470, large turns 270-360 deg/s
-constexpr double kTurnRateDegPerSec=400.;std::atomic<std::uint64_t> followWrites{0},followManualSkips{0},followNoHero{0},aimWrites{0},holdWrites{0};double turnLastT{};std::atomic<std::uint64_t> turnLimited{0};
+std::atomic<std::uint64_t> followWrites{0},followManualSkips{0},followNoHero{0},aimWrites{0},holdWrites{0};double turnLastT{};std::atomic<std::uint64_t> turnLimited{0};
 std::atomic<std::uint64_t> driveSideAxis{0};
 std::atomic<float> driveSnap[16]{};std::uint64_t driveSnapLogged{};
 // M5c-r6 diagnostics: vanilla reversal events (heading read back opposite to our previous write) and camera axis scan.
@@ -129,6 +131,7 @@ void admit(bool completeVerified,const std::array<Patch,4>&){
  // Load XInput only inside the real game process; test hosts (Wine smokes in Update-WS) must not load input stacks.
  if(kM3dStickDrive&&!xinputGetState.load()&&GetModuleHandleW(L"Spider-Man2.exe")){
   logInputStack();
+  startMouseHook();
   HMODULE x=LoadLibraryW(L"xinput1_4.dll");if(!x)x=LoadLibraryW(L"xinput9_1_0.dll");
   if(x)xinputGetState.store(reinterpret_cast<XInputGetStateFn>(reinterpret_cast<void*>(GetProcAddress(x,"XInputGetState"))));
   writeLog("wallrun_m3d_stick_drive_admission xinput=%u keyboard=WASD offsets=0x240,0x24c normal=0x398 deadzone=%.2f",unsigned(xinputGetState.load()!=nullptr),kStickDeadzone);
@@ -157,7 +160,7 @@ void drainLogs(){
  lastThresholdCheck=now;lastLoggedSamples=n;logProbeSnapshot(final?"final":"cumulative");
  writeLog("wallrun_m3d_stick_drive phase=%s enabled=%u writes=%llu cap=%llu no_input=%llu uncalibrated=%llu calibrations=%llu bad_normal=%llu lateral_sign=%d camera_mapped=%llu handedness=%d game_write=1",final?"final":"cumulative",unsigned(kM3dStickDrive),static_cast<unsigned long long>(driveWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(driveNoInput.load()),static_cast<unsigned long long>(driveUncalibrated.load()),static_cast<unsigned long long>(driveCalibrations.load()),static_cast<unsigned long long>(driveBadNormal.load()),driveLateralSign,static_cast<unsigned long long>(driveCameraMapped.load()),ws_camera_handedness.load());
  if(auto q=driveSnapSeq.load(std::memory_order_acquire);q!=driveSnapLogged){driveSnapLogged=q;float v[16];for(int i=0;i<16;++i){v[i]=driveSnap[i].load(std::memory_order_relaxed);}
-  writeLog("wallrun_m5c_map cam=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f stick=%.2f,%.2f out=%.3f,%.3f,%.3f heading=%.3f,%.3f,%.3f proj=%.3f mode=%d held=%llu up_assist=%llu side_axis=%llu turn_limited=%llu turn_rate=%.0f cam_follow_writes=%llu cam_follow_manual_skips=%llu cam_follow_no_hero=%llu cam_aim_writes=%llu cam_yaw_hold_writes=%llu",v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],int(v[15]),static_cast<unsigned long long>(driveHeldForward.load()),static_cast<unsigned long long>(driveUpAssist.load()),static_cast<unsigned long long>(driveSideAxis.load()),static_cast<unsigned long long>(turnLimited.load()),kTurnRateDegPerSec,static_cast<unsigned long long>(followWrites.load()),static_cast<unsigned long long>(followManualSkips.load()),static_cast<unsigned long long>(followNoHero.load()),static_cast<unsigned long long>(aimWrites.load()),static_cast<unsigned long long>(holdWrites.load()));}
+  writeLog("wallrun_m5c_map cam=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f stick=%.2f,%.2f out=%.3f,%.3f,%.3f heading=%.3f,%.3f,%.3f proj=%.3f mode=%d held=%llu up_assist=%llu side_axis=%llu turn_limited=%llu turn_rate=%.0f cam_follow_writes=%llu cam_follow_manual_skips=%llu cam_follow_no_hero=%llu cam_aim_writes=%llu cam_yaw_hold_writes=%llu",v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],int(v[15]),static_cast<unsigned long long>(driveHeldForward.load()),static_cast<unsigned long long>(driveUpAssist.load()),static_cast<unsigned long long>(driveSideAxis.load()),static_cast<unsigned long long>(turnLimited.load()),double(ws::settings::turnRateDegPerSec.load()),static_cast<unsigned long long>(followWrites.load()),static_cast<unsigned long long>(followManualSkips.load()),static_cast<unsigned long long>(followNoHero.load()),static_cast<unsigned long long>(aimWrites.load()),static_cast<unsigned long long>(holdWrites.load()));}
  if(auto q=driveFlips.load(std::memory_order_acquire);q!=driveFlipsLogged){driveFlipsLogged=q;float v[17];for(int i=0;i<17;++i){v[i]=driveFlipSnap[i].load(std::memory_order_relaxed);}
   writeLog("wallrun_m5c_vanilla_reversal count=%llu stick=%.2f,%.2f our_last=%.3f,%.3f,%.3f vanilla=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f cam_f=%.3f,%.3f,%.3f cam_u=%.3f,%.3f,%.3f",static_cast<unsigned long long>(q),v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],v[15],v[16]);}
  if(auto q=driveOverrides.load(std::memory_order_acquire);q!=driveOverridesLogged){driveOverridesLogged=q;float v[17];for(int i=0;i<17;++i){v[i]=driveOverrideSnap[i].load(std::memory_order_relaxed);}
@@ -232,6 +235,22 @@ void logInputStack(){
     if(dd.VirtualAddress&&dd.Size){for(auto d=reinterpret_cast<const IMAGE_DELAYLOAD_DESCRIPTOR*>(base+dd.VirtualAddress);d->DllNameRVA;++d)addName(d->DllNameRVA,"delay");}}}}
  msm2::writeLog("wallrun_m5d_input_stack loaded=%s exe_input_imports=%s read_only=1",len?loaded:"none",il?imports:"none");
 }
+// M7a: mouse look detection. A low-level mouse hook on its own thread records the last physical (non-injected) mouse
+// move; GetLastInputInfo was unusable (it fired ~85% of the time in a controller-only run). Game process only; the
+// module is pinned by camera_ref, so the hook procedure stays valid.
+std::atomic<std::uint64_t> lastMouseMoveMs{0};std::atomic<bool> mouseHookStarted{false};
+LRESULT CALLBACK mouseLowLevel(int code,WPARAM w,LPARAM l){
+ if(code==HC_ACTION&&w==WM_MOUSEMOVE){auto* m=reinterpret_cast<const MSLLHOOKSTRUCT*>(l);if(m&&!(m->flags&LLMHF_INJECTED))lastMouseMoveMs.store(GetTickCount64(),std::memory_order_relaxed);}
+ return CallNextHookEx(nullptr,code,w,l);
+}
+DWORD WINAPI mouseHookThread(void*){
+ HHOOK h=SetWindowsHookExW(WH_MOUSE_LL,mouseLowLevel,GetModuleHandleW(nullptr),0);
+ msm2::writeLog("WS_MOUSE_LOOK_DETECT installed=%u kind=WH_MOUSE_LL physical_moves_only=1",unsigned(h!=nullptr));
+ if(!h){return 0;}
+ MSG msg;while(GetMessageW(&msg,nullptr,0,0)>0){}
+ UnhookWindowsHookEx(h);return 0;
+}
+void startMouseHook(){bool e=false;if(!mouseHookStarted.compare_exchange_strong(e,true))return;if(HANDLE t=CreateThread(nullptr,0,mouseHookThread,nullptr,0,nullptr))CloseHandle(t);}
 bool readRightStick(float& rx,float& ry){
  rx=ry=0;if(auto get=xinputGetState.load()){XINPUT_STATE st{};if(get(0,&st)==ERROR_SUCCESS){rx=st.Gamepad.sThumbRX/32767.f;ry=st.Gamepad.sThumbRY/32767.f;return true;}}
  return false;
@@ -428,7 +447,7 @@ void driveHeading(std::uintptr_t owner){
   if(cl>0.5f&&std::fabs(dnn)<0.2f){for(float& c:cur)c/=cl;
    float x[3]{cur[1]*d[2]-cur[2]*d[1],cur[2]*d[0]-cur[0]*d[2],cur[0]*d[1]-cur[1]*d[0]};
    float ang=std::atan2(x[0]*n[0]+x[1]*n[1]+x[2]*n[2],cur[0]*d[0]+cur[1]*d[1]+cur[2]*d[2]);
-   float maxA=float(kTurnRateDegPerSec*3.14159265358979/180.*dt);
+   float maxA=float(double(ws::settings::turnRateDegPerSec.load(std::memory_order_relaxed))*3.14159265358979/180.*dt);
    if(std::fabs(ang)>maxA){float a=ang>0?maxA:-maxA,ca=std::cos(a),sa=std::sin(a);
     float nc[3]{n[1]*cur[2]-n[2]*cur[1],n[2]*cur[0]-n[0]*cur[2],n[0]*cur[1]-n[1]*cur[0]};
     for(int i=0;i<3;++i){d[i]=cur[i]*ca+nc[i]*sa;}
@@ -445,7 +464,8 @@ void driveHeading(std::uintptr_t owner){
 }
 }
 
-namespace msm2::writer{bool readStickInput(float& x,float& y){return readStick(x,y);}bool readRightStickInput(float& x,float& y){return readRightStick(x,y);}}
+namespace msm2::writer{bool mouseMovedWithin(unsigned ms){auto t=lastMouseMoveMs.load(std::memory_order_relaxed);return t&&GetTickCount64()-t<ms;}
+bool readStickInput(float& x,float& y){return readStick(x,y);}bool readRightStickInput(float& x,float& y){return readRightStick(x,y);}}
 
 extern "C" void ws_update_probe_sample(std::uintptr_t owner) noexcept{
  if(!thresholdProbeEnabled.load(std::memory_order_acquire)||!ws_update_probe_enabled.load(std::memory_order_acquire))return;

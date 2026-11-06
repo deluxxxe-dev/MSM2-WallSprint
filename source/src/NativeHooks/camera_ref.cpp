@@ -15,6 +15,7 @@
 #include <cstring>
 #include "NativeHooks/camera_ref.hpp"
 #include "msm2/actor_writer.hpp"
+#include "msm2/ws_settings.hpp"
 #include "msm2/drive_command.hpp"
 extern "C" { void ws_camset_thunk(); void* ws_camset_original{}; std::uintptr_t ws_camset_record(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r8, std::uintptr_t r9) noexcept; }
 extern "C" { void ws_camref_thunk(); void* ws_camref_original{}; extern std::uintptr_t ws_camref_this; extern std::uintptr_t ws_camref_raw, ws_camref_seq, ws_camref_ring[8]; extern std::atomic<void(*)()> ws_wallsprint_update_listener;
@@ -294,10 +295,10 @@ void angleHold(std::uintptr_t mover) noexcept {
   if (!kAngleHold || !setYawLock.load(std::memory_order_relaxed) || ws::drive::cameraAutoCenter.load(std::memory_order_relaxed) || !engagedManager.load() || killed.load()) { holdAngles = false; return; }
   if (!mover || mover > UINTPTR_MAX - 0x400) return;
   float a[2]; if (!msm2::readMemory(mover + 0x2CC, a, sizeof a) || !std::isfinite(a[0]) || !std::isfinite(a[1]) || std::fabs(a[0]) > 100.f || std::fabs(a[1]) > 10.f) { holdAngles = false; return; }
-  float rx = 0, ry = 0; bool stick = msm2::writer::readRightStickInput(rx, ry) && rx * rx + ry * ry > 0.2f * 0.2f;
+  float rx = 0, ry = 0, th = ws::settings::stickManualThreshold.load(std::memory_order_relaxed); bool stick = msm2::writer::readRightStickInput(rx, ry) && rx * rx + ry * ry > th * th;
   // M6w: GetLastInputInfo marked ~85% of WS calls as manual in the owner's controller-only run (M6v), so the hold
   // rarely acted. Controller right stick only for now; mouse look detection is a separate later step.
-  bool kbm = false;
+  bool kbm = msm2::writer::mouseMovedWithin(ws::settings::mouseManualMs.load(std::memory_order_relaxed)); // M7a mouse look
   if (!holdAngles || stick || kbm) { holdYaw = a[0]; holdPitch = a[1]; holdAngles = true; if (stick || kbm) angleManual.fetch_add(1, std::memory_order_relaxed); return; }
   if (a[0] == holdYaw && a[1] == holdPitch) return;
   MEMORY_BASIC_INFORMATION mi{}; if (!VirtualQuery(reinterpret_cast<void*>(mover + 0x2CC), &mi, sizeof mi) || mi.State != MEM_COMMIT || !(mi.Protect & (PAGE_READWRITE | PAGE_EXECUTE_READWRITE))) return;
