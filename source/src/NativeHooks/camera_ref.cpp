@@ -15,6 +15,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <cwchar>
 #include "NativeHooks/camera_ref.hpp"
 #include "msm2/actor_writer.hpp"
 #include "msm2/ws_settings.hpp"
@@ -589,6 +590,88 @@ void m8InputHooks(std::uint64_t now) {
       (unsigned long long)xgPresses[0].load(), (unsigned long long)xgPresses[2].load(), (unsigned long long)xsCalls[0].load(), (unsigned long long)xsCalls[1].load(),
       (unsigned long long)xsCalls[2].load(), (unsigned long long)xsCalls[3].load()); }
 }
+// M8h (2026-11-07): M8g VERIFIED that hiding A from XInput during WS does not stop the WS jump, so gameplay pad input
+// is not XInput. Windows.Gaming.Input is loaded. Pass-through hooks on the WGI Gamepad implementation (IGamepad vtable
+// slots 7 put_Vibration and 8 GetCurrentReading, found through our own Gamepad object): call counts, A edges, rumble
+// values on change; and, with WALLSPRINT_JUMP_HOLDBACK_TEST, A (GamepadButtons 0x4) hidden while WS is active.
+struct WgiReading { std::uint64_t ts; std::uint32_t buttons; double lt, rt, lx, ly, rx, ry; };
+struct WgiVibration { double left, right, ltrig, rtrig; };
+using WgiReadFn = HRESULT (STDMETHODCALLTYPE*)(void*, WgiReading*); using WgiVibFn = HRESULT (STDMETHODCALLTYPE*)(void*, const WgiVibration*);
+WgiReadFn wgiReadOrig{}; WgiVibFn wgiVibOrig{}; void* wgiReadTarget{}; void* wgiVibTarget{};
+std::atomic<std::uint64_t> wgiReads{0}, wgiPresses{0}, wgiVibs{0}, wgiHidden{0}; std::atomic<bool> wgiA{false}; std::atomic<unsigned> wgiLogs{0};
+WgiVibration wgiLastVib{-1, -1, -1, -1};
+HRESULT STDMETHODCALLTYPE wgiReadDetour(void* self, WgiReading* r) {
+  HRESULT hr = wgiReadOrig(self, r);
+  if (fromSelf(__builtin_return_address(0))) return hr;
+  wgiReads.fetch_add(1, std::memory_order_relaxed);
+  if (SUCCEEDED(hr) && r) {
+    bool a = (r->buttons & 0x4u) != 0;
+    if (a && !wgiA.exchange(true)) { auto now = GetTickCount64(); xgPress.store(now); wgiPresses.fetch_add(1);
+      if (wgiLogs.fetch_add(1) < 60) { auto kp = jiPress.load(); msm2::writeLog("WS_INPUT_GAME_A module=WGI since_ws_seen_press_ms=%lld read_only=1", kp ? (long long)(now - kp) : -1ll); } }
+    else if (!a) wgiA.store(false);
+    if (a && ws::drive::jumpHoldbackTest.load() && !killed.load() && engagedManager.load() != 0 && GetTickCount64() - lastWsMs.load() < 150) {
+      r->buttons &= ~0x4u; if (wgiHidden.fetch_add(1) < 40) msm2::writeLog("WS_JUMP_HOLDBACK module=WGI a_hidden=1 blocked=%llu", (unsigned long long)wgiHidden.load()); }
+  }
+  return hr;
+}
+HRESULT STDMETHODCALLTYPE wgiVibDetour(void* self, const WgiVibration* v) {
+  if (!fromSelf(__builtin_return_address(0))) { wgiVibs.fetch_add(1, std::memory_order_relaxed);
+    if (v && (v->left != wgiLastVib.left || v->right != wgiLastVib.right || v->ltrig != wgiLastVib.ltrig || v->rtrig != wgiLastVib.rtrig)) { wgiLastVib = *v;
+      if (xsLogs.fetch_add(1) < 400) { auto now = GetTickCount64(); auto p = xgPress.load(), kp = jiPress.load();
+        msm2::writeLog("WS_RUMBLE module=WGI left=%.3f right=%.3f ltrig=%.3f rtrig=%.3f since_game_A_press_ms=%lld since_jump_press_ms=%lld game_A_held=%u read_only=1", v->left, v->right, v->ltrig, v->rtrig,
+          p ? (long long)(now - p) : -1ll, kp ? (long long)(now - kp) : -1ll, unsigned(wgiA.load())); } } }
+  return wgiVibOrig(self, v);
+}
+std::atomic<bool> wgiStarted{false};
+DWORD WINAPI wgiSetup(void*) {
+  HMODULE combase = LoadLibraryW(L"combase.dll"); if (!combase) { msm2::writeLog("WS_WGI_HOOK installed=0 reason=no_combase"); return 0; }
+  using RoInitFn = HRESULT (WINAPI*)(int); using RoFactFn = HRESULT (WINAPI*)(void*, const IID&, void**);
+  using StrFn = HRESULT (WINAPI*)(const wchar_t*, UINT32, void**); using StrDelFn = HRESULT (WINAPI*)(void*);
+  auto roInit = reinterpret_cast<RoInitFn>(reinterpret_cast<void*>(GetProcAddress(combase, "RoInitialize")));
+  auto roFact = reinterpret_cast<RoFactFn>(reinterpret_cast<void*>(GetProcAddress(combase, "RoGetActivationFactory")));
+  auto mkStr = reinterpret_cast<StrFn>(reinterpret_cast<void*>(GetProcAddress(combase, "WindowsCreateString")));
+  auto delStr = reinterpret_cast<StrDelFn>(reinterpret_cast<void*>(GetProcAddress(combase, "WindowsDeleteString")));
+  if (!roInit || !roFact || !mkStr || !delStr) { msm2::writeLog("WS_WGI_HOOK installed=0 reason=no_ro_api"); return 0; }
+  roInit(1);  // RO_INIT_MULTITHREADED on this helper thread only
+  static const IID kStatics = {0x8bbce529, 0xd49c, 0x39e9, {0x95, 0x60, 0xe4, 0x7d, 0xde, 0x96, 0xb7, 0xc8}};
+  static const IID kGamepad = {0xbc7bb43c, 0x0a69, 0x3903, {0x9e, 0x9d, 0xa5, 0x0f, 0x86, 0xa4, 0x5d, 0xe5}};
+  const wchar_t* cls = L"Windows.Gaming.Input.Gamepad";
+  for (int attempt = 0; attempt < 90 && !killed.load(); ++attempt, Sleep(2000)) {
+    void* h = nullptr; if (FAILED(mkStr(cls, UINT32(std::wcslen(cls)), &h))) continue;
+    void* statics = nullptr; HRESULT hr = roFact(h, kStatics, &statics); delStr(h);
+    if (FAILED(hr) || !statics) { if (!attempt) msm2::writeLog("WS_WGI_HOOK factory_hr=0x%lx", (unsigned long)hr); continue; }
+    auto svt = *reinterpret_cast<void***>(statics);
+    void* view = nullptr; hr = reinterpret_cast<HRESULT (STDMETHODCALLTYPE*)(void*, void**)>(svt[10])(statics, &view);
+    unsigned size = 0; void* pad = nullptr;
+    if (SUCCEEDED(hr) && view) { auto vvt = *reinterpret_cast<void***>(view);
+      reinterpret_cast<HRESULT (STDMETHODCALLTYPE*)(void*, unsigned*)>(vvt[7])(view, &size);
+      if (size) reinterpret_cast<HRESULT (STDMETHODCALLTYPE*)(void*, unsigned, void**)>(vvt[6])(view, 0, &pad);
+      reinterpret_cast<ULONG (STDMETHODCALLTYPE*)(void*)>(vvt[2])(view); }
+    reinterpret_cast<ULONG (STDMETHODCALLTYPE*)(void*)>(svt[2])(statics);
+    if (!pad) { if (attempt % 15 == 0) msm2::writeLog("WS_WGI_HOOK waiting gamepads=%u attempt=%d", size, attempt); continue; }
+    void* igp = nullptr; auto pvt = *reinterpret_cast<void***>(pad);
+    reinterpret_cast<HRESULT (STDMETHODCALLTYPE*)(void*, const IID&, void**)>(pvt[0])(pad, kGamepad, &igp);
+    reinterpret_cast<ULONG (STDMETHODCALLTYPE*)(void*)>(pvt[2])(pad);
+    if (!igp) { msm2::writeLog("WS_WGI_HOOK installed=0 reason=no_IGamepad"); return 0; }
+    auto gvt = *reinterpret_cast<void***>(igp); void* readFn = gvt[8]; void* vibFn = gvt[7];
+    reinterpret_cast<ULONG (STDMETHODCALLTYPE*)(void*)>(gvt[2])(igp);
+    bool okR = MH_CreateHook(readFn, reinterpret_cast<void*>(&wgiReadDetour), reinterpret_cast<void**>(&wgiReadOrig)) == MH_OK && MH_EnableHook(readFn) == MH_OK;
+    bool okV = MH_CreateHook(vibFn, reinterpret_cast<void*>(&wgiVibDetour), reinterpret_cast<void**>(&wgiVibOrig)) == MH_OK && MH_EnableHook(vibFn) == MH_OK;
+    if (okR) { wgiReadTarget = readFn; }
+    if (okV) { wgiVibTarget = vibFn; }
+    msm2::writeLog("WS_WGI_HOOK installed_read=%u installed_vibration=%u gamepads=%u read_fn=0x%llx vib_fn=0x%llx pass_through=1", unsigned(okR), unsigned(okV), size,
+      (unsigned long long)reinterpret_cast<std::uintptr_t>(readFn), (unsigned long long)reinterpret_cast<std::uintptr_t>(vibFn));
+    return 0;
+  }
+  msm2::writeLog("WS_WGI_HOOK installed=0 reason=no_gamepad_in_180s");
+  return 0;
+}
+void m8WgiHooks(std::uint64_t now) {
+  static std::uint64_t lastLog = 0; static unsigned logs = 0;
+  if (!killed.load() && GetModuleHandleW(L"Windows.Gaming.Input.dll") && !wgiStarted.exchange(true)) { if (HANDLE h = CreateThread(nullptr, 0, wgiSetup, nullptr, 0, nullptr)) CloseHandle(h); }
+  if ((wgiReadTarget || wgiVibTarget) && now - lastLog >= 10000 && logs < 30) { lastLog = now; ++logs;
+    msm2::writeLog("WS_WGI_STATUS reads=%llu a_presses=%llu vibration_calls=%llu hidden=%llu", (unsigned long long)wgiReads.load(), (unsigned long long)wgiPresses.load(), (unsigned long long)wgiVibs.load(), (unsigned long long)wgiHidden.load()); }
+}
 struct ChargeMeasure { std::uint64_t release{}, hold{}; float y0{}, apex{}; bool active{}; } cm; unsigned cmLogs{};
 void m8ChargeMeasure(const msm2::Snapshot& hero, std::uint64_t now) {
   auto rel = jiRelease.load(), pr = jiPress.load();
@@ -682,6 +765,7 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   m8JumpTrace(snapshot, motion, now);
   m8JumpConfig(snapshot, now);
   m8InputHooks(now);
+  m8WgiHooks(now);
   m8ChargeMeasure(snapshot, now);
   m5eDistance(snapshot, now);
   m5ePitch(snapshot, now);
@@ -739,6 +823,8 @@ void kill() noexcept { jcRestoreNow(); killed = true; ws_wallsprint_update_liste
 void stop() noexcept {
   jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("stop");
   for (int m = 0; m < 4; ++m) { if (xgTarget[m]) MH_DisableHook(xgTarget[m]); if (xsTarget[m]) MH_DisableHook(xsTarget[m]); }
+  if (wgiReadTarget) MH_DisableHook(wgiReadTarget);
+  if (wgiVibTarget) MH_DisableHook(wgiVibTarget);
   if (setInstalled.exchange(false)) MH_DisableHook(reinterpret_cast<void*>(setTarget));
   if (installed.exchange(false)) MH_DisableHook(reinterpret_cast<void*>(target));
 }
