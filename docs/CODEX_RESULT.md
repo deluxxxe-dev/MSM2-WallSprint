@@ -302,3 +302,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M8c-r3 scan finished, no raw block. M8c-r4 mapped/readonly + float-pair dump; cloud full suites PASS on tree a98077cd1719e503356d479aa62ac3d331f6dc74 (listed).
 - 2026-11-06: M8c-r4 found the runtime float layout. M8c-r5 WS-only YBoost write on it; cloud full suites PASS on tree cbe9176e8733abfd3d951d699754767b1adbd8d4 (listed).
 - 2026-11-06: M8c-r5 WS-only YBoost write VERIFIED (scan accepted, WS jumps no upward boost). M8d read-only jump press/release timing (WS_JUMP_INPUT).
+- 2026-11-06: M8d cloud full suites PASS on tree e7810c3e1afee67d15e61d06e9b9e5822be7e8c0 (hooks suite re-run: first run hung in orientation_trace_smoke, which links no changed file).

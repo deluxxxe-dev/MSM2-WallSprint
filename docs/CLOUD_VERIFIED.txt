@@ -14,3 +14,4 @@ ae64bb50177898f6e121f6c0c0f2d0c563c5c378 2026-11-06 build+test.sh+smoke+hooks+pa
 7e9c56f2170927140ab7f9ef46b98cef54661fa9 2026-11-06 build+test.sh+smoke+hooks+package PASS (M8c-r3 linear resident-page scan)
 a98077cd1719e503356d479aa62ac3d331f6dc74 2026-11-06 build+test.sh+smoke+hooks+package PASS (M8c-r4 mapped + float layout scan)
 cbe9176e8733abfd3d951d699754767b1adbd8d4 2026-11-06 build+test.sh+smoke+hooks+package PASS (M8c-r5 float layout jump config write)
+e7810c3e1afee67d15e61d06e9b9e5822be7e8c0 2026-11-06 build+test.sh+smoke+hooks+package PASS (M8d jump input timing; hooks rerun after one Wine hang in orientation_trace_smoke)
