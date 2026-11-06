@@ -308,3 +308,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M8e: vanilla charge curve measured (threshold ~0.5-0.8 s, ~28-39 m); xinput9_1_0 not the pad path. M8f: hooks on all XInput DLLs + module list.
 - 2026-11-06: M8f cloud full suites PASS on tree 698066c1d22e6b63aa614ab08fa0a855af68ab9f (listed).
 - 2026-11-06: M8f: XInput polled ~16/s, no XInput rumble; charge curve refined. M8g: hide A from XInput during WS (route test).
+- 2026-11-06: M8g cloud full suites PASS on tree 681ba54acabf8720552979b1985acd03d24f338d (listed).

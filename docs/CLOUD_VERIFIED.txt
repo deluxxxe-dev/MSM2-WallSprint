@@ -17,3 +17,4 @@ cbe9176e8733abfd3d951d699754767b1adbd8d4 2026-11-06 build+test.sh+smoke+hooks+pa
 e7810c3e1afee67d15e61d06e9b9e5822be7e8c0 2026-11-06 build+test.sh+smoke+hooks+package PASS (M8d jump input timing; hooks rerun after one Wine hang in orientation_trace_smoke)
 9648d16db9f5471ad2b5310fce83279a6d12e927 2026-11-06 build+test.sh+smoke+hooks+package PASS (M8e input/rumble/charge measurements)
 698066c1d22e6b63aa614ab08fa0a855af68ab9f 2026-11-06 build+test.sh+smoke+hooks+package PASS (M8f XInput hooks all DLLs)
+681ba54acabf8720552979b1985acd03d24f338d 2026-11-06 build+test.sh+smoke+hooks+package PASS (M8g XInput A hold-back test)
