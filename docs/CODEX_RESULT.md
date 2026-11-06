@@ -282,3 +282,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M6v installed but mostly bypassed (GetLastInputInfo manual 85%); M6w right-stick-only manual detection. Build PASS; unit/hooks run in progress at commit.
 - 2026-11-06: M6w cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
 - 2026-11-06: M6w accepted by owner (WS auto-centering off works).
+- 2026-11-06: cloud full suites incl. smoke_windows.sh PASS on source tree 261c554503a9aa11c256b23fa21ca4cd0db1cd0d (cloud env needed a UTF-8 locale and wine path links; no repo change). Listed in docs/CLOUD_VERIFIED.txt.
