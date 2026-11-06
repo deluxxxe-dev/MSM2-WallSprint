@@ -520,14 +520,18 @@ void jcWriteAll(bool patch) {
 }
 // M8j: charge jump strength. SpeedMin/Max of every group = vanilla * k, only while the YBoost patch is applied
 // (restored with it). Every write re-checks the patched identity.
+// M9e: field attribution. Each charge scales one field group only, cycling: 0 = InSpeedMax, 1 = Speed*, 2 = GenBoost*.
+std::atomic<unsigned> jcVariantN{0}; std::atomic<int> jcLastVariant{-1};
 bool jcSetSpeed(float k) {
   if (jcState.load() != 2 || !jcApplied) return false;
+  int variant = int(jcVariantN.fetch_add(1) % 3); jcLastVariant.store(variant);
   while (jcLock.test_and_set(std::memory_order_acquire)) Sleep(0);
   unsigned done = 0;
   for (unsigned i = 0; i < jcCount; ++i) { auto a = jcAddr[i];
     if (!jcMatches(a, true) || !jcReleaseOk(a) || !writableByte(a + kReleaseOff) || !writableByte(a + 2 * kJumpStride + 35)) continue;
-    for (unsigned g = 0; g < 3; ++g) { auto* f = reinterpret_cast<volatile float*>(a + g * kJumpStride); for (unsigned j = 0; j < 5; ++j) f[j] = kJumpF[g][j] * k; }
-    *reinterpret_cast<volatile float*>(a + kReleaseOff) = kRelease[0] * k;
+    for (unsigned g = 0; g < 3; ++g) { auto* f = reinterpret_cast<volatile float*>(a + g * kJumpStride);
+      for (unsigned j = 0; j < 5; ++j) f[j] = kJumpF[g][j] * (((variant == 1 && j < 2) || (variant == 2 && j >= 2)) ? k : 1.f); }
+    *reinterpret_cast<volatile float*>(a + kReleaseOff) = kRelease[0] * (variant == 0 ? k : 1.f);
     ++done; }
   jcLock.clear(std::memory_order_release);
   return done > 0;
@@ -702,7 +706,8 @@ void wsChargeStep(WgiReading* r, bool a) {
           float h = 15.f + 24.f * std::fmin(1.f, float(hold - 500) / 600.f); float v = std::sqrt(2.f * 32.f * h);
           if (HANDLE th = CreateThread(nullptr, 0, m9Launch, reinterpret_cast<void*>(std::uintptr_t(v * 100.f)), 0, nullptr)) { CloseHandle(th); set = true; } }
         else if (k > 1.f && !ws::drive::wsVelocityWrite.load()) set = jcSetSpeed(k);   // M8j fallback
-        if (chLogs++ < 60) msm2::writeLog("WS_CHARGE_JUMP event=release hold_ms=%llu mode=%s k=%.2f strength_written=%u", (unsigned long long)hold, k > 1.f ? "charge" : "normal", k, unsigned(set));
+        if (chLogs++ < 60) msm2::writeLog("WS_CHARGE_JUMP event=release hold_ms=%llu mode=%s k=%.2f strength_written=%u variant=%s", (unsigned long long)hold, k > 1.f ? "charge" : "normal", k, unsigned(set),
+          !set ? "none" : jcLastVariant.load() == 0 ? "InSpeedMax" : jcLastVariant.load() == 1 ? "Speed" : "GenBoost");
         chState.store(kChGive); chGiveUntil.store(now + 60); r->buttons |= 0x4u; }
       break;
     case kChGive:

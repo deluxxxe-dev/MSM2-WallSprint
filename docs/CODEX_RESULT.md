@@ -325,3 +325,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M9c cloud full suites PASS on tree 115f6783fb1077b1138567603107121758c93ba2 (listed).
 - 2026-11-07: M9c: RT+A release VERIFIED; both velocity candidates rejected. M9d: charge scales Speed/GenBoost/InSpeedMax.
 - 2026-11-07: M9d cloud full suites PASS on tree e750dd98d8bbade16aa653c915e4ff66d657f204 (listed).
+- 2026-11-07: M9d: charge jump ~2x speed, mostly along the wall. M9e: per-charge field attribution (InSpeedMax/Speed/GenBoost).
