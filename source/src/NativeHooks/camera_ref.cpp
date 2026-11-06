@@ -295,7 +295,9 @@ void angleHold(std::uintptr_t mover) noexcept {
   if (!mover || mover > UINTPTR_MAX - 0x400) return;
   float a[2]; if (!msm2::readMemory(mover + 0x2CC, a, sizeof a) || !std::isfinite(a[0]) || !std::isfinite(a[1]) || std::fabs(a[0]) > 100.f || std::fabs(a[1]) > 10.f) { holdAngles = false; return; }
   float rx = 0, ry = 0; bool stick = msm2::writer::readRightStickInput(rx, ry) && rx * rx + ry * ry > 0.2f * 0.2f;
-  LASTINPUTINFO li{}; li.cbSize = sizeof li; bool kbm = GetLastInputInfo(&li) && GetTickCount() - li.dwTime < 150;
+  // M6w: GetLastInputInfo marked ~85% of WS calls as manual in the owner's controller-only run (M6v), so the hold
+  // rarely acted. Controller right stick only for now; mouse look detection is a separate later step.
+  bool kbm = false;
   if (!holdAngles || stick || kbm) { holdYaw = a[0]; holdPitch = a[1]; holdAngles = true; if (stick || kbm) angleManual.fetch_add(1, std::memory_order_relaxed); return; }
   if (a[0] == holdYaw && a[1] == holdPitch) return;
   MEMORY_BASIC_INFORMATION mi{}; if (!VirtualQuery(reinterpret_cast<void*>(mover + 0x2CC), &mi, sizeof mi) || mi.State != MEM_COMMIT || !(mi.Protect & (PAGE_READWRITE | PAGE_EXECUTE_READWRITE))) return;
