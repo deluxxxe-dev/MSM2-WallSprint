@@ -9,6 +9,7 @@
 #include <windows.h>
 #include <bcrypt.h>
 #include <MinHook.h>
+#include <xinput.h>
 #include <algorithm>
 #include <atomic>
 #include <cmath>
@@ -507,13 +508,15 @@ void jcWriteAll(bool patch) {
 // M8d diagnostic (read-only): does a WS jump start on button press or on release? A 5 ms poller records jump-button
 // (XInput A / Space) edges; at each WS end it logs the last press/release relative to the end. <= 30 lines.
 std::atomic<bool> jiStarted{false};
+std::atomic<std::uint64_t> jiPress{0}, jiRelease{0};
 DWORD WINAPI jiPoll(void*) {
   bool prev = false, wasWs = false; std::uint64_t press = 0, release = 0; unsigned logs = 0;
-  while (!killed.load() && logs < 30) {
+  while (!killed.load()) {
     auto now = GetTickCount64(); bool b = msm2::writer::readJumpButton();
-    if (b && !prev) { press = now; }
-    if (!b && prev) { release = now; }
+    if (b && !prev) { press = now; jiPress.store(now); }
+    if (!b && prev) { release = now; jiRelease.store(now); }
     prev = b;
+    if (logs >= 30) { wasWs = false; Sleep(5); continue; }
     bool ws = engagedManager.load() != 0 && now - lastWsMs.load() < 150;
     if (wasWs && !ws) { auto end = lastWsMs.load(); ++logs;
       msm2::writeLog("WS_JUMP_INPUT ws_end held_now=%u press_before_end_ms=%lld release_before_end_ms=%lld read_only=1", unsigned(b),
@@ -521,6 +524,51 @@ DWORD WINAPI jiPoll(void*) {
     wasWs = ws; Sleep(5);
   }
   return 0;
+}
+// M8e diagnostics (read-only, pass-through): (1) does the game read the pad through xinput9_1_0 XInputGetState
+// (call count, A-button edges as the game sees them)? (2) rumble the game sends through XInputSetState (logged on change,
+// time since the last game-seen A press). (3) vanilla ground charge jump: hold time (press -> release) vs apex height.
+using XGetFn = DWORD (WINAPI*)(DWORD, XINPUT_STATE*); using XSetFn = DWORD (WINAPI*)(DWORD, XINPUT_VIBRATION*);
+XGetFn xgOrig{}; XSetFn xsOrig{}; std::atomic<bool> xHooked{false}; void* xgTarget{}; void* xsTarget{};
+std::atomic<std::uint64_t> xgCalls{0}, xgOk{0}, xgPress{0}, xsCalls{0}; std::atomic<bool> xgA{false};
+std::atomic<unsigned> xsLogs{0}, xsLast{0xffffffffu};
+DWORD WINAPI xgDetour(DWORD i, XINPUT_STATE* st) {
+  DWORD r = xgOrig(i, st); xgCalls.fetch_add(1, std::memory_order_relaxed);
+  if (r == ERROR_SUCCESS && st && i == 0) { xgOk.fetch_add(1, std::memory_order_relaxed);
+    bool a = (st->Gamepad.wButtons & XINPUT_GAMEPAD_A) != 0; if (a && !xgA.exchange(true)) xgPress.store(GetTickCount64()); else if (!a) xgA.store(false); }
+  return r;
+}
+DWORD WINAPI xsDetour(DWORD i, XINPUT_VIBRATION* v) {
+  xsCalls.fetch_add(1, std::memory_order_relaxed);
+  if (v && i == 0) { unsigned key = (unsigned(v->wLeftMotorSpeed) << 16) | v->wRightMotorSpeed;
+    if (xsLast.exchange(key) != key && xsLogs.fetch_add(1) < 300) { auto now = GetTickCount64(); auto p = xgPress.load(), kp = jiPress.load();
+      msm2::writeLog("WS_RUMBLE left=%u right=%u since_game_A_press_ms=%lld since_jump_press_ms=%lld game_A_held=%u read_only=1", unsigned(v->wLeftMotorSpeed), unsigned(v->wRightMotorSpeed),
+        p ? (long long)(now - p) : -1ll, kp ? (long long)(now - kp) : -1ll, unsigned(xgA.load())); } }
+  return xsOrig(i, v);
+}
+void m8InputHooks(std::uint64_t now) {
+  static std::uint64_t lastTry = 0, lastLog = 0; static unsigned logs = 0;
+  if (!xHooked.load() && now - lastTry > 2000) { lastTry = now;
+    HMODULE x = GetModuleHandleW(L"xinput9_1_0.dll");
+    if (x) { auto g = reinterpret_cast<void*>(GetProcAddress(x, "XInputGetState")), sv = reinterpret_cast<void*>(GetProcAddress(x, "XInputSetState"));
+      bool ok = g && sv && MH_CreateHook(g, reinterpret_cast<void*>(&xgDetour), reinterpret_cast<void**>(&xgOrig)) == MH_OK &&
+                MH_CreateHook(sv, reinterpret_cast<void*>(&xsDetour), reinterpret_cast<void**>(&xsOrig)) == MH_OK &&
+                MH_EnableHook(g) == MH_OK && MH_EnableHook(sv) == MH_OK;
+      if (ok) { xgTarget = g; xsTarget = sv; }
+      xHooked.store(true); msm2::writeLog("WS_INPUT_HOOK module=xinput9_1_0 installed=%u pass_through=1", unsigned(ok)); } }
+  if (xHooked.load() && now - lastLog >= 10000 && logs < 30) { lastLog = now; ++logs;
+    msm2::writeLog("WS_INPUT_HOOK_STATUS get_calls=%llu get_ok_pad0=%llu set_calls=%llu game_A_held=%u", (unsigned long long)xgCalls.load(), (unsigned long long)xgOk.load(), (unsigned long long)xsCalls.load(), unsigned(xgA.load())); }
+}
+struct ChargeMeasure { std::uint64_t release{}, hold{}; float y0{}, apex{}; bool active{}; } cm; unsigned cmLogs{};
+void m8ChargeMeasure(const msm2::Snapshot& hero, std::uint64_t now) {
+  auto rel = jiRelease.load(), pr = jiPress.load();
+  if (rel && rel != cm.release && rel > pr && hero.hero && now - lastWsMs.load() > 1500 && now - rel < 300) {
+    if (cm.active && cmLogs < 40) { ++cmLogs; msm2::writeLog("WS_CHARGE_MEASURE hold_ms=%llu rise_m=%.2f cut_by_next_release=1 read_only=1", (unsigned long long)cm.hold, cm.apex - cm.y0); }
+    cm = {}; cm.release = rel; cm.hold = rel - pr; cm.y0 = cm.apex = hero.position[1]; cm.active = true; return; }
+  if (!cm.active) return;
+  if (hero.hero) cm.apex = std::fmax(cm.apex, hero.position[1]);
+  if (now - cm.release > 3000) { cm.active = false; if (cmLogs < 40) { ++cmLogs;
+    msm2::writeLog("WS_CHARGE_MEASURE hold_ms=%llu rise_m=%.2f read_only=1", (unsigned long long)cm.hold, cm.apex - cm.y0); } }
 }
 void m8JumpConfig(const msm2::Snapshot& hero, std::uint64_t now) {
   if (!killed.load() && hero.hero && !jiStarted.exchange(true)) { if (HANDLE h = CreateThread(nullptr, 0, jiPoll, nullptr, 0, nullptr)) CloseHandle(h); }
@@ -603,6 +651,8 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   m6Exit(snapshot, now);
   m8JumpTrace(snapshot, motion, now);
   m8JumpConfig(snapshot, now);
+  m8InputHooks(now);
+  m8ChargeMeasure(snapshot, now);
   m5eDistance(snapshot, now);
   m5ePitch(snapshot, now);
   if (now - statusLastMs >= 5000 && statusLogs < 40) { statusLastMs = now; ++statusLogs;
@@ -658,6 +708,8 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
 void kill() noexcept { jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("kill"); }
 void stop() noexcept {
   jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("stop");
+  if (xgTarget) MH_DisableHook(xgTarget);
+  if (xsTarget) MH_DisableHook(xsTarget);
   if (setInstalled.exchange(false)) MH_DisableHook(reinterpret_cast<void*>(setTarget));
   if (installed.exchange(false)) MH_DisableHook(reinterpret_cast<void*>(target));
 }
