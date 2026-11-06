@@ -304,3 +304,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M8c-r5 WS-only YBoost write VERIFIED (scan accepted, WS jumps no upward boost). M8d read-only jump press/release timing (WS_JUMP_INPUT).
 - 2026-11-06: M8d cloud full suites PASS on tree e7810c3e1afee67d15e61d06e9b9e5822be7e8c0 (hooks suite re-run: first run hung in orientation_trace_smoke, which links no changed file).
 - 2026-11-06: M8d: WS jump fires on press (VERIFIED). M8e read-only: XInput pass-through hooks (calls/rumble) + ground charge hold-vs-rise measure.
+- 2026-11-06: M8e cloud full suites PASS on tree 9648d16db9f5471ad2b5310fce83279a6d12e927 (listed).
