@@ -11,6 +11,7 @@ void drainLogs();
 bool active();
 bool mouseMovedWithin(unsigned ms); // physical mouse move seen by the low-level hook within ms
 bool readRightStickInput(float& x,float& y); // XInput pad 0 right stick; false when unavailable
+bool readJumpButton(); // M8d diagnostic: XInput A or Space held
 bool readStickInput(float& x,float& y); // XInput pad 0 (in-game only) or WASD; false when neutral
 }
 extern "C" {

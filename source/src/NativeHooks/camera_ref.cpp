@@ -504,7 +504,26 @@ void jcWriteAll(bool patch) {
     patch ? "yboost_0" : "restore_vanilla", done, conflict, (unsigned long long)jcWrites, (unsigned long long)jcRestores);
   jcLock.clear(std::memory_order_release);
 }
+// M8d diagnostic (read-only): does a WS jump start on button press or on release? A 5 ms poller records jump-button
+// (XInput A / Space) edges; at each WS end it logs the last press/release relative to the end. <= 30 lines.
+std::atomic<bool> jiStarted{false};
+DWORD WINAPI jiPoll(void*) {
+  bool prev = false, wasWs = false; std::uint64_t press = 0, release = 0; unsigned logs = 0;
+  while (!killed.load() && logs < 30) {
+    auto now = GetTickCount64(); bool b = msm2::writer::readJumpButton();
+    if (b && !prev) { press = now; }
+    if (!b && prev) { release = now; }
+    prev = b;
+    bool ws = engagedManager.load() != 0 && now - lastWsMs.load() < 150;
+    if (wasWs && !ws) { auto end = lastWsMs.load(); ++logs;
+      msm2::writeLog("WS_JUMP_INPUT ws_end held_now=%u press_before_end_ms=%lld release_before_end_ms=%lld read_only=1", unsigned(b),
+        press ? (long long)end - (long long)press : -1ll, (release && release > press) ? (long long)end - (long long)release : -1ll); }
+    wasWs = ws; Sleep(5);
+  }
+  return 0;
+}
 void m8JumpConfig(const msm2::Snapshot& hero, std::uint64_t now) {
+  if (!killed.load() && hero.hero && !jiStarted.exchange(true)) { if (HANDLE h = CreateThread(nullptr, 0, jiPoll, nullptr, 0, nullptr)) CloseHandle(h); }
   if (!ws::drive::jumpConfigWrite.load() || killed.load()) return;
   int st = jcState.load();
   if (st == 0) { if (!hero.hero) return; jcState.store(1);

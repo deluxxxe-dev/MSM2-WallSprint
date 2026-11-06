@@ -465,6 +465,9 @@ void driveHeading(std::uintptr_t owner){
 }
 
 namespace msm2::writer{bool mouseMovedWithin(unsigned ms){auto t=lastMouseMoveMs.load(std::memory_order_relaxed);return t&&GetTickCount64()-t<ms;}
+bool readJumpButton(){ // M8d: XInput A or Space (diagnostic only)
+ if(auto get=xinputGetState.load()){XINPUT_STATE st{};if(get(0,&st)==ERROR_SUCCESS&&(st.Gamepad.wButtons&XINPUT_GAMEPAD_A))return true;}
+ return GetForegroundWindow()&&GetAsyncKeyState(VK_SPACE)<0;}
 bool readStickInput(float& x,float& y){return readStick(x,y);}bool readRightStickInput(float& x,float& y){return readRightStick(x,y);}}
 
 extern "C" void ws_update_probe_sample(std::uintptr_t owner) noexcept{
