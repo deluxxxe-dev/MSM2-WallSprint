@@ -4,3 +4,4 @@
 # Format: <tree-sha> <date> <note>
 261c554503a9aa11c256b23fa21ca4cd0db1cd0d 2026-11-06 build+test.sh+smoke+hooks+package PASS (M6w camera angle hold + fast-update tooling)
 dfd7e04ec6f653e46deb364fac18273c96b63477 2026-11-06 build+test.sh+smoke+hooks+package PASS (M7a mouse look + settings prep)
+8dc46c192ffc404b328109897c8e0bce035668b8 2026-11-06 build+test.sh+smoke+hooks+package PASS (M6x exit diagnostic)
