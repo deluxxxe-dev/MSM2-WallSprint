@@ -377,6 +377,29 @@ void m6Exit(const msm2::Snapshot& hero, std::uint64_t now) {
   if (ok && exitLines < 18) { ++exitLines; exitLog("after", e, ep, t0); }
 }
 }
+namespace {
+// M8b diagnostic (read-only): hero velocity after WS ends (jump), split along the last WS wall normal n, world up y
+// and the horizontal wall axis h = up x n, to measure the WR jump-off vector. 100 ms worker, <= 10 episodes x 14 lines.
+ws::Vec3 jtN{}, jtPos{}, jtVel{}; bool jtWs{}, jtHave{}; std::uint64_t jtEnd{}; unsigned jtEpisodes{}, jtLines{};
+void m8JumpTrace(const msm2::Snapshot& hero, const ws::diag::Motion& motion, std::uint64_t now) {
+  auto axes = ws::diag::actorAxes(hero.prefix);
+  bool ws = engagedManager.load() != 0 && now - lastWsMs.load() < 150;
+  ws::Vec3 pos{hero.position[0], hero.position[1], hero.position[2]};
+  if (ws) {
+    if (hero.hero && axes.valid && std::fabs(axes.up.y) < 0.3f) { jtN = axes.up; jtPos = pos; jtVel = motion.valid ? motion.velocity : ws::Vec3{}; jtHave = true; }
+    jtWs = true; return;
+  }
+  if (jtWs) { jtWs = false; if (jtHave && jtEpisodes < 10) { jtEnd = lastWsMs.load(); jtLines = 0; ++jtEpisodes; } else jtEnd = 0; }
+  if (!jtEnd || !jtHave || now - jtEnd > 1300 || jtLines >= 14 || !hero.hero) return;
+  ws::Vec3 n = jtN, h{n.z, 0.f, -n.x}; float hl = std::sqrt(h.x * h.x + h.z * h.z); if (hl < 1e-3f) return; h = h * (1.f / hl);
+  auto split = [&](const ws::Vec3& v, float out[3]) { out[0] = ws::dot(v, n); out[1] = v.y; out[2] = ws::dot(v, h); };
+  float v[3]{}, d[3]{}, v0[3]{}; split(motion.valid ? motion.velocity : ws::Vec3{}, v); split(pos - jtPos, d); split(jtVel, v0);
+  if (!jtLines) msm2::writeLog("WS_JUMP_TRACE episode=%u phase=ws_last n=%.3f,%.3f,%.3f vel_n=%.2f vel_y=%.2f vel_h=%.2f read_only=1", jtEpisodes, n.x, n.y, n.z, v0[0], v0[1], v0[2]);
+  ++jtLines;
+  msm2::writeLog("WS_JUMP_TRACE episode=%u phase=after t_ms=%llu valid=%u vel_n=%.2f vel_y=%.2f vel_h=%.2f disp_n=%.2f disp_y=%.2f disp_h=%.2f hero_up=%.3f,%.3f,%.3f read_only=1",
+    jtEpisodes, (unsigned long long)(now - jtEnd), unsigned(motion.valid), v[0], v[1], v[2], d[0], d[1], d[2], axes.up.x, axes.up.y, axes.up.z);
+}
+}
 namespace msm2::camera_ref {
 void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
   if (!verified || !image || imageSize <= kEntryRva + 64) { writeLog("WS_CAMERA_REF admitted=0 reason=build_or_image_unverified"); return; }
@@ -442,6 +465,7 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   m6Framing(snapshot, motion, now);
   m6SetterLog(snapshot, now);
   m6Exit(snapshot, now);
+  m8JumpTrace(snapshot, motion, now);
   m5eDistance(snapshot, now);
   m5ePitch(snapshot, now);
   if (now - statusLastMs >= 5000 && statusLogs < 40) { statusLastMs = now; ++statusLogs;

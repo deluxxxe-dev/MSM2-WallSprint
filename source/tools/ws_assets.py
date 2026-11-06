@@ -184,6 +184,32 @@ def camera_members(inputs: Path) -> dict[str, bytes]:
     return out
 
 
+# M8b (2026-11-06): WS jump vector. Vanilla hero_wallrunjumpsetup_standard (WallRunJumpSetupConfig, owner-extracted,
+# sha pinned) JumpOffData_00/45/90 YBoostMax/YBoostMin (u8) 14/9, 12/6, 2/2. HYPOTHESIS: YBoost is the world-up speed
+# added at a WR jump-off; 0 should leave the jump along the wall normal (the WS "up"). Also changes vanilla WR jumps (D21).
+JUMP_ENABLED = True
+JUMP_INPUT = "hero_wallrunjumpsetup_standard.config"
+JUMP_PATH = "configs/hero/hero_wallrunjumpsetup_standard.config"
+JUMP_SHA = "a505ea2052fbce42c151550ff2ef4f1bdb3621512b836bd9111f0b7cc17def04"
+JUMP_PATCH = ((869, "B", 14, 0), (870, "B", 9, 0),      # JumpOffData_00 YBoostMax/Min
+              (1009, "B", 12, 0), (1010, "B", 6, 0),    # JumpOffData_45
+              (1149, "B", 2, 0), (1150, "B", 2, 0))     # JumpOffData_90
+
+
+def patch_jump(data: bytes) -> bytes:
+    return _patch(data, JUMP_SHA, JUMP_PATCH, "hero_wallrunjumpsetup_standard")
+
+
+def jump_members(inputs: Path) -> dict[str, bytes]:
+    src = inputs / JUMP_INPUT
+    if not JUMP_ENABLED or not src.is_file():
+        return {}
+    if _linked(src):
+        raise ValueError("reparse/symlink jump input refused")
+    print(f"WS jump: {JUMP_INPUT} -> JumpOffData YBoost 0 (no world-up boost at WR jump-off)")
+    return {f"0/{JUMP_PATH}": patch_jump(src.read_bytes())}
+
+
 def stage_bytes(steering: bytes, clips: dict[str, bytes] | None = None, camera: dict[str, bytes] | None = None) -> bytes:
     patched, _ = b.patch_steering(steering, TURN_MAX_DOWN, TURN_GAINS, TURN_SPEEDS, MOVE_SPEED_FAST)
     members = {f"0/{b.STEER_PATH}": patched, **(clips or {}), **(camera or {})}
@@ -197,7 +223,7 @@ def deploy(workspace: Path, game: Path) -> Path | None:
         return None
     if _linked(src) or _linked(src.parent):
         raise ValueError("reparse/symlink input refused")
-    stage = stage_bytes(src.read_bytes(), clip_members(src.parent), camera_members(src.parent))
+    stage = stage_bytes(src.read_bytes(), {**clip_members(src.parent), **jump_members(src.parent)}, camera_members(src.parent))
     parent = game / "Mods Library" / "Mods-Developing"
     if not parent.is_dir() or _linked(parent):
         raise ValueError("Mods-Developing missing or reparse")

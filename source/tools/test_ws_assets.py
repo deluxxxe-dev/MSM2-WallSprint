@@ -96,3 +96,15 @@ with tempfile.TemporaryDirectory() as t:
 clb = bytearray(1712); clb[1682] = 1; clb = bytes(clb); a.CLIMB_SHA = hashlib.sha256(clb).hexdigest()
 assert a.patch_climb(clb)[1682] == 0; fails(lambda: a.patch_climb(clb[:-1] + b"\1"))
 print("test_ws_assets: PASS")
+# M8b jump config patch (synthetic file with the vanilla values at the pinned offsets)
+jmp = bytearray(1216)
+for off, kind, old, new in a.JUMP_PATCH: struct.pack_into("<" + kind, jmp, off, old)
+jmp = bytes(jmp); a.JUMP_SHA = hashlib.sha256(jmp).hexdigest()
+pj = a.patch_jump(jmp)
+assert all(pj[off] == 0 for off, *_ in a.JUMP_PATCH) and sum(x != y for x, y in zip(jmp, pj)) == 6
+fails(lambda: a.patch_jump(jmp[:-1] + b"\1"))
+with tempfile.TemporaryDirectory() as t:
+    d = Path(t); (d / a.JUMP_INPUT).write_bytes(jmp)
+    assert a.jump_members(d) == {"0/" + a.JUMP_PATH: pj}
+    a.JUMP_ENABLED = False; assert a.jump_members(d) == {}; a.JUMP_ENABLED = True
+print("test_ws_assets M8b: PASS")
