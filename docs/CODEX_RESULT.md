@@ -306,3 +306,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M8d: WS jump fires on press (VERIFIED). M8e read-only: XInput pass-through hooks (calls/rumble) + ground charge hold-vs-rise measure.
 - 2026-11-06: M8e cloud full suites PASS on tree 9648d16db9f5471ad2b5310fce83279a6d12e927 (listed).
 - 2026-11-06: M8e: vanilla charge curve measured (threshold ~0.5-0.8 s, ~28-39 m); xinput9_1_0 not the pad path. M8f: hooks on all XInput DLLs + module list.
+- 2026-11-06: M8f cloud full suites PASS on tree 698066c1d22e6b63aa614ab08fa0a855af68ab9f (listed).
