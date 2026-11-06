@@ -122,6 +122,20 @@ def patch_follow(data: bytes) -> bytes:
     return _patch(data, FOLLOW_SHA, FOLLOW_PATCH, "herofollowcamconfig")
 
 
+# M6u (2026-11-06): the WS camera may use the CLIMB follow camera (wall crawl) rather than the hero follow camera.
+# heroclimbfollowcamconfig VelocityFollowData.Enabled (bool @1682, vanilla true) -> false. Experiment; it also turns
+# off vanilla wall-crawl camera follow while installed (D19).
+CLIMB_ENABLED = True
+CLIMB_INPUT = "heroclimbfollowcamconfig.config"
+CLIMB_PATH = "configs/heroclimbfollowcamconfig/heroclimbfollowcamconfig.config"
+CLIMB_SHA = "bd79fb6f21fd879712fa3672927c109cd74ed227893d673cd91749c4ed07c45e"
+CLIMB_PATCH = ((1682, "B", 1, 0),)
+
+
+def patch_climb(data: bytes) -> bytes:
+    return _patch(data, CLIMB_SHA, CLIMB_PATCH, "heroclimbfollowcamconfig")
+
+
 def patch_camera(data: bytes) -> bytes:
     import struct
     if b.sha(data) != CAMERA_SHA:
@@ -150,6 +164,12 @@ def camera_members(inputs: Path) -> dict[str, bytes]:
             raise ValueError("reparse/symlink follow input refused")
         out[f"0/{FOLLOW_PATH}"] = patch_follow(fsrc.read_bytes())
         print(f"Follow camera: {FOLLOW_INPUT} -> VelocityFollowData.Enabled false (no auto-centering)")
+    csrc = inputs / CLIMB_INPUT
+    if CLIMB_ENABLED and csrc.is_file():
+        if _linked(csrc):
+            raise ValueError("reparse/symlink climb input refused")
+        out[f"0/{CLIMB_PATH}"] = patch_climb(csrc.read_bytes())
+        print(f"Climb follow camera: {CLIMB_INPUT} -> VelocityFollowData.Enabled false (no auto-centering)")
     return out
 
 

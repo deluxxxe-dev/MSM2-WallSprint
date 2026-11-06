@@ -276,3 +276,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M6s cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
 - 2026-11-06: M6s rejected; M6t setter preserve flags (R9|=3) for auto-centering off. Build PASS; unit/hooks run in progress at commit.
 - 2026-11-06: M6t cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
+- 2026-11-06: M6t rejected; M6u climb follow camera velocity-follow off (config experiment); offline dump_camera_code.py added. test_ws_assets PASS.

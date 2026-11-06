@@ -90,4 +90,6 @@ with tempfile.TemporaryDirectory() as t:
     inp.mkdir(parents=True); (inp / a.INPUT_NAME).write_bytes(steer); (inp / a.CAMERA_INPUT).write_bytes(cam); (inp / a.FOLLOW_INPUT).write_bytes(fol)
     z = zipfile.ZipFile(io.BytesIO(a.deploy(ws, game).read_bytes())); assert ("0/" + a.FOLLOW_PATH) not in z.namelist()  # disabled
     a.FOLLOW_ENABLED = True; z = zipfile.ZipFile(io.BytesIO(a.deploy(ws, game).read_bytes())); assert z.read("0/" + a.FOLLOW_PATH)[2479] == 0; a.FOLLOW_ENABLED = False
+clb = bytearray(1712); clb[1682] = 1; clb = bytes(clb); a.CLIMB_SHA = hashlib.sha256(clb).hexdigest()
+assert a.patch_climb(clb)[1682] == 0; fails(lambda: a.patch_climb(clb[:-1] + b"\1"))
 print("test_ws_assets: PASS")
