@@ -525,39 +525,64 @@ DWORD WINAPI jiPoll(void*) {
   }
   return 0;
 }
-// M8e diagnostics (read-only, pass-through): (1) does the game read the pad through xinput9_1_0 XInputGetState
-// (call count, A-button edges as the game sees them)? (2) rumble the game sends through XInputSetState (logged on change,
-// time since the last game-seen A press). (3) vanilla ground charge jump: hold time (press -> release) vs apex height.
+// M8e/M8f diagnostics (read-only, pass-through). M8e: xinput9_1_0 got only ~16 calls/s and no XInputSetState, so it
+// is not the game's gameplay pad path. M8f hooks XInputGetState/SetState in every XInput DLL (1_4, 1_3, 9_1_0, uap),
+// counts only calls from outside this DLL (WS itself reads xinput1_4), records the A button as each module returns it
+// and logs rumble on change. Module list is logged at 30 s and 120 s (Windows.Gaming.Input / GameInput / HID).
 using XGetFn = DWORD (WINAPI*)(DWORD, XINPUT_STATE*); using XSetFn = DWORD (WINAPI*)(DWORD, XINPUT_VIBRATION*);
-XGetFn xgOrig{}; XSetFn xsOrig{}; std::atomic<bool> xHooked{false}; void* xgTarget{}; void* xsTarget{};
-std::atomic<std::uint64_t> xgCalls{0}, xgOk{0}, xgPress{0}, xsCalls{0}; std::atomic<bool> xgA{false};
-std::atomic<unsigned> xsLogs{0}, xsLast{0xffffffffu};
-DWORD WINAPI xgDetour(DWORD i, XINPUT_STATE* st) {
-  DWORD r = xgOrig(i, st); xgCalls.fetch_add(1, std::memory_order_relaxed);
-  if (r == ERROR_SUCCESS && st && i == 0) { xgOk.fetch_add(1, std::memory_order_relaxed);
-    bool a = (st->Gamepad.wButtons & XINPUT_GAMEPAD_A) != 0; if (a && !xgA.exchange(true)) xgPress.store(GetTickCount64()); else if (!a) xgA.store(false); }
+constexpr const wchar_t* kXMods[4] = {L"xinput1_4.dll", L"xinput1_3.dll", L"xinput9_1_0.dll", L"xinputuap.dll"};
+XGetFn xgOrig[4]{}; XSetFn xsOrig[4]{}; void* xgTarget[4]{}; void* xsTarget[4]{}; std::atomic<bool> xTried[4]{};
+std::atomic<std::uint64_t> xgCalls[4]{}, xgPresses[4]{}, xsCalls[4]{}, xgPress{0}; std::atomic<bool> xgA[4]{};
+std::atomic<unsigned> xsLogs{0}, xsLast{0xffffffffu}, xaLogs{0};
+std::uintptr_t selfLo{}, selfHi{};
+bool fromSelf(void* ret) { auto r = reinterpret_cast<std::uintptr_t>(ret); return r >= selfLo && r < selfHi; }
+template <int M> DWORD WINAPI xgDetour(DWORD i, XINPUT_STATE* st) {
+  DWORD r = xgOrig[M](i, st);
+  if (fromSelf(__builtin_return_address(0))) return r;
+  xgCalls[M].fetch_add(1, std::memory_order_relaxed);
+  if (r == ERROR_SUCCESS && st && i == 0) {
+    bool a = (st->Gamepad.wButtons & XINPUT_GAMEPAD_A) != 0;
+    if (a && !xgA[M].exchange(true)) { auto now = GetTickCount64(); xgPress.store(now); xgPresses[M].fetch_add(1);
+      if (xaLogs.fetch_add(1) < 40) { auto kp = jiPress.load(); msm2::writeLog("WS_INPUT_GAME_A module=%ls since_ws_seen_press_ms=%lld read_only=1", kXMods[M], kp ? (long long)(now - kp) : -1ll); } }
+    else if (!a) xgA[M].store(false); }
   return r;
 }
-DWORD WINAPI xsDetour(DWORD i, XINPUT_VIBRATION* v) {
-  xsCalls.fetch_add(1, std::memory_order_relaxed);
-  if (v && i == 0) { unsigned key = (unsigned(v->wLeftMotorSpeed) << 16) | v->wRightMotorSpeed;
-    if (xsLast.exchange(key) != key && xsLogs.fetch_add(1) < 300) { auto now = GetTickCount64(); auto p = xgPress.load(), kp = jiPress.load();
-      msm2::writeLog("WS_RUMBLE left=%u right=%u since_game_A_press_ms=%lld since_jump_press_ms=%lld game_A_held=%u read_only=1", unsigned(v->wLeftMotorSpeed), unsigned(v->wRightMotorSpeed),
-        p ? (long long)(now - p) : -1ll, kp ? (long long)(now - kp) : -1ll, unsigned(xgA.load())); } }
-  return xsOrig(i, v);
+template <int M> DWORD WINAPI xsDetour(DWORD i, XINPUT_VIBRATION* v) {
+  if (!fromSelf(__builtin_return_address(0))) { xsCalls[M].fetch_add(1, std::memory_order_relaxed);
+    if (v && i == 0) { unsigned key = (unsigned(v->wLeftMotorSpeed) << 16) | v->wRightMotorSpeed;
+      if (xsLast.exchange(key) != key && xsLogs.fetch_add(1) < 400) { auto now = GetTickCount64(); auto p = xgPress.load(), kp = jiPress.load();
+        msm2::writeLog("WS_RUMBLE module=%ls left=%u right=%u since_game_A_press_ms=%lld since_jump_press_ms=%lld read_only=1", kXMods[M], unsigned(v->wLeftMotorSpeed), unsigned(v->wRightMotorSpeed),
+          p ? (long long)(now - p) : -1ll, kp ? (long long)(now - kp) : -1ll); } } }
+  return xsOrig[M](i, v);
+}
+template <int M> void xHookOne() {
+  if (xTried[M].load()) return;
+  HMODULE x = GetModuleHandleW(kXMods[M]); if (!x) return;
+  xTried[M].store(true);
+  auto g = reinterpret_cast<void*>(GetProcAddress(x, "XInputGetState")), sv = reinterpret_cast<void*>(GetProcAddress(x, "XInputSetState"));
+  bool okG = g && MH_CreateHook(g, reinterpret_cast<void*>(&xgDetour<M>), reinterpret_cast<void**>(&xgOrig[M])) == MH_OK && MH_EnableHook(g) == MH_OK;
+  bool okS = sv && MH_CreateHook(sv, reinterpret_cast<void*>(&xsDetour<M>), reinterpret_cast<void**>(&xsOrig[M])) == MH_OK && MH_EnableHook(sv) == MH_OK;
+  if (okG) { xgTarget[M] = g; }
+  if (okS) { xsTarget[M] = sv; }
+  msm2::writeLog("WS_INPUT_HOOK module=%ls get=%u set=%u pass_through=1", kXMods[M], unsigned(okG), unsigned(okS));
 }
 void m8InputHooks(std::uint64_t now) {
-  static std::uint64_t lastTry = 0, lastLog = 0; static unsigned logs = 0;
-  if (!xHooked.load() && now - lastTry > 2000) { lastTry = now;
-    HMODULE x = GetModuleHandleW(L"xinput9_1_0.dll");
-    if (x) { auto g = reinterpret_cast<void*>(GetProcAddress(x, "XInputGetState")), sv = reinterpret_cast<void*>(GetProcAddress(x, "XInputSetState"));
-      bool ok = g && sv && MH_CreateHook(g, reinterpret_cast<void*>(&xgDetour), reinterpret_cast<void**>(&xgOrig)) == MH_OK &&
-                MH_CreateHook(sv, reinterpret_cast<void*>(&xsDetour), reinterpret_cast<void**>(&xsOrig)) == MH_OK &&
-                MH_EnableHook(g) == MH_OK && MH_EnableHook(sv) == MH_OK;
-      if (ok) { xgTarget = g; xsTarget = sv; }
-      xHooked.store(true); msm2::writeLog("WS_INPUT_HOOK module=xinput9_1_0 installed=%u pass_through=1", unsigned(ok)); } }
-  if (xHooked.load() && now - lastLog >= 10000 && logs < 30) { lastLog = now; ++logs;
-    msm2::writeLog("WS_INPUT_HOOK_STATUS get_calls=%llu get_ok_pad0=%llu set_calls=%llu game_A_held=%u", (unsigned long long)xgCalls.load(), (unsigned long long)xgOk.load(), (unsigned long long)xsCalls.load(), unsigned(xgA.load())); }
+  static std::uint64_t lastTry = 0, lastLog = 0, start = 0; static unsigned logs = 0; static bool mod30 = false, mod120 = false;
+  if (!start) { start = now; HMODULE self = nullptr;
+    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, reinterpret_cast<LPCWSTR>(&m8InputHooks), &self)) {
+      MEMORY_BASIC_INFORMATION mb{}; auto lo = reinterpret_cast<std::uintptr_t>(self); std::uintptr_t q = lo;
+      while (VirtualQuery(reinterpret_cast<void*>(q), &mb, sizeof mb) && mb.AllocationBase == static_cast<void*>(self)) q = reinterpret_cast<std::uintptr_t>(mb.BaseAddress) + mb.RegionSize;
+      selfLo = lo; selfHi = q; } }
+  if (now - lastTry > 2000) { lastTry = now; xHookOne<0>(); xHookOne<1>(); xHookOne<2>(); xHookOne<3>(); }
+  if ((!mod30 && now - start > 30000) || (!mod120 && now - start > 120000)) { (mod30 ? mod120 : mod30) = true;
+    const wchar_t* mods[] = {L"Windows.Gaming.Input.dll", L"GameInput.dll", L"hid.dll", L"dinput8.dll", L"xinput1_4.dll", L"xinput1_3.dll", L"xinput9_1_0.dll", L"xinputuap.dll", L"gameoverlayrenderer64.dll", L"steam_api64.dll", L"SDL2.dll", L"SDL3.dll"};
+    char line[600]{}; int len = 0; for (auto m : mods) if (GetModuleHandleW(m) && len < 520) len += std::snprintf(line + len, sizeof line - std::size_t(len), "%s%ls", len ? "," : "", m);
+    msm2::writeLog("WS_INPUT_MODULES t_s=%llu loaded=%s", (unsigned long long)((now - start) / 1000), line); }
+  if (now - lastLog >= 10000 && logs < 30) { lastLog = now; ++logs;
+    msm2::writeLog("WS_INPUT_HOOK_STATUS get_1_4=%llu get_1_3=%llu get_9_1_0=%llu get_uap=%llu presses_1_4=%llu presses_9_1_0=%llu set_1_4=%llu set_1_3=%llu set_9_1_0=%llu set_uap=%llu",
+      (unsigned long long)xgCalls[0].load(), (unsigned long long)xgCalls[1].load(), (unsigned long long)xgCalls[2].load(), (unsigned long long)xgCalls[3].load(),
+      (unsigned long long)xgPresses[0].load(), (unsigned long long)xgPresses[2].load(), (unsigned long long)xsCalls[0].load(), (unsigned long long)xsCalls[1].load(),
+      (unsigned long long)xsCalls[2].load(), (unsigned long long)xsCalls[3].load()); }
 }
 struct ChargeMeasure { std::uint64_t release{}, hold{}; float y0{}, apex{}; bool active{}; } cm; unsigned cmLogs{};
 void m8ChargeMeasure(const msm2::Snapshot& hero, std::uint64_t now) {
@@ -708,8 +733,7 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
 void kill() noexcept { jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("kill"); }
 void stop() noexcept {
   jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("stop");
-  if (xgTarget) MH_DisableHook(xgTarget);
-  if (xsTarget) MH_DisableHook(xsTarget);
+  for (int m = 0; m < 4; ++m) { if (xgTarget[m]) MH_DisableHook(xgTarget[m]); if (xsTarget[m]) MH_DisableHook(xsTarget[m]); }
   if (setInstalled.exchange(false)) MH_DisableHook(reinterpret_cast<void*>(setTarget));
   if (installed.exchange(false)) MH_DisableHook(reinterpret_cast<void*>(target));
 }
