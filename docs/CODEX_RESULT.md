@@ -280,3 +280,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: setter disassembled (rdx fwd, r8 up, r9 flags; view angles mover+0x2CC/+0x2D0). M6v angle hold for auto-centering off. Build PASS; unit/hooks run in progress at commit.
 - 2026-11-06: M6v cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
 - 2026-11-06: M6v installed but mostly bypassed (GetLastInputInfo manual 85%); M6w right-stick-only manual detection. Build PASS; unit/hooks run in progress at commit.
+- 2026-11-06: M6w cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
