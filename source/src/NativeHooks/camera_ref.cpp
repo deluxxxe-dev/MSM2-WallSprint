@@ -30,7 +30,7 @@ std::uintptr_t target{};
 std::atomic<bool> installed{false}, killed{false};
 std::atomic<std::uintptr_t> engagedManager{0};
 std::atomic<unsigned char> savedFlag{0};
-std::atomic<std::uint64_t> exitRestoreMs{0}, exitEpisode{0};
+std::atomic<std::uint64_t> exitRestoreMs{0}, exitEpisode{0}, exitBlendStart{0};
 std::atomic<std::uint64_t> lastWsMs{0}, engages{0}, restores{0}, refusedWritable{0}, wsSessionStartMs{0}, delayedUpdates{0};
 constexpr std::uint64_t kEngageDelayMs = 0; // M5e-2 tried 1000 ms: did not stop the dive (REJECTED), reverted
 struct Slot { unsigned fn{}, sn{}; double fsum{}, sdot{}, scross{}; };
@@ -242,6 +242,7 @@ constexpr std::uintptr_t kSetterRva = 0x3350220;
 std::atomic<bool> setYawLock{false}; std::atomic<std::uint64_t> lockWrites{0}, lockSkips{0};
 std::atomic<std::uint64_t> flagWrites{0}; std::atomic<std::uintptr_t> setR9{0};
 std::atomic<std::uint64_t> angleHoldWrites{0}, angleManual{0};
+std::atomic<std::uint64_t> exitBlendWrites{0};
 std::atomic<std::uint64_t> setCalls{0}; std::atomic<std::uintptr_t> setRcx{0}, setRdx{0}, setR8{0};
 std::atomic<float> setM[2][16]{}; std::atomic<unsigned> setMOk{0}; std::atomic<bool> setInstalled{false}; std::uintptr_t setTarget{};
 unsigned setLogs{}; std::uint64_t setLastLog{};
@@ -257,7 +258,7 @@ void m6SetterLog(const msm2::Snapshot& hero, std::uint64_t now) {
     len += std::snprintf(t + len, sizeof t - len, " m%d=[%.3f,%.3f,%.3f|%.3f,%.3f,%.3f|%.3f,%.3f,%.3f|%.2f,%.2f,%.2f,%.2f] dots_vs_hero r0.right=%.2f r1.up=%.2f r2.fwd=%.2f",
       k, m[0], m[1], m[2], m[4], m[5], m[6], m[8], m[9], m[10], m[12], m[13], m[14], m[15],
       axes.valid ? ws::dot(r0, axes.right) : 0.f, axes.valid ? ws::dot(r1, axes.up) : 0.f, axes.valid ? ws::dot(r2, axes.forward) : 0.f); }
-  msm2::writeLog("WS_CAMERA_SETTER angle_hold_writes=%llu manual=%llu flag_writes=%llu r9_in=0x%llx yaw_lock_writes=%llu skips=%llu calls=%llu ws=%u rcx=0x%llx rdx=0x%llx r8=0x%llx manager=0x%llx%s read_only=1", (unsigned long long)angleHoldWrites.load(), (unsigned long long)angleManual.load(), (unsigned long long)flagWrites.load(), (unsigned long long)setR9.load(), (unsigned long long)lockWrites.load(), (unsigned long long)lockSkips.load(), (unsigned long long)setCalls.load(), unsigned(wsNow),
+  msm2::writeLog("WS_CAMERA_SETTER exit_blend_writes=%llu angle_hold_writes=%llu manual=%llu flag_writes=%llu r9_in=0x%llx yaw_lock_writes=%llu skips=%llu calls=%llu ws=%u rcx=0x%llx rdx=0x%llx r8=0x%llx manager=0x%llx%s read_only=1", (unsigned long long)exitBlendWrites.load(), (unsigned long long)angleHoldWrites.load(), (unsigned long long)angleManual.load(), (unsigned long long)flagWrites.load(), (unsigned long long)setR9.load(), (unsigned long long)lockWrites.load(), (unsigned long long)lockSkips.load(), (unsigned long long)setCalls.load(), unsigned(wsNow),
     (unsigned long long)setRcx.load(), (unsigned long long)setRdx.load(), (unsigned long long)setR8.load(), (unsigned long long)ws_camref_this, t);
 }
 }
@@ -285,6 +286,24 @@ void yawLock(std::uintptr_t rdx) noexcept {
 // current view" and the vanilla actor-relative call passes R9 = 0. HYPOTHESIS: flag bits 0/1 keep the current view
 // yaw/pitch when the reference changes, i.e. no re-aim (no auto-centering). Auto-centering OFF -> R9 |= 3.
 constexpr bool kSetterPreserveFlags = true, kSetterYawLock = false; // M6s yaw lock REJECTED (centering unchanged)
+// M6y: smooth return when WS ends. The hero snaps upright in ~0.1-0.2 s and the actor-relative reference follows,
+// so the up to 90 deg camera roll vanished at once (M6x run). After the last WS update the camera stays engaged for
+// kExitBlendMs while the setter's up input is turned from the last WS up toward world up (smoothstep); the preserve
+// flags keep the world view meanwhile. The angle hold pauses during the blend (it would undo the re-expressed angles).
+constexpr std::uint64_t kExitBlendMs = 700;
+float lastWsUp[3]{}; bool lastWsUpValid{};
+void exitBlend(std::uintptr_t r8) noexcept {
+  if (!setYawLock.load(std::memory_order_relaxed) || killed.load() || r8 < 0x10000 || r8 > UINTPTR_MAX - 16) return;
+  auto now = GetTickCount64(); float up[3];
+  if (!msm2::readMemory(r8, up, sizeof up) || !std::isfinite(up[0]) || !std::isfinite(up[1]) || !std::isfinite(up[2])) return;
+  auto start = exitBlendStart.load(std::memory_order_relaxed);
+  if (!start) { if (now - lastWsMs.load() < 100) { std::memcpy(lastWsUp, up, sizeof up); lastWsUpValid = true; } return; }
+  if (!lastWsUpValid) return;
+  float t = std::fmin(1.f, float(now - start) / float(kExitBlendMs)), sm = t * t * (3.f - 2.f * t);
+  float v[3]{lastWsUp[0] * (1 - sm), lastWsUp[1] * (1 - sm) + sm, lastWsUp[2] * (1 - sm)};
+  float l = std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]); if (!(l > 0.2f)) return; for (float& c : v) c /= l;
+  std::memcpy(reinterpret_cast<void*>(r8), v, sizeof v); exitBlendWrites.fetch_add(1, std::memory_order_relaxed);
+}
 // M6v: angle hold. Disassembly of the setter (owner camera_code.json, cloud decode, not committed): rdx = forward input,
 // r8 = up input, r9 = flags; the camera's view angles are the mover's floats +0x2CC (yaw) and +0x2D0 (pitch, negated)
 // in the reference frame; flag 1/2 recompute them so the world view is kept when the reference changes. The WS input
@@ -309,7 +328,8 @@ void angleHold(std::uintptr_t mover) noexcept {
 }
 extern "C" std::uintptr_t ws_camset_record(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r8, std::uintptr_t r9) noexcept {
   if (kSetterYawLock) yawLock(rdx);
-  angleHold(rcx);
+  exitBlend(r8);
+  if (!exitBlendStart.load(std::memory_order_relaxed)) angleHold(rcx);
   setR9.store(r9, std::memory_order_relaxed);
   std::uintptr_t outR9 = r9;
   if (kSetterPreserveFlags && setYawLock.load(std::memory_order_relaxed) && !ws::drive::cameraAutoCenter.load(std::memory_order_relaxed) && engagedManager.load() && !killed.load()) {
@@ -402,7 +422,12 @@ void onWallSprintUpdate() noexcept {
 
 void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool available, float sx, float sy, bool stick) noexcept {
   auto now = GetTickCount64();
-  if (engagedManager.load() && now - lastWsMs.load() > 300) restore("wallsprint_ended");
+  if (engagedManager.load()) {
+    auto since = now - lastWsMs.load(); auto start = exitBlendStart.load();
+    if (since < 150) { if (start) exitBlendStart.store(0); }
+    else if (!start) { if (lastWsUpValid && std::fabs(lastWsUp[1]) < 0.995f) exitBlendStart.store(now); else restore("wallsprint_ended"); }
+    else if (now - start > kExitBlendMs + 50) { exitBlendStart.store(0); lastWsUpValid = false; restore("wallsprint_ended_after_blend"); }
+  }
   // (Disabled by default: actor_writer.cpp now starts with the accepted offset 0xD34, so the guard below returns at once.)
   // Read-only scan on the ground (no WS in the last second), moving: the camera forward is the unit vector whose
   // horizontal part is parallel to travel for a forward stick and perpendicular for a sideways stick
