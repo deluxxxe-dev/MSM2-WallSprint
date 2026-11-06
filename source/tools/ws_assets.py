@@ -97,6 +97,8 @@ def clip_members(inputs: Path) -> dict[str, bytes]:
 # M6p (2026-11-06): WS auto-centering seen with WS camera follow OFF (0 writes) -> the vanilla follow camera centers
 # by itself. herofollowcamconfig VelocityFollowData.Enabled (bool @2479, vanilla true) is the candidate. Experiment:
 # false. NOTE (D17): this is the global hero follow camera, so ground velocity-follow is also off while installed.
+# M6p result: no effect on WS centering -> disabled (kept for reference; it would also change the ground camera).
+FOLLOW_ENABLED = False
 FOLLOW_INPUT = "herofollowcamconfig.config"
 FOLLOW_PATH = "configs/herofollowcamconfig/herofollowcamconfig.config"
 FOLLOW_SHA = "79b64c0503fa2ee499a26830ad98472e4496a25bb01b45080ecb1fbb17c023c1"
@@ -143,7 +145,7 @@ def camera_members(inputs: Path) -> dict[str, bytes]:
     print(f"WS camera framing: {CAMERA_INPUT} -> uniform 3.5 m behind, 1 m up for every pitch, pivot 0")
     out = {f"0/{CAMERA_PATH}": data}
     fsrc = inputs / FOLLOW_INPUT
-    if fsrc.is_file():
+    if FOLLOW_ENABLED and fsrc.is_file():
         if _linked(fsrc):
             raise ValueError("reparse/symlink follow input refused")
         out[f"0/{FOLLOW_PATH}"] = patch_follow(fsrc.read_bytes())

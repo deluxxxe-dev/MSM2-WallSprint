@@ -88,5 +88,6 @@ fails(lambda: a.patch_follow(fol[:-1] + b"\1"))
 with tempfile.TemporaryDirectory() as t:
     game = Path(t) / "game"; ws = game / "Mods Library" / "Mods-Developing" / "MSM2-WS"; inp = ws / a.INPUT_DIR
     inp.mkdir(parents=True); (inp / a.INPUT_NAME).write_bytes(steer); (inp / a.CAMERA_INPUT).write_bytes(cam); (inp / a.FOLLOW_INPUT).write_bytes(fol)
-    z = zipfile.ZipFile(io.BytesIO(a.deploy(ws, game).read_bytes())); assert z.read("0/" + a.FOLLOW_PATH)[2479] == 0
+    z = zipfile.ZipFile(io.BytesIO(a.deploy(ws, game).read_bytes())); assert ("0/" + a.FOLLOW_PATH) not in z.namelist()  # disabled
+    a.FOLLOW_ENABLED = True; z = zipfile.ZipFile(io.BytesIO(a.deploy(ws, game).read_bytes())); assert z.read("0/" + a.FOLLOW_PATH)[2479] == 0; a.FOLLOW_ENABLED = False
 print("test_ws_assets: PASS")

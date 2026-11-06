@@ -268,3 +268,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M6o: WS camera auto-centering (follow+aim) default OFF via WALLSPRINT_CAMERA_AUTOCENTER=0. Build PASS; unit/hooks run in progress at commit.
 - 2026-11-06: M6o cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
 - 2026-11-06: M6p: vanilla follow-camera centering experiment (herofollowcamconfig VelocityFollowData.Enabled=false); follow camera configs decoded. test_ws_assets PASS. Config-only.
+- 2026-11-06: M6p rejected/disabled; M6q WS camera yaw hold when auto-centering is off. Build PASS; unit/hooks run in progress at commit.
