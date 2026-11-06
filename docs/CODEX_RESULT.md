@@ -281,3 +281,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M6v cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
 - 2026-11-06: M6v installed but mostly bypassed (GetLastInputInfo manual 85%); M6w right-stick-only manual detection. Build PASS; unit/hooks run in progress at commit.
 - 2026-11-06: M6w cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
+- 2026-11-06: M6w accepted by owner (WS auto-centering off works).
