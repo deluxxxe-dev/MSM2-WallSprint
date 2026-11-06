@@ -629,9 +629,14 @@ float chargeK(std::uint64_t ms) {
   float h = 15.f + 24.f * std::fmin(1.f, float(ms - 500) / 600.f);
   return std::sqrt(h / 1.8f);
 }
+// M8j-r2: input threads compare their own tick with lastWsMs stored by the game thread; a newer store made the unsigned
+// difference wrap and read as "not WS". Signed check: a store newer than now counts as active.
+bool wsActiveNow(std::uint64_t now) {
+  auto last = lastWsMs.load(); return engagedManager.load() != 0 && last && (last >= now || now - last < 150);
+}
 void wsChargeStep(WgiReading* r, bool a) {
   if (!ws::drive::wsChargeJump.load() || killed.load()) { chState.store(kChIdle); return; }
-  auto now = GetTickCount64(); bool ws = engagedManager.load() != 0 && now - lastWsMs.load() < 150;
+  auto now = GetTickCount64(); bool ws = wsActiveNow(now);
   static std::atomic<bool> prevA{false}; bool edge = a && !prevA.exchange(a);   // rising edge only
   switch (chState.load()) {
     case kChIdle:
@@ -659,7 +664,9 @@ HRESULT STDMETHODCALLTYPE wgiReadDetour(void* self, WgiReading* r) {
   if (SUCCEEDED(hr) && r) {
     bool a = (r->buttons & 0x4u) != 0;
     if (a && !wgiA.exchange(true)) { auto now = GetTickCount64(); xgPress.store(now); wgiPresses.fetch_add(1);
-      if (wgiLogs.fetch_add(1) < 60) { auto kp = jiPress.load(); msm2::writeLog("WS_INPUT_GAME_A module=WGI since_ws_seen_press_ms=%lld read_only=1", kp ? (long long)(now - kp) : -1ll); } }
+      if (wgiLogs.fetch_add(1) < 80) { auto kp = jiPress.load(); auto last = lastWsMs.load();
+        msm2::writeLog("WS_INPUT_GAME_A module=WGI since_ws_seen_press_ms=%lld ws=%u engaged=%u since_ws_update_ms=%lld charge_state=%d charge_enabled=%u",
+          kp ? (long long)(now - kp) : -1ll, unsigned(wsActiveNow(now)), unsigned(engagedManager.load() != 0), last ? (long long)now - (long long)last : -1ll, chState.load(), unsigned(ws::drive::wsChargeJump.load())); } }
     else if (!a) wgiA.store(false);
     if (a && ws::drive::jumpHoldbackTest.load() && !killed.load() && engagedManager.load() != 0 && GetTickCount64() - lastWsMs.load() < 150) {
       r->buttons &= ~0x4u; if (wgiHidden.fetch_add(1) < 40) msm2::writeLog("WS_JUMP_HOLDBACK module=WGI a_hidden=1 blocked=%llu", (unsigned long long)wgiHidden.load()); }
