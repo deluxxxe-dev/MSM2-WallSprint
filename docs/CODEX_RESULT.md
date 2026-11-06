@@ -261,3 +261,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M6k WS camera Z -2.5 (measured WS ~4.5 m vs ground ~4.0 m). test_ws_assets PASS. Config-only.
 - 2026-11-06: owner requirement recorded: per-player ModSettings presets for distance/speed etc.; M6 searches defaults (FEATURE_ROADMAP).
 - 2026-11-06: M6l: camera framing split by travel direction (up/side/down) to separate speed lag from pitch-dependent camera behavior. Build PASS; unit/hooks run in progress at commit.
+- 2026-11-06: M6l cloud unit tests PASS, hooks run PASS (exit 0), package PASS.
