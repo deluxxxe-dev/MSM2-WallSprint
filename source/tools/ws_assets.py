@@ -187,7 +187,7 @@ def camera_members(inputs: Path) -> dict[str, bytes]:
 # M8b (2026-11-06): WS jump vector. Vanilla hero_wallrunjumpsetup_standard (WallRunJumpSetupConfig, owner-extracted,
 # sha pinned) JumpOffData_00/45/90 YBoostMax/YBoostMin (u8) 14/9, 12/6, 2/2. HYPOTHESIS: YBoost is the world-up speed
 # added at a WR jump-off; 0 should leave the jump along the wall normal (the WS "up"). Also changes vanilla WR jumps (D21).
-JUMP_ENABLED = True
+JUMP_ENABLED = False  # M8c: replaced by the WS-only in-memory write (camera_ref.cpp); file patch kept for reference
 JUMP_INPUT = "hero_wallrunjumpsetup_standard.config"
 JUMP_PATH = "configs/hero/hero_wallrunjumpsetup_standard.config"
 JUMP_SHA = "a505ea2052fbce42c151550ff2ef4f1bdb3621512b836bd9111f0b7cc17def04"

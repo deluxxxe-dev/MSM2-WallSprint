@@ -85,6 +85,8 @@ Settings settings(){
   msm2::writeLog("WS_SETTINGS turn_rate_deg_s=%.0f mouse_manual_ms=%u stick_manual_threshold=%.2f camera_autocenter=%u source=WallSprint.ini[WallSprintSettings]",ws::settings::turnRateDegPerSec.load(),ws::settings::mouseManualMs.load(),ws::settings::stickManualThreshold.load(),unsigned(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_CAMERA_AUTOCENTER",0,path.c_str())==1));}
  ws::drive::cameraAutoCenter.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_CAMERA_AUTOCENTER",0,path.c_str())==1);
  msm2::writeLog("WS_CAMERA_AUTOCENTER enabled=%u key=WALLSPRINT_CAMERA_AUTOCENTER default=0",unsigned(ws::drive::cameraAutoCenter.load()));
+ ws::drive::jumpConfigWrite.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_JUMP_CONFIG_WRITE",0,path.c_str())==1);
+ msm2::writeLog("WS_JUMP_CONFIG_WRITE enabled=%u key=WALLSPRINT_JUMP_CONFIG_WRITE default=0",unsigned(ws::drive::jumpConfigWrite.load()));
  result.source.delay=number(L"WALLSPRINT_ENTRY_DELAY",L"0.70");result.source.rotateTime=number(L"WALLSPRINT_ROTATE_TIME",L"0.25");
  result.input.observe=GetPrivateProfileIntW(L"Diagnostics",L"SOURCE_ARGUMENT_CAPTURE",0,path.c_str())==1;
  result.input.enabled=GetPrivateProfileIntW(L"Diagnostics",L"ORIENTATION_SOURCE_DISCOVERY",1,path.c_str())==1;

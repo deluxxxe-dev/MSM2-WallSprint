@@ -9,6 +9,7 @@
 #include <windows.h>
 #include <bcrypt.h>
 #include <MinHook.h>
+#include <algorithm>
 #include <atomic>
 #include <cmath>
 #include <cstdio>
@@ -400,6 +401,97 @@ void m8JumpTrace(const msm2::Snapshot& hero, const ws::diag::Motion& motion, std
     jtEpisodes, (unsigned long long)(now - jtEnd), unsigned(motion.valid), v[0], v[1], v[2], d[0], d[1], d[2], axes.up.x, axes.up.y, axes.up.z);
 }
 }
+namespace {
+// M8c (2026-11-06): WS-only jump config. M8b A/B (analysis/M8_JUMP_PLAN_20261106.md) VERIFIED that
+// WallRunJumpSetupConfig JumpOffData YBoost is the world-up speed added at a WR jump-off (vanilla ~10 m/s, 0 -> ~0.4).
+// Instead of shipping a globally patched file, find the loaded config in memory and set the six YBoost bytes to 0 only
+// while WS is active; restore them 1.5 s after WS ends (after the jump-off read), on F8 and on stop.
+// Identity: three vanilla 15-byte value blocks (JumpOffData_00/45/90: GenBoostCap..YBoostMin) at +0/+140/+280, exactly
+// as in the vanilla file (sha a505ea20...). 1..4 full matches accepted; every write re-checks the bytes it replaces.
+constexpr unsigned char kJumpA[15] = {0x1e,0x06,0x03,0x14,0x08,0x66,0x66,0x26,0x3f,0x3d,0x0a,0xd7,0x3e,0x0e,0x09};
+constexpr unsigned char kJumpB[15] = {0x1e,0x06,0x03,0x14,0x08,0x33,0x33,0x33,0x3f,0x3d,0x0a,0xd7,0x3e,0x0c,0x06};
+constexpr unsigned char kJumpC[15] = {0x1c,0x08,0x04,0x1e,0x0a,0xcd,0xcc,0x4c,0x3f,0x00,0x00,0x00,0x3f,0x02,0x02};
+constexpr unsigned kJumpOff[3] = {0, 140, 280};
+std::atomic<int> jcState{0};             // 0 idle, 1 scanning, 2 accepted, 3 refused
+std::uintptr_t jcAddr[4]{}; unsigned jcCount{}; bool jcApplied{}; std::uint64_t jcWrites{}, jcRestores{}, jcConflicts{};
+const unsigned char* jcBlock(unsigned k) { return k == 0 ? kJumpA : k == 1 ? kJumpB : kJumpC; }
+bool jcMatches(std::uintptr_t a, bool patched) {
+  for (unsigned k = 0; k < 3; ++k) { unsigned char cur[15]; if (!msm2::readMemory(a + kJumpOff[k], cur, 15)) return false;
+    unsigned char want[15]; std::memcpy(want, jcBlock(k), 15); if (patched) { want[13] = 0; want[14] = 0; }
+    if (std::memcmp(cur, want, 15)) return false; }
+  return true;
+}
+DWORD WINAPI jcScan(void*) {
+  auto t0 = GetTickCount64(); std::uint64_t bytes = 0, regions = 0, aHits = 0; unsigned found = 0; std::uintptr_t hits[4]{};
+  // The buffer and this DLL's own image are skipped so copies made by the scan itself are never matched.
+  auto* buf = static_cast<unsigned char*>(VirtualAlloc(nullptr, 1 << 20, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
+  if (!buf) { jcState.store(3); msm2::writeLog("WS_JUMP_CFG_SCAN result=refused reason=no_buffer"); return 0; }
+  HMODULE self = nullptr; GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, reinterpret_cast<LPCWSTR>(&jcScan), &self);
+  SYSTEM_INFO si{}; GetSystemInfo(&si);
+  auto p = reinterpret_cast<std::uintptr_t>(si.lpMinimumApplicationAddress), end = reinterpret_cast<std::uintptr_t>(si.lpMaximumApplicationAddress);
+  bool timeout = false;
+  while (p < end && !killed.load()) {
+    MEMORY_BASIC_INFORMATION m{}; if (!VirtualQuery(reinterpret_cast<void*>(p), &m, sizeof m)) break;
+    auto base = reinterpret_cast<std::uintptr_t>(m.BaseAddress), next = base + m.RegionSize; if (next <= p) break;
+    if (m.State == MEM_COMMIT && (m.Protect & 0xff) == PAGE_READWRITE && !(m.Protect & PAGE_GUARD) &&
+        m.AllocationBase != static_cast<void*>(buf) && m.AllocationBase != static_cast<void*>(self)) {
+      ++regions;
+      for (std::uintptr_t q = base; q < next && !killed.load(); ) {
+        std::size_t n = std::size_t(std::min<std::uintptr_t>(std::uintptr_t(1) << 20, next - q));
+        if (!msm2::readMemory(q, buf, n)) { q += n; continue; }
+        bytes += n;
+        for (std::size_t i = 0; i + 15 <= n; ++i) {
+          if (buf[i] != 0x1e || std::memcmp(buf + i, kJumpA, 15)) continue;
+          ++aHits; auto a = q + i; if (jcMatches(a, false) && found < 4) hits[found++] = a;
+        }
+        q += n > 16 ? n - 16 : n;    // overlap so a block across chunks is still seen
+        if (GetTickCount64() - t0 > 120000) { timeout = true; break; }
+      }
+    }
+    if (timeout) break;
+    p = next;
+  }
+  VirtualFree(buf, 0, MEM_RELEASE);
+  for (unsigned i = 0; i < found; ++i) jcAddr[i] = hits[i];
+  jcCount = found;
+  bool ok = found >= 1 && found <= 4 && !timeout;
+  msm2::writeLog("WS_JUMP_CFG_SCAN result=%s full_matches=%u a_hits=%llu regions=%llu mib=%llu ms=%llu timeout=%u addr0=0x%llx addr1=0x%llx",
+    ok ? "accepted" : "refused", found, (unsigned long long)aHits, (unsigned long long)regions, (unsigned long long)(bytes >> 20),
+    (unsigned long long)(GetTickCount64() - t0), unsigned(timeout), (unsigned long long)hits[0], (unsigned long long)hits[1]);
+  jcState.store(ok ? 2 : 3);
+  return 0;
+}
+std::atomic_flag jcLock = ATOMIC_FLAG_INIT;   // tick vs F8/stop restore
+void jcWriteAll(bool patch) {
+  while (jcLock.test_and_set(std::memory_order_acquire)) Sleep(0);
+  unsigned done = 0, conflict = 0;
+  for (unsigned i = 0; i < jcCount; ++i) {
+    auto a = jcAddr[i];
+    if (!jcMatches(a, !patch)) { ++conflict; continue; }
+    bool w = true; for (unsigned k = 0; k < 3; ++k) w = w && writableByte(a + kJumpOff[k] + 13) && writableByte(a + kJumpOff[k] + 14);
+    if (!w) { ++conflict; continue; }
+    for (unsigned k = 0; k < 3; ++k) { auto* b = reinterpret_cast<volatile unsigned char*>(a + kJumpOff[k] + 13);
+      b[0] = patch ? 0 : jcBlock(k)[13]; b[1] = patch ? 0 : jcBlock(k)[14]; }
+    ++done;
+  }
+  jcConflicts += conflict; (patch ? jcWrites : jcRestores) += done;
+  if (jcWrites + jcRestores <= 40 || conflict) msm2::writeLog("WS_JUMP_CFG_WRITE op=%s copies=%u conflicts=%u writes=%llu restores=%llu",
+    patch ? "yboost_0" : "restore_vanilla", done, conflict, (unsigned long long)jcWrites, (unsigned long long)jcRestores);
+  jcLock.clear(std::memory_order_release);
+}
+void m8JumpConfig(const msm2::Snapshot& hero, std::uint64_t now) {
+  if (!ws::drive::jumpConfigWrite.load() || killed.load()) return;
+  int st = jcState.load();
+  if (st == 0) { if (!hero.hero) return; jcState.store(1);
+    if (HANDLE h = CreateThread(nullptr, 0, jcScan, nullptr, 0, nullptr)) { SetThreadPriority(h, THREAD_PRIORITY_BELOW_NORMAL); CloseHandle(h); } else jcState.store(3);
+    return; }
+  if (st != 2) return;
+  bool ws = engagedManager.load() != 0 && now - lastWsMs.load() < 150;
+  if (ws && !jcApplied && jcWrites < 2000) { jcWriteAll(true); jcApplied = true; }
+  else if (!ws && jcApplied && now - lastWsMs.load() > 1500) { jcWriteAll(false); jcApplied = false; }
+}
+void jcRestoreNow() { if (jcState.load() == 2 && jcApplied) { jcWriteAll(false); jcApplied = false; } }
+}
 namespace msm2::camera_ref {
 void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
   if (!verified || !image || imageSize <= kEntryRva + 64) { writeLog("WS_CAMERA_REF admitted=0 reason=build_or_image_unverified"); return; }
@@ -466,6 +558,7 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   m6SetterLog(snapshot, now);
   m6Exit(snapshot, now);
   m8JumpTrace(snapshot, motion, now);
+  m8JumpConfig(snapshot, now);
   m5eDistance(snapshot, now);
   m5ePitch(snapshot, now);
   if (now - statusLastMs >= 5000 && statusLogs < 40) { statusLastMs = now; ++statusLogs;
@@ -518,9 +611,9 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   }
 }
 
-void kill() noexcept { killed = true; ws_wallsprint_update_listener.store(nullptr); restore("kill"); }
+void kill() noexcept { jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("kill"); }
 void stop() noexcept {
-  killed = true; ws_wallsprint_update_listener.store(nullptr); restore("stop");
+  jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("stop");
   if (setInstalled.exchange(false)) MH_DisableHook(reinterpret_cast<void*>(setTarget));
   if (installed.exchange(false)) MH_DisableHook(reinterpret_cast<void*>(target));
 }

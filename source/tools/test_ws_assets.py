@@ -105,6 +105,7 @@ assert all(pj[off] == 0 for off, *_ in a.JUMP_PATCH) and sum(x != y for x, y in 
 fails(lambda: a.patch_jump(jmp[:-1] + b"\1"))
 with tempfile.TemporaryDirectory() as t:
     d = Path(t); (d / a.JUMP_INPUT).write_bytes(jmp)
+    a.JUMP_ENABLED = True
     assert a.jump_members(d) == {"0/" + a.JUMP_PATH: pj}
     a.JUMP_ENABLED = False; assert a.jump_members(d) == {}; a.JUMP_ENABLED = True
 print("test_ws_assets M8b: PASS")

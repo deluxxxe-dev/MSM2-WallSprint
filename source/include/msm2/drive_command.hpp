@@ -14,4 +14,6 @@ inline std::atomic<std::uint64_t> heroMs{0};
 // M6o: WS camera auto-centering (yaw follow + aim correction). Default OFF like the owner's ground camera setting;
 // WallSprint.ini WALLSPRINT_CAMERA_AUTOCENTER=1 turns it on (ModSettings later).
 inline std::atomic<bool> cameraAutoCenter{false};
+// M8c: WS-only in-memory jump config write (YBoost 0 during WS). WallSprint.ini WALLSPRINT_JUMP_CONFIG_WRITE, default 0.
+inline std::atomic<bool> jumpConfigWrite{false};
 }
