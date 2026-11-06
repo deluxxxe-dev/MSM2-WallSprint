@@ -417,6 +417,7 @@ std::atomic<int> jcState{0};             // 0 idle, 1 scanning, 2 accepted, 3 re
 std::uintptr_t jcAddr[4]{}; unsigned jcCount{}; bool jcApplied{}; std::uint64_t jcWrites{}, jcRestores{}, jcConflicts{};
 bool jcGroupsEqual(const float (&cur)[3][9], bool patched) {
   for (unsigned k = 0; k < 3; ++k) for (unsigned j = 0; j < 9; ++j) {
+    if (patched && j < 2) continue;   // M8j: SpeedMin/Max may hold a charge value while patched
     float want = (patched && (j == kYMin || j == kYMax)) ? 0.f : kJumpF[k][j];
     if (std::memcmp(&cur[k][j], &want, 4)) return false; }
   return true;
@@ -495,16 +496,30 @@ void jcWriteAll(bool patch) {
   for (unsigned i = 0; i < jcCount; ++i) {
     auto a = jcAddr[i];
     if (!jcMatches(a, !patch)) { ++conflict; continue; }
-    bool w = true; for (unsigned k = 0; k < 3; ++k) w = w && writableByte(a + k * kJumpStride + 4 * kYMin) && writableByte(a + k * kJumpStride + 4 * kYMax + 3);
+    bool w = true; for (unsigned k = 0; k < 3; ++k) w = w && writableByte(a + k * kJumpStride) && writableByte(a + k * kJumpStride + 4 * kYMax + 3);
     if (!w) { ++conflict; continue; }
     for (unsigned k = 0; k < 3; ++k) { auto* f = reinterpret_cast<volatile float*>(a + k * kJumpStride);
-      f[kYMin] = patch ? 0.f : kJumpF[k][kYMin]; f[kYMax] = patch ? 0.f : kJumpF[k][kYMax]; }
+      f[kYMin] = patch ? 0.f : kJumpF[k][kYMin]; f[kYMax] = patch ? 0.f : kJumpF[k][kYMax];
+      if (!patch) { f[0] = kJumpF[k][0]; f[1] = kJumpF[k][1]; } }
     ++done;
   }
   jcConflicts += conflict; (patch ? jcWrites : jcRestores) += done;
   if (jcWrites + jcRestores <= 40 || conflict) msm2::writeLog("WS_JUMP_CFG_WRITE op=%s copies=%u conflicts=%u writes=%llu restores=%llu",
     patch ? "yboost_0" : "restore_vanilla", done, conflict, (unsigned long long)jcWrites, (unsigned long long)jcRestores);
   jcLock.clear(std::memory_order_release);
+}
+// M8j: charge jump strength. SpeedMin/Max of every group = vanilla * k, only while the YBoost patch is applied
+// (restored with it). Every write re-checks the patched identity.
+bool jcSetSpeed(float k) {
+  if (jcState.load() != 2 || !jcApplied) return false;
+  while (jcLock.test_and_set(std::memory_order_acquire)) Sleep(0);
+  unsigned done = 0;
+  for (unsigned i = 0; i < jcCount; ++i) { auto a = jcAddr[i];
+    if (!jcMatches(a, true) || !writableByte(a) || !writableByte(a + 2 * kJumpStride + 7)) continue;
+    for (unsigned g = 0; g < 3; ++g) { auto* f = reinterpret_cast<volatile float*>(a + g * kJumpStride); f[0] = kJumpF[g][0] * k; f[1] = kJumpF[g][1] * k; }
+    ++done; }
+  jcLock.clear(std::memory_order_release);
+  return done > 0;
 }
 // M8d diagnostic (read-only): does a WS jump start on button press or on release? A 5 ms poller records jump-button
 // (XInput A / Space) edges; at each WS end it logs the last press/release relative to the end. <= 30 lines.
@@ -600,6 +615,43 @@ using WgiReadFn = HRESULT (STDMETHODCALLTYPE*)(void*, WgiReading*); using WgiVib
 WgiReadFn wgiReadOrig{}; WgiVibFn wgiVibOrig{}; void* wgiReadTarget{}; void* wgiVibTarget{};
 std::atomic<std::uint64_t> wgiReads{0}, wgiPresses{0}, wgiVibs{0}, wgiHidden{0}; std::atomic<bool> wgiA{false}; std::atomic<unsigned> wgiLogs{0};
 WgiVibration wgiLastVib{-1, -1, -1, -1};
+// M8j (2026-11-07): WS charge jump, controller only. M8i VERIFIED the game reads the pad through WGI
+// GetCurrentReading (~77/s, A seen with 0 ms delay). While WS is active an A press is hidden from the game; on release
+// the press is given back for 60 ms so the vanilla WS jump fires. Hold < 500 ms = normal WS jump; hold >= 500 ms sets
+// SpeedMin/Max *= k first, k = sqrt(h / 1.8 m) with h the vanilla ground charge rise (M8e/M8f: ~15 m at 0.5 s rising
+// linearly to ~39 m at 1.1 s, flat after) and 1.8 m the normal jump: k = 2.9 .. 4.65. HYPOTHESIS: Speed* sets the
+// outward (wall-normal) jump-off speed. If WS ends while A is held, A stays hidden until release (no stray jump).
+// INI WALLSPRINT_WS_CHARGE_JUMP (default 0, shipped 1); F8 stops it.
+enum : int { kChIdle, kChHold, kChGive, kChSwallow };
+std::atomic<int> chState{kChIdle}; std::atomic<std::uint64_t> chStart{0}, chGiveUntil{0}; unsigned chLogs{};
+float chargeK(std::uint64_t ms) {
+  if (ms < 500) return 1.f;
+  float h = 15.f + 24.f * std::fmin(1.f, float(ms - 500) / 600.f);
+  return std::sqrt(h / 1.8f);
+}
+void wsChargeStep(WgiReading* r, bool a) {
+  if (!ws::drive::wsChargeJump.load() || killed.load()) { chState.store(kChIdle); return; }
+  auto now = GetTickCount64(); bool ws = engagedManager.load() != 0 && now - lastWsMs.load() < 150;
+  static std::atomic<bool> prevA{false}; bool edge = a && !prevA.exchange(a);   // rising edge only
+  switch (chState.load()) {
+    case kChIdle:
+      if (edge && ws) { chState.store(kChHold); chStart.store(now); r->buttons &= ~0x4u; }
+      break;
+    case kChHold:
+      r->buttons &= ~0x4u;
+      if (!ws) { chState.store(kChSwallow); if (chLogs++ < 60) msm2::writeLog("WS_CHARGE_JUMP event=ws_ended_while_held hold_ms=%llu", (unsigned long long)(now - chStart.load())); break; }
+      if (!a) { auto hold = now - chStart.load(); float k = chargeK(hold); bool set = k > 1.f && jcSetSpeed(k);
+        if (chLogs++ < 60) msm2::writeLog("WS_CHARGE_JUMP event=release hold_ms=%llu mode=%s k=%.2f speed_written=%u", (unsigned long long)hold, k > 1.f ? "charge" : "normal", k, unsigned(set));
+        chState.store(kChGive); chGiveUntil.store(now + 60); r->buttons |= 0x4u; }
+      break;
+    case kChGive:
+      if (now < chGiveUntil.load()) r->buttons |= 0x4u; else { chState.store(kChIdle); r->buttons &= ~0x4u; }
+      break;
+    case kChSwallow:
+      if (a) r->buttons &= ~0x4u; else { chState.store(kChIdle); }
+      break;
+  }
+}
 HRESULT STDMETHODCALLTYPE wgiReadDetour(void* self, WgiReading* r) {
   HRESULT hr = wgiReadOrig(self, r);
   if (fromSelf(__builtin_return_address(0))) return hr;
@@ -611,15 +663,16 @@ HRESULT STDMETHODCALLTYPE wgiReadDetour(void* self, WgiReading* r) {
     else if (!a) wgiA.store(false);
     if (a && ws::drive::jumpHoldbackTest.load() && !killed.load() && engagedManager.load() != 0 && GetTickCount64() - lastWsMs.load() < 150) {
       r->buttons &= ~0x4u; if (wgiHidden.fetch_add(1) < 40) msm2::writeLog("WS_JUMP_HOLDBACK module=WGI a_hidden=1 blocked=%llu", (unsigned long long)wgiHidden.load()); }
+    wsChargeStep(r, a);
   }
   return hr;
 }
 HRESULT STDMETHODCALLTYPE wgiVibDetour(void* self, const WgiVibration* v) {
   if (!fromSelf(__builtin_return_address(0))) { wgiVibs.fetch_add(1, std::memory_order_relaxed);
-    if (v && (v->left != wgiLastVib.left || v->right != wgiLastVib.right || v->ltrig != wgiLastVib.ltrig || v->rtrig != wgiLastVib.rtrig)) { wgiLastVib = *v;
-      if (xsLogs.fetch_add(1) < 400) { auto now = GetTickCount64(); auto p = xgPress.load(), kp = jiPress.load();
-        msm2::writeLog("WS_RUMBLE module=WGI left=%.3f right=%.3f ltrig=%.3f rtrig=%.3f since_game_A_press_ms=%lld since_jump_press_ms=%lld game_A_held=%u read_only=1", v->left, v->right, v->ltrig, v->rtrig,
-          p ? (long long)(now - p) : -1ll, kp ? (long long)(now - kp) : -1ll, unsigned(wgiA.load())); } } }
+    if (v && (std::fabs(v->left - wgiLastVib.left) > 0.004 || std::fabs(v->right - wgiLastVib.right) > 0.004 || std::fabs(v->ltrig - wgiLastVib.ltrig) > 0.004 || std::fabs(v->rtrig - wgiLastVib.rtrig) > 0.004)) { wgiLastVib = *v;
+      if (xsLogs.fetch_add(1) < 1500) { auto now = GetTickCount64(); auto p = xgPress.load(), kp = jiPress.load();
+        msm2::writeLog("WS_RUMBLE module=WGI left=%.3f right=%.3f ltrig=%.3f rtrig=%.3f since_game_A_press_ms=%lld since_jump_press_ms=%lld game_A_held=%u since_release_ms=%lld read_only=1", v->left, v->right, v->ltrig, v->rtrig,
+          p ? (long long)(now - p) : -1ll, kp ? (long long)(now - kp) : -1ll, unsigned(wgiA.load()), jiRelease.load() ? (long long)(now - jiRelease.load()) : -1ll); } } }
   return wgiVibOrig(self, v);
 }
 std::atomic<bool> wgiStarted{false};

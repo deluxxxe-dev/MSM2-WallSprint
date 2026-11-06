@@ -18,4 +18,6 @@ inline std::atomic<bool> cameraAutoCenter{false};
 inline std::atomic<bool> jumpConfigWrite{false};
 // M8g: hide the XInput A button from the game while WS is active (input-route test). WALLSPRINT_JUMP_HOLDBACK_TEST, default 0.
 inline std::atomic<bool> jumpHoldbackTest{false};
+// M8j: WS charge jump (hold A during WS, release to jump; strength from hold time). WALLSPRINT_WS_CHARGE_JUMP, default 0.
+inline std::atomic<bool> wsChargeJump{false};
 }
