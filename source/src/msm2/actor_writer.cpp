@@ -57,7 +57,7 @@ constexpr float kStickDeadzone=0.35f;
 std::atomic<std::uint64_t> driveWrites{0},driveNoInput{0},driveUncalibrated{0},driveBadNormal{0},driveCalibrations{0},driveCameraMapped{0},driveHeldForward{0},driveSnapSeq{0},driveUpAssist{0};
 constexpr bool kCameraUpAssist=true,kCameraSideAxis=true;
 constexpr bool kSmoothTurn=true;// M6e: ground sprint measured max ~470, large turns 270-360 deg/s
-constexpr double kTurnRateDegPerSec=400.;std::atomic<std::uint64_t> followWrites{0},followManualSkips{0},followNoHero{0};double turnLastT{};std::atomic<std::uint64_t> turnLimited{0};
+constexpr double kTurnRateDegPerSec=400.;std::atomic<std::uint64_t> followWrites{0},followManualSkips{0},followNoHero{0},aimWrites{0};double turnLastT{};std::atomic<std::uint64_t> turnLimited{0};
 std::atomic<std::uint64_t> driveSideAxis{0};
 std::atomic<float> driveSnap[16]{};std::uint64_t driveSnapLogged{};
 // M5c-r6 diagnostics: vanilla reversal events (heading read back opposite to our previous write) and camera axis scan.
@@ -157,7 +157,7 @@ void drainLogs(){
  lastThresholdCheck=now;lastLoggedSamples=n;logProbeSnapshot(final?"final":"cumulative");
  writeLog("wallrun_m3d_stick_drive phase=%s enabled=%u writes=%llu cap=%llu no_input=%llu uncalibrated=%llu calibrations=%llu bad_normal=%llu lateral_sign=%d camera_mapped=%llu handedness=%d game_write=1",final?"final":"cumulative",unsigned(kM3dStickDrive),static_cast<unsigned long long>(driveWrites.load()),static_cast<unsigned long long>(kTiltWriteCap),static_cast<unsigned long long>(driveNoInput.load()),static_cast<unsigned long long>(driveUncalibrated.load()),static_cast<unsigned long long>(driveCalibrations.load()),static_cast<unsigned long long>(driveBadNormal.load()),driveLateralSign,static_cast<unsigned long long>(driveCameraMapped.load()),ws_camera_handedness.load());
  if(auto q=driveSnapSeq.load(std::memory_order_acquire);q!=driveSnapLogged){driveSnapLogged=q;float v[16];for(int i=0;i<16;++i){v[i]=driveSnap[i].load(std::memory_order_relaxed);}
-  writeLog("wallrun_m5c_map cam=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f stick=%.2f,%.2f out=%.3f,%.3f,%.3f heading=%.3f,%.3f,%.3f proj=%.3f mode=%d held=%llu up_assist=%llu side_axis=%llu turn_limited=%llu turn_rate=%.0f cam_follow_writes=%llu cam_follow_manual_skips=%llu cam_follow_no_hero=%llu",v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],int(v[15]),static_cast<unsigned long long>(driveHeldForward.load()),static_cast<unsigned long long>(driveUpAssist.load()),static_cast<unsigned long long>(driveSideAxis.load()),static_cast<unsigned long long>(turnLimited.load()),kTurnRateDegPerSec,static_cast<unsigned long long>(followWrites.load()),static_cast<unsigned long long>(followManualSkips.load()),static_cast<unsigned long long>(followNoHero.load()));}
+  writeLog("wallrun_m5c_map cam=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f stick=%.2f,%.2f out=%.3f,%.3f,%.3f heading=%.3f,%.3f,%.3f proj=%.3f mode=%d held=%llu up_assist=%llu side_axis=%llu turn_limited=%llu turn_rate=%.0f cam_follow_writes=%llu cam_follow_manual_skips=%llu cam_follow_no_hero=%llu cam_aim_writes=%llu",v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],int(v[15]),static_cast<unsigned long long>(driveHeldForward.load()),static_cast<unsigned long long>(driveUpAssist.load()),static_cast<unsigned long long>(driveSideAxis.load()),static_cast<unsigned long long>(turnLimited.load()),kTurnRateDegPerSec,static_cast<unsigned long long>(followWrites.load()),static_cast<unsigned long long>(followManualSkips.load()),static_cast<unsigned long long>(followNoHero.load()),static_cast<unsigned long long>(aimWrites.load()));}
  if(auto q=driveFlips.load(std::memory_order_acquire);q!=driveFlipsLogged){driveFlipsLogged=q;float v[17];for(int i=0;i<17;++i){v[i]=driveFlipSnap[i].load(std::memory_order_relaxed);}
   writeLog("wallrun_m5c_vanilla_reversal count=%llu stick=%.2f,%.2f our_last=%.3f,%.3f,%.3f vanilla=%.3f,%.3f,%.3f normal=%.3f,%.3f,%.3f cam_f=%.3f,%.3f,%.3f cam_u=%.3f,%.3f,%.3f",static_cast<unsigned long long>(q),v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],v[15],v[16]);}
  if(auto q=driveOverrides.load(std::memory_order_acquire);q!=driveOverridesLogged){driveOverridesLogged=q;float v[17];for(int i=0;i<17;++i){v[i]=driveOverrideSnap[i].load(std::memory_order_relaxed);}
@@ -251,7 +251,7 @@ bool readStick(float& sx,float& sy){
 // forward) and position (+0xD54) about the wall normal through the hero toward the commanded travel, <=90 deg/s,
 // 10 deg deadband. Never while the right stick moves the camera or for 1 s after. If the game recomputes these
 // rows from its own state the write has no effect (observable in WS_CAMERA_FRAMING travel_vs_view).
-constexpr bool kCameraFollow=true;constexpr double kCameraFollowDegPerSec=90.,kCameraFollowDeadbandDeg=10.;
+constexpr bool kCameraFollow=true,kCameraAim=true;constexpr float kCameraAimPivot=1.55f;constexpr double kCameraAimDeadbandDeg=5.;constexpr double kCameraFollowDegPerSec=90.,kCameraFollowDeadbandDeg=10.;
 double followLastT{};std::uint64_t followManualMs{};
 void rotN(const float* n,float* v,float ca,float sa){float nv=n[0]*v[0]+n[1]*v[1]+n[2]*v[2];float c[3]{n[1]*v[2]-n[2]*v[1],n[2]*v[0]-n[0]*v[2],n[0]*v[1]-n[1]*v[0]};
  for(int i=0;i<3;++i){v[i]=v[i]*ca+c[i]*sa+n[i]*nv*(1-ca);}}
@@ -267,11 +267,23 @@ void cameraFollow(const float* n,const float* d){
  float fn=f[0]*n[0]+f[1]*n[1]+f[2]*n[2];float fp[3]{f[0]-fn*n[0],f[1]-fn*n[1],f[2]-fn*n[2]};float fpl=std::sqrt(fp[0]*fp[0]+fp[1]*fp[1]+fp[2]*fp[2]);if(fpl<0.3f)return;
  float x[3]{fp[1]*d[2]-fp[2]*d[1],fp[2]*d[0]-fp[0]*d[2],fp[0]*d[1]-fp[1]*d[0]};
  float err=std::atan2(x[0]*n[0]+x[1]*n[1]+x[2]*n[2],fp[0]*d[0]+fp[1]*d[1]+fp[2]*d[2]);
- if(std::fabs(err)<float(kCameraFollowDeadbandDeg*3.14159265358979/180.))return;
+ if(std::fabs(err)<float(kCameraFollowDeadbandDeg*3.14159265358979/180.))err=0;
  float mx=float(kCameraFollowDegPerSec*3.14159265358979/180.*dt),a=err>0?std::fmin(err,mx):std::fmax(err,-mx),ca=std::cos(a),sa=std::sin(a);
  float hp[3]{ws::drive::heroPos[0].load(std::memory_order_relaxed),ws::drive::heroPos[1].load(std::memory_order_relaxed),ws::drive::heroPos[2].load(std::memory_order_relaxed)};
  float rel[3]{R[12]-hp[0],R[13]-hp[1],R[14]-hp[2]};float rl=std::sqrt(rel[0]*rel[0]+rel[1]*rel[1]+rel[2]*rel[2]);if(!std::isfinite(rl)||rl>30.f)return;
- rotN(n,R,ca,sa);rotN(n,R+4,ca,sa);rotN(n,R+8,ca,sa);rotN(n,rel,ca,sa);for(int i=0;i<3;++i){R[12+i]=hp[i]+rel[i];}
+ bool changed=a!=0;
+ if(changed){rotN(n,R,ca,sa);rotN(n,R+4,ca,sa);rotN(n,R+8,ca,sa);rotN(n,rel,ca,sa);for(int i=0;i<3;++i){R[12+i]=hp[i]+rel[i];}}
+ // M6m: aim correction. Turn the view (rows only, camera position kept) toward the hero pivot point
+ // (hero + wall normal * 1.55 m, the ground pivot height) at <= 90 deg/s with a 5 deg deadband. M6l measured the hero
+ // 36-44 deg off center while running down the wall (up/sideways 14-19 deg).
+ if(kCameraAim){float tg[3]{hp[0]+n[0]*kCameraAimPivot-R[12],hp[1]+n[1]*kCameraAimPivot-R[13],hp[2]+n[2]*kCameraAimPivot-R[14]};
+  float tl=std::sqrt(tg[0]*tg[0]+tg[1]*tg[1]+tg[2]*tg[2]);
+  if(tl>0.3f&&tl<30.f){for(float& c:tg)c/=tl;float* ff=R+8;float fl2=std::sqrt(ff[0]*ff[0]+ff[1]*ff[1]+ff[2]*ff[2]);
+   float cd=(ff[0]*tg[0]+ff[1]*tg[1]+ff[2]*tg[2])/fl2;float ang=std::acos(std::fmax(-1.f,std::fmin(1.f,cd)));
+   if(ang>float(kCameraAimDeadbandDeg*3.14159265358979/180.)){float ax[3]{ff[1]*tg[2]-ff[2]*tg[1],ff[2]*tg[0]-ff[0]*tg[2],ff[0]*tg[1]-ff[1]*tg[0]};
+    float al=std::sqrt(ax[0]*ax[0]+ax[1]*ax[1]+ax[2]*ax[2]);
+    if(al>1e-4f){for(float& c:ax)c/=al;float st=std::fmin(ang,mx),c2=std::cos(st),s2=std::sin(st);rotN(ax,R,c2,s2);rotN(ax,R+4,c2,s2);rotN(ax,R+8,c2,s2);changed=true;aimWrites.fetch_add(1,std::memory_order_relaxed);}}}}
+ if(!changed)return;
  if(!writableRange(m+0xD24,sizeof(R)))return;
  for(int row=0;row<4;++row){std::memcpy(reinterpret_cast<void*>(m+0xD24+0x10*row),R+4*row,12);}
  followWrites.fetch_add(1,std::memory_order_relaxed);
