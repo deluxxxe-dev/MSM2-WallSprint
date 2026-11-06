@@ -654,3 +654,6 @@ git remote -v
 - Scheduled Task backup 正常
 
 将来障害が起きた場合は、この既知正常状態との差分を最初に探します。
+
+## Cloud-verified fast update (owner decision 2026-11-06)
+`Update-WS.cmd` reads `docs/CLOUD_VERIFIED.txt`. If the pulled `HEAD:source` tree is listed, the WSL build skips the local `smoke_windows.sh` and `test_hooks_windows.sh` suites, which the cloud session already ran on that exact tree. Build, `test.sh` and packaging always run locally. A tree is listed only after every suite passed in the cloud. Unlisted trees get the full local validation.

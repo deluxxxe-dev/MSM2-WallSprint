@@ -1,0 +1,4 @@
+# Source trees (git rev-parse HEAD:source) on which the cloud session ran build_windows.sh, test.sh, smoke_windows.sh,
+# test_hooks_windows.sh and package.py with every suite passing. Update-WS skips only the local smoke/hooks suites
+# for a listed tree (owner decision 2026-11-06); build, portable tests and packaging always run locally.
+# Format: <tree-sha> <date> <note>

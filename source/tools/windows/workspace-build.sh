@@ -50,10 +50,17 @@ build_stage=build; progress running
 bash source/tools/build_windows.sh
 build_stage=portable; progress running
 bash source/tools/test.sh
+# Owner decision 2026-11-06: when the exact source tree (git tree of source/) is listed in docs/CLOUD_VERIFIED.txt,
+# the cloud session already ran the same smoke + hooks suites on it; the local update skips only those two slow suites.
+# Build, portable tests and packaging always run.
+if [[ "${MSM2_WS_CLOUD_VERIFIED:-0}" == 1 ]]; then
+ echo 'WS: source tree verified in cloud (docs/CLOUD_VERIFIED.txt); skipping local smoke/hooks suites'
+else
 build_stage=smoke; progress running
 bash source/tools/smoke_windows.sh
 build_stage=hooks; progress running
 bash source/tools/test_hooks_windows.sh
+fi
 build_stage=package; progress running
 python source/tools/release.py
 build_stage=stage_payload; progress running

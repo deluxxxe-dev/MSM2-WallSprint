@@ -251,7 +251,8 @@ class WindowsSystem:
   script=src+'/source/tools/windows/workspace-build.sh'
   token=operation_lock._current.record['token']
   operation_lock.phase('building',build_token=token,distro=distro,linux_uid=int(linux_uid))
-  try:p=subprocess.run(prefix+['env','MSM2_WS_OPERATION_TOKEN='+token,'bash','--noprofile','--norc',script,src,dest],**operation_lock.child_options())
+  verified='1' if getattr(self,'cloud_verified',False) else '0'
+  try:p=subprocess.run(prefix+['env','MSM2_WS_OPERATION_TOKEN='+token,'MSM2_WS_CLOUD_VERIFIED='+verified,'bash','--noprofile','--norc',script,src,dest],**operation_lock.child_options())
   except BaseException as ex:
    operation_lock.phase('build_interrupted',build_returncode=None,build_exception=type(ex).__name__)
    raise
@@ -345,6 +346,12 @@ class Manager:
    build=workspace/'_archive/_build'
    if not build.exists():build.mkdir()
    no_links(build)
+   # Cloud-verified source tree -> the build skips only the slow smoke/hooks suites (docs/CLOUD_VERIFIED.txt).
+   try:
+    tree=git(source,'rev-parse','HEAD:source').strip();listed=(Path(source)/'docs/CLOUD_VERIFIED.txt')
+    self.system.cloud_verified=bool(re.fullmatch(r'[0-9a-f]{40}',tree)) and listed.is_file() and any(l.split()[:1]==[tree] for l in listed.read_text(encoding='utf-8').splitlines())
+   except Exception:self.system.cloud_verified=False
+   print('WS: cloud-verified source tree -> local smoke/hooks skipped' if self.system.cloud_verified else 'WS: full local validation (source tree not in docs/CLOUD_VERIFIED.txt)')
    payload,manifest=self.system.build(source,build)
    require(payload.parent.resolve()==build.resolve(),'Build artifact escaped WS staging directory')
    require(payload.name=='MSM2-WS-'+label+'.script.disabled','Artifact is not the authoritative version')
