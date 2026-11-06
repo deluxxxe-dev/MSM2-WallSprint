@@ -314,3 +314,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M8h: WGI hook not installed (no gamepad visible to our query); jump still fires without XInput A. M8i: Raw Input / hid.dll call counting.
 - 2026-11-07: M8i cloud full suites PASS on tree fff9e62801385868a68da52e3476ed2d3a093ff1 (listed).
 - 2026-11-07: M8i: gameplay pad = WGI GetCurrentReading, rumble = WGI put_Vibration (VERIFIED). M8j: WS charge jump v1 (hold-back + Speed scaling).
+- 2026-11-07: M8j cloud full suites PASS on tree c91f417c46a76e0e27dcedbac0324602301e7ba6 (listed).

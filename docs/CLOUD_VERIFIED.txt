@@ -20,3 +20,4 @@ e7810c3e1afee67d15e61d06e9b9e5822be7e8c0 2026-11-06 build+test.sh+smoke+hooks+pa
 681ba54acabf8720552979b1985acd03d24f338d 2026-11-06 build+test.sh+smoke+hooks+package PASS (M8g XInput A hold-back test)
 eb4ac4e1ec3fa17bd68e7a4d3b4666909ae2e7b6 2026-11-07 build+test.sh+smoke+hooks+package PASS (M8h WGI gamepad hooks)
 fff9e62801385868a68da52e3476ed2d3a093ff1 2026-11-07 build+test.sh+smoke+hooks+package PASS (M8i Raw Input / hid.dll counting)
+c91f417c46a76e0e27dcedbac0324602301e7ba6 2026-11-07 build+test.sh+smoke+hooks+package PASS (M8j WS charge jump v1)
