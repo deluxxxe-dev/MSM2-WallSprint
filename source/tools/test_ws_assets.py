@@ -82,4 +82,11 @@ with tempfile.TemporaryDirectory() as t:
     inp.mkdir(parents=True); (inp / a.INPUT_NAME).write_bytes(steer); (inp / a.CAMERA_INPUT).write_bytes(cam)
     out = a.deploy(ws, game); z = zipfile.ZipFile(io.BytesIO(out.read_bytes()))
     assert z.read("0/" + a.CAMERA_PATH) == pc and "GroundCam" in z.read("info.json").decode()
+fol = bytearray(2532); fol[2479] = 1; fol = bytes(fol); a.FOLLOW_SHA = hashlib.sha256(fol).hexdigest()
+assert a.patch_follow(fol)[2479] == 0 and sum(x != y for x, y in zip(fol, a.patch_follow(fol))) == 1
+fails(lambda: a.patch_follow(fol[:-1] + b"\1"))
+with tempfile.TemporaryDirectory() as t:
+    game = Path(t) / "game"; ws = game / "Mods Library" / "Mods-Developing" / "MSM2-WS"; inp = ws / a.INPUT_DIR
+    inp.mkdir(parents=True); (inp / a.INPUT_NAME).write_bytes(steer); (inp / a.CAMERA_INPUT).write_bytes(cam); (inp / a.FOLLOW_INPUT).write_bytes(fol)
+    z = zipfile.ZipFile(io.BytesIO(a.deploy(ws, game).read_bytes())); assert z.read("0/" + a.FOLLOW_PATH)[2479] == 0
 print("test_ws_assets: PASS")

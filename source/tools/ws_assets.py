@@ -94,6 +94,32 @@ def clip_members(inputs: Path) -> dict[str, bytes]:
     return members
 
 
+# M6p (2026-11-06): WS auto-centering seen with WS camera follow OFF (0 writes) -> the vanilla follow camera centers
+# by itself. herofollowcamconfig VelocityFollowData.Enabled (bool @2479, vanilla true) is the candidate. Experiment:
+# false. NOTE (D17): this is the global hero follow camera, so ground velocity-follow is also off while installed.
+FOLLOW_INPUT = "herofollowcamconfig.config"
+FOLLOW_PATH = "configs/herofollowcamconfig/herofollowcamconfig.config"
+FOLLOW_SHA = "79b64c0503fa2ee499a26830ad98472e4496a25bb01b45080ecb1fbb17c023c1"
+FOLLOW_PATCH = ((2479, "B", 1, 0),)  # VelocityFollowData.Enabled true -> false
+
+
+def _patch(data: bytes, sha: str, table, label: str) -> bytes:
+    import struct
+    if b.sha(data) != sha:
+        raise ValueError(f"{label} input is not the pinned vanilla file")
+    out = bytearray(data)
+    for off, kind, old, new in table:
+        cur = struct.unpack_from("<" + kind, out, off)[0]
+        if abs(cur - old) > 1e-5:
+            raise ValueError(f"{label} layout mismatch at {off}: {cur} != {old}")
+        struct.pack_into("<" + kind, out, off, new)
+    return bytes(out)
+
+
+def patch_follow(data: bytes) -> bytes:
+    return _patch(data, FOLLOW_SHA, FOLLOW_PATCH, "herofollowcamconfig")
+
+
 def patch_camera(data: bytes) -> bytes:
     import struct
     if b.sha(data) != CAMERA_SHA:
@@ -115,7 +141,14 @@ def camera_members(inputs: Path) -> dict[str, bytes]:
         raise ValueError("reparse/symlink camera input refused")
     data = patch_camera(src.read_bytes())
     print(f"WS camera framing: {CAMERA_INPUT} -> uniform 3.5 m behind, 1 m up for every pitch, pivot 0")
-    return {f"0/{CAMERA_PATH}": data}
+    out = {f"0/{CAMERA_PATH}": data}
+    fsrc = inputs / FOLLOW_INPUT
+    if fsrc.is_file():
+        if _linked(fsrc):
+            raise ValueError("reparse/symlink follow input refused")
+        out[f"0/{FOLLOW_PATH}"] = patch_follow(fsrc.read_bytes())
+        print(f"Follow camera: {FOLLOW_INPUT} -> VelocityFollowData.Enabled false (no auto-centering)")
+    return out
 
 
 def stage_bytes(steering: bytes, clips: dict[str, bytes] | None = None, camera: dict[str, bytes] | None = None) -> bytes:

@@ -14,6 +14,8 @@ def parse(b,i,names):
         if t==8: out[nm]=round(struct.unpack_from('<f',b,cur)[0],4);cur+=4
         elif t==4: out[nm]=struct.unpack_from('<b',b,cur)[0];cur+=1
         elif t==0: out[nm]=b[cur];cur+=1
+        elif t==1: out[nm]=struct.unpack_from('<h',b,cur)[0];cur+=2   # HYPOTHESIS: int16
+        elif t==0xf: out[nm]=bool(b[cur]);cur+=1                      # HYPOTHESIS: bool
         elif t==0xd:
             j=b.find(TAG,cur);v,end=parse(b,j,names);out[nm]=v;cur=a4(end)
         else: out[nm]='?fl%x'%fl;cur+=4
@@ -22,12 +24,14 @@ for path in sys.argv[1:]:
     b=open(path,'rb').read()
     tags0=[];i0=0
     while (i0:=b.find(TAG,i0))>=0: tags0.append(i0);i0+=4
-    # base of the name table: a leaf X/Y/Z struct's first name offset points at "X\0Y\0Z"
-    k=None
+    # base of the name table: the offset that makes every struct's field-name offsets land on string starts
+    allo=[]
     for t in tags0:
         c=struct.unpack_from('<I',b,t+4)[0]
-        if c==3:
-            o=struct.unpack_from('<I',b,t+12+24)[0];x=b.find(b'X\x00Y\x00Z\x00');k=x-o;break
+        if 0<c<=64: allo+=list(struct.unpack_from('<%dI'%c,b,t+12+8*c))
+    k=None
+    for base in range(0,min(len(b),1024)):
+        if all(0<base+o<len(b) and b[base+o-1]==0 and 65<=b[base+o]<=122 for o in allo): k=base;break
     def names(o,b=b,k=k):
         # find base: names offsets are relative to start of string table ("Config")
         s=b[k+o:b.index(b'\x00',k+o)];return s.decode(errors='replace')
