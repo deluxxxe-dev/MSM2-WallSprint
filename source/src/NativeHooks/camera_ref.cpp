@@ -404,29 +404,30 @@ void m8JumpTrace(const msm2::Snapshot& hero, const ws::diag::Motion& motion, std
 namespace {
 // M8c (2026-11-06): WS-only jump config. M8b A/B (analysis/M8_JUMP_PLAN_20261106.md) VERIFIED that
 // WallRunJumpSetupConfig JumpOffData YBoost is the world-up speed added at a WR jump-off (vanilla ~10 m/s, 0 -> ~0.4).
-// Instead of shipping a globally patched file, find the loaded config in memory and set the six YBoost bytes to 0 only
-// while WS is active; restore them 1.5 s after WS ends (after the jump-off read), on F8 and on stop.
-// Identity: three vanilla 15-byte value blocks (JumpOffData_00/45/90: GenBoostCap..YBoostMin) at +0/+140/+280, exactly
-// as in the vanilla file (sha a505ea20...). 1..4 full matches accepted; every write re-checks the bytes it replaces.
-constexpr unsigned char kJumpA[15] = {0x1e,0x06,0x03,0x14,0x08,0x66,0x66,0x26,0x3f,0x3d,0x0a,0xd7,0x3e,0x0e,0x09};
-constexpr unsigned char kJumpB[15] = {0x1e,0x06,0x03,0x14,0x08,0x33,0x33,0x33,0x3f,0x3d,0x0a,0xd7,0x3e,0x0c,0x06};
-constexpr unsigned char kJumpC[15] = {0x1c,0x08,0x04,0x1e,0x0a,0xcd,0xcc,0x4c,0x3f,0x00,0x00,0x00,0x3f,0x02,0x02};
-constexpr unsigned kJumpOff[3] = {0, 140, 280};
+// Instead of shipping a globally patched file, the loaded config is found in memory and the YBoost values are set to 0
+// only while WS is active; they are restored 1.5 s after WS ends (after the jump-off read), on F8 and on stop.
+// M8c-r4 runtime layout (VERIFIED-RUNTIME, one copy): each JumpOffData is 9 floats {SpeedMin, SpeedMax, GenBoostMin,
+// GenBoostMax, GenBoostCap, YBoostMin, YBoostMax, TimeToPeakMin, TimeToPeakMax}; _00/_45/_90 are 48 bytes apart.
+// Identity: all 27 vanilla floats, bit-exact. 1..4 matches accepted; every write re-checks the 27 floats.
+constexpr float kJumpF[3][9] = {{8, 20, 3, 6, 30, 9, 14, 0.42f, 0.65f}, {8, 20, 3, 6, 30, 6, 12, 0.42f, 0.7f}, {10, 30, 4, 8, 28, 2, 2, 0.5f, 0.8f}};
+constexpr unsigned kJumpStride = 48, kYMin = 5, kYMax = 6;
 std::atomic<int> jcState{0};             // 0 idle, 1 scanning, 2 accepted, 3 refused
 std::uintptr_t jcAddr[4]{}; unsigned jcCount{}; bool jcApplied{}; std::uint64_t jcWrites{}, jcRestores{}, jcConflicts{};
-const unsigned char* jcBlock(unsigned k) { return k == 0 ? kJumpA : k == 1 ? kJumpB : kJumpC; }
-bool jcMatches(std::uintptr_t a, bool patched) {
-  for (unsigned k = 0; k < 3; ++k) { unsigned char cur[15]; if (!msm2::readMemory(a + kJumpOff[k], cur, 15)) return false;
-    unsigned char want[15]; std::memcpy(want, jcBlock(k), 15); if (patched) { want[13] = 0; want[14] = 0; }
-    if (std::memcmp(cur, want, 15)) return false; }
+bool jcGroupsEqual(const float (&cur)[3][9], bool patched) {
+  for (unsigned k = 0; k < 3; ++k) for (unsigned j = 0; j < 9; ++j) {
+    float want = (patched && (j == kYMin || j == kYMax)) ? 0.f : kJumpF[k][j];
+    if (std::memcmp(&cur[k][j], &want, 4)) return false; }
   return true;
+}
+bool jcMatches(std::uintptr_t a, bool patched) {
+  float cur[3][9]; for (unsigned k = 0; k < 3; ++k) if (!msm2::readMemory(a + k * kJumpStride, cur[k], 36)) return false;
+  return jcGroupsEqual(cur, patched);
 }
 DWORD WINAPI jcScan(void*) {
   struct WsEx { void* va; ULONG_PTR attr; };
   using QueryWsFn = BOOL (WINAPI*)(HANDLE, PVOID, DWORD);
   auto queryWs = reinterpret_cast<QueryWsFn>(reinterpret_cast<void*>(GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "K32QueryWorkingSetEx")));
-  std::uint64_t nonResident = 0, mappedScanned = 0, fHits[3]{}; std::uintptr_t fAddr[3][4]{};
-  auto t0 = GetTickCount64(); std::uint64_t bytes = 0, regions = 0, aHits = 0, bHits = 0, cHits = 0, skippedMapped = 0, roBytes = 0; unsigned found = 0; std::uintptr_t hits[4]{}, bFirst = 0, cFirst = 0;
+  auto t0 = GetTickCount64(); std::uint64_t bytes = 0, regions = 0, nonResident = 0, mapped = 0, firstHits = 0; unsigned found = 0; std::uintptr_t hits[4]{};
   // The buffer and this DLL's own image are skipped so copies made by the scan itself are never matched.
   constexpr std::size_t kChunk = std::size_t(8) << 20;
   auto* buf = static_cast<unsigned char*>(VirtualAlloc(nullptr, kChunk, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
@@ -434,25 +435,18 @@ DWORD WINAPI jcScan(void*) {
   HMODULE self = nullptr; GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, reinterpret_cast<LPCWSTR>(&jcScan), &self);
   SYSTEM_INFO si{}; GetSystemInfo(&si);
   auto p = reinterpret_cast<std::uintptr_t>(si.lpMinimumApplicationAddress), end = reinterpret_cast<std::uintptr_t>(si.lpMaximumApplicationAddress);
+  std::uint32_t first; std::memcpy(&first, &kJumpF[0][0], 4);
   bool timeout = false;
   while (p < end && !killed.load()) {
     MEMORY_BASIC_INFORMATION m{}; if (!VirtualQuery(reinterpret_cast<void*>(p), &m, sizeof m)) break;
     auto base = reinterpret_cast<std::uintptr_t>(m.BaseAddress), next = base + m.RegionSize; if (next <= p) break;
-    // M8c-r2: M8c timed out (120 s, 13.5 GiB, 0 hits). Only private read-write memory is scanned now (file/GPU
-    // mappings are counted and skipped); readonly private bytes are only counted.
-    if (m.State == MEM_COMMIT && m.Type == MEM_IMAGE) skippedMapped += m.RegionSize;
-    if (m.State == MEM_COMMIT && m.Type == MEM_PRIVATE && (m.Protect & 0xff) == PAGE_READONLY) roBytes += m.RegionSize;
-    // M8c-r4: r3 finished (20 s, 5.6 GiB resident private RW) with no raw block. Now also mapped memory and readonly
-    // pages are searched (writes still need PAGE_READWRITE), and aligned float pairs of TimeToPeakMax/Min are logged.
+    // History: r1/r2 timed out (low priority, quadratic search, non-resident reads); r3 found no raw u8 copy; r4 found
+    // the float struct. Readable non-image memory, working-set-resident pages only, aligned 4-byte search.
     const DWORD prot = m.Protect & 0xff;
     const bool readable = prot == PAGE_READWRITE || prot == PAGE_READONLY || prot == PAGE_WRITECOPY;
     if (m.State == MEM_COMMIT && m.Type != MEM_IMAGE && readable && !(m.Protect & PAGE_GUARD) &&
         m.AllocationBase != static_cast<void*>(buf) && m.AllocationBase != static_cast<void*>(self)) {
-      if (m.Type != MEM_PRIVATE) mappedScanned += m.RegionSize;
-      ++regions;
-      // M8c-r3: r2 also timed out (300 s, 15.8 GiB). Two causes fixed: (1) the two-byte memchr rescanned to the chunk
-      // end on every hit (quadratic); now one independent memchr pass per first byte. (2) committed pages that were
-      // never touched were read (the OS materialises them); now only working-set-resident pages are read.
+      ++regions; if (m.Type != MEM_PRIVATE) mapped += m.RegionSize;
       for (std::uintptr_t q = base; q < next && !killed.load(); ) {
         std::size_t n = std::size_t(std::min<std::uintptr_t>(kChunk, next - q));
         std::size_t pages = (n + 4095) / 4096; static WsEx ws[2048];
@@ -463,30 +457,17 @@ DWORD WINAPI jcScan(void*) {
           std::size_t k2 = k; while (k2 < pages && (!wsOk || (ws[k2].attr & 1))) ++k2;
           auto runAddr = q + k * 4096; std::size_t runLen = std::min<std::size_t>((k2 - k) * 4096, n - k * 4096);
           if (msm2::readMemory(runAddr, buf, runLen)) { bytes += runLen;
-            auto pass = [&](unsigned char first) {
-              for (const unsigned char* c = buf; c + 15 <= buf + runLen; ++c) {
-                c = static_cast<const unsigned char*>(std::memchr(c, first, std::size_t(buf + runLen - c) - 14)); if (!c) break;
-                auto a = runAddr + std::uintptr_t(c - buf);
-                if (first == 0x1e && !std::memcmp(c, kJumpA, 15)) { bool dup = false; for (unsigned j = 0; j < found; ++j) dup |= hits[j] == a;
-                  if (!dup) { ++aHits; if (jcMatches(a, false) && found < 4) hits[found++] = a; } }
-                else if (first == 0x1e && !std::memcmp(c, kJumpB, 15)) { if (!bHits++) bFirst = a; }
-                else if (first == 0x1c && !std::memcmp(c, kJumpC, 15)) { if (!cHits++) cFirst = a; }
-              } };
-            pass(0x1e); pass(0x1c);
-            // float pairs (any order): 0.65/0.42 (JumpOffData_00), 0.7/0.42 (_45), 0.8/0.5 (_90 / Release)
-            for (std::size_t w = 0; w + 8 <= runLen; w += 4) {
-              std::uint32_t x, y; std::memcpy(&x, buf + w, 4); std::memcpy(&y, buf + w + 4, 4);
-              int kind = -1;
-              if ((x == 0x3f266666u && y == 0x3ed70a3du) || (y == 0x3f266666u && x == 0x3ed70a3du)) kind = 0;
-              else if ((x == 0x3f333333u && y == 0x3ed70a3du) || (y == 0x3f333333u && x == 0x3ed70a3du)) kind = 1;
-              else if ((x == 0x3f4ccccdu && y == 0x3f000000u) || (y == 0x3f4ccccdu && x == 0x3f000000u)) kind = 2;
-              if (kind < 0) continue;
-              auto a = runAddr + w; if (fHits[kind]++ < 4) fAddr[kind][fHits[kind] - 1] = a;
-            }
-          }
+            for (std::size_t w = 0; w + 36 <= runLen; w += 4) {
+              std::uint32_t x; std::memcpy(&x, buf + w, 4); if (x != first) continue;
+              ++firstHits; auto a = runAddr + w;
+              if (std::memcmp(buf + w, kJumpF[0], 36)) continue;                       // group _00 in the buffer
+              if (w + 2 * kJumpStride + 36 <= runLen && (std::memcmp(buf + w + kJumpStride, kJumpF[1], 36) || std::memcmp(buf + w + 2 * kJumpStride, kJumpF[2], 36))) continue;
+              bool dup = false; for (unsigned j = 0; j < found; ++j) dup |= hits[j] == a;
+              if (!dup && found < 4 && jcMatches(a, false)) hits[found++] = a;
+            } }
           k = k2;
         }
-        q += n;   // a 15-byte block across an 8 MiB boundary can be missed (accepted; logged b/c hits show layout)
+        q += n;
         if (GetTickCount64() - t0 > 300000) { timeout = true; break; }
       }
     }
@@ -497,18 +478,11 @@ DWORD WINAPI jcScan(void*) {
   for (unsigned i = 0; i < found; ++i) jcAddr[i] = hits[i];
   jcCount = found;
   bool ok = found >= 1 && found <= 4 && !timeout;
-  msm2::writeLog("WS_JUMP_CFG_FLOATS mapped_scanned_mib=%llu pair_0.65_0.42=%llu pair_0.7_0.42=%llu pair_0.8_0.5=%llu",
-    (unsigned long long)(mappedScanned >> 20), (unsigned long long)fHits[0], (unsigned long long)fHits[1], (unsigned long long)fHits[2]);
-  for (int kind = 0; kind < 2; ++kind) for (unsigned i = 0; i < 4 && i < fHits[kind]; ++i) {
-    float f[40]{}; bool r = msm2::readMemory(fAddr[kind][i] - 64, f, sizeof f);
-    char line[900]; int len = std::snprintf(line, sizeof line, "WS_JUMP_CFG_FLOAT_CTX kind=%d i=%u addr=0x%llx read=%u from=-64 f=", kind, i, (unsigned long long)fAddr[kind][i], unsigned(r));
-    for (int k = 0; k < 40 && len > 0 && len < int(sizeof line) - 16; ++k) len += std::snprintf(line + len, sizeof line - std::size_t(len), "%g,", double(f[k]));
-    msm2::writeLog("%s", line);
-  }
-  msm2::writeLog("WS_JUMP_CFG_SCAN result=%s full_matches=%u a_hits=%llu b_hits=%llu c_hits=%llu b_first=0x%llx c_first=0x%llx regions=%llu mib=%llu nonresident_mib=%llu ws_query=%u skipped_mapped_mib=%llu private_ro_mib=%llu ms=%llu timeout=%u addr0=0x%llx addr1=0x%llx",
-    ok ? "accepted" : "refused", found, (unsigned long long)aHits, (unsigned long long)bHits, (unsigned long long)cHits, (unsigned long long)bFirst,
-    (unsigned long long)cFirst, (unsigned long long)regions, (unsigned long long)(bytes >> 20), (unsigned long long)(nonResident >> 20), unsigned(queryWs != nullptr), (unsigned long long)(skippedMapped >> 20),
-    (unsigned long long)(roBytes >> 20), (unsigned long long)(GetTickCount64() - t0), unsigned(timeout), (unsigned long long)hits[0], (unsigned long long)hits[1]);
+  MEMORY_BASIC_INFORMATION hm{}; bool hq = found && VirtualQuery(reinterpret_cast<void*>(hits[0]), &hm, sizeof hm);
+  msm2::writeLog("WS_JUMP_CFG_SCAN result=%s layout=float27 matches=%u first_float_hits=%llu regions=%llu mib=%llu nonresident_mib=%llu mapped_mib=%llu ms=%llu timeout=%u addr0=0x%llx addr1=0x%llx addr0_type=0x%lx addr0_protect=0x%lx",
+    ok ? "accepted" : "refused", found, (unsigned long long)firstHits, (unsigned long long)regions, (unsigned long long)(bytes >> 20),
+    (unsigned long long)(nonResident >> 20), (unsigned long long)(mapped >> 20), (unsigned long long)(GetTickCount64() - t0), unsigned(timeout),
+    (unsigned long long)hits[0], (unsigned long long)hits[1], hq ? (unsigned long)hm.Type : 0ul, hq ? (unsigned long)hm.Protect : 0ul);
   jcState.store(ok ? 2 : 3);
   return 0;
 }
@@ -519,10 +493,10 @@ void jcWriteAll(bool patch) {
   for (unsigned i = 0; i < jcCount; ++i) {
     auto a = jcAddr[i];
     if (!jcMatches(a, !patch)) { ++conflict; continue; }
-    bool w = true; for (unsigned k = 0; k < 3; ++k) w = w && writableByte(a + kJumpOff[k] + 13) && writableByte(a + kJumpOff[k] + 14);
+    bool w = true; for (unsigned k = 0; k < 3; ++k) w = w && writableByte(a + k * kJumpStride + 4 * kYMin) && writableByte(a + k * kJumpStride + 4 * kYMax + 3);
     if (!w) { ++conflict; continue; }
-    for (unsigned k = 0; k < 3; ++k) { auto* b = reinterpret_cast<volatile unsigned char*>(a + kJumpOff[k] + 13);
-      b[0] = patch ? 0 : jcBlock(k)[13]; b[1] = patch ? 0 : jcBlock(k)[14]; }
+    for (unsigned k = 0; k < 3; ++k) { auto* f = reinterpret_cast<volatile float*>(a + k * kJumpStride);
+      f[kYMin] = patch ? 0.f : kJumpF[k][kYMin]; f[kYMax] = patch ? 0.f : kJumpF[k][kYMax]; }
     ++done;
   }
   jcConflicts += conflict; (patch ? jcWrites : jcRestores) += done;
