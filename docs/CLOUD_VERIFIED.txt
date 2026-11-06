@@ -6,3 +6,4 @@
 dfd7e04ec6f653e46deb364fac18273c96b63477 2026-11-06 build+test.sh+smoke+hooks+package PASS (M7a mouse look + settings prep)
 8dc46c192ffc404b328109897c8e0bce035668b8 2026-11-06 build+test.sh+smoke+hooks+package PASS (M6x exit diagnostic)
 5b7aa310078a69be3e8c51b00ff45769392cf978 2026-11-06 build+test.sh+smoke+hooks+package PASS (M6y exit blend)
+a98075fe490354e09e9fff64f70e2d6f7355e596 2026-11-06 build+test.sh+smoke+hooks+package PASS (M6z camera up rate limit)
