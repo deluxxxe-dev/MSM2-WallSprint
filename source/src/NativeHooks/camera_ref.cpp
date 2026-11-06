@@ -425,7 +425,7 @@ DWORD WINAPI jcScan(void*) {
   struct WsEx { void* va; ULONG_PTR attr; };
   using QueryWsFn = BOOL (WINAPI*)(HANDLE, PVOID, DWORD);
   auto queryWs = reinterpret_cast<QueryWsFn>(reinterpret_cast<void*>(GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "K32QueryWorkingSetEx")));
-  std::uint64_t nonResident = 0;
+  std::uint64_t nonResident = 0, mappedScanned = 0, fHits[3]{}; std::uintptr_t fAddr[3][4]{};
   auto t0 = GetTickCount64(); std::uint64_t bytes = 0, regions = 0, aHits = 0, bHits = 0, cHits = 0, skippedMapped = 0, roBytes = 0; unsigned found = 0; std::uintptr_t hits[4]{}, bFirst = 0, cFirst = 0;
   // The buffer and this DLL's own image are skipped so copies made by the scan itself are never matched.
   constexpr std::size_t kChunk = std::size_t(8) << 20;
@@ -440,10 +440,15 @@ DWORD WINAPI jcScan(void*) {
     auto base = reinterpret_cast<std::uintptr_t>(m.BaseAddress), next = base + m.RegionSize; if (next <= p) break;
     // M8c-r2: M8c timed out (120 s, 13.5 GiB, 0 hits). Only private read-write memory is scanned now (file/GPU
     // mappings are counted and skipped); readonly private bytes are only counted.
-    if (m.State == MEM_COMMIT && m.Type != MEM_PRIVATE) skippedMapped += m.RegionSize;
+    if (m.State == MEM_COMMIT && m.Type == MEM_IMAGE) skippedMapped += m.RegionSize;
     if (m.State == MEM_COMMIT && m.Type == MEM_PRIVATE && (m.Protect & 0xff) == PAGE_READONLY) roBytes += m.RegionSize;
-    if (m.State == MEM_COMMIT && m.Type == MEM_PRIVATE && (m.Protect & 0xff) == PAGE_READWRITE && !(m.Protect & PAGE_GUARD) &&
+    // M8c-r4: r3 finished (20 s, 5.6 GiB resident private RW) with no raw block. Now also mapped memory and readonly
+    // pages are searched (writes still need PAGE_READWRITE), and aligned float pairs of TimeToPeakMax/Min are logged.
+    const DWORD prot = m.Protect & 0xff;
+    const bool readable = prot == PAGE_READWRITE || prot == PAGE_READONLY || prot == PAGE_WRITECOPY;
+    if (m.State == MEM_COMMIT && m.Type != MEM_IMAGE && readable && !(m.Protect & PAGE_GUARD) &&
         m.AllocationBase != static_cast<void*>(buf) && m.AllocationBase != static_cast<void*>(self)) {
+      if (m.Type != MEM_PRIVATE) mappedScanned += m.RegionSize;
       ++regions;
       // M8c-r3: r2 also timed out (300 s, 15.8 GiB). Two causes fixed: (1) the two-byte memchr rescanned to the chunk
       // end on every hit (quadratic); now one independent memchr pass per first byte. (2) committed pages that were
@@ -467,7 +472,18 @@ DWORD WINAPI jcScan(void*) {
                 else if (first == 0x1e && !std::memcmp(c, kJumpB, 15)) { if (!bHits++) bFirst = a; }
                 else if (first == 0x1c && !std::memcmp(c, kJumpC, 15)) { if (!cHits++) cFirst = a; }
               } };
-            pass(0x1e); pass(0x1c); }
+            pass(0x1e); pass(0x1c);
+            // float pairs (any order): 0.65/0.42 (JumpOffData_00), 0.7/0.42 (_45), 0.8/0.5 (_90 / Release)
+            for (std::size_t w = 0; w + 8 <= runLen; w += 4) {
+              std::uint32_t x, y; std::memcpy(&x, buf + w, 4); std::memcpy(&y, buf + w + 4, 4);
+              int kind = -1;
+              if ((x == 0x3f266666u && y == 0x3ed70a3du) || (y == 0x3f266666u && x == 0x3ed70a3du)) kind = 0;
+              else if ((x == 0x3f333333u && y == 0x3ed70a3du) || (y == 0x3f333333u && x == 0x3ed70a3du)) kind = 1;
+              else if ((x == 0x3f4ccccdu && y == 0x3f000000u) || (y == 0x3f4ccccdu && x == 0x3f000000u)) kind = 2;
+              if (kind < 0) continue;
+              auto a = runAddr + w; if (fHits[kind]++ < 4) fAddr[kind][fHits[kind] - 1] = a;
+            }
+          }
           k = k2;
         }
         q += n;   // a 15-byte block across an 8 MiB boundary can be missed (accepted; logged b/c hits show layout)
@@ -481,6 +497,14 @@ DWORD WINAPI jcScan(void*) {
   for (unsigned i = 0; i < found; ++i) jcAddr[i] = hits[i];
   jcCount = found;
   bool ok = found >= 1 && found <= 4 && !timeout;
+  msm2::writeLog("WS_JUMP_CFG_FLOATS mapped_scanned_mib=%llu pair_0.65_0.42=%llu pair_0.7_0.42=%llu pair_0.8_0.5=%llu",
+    (unsigned long long)(mappedScanned >> 20), (unsigned long long)fHits[0], (unsigned long long)fHits[1], (unsigned long long)fHits[2]);
+  for (int kind = 0; kind < 2; ++kind) for (unsigned i = 0; i < 4 && i < fHits[kind]; ++i) {
+    float f[40]{}; bool r = msm2::readMemory(fAddr[kind][i] - 64, f, sizeof f);
+    char line[900]; int len = std::snprintf(line, sizeof line, "WS_JUMP_CFG_FLOAT_CTX kind=%d i=%u addr=0x%llx read=%u from=-64 f=", kind, i, (unsigned long long)fAddr[kind][i], unsigned(r));
+    for (int k = 0; k < 40 && len > 0 && len < int(sizeof line) - 16; ++k) len += std::snprintf(line + len, sizeof line - std::size_t(len), "%g,", double(f[k]));
+    msm2::writeLog("%s", line);
+  }
   msm2::writeLog("WS_JUMP_CFG_SCAN result=%s full_matches=%u a_hits=%llu b_hits=%llu c_hits=%llu b_first=0x%llx c_first=0x%llx regions=%llu mib=%llu nonresident_mib=%llu ws_query=%u skipped_mapped_mib=%llu private_ro_mib=%llu ms=%llu timeout=%u addr0=0x%llx addr1=0x%llx",
     ok ? "accepted" : "refused", found, (unsigned long long)aHits, (unsigned long long)bHits, (unsigned long long)cHits, (unsigned long long)bFirst,
     (unsigned long long)cFirst, (unsigned long long)regions, (unsigned long long)(bytes >> 20), (unsigned long long)(nonResident >> 20), unsigned(queryWs != nullptr), (unsigned long long)(skippedMapped >> 20),
