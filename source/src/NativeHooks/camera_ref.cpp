@@ -286,23 +286,28 @@ void yawLock(std::uintptr_t rdx) noexcept {
 // current view" and the vanilla actor-relative call passes R9 = 0. HYPOTHESIS: flag bits 0/1 keep the current view
 // yaw/pitch when the reference changes, i.e. no re-aim (no auto-centering). Auto-centering OFF -> R9 |= 3.
 constexpr bool kSetterPreserveFlags = true, kSetterYawLock = false; // M6s yaw lock REJECTED (centering unchanged)
-// M6y: smooth return when WS ends. The hero snaps upright in ~0.1-0.2 s and the actor-relative reference follows,
-// so the up to 90 deg camera roll vanished at once (M6x run). After the last WS update the camera stays engaged for
-// kExitBlendMs while the setter's up input is turned from the last WS up toward world up (smoothstep); the preserve
-// flags keep the world view meanwhile. The angle hold pauses during the blend (it would undo the re-expressed angles).
-constexpr std::uint64_t kExitBlendMs = 700;
-float lastWsUp[3]{}; bool lastWsUpValid{};
+// M6z: rate-limited camera up (supersedes the M6y exit-only blend, which rarely triggered). The actor-relative
+// reference follows the hero up, which turns ~90 deg in 0.1-0.2 s at WS entry/exit. Every setter call the up input
+// (r8) is replaced with a camera up that turns toward the game's up at <= kCamUpDegPerSec. The camera stays engaged
+// after WS until that up is back to world up (or 3 s). Preserve flags keep the world view during the turn.
+constexpr float kCamUpDegPerSec = 150.f; constexpr std::uint64_t kExitBlendMs = 3000;
+float camUp[3]{}; bool camUpValid{}; double camUpLastT{}; std::atomic<bool> camUpSettled{true}, camUpTurning{false};
 void exitBlend(std::uintptr_t r8) noexcept {
   if (!setYawLock.load(std::memory_order_relaxed) || killed.load() || r8 < 0x10000 || r8 > UINTPTR_MAX - 16) return;
-  auto now = GetTickCount64(); float up[3];
-  if (!msm2::readMemory(r8, up, sizeof up) || !std::isfinite(up[0]) || !std::isfinite(up[1]) || !std::isfinite(up[2])) return;
-  auto start = exitBlendStart.load(std::memory_order_relaxed);
-  if (!start) { if (now - lastWsMs.load() < 100) { std::memcpy(lastWsUp, up, sizeof up); lastWsUpValid = true; } return; }
-  if (!lastWsUpValid) return;
-  float t = std::fmin(1.f, float(now - start) / float(kExitBlendMs)), sm = t * t * (3.f - 2.f * t);
-  float v[3]{lastWsUp[0] * (1 - sm), lastWsUp[1] * (1 - sm) + sm, lastWsUp[2] * (1 - sm)};
-  float l = std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]); if (!(l > 0.2f)) return; for (float& c : v) c /= l;
-  std::memcpy(reinterpret_cast<void*>(r8), v, sizeof v); exitBlendWrites.fetch_add(1, std::memory_order_relaxed);
+  float tgt[3];
+  if (!msm2::readMemory(r8, tgt, sizeof tgt) || !std::isfinite(tgt[0]) || !std::isfinite(tgt[1]) || !std::isfinite(tgt[2])) return;
+  float tl = std::sqrt(tgt[0] * tgt[0] + tgt[1] * tgt[1] + tgt[2] * tgt[2]); if (!(tl > 0.5f && tl < 1.5f)) return; for (float& c : tgt) c /= tl;
+  if (exitBlendStart.load(std::memory_order_relaxed)) { tgt[0] = 0; tgt[1] = 1; tgt[2] = 0; } // WS over: head for world up
+  LARGE_INTEGER q{}, f{}; QueryPerformanceCounter(&q); QueryPerformanceFrequency(&f); double t = double(q.QuadPart) / double(f.QuadPart), dt = camUpLastT > 0 ? t - camUpLastT : 0.; camUpLastT = t;
+  if (!camUpValid || dt > 0.5) { camUp[0] = 0; camUp[1] = 1; camUp[2] = 0; camUpValid = true; } // engage starts from world up
+  float d = std::fmax(-1.f, std::fmin(1.f, camUp[0] * tgt[0] + camUp[1] * tgt[1] + camUp[2] * tgt[2])), ang = std::acos(d);
+  float mx = float(kCamUpDegPerSec * 3.14159265f / 180.f * std::fmin(dt, 0.1));
+  camUpTurning.store(ang > mx + 0.01f, std::memory_order_relaxed);
+  if (ang <= mx || ang < 1e-4f) std::memcpy(camUp, tgt, sizeof camUp);
+  else { float k = mx / ang; float v[3]; for (int i = 0; i < 3; ++i) v[i] = camUp[i] + (tgt[i] - camUp[i]) * k; // small-step approach
+    float l = std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]); if (!(l > 1e-3f)) return; for (int i = 0; i < 3; ++i) camUp[i] = v[i] / l; }
+  camUpSettled.store(camUp[1] > 0.9998f, std::memory_order_relaxed);
+  std::memcpy(reinterpret_cast<void*>(r8), camUp, sizeof camUp); exitBlendWrites.fetch_add(1, std::memory_order_relaxed);
 }
 // M6v: angle hold. Disassembly of the setter (owner camera_code.json, cloud decode, not committed): rdx = forward input,
 // r8 = up input, r9 = flags; the camera's view angles are the mover's floats +0x2CC (yaw) and +0x2D0 (pitch, negated)
@@ -329,7 +334,7 @@ void angleHold(std::uintptr_t mover) noexcept {
 extern "C" std::uintptr_t ws_camset_record(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r8, std::uintptr_t r9) noexcept {
   if (kSetterYawLock) yawLock(rdx);
   exitBlend(r8);
-  if (!exitBlendStart.load(std::memory_order_relaxed)) angleHold(rcx);
+  if (!exitBlendStart.load(std::memory_order_relaxed) && !camUpTurning.load(std::memory_order_relaxed)) angleHold(rcx); // the hold would undo the re-expressed angles while the up turns
   setR9.store(r9, std::memory_order_relaxed);
   std::uintptr_t outR9 = r9;
   if (kSetterPreserveFlags && setYawLock.load(std::memory_order_relaxed) && !ws::drive::cameraAutoCenter.load(std::memory_order_relaxed) && engagedManager.load() && !killed.load()) {
@@ -425,8 +430,8 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   if (engagedManager.load()) {
     auto since = now - lastWsMs.load(); auto start = exitBlendStart.load();
     if (since < 150) { if (start) exitBlendStart.store(0); }
-    else if (!start) { if (lastWsUpValid && std::fabs(lastWsUp[1]) < 0.995f) exitBlendStart.store(now); else restore("wallsprint_ended"); }
-    else if (now - start > kExitBlendMs + 50) { exitBlendStart.store(0); lastWsUpValid = false; restore("wallsprint_ended_after_blend"); }
+    else if (!start) exitBlendStart.store(now);
+    else if (camUpSettled.load() || now - start > kExitBlendMs) { exitBlendStart.store(0); camUpValid = false; restore(camUpSettled.load() ? "wallsprint_ended_up_settled" : "wallsprint_ended_blend_timeout"); }
   }
   // (Disabled by default: actor_writer.cpp now starts with the accepted offset 0xD34, so the guard below returns at once.)
   // Read-only scan on the ground (no WS in the last second), moving: the camera forward is the unit vector whose
