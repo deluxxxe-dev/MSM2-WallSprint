@@ -35,6 +35,17 @@ MOD_NAME = (f"WallSprint - WallRun TurnMaxDown {TURN_MAX_DOWN}"
 CLIP_SWAPS = (
     ("stand_sprint_fwd_spiderman.animclip", "characters/hero/hero_spiderman/animations/wall_run_spiderman.animclip"),
     ("stand_sprint_fwd_spiderman_miles.animclip", "characters/hero/hero_spiderman_milesmorales/animation/wall_run_spiderman_miles.animclip"),
+    # M8a (2026-11-06): WS jump motion. HYPOTHESIS: a jump from a sideways WR plays one of these WR jump clips (owner
+    # search "wall_run": Peter horiz_jump + traversal jump_spin lf/rt, Miles jump_spin lf/rt + 02 lf/rt; Miles has no
+    # horiz_jump). All are replaced by the ground sprint jump in one run; toswing/sling_up/vault/dodge jumps are kept.
+    # Shared with vanilla WR (D20).
+    ("stand_sprint_jump_fwd_spiderman.animclip", "characters/hero/hero_spiderman/animations/wall_run_horiz_jump_spiderman.animclip"),
+    ("stand_sprint_jump_fwd_spiderman.animclip", "characters/hero/hero_spiderman/animations/traversal/wall_run_jump_spin_lf_spiderman.animclip"),
+    ("stand_sprint_jump_fwd_spiderman.animclip", "characters/hero/hero_spiderman/animations/traversal/wall_run_jump_spin_rt_spiderman.animclip"),
+    ("stand_sprint_jump_fwd_spiderman_miles.animclip", "characters/hero/hero_spiderman_milesmorales/animation/wall_run_jump_spin_lf_spiderman_miles.animclip"),
+    ("stand_sprint_jump_fwd_spiderman_miles.animclip", "characters/hero/hero_spiderman_milesmorales/animation/wall_run_jump_spin_rt_spiderman_miles.animclip"),
+    ("stand_sprint_jump_fwd_spiderman_miles.animclip", "characters/hero/hero_spiderman_milesmorales/animation/wall_run_jump_spin_02_lf_spiderman_miles.animclip"),
+    ("stand_sprint_jump_fwd_spiderman_miles.animclip", "characters/hero/hero_spiderman_milesmorales/animation/wall_run_jump_spin_02_rt_spiderman_miles.animclip"),
 )
 CLIP_MIN, CLIP_MAX = 1024, 1024 * 1024
 # M6d (2026-11-05): frame the WS camera like the ground camera (M6f: standard Offset* values, see CAMERA_PATCH). Vanilla camera_wallrun_aimcontext

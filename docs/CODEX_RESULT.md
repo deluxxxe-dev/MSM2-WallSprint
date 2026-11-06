@@ -291,3 +291,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-06: M6y cloud full suites PASS on tree 5b7aa310078a69be3e8c51b00ff45769392cf978 (listed).
 - 2026-11-06: M6y rejected (blend rarely triggered); M6z rate-limited camera up (150 deg/s) for entry and exit.
 - 2026-11-06: M6z cloud full suites PASS on tree a98075fe490354e09e9fff64f70e2d6f7355e596 (listed).
+- 2026-11-06: M8a WS jump clip swap (ground sprint jump -> 7 sideways WR jump clips), tooling only, no native change. Plan/decision table: analysis/M8_JUMP_PLAN_20261106.md. Charge jump clip names pending (owner search).

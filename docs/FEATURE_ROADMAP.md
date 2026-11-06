@@ -155,6 +155,7 @@ Planned categories:
 - related thresholds.
 
 ### Jump / gravity return
+- 2026-11-06 owner: WS jump and charge jump, first only the ground-sprint-derived variants (sprint jump, sprint charge jump); M8a swaps the jump clip (analysis/M8_JUMP_PLAN_20261106.md). Open choice: keep vanilla vertical-WR web-climb (sling up) jump and use WS jump only on charge jump, or replace it.
 - surface-jump parameters;
 - delay/condition for restoring world gravity;
 - orientation return/blend timing;
