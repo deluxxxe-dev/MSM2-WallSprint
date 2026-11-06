@@ -385,13 +385,15 @@ void m6Exit(const msm2::Snapshot& hero, std::uint64_t now) {
 namespace {
 // M8b diagnostic (read-only): hero velocity after WS ends (jump), split along the last WS wall normal n, world up y
 // and the horizontal wall axis h = up x n, to measure the WR jump-off vector. 100 ms worker, <= 10 episodes x 14 lines.
+std::atomic<float> m9N[3]{}; std::atomic<std::uintptr_t> m9Hero{0};
 ws::Vec3 jtN{}, jtPos{}, jtVel{}; bool jtWs{}, jtHave{}; std::uint64_t jtEnd{}; unsigned jtEpisodes{}, jtLines{};
 void m8JumpTrace(const msm2::Snapshot& hero, const ws::diag::Motion& motion, std::uint64_t now) {
   auto axes = ws::diag::actorAxes(hero.prefix);
   bool ws = engagedManager.load() != 0 && now - lastWsMs.load() < 150;
   ws::Vec3 pos{hero.position[0], hero.position[1], hero.position[2]};
   if (ws) {
-    if (hero.hero && axes.valid && std::fabs(axes.up.y) < 0.3f) { jtN = axes.up; jtPos = pos; jtVel = motion.valid ? motion.velocity : ws::Vec3{}; jtHave = true; }
+    if (hero.hero && axes.valid && std::fabs(axes.up.y) < 0.3f) { jtN = axes.up; jtPos = pos; jtVel = motion.valid ? motion.velocity : ws::Vec3{}; jtHave = true;
+      m9N[0].store(axes.up.x); m9N[1].store(axes.up.y); m9N[2].store(axes.up.z); m9Hero.store(hero.hero); }
     jtWs = true; return;
   }
   if (jtWs) { jtWs = false; if (jtHave && jtEpisodes < 10) { jtEnd = lastWsMs.load(); jtLines = 0; ++jtEpisodes; } else jtEnd = 0; }
@@ -624,6 +626,36 @@ WgiVibration wgiLastVib{-1, -1, -1, -1};
 // linearly to ~39 m at 1.1 s, flat after) and 1.8 m the normal jump: k = 2.9 .. 4.65. HYPOTHESIS: Speed* sets the
 // outward (wall-normal) jump-off speed. If WS ends while A is held, A stays hidden until release (no stray jump).
 // INI WALLSPRINT_WS_CHARGE_JUMP (default 0, shipped 1); F8 stops it.
+// M9b (2026-11-07): bounded velocity write test. M9a found two float3 slots matching the hero velocity in 92 % / 90 %
+// of 1200 samples: [hero+0xBA0]+0x7FC and [hero+0xAE8]+0x1E0. On a WS charge release (hold >= 500 ms) a helper thread
+// waits for the WS end (jump-off), then for 6 writes ~8 ms apart raises the wall-normal component of both slots to
+// the charge launch speed v = sqrt(2 * 32 m/s^2 * h(hold)) (31-50 m/s; h = vanilla ground charge rise). Each write
+// re-reads the pointer (private RW) and checks the slot is near the current velocity first. Speed* scaling is off.
+// INI WALLSPRINT_WS_VELOCITY_WRITE (default 0, shipped 1); F8 stops it.
+constexpr unsigned kVelSlot[2] = {0xBA0, 0xAE8}, kVelField[2] = {0x7FC, 0x1E0};
+std::atomic<unsigned> m9Launches{0};
+bool velReadable(std::uintptr_t p);
+DWORD WINAPI m9Launch(void* arg) {
+  float target = float(reinterpret_cast<std::uintptr_t>(arg)) / 100.f;
+  auto t0 = GetTickCount64();
+  while (!killed.load() && GetTickCount64() - t0 < 400) { auto now = GetTickCount64(), last = lastWsMs.load(); if (last < now && now - last > 30) break; Sleep(2); }
+  auto hero = m9Hero.load(); float n[3] = {m9N[0].load(), m9N[1].load(), m9N[2].load()};
+  unsigned writes = 0, refused = 0; float before[2] = {-99, -99}, after[2] = {-99, -99};
+  for (int i = 0; i < 6 && !killed.load() && hero; ++i) {
+    for (int k = 0; k < 2; ++k) {
+      std::uintptr_t obj = 0; if (!msm2::readMemory(hero + kVelSlot[k], &obj, 8) || !velReadable(obj)) { ++refused; continue; }
+      auto a = obj + kVelField[k]; float v[3]; if (!msm2::readMemory(a, v, 12) || !std::isfinite(v[0]) || !std::isfinite(v[1]) || !std::isfinite(v[2])) { ++refused; continue; }
+      float vn = v[0] * n[0] + v[1] * n[1] + v[2] * n[2]; if (i == 0) before[k] = vn;
+      if (std::fabs(v[0]) > 150 || std::fabs(v[1]) > 150 || std::fabs(v[2]) > 150) { ++refused; continue; }
+      if (vn < target) { auto* f = reinterpret_cast<volatile float*>(a); float d = target - vn; f[0] = v[0] + n[0] * d; f[1] = v[1] + n[1] * d; f[2] = v[2] + n[2] * d; ++writes; }
+      after[k] = vn;
+    }
+    Sleep(8);
+  }
+  msm2::writeLog("WS_VEL_WRITE target_vn=%.1f writes=%u refused=%u vn_before=%.2f/%.2f vn_last_read=%.2f/%.2f wait_ms=%llu n=%.3f,%.3f,%.3f",
+    target, writes, refused, before[0], before[1], after[0], after[1], (unsigned long long)(GetTickCount64() - t0), n[0], n[1], n[2]);
+  return 0;
+}
 enum : int { kChIdle, kChHold, kChGive, kChSwallow };
 std::atomic<int> chState{kChIdle}; std::atomic<std::uint64_t> chStart{0}, chGiveUntil{0}; unsigned chLogs{};
 float chargeK(std::uint64_t ms) {
@@ -648,8 +680,12 @@ void wsChargeStep(WgiReading* r, bool a) {
     case kChHold:
       r->buttons &= ~0x4u;
       if (!ws) { chState.store(kChSwallow); if (chLogs++ < 60) msm2::writeLog("WS_CHARGE_JUMP event=ws_ended_while_held hold_ms=%llu", (unsigned long long)(now - chStart.load())); break; }
-      if (!a) { auto hold = now - chStart.load(); float k = chargeK(hold); bool set = k > 1.f && jcSetSpeed(k);
-        if (chLogs++ < 60) msm2::writeLog("WS_CHARGE_JUMP event=release hold_ms=%llu mode=%s k=%.2f speed_written=%u", (unsigned long long)hold, k > 1.f ? "charge" : "normal", k, unsigned(set));
+      if (!a) { auto hold = now - chStart.load(); float k = chargeK(hold); bool set = false;
+        if (k > 1.f && ws::drive::wsVelocityWrite.load() && m9Launches.fetch_add(1) < 200) {
+          float h = 15.f + 24.f * std::fmin(1.f, float(hold - 500) / 600.f); float v = std::sqrt(2.f * 32.f * h);
+          if (HANDLE th = CreateThread(nullptr, 0, m9Launch, reinterpret_cast<void*>(std::uintptr_t(v * 100.f)), 0, nullptr)) { CloseHandle(th); set = true; } }
+        else if (k > 1.f && !ws::drive::wsVelocityWrite.load()) set = jcSetSpeed(k);   // M8j fallback
+        if (chLogs++ < 60) msm2::writeLog("WS_CHARGE_JUMP event=release hold_ms=%llu mode=%s k=%.2f velocity_launch=%u", (unsigned long long)hold, k > 1.f ? "charge" : "normal", k, unsigned(set));
         chState.store(kChGive); chGiveUntil.store(now + 60); r->buttons |= 0x4u; }
       break;
     case kChGive:

@@ -20,4 +20,6 @@ inline std::atomic<bool> jumpConfigWrite{false};
 inline std::atomic<bool> jumpHoldbackTest{false};
 // M8j: WS charge jump (hold A during WS, release to jump; strength from hold time). WALLSPRINT_WS_CHARGE_JUMP, default 0.
 inline std::atomic<bool> wsChargeJump{false};
+// M9b: charge launch by writing the hero velocity candidates. WALLSPRINT_WS_VELOCITY_WRITE, default 0.
+inline std::atomic<bool> wsVelocityWrite{false};
 }

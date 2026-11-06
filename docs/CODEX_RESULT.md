@@ -319,3 +319,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M8j-r2 found the edge-detection bug; M8j-r3 fix; cloud full suites PASS on tree 0bb089ace31c160bfe0f740252ef2ad4ed3de37e (listed).
 - 2026-11-07: M8j-r3 charge hold-back VERIFIED; Speed* scaling does not set the launch (capped ~22 m/s). M9a read-only hero velocity field search.
 - 2026-11-07: M9a cloud full suites PASS on tree 943fc4010241dd1390c458f977ff7d6b6a1802a0 (listed).
+- 2026-11-07: M9a velocity candidates [hero+0xBA0]+0x7FC / [hero+0xAE8]+0x1E0 (0.92/0.90). M9b bounded velocity write on WS charge release.
