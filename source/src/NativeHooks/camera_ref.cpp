@@ -672,6 +672,38 @@ void m8WgiHooks(std::uint64_t now) {
   if ((wgiReadTarget || wgiVibTarget) && now - lastLog >= 10000 && logs < 30) { lastLog = now; ++logs;
     msm2::writeLog("WS_WGI_STATUS reads=%llu a_presses=%llu vibration_calls=%llu hidden=%llu", (unsigned long long)wgiReads.load(), (unsigned long long)wgiPresses.load(), (unsigned long long)wgiVibs.load(), (unsigned long long)wgiHidden.load()); }
 }
+// M8i (2026-11-07): M8h could not hook WGI (our Gamepads list stayed empty for 180 s) and the WS jump still fired with
+// XInput A hidden. HYPOTHESIS: the game reads the USB Xbox pad as a HID device (Raw Input and/or hid.dll parsing).
+// Pass-through counting hooks on user32 GetRawInputData/GetRawInputBuffer (Raw Input types counted) and hid.dll
+// HidP_*/HidD_* parsing/report functions; calls from the WS DLL are excluded. No value changed.
+constexpr int kApiN = 9;
+const char* const kApiMod[kApiN] = {"user32.dll", "user32.dll", "hid.dll", "hid.dll", "hid.dll", "hid.dll", "hid.dll", "hid.dll", "hid.dll"};
+const char* const kApiName[kApiN] = {"GetRawInputData", "GetRawInputBuffer", "HidP_GetUsages", "HidP_GetUsagesEx", "HidP_GetData", "HidP_GetUsageValue", "HidP_GetScaledUsageValue", "HidD_GetInputReport", "HidP_GetButtonCaps"};
+using Api8 = std::uintptr_t (WINAPI*)(std::uintptr_t, std::uintptr_t, std::uintptr_t, std::uintptr_t, std::uintptr_t, std::uintptr_t, std::uintptr_t, std::uintptr_t);
+Api8 apiOrig[kApiN]{}; void* apiTarget[kApiN]{}; std::atomic<std::uint64_t> apiCalls[kApiN]{}, rawType[3]{};
+template <int K> std::uintptr_t WINAPI apiDetour(std::uintptr_t a, std::uintptr_t b, std::uintptr_t c, std::uintptr_t d, std::uintptr_t e, std::uintptr_t f, std::uintptr_t g, std::uintptr_t h) {
+  // Generic forwarder: <= 8 integer/pointer arguments; unused stack slots are passed through untouched.
+  bool outside = !fromSelf(__builtin_return_address(0));
+  auto r = apiOrig[K](a, b, c, d, e, f, g, h);
+  if (outside) { apiCalls[K].fetch_add(1, std::memory_order_relaxed);
+    if (K == 0 && b == 0x10000003u && c && r != std::uintptr_t(UINT(-1))) { auto type = reinterpret_cast<const RAWINPUTHEADER*>(c)->dwType; if (type < 3) rawType[type].fetch_add(1, std::memory_order_relaxed); } }
+  return r;
+}
+template <int K> void apiHookOne() {
+  if (apiTarget[K]) return;
+  HMODULE m = GetModuleHandleA(kApiMod[K]); if (!m) return;
+  auto t = reinterpret_cast<void*>(GetProcAddress(m, kApiName[K])); if (!t) return;
+  if (MH_CreateHook(t, reinterpret_cast<void*>(&apiDetour<K>), reinterpret_cast<void**>(&apiOrig[K])) == MH_OK && MH_EnableHook(t) == MH_OK) apiTarget[K] = t;
+}
+void m8ApiHooks(std::uint64_t now) {
+  static std::uint64_t lastTry = 0, lastLog = 0; static unsigned logs = 0;
+  if (killed.load()) return;
+  if (now - lastTry > 2000) { lastTry = now; apiHookOne<0>(); apiHookOne<1>(); apiHookOne<2>(); apiHookOne<3>(); apiHookOne<4>(); apiHookOne<5>(); apiHookOne<6>(); apiHookOne<7>(); apiHookOne<8>(); }
+  if (now - lastLog >= 10000 && logs < 30) { lastLog = now; ++logs;
+    char line[700]; int len = std::snprintf(line, sizeof line, "WS_INPUT_API_STATUS raw_mouse=%llu raw_keyboard=%llu raw_hid=%llu", (unsigned long long)rawType[0].load(), (unsigned long long)rawType[1].load(), (unsigned long long)rawType[2].load());
+    for (int k = 0; k < kApiN && len > 0 && len < int(sizeof line) - 60; ++k) len += std::snprintf(line + len, sizeof line - std::size_t(len), " %s=%s%llu", kApiName[k], apiTarget[k] ? "" : "unhooked:", (unsigned long long)apiCalls[k].load());
+    msm2::writeLog("%s read_only=1", line); }
+}
 struct ChargeMeasure { std::uint64_t release{}, hold{}; float y0{}, apex{}; bool active{}; } cm; unsigned cmLogs{};
 void m8ChargeMeasure(const msm2::Snapshot& hero, std::uint64_t now) {
   auto rel = jiRelease.load(), pr = jiPress.load();
@@ -766,6 +798,7 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   m8JumpConfig(snapshot, now);
   m8InputHooks(now);
   m8WgiHooks(now);
+  m8ApiHooks(now);
   m8ChargeMeasure(snapshot, now);
   m5eDistance(snapshot, now);
   m5ePitch(snapshot, now);
@@ -825,6 +858,7 @@ void stop() noexcept {
   for (int m = 0; m < 4; ++m) { if (xgTarget[m]) MH_DisableHook(xgTarget[m]); if (xsTarget[m]) MH_DisableHook(xsTarget[m]); }
   if (wgiReadTarget) MH_DisableHook(wgiReadTarget);
   if (wgiVibTarget) MH_DisableHook(wgiVibTarget);
+  for (int k = 0; k < kApiN; ++k) if (apiTarget[k]) MH_DisableHook(apiTarget[k]);
   if (setInstalled.exchange(false)) MH_DisableHook(reinterpret_cast<void*>(setTarget));
   if (installed.exchange(false)) MH_DisableHook(reinterpret_cast<void*>(target));
 }
