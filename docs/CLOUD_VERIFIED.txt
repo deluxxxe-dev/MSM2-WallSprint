@@ -26,3 +26,4 @@ c91f417c46a76e0e27dcedbac0324602301e7ba6 2026-11-07 build+test.sh+smoke+hooks+pa
 943fc4010241dd1390c458f977ff7d6b6a1802a0 2026-11-07 build+test.sh+smoke+hooks+package PASS (M9a velocity field search)
 b63f07b3cbffe0593270d7982ed258393cae74f0 2026-11-07 build+test.sh+smoke+hooks+package PASS (M9b velocity write test)
 115f6783fb1077b1138567603107121758c93ba2 2026-11-07 build+test.sh+smoke+hooks+package PASS (M9c slot 0 + RT hold)
+e750dd98d8bbade16aa653c915e4ff66d657f204 2026-11-07 build+test.sh+smoke+hooks+package PASS (M9d charge scales jump caps)
