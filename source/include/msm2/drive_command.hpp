@@ -22,4 +22,6 @@ inline std::atomic<bool> jumpHoldbackTest{false};
 inline std::atomic<bool> wsChargeJump{false};
 // M9b: charge launch by writing the hero velocity candidates. WALLSPRINT_WS_VELOCITY_WRITE, default 0.
 inline std::atomic<bool> wsVelocityWrite{false};
+// M9f: bounded +4 m/s velocity probe of search candidates during falls. WALLSPRINT_VELOCITY_PROBE, default 0.
+inline std::atomic<bool> velocityProbe{false};
 }

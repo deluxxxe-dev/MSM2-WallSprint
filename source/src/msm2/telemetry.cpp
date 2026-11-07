@@ -93,6 +93,8 @@ Settings settings(){
  msm2::writeLog("WS_CHARGE_JUMP enabled=%u key=WALLSPRINT_WS_CHARGE_JUMP default=0",unsigned(ws::drive::wsChargeJump.load()));
  ws::drive::wsVelocityWrite.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_VELOCITY_WRITE",0,path.c_str())==1);
  msm2::writeLog("WS_VELOCITY_WRITE enabled=%u key=WALLSPRINT_WS_VELOCITY_WRITE default=0",unsigned(ws::drive::wsVelocityWrite.load()));
+ ws::drive::velocityProbe.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_VELOCITY_PROBE",0,path.c_str())==1);
+ msm2::writeLog("WS_VELOCITY_PROBE enabled=%u key=WALLSPRINT_VELOCITY_PROBE default=0",unsigned(ws::drive::velocityProbe.load()));
  result.source.delay=number(L"WALLSPRINT_ENTRY_DELAY",L"0.70");result.source.rotateTime=number(L"WALLSPRINT_ROTATE_TIME",L"0.25");
  result.input.observe=GetPrivateProfileIntW(L"Diagnostics",L"SOURCE_ARGUMENT_CAPTURE",0,path.c_str())==1;
  result.input.enabled=GetPrivateProfileIntW(L"Diagnostics",L"ORIENTATION_SOURCE_DISCOVERY",1,path.c_str())==1;

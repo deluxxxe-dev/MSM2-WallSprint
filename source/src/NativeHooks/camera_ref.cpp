@@ -396,7 +396,7 @@ void m8JumpTrace(const msm2::Snapshot& hero, const ws::diag::Motion& motion, std
       m9N[0].store(axes.up.x); m9N[1].store(axes.up.y); m9N[2].store(axes.up.z); m9Hero.store(hero.hero); }
     jtWs = true; return;
   }
-  if (jtWs) { jtWs = false; if (jtHave && jtEpisodes < 10) { jtEnd = lastWsMs.load(); jtLines = 0; ++jtEpisodes; } else jtEnd = 0; }
+  if (jtWs) { jtWs = false; if (jtHave && jtEpisodes < 60) { jtEnd = lastWsMs.load(); jtLines = 0; ++jtEpisodes; } else jtEnd = 0; }
   if (!jtEnd || !jtHave || now - jtEnd > 1300 || jtLines >= 14 || !hero.hero) return;
   ws::Vec3 n = jtN, h{n.z, 0.f, -n.x}; float hl = std::sqrt(h.x * h.x + h.z * h.z); if (hl < 1e-3f) return; h = h * (1.f / hl);
   auto split = [&](const ws::Vec3& v, float out[3]) { out[0] = ws::dot(v, n); out[1] = v.y; out[2] = ws::dot(v, h); };
@@ -827,32 +827,70 @@ void m8ApiHooks(std::uint64_t now) {
 }
 // M9a (2026-11-07, read-only): find the hero velocity vector in memory. M8j: the WR jump config caps the jump-off
 // speed (~22 m/s, InSpeedMax), so a wall-normal charge launch and gravity toward the wall need the velocity itself.
-// Roots: the hero actor and its Transform (0x2000 bytes each, level 0) and every heap pointer found in them (level 1,
-// first 0x1000 bytes, <= 256 targets, rebuilt every 10 s). Each 100 ms sample with |v| > 4 m/s (v = position
-// difference) counts float3 slots within 25 % (+0.3 m/s) of v. Top slots by hit ratio are logged every 30 s.
-struct VelStat { std::uint32_t hits{}, seen{}; float ex[3]{}; };
+// M9b/M9c REJECTED both level-1 matches ([hero+0xBA0]+0x7FC, [hero+0xAE8]+0x1E0) as motion sources.
+// M9f: search two pointer levels (hero/Transform 0x2000 -> targets 0x1000 -> their pointers in the first 0x400 bytes,
+// 0x800 each; <= 1500 regions, rebuilt every 10 s), then an automatic bounded probe: for each slot with hit ratio
+// >= 0.8 (max 16, two trials each), during a fall with no WS for 2 s add +4 m/s to its y once and compare the
+// change of the measured vertical velocity with the previous sample. A motion source shows ~+4 m/s.
+// INI WALLSPRINT_VELOCITY_PROBE (default 0, shipped 1). F8 stops it.
+struct VelStat { std::uint32_t hits{}; float ex[3]{}; std::uint8_t trials{}; float effect[2]{}; };
 std::unordered_map<std::uint64_t, VelStat> velStats;
 struct VelRegion { std::uintptr_t addr; std::uint32_t size; std::uint64_t key; };
 std::vector<VelRegion> velRegions; std::uint64_t velBuilt{}, velLastLog{}, velSamples{}; unsigned velLogs{};
 bool velReadable(std::uintptr_t p) {
   if (p < 0x10000 || p > 0x7FFFFFFFFFFFull || (p & 7)) return false;
   MEMORY_BASIC_INFORMATION m{}; return VirtualQuery(reinterpret_cast<void*>(p), &m, sizeof m) && m.State == MEM_COMMIT && m.Type == MEM_PRIVATE &&
-    (m.Protect & 0xff) == PAGE_READWRITE && !(m.Protect & PAGE_GUARD) && reinterpret_cast<std::uintptr_t>(m.BaseAddress) + m.RegionSize >= p + 0x1000;
+    (m.Protect & 0xff) == PAGE_READWRITE && !(m.Protect & PAGE_GUARD) && reinterpret_cast<std::uintptr_t>(m.BaseAddress) + m.RegionSize >= p + 0x800;
 }
+// key: bit63 root, bits48-62 level-1 slot (0x7FFF = direct), bits32-47 level-2 slot + 1 (0 = none), bits0-31 field
+std::uint64_t velKey(unsigned root, unsigned s1, unsigned s2p1, unsigned field) { return (std::uint64_t(root) << 63) | (std::uint64_t(s1 & 0x7FFF) << 48) | (std::uint64_t(s2p1 & 0xFFFF) << 32) | field; }
+bool velRejected(std::uint64_t k) { return k == velKey(0, 0xBA0, 0, 0x7FC) || k == velKey(0, 0xAE8, 0, 0x1E0); }
 void velBuild(const msm2::Snapshot& hero) {
   velRegions.clear();
   std::uintptr_t roots[2] = {hero.hero, hero.transform};
+  static std::uintptr_t q[0x400], q2[0x80];
   for (unsigned r = 0; r < 2; ++r) { if (!roots[r] || !velReadable(roots[r])) continue;
-    velRegions.push_back({roots[r], 0x2000, (std::uint64_t(r) << 60) | 0xFFFFFull << 32});
-    static std::uintptr_t q[0x400]; if (!msm2::readMemory(roots[r], q, sizeof q)) continue;
-    for (unsigned i = 0; i < 0x400 && velRegions.size() < 258; ++i) { auto t = q[i];
+    velRegions.push_back({roots[r], 0x2000, velKey(r, 0x7FFF, 0, 0)});
+    if (!msm2::readMemory(roots[r], q, sizeof q)) continue;
+    for (unsigned i = 0; i < 0x400 && velRegions.size() < 1500; ++i) { auto t = q[i];
       if (t == roots[0] || t == roots[1] || !velReadable(t)) continue;
-      velRegions.push_back({t, 0x1000, (std::uint64_t(r) << 60) | (std::uint64_t(i * 8) << 32)}); } }
+      velRegions.push_back({t, 0x1000, velKey(r, i * 8, 0, 0)});
+      if (!msm2::readMemory(t, q2, sizeof q2)) continue;
+      for (unsigned j = 0; j < 0x80 && velRegions.size() < 1500; ++j) { auto u = q2[j];
+        if (u == t || u == roots[0] || u == roots[1] || !velReadable(u)) continue;
+        velRegions.push_back({u, 0x800, velKey(r, i * 8, j * 8 + 1, 0)}); } } }
 }
+std::uintptr_t velResolve(const msm2::Snapshot& hero, std::uint64_t key) {
+  unsigned root = unsigned(key >> 63), s1 = unsigned((key >> 48) & 0x7FFF), s2 = unsigned((key >> 32) & 0xFFFF), field = unsigned(key & 0xFFFFFFFFu);
+  std::uintptr_t p = root ? hero.transform : hero.hero; if (!p) return 0;
+  if (s1 != 0x7FFF) { std::uintptr_t t = 0; if (!msm2::readMemory(p + s1, &t, 8) || !velReadable(t)) return 0; p = t;
+    if (s2) { std::uintptr_t u = 0; if (!msm2::readMemory(p + (s2 - 1), &u, 8) || !velReadable(u)) return 0; p = u; } }
+  return p + field;
+}
+struct VelProbe { std::uint64_t key{}; float vyBefore{}, accBefore{}; std::uint64_t ms{}; bool armed{}; } vprobe; float velPrevVy{}; bool velPrevOk{}; std::uint64_t velProbeLast{};
+unsigned velProbes{};
 void m9VelocitySearch(const msm2::Snapshot& hero, const ws::diag::Motion& motion, std::uint64_t now) {
   if (killed.load() || !hero.hero) return;
   if (!velBuilt || now - velBuilt > 10000) { velBuild(hero); velBuilt = now; }
-  if (!motion.valid) return;
+  if (!motion.valid) { velPrevOk = false; return; }
+  float vy = motion.velocity.y; float acc = velPrevOk ? vy - velPrevVy : 0.f; bool accOk = velPrevOk; velPrevVy = vy; velPrevOk = true;
+  // probe evaluation: the sample after the write
+  if (vprobe.armed) { vprobe.armed = false; auto& st = velStats[vprobe.key];
+    float effect = accOk ? acc - vprobe.accBefore : 0.f; if (st.trials < 2) st.effect[st.trials] = effect; ++st.trials;
+    msm2::writeLog("WS_VEL_PROBE key=0x%016llx trial=%u vy_before=%.2f vy_after=%.2f acc_before=%.2f acc_after=%.2f effect=%.2f expected=+4",
+      (unsigned long long)vprobe.key, unsigned(st.trials), vprobe.vyBefore, vy, vprobe.accBefore, acc, effect); }
+  // probe arming: falling, no WS for 2 s, steady gravity trend
+  if (ws::drive::velocityProbe.load() && velSamples >= 300 && !vprobe.armed && now - velProbeLast > 1500 && velProbes < 32 && accOk &&
+      now - lastWsMs.load() > 2000 && vy < -3.f && acc < -1.f && acc > -6.f) {
+    std::uint64_t best = 0; std::uint32_t bestHits = 0;
+    for (auto& kv : velStats) if (!velRejected(kv.first) && kv.second.trials < 2 && double(kv.second.hits) / double(velSamples) >= 0.8 && kv.second.hits > bestHits) { best = kv.first; bestHits = kv.second.hits; }
+    if (best) { auto a = velResolve(hero, best); float v[3];
+      MEMORY_BASIC_INFORMATION mb{};
+      if (a && VirtualQuery(reinterpret_cast<void*>(a), &mb, sizeof mb) && (mb.Protect & 0xff) == PAGE_READWRITE && msm2::readMemory(a, v, 12) &&
+          std::fabs(v[1] - vy) < 0.25f * std::fabs(vy) + 1.f) {
+        *reinterpret_cast<volatile float*>(a + 4) = v[1] + 4.f; ++velProbes; velProbeLast = now;
+        vprobe = {best, vy, acc, now, true}; }
+      else { auto& st = velStats[best]; ++st.trials; st.effect[st.trials > 1 ? 1 : 0] = -99.f; } } }
   float sp = std::sqrt(ws::dot(motion.velocity, motion.velocity)); if (!std::isfinite(sp) || sp < 4.f || sp > 120.f) return;
   float tol = 0.25f * sp + 0.3f; ++velSamples;
   static unsigned char buf[0x2000];
@@ -860,21 +898,19 @@ void m9VelocitySearch(const msm2::Snapshot& hero, const ws::diag::Motion& motion
     if (!msm2::readMemory(rg.addr, buf, rg.size)) continue;
     for (std::uint32_t o = 0; o + 12 <= rg.size; o += 4) {
       float v[3]; std::memcpy(v, buf + o, 12);
-      if (!std::isfinite(v[0]) || !std::isfinite(v[1]) || !std::isfinite(v[2])) continue;
       float dx = v[0] - motion.velocity.x, dy = v[1] - motion.velocity.y, dz = v[2] - motion.velocity.z;
-      auto key = rg.key | o;
-      bool hit = dx * dx + dy * dy + dz * dz <= tol * tol;
-      if (hit) { auto& st = velStats[key]; ++st.hits; st.ex[0] = v[0]; st.ex[1] = v[1]; st.ex[2] = v[2]; }
+      if (!(dx * dx + dy * dy + dz * dz <= tol * tol)) continue;   // also rejects NaN
+      auto& st = velStats[rg.key | o]; ++st.hits; st.ex[0] = v[0]; st.ex[1] = v[1]; st.ex[2] = v[2];
     }
   }
   if (now - velLastLog >= 30000 && velLogs < 20 && velSamples >= 20) { velLastLog = now; ++velLogs;
     std::vector<std::pair<std::uint64_t, VelStat>> top(velStats.begin(), velStats.end());
-    std::sort(top.begin(), top.end(), [](auto& a, auto& b) { return a.second.hits > b.second.hits; });
-    msm2::writeLog("WS_VEL_SEARCH samples=%llu regions=%zu candidates=%zu read_only=1", (unsigned long long)velSamples, velRegions.size(), velStats.size());
-    for (std::size_t i = 0; i < top.size() && i < 12; ++i) { auto k = top[i].first; auto& st = top[i].second;
-      unsigned slot = unsigned((k >> 32) & 0xFFFFF);
-      msm2::writeLog("WS_VEL_CANDIDATE rank=%zu root=%s slot=%s0x%x field=0x%x hits=%u ratio=%.2f last=%.2f,%.2f,%.2f", i + 1, (k >> 60) ? "transform" : "hero",
-        slot == 0xFFFFF ? "direct" : "ptr@", slot == 0xFFFFF ? 0u : slot, unsigned(k & 0xFFFFFFFFu), st.hits, double(st.hits) / double(velSamples), st.ex[0], st.ex[1], st.ex[2]); } }
+    std::sort(top.begin(), top.end(), [](auto& x, auto& y) { return x.second.hits > y.second.hits; });
+    msm2::writeLog("WS_VEL_SEARCH samples=%llu regions=%zu candidates=%zu probes=%u read_only_except_probe=1", (unsigned long long)velSamples, velRegions.size(), velStats.size(), velProbes);
+    for (std::size_t i = 0; i < top.size() && i < 16; ++i) { auto k = top[i].first; auto& st = top[i].second;
+      msm2::writeLog("WS_VEL_CANDIDATE rank=%zu key=0x%016llx root=%s s1=0x%x s2=0x%x field=0x%x hits=%u ratio=%.2f trials=%u effect=%.2f/%.2f rejected=%u last=%.2f,%.2f,%.2f",
+        i + 1, (unsigned long long)k, (k >> 63) ? "transform" : "hero", unsigned((k >> 48) & 0x7FFF), unsigned((k >> 32) & 0xFFFF) ? unsigned((k >> 32) & 0xFFFF) - 1 : 0xFFFFu,
+        unsigned(k & 0xFFFFFFFFu), st.hits, double(st.hits) / double(velSamples), unsigned(st.trials), st.effect[0], st.effect[1], unsigned(velRejected(k)), st.ex[0], st.ex[1], st.ex[2]); } }
 }
 struct ChargeMeasure { std::uint64_t release{}, hold{}; float y0{}, apex{}; bool active{}; } cm; unsigned cmLogs{};
 void m8ChargeMeasure(const msm2::Snapshot& hero, std::uint64_t now) {
