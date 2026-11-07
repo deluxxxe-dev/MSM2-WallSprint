@@ -44,3 +44,4 @@ ba230c696460c84a264856ac7cef01613aa2bf1a 2026-11-07 build+test.sh+smoke+hooks+pa
 bfb672581cf1771b11d860d18e7548ee06aa3372 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10i manual hook)
 2f89e382375d70007da28162329238764c94379e 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10j setter substitution)
 7a5ca3286f2be6e50a1cae546513a7fd91cf4a77 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10k sticky hero block)
+4cd2f27bf4cb3e6b6c44994c661d0f48587a9fdc 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10l hero block by up)
