@@ -1110,7 +1110,7 @@ void gbDiscover(const msm2::Snapshot& hero, std::uint64_t now) {
 void gbWrite(const float* v) { MEMORY_BASIC_INFORMATION mb{};
   if (!gbAddr || !VirtualQuery(reinterpret_cast<void*>(gbAddr), &mb, sizeof mb) || (mb.Protect & 0xff) != PAGE_READWRITE) return;
   auto* f = reinterpret_cast<volatile float*>(gbAddr); for (int i = 0; i < 9; ++i) f[i] = v[i]; }
-void m10GravityTest(const msm2::Snapshot& hero, std::uint64_t now) {
+void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, std::uint64_t now) {
   if (killed.load() || !hero.hero) { if (gbActive) { gbWrite(kGravVanilla); gbActive = false; } return; }
   gbDiscover(hero, now);
   if (!ws::drive::wsGravityTest.load() || !gbAddr) return;
@@ -1125,7 +1125,7 @@ void m10GravityTest(const msm2::Snapshot& hero, std::uint64_t now) {
   // M10m: the 250 ms freshness missed short WS sessions / jumps right after the rotation (3 vanilla jumps in log
   // 20261107-212834). The normal now only has to be measured during the current WS session.
   bool fresh = m9NMs.load() && m9NMs.load() >= wsSessionStartMs.load();
-  if (startNow && fresh && !gbActive && gbTests < 100 && nl > 0.95f && nl < 1.05f && std::fabs(n[1]) < 0.3f) { float f[9];
+  if (startNow && fresh && !gbActive && gbTests < 100000 && nl > 0.95f && nl < 1.05f && std::fabs(n[1]) < 0.3f) { float f[9];
     if (msm2::readMemory(gbAddr, f, sizeof f)) { gbWrite(want); gbActive = true; gbStart = now; ++gbTests;
       for (int i = 0; i < 3; ++i) { std::uint32_t b; std::memcpy(&b, &n[i], 4); sgSubBits[i].store(b); } sgSubBlock.store(gbAddr); sgSubActive.store(true);
       msm2::writeLog("WS_GRAVITY_TEST start test=%u n=%.3f,%.3f,%.3f g=0x%llx", gbTests, n[0], n[1], n[2], (unsigned long long)gbAddr); } }
@@ -1134,8 +1134,16 @@ void m10GravityTest(const msm2::Snapshot& hero, std::uint64_t now) {
   float f[9]; bool rd = msm2::readMemory(gbAddr, f, sizeof f);
   bool kept = rd; for (int i = 0; i < 9 && rd; ++i) kept = kept && std::fabs(f[i] - want[i]) < 1e-3f;
   if (gbTests <= 6 && (now - gbStart) % 500 < 110) msm2::writeLog("WS_GRAVITY_TEST t_ms=%llu kept=%u read=%.3f,%.3f,%.3f|%.3f,%.3f,%.3f|%.3f,%.3f,%.3f", (unsigned long long)(now - gbStart), unsigned(kept), f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7], f[8]);
-  bool done = ws::drive::wsGravityDuringWs.load() ? (!wsNow && now - lastWsMs.load() > 1500) : (now - gbStart >= 1500 || wsNow);
-  if (done) { sgSubActive.store(false); gbWrite(kGravVanilla); gbActive = false; msm2::writeLog("WS_GRAVITY_TEST restore test=%u reason=%s", gbTests, wsNow ? "ws_again" : "timeout_1500ms"); }
+  // M10n (owner spec): keep the wall gravity until another wall (new WS), the ground / a stop (measured speed < 1 m/s
+  // for two samples, from 300 ms on), or at most 3 s.
+  static unsigned slow = 0; float sp = motion.valid ? std::sqrt(ws::dot(motion.velocity, motion.velocity)) : 99.f;
+  slow = (now - gbStart >= 300 && sp < 1.f) ? slow + 1 : 0;
+  const char* why = nullptr;
+  if (ws::drive::wsGravityDuringWs.load()) { if (!wsNow && now - lastWsMs.load() > 1500) why = "timeout_after_ws"; }
+  else if (wsNow) why = "ws_again";
+  else if (slow >= 2) why = "stopped_or_landed";
+  else if (now - gbStart >= 3000) why = "timeout_3000ms";
+  if (why) { slow = 0; sgSubActive.store(false); gbWrite(kGravVanilla); gbActive = false; msm2::writeLog("WS_GRAVITY_TEST restore test=%u reason=%s held_ms=%llu", gbTests, why, (unsigned long long)(now - gbStart)); }
   else gbWrite(want);
 }
 void gbRestoreNow() { sgSubActive.store(false); if (gbActive) { gbWrite(kGravVanilla); gbActive = false; } }
@@ -1243,7 +1251,7 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   m8ApiHooks(now);
   m8ChargeMeasure(snapshot, now);
   m9VelocitySearch(snapshot, motion, now);
-  m10GravityTest(snapshot, now);
+  m10GravityTest(snapshot, motion, now);
   sgStatus(now);
   m5eDistance(snapshot, now);
   m5ePitch(snapshot, now);
