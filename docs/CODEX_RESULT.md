@@ -361,3 +361,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M10k: chain block was not a setter block. M10l: identify the hero block by the first non-vertical setter up (wall crawl).
 - 2026-11-07: M10l cloud full suites PASS on tree 4cd2f27bf4cb3e6b6c44994c661d0f48587a9fdc (listed).
 - 2026-11-07: M10l: WALL GRAVITY ACHIEVED (pull + orientation, wall-to-wall). M10m: normal freshness = current WS session.
+- 2026-11-07: M10m cloud full suites PASS on tree 5a5d1cffe06e356d5a66164f9106589fda569b1b (listed).
