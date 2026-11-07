@@ -366,3 +366,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M10n cloud full suites PASS on tree f5fe48543a148cebf8726dbf2b0049abcf8de203 (listed).
 - 2026-11-07: M10n videos: slow ground reset, mid-air drops, camera reset, direction flip. M10o: hold armed during WS, WallRun normal, landing by vertical-speed stop, WS camera kept.
 - 2026-11-07: M10o cloud full suites PASS on tree a22e5a2964dd650d1a4eb607fc67107bdbae865b (listed).
+- 2026-11-07: M10p: ground contact via game setter, 8 s hold + 2 s blend back, swing keeps hold, L3 gravity lock, camera re-centering in air.
