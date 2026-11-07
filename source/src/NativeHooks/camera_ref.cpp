@@ -1017,6 +1017,27 @@ std::atomic<std::uint32_t> sgSubBits[3]{}; std::atomic<std::uint64_t> sgSubCalls
 constexpr float kGfG = 33.f;
 using SetPosFn = void (*)(void*, float*);
 std::atomic<SetPosFn> spFn{nullptr}; std::atomic<std::uintptr_t> gfTransform{0};
+extern "C" bool ws_guarded_call(void (*callback)(void*), void* context);
+// M10r: M10q's SetPosition was refused (unique match at RVA 0x49CE582 but no pdata begin: a leaf function has no unwind
+// entry). Now: leaf accepted when the byte before is int3/ret/nop; the first call per session is SEH-guarded and must
+// read back the written position, otherwise (or when not admitted) the position is written directly at Transform+0x30.
+std::atomic<int> gfMode{0};   // 0 unknown, 1 SetPosition verified, 2 direct store
+struct SpCall { SetPosFn fn; void* tr; float* q; };
+void spCallCb(void* c) { auto* k = static_cast<SpCall*>(c); k->fn(k->tr, k->q); }
+struct DirectStore { std::uintptr_t a; const float* q; };
+void directStoreCb(void* c) { auto* k = static_cast<DirectStore*>(c); auto* f = reinterpret_cast<volatile float*>(k->a); f[0] = k->q[0]; f[1] = k->q[1]; f[2] = k->q[2]; }
+bool gfWritePos(std::uintptr_t tr, float* q) {
+  auto fn = spFn.load(std::memory_order_relaxed); int mode = gfMode.load(std::memory_order_relaxed);
+  if (fn && mode != 2) { SpCall c{fn, reinterpret_cast<void*>(tr), q}; bool ok = ws_guarded_call(spCallCb, &c);
+    if (mode == 1 && ok) return true;
+    float b[3]{}; bool rb = ok && msm2::readMemory(tr + 0x30, b, 12) && std::fabs(b[0] - q[0]) < 1e-3f && std::fabs(b[1] - q[1]) < 1e-3f && std::fabs(b[2] - q[2]) < 1e-3f;
+    gfMode.store(rb ? 1 : 2);
+    msm2::writeLog("WS_GRAVITY_FORCE_ROUTE set_position_call_ok=%u readback_ok=%u route=%s", unsigned(ok), unsigned(rb), rb ? "set_position" : "direct_store");
+    if (rb) return true; }
+  if (gfMode.load() != 2) { gfMode.store(2); msm2::writeLog("WS_GRAVITY_FORCE_ROUTE route=direct_store reason=set_position_not_admitted"); }
+  MEMORY_BASIC_INFORMATION mb{}; if (!VirtualQuery(reinterpret_cast<void*>(tr + 0x30), &mb, sizeof mb) || (mb.Protect & 0xff) != PAGE_READWRITE) return false;
+  DirectStore d{tr + 0x30, q}; return ws_guarded_call(directStoreCb, &d);
+}
 std::atomic<bool> gfOn{false}, gfContact{false}; std::atomic<unsigned> gfGen{0};
 std::atomic<float> gfP0[3]{}, gfN0[3]{}, gfVy0{0};
 std::atomic<std::uint64_t> gfFrames{0}, gfWrites{0}, gfReadFails{0}, gfClamps{0};
@@ -1035,8 +1056,8 @@ void sbBlendStep() {
 struct GfLocal { unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}; bool left{}, model{}; unsigned frames{}; } gfL;
 std::atomic<bool> gfModelUsed{false};
 void gfStep() {
-  auto fn = spFn.load(std::memory_order_relaxed); auto tr = gfTransform.load(std::memory_order_relaxed);
-  if (!fn || !tr || !gfOn.load(std::memory_order_relaxed) || killed.load(std::memory_order_relaxed)) return;
+  auto tr = gfTransform.load(std::memory_order_relaxed);
+  if (!tr || !gfOn.load(std::memory_order_relaxed) || killed.load(std::memory_order_relaxed)) return;
   unsigned gen = gfGen.load(); if (gen != gfL.gen) { gfL = {}; gfL.gen = gen; }
   float p[4]{}; if (!msm2::readMemory(tr + 0x30, p, 16) || !std::isfinite(p[0]) || !std::isfinite(p[1]) || !std::isfinite(p[2])) { gfReadFails.fetch_add(1); return; }
   auto now = qpcNow();
@@ -1067,7 +1088,8 @@ void gfStep() {
     float vn = gfL.vg[0] * n0[0] + gfL.vg[1] * n0[1] + gfL.vg[2] * n0[2]; if (vn < 0) for (int i = 0; i < 3; ++i) gfL.vg[i] -= vn * n0[i];
     if (locked) gfL.vy = 0.f; else if (gfL.left) gfContact.store(true);
   }
-  fn(reinterpret_cast<void*>(tr), q); gfWrites.fetch_add(1, std::memory_order_relaxed); gfFrames.fetch_add(1, std::memory_order_relaxed);
+  if (!gfWritePos(tr, q)) { gfReadFails.fetch_add(1); return; }
+  gfWrites.fetch_add(1, std::memory_order_relaxed); gfFrames.fetch_add(1, std::memory_order_relaxed);
   gfDyGameSum.store(gfDyGameSum.load(std::memory_order_relaxed) + dyGame, std::memory_order_relaxed);
   if ((gfL.frames % 6) == 1 && gfSampleLogs.fetch_add(1) < 120)
     msm2::writeLog("WS_GRAVITY_FORCE_SAMPLE frame=%u dt_ms=%.1f game_pos=%.3f,%.3f,%.3f dy_game=%.4f set_pos=%.3f,%.3f,%.3f vg=%.2f,%.2f,%.2f vy=%.2f plane_d=%.2f up=%.3f,%.3f,%.3f locked=%u model=%u",
@@ -1087,9 +1109,13 @@ DWORD WINAPI spResolve(void* imgp) {
       bool m = true; for (int j = 1; j < 7 && m; ++j) m = pat[j] < 0 || hit[j] == pat[j];
       if (m) { ++count; only = reinterpret_cast<std::uintptr_t>(hit); } ++k; } }
   DWORD64 fb = 0; auto* f = count == 1 ? RtlLookupFunctionEntry(only, &fb, nullptr) : nullptr;
-  bool ok = count == 1 && f && fb == image && image + f->BeginAddress == only;
+  bool begin = f && fb == image && image + f->BeginAddress == only;
+  unsigned char pre = count == 1 ? *reinterpret_cast<const unsigned char*>(only - 1) : 0;
+  bool leaf = count == 1 && !f && (pre == 0xCC || pre == 0xC3 || pre == 0x90);
+  bool ok = count == 1 && (begin || leaf);
   if (ok) spFn.store(reinterpret_cast<SetPosFn>(only));
-  msm2::writeLog("WS_SET_POSITION_RESOLVE matches=%zu rva=0x%llx pdata_begin=%u admitted=%u (expected writer 0x2cfc900)", count, (unsigned long long)(count == 1 ? only - image : 0), unsigned(f && fb == image && image + f->BeginAddress == only), unsigned(ok));
+  char hex[3 * 48 + 1]{}; if (count == 1) for (int i = 0; i < 48; ++i) std::snprintf(hex + 3 * i, 4, "%02x ", reinterpret_cast<const unsigned char*>(only - 16)[i]);
+  msm2::writeLog("WS_SET_POSITION_RESOLVE matches=%zu rva=0x%llx pdata_entry=%u pdata_begin=%u leaf_prev_byte=0x%02x admitted=%u bytes_from_minus16=%s", count, (unsigned long long)(count == 1 ? only - image : 0), unsigned(f != nullptr), unsigned(begin), pre, unsigned(ok), hex);
   return 0;
 }
 std::uintptr_t sgDetour(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r8, std::uintptr_t r9) {
@@ -1098,17 +1124,19 @@ std::uintptr_t sgDetour(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r
   // M10p: ground contact by the game itself. In the air phase the game passing an up that turns toward vertical while the
   // hero's vertical speed is ~0 means it landed: stop substituting in this frame and let the game blend to its gravity.
   // (also when locked: a landing ends the lock)
+  bool gameVertical = false;   // M10r: the game treats the hero as airborne (no own wall/crawl up)
   if (doSub && sgAirPhase.load(std::memory_order_relaxed)) { std::uint32_t inb[3];
     if (msm2::readMemory(rdx, inb, sizeof inb)) { float in[3]; std::memcpy(in, inb, 12); float sb[3]; for (int i = 0; i < 3; ++i) { std::uint32_t b = sgSubBits[i].load(); std::memcpy(&sb[i], &b, 4); }
       // M10q: with the position force the game's own up turning vertical is its timed reset, not a landing (the model
       // keeps the vertical speed small), so only a surface the game itself attaches to (another non-vertical up) ends it.
       bool force = gfOn.load(std::memory_order_relaxed);
       bool otherWall = std::isfinite(in[1]) && std::fabs(in[1]) < 0.9f && in[0] * sb[0] + in[1] * sb[1] + in[2] * sb[2] < 0.95f;
-      bool vertical = !force && std::isfinite(in[1]) && in[1] > sb[1] + 0.05f && std::fabs(sgLastVy.load(std::memory_order_relaxed)) < 2.f;
+      gameVertical = std::isfinite(in[1]) && in[1] > 0.9f;
+      bool vertical = !force && !sgLocked.load(std::memory_order_relaxed) && std::isfinite(in[1]) && in[1] > sb[1] + 0.05f && std::fabs(sgLastVy.load(std::memory_order_relaxed)) < 2.f;
       if (otherWall || vertical) { doSub = false; sgSubActive.store(false); sgGameLanded.store(true); } } }
   if (doSub) { sub[0] = sgSubBits[0].load(); sub[1] = sgSubBits[1].load(); sub[2] = sgSubBits[2].load(); sgSubCalls.fetch_add(1, std::memory_order_relaxed); }
   auto r = sgOrig(rcx, doSub ? reinterpret_cast<std::uintptr_t>(sub) : rdx, r8, r9);
-  if (doSub && sgAirPhase.load(std::memory_order_relaxed)) { sbBlendStep(); gfStep(); }   // M10q (game thread, after the original)
+  if (doSub && sgAirPhase.load(std::memory_order_relaxed)) { sbBlendStep(); if (gameVertical) gfStep(); }   // M10q (game thread, after the original)
   // M10l: M10k's chain block was not a setter block. Hero identification: the first block that receives a non-vertical up
   // (|y| < 0.9; only a character on a wall/ceiling, i.e. the crawling hero) becomes the hero block for the session.
   if (rcx && !doSub) { float in[3]{}; if (msm2::readMemory(rdx, in, sizeof in) && std::isfinite(in[1]) && std::fabs(in[1]) < 0.9f) {
@@ -1232,8 +1260,8 @@ void gbSetUp(const float* up) { float want[9] = {-up[0], -up[1], -up[2], up[0], 
   for (int i = 0; i < 3; ++i) { std::uint32_t bits; std::memcpy(&bits, &up[i], 4); sgSubBits[i].store(bits); } }
 void gfSummary(const char* why) {
   if (!gfOn.exchange(false) && !gfFrames.load()) return;
-  msm2::writeLog("WS_GRAVITY_FORCE_END reason=%s frames=%llu set_position_calls=%llu read_fails=%llu plane_clamps=%llu dy_game_sum=%.3f launch_model=%u set_position_fn=%u",
-    why, (unsigned long long)gfFrames.load(), (unsigned long long)gfWrites.load(), (unsigned long long)gfReadFails.load(), (unsigned long long)gfClamps.load(), gfDyGameSum.load(), unsigned(gfModelUsed.exchange(false)), unsigned(spFn.load() != nullptr));
+  msm2::writeLog("WS_GRAVITY_FORCE_END reason=%s frames=%llu set_position_calls=%llu read_fails=%llu plane_clamps=%llu dy_game_sum=%.3f launch_model=%u set_position_fn=%u route=%d game_airborne_frames_only=1",
+    why, (unsigned long long)gfFrames.load(), (unsigned long long)gfWrites.load(), (unsigned long long)gfReadFails.load(), (unsigned long long)gfClamps.load(), gfDyGameSum.load(), unsigned(gfModelUsed.exchange(false)), unsigned(spFn.load() != nullptr), gfMode.load());
   gfFrames.store(0); gfWrites.store(0); gfReadFails.store(0); gfClamps.store(0); gfDyGameSum.store(0);
 }
 void gbEnd(const char* why, std::uint64_t now, bool writeVanilla = true) {
@@ -1271,7 +1299,7 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
   } else if (gbState == 1 && !wsNow) {
     gbState = 2; gbStart = now; gbSetUp(gbN); prevOk = false; sgAirPhase.store(true); gbAirCam.store(true); sgGameLanded.store(false);
     for (int i = 0; i < 3; ++i) { gfP0[i].store(hero.position[i]); gfN0[i].store(gbN[i]); } gfVy0.store(vOk ? vy : 0.f); gfContact.store(false); sbBlendQpc.store(0);
-    gfGen.fetch_add(1); gfOn.store(ws::drive::wsGravityForce.load() && spFn.load() != nullptr);
+    gfGen.fetch_add(1); gfOn.store(ws::drive::wsGravityForce.load());
     msm2::writeLog("WS_GRAVITY_TEST start test=%u n=%.3f,%.3f,%.3f locked=%u", gbTests, gbN[0], gbN[1], gbN[2], unsigned(sgLocked.load()));
   } else if (gbState >= 2) {
     bool velStop = vOk && prevOk && now - gbStart >= 150 && prevVy < -3.f && vy > -0.7f;
@@ -1279,7 +1307,7 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     if (!vOk || sp > 0.3f || sgLocked.load()) slowSince = 0; else if (!slowSince) slowSince = now;
     if (sgGameLanded.exchange(false)) gbEnd("landed_game", now, false);        // the game blends to its own gravity
     else if (gfContact.exchange(false)) gbEnd("wall_contact", now, true);       // M10q: back on the wall it left
-    else if (gbState == 2 && slowSince && now - slowSince >= 400 && now - gbStart >= 500) gbEnd("stalled", now, true);   // M10q: no 8 s lag when stuck
+    else if (gbState == 2 && gfOn.load() && slowSince && now - slowSince >= 400 && now - gbStart >= 500) gbEnd("stalled", now, true);   // M10q: no 8 s lag when stuck
     else if (velStop) gbEnd("landed_velocity", now, true);
     else if (gbState == 2) {
       if (wgiRt.load() > 0.5) gbStart = now;                                   // web swing keeps the hold
