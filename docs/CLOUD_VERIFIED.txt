@@ -36,3 +36,4 @@ c6be2e8764770fdf83b1772a15de55756aeccfd3 2026-11-07 build+test.sh+smoke+hooks+pa
 3b37c482fa47b53d1a43a6b8416ebf12cdd435a7 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10b)
 e2b8bbedbe22466724624560f968caeac1c1a613 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10c gravity test)
 5124508807b6d13a55076ed897b1ae257e730a53 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10c-r2)
+10d1b6a40bb29fc0b51626854388a005b21e4652 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10d orientation retarget)
