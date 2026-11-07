@@ -349,3 +349,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M10d accepted (WS follows uneven walls). M10e: gravity block = hero gravity orientation (up), zeroes motion along it, no pull. M10f: block during the whole WS, vanilla YBoost.
 - 2026-11-07: M10f cloud full suites PASS on tree c4e1c7807d5896c5dc00d41c4de37be5136e4921 (listed).
 - 2026-11-07: M10f: gravity block = orientation/up only (jump and force use world up); still-stand in WS pose observed. M10g: scan for (0,-g,0) gravity force vectors.
+- 2026-11-07: M10g cloud full suites PASS on tree 8e5d983fa47ff0a1660bebdde5a735fd0b16cbee (listed).
