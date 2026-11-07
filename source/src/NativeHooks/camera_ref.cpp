@@ -934,7 +934,7 @@ unsigned gvLogs{}; std::uint64_t gvLast{}; std::vector<std::uintptr_t> gvSeen;
 // M10b: also up-pointing vectors (an "orientation" may store up), and every complete chain is logged once.
 bool gvVec(const float* v) { float l = std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]); if (!std::isfinite(l)) return false;
   return ((l > 0.95f && l < 1.05f) || (l > 5.f && l < 60.f)) && std::fabs(v[1]) > 0.9f * l; }
-void m10GravityChain(const msm2::Snapshot& hero, std::uint64_t now) {
+[[maybe_unused]] void m10GravityChain(const msm2::Snapshot& hero, std::uint64_t now) {   // M10c-r2: no longer called (worker load)
   if (killed.load() || !hero.hero || gvLogs >= 60 || now - gvLast < 5000) { return; }
   gvLast = now;
   std::vector<std::pair<std::uintptr_t, unsigned>> bases; bases.push_back({hero.hero, 0xFFFFu}); bases.push_back({hero.transform, 0xFFFEu});
@@ -964,26 +964,41 @@ void m10GravityChain(const msm2::Snapshot& hero, std::uint64_t now) {
 // starts, write (-n | n | n) with n = last WS wall normal (gravity toward the wall), re-write each tick for 1.5 s,
 // then restore the vanilla pattern. Each tick logs whether the game kept the written values.
 constexpr float kGravVanilla[9] = {0, -1, 0, 0, 1, 0, 0, 1, 0};
-std::uintptr_t gbAddr{}; std::uint64_t gbFoundMs{}, gbStart{}, gbLastScan{}; bool gbActive{}; unsigned gbLogs{}, gbTests{};
+std::uintptr_t gbAddr{}; std::uint64_t gbStart{}, gbLastScan{}; bool gbActive{}; unsigned gbLogs{}, gbTests{};
 bool gbIsVanilla(const float* f) { for (int i = 0; i < 9; ++i) if (std::fabs(f[i] - kGravVanilla[i]) > 1e-4f) return false; return true; }
 bool gbChain(std::uintptr_t b, std::uintptr_t& g) { std::uintptr_t p1 = 0, p2 = 0;
   if (!msm2::readMemory(b + 0xF0, &p1, 8) || !velReadable(p1) || !msm2::readMemory(p1 + 0xF8, &p2, 8) || !velReadable(p2)) return false;
   g = p2 + 0x5F4; float f[9]; return msm2::readMemory(g, f, sizeof f) && gbIsVanilla(f); }
+// M10c-r2: M10c ran this search on the 100 ms worker; ~10k bases every 3 s stalled that worker for tens of seconds and
+// broke the WS camera/orientation. The search now runs on its own low-priority thread, yields every 64 bases, and
+// only runs again when the stored block stops matching (or the hero/Transform changes).
+std::atomic<std::uintptr_t> gbHero{0}, gbTransform{0}, gbFound{0}; std::atomic<bool> gbThread{false};
+DWORD WINAPI gbSearch(void*) {
+  static std::uintptr_t q[0x400], q2[0x80];
+  while (!killed.load()) {
+    auto hero = gbHero.load(), tr = gbTransform.load();
+    if (!hero || gbFound.load()) { Sleep(1000); continue; }
+    unsigned bases = 0; std::uintptr_t found = 0; std::uintptr_t roots[2] = {tr, hero};
+    for (int r = 0; r < 2 && !found && !killed.load(); ++r) { auto root = roots[r]; if (!root) continue; std::uintptr_t g = 0;
+      if (gbChain(root, g)) { found = g; break; }
+      if (!msm2::readMemory(root, q, sizeof q)) continue;
+      for (unsigned i = 0; i < 0x400 && !found; ++i) { auto t = q[i]; if (!velReadable(t)) continue; if ((++bases & 63) == 0) Sleep(1);
+        if (gbChain(t, g)) { found = g; if (gbLogs++ < 20) msm2::writeLog("WS_GRAVITY_BLOCK found root=%s slot=0x%x level=1 g=0x%llx", r ? "hero" : "transform", i * 8, (unsigned long long)g); break; }
+        if (!msm2::readMemory(t, q2, sizeof q2)) continue;
+        for (unsigned j = 0; j < 0x80; ++j) { auto u = q2[j]; if (!velReadable(u)) continue; if ((++bases & 63) == 0) Sleep(1);
+          if (gbChain(u, g)) { found = g; if (gbLogs++ < 20) msm2::writeLog("WS_GRAVITY_BLOCK found root=%s slot=0x%x slot2=0x%x level=2 g=0x%llx", r ? "hero" : "transform", i * 8, j * 8, (unsigned long long)g); break; } } } }
+    if (found) gbFound.store(found);
+    else { static unsigned miss = 0; if (miss++ < 10) msm2::writeLog("WS_GRAVITY_BLOCK not_found bases=%u", bases); Sleep(10000); }
+  }
+  return 0;
+}
 void gbDiscover(const msm2::Snapshot& hero, std::uint64_t now) {
-  if (now - gbLastScan < 3000) { return; }
+  if (gbHero.load() != hero.hero || gbTransform.load() != hero.transform) { gbHero.store(hero.hero); gbTransform.store(hero.transform); if (!gbActive) gbFound.store(0); }
+  if (!gbThread.exchange(true)) { if (HANDLE h = CreateThread(nullptr, 0, gbSearch, nullptr, 0, nullptr)) { SetThreadPriority(h, THREAD_PRIORITY_LOWEST); CloseHandle(h); } }
+  if (now - gbLastScan < 1000) { gbAddr = gbFound.load(); return; }
   gbLastScan = now;
-  if (gbAddr) { float f[9]; if (msm2::readMemory(gbAddr, f, sizeof f) && (gbIsVanilla(f) || gbActive)) return; gbAddr = 0; }
-  static std::uintptr_t q[0x400], q2[0x80]; unsigned bases = 0;
-  std::uintptr_t roots[2] = {hero.transform, hero.hero};
-  for (int r = 0; r < 2 && !gbAddr; ++r) { auto root = roots[r]; if (!root) continue; std::uintptr_t g = 0;
-    if (gbChain(root, g)) { gbAddr = g; break; }
-    if (!msm2::readMemory(root, q, sizeof q)) continue;
-    for (unsigned i = 0; i < 0x400 && !gbAddr; ++i) { auto t = q[i]; if (!velReadable(t)) continue; ++bases;
-      if (gbChain(t, g)) { gbAddr = g; if (gbLogs++ < 20) msm2::writeLog("WS_GRAVITY_BLOCK found root=%s slot=0x%x level=1 g=0x%llx", r ? "hero" : "transform", i * 8, (unsigned long long)g); break; }
-      if (!msm2::readMemory(t, q2, sizeof q2)) continue;
-      for (unsigned j = 0; j < 0x80; ++j) { auto u = q2[j]; if (!velReadable(u)) continue; ++bases;
-        if (gbChain(u, g)) { gbAddr = g; if (gbLogs++ < 20) msm2::writeLog("WS_GRAVITY_BLOCK found root=%s slot=0x%x slot2=0x%x level=2 g=0x%llx", r ? "hero" : "transform", i * 8, j * 8, (unsigned long long)g); break; } } } }
-  if (!gbAddr) { static unsigned miss = 0; if (miss++ < 10) msm2::writeLog("WS_GRAVITY_BLOCK not_found bases=%u", bases); } else gbFoundMs = now;
+  auto g = gbFound.load(); if (g && !gbActive) { float f[9]; if (!msm2::readMemory(g, f, sizeof f) || !gbIsVanilla(f)) { gbFound.store(0); g = 0; } }
+  gbAddr = g;
 }
 void gbWrite(const float* v) { MEMORY_BASIC_INFORMATION mb{};
   if (!gbAddr || !VirtualQuery(reinterpret_cast<void*>(gbAddr), &mb, sizeof mb) || (mb.Protect & 0xff) != PAGE_READWRITE) return;
@@ -996,7 +1011,8 @@ void m10GravityTest(const msm2::Snapshot& hero, std::uint64_t now) {
   static bool wasWs = false; bool jumpStart = wasWs && !wsNow; wasWs = wsNow;
   float n[3] = {m9N[0].load(), m9N[1].load(), m9N[2].load()};
   float want[9] = {-n[0], -n[1], -n[2], n[0], n[1], n[2], n[0], n[1], n[2]};
-  if (jumpStart && !gbActive && gbTests < 100 && std::fabs(n[1]) < 0.3f) { float f[9];
+  float nl = std::sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);   // M10c-r2: M10c wrote n = 0 (no WS normal yet)
+  if (jumpStart && !gbActive && gbTests < 100 && nl > 0.95f && nl < 1.05f && std::fabs(n[1]) < 0.3f) { float f[9];
     if (msm2::readMemory(gbAddr, f, sizeof f) && gbIsVanilla(f)) { gbWrite(want); gbActive = true; gbStart = now; ++gbTests;
       msm2::writeLog("WS_GRAVITY_TEST start test=%u n=%.3f,%.3f,%.3f g=0x%llx", gbTests, n[0], n[1], n[2], (unsigned long long)gbAddr); } }
   if (!gbActive) return;
@@ -1104,7 +1120,6 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   m8ApiHooks(now);
   m8ChargeMeasure(snapshot, now);
   m9VelocitySearch(snapshot, motion, now);
-  m10GravityChain(snapshot, now);
   m10GravityTest(snapshot, now);
   m5eDistance(snapshot, now);
   m5ePitch(snapshot, now);
