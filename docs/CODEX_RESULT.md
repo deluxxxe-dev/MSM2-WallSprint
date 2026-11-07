@@ -347,3 +347,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M10e: SetGravityVector pass-through observer (identity-checked) feeding the gravity test.
 - 2026-11-07: M10d+M10e cloud full suites PASS on tree c185298937b5a6b5fbb8c903c3d0c6f9ac3f9ad5 (listed).
 - 2026-11-07: M10d accepted (WS follows uneven walls). M10e: gravity block = hero gravity orientation (up), zeroes motion along it, no pull. M10f: block during the whole WS, vanilla YBoost.
+- 2026-11-07: M10f cloud full suites PASS on tree c4e1c7807d5896c5dc00d41c4de37be5136e4921 (listed).
