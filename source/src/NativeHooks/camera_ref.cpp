@@ -867,29 +867,39 @@ std::uintptr_t velResolve(const msm2::Snapshot& hero, std::uint64_t key) {
     if (s2) { std::uintptr_t u = 0; if (!msm2::readMemory(p + (s2 - 1), &u, 8) || !velReadable(u)) return 0; p = u; } }
   return p + field;
 }
-struct VelProbe { std::uint64_t key{}; float vyBefore{}, accBefore{}; std::uint64_t ms{}; bool armed{}; } vprobe; float velPrevVy{}; bool velPrevOk{}; std::uint64_t velProbeLast{};
-unsigned velProbes{};
+struct VelProbe { std::uint64_t key{}; float vyBefore{}, accBefore{}; std::uint64_t ms{}; int armed{}; } vprobe; float velPrevVy{}; bool velPrevOk{}; std::uint64_t velProbeLast{};
+unsigned velProbes{}; std::vector<std::uintptr_t> velTestedAddr;   // M9g: aliases (same object via other paths) skipped
 void m9VelocitySearch(const msm2::Snapshot& hero, const ws::diag::Motion& motion, std::uint64_t now) {
   if (killed.load() || !hero.hero) return;
   if (!velBuilt || now - velBuilt > 10000) { velBuild(hero); velBuilt = now; }
   if (!motion.valid) { velPrevOk = false; return; }
   float vy = motion.velocity.y; float acc = velPrevOk ? vy - velPrevVy : 0.f; bool accOk = velPrevOk; velPrevVy = vy; velPrevOk = true;
   // probe evaluation: the sample after the write
-  if (vprobe.armed) { vprobe.armed = false; auto& st = velStats[vprobe.key];
-    float effect = accOk ? acc - vprobe.accBefore : 0.f; if (st.trials < 2) st.effect[st.trials] = effect; ++st.trials;
-    msm2::writeLog("WS_VEL_PROBE key=0x%016llx trial=%u vy_before=%.2f vy_after=%.2f acc_before=%.2f acc_after=%.2f effect=%.2f expected=+4",
-      (unsigned long long)vprobe.key, unsigned(st.trials), vprobe.vyBefore, vy, vprobe.accBefore, acc, effect); }
+  // M9g: evaluated over two samples after the write: effect = (vy2 - vy0) - 2 * acc_before (gravity trend removed)
+  if (vprobe.armed == 1) vprobe.armed = 2;
+  else if (vprobe.armed == 2) { vprobe.armed = 0; auto& st = velStats[vprobe.key];
+    float effect = (vy - vprobe.vyBefore) - 2.f * vprobe.accBefore; if (st.trials < 2) st.effect[st.trials] = effect; ++st.trials;
+    msm2::writeLog("WS_VEL_PROBE key=0x%016llx trial=%u vy_before=%.2f vy_after2=%.2f acc_before=%.2f effect=%.2f expected=+4",
+      (unsigned long long)vprobe.key, unsigned(st.trials), vprobe.vyBefore, vy, vprobe.accBefore, effect); }
   // probe arming: falling, no WS for 2 s, steady gravity trend
-  if (ws::drive::velocityProbe.load() && velSamples >= 300 && !vprobe.armed && now - velProbeLast > 1500 && velProbes < 32 && accOk &&
+  if (ws::drive::velocityProbe.load() && velSamples >= 300 && !vprobe.armed && now - velProbeLast > 600 && velProbes < 80 && accOk &&
       now - lastWsMs.load() > 2000 && vy < -3.f && acc < -1.f && acc > -6.f) {
-    std::uint64_t best = 0; std::uint32_t bestHits = 0;
-    for (auto& kv : velStats) if (!velRejected(kv.first) && kv.second.trials < 2 && double(kv.second.hits) / double(velSamples) >= 0.8 && kv.second.hits > bestHits) { best = kv.first; bestHits = kv.second.hits; }
-    if (best) { auto a = velResolve(hero, best); float v[3];
+    std::uint64_t best = 0; std::uint32_t bestHits = 0; std::uintptr_t a = 0;
+    for (int pass = 0; pass < 8; ++pass) { best = 0; bestHits = 0;
+      for (auto& kv : velStats) if (!velRejected(kv.first) && kv.second.trials < 2 && double(kv.second.hits) / double(velSamples) >= 0.8 && kv.second.hits > bestHits) { best = kv.first; bestHits = kv.second.hits; }
+      if (!best) break;
+      a = velResolve(hero, best);
+      bool alias = false; for (auto t : velTestedAddr) alias |= t == a;
+      auto& st0 = velStats[best];
+      if (alias && st0.trials == 0) { st0.trials = 2; st0.effect[0] = st0.effect[1] = -77.f; best = 0; continue; }   // -77 = alias of a tested address
+      break; }
+    if (best) { float v[3];
       MEMORY_BASIC_INFORMATION mb{};
       if (a && VirtualQuery(reinterpret_cast<void*>(a), &mb, sizeof mb) && (mb.Protect & 0xff) == PAGE_READWRITE && msm2::readMemory(a, v, 12) &&
           std::fabs(v[1] - vy) < 0.25f * std::fabs(vy) + 1.f) {
         *reinterpret_cast<volatile float*>(a + 4) = v[1] + 4.f; ++velProbes; velProbeLast = now;
-        vprobe = {best, vy, acc, now, true}; }
+        if (velStats[best].trials == 0) velTestedAddr.push_back(a);
+        vprobe = {best, vy, acc, now, 1}; }
       else { auto& st = velStats[best]; ++st.trials; st.effect[st.trials > 1 ? 1 : 0] = -99.f; } } }
   float sp = std::sqrt(ws::dot(motion.velocity, motion.velocity)); if (!std::isfinite(sp) || sp < 4.f || sp > 120.f) return;
   float tol = 0.25f * sp + 0.3f; ++velSamples;
