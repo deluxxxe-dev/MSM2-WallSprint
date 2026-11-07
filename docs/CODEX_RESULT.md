@@ -345,3 +345,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M10c-r2 cloud full suites PASS on tree 5124508807b6d13a55076ed897b1ae257e730a53 (listed).
 - 2026-11-07: M10c-r2: WS fixed; gravity block not found. M10d: orientation re-aims on moderate wall-normal changes instead of closing.
 - 2026-11-07: M10e: SetGravityVector pass-through observer (identity-checked) feeding the gravity test.
+- 2026-11-07: M10d+M10e cloud full suites PASS on tree c185298937b5a6b5fbb8c903c3d0c6f9ac3f9ad5 (listed).
