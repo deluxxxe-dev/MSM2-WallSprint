@@ -339,3 +339,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M10a cloud full suites PASS on tree 6eded085af2d833d87de5fcd9d5a33c191695b92 (listed).
 - 2026-11-07: M10a: no gravity-like chain; sprint charge ~7-10 m (separate jump). M10b: log all chains, test stand_chargejump_fwd.
 - 2026-11-07: M10b cloud full suites PASS on tree 3b37c482fa47b53d1a43a6b8416ebf12cdd435a7 (listed).
+- 2026-11-07: M10b: stand_chargejump_fwd = sprint charge launch clip (VERIFIED); gravity-orientation block seen. M10c: bounded gravity-toward-wall test after WS jumps.

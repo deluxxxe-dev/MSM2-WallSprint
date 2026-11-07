@@ -24,4 +24,6 @@ inline std::atomic<bool> wsChargeJump{false};
 inline std::atomic<bool> wsVelocityWrite{false};
 // M9f: bounded +4 m/s velocity probe of search candidates during falls. WALLSPRINT_VELOCITY_PROBE, default 0.
 inline std::atomic<bool> velocityProbe{false};
+// M10c: gravity toward the wall for 1.5 s after a WS jump (gravity block write). WALLSPRINT_WS_GRAVITY_TEST, default 0.
+inline std::atomic<bool> wsGravityTest{false};
 }

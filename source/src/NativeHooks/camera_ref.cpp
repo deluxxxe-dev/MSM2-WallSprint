@@ -957,6 +957,56 @@ void m10GravityChain(const msm2::Snapshot& hero, std::uint64_t now) {
   }
   static unsigned sum = 0; if (sum++ < 30) msm2::writeLog("WS_GRAVITY_CHAIN_STATUS bases=%zu complete_chains=%u gravity_like=%u read_only=1", bases.size(), chains, hits);
 }
+// M10c (2026-11-07): gravity block test. M10b found, for one hero instance, [Transform+0xA88] -> +0xF0 -> +0xF8 -> +0x5F4
+// holding (0,-1,0 | 0,1,0 | 0,1,0): the SetGravityVector target layout (scalars/vector at +0, vectors at +12/+24).
+// Discovery: same chain from the Transform, its level-1 targets (0x2000 bytes) and their level-2 targets (0x400 bytes),
+// identity = exactly that vanilla pattern. Test (INI WALLSPRINT_WS_GRAVITY_TEST, default 0, shipped 1): when a WS jump
+// starts, write (-n | n | n) with n = last WS wall normal (gravity toward the wall), re-write each tick for 1.5 s,
+// then restore the vanilla pattern. Each tick logs whether the game kept the written values.
+constexpr float kGravVanilla[9] = {0, -1, 0, 0, 1, 0, 0, 1, 0};
+std::uintptr_t gbAddr{}; std::uint64_t gbFoundMs{}, gbStart{}, gbLastScan{}; bool gbActive{}; unsigned gbLogs{}, gbTests{};
+bool gbIsVanilla(const float* f) { for (int i = 0; i < 9; ++i) if (std::fabs(f[i] - kGravVanilla[i]) > 1e-4f) return false; return true; }
+bool gbChain(std::uintptr_t b, std::uintptr_t& g) { std::uintptr_t p1 = 0, p2 = 0;
+  if (!msm2::readMemory(b + 0xF0, &p1, 8) || !velReadable(p1) || !msm2::readMemory(p1 + 0xF8, &p2, 8) || !velReadable(p2)) return false;
+  g = p2 + 0x5F4; float f[9]; return msm2::readMemory(g, f, sizeof f) && gbIsVanilla(f); }
+void gbDiscover(const msm2::Snapshot& hero, std::uint64_t now) {
+  if (now - gbLastScan < 3000) { return; }
+  gbLastScan = now;
+  if (gbAddr) { float f[9]; if (msm2::readMemory(gbAddr, f, sizeof f) && (gbIsVanilla(f) || gbActive)) return; gbAddr = 0; }
+  static std::uintptr_t q[0x400], q2[0x80]; unsigned bases = 0;
+  std::uintptr_t roots[2] = {hero.transform, hero.hero};
+  for (int r = 0; r < 2 && !gbAddr; ++r) { auto root = roots[r]; if (!root) continue; std::uintptr_t g = 0;
+    if (gbChain(root, g)) { gbAddr = g; break; }
+    if (!msm2::readMemory(root, q, sizeof q)) continue;
+    for (unsigned i = 0; i < 0x400 && !gbAddr; ++i) { auto t = q[i]; if (!velReadable(t)) continue; ++bases;
+      if (gbChain(t, g)) { gbAddr = g; if (gbLogs++ < 20) msm2::writeLog("WS_GRAVITY_BLOCK found root=%s slot=0x%x level=1 g=0x%llx", r ? "hero" : "transform", i * 8, (unsigned long long)g); break; }
+      if (!msm2::readMemory(t, q2, sizeof q2)) continue;
+      for (unsigned j = 0; j < 0x80; ++j) { auto u = q2[j]; if (!velReadable(u)) continue; ++bases;
+        if (gbChain(u, g)) { gbAddr = g; if (gbLogs++ < 20) msm2::writeLog("WS_GRAVITY_BLOCK found root=%s slot=0x%x slot2=0x%x level=2 g=0x%llx", r ? "hero" : "transform", i * 8, j * 8, (unsigned long long)g); break; } } } }
+  if (!gbAddr) { static unsigned miss = 0; if (miss++ < 10) msm2::writeLog("WS_GRAVITY_BLOCK not_found bases=%u", bases); } else gbFoundMs = now;
+}
+void gbWrite(const float* v) { MEMORY_BASIC_INFORMATION mb{};
+  if (!gbAddr || !VirtualQuery(reinterpret_cast<void*>(gbAddr), &mb, sizeof mb) || (mb.Protect & 0xff) != PAGE_READWRITE) return;
+  auto* f = reinterpret_cast<volatile float*>(gbAddr); for (int i = 0; i < 9; ++i) f[i] = v[i]; }
+void m10GravityTest(const msm2::Snapshot& hero, std::uint64_t now) {
+  if (killed.load() || !hero.hero) { if (gbActive) { gbWrite(kGravVanilla); gbActive = false; } return; }
+  gbDiscover(hero, now);
+  if (!ws::drive::wsGravityTest.load() || !gbAddr) return;
+  bool wsNow = engagedManager.load() != 0 && now - lastWsMs.load() < 150;
+  static bool wasWs = false; bool jumpStart = wasWs && !wsNow; wasWs = wsNow;
+  float n[3] = {m9N[0].load(), m9N[1].load(), m9N[2].load()};
+  float want[9] = {-n[0], -n[1], -n[2], n[0], n[1], n[2], n[0], n[1], n[2]};
+  if (jumpStart && !gbActive && gbTests < 100 && std::fabs(n[1]) < 0.3f) { float f[9];
+    if (msm2::readMemory(gbAddr, f, sizeof f) && gbIsVanilla(f)) { gbWrite(want); gbActive = true; gbStart = now; ++gbTests;
+      msm2::writeLog("WS_GRAVITY_TEST start test=%u n=%.3f,%.3f,%.3f g=0x%llx", gbTests, n[0], n[1], n[2], (unsigned long long)gbAddr); } }
+  if (!gbActive) return;
+  float f[9]; bool rd = msm2::readMemory(gbAddr, f, sizeof f);
+  bool kept = rd; for (int i = 0; i < 9 && rd; ++i) kept = kept && std::fabs(f[i] - want[i]) < 1e-3f;
+  if (gbTests <= 6) msm2::writeLog("WS_GRAVITY_TEST t_ms=%llu kept=%u read=%.3f,%.3f,%.3f|%.3f,%.3f,%.3f|%.3f,%.3f,%.3f", (unsigned long long)(now - gbStart), unsigned(kept), f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7], f[8]);
+  if (now - gbStart >= 1500 || wsNow) { gbWrite(kGravVanilla); gbActive = false; msm2::writeLog("WS_GRAVITY_TEST restore test=%u reason=%s", gbTests, wsNow ? "ws_again" : "timeout_1500ms"); }
+  else gbWrite(want);
+}
+void gbRestoreNow() { if (gbActive) { gbWrite(kGravVanilla); gbActive = false; } }
 struct ChargeMeasure { std::uint64_t release{}, hold{}; float y0{}, apex{}; bool active{}; } cm; unsigned cmLogs{};
 void m8ChargeMeasure(const msm2::Snapshot& hero, std::uint64_t now) {
   auto rel = jiRelease.load(), pr = jiPress.load();
@@ -1055,6 +1105,7 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   m8ChargeMeasure(snapshot, now);
   m9VelocitySearch(snapshot, motion, now);
   m10GravityChain(snapshot, now);
+  m10GravityTest(snapshot, now);
   m5eDistance(snapshot, now);
   m5ePitch(snapshot, now);
   if (now - statusLastMs >= 5000 && statusLogs < 40) { statusLastMs = now; ++statusLogs;
@@ -1107,9 +1158,9 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   }
 }
 
-void kill() noexcept { jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("kill"); }
+void kill() noexcept { gbRestoreNow(); jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("kill"); }
 void stop() noexcept {
-  jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("stop");
+  gbRestoreNow(); jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("stop");
   for (int m = 0; m < 4; ++m) { if (xgTarget[m]) MH_DisableHook(xgTarget[m]); if (xsTarget[m]) MH_DisableHook(xsTarget[m]); }
   if (wgiReadTarget) MH_DisableHook(wgiReadTarget);
   if (wgiVibTarget) MH_DisableHook(wgiVibTarget);

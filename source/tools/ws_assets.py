@@ -48,8 +48,8 @@ CLIP_SWAPS = (
     ("stand_sprint_jump_fwd_spiderman_miles.animclip", "characters/hero/hero_spiderman_milesmorales/animation/wall_run_jump_spin_02_rt_spiderman_miles.animclip"),
     # M10a test (2026-11-07): which clip is the vanilla sprint charge-jump launch? Peter's stand_sprint_high_jump_fwd gets
     # the normal sprint jump. If a GROUND sprint charge jump now launches with the normal sprint-jump motion, this is it.
-    # M10b: M10a showed no visible change -> stand_sprint_high_jump_fwd is not the launch; test stand_chargejump_fwd next.
-    ("stand_sprint_jump_fwd_spiderman.animclip", "characters/hero/hero_spiderman/animations/stand_chargejump_fwd_spiderman.animclip"),
+    # M10b result (owner): with this swap a GROUND sprint charge jump played the normal sprint-jump motion, standing charge
+    # unchanged -> stand_chargejump_fwd is the vanilla sprint charge-jump launch (VERIFIED). Test swap removed (M10c).
 )
 CLIP_MIN, CLIP_MAX = 1024, 1024 * 1024
 # M6d (2026-11-05): frame the WS camera like the ground camera (M6f: standard Offset* values, see CAMERA_PATCH). Vanilla camera_wallrun_aimcontext

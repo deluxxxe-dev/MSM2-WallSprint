@@ -63,7 +63,7 @@ with tempfile.TemporaryDirectory() as t:                       # M2a clip swaps
     assert "SprintClip" in z.read("info.json").decode()
     jump = os.urandom(8192); (inp / "stand_sprint_jump_fwd_spiderman.animclip").write_bytes(jump)   # M8a fan-out
     jm = a.clip_members(inp); jt = [t for n, t in a.CLIP_SWAPS if n == "stand_sprint_jump_fwd_spiderman.animclip"]
-    assert len(jt) == 4 and all(jm["0/" + t] == jump for t in jt); (inp / "stand_sprint_jump_fwd_spiderman.animclip").unlink()
+    assert len(jt) == 3 and all(jm["0/" + t] == jump for t in jt); (inp / "stand_sprint_jump_fwd_spiderman.animclip").unlink()
     (inp / a.CLIP_SWAPS[1][0]).write_bytes(b"x" * 10)          # implausible size -> refuse, previous stage kept
     before = out.read_bytes(); fails(lambda: a.deploy(ws, game)); assert out.read_bytes() == before
 sp, rep = b.patch_steering(steer, 90, (0.0, 0.0), (255, 255))
