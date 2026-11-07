@@ -328,3 +328,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M9d: charge jump ~2x speed, mostly along the wall. M9e: per-charge field attribution (InSpeedMax/Speed/GenBoost).
 - 2026-11-07: M9e cloud full suites PASS on tree 7b0cfe8cbdb365256c24d38828f6504d4fa7cbcb (listed).
 - 2026-11-07: M9e: no single config field aims the charge along the normal. M9f: two-level velocity search + bounded +4 m/s fall probe.
+- 2026-11-07: M9f cloud full suites PASS on tree af795a64f06b830ab021a49816abdadda20fa981 (listed).

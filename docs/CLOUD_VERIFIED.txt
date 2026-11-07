@@ -28,3 +28,4 @@ b63f07b3cbffe0593270d7982ed258393cae74f0 2026-11-07 build+test.sh+smoke+hooks+pa
 115f6783fb1077b1138567603107121758c93ba2 2026-11-07 build+test.sh+smoke+hooks+package PASS (M9c slot 0 + RT hold)
 e750dd98d8bbade16aa653c915e4ff66d657f204 2026-11-07 build+test.sh+smoke+hooks+package PASS (M9d charge scales jump caps)
 7b0cfe8cbdb365256c24d38828f6504d4fa7cbcb 2026-11-07 build+test.sh+smoke+hooks+package PASS (M9e field attribution)
+af795a64f06b830ab021a49816abdadda20fa981 2026-11-07 build+test.sh+smoke+hooks+package PASS (M9f velocity search + probe)
