@@ -47,3 +47,4 @@ bfb672581cf1771b11d860d18e7548ee06aa3372 2026-11-07 build+test.sh+smoke+hooks+pa
 4cd2f27bf4cb3e6b6c44994c661d0f48587a9fdc 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10l hero block by up)
 5a5d1cffe06e356d5a66164f9106589fda569b1b 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10m)
 f5fe48543a148cebf8726dbf2b0049abcf8de203 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10n gravity hold rules)
+a22e5a2964dd650d1a4eb607fc67107bdbae865b 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10o)
