@@ -385,7 +385,7 @@ void m6Exit(const msm2::Snapshot& hero, std::uint64_t now) {
 namespace {
 // M8b diagnostic (read-only): hero velocity after WS ends (jump), split along the last WS wall normal n, world up y
 // and the horizontal wall axis h = up x n, to measure the WR jump-off vector. 100 ms worker, <= 10 episodes x 14 lines.
-std::atomic<float> m9N[3]{}; std::atomic<std::uintptr_t> m9Hero{0};
+std::atomic<float> m9N[3]{}; std::atomic<std::uintptr_t> m9Hero{0}; std::atomic<std::uint64_t> m9NMs{0};
 ws::Vec3 jtN{}, jtPos{}, jtVel{}; bool jtWs{}, jtHave{}; std::uint64_t jtEnd{}; unsigned jtEpisodes{}, jtLines{};
 void m8JumpTrace(const msm2::Snapshot& hero, const ws::diag::Motion& motion, std::uint64_t now) {
   auto axes = ws::diag::actorAxes(hero.prefix);
@@ -393,7 +393,7 @@ void m8JumpTrace(const msm2::Snapshot& hero, const ws::diag::Motion& motion, std
   ws::Vec3 pos{hero.position[0], hero.position[1], hero.position[2]};
   if (ws) {
     if (hero.hero && axes.valid && std::fabs(axes.up.y) < 0.3f) { jtN = axes.up; jtPos = pos; jtVel = motion.valid ? motion.velocity : ws::Vec3{}; jtHave = true;
-      m9N[0].store(axes.up.x); m9N[1].store(axes.up.y); m9N[2].store(axes.up.z); m9Hero.store(hero.hero); }
+      m9N[0].store(axes.up.x); m9N[1].store(axes.up.y); m9N[2].store(axes.up.z); m9Hero.store(hero.hero); m9NMs.store(now); }
     jtWs = true; return;
   }
   if (jtWs) { jtWs = false; if (jtHave && jtEpisodes < 60) { jtEnd = lastWsMs.load(); jtLines = 0; ++jtEpisodes; } else jtEnd = 0; }
@@ -1041,14 +1041,19 @@ void m10GravityTest(const msm2::Snapshot& hero, std::uint64_t now) {
   float n[3] = {m9N[0].load(), m9N[1].load(), m9N[2].load()};
   float want[9] = {-n[0], -n[1], -n[2], n[0], n[1], n[2], n[0], n[1], n[2]};
   float nl = std::sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);   // M10c-r2: M10c wrote n = 0 (no WS normal yet)
-  if (jumpStart && !gbActive && gbTests < 100 && nl > 0.95f && nl < 1.05f && std::fabs(n[1]) < 0.3f) { float f[9];
+  // M10f: M10e showed the block sets the hero up (orientation) and zeroes motion along it, without a pull. Now the block
+  // is written for the whole WS (from WS start) so the jump-off itself sees up = n; restored 1.5 s after the WS ends.
+  bool startNow = ws::drive::wsGravityDuringWs.load() ? wsNow : jumpStart;
+  bool fresh = now - m9NMs.load() < 250;   // the normal must come from the current WS, not a previous wall
+  if (startNow && fresh && !gbActive && gbTests < 100 && nl > 0.95f && nl < 1.05f && std::fabs(n[1]) < 0.3f) { float f[9];
     if (msm2::readMemory(gbAddr, f, sizeof f) && gbIsVanilla(f)) { gbWrite(want); gbActive = true; gbStart = now; ++gbTests;
       msm2::writeLog("WS_GRAVITY_TEST start test=%u n=%.3f,%.3f,%.3f g=0x%llx", gbTests, n[0], n[1], n[2], (unsigned long long)gbAddr); } }
   if (!gbActive) return;
   float f[9]; bool rd = msm2::readMemory(gbAddr, f, sizeof f);
   bool kept = rd; for (int i = 0; i < 9 && rd; ++i) kept = kept && std::fabs(f[i] - want[i]) < 1e-3f;
-  if (gbTests <= 6) msm2::writeLog("WS_GRAVITY_TEST t_ms=%llu kept=%u read=%.3f,%.3f,%.3f|%.3f,%.3f,%.3f|%.3f,%.3f,%.3f", (unsigned long long)(now - gbStart), unsigned(kept), f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7], f[8]);
-  if (now - gbStart >= 1500 || wsNow) { gbWrite(kGravVanilla); gbActive = false; msm2::writeLog("WS_GRAVITY_TEST restore test=%u reason=%s", gbTests, wsNow ? "ws_again" : "timeout_1500ms"); }
+  if (gbTests <= 6 && (now - gbStart) % 500 < 110) msm2::writeLog("WS_GRAVITY_TEST t_ms=%llu kept=%u read=%.3f,%.3f,%.3f|%.3f,%.3f,%.3f|%.3f,%.3f,%.3f", (unsigned long long)(now - gbStart), unsigned(kept), f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7], f[8]);
+  bool done = ws::drive::wsGravityDuringWs.load() ? (!wsNow && now - lastWsMs.load() > 1500) : (now - gbStart >= 1500 || wsNow);
+  if (done) { gbWrite(kGravVanilla); gbActive = false; msm2::writeLog("WS_GRAVITY_TEST restore test=%u reason=%s", gbTests, wsNow ? "ws_again" : "timeout_1500ms"); }
   else gbWrite(want);
 }
 void gbRestoreNow() { if (gbActive) { gbWrite(kGravVanilla); gbActive = false; } }

@@ -26,4 +26,6 @@ inline std::atomic<bool> wsVelocityWrite{false};
 inline std::atomic<bool> velocityProbe{false};
 // M10c: gravity toward the wall for 1.5 s after a WS jump (gravity block write). WALLSPRINT_WS_GRAVITY_TEST, default 0.
 inline std::atomic<bool> wsGravityTest{false};
+// M10f: write the gravity block for the whole WS (not only after the jump). WALLSPRINT_WS_GRAVITY_DURING_WS, default 0.
+inline std::atomic<bool> wsGravityDuringWs{false};
 }
