@@ -34,3 +34,4 @@ c6be2e8764770fdf83b1772a15de55756aeccfd3 2026-11-07 build+test.sh+smoke+hooks+pa
 0382e89fb0d1a411e47de850abb16d8234b821dd 2026-11-07 build+test.sh+smoke+hooks+package PASS (M9h probe off)
 6eded085af2d833d87de5fcd9d5a33c191695b92 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10a gravity chain + clip id)
 3b37c482fa47b53d1a43a6b8416ebf12cdd435a7 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10b)
+e2b8bbedbe22466724624560f968caeac1c1a613 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10c gravity test)
