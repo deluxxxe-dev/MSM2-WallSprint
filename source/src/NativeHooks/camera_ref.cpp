@@ -878,12 +878,15 @@ void m9VelocitySearch(const msm2::Snapshot& hero, const ws::diag::Motion& motion
   // M9g: evaluated over two samples after the write: effect = (vy2 - vy0) - 2 * acc_before (gravity trend removed)
   if (vprobe.armed == 1) vprobe.armed = 2;
   else if (vprobe.armed == 2) { vprobe.armed = 0; auto& st = velStats[vprobe.key];
-    float effect = (vy - vprobe.vyBefore) - 2.f * vprobe.accBefore; if (st.trials < 2) st.effect[st.trials] = effect; ++st.trials;
-    msm2::writeLog("WS_VEL_PROBE key=0x%016llx trial=%u vy_before=%.2f vy_after2=%.2f acc_before=%.2f effect=%.2f expected=+4",
-      (unsigned long long)vprobe.key, unsigned(st.trials), vprobe.vyBefore, vy, vprobe.accBefore, effect); }
+    // M9h: +15 m/s push; a sample at |vy| < 0.5 after the write means a landing -> trial discarded (not counted).
+    bool landed = std::fabs(vy) < 0.5f;
+    float effect = (vy - vprobe.vyBefore) - 2.f * vprobe.accBefore;
+    if (!landed) { if (st.trials < 2) st.effect[st.trials] = effect; ++st.trials; }
+    msm2::writeLog("WS_VEL_PROBE key=0x%016llx trial=%u vy_before=%.2f vy_after2=%.2f acc_before=%.2f effect=%.2f expected=+15 landed_discarded=%u",
+      (unsigned long long)vprobe.key, unsigned(st.trials), vprobe.vyBefore, vy, vprobe.accBefore, effect, unsigned(landed)); }
   // probe arming: falling, no WS for 2 s, steady gravity trend
-  if (ws::drive::velocityProbe.load() && velSamples >= 300 && !vprobe.armed && now - velProbeLast > 600 && velProbes < 80 && accOk &&
-      now - lastWsMs.load() > 2000 && vy < -3.f && acc < -1.f && acc > -6.f) {
+  if (ws::drive::velocityProbe.load() && velSamples >= 300 && !vprobe.armed && now - velProbeLast > 600 && velProbes < 120 && accOk &&
+      now - lastWsMs.load() > 2000 && vy < -5.f && acc < -1.f && acc > -6.f) {
     std::uint64_t best = 0; std::uint32_t bestHits = 0; std::uintptr_t a = 0;
     for (int pass = 0; pass < 8; ++pass) { best = 0; bestHits = 0;
       for (auto& kv : velStats) if (!velRejected(kv.first) && kv.second.trials < 2 && double(kv.second.hits) / double(velSamples) >= 0.8 && kv.second.hits > bestHits) { best = kv.first; bestHits = kv.second.hits; }
@@ -897,7 +900,7 @@ void m9VelocitySearch(const msm2::Snapshot& hero, const ws::diag::Motion& motion
       MEMORY_BASIC_INFORMATION mb{};
       if (a && VirtualQuery(reinterpret_cast<void*>(a), &mb, sizeof mb) && (mb.Protect & 0xff) == PAGE_READWRITE && msm2::readMemory(a, v, 12) &&
           std::fabs(v[1] - vy) < 0.25f * std::fabs(vy) + 1.f) {
-        *reinterpret_cast<volatile float*>(a + 4) = v[1] + 4.f; ++velProbes; velProbeLast = now;
+        *reinterpret_cast<volatile float*>(a + 4) = v[1] + 15.f; ++velProbes; velProbeLast = now;
         if (velStats[best].trials == 0) velTestedAddr.push_back(a);
         vprobe = {best, vy, acc, now, 1}; }
       else { auto& st = velStats[best]; ++st.trials; st.effect[st.trials > 1 ? 1 : 0] = -99.f; } } }

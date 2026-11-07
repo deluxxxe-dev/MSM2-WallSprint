@@ -331,3 +331,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M9f cloud full suites PASS on tree af795a64f06b830ab021a49816abdadda20fa981 (listed).
 - 2026-11-07: M9f: 3 probes, field 0x4e4 object rejected. M9g: alias skipping, faster probes, 2-sample effect.
 - 2026-11-07: M9g cloud full suites PASS on tree c6be2e8764770fdf83b1772a15de55756aeccfd3 (listed).
+- 2026-11-07: M9g probes inconclusive (+-3 noise). M9h: +15 m/s probe, landings discarded.
