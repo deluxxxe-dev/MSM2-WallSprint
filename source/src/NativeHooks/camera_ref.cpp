@@ -1008,7 +1008,8 @@ std::uintptr_t sgDetour(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r
   bool doSub = sgSubActive.load(std::memory_order_relaxed) && rcx == sgSubBlock.load(std::memory_order_relaxed) && rcx;
   // M10p: ground contact by the game itself. In the air phase the game passing an up that turns toward vertical while the
   // hero's vertical speed is ~0 means it landed: stop substituting in this frame and let the game blend to its gravity.
-  if (doSub && sgAirPhase.load(std::memory_order_relaxed)) {   // also when locked: a landing ends the lock std::uint32_t inb[3];
+  // (also when locked: a landing ends the lock)
+  if (doSub && sgAirPhase.load(std::memory_order_relaxed)) { std::uint32_t inb[3];
     if (msm2::readMemory(rdx, inb, sizeof inb)) { float in[3]; std::memcpy(in, inb, 12); float sb[3]; for (int i = 0; i < 3; ++i) { std::uint32_t b = sgSubBits[i].load(); std::memcpy(&sb[i], &b, 4); }
       if (std::isfinite(in[1]) && in[1] > sb[1] + 0.05f && std::fabs(sgLastVy.load(std::memory_order_relaxed)) < 2.f) { doSub = false; sgSubActive.store(false); sgGameLanded.store(true); } } }
   if (doSub) { sub[0] = sgSubBits[0].load(); sub[1] = sgSubBits[1].load(); sub[2] = sgSubBits[2].load(); sgSubCalls.fetch_add(1, std::memory_order_relaxed); }
