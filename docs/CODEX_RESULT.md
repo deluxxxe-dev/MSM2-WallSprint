@@ -342,3 +342,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M10b: stand_chargejump_fwd = sprint charge launch clip (VERIFIED); gravity-orientation block seen. M10c: bounded gravity-toward-wall test after WS jumps.
 - 2026-11-07: M10c cloud full suites PASS on tree e2b8bbedbe22466724624560f968caeac1c1a613 (listed).
 - 2026-11-07: M10c broke WS (worker stall from the gravity search; zero-normal write). M10c-r2: search on its own thread, normal check.
+- 2026-11-07: M10c-r2 cloud full suites PASS on tree 5124508807b6d13a55076ed897b1ae257e730a53 (listed).
