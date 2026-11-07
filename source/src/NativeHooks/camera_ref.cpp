@@ -1004,19 +1004,55 @@ std::uintptr_t sgDetour(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r
       (unsigned long long)sgCalls.load(), (unsigned long long)rcx, unsigned(ri), in[0], in[1], in[2], unsigned(rf), f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7], f[8], (unsigned long)GetCurrentThreadId()); }
   return r;
 }
+// M10i: MinHook refused this entry (MH_ERROR_UNSUPPORTED_FUNCTION: VEX prefix c5 fb 10 02 = vmovsd xmm0,[rdx];
+// c5 fa 10 15 <disp32> = vmovss xmm2,[rip+disp32]). Exact-prefix manual hook: the first 12 bytes (these two
+// instructions, verified byte-exact apart from disp32) move to a trampoline allocated within +-2 GiB, the RIP-relative
+// displacement is recomputed, and the trampoline jumps back to entry+12. The entry gets `jmp rel32` to a near relay
+// that jumps to sgDetour; 7 NOPs pad the 12 bytes. Restored byte-exact on stop.
+unsigned char sgSaved[12]{}; std::uintptr_t sgEntry{}; unsigned char* sgNear{};
+unsigned char* sgAllocNear(std::uintptr_t target) {
+  SYSTEM_INFO si{}; GetSystemInfo(&si); const std::uintptr_t gran = si.dwAllocationGranularity;
+  for (std::uintptr_t d = gran; d < 0x60000000ull; d += gran) for (int sgn = -1; sgn <= 1; sgn += 2) {
+    std::uintptr_t a = sgn < 0 ? (target > d ? (target - d) & ~(gran - 1) : 0) : ((target + d) & ~(gran - 1)); if (!a) continue;
+    if (void* p = VirtualAlloc(reinterpret_cast<void*>(a), 4096, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE)) return static_cast<unsigned char*>(p); }
+  return nullptr;
+}
+bool sgManualHook(std::uintptr_t t, void* detour, void** original, const char*& why) {
+  const unsigned char* c = reinterpret_cast<const unsigned char*>(t);
+  static const unsigned char kI1[4] = {0xc5, 0xfb, 0x10, 0x02}; static const unsigned char kI2[4] = {0xc5, 0xfa, 0x10, 0x15};
+  if (std::memcmp(c, kI1, 4) || std::memcmp(c + 4, kI2, 4)) { why = "prefix_mismatch"; return false; }
+  std::int32_t disp; std::memcpy(&disp, c + 8, 4); std::uintptr_t abs = t + 12 + std::intptr_t(disp);
+  auto* n = sgAllocNear(t); if (!n) { why = "no_near_memory"; return false; }
+  // trampoline at n+0: i1 (4) + i2 (8, new disp) + jmp [rip+0] abs64 (14) ; relay at n+64: jmp [rip+0] detour
+  std::memcpy(n, c, 4); std::memcpy(n + 4, kI2, 4);
+  std::intptr_t nd = std::intptr_t(abs) - std::intptr_t(n + 12); if (nd > INT32_MAX || nd < INT32_MIN) { VirtualFree(n, 0, MEM_RELEASE); why = "disp_range"; return false; }
+  std::int32_t nd32 = std::int32_t(nd); std::memcpy(n + 8, &nd32, 4);
+  n[12] = 0xff; n[13] = 0x25; std::memset(n + 14, 0, 4); std::uintptr_t back = t + 12; std::memcpy(n + 18, &back, 8);
+  n[64] = 0xff; n[65] = 0x25; std::memset(n + 66, 0, 4); auto det = reinterpret_cast<std::uintptr_t>(detour); std::memcpy(n + 70, &det, 8);
+  std::intptr_t rel = std::intptr_t(n + 64) - std::intptr_t(t + 5); if (rel > INT32_MAX || rel < INT32_MIN) { VirtualFree(n, 0, MEM_RELEASE); why = "relay_range"; return false; }
+  unsigned char patch[12]; patch[0] = 0xe9; std::int32_t r32 = std::int32_t(rel); std::memcpy(patch + 1, &r32, 4); std::memset(patch + 5, 0x90, 7);
+  DWORD old = 0; if (!VirtualProtect(reinterpret_cast<void*>(t), 12, PAGE_EXECUTE_READWRITE, &old)) { VirtualFree(n, 0, MEM_RELEASE); why = "protect"; return false; }
+  std::memcpy(sgSaved, c, 12); *original = n;
+  // write the tail first, then the 4 bytes that start the jump, so no thread sees a half-written jump target
+  std::memcpy(reinterpret_cast<void*>(t + 4), patch + 4, 8); std::memcpy(reinterpret_cast<void*>(t), patch, 4);
+  DWORD tmp = 0; VirtualProtect(reinterpret_cast<void*>(t), 12, old, &tmp); FlushInstructionCache(GetCurrentProcess(), reinterpret_cast<void*>(t), 12);
+  sgEntry = t; sgNear = n; why = "ok"; return true;
+}
+void sgManualUnhook() {
+  if (!sgEntry) { return; }
+  DWORD old = 0;
+  if (VirtualProtect(reinterpret_cast<void*>(sgEntry), 12, PAGE_EXECUTE_READWRITE, &old)) { std::memcpy(reinterpret_cast<void*>(sgEntry), sgSaved, 12); DWORD tmp = 0;
+    VirtualProtect(reinterpret_cast<void*>(sgEntry), 12, old, &tmp); FlushInstructionCache(GetCurrentProcess(), reinterpret_cast<void*>(sgEntry), 12); }
+  sgEntry = 0;   // trampoline memory stays allocated (a thread may still be inside it)
+}
 void sgInstall(std::uintptr_t image, std::size_t imageSize) {
   if (!image || imageSize <= kSetGravityRva + 79) return;
   auto t = image + kSetGravityRva; unsigned char code[79]{}; char hash[65]{};
   bool ok = msm2::readMemory(t, code, sizeof code) && sha256(code, sizeof code, hash) && !std::strcmp(hash, kSetGravitySha);
-  // M10h: M10e logged installed=0 with a matching sha256; log each MinHook status and the first 16 code bytes.
-  int stInit = -99, stCreate = -99, stEnable = -99; bool shaOk = ok;
-  if (ok) { stInit = MH_Initialize(); ok = stInit == MH_OK || stInit == MH_ERROR_ALREADY_INITIALIZED;
-    if (ok) { stCreate = MH_CreateHook(reinterpret_cast<void*>(t), reinterpret_cast<void*>(&sgDetour), reinterpret_cast<void**>(&sgOrig)); ok = stCreate == MH_OK; }
-    if (ok) { stEnable = MH_EnableHook(reinterpret_cast<void*>(t)); ok = stEnable == MH_OK; } }
+  const char* why = ok ? "" : "sha_mismatch";
+  if (ok) ok = sgManualHook(t, reinterpret_cast<void*>(&sgDetour), reinterpret_cast<void**>(&sgOrig), why);
   if (ok) sgTarget = reinterpret_cast<void*>(t);
-  char hex[49]{}; for (int i = 0; i < 16; ++i) std::snprintf(hex + i * 3, 4, "%02x ", code[i]);
-  msm2::writeLog("WS_SET_GRAVITY_HOOK installed=%u sha_ok=%u mh_init=%d mh_create=%d mh_enable=%d rva=0x35132a0 sha256=%s first16=%s pass_through=1",
-    unsigned(ok), unsigned(shaOk), stInit, stCreate, stEnable, hash[0] ? hash : "none", hex);
+  msm2::writeLog("WS_SET_GRAVITY_HOOK installed=%u method=manual_vex_prefix result=%s rva=0x35132a0 sha256=%s pass_through=1", unsigned(ok), why, hash[0] ? hash : "none");
 }
 // M10c-r2: M10c ran this search on the 100 ms worker; ~10k bases every 3 s stalled that worker for tens of seconds and
 // broke the WS camera/orientation. The search now runs on its own low-priority thread, yields every 64 bases, and
@@ -1237,7 +1273,7 @@ void kill() noexcept { gbRestoreNow(); jcRestoreNow(); killed = true; ws_wallspr
 void stop() noexcept {
   gbRestoreNow(); jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("stop");
   for (int m = 0; m < 4; ++m) { if (xgTarget[m]) MH_DisableHook(xgTarget[m]); if (xsTarget[m]) MH_DisableHook(xsTarget[m]); }
-  if (sgTarget) MH_DisableHook(sgTarget);
+  if (sgTarget) sgManualUnhook();
   if (wgiReadTarget) MH_DisableHook(wgiReadTarget);
   if (wgiVibTarget) MH_DisableHook(wgiVibTarget);
   for (int k = 0; k < kApiN; ++k) if (apiTarget[k]) MH_DisableHook(apiTarget[k]);
