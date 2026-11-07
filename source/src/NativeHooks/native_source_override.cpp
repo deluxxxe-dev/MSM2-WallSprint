@@ -67,7 +67,7 @@ struct Shared {
  std::uint64_t permissionEpoch{},acceptedEpoch{},staleStart{},staleUpdate{},staleAge{},maxStaleMs{},handledStaleUpdate{};
  double pausedTransitionMs{},frozenTransitionMs{};
  bool positionRequested{};unsigned movementSamples{},movementEmitted{};std::uint64_t movementMs{},movementUpdate{};Vec3 movementPosition{};
- ws::heading::Reversal heading;double headingClock{};std::uint64_t headingWallMs{};unsigned headingLogs{},headingHoldLogs{},actorLogs{},countLogs{};
+ unsigned surfaceRetargets{};ws::heading::Reversal heading;double headingClock{};std::uint64_t headingWallMs{};unsigned headingLogs{},headingHoldLogs{},actorLogs{},countLogs{};
  Adhesion adhesion{};
 } state;
 struct Comparison {ws::motion_diag::Window window;Token token{};std::uint64_t session{};std::uintptr_t hero{},transform{};Vec3 normal{};} comparison;
@@ -499,7 +499,18 @@ void tick(const ws::observed::VerifiedWallContext& ctx,const char* reason,bool a
  if(!currentGuards()){hardClose("current_hook_or_caller_integrity_lost");return;}
  Vec3 n{};bool normalOk=token.owner<=UINTPTR_MAX-0x3a4&&msm2::readMemory(token.owner+0x398,&n,12)&&ws::finite(n);
  if(state.entered){float length=normalOk?std::sqrt(ws::dot(n,n)):0;
-  if(length<.95f||length>1.05f||std::abs(n.y)>length*.20f||ws::dot(n,state.transition.surface)<length*.995f){hardClose("invalid_owned_surface_normal");return;}}
+  if(length<.95f||length>1.05f||std::abs(n.y)>length*.20f){hardClose("invalid_owned_surface_normal");return;}
+  // M10d (2026-11-07): the owned wall normal changing by > ~5.7 deg used to end the override mid-WS (body upright while
+  // the WallRun continued; 8/14 sessions on uneven facades in log 20261107-164813). A moderate change (< ~45 deg,
+  // still a vertical wall) now re-aims the orientation from the current applied basis to the new wall over the normal
+  // rotate time (heading re-entered from the new target). Cap 64 per session; larger changes still close.
+  float along=ws::dot(n,state.transition.surface);
+  if(along<length*.995f){
+   const auto& from=state.lastT>0?state.currentBasis:state.entryBasis;
+   if(along<length*.70f||state.surfaceRetargets>=64||!state.transition.enter(from,n,double(now)-state.pausedTransitionMs)){hardClose("invalid_owned_surface_normal");return;}
+   state.entryBasis=from;state.heading.reset();state.headingWallMs=0;++state.surfaceRetargets;state.lastT=0;
+   if(state.surfaceRetargets<=8)writeLog("NATIVE_SOURCE_SURFACE_RETARGET session=%llu count=%u angle_deg=%.1f new_normal=%.3f,%.3f,%.3f",(unsigned long long)state.session,state.surfaceRetargets,std::acos(std::clamp(along/length,-1.f,1.f))*57.2958f,n.x,n.y,n.z);
+  }}
  state.elapsed=float(ctx.elapsed);
  StaleSignal signal{};
  if(state.ownership==Ownership::Active&&stalePublication.read(signal)&&signal.session==state.session&&signal.token.owner==state.owner&&signal.token.generation==state.generation&&signal.token.updates>state.handledStaleUpdate&&signal.token.acceptedEventEpoch==state.acceptedEpoch&&signal.token.thread==state.expectedThread){
