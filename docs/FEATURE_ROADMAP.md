@@ -2,6 +2,20 @@
 
 This file records deferred user-facing features that should be implemented only after the underlying movement/ownership foundation is safe enough. It does not authorize bypassing the current analysis gates.
 
+## Owner requirements 2026-11-07 (authoritative, methods free)
+Concept: the wall is treated as the ground; WS should perform like ground movement.
+Mandatory, in this order unless implementation needs reorder:
+1. WS charge jump uses its own motion (the vanilla sprint charge-jump launch), separate from the normal WS jump.
+2. Normal jump and charge jump differ in height/speed like on the ground (vanilla curve: normal ~1.8 m, charge ~15 m at
+   0.5 s hold to ~39 m at ~1.1 s).
+3. The jump goes "up" from the wall (wall = down), and gravity keeps the wall-down direction for a few seconds or until
+   landing on another wall/ground.
+Afterwards: wall parkour, web zip, etc.
+Route plan (analysis/M8_JUMP_PLAN_20261106.md): (a) gravity direction via the game's gravity owner/setter
+(SetGravityVector RVA 0x35132A0, chain load64(load64(owner+0xF0)+0xF8)+0x5F4) -> if the hero gravity can be pointed at
+the wall, the vanilla jump arc (YBoost/TimeToPeak) may follow it (req. 2+3 with the existing config writes);
+(b) charge motion via an in-memory animset entry switch at release; (c) fallback: position-driven (kinematic) jump.
+
 ## Design principle
 
 Current near-term priority is completing the bounded orientation/reversal proof, then establishing safe wall-relative directional locomotion. A validated high-level motion route may replace the deferred low-level writer route; a roadmap is not permission to bypass ownership/lifecycle proof. User-facing controls and tuning follow the relevant demonstrated behavior.

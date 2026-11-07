@@ -335,3 +335,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M9h cloud full suites PASS on tree 639b5c52397001acddd91dd28fc780e06fedae98 (listed).
 - 2026-11-07: M9h: velocity search within two pointer levels closed (no writable source). Probe off (INI 0).
 - 2026-11-07: probe-off tree cloud full suites PASS (0382e89fb0d1a411e47de850abb16d8234b821dd, listed).
+- 2026-11-07: owner requirements recorded (FEATURE_ROADMAP). M10a: gravity chain discovery (read-only) + sprint-charge clip identification.

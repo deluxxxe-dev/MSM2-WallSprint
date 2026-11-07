@@ -870,7 +870,7 @@ std::uintptr_t velResolve(const msm2::Snapshot& hero, std::uint64_t key) {
 struct VelProbe { std::uint64_t key{}; float vyBefore{}, accBefore{}; std::uint64_t ms{}; int armed{}; } vprobe; float velPrevVy{}; bool velPrevOk{}; std::uint64_t velProbeLast{};
 unsigned velProbes{}; std::vector<std::uintptr_t> velTestedAddr;   // M9g: aliases (same object via other paths) skipped
 void m9VelocitySearch(const msm2::Snapshot& hero, const ws::diag::Motion& motion, std::uint64_t now) {
-  if (killed.load() || !hero.hero) return;
+  if (killed.load() || !hero.hero || !ws::drive::velocityProbe.load()) return;   // M10a: route closed, off unless probing
   if (!velBuilt || now - velBuilt > 10000) { velBuild(hero); velBuilt = now; }
   if (!motion.valid) { velPrevOk = false; return; }
   float vy = motion.velocity.y; float acc = velPrevOk ? vy - velPrevVy : 0.f; bool accOk = velPrevOk; velPrevVy = vy; velPrevOk = true;
@@ -924,6 +924,38 @@ void m9VelocitySearch(const msm2::Snapshot& hero, const ws::diag::Motion& motion
       msm2::writeLog("WS_VEL_CANDIDATE rank=%zu key=0x%016llx root=%s s1=0x%x s2=0x%x field=0x%x hits=%u ratio=%.2f trials=%u effect=%.2f/%.2f rejected=%u last=%.2f,%.2f,%.2f",
         i + 1, (unsigned long long)k, (k >> 63) ? "transform" : "hero", unsigned((k >> 48) & 0x7FFF), unsigned((k >> 32) & 0xFFFF) ? unsigned((k >> 32) & 0xFFFF) - 1 : 0xFFFFu,
         unsigned(k & 0xFFFFFFFFu), st.hits, double(st.hits) / double(velSamples), unsigned(st.trials), st.effect[0], st.effect[1], unsigned(velRejected(k)), st.ex[0], st.ex[1], st.ex[2]); } }
+}
+// M10a (2026-11-07, read-only): gravity owner discovery. Static evidence (analysis/MOTION_GRAVITY_OWNER_CONTRACT_20261031.md):
+// GravityOrientationOwner calls SetGravityVector with RCX = load64(load64(entry RCX + 0xF0) + 0xF8) + 0x5F4; the setter
+// writes RCX+12..23 and +24..35 (and scalars at +0/+4/+8). The owner type is UNKNOWN, so this chain is evaluated from
+// the hero actor, its Transform and every heap object they point to (first 0x2000 bytes); the 9 floats at the end of
+// each complete chain are logged when one of the vectors looks like gravity (|v| ~1 or 5-60, pointing down).
+unsigned gvLogs{}; std::uint64_t gvLast{}; std::vector<std::uintptr_t> gvSeen;
+bool gvVec(const float* v) { float l = std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]); if (!std::isfinite(l)) return false;
+  return ((l > 0.95f && l < 1.05f) || (l > 5.f && l < 60.f)) && v[1] < -0.9f * l; }
+void m10GravityChain(const msm2::Snapshot& hero, std::uint64_t now) {
+  if (killed.load() || !hero.hero || gvLogs >= 40 || now - gvLast < 5000) { return; }
+  gvLast = now;
+  std::vector<std::pair<std::uintptr_t, unsigned>> bases; bases.push_back({hero.hero, 0xFFFFu}); bases.push_back({hero.transform, 0xFFFEu});
+  static std::uintptr_t q[0x400];
+  for (int r = 0; r < 2; ++r) { auto root = r ? hero.transform : hero.hero; if (!root || !msm2::readMemory(root, q, sizeof q)) continue;
+    for (unsigned i = 0; i < 0x400; ++i) if (velReadable(q[i])) bases.push_back({q[i], (unsigned(r) << 15) | (i * 8)}); }
+  unsigned chains = 0, hits = 0;
+  for (auto& b : bases) {
+    std::uintptr_t p1 = 0, p2 = 0; if (!msm2::readMemory(b.first + 0xF0, &p1, 8) || !velReadable(p1)) continue;
+    if (!msm2::readMemory(p1 + 0xF8, &p2, 8) || !velReadable(p2)) continue;
+    auto g = p2 + 0x5F4; float f[9]; if (!msm2::readMemory(g, f, sizeof f)) { continue; }
+    ++chains;
+    if (!gvVec(f + 3) && !gvVec(f + 6) && !gvVec(f)) { continue; }
+    ++hits;
+    bool seen = false; for (auto x : gvSeen) { seen |= x == g; }
+    if (seen) { continue; }
+    gvSeen.push_back(g);
+    if (gvLogs++ < 40) msm2::writeLog("WS_GRAVITY_CHAIN base=%s0x%x g=0x%llx f=%.3f,%.3f,%.3f | %.3f,%.3f,%.3f | %.3f,%.3f,%.3f read_only=1",
+      b.second == 0xFFFFu ? "hero" : b.second == 0xFFFEu ? "transform" : (b.second >> 15) ? "transform_ptr@" : "hero_ptr@", (b.second >= 0xFFFEu) ? 0u : (b.second & 0x7FFF),
+      (unsigned long long)g, f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7], f[8]);
+  }
+  static unsigned sum = 0; if (sum++ < 6) msm2::writeLog("WS_GRAVITY_CHAIN_STATUS bases=%zu complete_chains=%u gravity_like=%u read_only=1", bases.size(), chains, hits);
 }
 struct ChargeMeasure { std::uint64_t release{}, hold{}; float y0{}, apex{}; bool active{}; } cm; unsigned cmLogs{};
 void m8ChargeMeasure(const msm2::Snapshot& hero, std::uint64_t now) {
@@ -1022,6 +1054,7 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   m8ApiHooks(now);
   m8ChargeMeasure(snapshot, now);
   m9VelocitySearch(snapshot, motion, now);
+  m10GravityChain(snapshot, now);
   m5eDistance(snapshot, now);
   m5ePitch(snapshot, now);
   if (now - statusLastMs >= 5000 && statusLogs < 40) { statusLastMs = now; ++statusLogs;
