@@ -30,3 +30,4 @@ e750dd98d8bbade16aa653c915e4ff66d657f204 2026-11-07 build+test.sh+smoke+hooks+pa
 7b0cfe8cbdb365256c24d38828f6504d4fa7cbcb 2026-11-07 build+test.sh+smoke+hooks+package PASS (M9e field attribution)
 af795a64f06b830ab021a49816abdadda20fa981 2026-11-07 build+test.sh+smoke+hooks+package PASS (M9f velocity search + probe)
 c6be2e8764770fdf83b1772a15de55756aeccfd3 2026-11-07 build+test.sh+smoke+hooks+package PASS (M9g probe aliases)
+639b5c52397001acddd91dd28fc780e06fedae98 2026-11-07 build+test.sh+smoke+hooks+package PASS (M9h +15 probe)
