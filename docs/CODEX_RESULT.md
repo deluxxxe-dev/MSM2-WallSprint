@@ -358,3 +358,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M10j cloud full suites PASS on tree 2f89e382375d70007da28162329238764c94379e (listed).
 - 2026-11-07: M10j: hero block dropped (non-vanilla), no test. M10k: sticky hero block, log the game's hero up inputs.
 - 2026-11-07: M10k cloud full suites PASS on tree 7a5ca3286f2be6e50a1cae546513a7fd91cf4a77 (listed).
+- 2026-11-07: M10k: chain block was not a setter block. M10l: identify the hero block by the first non-vertical setter up (wall crawl).
