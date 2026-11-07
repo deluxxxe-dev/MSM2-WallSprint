@@ -333,3 +333,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M9g cloud full suites PASS on tree c6be2e8764770fdf83b1772a15de55756aeccfd3 (listed).
 - 2026-11-07: M9g probes inconclusive (+-3 noise). M9h: +15 m/s probe, landings discarded.
 - 2026-11-07: M9h cloud full suites PASS on tree 639b5c52397001acddd91dd28fc780e06fedae98 (listed).
+- 2026-11-07: M9h: velocity search within two pointer levels closed (no writable source). Probe off (INI 0).
