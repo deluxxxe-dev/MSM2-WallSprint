@@ -1008,10 +1008,15 @@ void sgInstall(std::uintptr_t image, std::size_t imageSize) {
   if (!image || imageSize <= kSetGravityRva + 79) return;
   auto t = image + kSetGravityRva; unsigned char code[79]{}; char hash[65]{};
   bool ok = msm2::readMemory(t, code, sizeof code) && sha256(code, sizeof code, hash) && !std::strcmp(hash, kSetGravitySha);
-  if (ok) { auto init = MH_Initialize(); ok = (init == MH_OK || init == MH_ERROR_ALREADY_INITIALIZED) &&
-    MH_CreateHook(reinterpret_cast<void*>(t), reinterpret_cast<void*>(&sgDetour), reinterpret_cast<void**>(&sgOrig)) == MH_OK && MH_EnableHook(reinterpret_cast<void*>(t)) == MH_OK; }
+  // M10h: M10e logged installed=0 with a matching sha256; log each MinHook status and the first 16 code bytes.
+  int stInit = -99, stCreate = -99, stEnable = -99; bool shaOk = ok;
+  if (ok) { stInit = MH_Initialize(); ok = stInit == MH_OK || stInit == MH_ERROR_ALREADY_INITIALIZED;
+    if (ok) { stCreate = MH_CreateHook(reinterpret_cast<void*>(t), reinterpret_cast<void*>(&sgDetour), reinterpret_cast<void**>(&sgOrig)); ok = stCreate == MH_OK; }
+    if (ok) { stEnable = MH_EnableHook(reinterpret_cast<void*>(t)); ok = stEnable == MH_OK; } }
   if (ok) sgTarget = reinterpret_cast<void*>(t);
-  msm2::writeLog("WS_SET_GRAVITY_HOOK installed=%u rva=0x35132a0 sha256=%s pass_through=1", unsigned(ok), hash[0] ? hash : "none");
+  char hex[49]{}; for (int i = 0; i < 16; ++i) std::snprintf(hex + i * 3, 4, "%02x ", code[i]);
+  msm2::writeLog("WS_SET_GRAVITY_HOOK installed=%u sha_ok=%u mh_init=%d mh_create=%d mh_enable=%d rva=0x35132a0 sha256=%s first16=%s pass_through=1",
+    unsigned(ok), unsigned(shaOk), stInit, stCreate, stEnable, hash[0] ? hash : "none", hex);
 }
 // M10c-r2: M10c ran this search on the 100 ms worker; ~10k bases every 3 s stalled that worker for tens of seconds and
 // broke the WS camera/orientation. The search now runs on its own low-priority thread, yields every 64 bases, and
