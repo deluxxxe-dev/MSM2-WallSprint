@@ -1122,7 +1122,9 @@ void m10GravityTest(const msm2::Snapshot& hero, std::uint64_t now) {
   // M10f: M10e showed the block sets the hero up (orientation) and zeroes motion along it, without a pull. Now the block
   // is written for the whole WS (from WS start) so the jump-off itself sees up = n; restored 1.5 s after the WS ends.
   bool startNow = ws::drive::wsGravityDuringWs.load() ? wsNow : jumpStart;
-  bool fresh = now - m9NMs.load() < 250;   // the normal must come from the current WS, not a previous wall
+  // M10m: the 250 ms freshness missed short WS sessions / jumps right after the rotation (3 vanilla jumps in log
+  // 20261107-212834). The normal now only has to be measured during the current WS session.
+  bool fresh = m9NMs.load() && m9NMs.load() >= wsSessionStartMs.load();
   if (startNow && fresh && !gbActive && gbTests < 100 && nl > 0.95f && nl < 1.05f && std::fabs(n[1]) < 0.3f) { float f[9];
     if (msm2::readMemory(gbAddr, f, sizeof f)) { gbWrite(want); gbActive = true; gbStart = now; ++gbTests;
       for (int i = 0; i < 3; ++i) { std::uint32_t b; std::memcpy(&b, &n[i], 4); sgSubBits[i].store(b); } sgSubBlock.store(gbAddr); sgSubActive.store(true);
