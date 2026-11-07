@@ -41,3 +41,4 @@ c185298937b5a6b5fbb8c903c3d0c6f9ac3f9ad5 2026-11-07 build+test.sh+smoke+hooks+pa
 c4e1c7807d5896c5dc00d41c4de37be5136e4921 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10f gravity during WS)
 8e5d983fa47ff0a1660bebdde5a735fd0b16cbee 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10g gravity vector scan)
 ba230c696460c84a264856ac7cef01613aa2bf1a 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10h hook diag)
+bfb672581cf1771b11d860d18e7548ee06aa3372 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10i manual hook)

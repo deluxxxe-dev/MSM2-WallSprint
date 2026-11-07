@@ -353,3 +353,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M10g gravity-vector scan inconclusive (too many (0,-g,0) triples). M10h: SetGravityVector MinHook status diagnostics.
 - 2026-11-07: M10h cloud full suites PASS on tree ba230c696460c84a264856ac7cef01613aa2bf1a (listed).
 - 2026-11-07: M10h: MinHook cannot hook SetGravityVector (VEX prefix). M10i: exact-prefix manual hook (Wine-tested).
+- 2026-11-07: M10i cloud full suites PASS on tree bfb672581cf1771b11d860d18e7548ee06aa3372 (listed).
