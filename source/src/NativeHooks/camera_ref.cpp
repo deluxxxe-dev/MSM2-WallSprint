@@ -995,9 +995,17 @@ constexpr char kSetGravitySha[] = "7aaa6fefc1776035cffb9c3f291ac59c892444826dbd8
 using SetGravFn = std::uintptr_t (*)(std::uintptr_t, std::uintptr_t, std::uintptr_t, std::uintptr_t);
 SetGravFn sgOrig{}; void* sgTarget{}; std::atomic<std::uint64_t> sgCalls{0}; std::atomic<unsigned> sgDistinct{0}; std::atomic<std::uintptr_t> sgLast{0};
 std::uintptr_t sgSeen[24]{};
+// M10j: per-block call counts, and input substitution: while active, calls for the hero's block get the wall normal
+// as the up input instead of the game's (0,1,0). Integer copies only before the original call (no xmm use).
+std::atomic<std::uint64_t> sgCount[24]{}; std::atomic<std::uintptr_t> sgSubBlock{0}; std::atomic<bool> sgSubActive{false};
+std::atomic<std::uint32_t> sgSubBits[3]{}; std::atomic<std::uint64_t> sgSubCalls{0};
 std::uintptr_t sgDetour(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r8, std::uintptr_t r9) {
-  auto r = sgOrig(rcx, rdx, r8, r9);
+  std::uint32_t sub[4] = {0, 0, 0, 0};
+  bool doSub = sgSubActive.load(std::memory_order_relaxed) && rcx == sgSubBlock.load(std::memory_order_relaxed) && rcx;
+  if (doSub) { sub[0] = sgSubBits[0].load(); sub[1] = sgSubBits[1].load(); sub[2] = sgSubBits[2].load(); sgSubCalls.fetch_add(1, std::memory_order_relaxed); }
+  auto r = sgOrig(rcx, doSub ? reinterpret_cast<std::uintptr_t>(sub) : rdx, r8, r9);
   sgCalls.fetch_add(1, std::memory_order_relaxed); sgLast.store(rcx);
+  { unsigned nn = sgDistinct.load(); for (unsigned i = 0; i < nn && i < 24; ++i) if (sgSeen[i] == rcx) { sgCount[i].fetch_add(1, std::memory_order_relaxed); break; } }
   bool known = false; unsigned n = sgDistinct.load(); for (unsigned i = 0; i < n && i < 24; ++i) known |= sgSeen[i] == rcx;
   if (!known && n < 24) { sgSeen[n] = rcx; sgDistinct.store(n + 1); float f[9]{}; float in[3]{}; bool rf = msm2::readMemory(rcx, f, sizeof f); bool ri = msm2::readMemory(rdx, in, sizeof in);
     msm2::writeLog("WS_SET_GRAVITY call=%llu block=0x%llx input_read=%u input=%.3f,%.3f,%.3f block_read=%u f=%.3f,%.3f,%.3f|%.3f,%.3f,%.3f|%.3f,%.3f,%.3f thread=%lu",
@@ -1105,18 +1113,24 @@ void m10GravityTest(const msm2::Snapshot& hero, std::uint64_t now) {
   bool fresh = now - m9NMs.load() < 250;   // the normal must come from the current WS, not a previous wall
   if (startNow && fresh && !gbActive && gbTests < 100 && nl > 0.95f && nl < 1.05f && std::fabs(n[1]) < 0.3f) { float f[9];
     if (msm2::readMemory(gbAddr, f, sizeof f) && gbIsVanilla(f)) { gbWrite(want); gbActive = true; gbStart = now; ++gbTests;
+      for (int i = 0; i < 3; ++i) { std::uint32_t b; std::memcpy(&b, &n[i], 4); sgSubBits[i].store(b); } sgSubBlock.store(gbAddr); sgSubActive.store(true);
       msm2::writeLog("WS_GRAVITY_TEST start test=%u n=%.3f,%.3f,%.3f g=0x%llx", gbTests, n[0], n[1], n[2], (unsigned long long)gbAddr); } }
   if (!gbActive) return;
+  for (int i = 0; i < 3; ++i) { std::uint32_t b; std::memcpy(&b, &n[i], 4); sgSubBits[i].store(b); }
   float f[9]; bool rd = msm2::readMemory(gbAddr, f, sizeof f);
   bool kept = rd; for (int i = 0; i < 9 && rd; ++i) kept = kept && std::fabs(f[i] - want[i]) < 1e-3f;
   if (gbTests <= 6 && (now - gbStart) % 500 < 110) msm2::writeLog("WS_GRAVITY_TEST t_ms=%llu kept=%u read=%.3f,%.3f,%.3f|%.3f,%.3f,%.3f|%.3f,%.3f,%.3f", (unsigned long long)(now - gbStart), unsigned(kept), f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7], f[8]);
   bool done = ws::drive::wsGravityDuringWs.load() ? (!wsNow && now - lastWsMs.load() > 1500) : (now - gbStart >= 1500 || wsNow);
-  if (done) { gbWrite(kGravVanilla); gbActive = false; msm2::writeLog("WS_GRAVITY_TEST restore test=%u reason=%s", gbTests, wsNow ? "ws_again" : "timeout_1500ms"); }
+  if (done) { sgSubActive.store(false); gbWrite(kGravVanilla); gbActive = false; msm2::writeLog("WS_GRAVITY_TEST restore test=%u reason=%s", gbTests, wsNow ? "ws_again" : "timeout_1500ms"); }
   else gbWrite(want);
 }
-void gbRestoreNow() { if (gbActive) { gbWrite(kGravVanilla); gbActive = false; } }
+void gbRestoreNow() { sgSubActive.store(false); if (gbActive) { gbWrite(kGravVanilla); gbActive = false; } }
 void sgStatus(std::uint64_t now) { static std::uint64_t last = 0; static unsigned logs = 0; if (!sgTarget || now - last < 20000 || logs >= 20) return; last = now; ++logs;
-  msm2::writeLog("WS_SET_GRAVITY_STATUS calls=%llu distinct_blocks=%u last=0x%llx", (unsigned long long)sgCalls.load(), sgDistinct.load(), (unsigned long long)sgLast.load()); }
+  char line[900]; int len = std::snprintf(line, sizeof line, "WS_SET_GRAVITY_STATUS calls=%llu distinct_blocks=%u hero_block=0x%llx substituted_calls=%llu per_block=",
+    (unsigned long long)sgCalls.load(), sgDistinct.load(), (unsigned long long)gbFound.load(), (unsigned long long)sgSubCalls.load());
+  unsigned nn = sgDistinct.load(); for (unsigned i = 0; i < nn && i < 24 && len > 0 && len < int(sizeof line) - 40; ++i)
+    len += std::snprintf(line + len, sizeof line - std::size_t(len), "%s%llx:%llu", i ? "," : "", (unsigned long long)(sgSeen[i] & 0xFFFFFF), (unsigned long long)sgCount[i].load());
+  msm2::writeLog("%s", line); }
 struct ChargeMeasure { std::uint64_t release{}, hold{}; float y0{}, apex{}; bool active{}; } cm; unsigned cmLogs{};
 void m8ChargeMeasure(const msm2::Snapshot& hero, std::uint64_t now) {
   auto rel = jiRelease.load(), pr = jiPress.load();
