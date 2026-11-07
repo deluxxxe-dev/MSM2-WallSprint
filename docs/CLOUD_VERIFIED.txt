@@ -48,3 +48,4 @@ bfb672581cf1771b11d860d18e7548ee06aa3372 2026-11-07 build+test.sh+smoke+hooks+pa
 5a5d1cffe06e356d5a66164f9106589fda569b1b 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10m)
 f5fe48543a148cebf8726dbf2b0049abcf8de203 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10n gravity hold rules)
 a22e5a2964dd650d1a4eb607fc67107bdbae865b 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10o)
+d603245b56845a8cafbac67c0eb3074bceeb919c 2026-11-07 build+test.sh+smoke+hooks+package PASS (M10p)
