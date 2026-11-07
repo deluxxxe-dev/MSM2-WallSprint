@@ -363,3 +363,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M10l: WALL GRAVITY ACHIEVED (pull + orientation, wall-to-wall). M10m: normal freshness = current WS session.
 - 2026-11-07: M10m cloud full suites PASS on tree 5a5d1cffe06e356d5a66164f9106589fda569b1b (listed).
 - 2026-11-07: M10m accepted (no vanilla WS jumps, hero id by WS). M10n: hold wall gravity until wall/ground/stop or 3 s.
+- 2026-11-07: M10n cloud full suites PASS on tree f5fe48543a148cebf8726dbf2b0049abcf8de203 (listed).
