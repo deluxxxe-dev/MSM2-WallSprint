@@ -430,6 +430,15 @@ bool jcMatches(std::uintptr_t a, bool patched) {
   float cur[3][9]; for (unsigned k = 0; k < 3; ++k) if (!msm2::readMemory(a + k * kJumpStride, cur[k], 36)) return false;
   return jcGroupsEqual(cur, patched);
 }
+// M10g (2026-11-07, read-only): the M10e/M10f block is the hero gravity ORIENTATION; the fall acceleration (~31-35
+// m/s^2) comes from elsewhere. During the jump-config scan, also count float3 (0, -g, 0) with g in [20, 60] (exact
+// zeros in x/z) per distinct g: a world/hero gravity vector would show as a few copies of one value.
+struct GvBin { float g; std::uint32_t count; std::uintptr_t addr[4]; DWORD type[4]; };
+GvBin gvBins[48]{}; unsigned gvBinN{}; std::uint64_t gvOverflow{};
+void gvRecord(float g, std::uintptr_t a, DWORD type) {
+  for (unsigned i = 0; i < gvBinN; ++i) if (gvBins[i].g == g) { auto& b = gvBins[i]; if (b.count < 4) { b.addr[b.count] = a; b.type[b.count] = type; } ++b.count; return; }
+  if (gvBinN < 48) { auto& b = gvBins[gvBinN++]; b.g = g; b.count = 1; b.addr[0] = a; b.type[0] = type; } else ++gvOverflow;
+}
 DWORD WINAPI jcScan(void*) {
   struct WsEx { void* va; ULONG_PTR attr; };
   using QueryWsFn = BOOL (WINAPI*)(HANDLE, PVOID, DWORD);
@@ -453,7 +462,7 @@ DWORD WINAPI jcScan(void*) {
     const bool readable = prot == PAGE_READWRITE || prot == PAGE_READONLY || prot == PAGE_WRITECOPY;
     if (m.State == MEM_COMMIT && m.Type != MEM_IMAGE && readable && !(m.Protect & PAGE_GUARD) &&
         m.AllocationBase != static_cast<void*>(buf) && m.AllocationBase != static_cast<void*>(self)) {
-      ++regions; if (m.Type != MEM_PRIVATE) mapped += m.RegionSize;
+      ++regions; if (m.Type != MEM_PRIVATE) mapped += m.RegionSize; const DWORD mbType = m.Type;
       for (std::uintptr_t q = base; q < next && !killed.load(); ) {
         std::size_t n = std::size_t(std::min<std::uintptr_t>(kChunk, next - q));
         std::size_t pages = (n + 4095) / 4096; static WsEx ws[2048];
@@ -465,7 +474,11 @@ DWORD WINAPI jcScan(void*) {
           auto runAddr = q + k * 4096; std::size_t runLen = std::min<std::size_t>((k2 - k) * 4096, n - k * 4096);
           if (msm2::readMemory(runAddr, buf, runLen)) { bytes += runLen;
             for (std::size_t w = 0; w + 36 <= runLen; w += 4) {
-              std::uint32_t x; std::memcpy(&x, buf + w, 4); if (x != first) continue;
+              std::uint32_t x; std::memcpy(&x, buf + w, 4);
+              if ((x & 0x7fffffffu) == 0 && w + 12 <= runLen) { float g3[3]; std::memcpy(g3, buf + w, 12);   // M10g: (0, -g, 0)
+                std::uint32_t zb; std::memcpy(&zb, buf + w + 8, 4);
+                if ((zb & 0x7fffffffu) == 0 && g3[1] <= -20.f && g3[1] >= -60.f) gvRecord(g3[1], runAddr + w, mbType); }
+              if (x != first) continue;
               ++firstHits; auto a = runAddr + w;
               if (std::memcmp(buf + w, kJumpF[0], 36)) continue;                       // group _00 in the buffer
               if (w + 2 * kJumpStride + 36 <= runLen && (std::memcmp(buf + w + kJumpStride, kJumpF[1], 36) || std::memcmp(buf + w + 2 * kJumpStride, kJumpF[2], 36))) continue;
@@ -490,6 +503,10 @@ DWORD WINAPI jcScan(void*) {
     ok ? "accepted" : "refused", found, (unsigned long long)firstHits, (unsigned long long)regions, (unsigned long long)(bytes >> 20),
     (unsigned long long)(nonResident >> 20), (unsigned long long)(mapped >> 20), (unsigned long long)(GetTickCount64() - t0), unsigned(timeout),
     (unsigned long long)hits[0], (unsigned long long)hits[1], hq ? (unsigned long)hm.Type : 0ul, hq ? (unsigned long)hm.Protect : 0ul);
+  for (unsigned i = 0; i < gvBinN; ++i) { auto& b = gvBins[i]; if (b.count > 200) continue;   // very common values are not a single gravity
+    msm2::writeLog("WS_GRAVITY_VECTOR g=%.4f count=%u a0=0x%llx t0=0x%lx a1=0x%llx t1=0x%lx a2=0x%llx a3=0x%llx read_only=1", double(b.g), b.count,
+      (unsigned long long)b.addr[0], (unsigned long)b.type[0], (unsigned long long)b.addr[1], (unsigned long)b.type[1], (unsigned long long)b.addr[2], (unsigned long long)b.addr[3]); }
+  msm2::writeLog("WS_GRAVITY_VECTOR_SUMMARY distinct=%u overflow=%llu read_only=1", gvBinN, (unsigned long long)gvOverflow);
   jcState.store(ok ? 2 : 3);
   return 0;
 }
