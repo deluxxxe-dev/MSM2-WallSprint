@@ -998,12 +998,16 @@ std::uintptr_t sgSeen[24]{};
 // M10j: per-block call counts, and input substitution: while active, calls for the hero's block get the wall normal
 // as the up input instead of the game's (0,1,0). Integer copies only before the original call (no xmm use).
 std::atomic<std::uint64_t> sgCount[24]{}; std::atomic<std::uintptr_t> sgSubBlock{0}; std::atomic<bool> sgSubActive{false};
-std::atomic<std::uint32_t> sgSubBits[3]{}; std::atomic<std::uint64_t> sgSubCalls{0};
+std::atomic<std::uint32_t> sgSubBits[3]{}; std::atomic<std::uint64_t> sgSubCalls{0}; std::atomic<std::uintptr_t> sgHeroBlock{0}; std::atomic<unsigned> sgHeroLogs{0};
 std::uintptr_t sgDetour(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r8, std::uintptr_t r9) {
   std::uint32_t sub[4] = {0, 0, 0, 0};
   bool doSub = sgSubActive.load(std::memory_order_relaxed) && rcx == sgSubBlock.load(std::memory_order_relaxed) && rcx;
   if (doSub) { sub[0] = sgSubBits[0].load(); sub[1] = sgSubBits[1].load(); sub[2] = sgSubBits[2].load(); sgSubCalls.fetch_add(1, std::memory_order_relaxed); }
   auto r = sgOrig(rcx, doSub ? reinterpret_cast<std::uintptr_t>(sub) : rdx, r8, r9);
+  if (rcx && rcx == sgHeroBlock.load(std::memory_order_relaxed) && sgHeroLogs.load() < 80) { float in[3]{}; if (msm2::readMemory(rdx, in, sizeof in)) {
+      static float last[3] = {9, 9, 9}; if (std::fabs(in[0] - last[0]) + std::fabs(in[1] - last[1]) + std::fabs(in[2] - last[2]) > 0.02f || doSub) { last[0] = in[0]; last[1] = in[1]; last[2] = in[2];
+        sgHeroLogs.fetch_add(1); msm2::writeLog("WS_SET_GRAVITY_HERO game_up=%.3f,%.3f,%.3f substituted=%u ws=%u since_ws_ms=%lld", in[0], in[1], in[2], unsigned(doSub),
+          unsigned(engagedManager.load() != 0 && GetTickCount64() - lastWsMs.load() < 150), lastWsMs.load() ? (long long)(GetTickCount64() - lastWsMs.load()) : -1ll); } } }
   sgCalls.fetch_add(1, std::memory_order_relaxed); sgLast.store(rcx);
   { unsigned nn = sgDistinct.load(); for (unsigned i = 0; i < nn && i < 24; ++i) if (sgSeen[i] == rcx) { sgCount[i].fetch_add(1, std::memory_order_relaxed); break; } }
   bool known = false; unsigned n = sgDistinct.load(); for (unsigned i = 0; i < n && i < 24; ++i) known |= sgSeen[i] == rcx;
@@ -1080,7 +1084,7 @@ DWORD WINAPI gbSearch(void*) {
         if (!msm2::readMemory(t, q2, sizeof q2)) continue;
         for (unsigned j = 0; j < 0x80; ++j) { auto u = q2[j]; if (!velReadable(u)) continue; if ((++bases & 63) == 0) Sleep(1);
           if (gbChain(u, g)) { found = g; if (gbLogs++ < 20) msm2::writeLog("WS_GRAVITY_BLOCK found root=%s slot=0x%x slot2=0x%x level=2 g=0x%llx", r ? "hero" : "transform", i * 8, j * 8, (unsigned long long)g); break; } } } }
-    if (found) gbFound.store(found);
+    if (found) { gbFound.store(found); sgHeroBlock.store(found); }
     else { static unsigned miss = 0; if (miss++ < 10) msm2::writeLog("WS_GRAVITY_BLOCK not_found bases=%u", bases); Sleep(10000); }
   }
   return 0;
@@ -1090,7 +1094,9 @@ void gbDiscover(const msm2::Snapshot& hero, std::uint64_t now) {
   if (!gbThread.exchange(true)) { if (HANDLE h = CreateThread(nullptr, 0, gbSearch, nullptr, 0, nullptr)) { SetThreadPriority(h, THREAD_PRIORITY_LOWEST); CloseHandle(h); } }
   if (now - gbLastScan < 1000) { gbAddr = gbFound.load(); return; }
   gbLastScan = now;
-  auto g = gbFound.load(); if (g && !gbActive) { float f[9]; if (!msm2::readMemory(g, f, sizeof f) || !gbIsVanilla(f)) { gbFound.store(0); g = 0; } }
+  // M10k: the game itself sets other up vectors for the hero block (M10j: bursts of calls), so a found block stays until
+  // the hero/Transform changes or the memory becomes unreadable; it no longer has to hold the vanilla pattern.
+  auto g = gbFound.load(); if (g && !gbActive) { float f[9]; if (!msm2::readMemory(g, f, sizeof f)) { gbFound.store(0); g = 0; } }
   if (!g && sgDistinct.load() == 1) { float f[9]; auto c = sgSeen[0]; if (msm2::readMemory(c, f, sizeof f) && gbIsVanilla(f)) { g = c; gbFound.store(c);
     static bool once = false; if (!once) { once = true; msm2::writeLog("WS_GRAVITY_BLOCK from_setter g=0x%llx", (unsigned long long)c); } } }
   gbAddr = g;
@@ -1112,7 +1118,7 @@ void m10GravityTest(const msm2::Snapshot& hero, std::uint64_t now) {
   bool startNow = ws::drive::wsGravityDuringWs.load() ? wsNow : jumpStart;
   bool fresh = now - m9NMs.load() < 250;   // the normal must come from the current WS, not a previous wall
   if (startNow && fresh && !gbActive && gbTests < 100 && nl > 0.95f && nl < 1.05f && std::fabs(n[1]) < 0.3f) { float f[9];
-    if (msm2::readMemory(gbAddr, f, sizeof f) && gbIsVanilla(f)) { gbWrite(want); gbActive = true; gbStart = now; ++gbTests;
+    if (msm2::readMemory(gbAddr, f, sizeof f)) { gbWrite(want); gbActive = true; gbStart = now; ++gbTests;
       for (int i = 0; i < 3; ++i) { std::uint32_t b; std::memcpy(&b, &n[i], 4); sgSubBits[i].store(b); } sgSubBlock.store(gbAddr); sgSubActive.store(true);
       msm2::writeLog("WS_GRAVITY_TEST start test=%u n=%.3f,%.3f,%.3f g=0x%llx", gbTests, n[0], n[1], n[2], (unsigned long long)gbAddr); } }
   if (!gbActive) return;
