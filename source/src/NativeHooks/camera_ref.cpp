@@ -931,10 +931,11 @@ void m9VelocitySearch(const msm2::Snapshot& hero, const ws::diag::Motion& motion
 // the hero actor, its Transform and every heap object they point to (first 0x2000 bytes); the 9 floats at the end of
 // each complete chain are logged when one of the vectors looks like gravity (|v| ~1 or 5-60, pointing down).
 unsigned gvLogs{}; std::uint64_t gvLast{}; std::vector<std::uintptr_t> gvSeen;
+// M10b: also up-pointing vectors (an "orientation" may store up), and every complete chain is logged once.
 bool gvVec(const float* v) { float l = std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]); if (!std::isfinite(l)) return false;
-  return ((l > 0.95f && l < 1.05f) || (l > 5.f && l < 60.f)) && v[1] < -0.9f * l; }
+  return ((l > 0.95f && l < 1.05f) || (l > 5.f && l < 60.f)) && std::fabs(v[1]) > 0.9f * l; }
 void m10GravityChain(const msm2::Snapshot& hero, std::uint64_t now) {
-  if (killed.load() || !hero.hero || gvLogs >= 40 || now - gvLast < 5000) { return; }
+  if (killed.load() || !hero.hero || gvLogs >= 60 || now - gvLast < 5000) { return; }
   gvLast = now;
   std::vector<std::pair<std::uintptr_t, unsigned>> bases; bases.push_back({hero.hero, 0xFFFFu}); bases.push_back({hero.transform, 0xFFFEu});
   static std::uintptr_t q[0x400];
@@ -946,16 +947,15 @@ void m10GravityChain(const msm2::Snapshot& hero, std::uint64_t now) {
     if (!msm2::readMemory(p1 + 0xF8, &p2, 8) || !velReadable(p2)) continue;
     auto g = p2 + 0x5F4; float f[9]; if (!msm2::readMemory(g, f, sizeof f)) { continue; }
     ++chains;
-    if (!gvVec(f + 3) && !gvVec(f + 6) && !gvVec(f)) { continue; }
-    ++hits;
+    bool like = gvVec(f + 3) || gvVec(f + 6) || gvVec(f); if (like) { ++hits; }
     bool seen = false; for (auto x : gvSeen) { seen |= x == g; }
     if (seen) { continue; }
     gvSeen.push_back(g);
-    if (gvLogs++ < 40) msm2::writeLog("WS_GRAVITY_CHAIN base=%s0x%x g=0x%llx f=%.3f,%.3f,%.3f | %.3f,%.3f,%.3f | %.3f,%.3f,%.3f read_only=1",
-      b.second == 0xFFFFu ? "hero" : b.second == 0xFFFEu ? "transform" : (b.second >> 15) ? "transform_ptr@" : "hero_ptr@", (b.second >= 0xFFFEu) ? 0u : (b.second & 0x7FFF),
+    if (gvLogs++ < 60) msm2::writeLog("WS_GRAVITY_CHAIN like=%u base=%s0x%x g=0x%llx f=%.3f,%.3f,%.3f | %.3f,%.3f,%.3f | %.3f,%.3f,%.3f read_only=1",
+      unsigned(like), b.second == 0xFFFFu ? "hero" : b.second == 0xFFFEu ? "transform" : (b.second >> 15) ? "transform_ptr@" : "hero_ptr@", (b.second >= 0xFFFEu) ? 0u : (b.second & 0x7FFF),
       (unsigned long long)g, f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7], f[8]);
   }
-  static unsigned sum = 0; if (sum++ < 6) msm2::writeLog("WS_GRAVITY_CHAIN_STATUS bases=%zu complete_chains=%u gravity_like=%u read_only=1", bases.size(), chains, hits);
+  static unsigned sum = 0; if (sum++ < 30) msm2::writeLog("WS_GRAVITY_CHAIN_STATUS bases=%zu complete_chains=%u gravity_like=%u read_only=1", bases.size(), chains, hits);
 }
 struct ChargeMeasure { std::uint64_t release{}, hold{}; float y0{}, apex{}; bool active{}; } cm; unsigned cmLogs{};
 void m8ChargeMeasure(const msm2::Snapshot& hero, std::uint64_t now) {
