@@ -99,6 +99,8 @@ Settings settings(){
  msm2::writeLog("WS_GRAVITY_TEST enabled=%u key=WALLSPRINT_WS_GRAVITY_TEST default=0",unsigned(ws::drive::wsGravityTest.load()));
  ws::drive::wsGravityDuringWs.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_GRAVITY_DURING_WS",0,path.c_str())==1);
  msm2::writeLog("WS_GRAVITY_DURING_WS enabled=%u key=WALLSPRINT_WS_GRAVITY_DURING_WS default=0",unsigned(ws::drive::wsGravityDuringWs.load()));
+ ws::drive::wsGravityForce.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_GRAVITY_FORCE",0,path.c_str())==1);
+ msm2::writeLog("WS_GRAVITY_FORCE enabled=%u key=WALLSPRINT_WS_GRAVITY_FORCE default=0",unsigned(ws::drive::wsGravityForce.load()));
  result.source.delay=number(L"WALLSPRINT_ENTRY_DELAY",L"0.70");result.source.rotateTime=number(L"WALLSPRINT_ROTATE_TIME",L"0.25");
  result.input.observe=GetPrivateProfileIntW(L"Diagnostics",L"SOURCE_ARGUMENT_CAPTURE",0,path.c_str())==1;
  result.input.enabled=GetPrivateProfileIntW(L"Diagnostics",L"ORIENTATION_SOURCE_DISCOVERY",1,path.c_str())==1;

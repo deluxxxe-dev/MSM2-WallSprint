@@ -368,3 +368,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-07: M10o cloud full suites PASS on tree a22e5a2964dd650d1a4eb607fc67107bdbae865b (listed).
 - 2026-11-07: M10p: ground contact via game setter, 8 s hold + 2 s blend back, swing keeps hold, L3 gravity lock, camera re-centering in air.
 - 2026-11-07: M10p cloud full suites PASS on tree d603245b56845a8cafbac67c0eb3074bceeb919c (listed; first push had a build error, fixed).
+- 2026-11-08: M10q: wall gravity by per-frame Transform::SetPosition correction (WALLSPRINT_WS_GRAVITY_FORCE=1), per-frame smooth gravity return, landing/contact/stall ends, L3 stand (stick neutral until re-pressed). Cloud suites: pending rerun on final tree.

@@ -31,4 +31,9 @@ inline std::atomic<bool> wsGravityDuringWs{false};
 // M10o: WallRun wall normal (owner+0x398), published every WallRun update by actor_writer.
 inline std::atomic<float> wallN[3]{};
 inline std::atomic<std::uint64_t> wallNMs{0};
+// M10q: real wall gravity after a WS jump: per-frame Transform::SetPosition correction on the game thread (world-y
+// gravity removed, gravity along -wall normal added). WALLSPRINT_WS_GRAVITY_FORCE, default 0.
+inline std::atomic<bool> wsGravityForce{false};
+// M10q: L3 stand: while set, the left stick reads neutral (WGI and the WS stick drive) until the stick is re-pressed.
+inline std::atomic<bool> stickMask{false};
 }

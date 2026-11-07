@@ -256,6 +256,7 @@ bool readRightStick(float& rx,float& ry){
  return false;
 }
 bool readStick(float& sx,float& sy){
+ if(ws::drive::stickMask.load(std::memory_order_relaxed)){sx=sy=0;return false;}   // M10q L3 stand
  sx=sy=0;
  if(auto get=xinputGetState.load()){XINPUT_STATE st{};if(get(0,&st)==ERROR_SUCCESS){
   float x=st.Gamepad.sThumbLX/32767.f,y=st.Gamepad.sThumbLY/32767.f;

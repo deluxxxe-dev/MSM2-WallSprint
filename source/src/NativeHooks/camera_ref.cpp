@@ -752,6 +752,10 @@ HRESULT STDMETHODCALLTYPE wgiReadDetour(void* self, WgiReading* r) {
     wsChargeStep(r, a);
     wgiRt.store(r->rt, std::memory_order_relaxed);
     { bool l3 = (r->buttons & 0x1000u) != 0; static std::atomic<bool> prevL3{false}; bool was = prevL3.exchange(l3); if (l3 && !was) wgiL3Edges.fetch_add(1); }   // M10p gravity lock
+    // M10q L3 stand: the left stick reads neutral until it was released (< 0.25) and pushed again (> 0.4).
+    { static bool sawNeutral = false; double m2 = r->lx * r->lx + r->ly * r->ly;
+      if (!ws::drive::stickMask.load(std::memory_order_relaxed)) sawNeutral = false;
+      else { if (m2 < 0.0625) sawNeutral = true; if (sawNeutral && m2 > 0.16) { ws::drive::stickMask.store(false); sawNeutral = false; } else { r->lx = 0; r->ly = 0; } } }
   }
   return hr;
 }
@@ -1003,6 +1007,91 @@ std::uintptr_t sgSeen[24]{};
 // as the up input instead of the game's (0,1,0). Integer copies only before the original call (no xmm use).
 std::atomic<std::uint64_t> sgCount[24]{}; std::atomic<std::uintptr_t> sgSubBlock{0}; std::atomic<bool> sgSubActive{false};
 std::atomic<std::uint32_t> sgSubBits[3]{}; std::atomic<std::uint64_t> sgSubCalls{0}; std::atomic<std::uintptr_t> sgHeroBlock{0}, sgHeroByUp{0}; std::atomic<bool> sgAirPhase{false}, sgLocked{false}, sgGameLanded{false}; std::atomic<float> sgLastVy{0}; std::atomic<unsigned> sgHeroLogs{0}, sgOtherLogs{0};
+// M10q (owner, log 20261108-005204, videos A/B): the gravity block only turns the body; the fall still follows world y
+// (31-35 m/s^2 measured), so the hero never fell toward the wall. Real wall gravity: on the game thread (this detour,
+// hero block, air phase) the hero position is corrected each frame through the game's own Transform::SetPosition
+// (public template AOB, unique match + pdata function begin required): the game's vertical displacement is replaced by
+// the launch vertical speed, and gravity G along -up (the substituted up, also during the blend) is integrated.
+// The plane of the wall left is never crossed (d >= 0); touching it again ends the hold (unlocked) or holds the hero
+// there (L3 lock). Caps: |v| <= 30 m/s, 1500 frames per hold, F8 stops.
+constexpr float kGfG = 33.f;
+using SetPosFn = void (*)(void*, float*);
+std::atomic<SetPosFn> spFn{nullptr}; std::atomic<std::uintptr_t> gfTransform{0};
+std::atomic<bool> gfOn{false}, gfContact{false}; std::atomic<unsigned> gfGen{0};
+std::atomic<float> gfP0[3]{}, gfN0[3]{}, gfVy0{0};
+std::atomic<std::uint64_t> gfFrames{0}, gfWrites{0}, gfReadFails{0}, gfClamps{0};
+std::atomic<float> gfDyGameSum{0}; std::atomic<unsigned> gfSampleLogs{0};
+// M10q: seamless return. While blending, the up for the next call is computed per call (smoothstep over 2 s).
+std::atomic<std::int64_t> sbBlendQpc{0}; std::atomic<float> sbN[3]{};
+std::int64_t qpcNow() { LARGE_INTEGER q; QueryPerformanceCounter(&q); return q.QuadPart; }
+double qpcSec(std::int64_t d) { static std::int64_t f = 0; if (!f) { LARGE_INTEGER q; QueryPerformanceFrequency(&q); f = q.QuadPart; } return double(d) / double(f); }
+void sbBlendStep() {
+  auto b = sbBlendQpc.load(std::memory_order_relaxed); if (!b) return;
+  float t = float(qpcSec(qpcNow() - b) / 2.0); if (t > 1.f) t = 1.f; if (t < 0.f) t = 0.f; float s = t * t * (3.f - 2.f * t);
+  float up[3] = {sbN[0].load() * (1 - s), sbN[1].load() * (1 - s) + s, sbN[2].load() * (1 - s)};
+  float l = std::sqrt(up[0] * up[0] + up[1] * up[1] + up[2] * up[2]); if (!(l > 1e-3f)) return;
+  for (int i = 0; i < 3; ++i) { up[i] /= l; std::uint32_t bits; std::memcpy(&bits, &up[i], 4); sgSubBits[i].store(bits, std::memory_order_relaxed); }
+}
+struct GfLocal { unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}; bool left{}, model{}; unsigned frames{}; } gfL;
+std::atomic<bool> gfModelUsed{false};
+void gfStep() {
+  auto fn = spFn.load(std::memory_order_relaxed); auto tr = gfTransform.load(std::memory_order_relaxed);
+  if (!fn || !tr || !gfOn.load(std::memory_order_relaxed) || killed.load(std::memory_order_relaxed)) return;
+  unsigned gen = gfGen.load(); if (gen != gfL.gen) { gfL = {}; gfL.gen = gen; }
+  float p[4]{}; if (!msm2::readMemory(tr + 0x30, p, 16) || !std::isfinite(p[0]) || !std::isfinite(p[1]) || !std::isfinite(p[2])) { gfReadFails.fetch_add(1); return; }
+  auto now = qpcNow();
+  if (!gfL.init || qpcSec(now - gfL.last) > 0.1) { gfL.init = true; gfL.last = now; std::memcpy(gfL.pLast, p, 12); gfL.vy = gfVy0.load(); gfL.vg[0] = gfL.vg[1] = gfL.vg[2] = 0; return; }
+  float dt = float(qpcSec(now - gfL.last)); if (dt < 0.002f) return;    // second call in the same frame
+  if (dt > 0.05f) { dt = 0.05f; }
+  gfL.last = now;
+  if (++gfL.frames > 1500) return;
+  float u[3]; for (int i = 0; i < 3; ++i) { std::uint32_t b = sgSubBits[i].load(std::memory_order_relaxed); std::memcpy(&u[i], &b, 4); }
+  for (int i = 0; i < 3; ++i) gfL.vg[i] -= kGfG * u[i] * dt;
+  float vl = std::sqrt(gfL.vg[0] * gfL.vg[0] + gfL.vg[1] * gfL.vg[1] + gfL.vg[2] * gfL.vg[2]); if (vl > 30.f) for (float& c : gfL.vg) c *= 30.f / vl;
+  float dyGame = p[1] - gfL.pLast[1];
+  if (gfL.frames <= 4) { float v = dyGame / dt;   // first 4 frames follow the game (takeoff), then the speed is kept
+    gfL.vy = std::isfinite(v) ? std::fmax(-25.f, std::fmin(25.f, v)) : gfVy0.load();   // launch vertical speed
+    gfL.vh[0] = (p[0] - gfL.pLast[0]) / dt; gfL.vh[1] = (p[2] - gfL.pLast[2]) / dt;
+    float hl = std::sqrt(gfL.vh[0] * gfL.vh[0] + gfL.vh[1] * gfL.vh[1]); if (!std::isfinite(hl)) { gfL.vh[0] = gfL.vh[1] = 0; } else if (hl > 30.f) { gfL.vh[0] *= 30.f / hl; gfL.vh[1] *= 30.f / hl; } }
+  else if (!gfL.model) { // if SetPosition resets the game's own motion, its horizontal step collapses: carry the launch speed in the model
+    float hl = std::sqrt(gfL.vh[0] * gfL.vh[0] + gfL.vh[1] * gfL.vh[1]), dx = p[0] - gfL.pLast[0], dz = p[2] - gfL.pLast[2];
+    if (hl > 2.f && std::sqrt(dx * dx + dz * dz) / dt < 0.2f * hl) { gfL.model = true; gfModelUsed.store(true); } }
+  float bx = gfL.model ? gfL.pLast[0] + gfL.vh[0] * dt : p[0], bz = gfL.model ? gfL.pLast[2] + gfL.vh[1] * dt : p[2];
+  alignas(16) float q[4] = {bx + gfL.vg[0] * dt, gfL.pLast[1] + (gfL.vy + gfL.vg[1]) * dt, bz + gfL.vg[2] * dt, 1.f};
+  float n0[3] = {gfN0[0].load(), gfN0[1].load(), gfN0[2].load()}, p0[3] = {gfP0[0].load(), gfP0[1].load(), gfP0[2].load()};
+  float d = (q[0] - p0[0]) * n0[0] + (q[1] - p0[1]) * n0[1] + (q[2] - p0[2]) * n0[2];
+  if (d > 0.4f) gfL.left = true;
+  bool locked = sgLocked.load(std::memory_order_relaxed);
+  if (d < 0.f || (gfL.left && d < 0.05f)) {
+    float want = locked ? 0.f : 0.05f; if (d < want) { for (int i = 0; i < 3; ++i) q[i] += (want - d) * n0[i]; gfClamps.fetch_add(1); }
+    float vn = gfL.vg[0] * n0[0] + gfL.vg[1] * n0[1] + gfL.vg[2] * n0[2]; if (vn < 0) for (int i = 0; i < 3; ++i) gfL.vg[i] -= vn * n0[i];
+    if (locked) gfL.vy = 0.f; else if (gfL.left) gfContact.store(true);
+  }
+  fn(reinterpret_cast<void*>(tr), q); gfWrites.fetch_add(1, std::memory_order_relaxed); gfFrames.fetch_add(1, std::memory_order_relaxed);
+  gfDyGameSum.store(gfDyGameSum.load(std::memory_order_relaxed) + dyGame, std::memory_order_relaxed);
+  if ((gfL.frames % 6) == 1 && gfSampleLogs.fetch_add(1) < 120)
+    msm2::writeLog("WS_GRAVITY_FORCE_SAMPLE frame=%u dt_ms=%.1f game_pos=%.3f,%.3f,%.3f dy_game=%.4f set_pos=%.3f,%.3f,%.3f vg=%.2f,%.2f,%.2f vy=%.2f plane_d=%.2f up=%.3f,%.3f,%.3f locked=%u model=%u",
+      gfL.frames, dt * 1000.f, p[0], p[1], p[2], dyGame, q[0], q[1], q[2], gfL.vg[0], gfL.vg[1], gfL.vg[2], gfL.vy, d, u[0], u[1], u[2], unsigned(locked), unsigned(gfL.model));
+  std::memcpy(gfL.pLast, q, 12);
+}
+// Transform::SetPosition: template AOB "0F 10 51 ?? 4C 8B C1", exactly one match in executable sections, and the match
+// must be a pdata function begin. Background thread, once.
+DWORD WINAPI spResolve(void* imgp) {
+  auto image = reinterpret_cast<std::uintptr_t>(imgp); std::size_t count = 0; std::uintptr_t only = 0;
+  auto* dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(image); auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(image + dos->e_lfanew);
+  auto* sec = IMAGE_FIRST_SECTION(nt);
+  static const int pat[7] = {0x0F, 0x10, 0x51, -1, 0x4C, 0x8B, 0xC1};
+  for (unsigned i = 0; i < nt->FileHeader.NumberOfSections && count < 4; ++i) { if (!(sec[i].Characteristics & IMAGE_SCN_MEM_EXECUTE)) continue;
+    auto* b = reinterpret_cast<const unsigned char*>(image + sec[i].VirtualAddress); std::size_t n = sec[i].Misc.VirtualSize; if (n < 8) continue;
+    for (std::size_t k = 0; k + 7 <= n;) { auto* hit = static_cast<const unsigned char*>(std::memchr(b + k, 0x0F, n - 7 - k + 1)); if (!hit) break; k = std::size_t(hit - b);
+      bool m = true; for (int j = 1; j < 7 && m; ++j) m = pat[j] < 0 || hit[j] == pat[j];
+      if (m) { ++count; only = reinterpret_cast<std::uintptr_t>(hit); } ++k; } }
+  DWORD64 fb = 0; auto* f = count == 1 ? RtlLookupFunctionEntry(only, &fb, nullptr) : nullptr;
+  bool ok = count == 1 && f && fb == image && image + f->BeginAddress == only;
+  if (ok) spFn.store(reinterpret_cast<SetPosFn>(only));
+  msm2::writeLog("WS_SET_POSITION_RESOLVE matches=%zu rva=0x%llx pdata_begin=%u admitted=%u (expected writer 0x2cfc900)", count, (unsigned long long)(count == 1 ? only - image : 0), unsigned(f && fb == image && image + f->BeginAddress == only), unsigned(ok));
+  return 0;
+}
 std::uintptr_t sgDetour(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r8, std::uintptr_t r9) {
   std::uint32_t sub[4] = {0, 0, 0, 0};
   bool doSub = sgSubActive.load(std::memory_order_relaxed) && rcx == sgSubBlock.load(std::memory_order_relaxed) && rcx;
@@ -1011,9 +1100,15 @@ std::uintptr_t sgDetour(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r
   // (also when locked: a landing ends the lock)
   if (doSub && sgAirPhase.load(std::memory_order_relaxed)) { std::uint32_t inb[3];
     if (msm2::readMemory(rdx, inb, sizeof inb)) { float in[3]; std::memcpy(in, inb, 12); float sb[3]; for (int i = 0; i < 3; ++i) { std::uint32_t b = sgSubBits[i].load(); std::memcpy(&sb[i], &b, 4); }
-      if (std::isfinite(in[1]) && in[1] > sb[1] + 0.05f && std::fabs(sgLastVy.load(std::memory_order_relaxed)) < 2.f) { doSub = false; sgSubActive.store(false); sgGameLanded.store(true); } } }
+      // M10q: with the position force the game's own up turning vertical is its timed reset, not a landing (the model
+      // keeps the vertical speed small), so only a surface the game itself attaches to (another non-vertical up) ends it.
+      bool force = gfOn.load(std::memory_order_relaxed);
+      bool otherWall = std::isfinite(in[1]) && std::fabs(in[1]) < 0.9f && in[0] * sb[0] + in[1] * sb[1] + in[2] * sb[2] < 0.95f;
+      bool vertical = !force && std::isfinite(in[1]) && in[1] > sb[1] + 0.05f && std::fabs(sgLastVy.load(std::memory_order_relaxed)) < 2.f;
+      if (otherWall || vertical) { doSub = false; sgSubActive.store(false); sgGameLanded.store(true); } } }
   if (doSub) { sub[0] = sgSubBits[0].load(); sub[1] = sgSubBits[1].load(); sub[2] = sgSubBits[2].load(); sgSubCalls.fetch_add(1, std::memory_order_relaxed); }
   auto r = sgOrig(rcx, doSub ? reinterpret_cast<std::uintptr_t>(sub) : rdx, r8, r9);
+  if (doSub && sgAirPhase.load(std::memory_order_relaxed)) { sbBlendStep(); gfStep(); }   // M10q (game thread, after the original)
   // M10l: M10k's chain block was not a setter block. Hero identification: the first block that receives a non-vertical up
   // (|y| < 0.9; only a character on a wall/ceiling, i.e. the crawling hero) becomes the hero block for the session.
   if (rcx && !doSub) { float in[3]{}; if (msm2::readMemory(rdx, in, sizeof in) && std::isfinite(in[1]) && std::fabs(in[1]) < 0.9f) {
@@ -1080,6 +1175,7 @@ void sgInstall(std::uintptr_t image, std::size_t imageSize) {
   const char* why = ok ? "" : "sha_mismatch";
   if (ok) ok = sgManualHook(t, reinterpret_cast<void*>(&sgDetour), reinterpret_cast<void**>(&sgOrig), why);
   if (ok) sgTarget = reinterpret_cast<void*>(t);
+  if (ok) { if (HANDLE h = CreateThread(nullptr, 0, spResolve, reinterpret_cast<void*>(image), 0, nullptr)) CloseHandle(h); }
   msm2::writeLog("WS_SET_GRAVITY_HOOK installed=%u method=manual_vex_prefix result=%s rva=0x35132a0 sha256=%s pass_through=1", unsigned(ok), why, hash[0] ? hash : "none");
 }
 // M10c-r2: M10c ran this search on the 100 ms worker; ~10k bases every 3 s stalled that worker for tens of seconds and
@@ -1134,7 +1230,14 @@ std::atomic<bool> gbHoldA{false}; int gbState{0};   // 0 off, 1 armed during WS,
 std::uint64_t gbBlendStart{}; float gbN[3]{}; unsigned gbL3Seen{};
 void gbSetUp(const float* up) { float want[9] = {-up[0], -up[1], -up[2], up[0], up[1], up[2], up[0], up[1], up[2]}; gbWrite(want);
   for (int i = 0; i < 3; ++i) { std::uint32_t bits; std::memcpy(&bits, &up[i], 4); sgSubBits[i].store(bits); } }
+void gfSummary(const char* why) {
+  if (!gfOn.exchange(false) && !gfFrames.load()) return;
+  msm2::writeLog("WS_GRAVITY_FORCE_END reason=%s frames=%llu set_position_calls=%llu read_fails=%llu plane_clamps=%llu dy_game_sum=%.3f launch_model=%u set_position_fn=%u",
+    why, (unsigned long long)gfFrames.load(), (unsigned long long)gfWrites.load(), (unsigned long long)gfReadFails.load(), (unsigned long long)gfClamps.load(), gfDyGameSum.load(), unsigned(gfModelUsed.exchange(false)), unsigned(spFn.load() != nullptr));
+  gfFrames.store(0); gfWrites.store(0); gfReadFails.store(0); gfClamps.store(0); gfDyGameSum.store(0);
+}
 void gbEnd(const char* why, std::uint64_t now, bool writeVanilla = true) {
+  gfSummary(why); sbBlendQpc.store(0); gfContact.store(false);
   sgSubActive.store(false); sgAirPhase.store(false); gbAirCam.store(false); bool wasLocked = sgLocked.exchange(false);
   if (gbState >= 2 && writeVanilla) { gbWrite(kGravVanilla); }
   gbActive = false; gbHoldA.store(false);
@@ -1151,6 +1254,11 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
   bool nOk = nl > 0.95f && nl < 1.05f && std::fabs(n[1]) < 0.3f && (fromWr || (m9NMs.load() && m9NMs.load() >= wsSessionStartMs.load()));
   static float prevVy = 0; static bool prevOk = false; float vy = motion.velocity.y; bool vOk = motion.valid; sgLastVy.store(vOk ? vy : 99.f);
   unsigned l3 = wgiL3Edges.load(); bool l3Press = l3 != gbL3Seen; gbL3Seen = l3;
+  gfTransform.store(hero.transform);
+  { static std::uint64_t maskStart = 0; bool m = ws::drive::stickMask.load();
+    if (m && !maskStart) { maskStart = now; }
+    if (!m && maskStart) { msm2::writeLog("WS_L3_STAND off reason=stick_repressed held_ms=%llu", (unsigned long long)(now - maskStart)); maskStart = 0; }
+    if (m && now - maskStart > 20000) { ws::drive::stickMask.store(false); msm2::writeLog("WS_L3_STAND off reason=timeout"); maskStart = 0; } }
   if (wsNow && nOk) {
     std::memcpy(gbN, n, sizeof gbN);
     if (gbState >= 2 && sgLocked.exchange(false)) msm2::writeLog("WS_GRAVITY_LOCK off reason=new_ws");
@@ -1159,29 +1267,37 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     if (gbState != 1) { if (gbState == 0) { ++gbTests; msm2::writeLog("WS_GRAVITY_TEST armed test=%u n=%.3f,%.3f,%.3f g=0x%llx", gbTests, n[0], n[1], n[2], (unsigned long long)gbAddr); }
       else { msm2::writeLog("WS_GRAVITY_TEST ws_again test=%u n=%.3f,%.3f,%.3f", gbTests, n[0], n[1], n[2]); }
       gbState = 1; }
-    if (l3Press) { sgLocked.store(true); msm2::writeLog("WS_GRAVITY_LOCK on n=%.3f,%.3f,%.3f", n[0], n[1], n[2]); }
+    if (l3Press) { sgLocked.store(true); ws::drive::stickMask.store(true); msm2::writeLog("WS_GRAVITY_LOCK on n=%.3f,%.3f,%.3f", n[0], n[1], n[2]); msm2::writeLog("WS_L3_STAND on (left stick reads neutral until re-pressed)"); }
   } else if (gbState == 1 && !wsNow) {
     gbState = 2; gbStart = now; gbSetUp(gbN); prevOk = false; sgAirPhase.store(true); gbAirCam.store(true); sgGameLanded.store(false);
+    for (int i = 0; i < 3; ++i) { gfP0[i].store(hero.position[i]); gfN0[i].store(gbN[i]); } gfVy0.store(vOk ? vy : 0.f); gfContact.store(false); sbBlendQpc.store(0);
+    gfGen.fetch_add(1); gfOn.store(ws::drive::wsGravityForce.load() && spFn.load() != nullptr);
     msm2::writeLog("WS_GRAVITY_TEST start test=%u n=%.3f,%.3f,%.3f locked=%u", gbTests, gbN[0], gbN[1], gbN[2], unsigned(sgLocked.load()));
   } else if (gbState >= 2) {
     bool velStop = vOk && prevOk && now - gbStart >= 150 && prevVy < -3.f && vy > -0.7f;
+    static std::uint64_t slowSince = 0; float sp = std::sqrt(motion.velocity.x * motion.velocity.x + motion.velocity.y * motion.velocity.y + motion.velocity.z * motion.velocity.z);
+    if (!vOk || sp > 0.3f || sgLocked.load()) slowSince = 0; else if (!slowSince) slowSince = now;
     if (sgGameLanded.exchange(false)) gbEnd("landed_game", now, false);        // the game blends to its own gravity
+    else if (gfContact.exchange(false)) gbEnd("wall_contact", now, true);       // M10q: back on the wall it left
+    else if (gbState == 2 && slowSince && now - slowSince >= 400 && now - gbStart >= 500) gbEnd("stalled", now, true);   // M10q: no 8 s lag when stuck
     else if (velStop) gbEnd("landed_velocity", now, true);
     else if (gbState == 2) {
       if (wgiRt.load() > 0.5) gbStart = now;                                   // web swing keeps the hold
-      if (!sgLocked.load() && now - gbStart >= 8000) { gbState = 3; gbBlendStart = now; msm2::writeLog("WS_GRAVITY_TEST blend_back test=%u", gbTests); }
+      if (!sgLocked.load() && now - gbStart >= 8000) { gbState = 3; gbBlendStart = now; for (int i = 0; i < 3; ++i) sbN[i].store(gbN[i]); sbBlendQpc.store(qpcNow()); msm2::writeLog("WS_GRAVITY_TEST blend_back test=%u per_frame=1", gbTests); }
       else gbSetUp(gbN);
     }
     if (gbState == 3) {
-      if (wgiRt.load() > 0.5) { gbState = 2; gbStart = now; gbSetUp(gbN); }      // swinging again: back to full hold
+      if (wgiRt.load() > 0.5) { gbState = 2; gbStart = now; sbBlendQpc.store(0); gbSetUp(gbN); }      // swinging again: back to full hold
       else { float t = std::fmin(1.f, float(now - gbBlendStart) / 2000.f), up[3] = {gbN[0] * (1 - t), gbN[1] * (1 - t) + t, gbN[2] * (1 - t)};
         float l = std::sqrt(up[0] * up[0] + up[1] * up[1] + up[2] * up[2]); for (float& c : up) c /= l;
-        if (t >= 1.f) gbEnd("blend_done", now, true); else gbSetUp(up); }
+        // M10q: the setter detour computes the up per call (smooth); the worker only writes when no call arrived.
+        static std::uint64_t lastCalls = 0; auto calls = sgSubCalls.load(); bool stale = calls == lastCalls; lastCalls = calls;
+        if (t >= 1.f) gbEnd("blend_done", now, true); else if (stale) gbSetUp(up); }
     }
   }
   prevVy = vy; prevOk = vOk;
 }
-void gbRestoreNow() { sgSubActive.store(false); sgAirPhase.store(false); gbAirCam.store(false); sgLocked.store(false); gbHoldA.store(false); if (gbActive) { gbWrite(kGravVanilla); gbActive = false; } gbState = 0; }
+void gbRestoreNow() { gfSummary("restore_now"); sbBlendQpc.store(0); ws::drive::stickMask.store(false); sgSubActive.store(false); sgAirPhase.store(false); gbAirCam.store(false); sgLocked.store(false); gbHoldA.store(false); if (gbActive) { gbWrite(kGravVanilla); gbActive = false; } gbState = 0; }
 void sgStatus(std::uint64_t now) { static std::uint64_t last = 0; static unsigned logs = 0; if (!sgTarget || now - last < 20000 || logs >= 20) return; last = now; ++logs;
   char line[900]; int len = std::snprintf(line, sizeof line, "WS_SET_GRAVITY_STATUS calls=%llu distinct_blocks=%u hero_block=0x%llx substituted_calls=%llu per_block=",
     (unsigned long long)sgCalls.load(), sgDistinct.load(), (unsigned long long)gbFound.load(), (unsigned long long)sgSubCalls.load());
