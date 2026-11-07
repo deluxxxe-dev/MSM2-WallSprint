@@ -969,6 +969,33 @@ bool gbIsVanilla(const float* f) { for (int i = 0; i < 9; ++i) if (std::fabs(f[i
 bool gbChain(std::uintptr_t b, std::uintptr_t& g) { std::uintptr_t p1 = 0, p2 = 0;
   if (!msm2::readMemory(b + 0xF0, &p1, 8) || !velReadable(p1) || !msm2::readMemory(p1 + 0xF8, &p2, 8) || !velReadable(p2)) return false;
   g = p2 + 0x5F4; float f[9]; return msm2::readMemory(g, f, sizeof f) && gbIsVanilla(f); }
+// M10e (2026-11-07): observe the game's SetGravityVector (RVA 0x35132A0, no .pdata; accepted 79-byte identity
+// sha256 7aaa6fef...31aa, analysis/MOTION_GRAVITY_OWNER_RESOLUTION_20261031.md). Pass-through: the original runs first
+// with untouched registers; afterwards RCX (the gravity block) and the 9 floats it now holds are recorded. Distinct
+// blocks are logged (<= 24); if the chain search finds nothing, a single vanilla block seen here is used for the test.
+constexpr std::uintptr_t kSetGravityRva = 0x35132A0;
+constexpr char kSetGravitySha[] = "7aaa6fefc1776035cffb9c3f291ac59c892444826dbd8b191092d71a910631aa";
+using SetGravFn = std::uintptr_t (*)(std::uintptr_t, std::uintptr_t, std::uintptr_t, std::uintptr_t);
+SetGravFn sgOrig{}; void* sgTarget{}; std::atomic<std::uint64_t> sgCalls{0}; std::atomic<unsigned> sgDistinct{0}; std::atomic<std::uintptr_t> sgLast{0};
+std::uintptr_t sgSeen[24]{};
+std::uintptr_t sgDetour(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r8, std::uintptr_t r9) {
+  auto r = sgOrig(rcx, rdx, r8, r9);
+  sgCalls.fetch_add(1, std::memory_order_relaxed); sgLast.store(rcx);
+  bool known = false; unsigned n = sgDistinct.load(); for (unsigned i = 0; i < n && i < 24; ++i) known |= sgSeen[i] == rcx;
+  if (!known && n < 24) { sgSeen[n] = rcx; sgDistinct.store(n + 1); float f[9]{}; float in[3]{}; bool rf = msm2::readMemory(rcx, f, sizeof f); bool ri = msm2::readMemory(rdx, in, sizeof in);
+    msm2::writeLog("WS_SET_GRAVITY call=%llu block=0x%llx input_read=%u input=%.3f,%.3f,%.3f block_read=%u f=%.3f,%.3f,%.3f|%.3f,%.3f,%.3f|%.3f,%.3f,%.3f thread=%lu",
+      (unsigned long long)sgCalls.load(), (unsigned long long)rcx, unsigned(ri), in[0], in[1], in[2], unsigned(rf), f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7], f[8], (unsigned long)GetCurrentThreadId()); }
+  return r;
+}
+void sgInstall(std::uintptr_t image, std::size_t imageSize) {
+  if (!image || imageSize <= kSetGravityRva + 79) return;
+  auto t = image + kSetGravityRva; unsigned char code[79]{}; char hash[65]{};
+  bool ok = msm2::readMemory(t, code, sizeof code) && sha256(code, sizeof code, hash) && !std::strcmp(hash, kSetGravitySha);
+  if (ok) { auto init = MH_Initialize(); ok = (init == MH_OK || init == MH_ERROR_ALREADY_INITIALIZED) &&
+    MH_CreateHook(reinterpret_cast<void*>(t), reinterpret_cast<void*>(&sgDetour), reinterpret_cast<void**>(&sgOrig)) == MH_OK && MH_EnableHook(reinterpret_cast<void*>(t)) == MH_OK; }
+  if (ok) sgTarget = reinterpret_cast<void*>(t);
+  msm2::writeLog("WS_SET_GRAVITY_HOOK installed=%u rva=0x35132a0 sha256=%s pass_through=1", unsigned(ok), hash[0] ? hash : "none");
+}
 // M10c-r2: M10c ran this search on the 100 ms worker; ~10k bases every 3 s stalled that worker for tens of seconds and
 // broke the WS camera/orientation. The search now runs on its own low-priority thread, yields every 64 bases, and
 // only runs again when the stored block stops matching (or the hero/Transform changes).
@@ -998,6 +1025,8 @@ void gbDiscover(const msm2::Snapshot& hero, std::uint64_t now) {
   if (now - gbLastScan < 1000) { gbAddr = gbFound.load(); return; }
   gbLastScan = now;
   auto g = gbFound.load(); if (g && !gbActive) { float f[9]; if (!msm2::readMemory(g, f, sizeof f) || !gbIsVanilla(f)) { gbFound.store(0); g = 0; } }
+  if (!g && sgDistinct.load() == 1) { float f[9]; auto c = sgSeen[0]; if (msm2::readMemory(c, f, sizeof f) && gbIsVanilla(f)) { g = c; gbFound.store(c);
+    static bool once = false; if (!once) { once = true; msm2::writeLog("WS_GRAVITY_BLOCK from_setter g=0x%llx", (unsigned long long)c); } } }
   gbAddr = g;
 }
 void gbWrite(const float* v) { MEMORY_BASIC_INFORMATION mb{};
@@ -1023,6 +1052,8 @@ void m10GravityTest(const msm2::Snapshot& hero, std::uint64_t now) {
   else gbWrite(want);
 }
 void gbRestoreNow() { if (gbActive) { gbWrite(kGravVanilla); gbActive = false; } }
+void sgStatus(std::uint64_t now) { static std::uint64_t last = 0; static unsigned logs = 0; if (!sgTarget || now - last < 20000 || logs >= 20) return; last = now; ++logs;
+  msm2::writeLog("WS_SET_GRAVITY_STATUS calls=%llu distinct_blocks=%u last=0x%llx", (unsigned long long)sgCalls.load(), sgDistinct.load(), (unsigned long long)sgLast.load()); }
 struct ChargeMeasure { std::uint64_t release{}, hold{}; float y0{}, apex{}; bool active{}; } cm; unsigned cmLogs{};
 void m8ChargeMeasure(const msm2::Snapshot& hero, std::uint64_t now) {
   auto rel = jiRelease.load(), pr = jiPress.load();
@@ -1051,6 +1082,7 @@ void jcRestoreNow() { if (jcState.load() == 2 && jcApplied) { jcWriteAll(false);
 namespace msm2::camera_ref {
 void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
   if (!verified || !image || imageSize <= kEntryRva + 64) { writeLog("WS_CAMERA_REF admitted=0 reason=build_or_image_unverified"); return; }
+  sgInstall(image, imageSize);
   target = image + kEntryRva;
   DWORD64 base = 0; auto* f = RtlLookupFunctionEntry(target, &base, nullptr);
   unsigned char entry[64]{}; char hash[65]{};
@@ -1121,6 +1153,7 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   m8ChargeMeasure(snapshot, now);
   m9VelocitySearch(snapshot, motion, now);
   m10GravityTest(snapshot, now);
+  sgStatus(now);
   m5eDistance(snapshot, now);
   m5ePitch(snapshot, now);
   if (now - statusLastMs >= 5000 && statusLogs < 40) { statusLastMs = now; ++statusLogs;
@@ -1177,6 +1210,7 @@ void kill() noexcept { gbRestoreNow(); jcRestoreNow(); killed = true; ws_wallspr
 void stop() noexcept {
   gbRestoreNow(); jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("stop");
   for (int m = 0; m < 4; ++m) { if (xgTarget[m]) MH_DisableHook(xgTarget[m]); if (xsTarget[m]) MH_DisableHook(xsTarget[m]); }
+  if (sgTarget) MH_DisableHook(sgTarget);
   if (wgiReadTarget) MH_DisableHook(wgiReadTarget);
   if (wgiVibTarget) MH_DisableHook(wgiVibTarget);
   for (int k = 0; k < kApiN; ++k) if (apiTarget[k]) MH_DisableHook(apiTarget[k]);
