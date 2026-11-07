@@ -1110,43 +1110,49 @@ void gbDiscover(const msm2::Snapshot& hero, std::uint64_t now) {
 void gbWrite(const float* v) { MEMORY_BASIC_INFORMATION mb{};
   if (!gbAddr || !VirtualQuery(reinterpret_cast<void*>(gbAddr), &mb, sizeof mb) || (mb.Protect & 0xff) != PAGE_READWRITE) return;
   auto* f = reinterpret_cast<volatile float*>(gbAddr); for (int i = 0; i < 9; ++i) f[i] = v[i]; }
-void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, std::uint64_t now) {
-  if (killed.load() || !hero.hero) { if (gbActive) { gbWrite(kGravVanilla); gbActive = false; } return; }
-  gbDiscover(hero, now);
-  if (!ws::drive::wsGravityTest.load() || !gbAddr) return;
-  bool wsNow = engagedManager.load() != 0 && now - lastWsMs.load() < 150;
-  static bool wasWs = false; bool jumpStart = wasWs && !wsNow; wasWs = wsNow;
-  float n[3] = {m9N[0].load(), m9N[1].load(), m9N[2].load()};
-  float want[9] = {-n[0], -n[1], -n[2], n[0], n[1], n[2], n[0], n[1], n[2]};
-  float nl = std::sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);   // M10c-r2: M10c wrote n = 0 (no WS normal yet)
-  // M10f: M10e showed the block sets the hero up (orientation) and zeroes motion along it, without a pull. Now the block
-  // is written for the whole WS (from WS start) so the jump-off itself sees up = n; restored 1.5 s after the WS ends.
-  bool startNow = ws::drive::wsGravityDuringWs.load() ? wsNow : jumpStart;
-  // M10m: the 250 ms freshness missed short WS sessions / jumps right after the rotation (3 vanilla jumps in log
-  // 20261107-212834). The normal now only has to be measured during the current WS session.
-  bool fresh = m9NMs.load() && m9NMs.load() >= wsSessionStartMs.load();
-  if (startNow && fresh && !gbActive && gbTests < 100000 && nl > 0.95f && nl < 1.05f && std::fabs(n[1]) < 0.3f) { float f[9];
-    if (msm2::readMemory(gbAddr, f, sizeof f)) { gbWrite(want); gbActive = true; gbStart = now; ++gbTests;
-      for (int i = 0; i < 3; ++i) { std::uint32_t b; std::memcpy(&b, &n[i], 4); sgSubBits[i].store(b); } sgSubBlock.store(gbAddr); sgSubActive.store(true);
-      msm2::writeLog("WS_GRAVITY_TEST start test=%u n=%.3f,%.3f,%.3f g=0x%llx", gbTests, n[0], n[1], n[2], (unsigned long long)gbAddr); } }
-  if (!gbActive) return;
-  for (int i = 0; i < 3; ++i) { std::uint32_t b; std::memcpy(&b, &n[i], 4); sgSubBits[i].store(b); }
-  float f[9]; bool rd = msm2::readMemory(gbAddr, f, sizeof f);
-  bool kept = rd; for (int i = 0; i < 9 && rd; ++i) kept = kept && std::fabs(f[i] - want[i]) < 1e-3f;
-  if (gbTests <= 6 && (now - gbStart) % 500 < 110) msm2::writeLog("WS_GRAVITY_TEST t_ms=%llu kept=%u read=%.3f,%.3f,%.3f|%.3f,%.3f,%.3f|%.3f,%.3f,%.3f", (unsigned long long)(now - gbStart), unsigned(kept), f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7], f[8]);
-  // M10n (owner spec): keep the wall gravity until another wall (new WS), the ground / a stop (measured speed < 1 m/s
-  // for two samples, from 300 ms on), or at most 3 s.
-  static unsigned slow = 0; float sp = motion.valid ? std::sqrt(ws::dot(motion.velocity, motion.velocity)) : 99.f;
-  slow = (now - gbStart >= 300 && sp < 1.f) ? slow + 1 : 0;
-  const char* why = nullptr;
-  if (ws::drive::wsGravityDuringWs.load()) { if (!wsNow && now - lastWsMs.load() > 1500) why = "timeout_after_ws"; }
-  else if (wsNow) why = "ws_again";
-  else if (slow >= 2) why = "stopped_or_landed";
-  else if (now - gbStart >= 3000) why = "timeout_3000ms";
-  if (why) { slow = 0; sgSubActive.store(false); gbWrite(kGravVanilla); gbActive = false; msm2::writeLog("WS_GRAVITY_TEST restore test=%u reason=%s held_ms=%llu", gbTests, why, (unsigned long long)(now - gbStart)); }
-  else gbWrite(want);
+// M10o (owner, log 20261107-231255): (1) upright frames at the jump: the hold started 180-250 ms after WallRun Deinit;
+// (2) slow / wrong releases from the speed rule (also mid-air at the apex, C-3); (3) short WS sessions had no sampled
+// normal (C-4); (4) the camera returned to vanilla at the jump (also flipped the stick mapping, C-2).
+// Now: hold armed already during WS (setter input substitution with the WallRun normal; the game itself sets that up at WS
+// start), so there is no gap at the jump; after the WS the block is also written each tick. Ends: new WS (continues with
+// the new wall), landing (world vertical speed jumps from < -3 m/s to > -0.7 m/s between samples), or 3 s.
+// gbHoldA keeps the WS camera for the whole hold.
+std::atomic<bool> gbHoldA{false}; int gbState{0};   // 0 off, 1 armed during WS, 2 air after WS
+void gbEnd(const char* why, std::uint64_t now) {
+  sgSubActive.store(false); if (gbState == 2) gbWrite(kGravVanilla); gbActive = false; gbHoldA.store(false);
+  msm2::writeLog("WS_GRAVITY_TEST restore test=%u reason=%s held_ms=%llu", gbTests, why, (unsigned long long)(gbState == 2 ? now - gbStart : 0)); gbState = 0;
 }
-void gbRestoreNow() { sgSubActive.store(false); if (gbActive) { gbWrite(kGravVanilla); gbActive = false; } }
+void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, std::uint64_t now) {
+  if (killed.load() || !hero.hero) { if (gbState) gbEnd("killed_or_no_hero", now); return; }
+  gbDiscover(hero, now);
+  if (!ws::drive::wsGravityTest.load() || !gbAddr) { if (gbState) gbEnd("disabled_or_no_block", now); return; }
+  bool wsNow = engagedManager.load() != 0 && now - lastWsMs.load() < 150;
+  // wall normal: WallRun owner normal (every WS update) if fresh, else the sampled hero up
+  float n[3]; auto wnMs = ws::drive::wallNMs.load();
+  if (wnMs && wnMs >= wsSessionStartMs.load()) { for (int i = 0; i < 3; ++i) n[i] = ws::drive::wallN[i].load(); }
+  else { for (int i = 0; i < 3; ++i) n[i] = m9N[i].load(); }
+  float nl = std::sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+  bool nOk = nl > 0.95f && nl < 1.05f && std::fabs(n[1]) < 0.3f && ((wnMs && wnMs >= wsSessionStartMs.load()) || (m9NMs.load() && m9NMs.load() >= wsSessionStartMs.load()));
+  float want[9] = {-n[0], -n[1], -n[2], n[0], n[1], n[2], n[0], n[1], n[2]};
+  static float prevVy = 0; static bool prevOk = false; float vy = motion.velocity.y; bool vOk = motion.valid;
+  if (wsNow && nOk) {
+    for (int i = 0; i < 3; ++i) { std::uint32_t bits; std::memcpy(&bits, &n[i], 4); sgSubBits[i].store(bits); }
+    sgSubBlock.store(gbAddr); sgSubActive.store(true); gbHoldA.store(true); gbActive = true;
+    if (gbState != 1) { if (gbState == 0) { ++gbTests; msm2::writeLog("WS_GRAVITY_TEST armed test=%u n=%.3f,%.3f,%.3f g=0x%llx", gbTests, n[0], n[1], n[2], (unsigned long long)gbAddr); }
+      else { msm2::writeLog("WS_GRAVITY_TEST ws_again test=%u n=%.3f,%.3f,%.3f", gbTests, n[0], n[1], n[2]); }
+      gbState = 1; }
+  } else if (gbState == 1 && !wsNow) {
+    gbState = 2; gbStart = now; gbWrite(want); prevOk = false;
+    msm2::writeLog("WS_GRAVITY_TEST start test=%u n=%.3f,%.3f,%.3f g=0x%llx", gbTests, n[0], n[1], n[2], (unsigned long long)gbAddr);
+  } else if (gbState == 2) {
+    bool landed = vOk && prevOk && now - gbStart >= 150 && prevVy < -3.f && vy > -0.7f;
+    if (landed) gbEnd("landed", now);
+    else if (now - gbStart >= 3000) gbEnd("timeout_3000ms", now);
+    else gbWrite(want);
+  } else if (gbState == 1 && wsNow && !nOk) { /* keep armed with the last normal */ }
+  prevVy = vy; prevOk = vOk;
+}
+void gbRestoreNow() { sgSubActive.store(false); gbHoldA.store(false); if (gbActive) { gbWrite(kGravVanilla); gbActive = false; } gbState = 0; }
 void sgStatus(std::uint64_t now) { static std::uint64_t last = 0; static unsigned logs = 0; if (!sgTarget || now - last < 20000 || logs >= 20) return; last = now; ++logs;
   char line[900]; int len = std::snprintf(line, sizeof line, "WS_SET_GRAVITY_STATUS calls=%llu distinct_blocks=%u hero_block=0x%llx substituted_calls=%llu per_block=",
     (unsigned long long)sgCalls.load(), sgDistinct.load(), (unsigned long long)gbFound.load(), (unsigned long long)sgSubCalls.load());
@@ -1231,6 +1237,7 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   auto now = GetTickCount64();
   if (engagedManager.load()) {
     auto since = now - lastWsMs.load(); auto start = exitBlendStart.load();
+    if (gbHoldA.load()) since = 0;   // M10o: keep the WS camera while the wall gravity is held
     if (since < 150) { if (start) exitBlendStart.store(0); }
     else if (!start) exitBlendStart.store(now);
     else if (camUpSettled.load() || now - start > kExitBlendMs) { exitBlendStart.store(0); camUpValid = false; restore(camUpSettled.load() ? "wallsprint_ended_up_settled" : "wallsprint_ended_blend_timeout"); }

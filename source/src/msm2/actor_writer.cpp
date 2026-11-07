@@ -343,6 +343,9 @@ void driveHeading(std::uintptr_t owner){
  if(owner!=driveOwner){driveOwner=owner;driveLateralSign=0;driveOwnerWrites=0;driveLatched=false;}
  {auto now=GetTickCount64();if(now-driveLastCallMs>500)driveOwnerWrites=0;driveLastCallMs=now;}
  if(driveOwnerWrites>=kTiltWriteCap)return;
+ // M10o: publish the WallRun wall normal every update (also with the stick neutral) for the wall-gravity jump.
+ {float wn[3]{};if(msm2::readMemory(owner+kWallNormalOffset,wn,sizeof(wn))&&std::isfinite(wn[0])&&std::isfinite(wn[1])&&std::isfinite(wn[2])){
+   float l=std::sqrt(wn[0]*wn[0]+wn[1]*wn[1]+wn[2]*wn[2]);if(l>.95f&&l<1.05f){for(int i=0;i<3;++i)ws::drive::wallN[i].store(wn[i]/l,std::memory_order_relaxed);ws::drive::wallNMs.store(GetTickCount64(),std::memory_order_release);}}}
  float sx,sy;if(!readStick(sx,sy)){driveLatched=false;driveLastOutValid=false;statePrevValid=false;driveNoInput.fetch_add(1,std::memory_order_relaxed);return;}
  float h[6]{},n[3]{};
  if(!msm2::readMemory(owner+kHeadingOffsetA,h,sizeof(h))||!msm2::readMemory(owner+kWallNormalOffset,n,sizeof(n))){driveBadNormal.fetch_add(1,std::memory_order_relaxed);return;}

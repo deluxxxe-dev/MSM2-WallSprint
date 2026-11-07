@@ -28,4 +28,7 @@ inline std::atomic<bool> velocityProbe{false};
 inline std::atomic<bool> wsGravityTest{false};
 // M10f: write the gravity block for the whole WS (not only after the jump). WALLSPRINT_WS_GRAVITY_DURING_WS, default 0.
 inline std::atomic<bool> wsGravityDuringWs{false};
+// M10o: WallRun wall normal (owner+0x398), published every WallRun update by actor_writer.
+inline std::atomic<float> wallN[3]{};
+inline std::atomic<std::uint64_t> wallNMs{0};
 }
