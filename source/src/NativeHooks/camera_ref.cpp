@@ -1305,7 +1305,7 @@ DWORD WINAPI gfThread(void*) {
 constexpr std::uintptr_t kMoverRva = 0x3519E10;
 constexpr char kMoverSha[] = "c6b4e9c1adfdb3701a9dcb1a33507ae1e2a06a9fce7312fcf4ca713498ffc34e";   // first 64 bytes
 using MoverFn = std::uintptr_t (*)(std::uintptr_t, std::uintptr_t, std::uintptr_t, std::uintptr_t);
-MoverFn gmOrig{}; std::atomic<std::uintptr_t> gmHero{0}; std::atomic<std::uint64_t> gmCalls{0}, gmEdits{0};
+MoverFn gmOrig{}; std::atomic<std::uintptr_t> gmHero{0}; std::atomic<std::uint64_t> gmCalls{0}, gmEdits{0}, gmHeroCalls{0}, gmIvShort{0}, gmIvFrame{0}, gmIvLong{0};
 struct MoverStore { std::uintptr_t a; const float* v; }; void moverStoreCb(void* c) { auto* k = static_cast<MoverStore*>(c); auto* f = reinterpret_cast<volatile float*>(k->a); f[0] = k->v[0]; f[1] = k->v[1]; f[2] = k->v[2]; }
 // diagnostic: offsets in the mover object whose vec3 equals the desired step / dt (the velocity), counted per hold
 std::atomic<unsigned> gmVelHits[512]{}; std::atomic<unsigned> gmVelSamples{0}; std::int64_t gmLastQpcDiag{};
@@ -1313,7 +1313,7 @@ std::uintptr_t gmDetour(std::uintptr_t obj, std::uintptr_t rdx, std::uintptr_t r
   gmCalls.fetch_add(1, std::memory_order_relaxed);
   auto heroObj = gmHero.load(std::memory_order_relaxed);
   if (heroObj && obj != heroObj) return gmOrig(obj, rdx, r8, r9);   // other characters: pass through without reads
-  if (obj && ws::drive::wsGravityMover.load(std::memory_order_relaxed) && !killed.load(std::memory_order_relaxed)) {
+  if (obj && !killed.load(std::memory_order_relaxed)) {
     float A[3], B[3], T[3]; auto tr = gfTransform.load(std::memory_order_relaxed);
     if (tr && msm2::readMemory(obj + 0x110, A, 12) && msm2::readMemory(obj + 0x11C, B, 12) && msm2::readMemory(tr + 0x30, T, 12)) {
       float dx = A[0] - T[0], dy = A[1] - T[1], dz = A[2] - T[2];
@@ -1321,11 +1321,12 @@ std::uintptr_t gmDetour(std::uintptr_t obj, std::uintptr_t rdx, std::uintptr_t r
       if (obj == gmHero.load() && (dx * dx + dz * dz > 4.f || std::fabs(dy) > 4.f)) { gmHero.store(0); msm2::writeLog("WS_MOVER_HERO lost obj=0x%llx", (unsigned long long)obj); }
       if (obj == gmHero.load()) {
         auto now = qpcNow(); double dtd = gmLastQpcDiag ? qpcSec(now - gmLastQpcDiag) : 0; gmLastQpcDiag = now;
+        if (gfOn.load()) { gmHeroCalls.fetch_add(1, std::memory_order_relaxed); (dtd < 0.004 ? gmIvShort : dtd <= 0.05 ? gmIvFrame : gmIvLong).fetch_add(1, std::memory_order_relaxed); }
         if (gfOn.load() && dtd > 0.004 && dtd < 0.05 && gmVelSamples.load() < 4000) { float v[3] = {float((B[0] - A[0]) / dtd), float((B[1] - A[1]) / dtd), float((B[2] - A[2]) / dtd)};
           float vl = std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
           if (vl > 3.f) { float o[512 + 2]; if (msm2::readMemory(obj, o, sizeof o)) { gmVelSamples.fetch_add(1);
               for (unsigned i = 0; i < 512; ++i) { float ex = std::fabs(o[i] - v[0]) + std::fabs(o[i + 1] - v[1]) + std::fabs(o[i + 2] - v[2]); if (ex < 0.1f * vl + 0.1f) gmVelHits[i].fetch_add(1, std::memory_order_relaxed); } } } }
-        if (gfOn.load()) { gmQpc.store(now); float Bn[3] = {B[0], B[1], B[2]}; gfStep(A, Bn);
+        if (gfOn.load() && ws::drive::wsGravityMover.load(std::memory_order_relaxed)) { gmQpc.store(now); float Bn[3] = {B[0], B[1], B[2]}; gfStep(A, Bn);
           if (Bn[0] != B[0] || Bn[1] != B[1] || Bn[2] != B[2]) { MoverStore ms{obj + 0x11C, Bn}; if (ws_guarded_call(moverStoreCb, &ms)) gmEdits.fetch_add(1, std::memory_order_relaxed); } }
       } else if (dx * dx + dz * dz < 0.25f && std::fabs(dy) < 2.f && obj != gmHero.load()) {
         static unsigned other = 0; if (other++ < 5) msm2::writeLog("WS_MOVER_OTHER_NEAR obj=0x%llx", (unsigned long long)obj); } } }
@@ -1333,8 +1334,8 @@ std::uintptr_t gmDetour(std::uintptr_t obj, std::uintptr_t rdx, std::uintptr_t r
 }
 void gmReport(const char* why) {
   unsigned best[6]{}, bi[6]{}; for (unsigned i = 0; i < 512; ++i) { unsigned c = gmVelHits[i].load(); for (int k = 0; k < 6; ++k) if (c > best[k]) { for (int m = 5; m > k; --m) { best[m] = best[m - 1]; bi[m] = bi[m - 1]; } best[k] = c; bi[k] = i; break; } }
-  msm2::writeLog("WS_MOVER_REPORT why=%s calls=%llu edits=%llu hero=0x%llx vel_samples=%u top_vel_offsets=0x%x:%u,0x%x:%u,0x%x:%u,0x%x:%u,0x%x:%u,0x%x:%u", why,
-    (unsigned long long)gmCalls.load(), (unsigned long long)gmEdits.load(), (unsigned long long)gmHero.load(), gmVelSamples.load(), bi[0] * 4, best[0], bi[1] * 4, best[1], bi[2] * 4, best[2], bi[3] * 4, best[3], bi[4] * 4, best[4], bi[5] * 4, best[5]);
+  msm2::writeLog("WS_MOVER_REPORT why=%s hero_calls_in_hold=%llu interval_lt4ms=%llu interval_4_50ms=%llu interval_gt50ms=%llu calls=%llu edits=%llu hero=0x%llx vel_samples=%u top_vel_offsets=0x%x:%u,0x%x:%u,0x%x:%u,0x%x:%u,0x%x:%u,0x%x:%u", why,
+    (unsigned long long)gmHeroCalls.exchange(0), (unsigned long long)gmIvShort.exchange(0), (unsigned long long)gmIvFrame.exchange(0), (unsigned long long)gmIvLong.exchange(0), (unsigned long long)gmCalls.load(), (unsigned long long)gmEdits.load(), (unsigned long long)gmHero.load(), gmVelSamples.load(), bi[0] * 4, best[0], bi[1] * 4, best[1], bi[2] * 4, best[2], bi[3] * 4, best[3], bi[4] * 4, best[4], bi[5] * 4, best[5]);
 }
 void gmInstall(std::uintptr_t image, std::size_t imageSize) {
   if (!image || imageSize <= kMoverRva + 64) return;
@@ -1380,7 +1381,9 @@ std::uintptr_t sgDetour(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r
       bool force = gfOn.load(std::memory_order_relaxed);
       bool otherWall = std::isfinite(in[1]) && std::fabs(in[1]) < 0.9f && in[0] * sb[0] + in[1] * sb[1] + in[2] * sb[2] < 0.95f;
       bool vertical = !force && !sgLocked.load(std::memory_order_relaxed) && std::isfinite(in[1]) && in[1] > sb[1] + 0.05f && std::fabs(sgLastVy.load(std::memory_order_relaxed)) < 2.f;
-      if (otherWall || vertical) { doSub = false; sgSubActive.store(false); sgGameLanded.store(true); } } }
+      // M10z-r10 (log Wall_Jump): the air A action (web zip) set another up and ended the hold; with the force the
+      // face stays the ground until a new WS or B, so another surface no longer ends it.
+      if ((otherWall && !force) || vertical) { doSub = false; sgSubActive.store(false); sgGameLanded.store(true); } } }
   if (doSub) { sub[0] = sgSubBits[0].load(); sub[1] = sgSubBits[1].load(); sub[2] = sgSubBits[2].load(); sgSubCalls.fetch_add(1, std::memory_order_relaxed); }
   auto r = sgOrig(rcx, doSub ? reinterpret_cast<std::uintptr_t>(sub) : rdx, r8, r9);
   if (doSub && sgAirPhase.load(std::memory_order_relaxed)) sbBlendStep();   // M10q (after the original)
