@@ -17,7 +17,7 @@ the wall, the vanilla jump arc (YBoost/TimeToPeak) may follow it (req. 2+3 with 
 (b) charge motion via an in-memory animset entry switch at release; (c) fallback: position-driven (kinematic) jump.
 Owner spec change 2026-11-08 (supersedes the L3 lock below): the L3 gravity lock is cancelled. Once WS sets a new
 gravity direction, that face is the ground permanently (stopping or walking keeps it) until the hero moves to a new face
-(new WS) or presses A (cancel, gravity returns to vanilla).
+(new WS) or presses B (Xbox B; cancel, gravity returns to vanilla). (Owner correction: B, not A.)
 Owner additions 2026-11-08 (may come after the current push):
 - Gravity lock mode (L3 during WS): stand upright on the wall and walk on it like on the ground, also while stopped
   (owner reference: Nexus Mods marvelsspiderman2 mod 1002; page not reachable from the cloud session). L3 during WS
