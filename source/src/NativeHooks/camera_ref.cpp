@@ -692,7 +692,7 @@ DWORD WINAPI m9Launch(void* arg) {
     target, writes, wslot[0], wslot[1], refused, why[0], why[1], (unsigned long long)ptrSeen[0], (unsigned long long)ptrSeen[1], before[0], before[1], after[0], after[1], (unsigned long long)(GetTickCount64() - t0), n[0], n[1], n[2]);
   return 0;
 }
-std::atomic<double> wgiRt{0}; std::atomic<unsigned> wgiL3Edges{0};
+std::atomic<double> wgiRt{0}; std::atomic<unsigned> wgiL3Edges{0}; std::atomic<float> wgiStick{0}; std::atomic<std::uint64_t> wsStopHops{0};
 enum : int { kChIdle, kChHold, kChGive, kChSwallow };
 std::atomic<int> chState{kChIdle}; std::atomic<std::uint64_t> chStart{0}, chGiveUntil{0}; unsigned chLogs{};
 // M10t: the jump height of the last WS jump release (normal 1.8 m, charge 15 -> 39 m like the ground curve) for the
@@ -760,6 +760,19 @@ HRESULT STDMETHODCALLTYPE wgiReadDetour(void* self, WgiReading* r) {
     if (a && ws::drive::jumpHoldbackTest.load() && !killed.load() && engagedManager.load() != 0 && GetTickCount64() - lastWsMs.load() < 150) {
       r->buttons &= ~0x4u; if (wgiHidden.fetch_add(1) < 40) msm2::writeLog("WS_JUMP_HOLDBACK module=WGI a_hidden=1 blocked=%llu", (unsigned long long)wgiHidden.load()); }
     wsChargeStep(r, a);
+    // M10z-r4 (owner: stopping during WS goes to the crawl; upright only after a jump): when the stick stays neutral for
+    // 120 ms during a WS, one 60 ms A tap is given to the game (a small jump, 0.4 m) so the hero lands on the face in the
+    // face-as-ground mode. Once per WS session; not while a charge is held.
+    { float m = float(std::sqrt(r->lx * r->lx + r->ly * r->ly)); wgiStick.store(m, std::memory_order_relaxed);
+      static std::uint64_t neutralSince = 0, hopUntil = 0, hopSession = 0; auto nowh = GetTickCount64();
+      if (hopUntil && nowh < hopUntil) r->buttons |= 0x4u; else hopUntil = 0;
+      if (ws::drive::wsGravityForce.load() && !killed.load() && wsActiveNow(nowh) && chState.load() == kChIdle && !a) {
+        if (m < 0.2f) { if (!neutralSince) neutralSince = nowh;
+          auto sess = wsSessionStartMs.load();
+          if (nowh - neutralSince >= 120 && hopSession != sess && nowh - sess > 600) { hopSession = sess; hopUntil = nowh + 60; r->buttons |= 0x4u;
+            gfJumpH.store(0.4f); gfJumpMs.store(nowh); wsStopHops.fetch_add(1); } }
+        else neutralSince = 0; }
+      else neutralSince = 0; }
     wgiRt.store(r->rt, std::memory_order_relaxed);
     { bool b = (r->buttons & 0x8u) != 0; static std::atomic<bool> prevB{false}; bool was = prevB.exchange(b); if (b && !was) wgiBPresses.fetch_add(1); }
     { bool l3 = (r->buttons & 0x1000u) != 0; static std::atomic<bool> prevL3{false}; bool was = prevL3.exchange(l3); if (l3 && !was) wgiL3Edges.fetch_add(1); }   // M10p gravity lock
@@ -1052,7 +1065,7 @@ bool gfWritePos(std::uintptr_t tr, float* q) {
 std::atomic<bool> gfOn{false}, gfContact{false}; std::atomic<unsigned> gfGen{0}, gfContactGen{0};
 std::atomic<float> gfP0[3]{}, gfN0[3]{}, gfVy0{0}, gfStandoff{-1.f};
 std::atomic<std::uint64_t> gfFrames{0}, gfWrites{0}, gfReadFails{0}, gfClamps{0};
-std::atomic<float> gfDyGameSum{0}; std::atomic<unsigned> gfSampleLogs{0}; std::atomic<std::uint64_t> gfPinDrops{0};
+std::atomic<float> gfDyGameSum{0}; std::atomic<unsigned> gfSampleLogs{0}, gfMoveLogs{0}; std::atomic<std::uint64_t> gfPinDrops{0}, gfFaceJumps{0};
 // M10q: seamless return. While blending, the up for the next call is computed per call (smoothstep over 2 s).
 std::atomic<std::int64_t> sbBlendQpc{0}; std::atomic<float> sbN[3]{};
 std::int64_t qpcNow() { LARGE_INTEGER q; QueryPerformanceCounter(&q); return q.QuadPart; }
@@ -1123,13 +1136,20 @@ void gfStep() {
   // M10y (owner: after landing the hero fell to the ground after a few seconds): stay on the wall until a new WS starts
   // (worker), A is pressed (jump off; vanilla gravity resumes) or 30 s.
   if (gfL.pinned) gfL.pinT += dt;   // M10z: stays on the wall; B (worker) ends it
+  // M10z-r4 (owner C: jumps from the face barely rose): the pin capped the distance at 0.6 m. A on the face now releases
+  // the pin and launches along the normal like the WS jump (1.8 m); the landing check restarts.
+  if (gfL.pinned && !sbBlendQpc.load(std::memory_order_relaxed) && wgiPresses.load(std::memory_order_relaxed) != gfL.pinPresses) {
+    gfL.pinned = false; gfL.left = false; gfL.t = 0; gfL.vy = 0.f; float v = std::sqrt(2.f * kGfG * 1.8f);
+    for (int i = 0; i < 3; ++i) gfL.vg[i] = n0[i] * v;
+    gfFaceJumps.fetch_add(1); msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP speed=%.1f", v); }
   // M10z-r3 (log 20261109-000226): on the wall the game treats the face as ground (stand/walk/stairs motions, dy_game 0 on
   // most steps) but drops the hero ~0.5 m on some steps (shaking); the full height freeze also blocked up/down moves.
   // While pinned the game's own position is used; only steps that drop more than 0.1 m in world y are undone, and the
   // hero is kept between the wall (d >= -0.05) and 0.6 m off it.
   if (gfL.pinned && !sbBlendQpc.load(std::memory_order_relaxed)) {
     q[0] = p[0]; q[1] = p[1]; q[2] = p[2];
-    if (dyGame < -0.1f) { q[1] = gfL.pLast[1]; gfPinDrops.fetch_add(1, std::memory_order_relaxed); }
+    bool moving = wgiStick.load(std::memory_order_relaxed) > 0.25f;   // M10z-r4: the game's own walking is not undone
+    if (dyGame < -0.1f && !moving) { q[1] = gfL.pLast[1]; gfPinDrops.fetch_add(1, std::memory_order_relaxed); }
     float dq = (q[0] - p0[0]) * n0[0] + (q[1] - p0[1]) * n0[1] + (q[2] - p0[2]) * n0[2];
     float want = dq < -0.05f ? -0.05f : dq > 0.6f ? 0.6f : dq; for (int i = 0; i < 3; ++i) q[i] += (want - dq) * n0[i];
     gfL.vy = 0.f; for (float& c : gfL.vg) c = 0.f;
@@ -1140,6 +1160,14 @@ void gfStep() {
   if (!gfWritePos(tr, q)) { gfReadFails.fetch_add(1); return; }
   gfWrites.fetch_add(1, std::memory_order_relaxed); gfFrames.fetch_add(1, std::memory_order_relaxed);
   gfDyGameSum.store(gfDyGameSum.load(std::memory_order_relaxed) + dyGame, std::memory_order_relaxed);
+  if (gfL.pinned && wgiStick.load(std::memory_order_relaxed) > 0.25f && (gfL.frames % 10) == 0 && gfMoveLogs.fetch_add(1) < 200) {
+    // M10z-r4 diagnostic: game step since our last store, split along the normal, the wall up (world y on the face) and side
+    float g[3] = {p[0] - gfL.pLast[0], p[1] - gfL.pLast[1], p[2] - gfL.pLast[2]}, wu[3] = {-n0[0] * n0[1], 1.f - n0[1] * n0[1], -n0[2] * n0[1]};
+    float wl = std::sqrt(wu[0] * wu[0] + wu[1] * wu[1] + wu[2] * wu[2]); if (wl > 1e-3f) for (float& c : wu) c /= wl;
+    float ws[3] = {n0[1] * wu[2] - n0[2] * wu[1], n0[2] * wu[0] - n0[0] * wu[2], n0[0] * wu[1] - n0[1] * wu[0]};
+    msm2::writeLog("WS_FACE_MOVE_SAMPLE frame=%u stick=%.2f step_n=%.4f step_up=%.4f step_side=%.4f plane_d=%.3f store_dn=%.4f store_dy=%.4f",
+      gfL.frames, wgiStick.load(), g[0] * n0[0] + g[1] * n0[1] + g[2] * n0[2], g[0] * wu[0] + g[1] * wu[1] + g[2] * wu[2], g[0] * ws[0] + g[1] * ws[1] + g[2] * ws[2], d,
+      (q[0] - p[0]) * n0[0] + (q[1] - p[1]) * n0[1] + (q[2] - p[2]) * n0[2], q[1] - p[1]); }
   if ((gfL.frames % 25) == 1 && gfSampleLogs.fetch_add(1) < 160)
     msm2::writeLog("WS_GRAVITY_FORCE_SAMPLE frame=%u dt_ms=%.1f game_pos=%.3f,%.3f,%.3f dy_game=%.4f set_pos=%.3f,%.3f,%.3f vg=%.2f,%.2f,%.2f vy=%.2f plane_d=%.2f up=%.3f,%.3f,%.3f locked=%u model=%u",
       gfL.frames, dt * 1000.f, p[0], p[1], p[2], dyGame, q[0], q[1], q[2], gfL.vg[0], gfL.vg[1], gfL.vg[2], gfL.vy, d, u[0], u[1], u[2], unsigned(locked), unsigned(gfL.model));
@@ -1403,8 +1431,8 @@ std::atomic<unsigned> gvSearches{0};
 void gfSummary(const char* why) {
   if (auto ta = gvTestAddr.exchange(0)) msm2::writeLog("WS_VELOCITY_TEST end addr=0x%llx writes=%llu frames=%llu dy_game_sum=%.3f (baseline: holds without a test)", (unsigned long long)ta, (unsigned long long)gvTestWrites.load(), (unsigned long long)gfFrames.load(), gfDyGameSum.load());
   if (!gfOn.exchange(false) && !gfFrames.load()) return;
-  msm2::writeLog("WS_GRAVITY_FORCE_END reason=%s pin_drops_undone=%llu frames=%llu set_position_calls=%llu read_fails=%llu plane_clamps=%llu dy_game_sum=%.3f launch_model=%u set_position_fn=%u route=%d game_airborne_frames_only=1",
-    why, (unsigned long long)gfPinDrops.exchange(0), (unsigned long long)gfFrames.load(), (unsigned long long)gfWrites.load(), (unsigned long long)gfReadFails.load(), (unsigned long long)gfClamps.load(), gfDyGameSum.load(), unsigned(gfModelUsed.exchange(false)), unsigned(spFn.load() != nullptr), gfMode.load());
+  msm2::writeLog("WS_GRAVITY_FORCE_END reason=%s pin_drops_undone=%llu face_jumps=%llu stop_hops=%llu frames=%llu set_position_calls=%llu read_fails=%llu plane_clamps=%llu dy_game_sum=%.3f launch_model=%u set_position_fn=%u route=%d game_airborne_frames_only=1",
+    why, (unsigned long long)gfPinDrops.exchange(0), (unsigned long long)gfFaceJumps.exchange(0), (unsigned long long)wsStopHops.load(), (unsigned long long)gfFrames.load(), (unsigned long long)gfWrites.load(), (unsigned long long)gfReadFails.load(), (unsigned long long)gfClamps.load(), gfDyGameSum.load(), unsigned(gfModelUsed.exchange(false)), unsigned(spFn.load() != nullptr), gfMode.load());
   gfFrames.store(0); gfWrites.store(0); gfReadFails.store(0); gfClamps.store(0); gfDyGameSum.store(0);
 }
 void gbEnd(const char* why, std::uint64_t now, bool writeVanilla = true) {
