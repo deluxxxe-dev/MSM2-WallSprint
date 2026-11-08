@@ -60,3 +60,4 @@ fe6369fbe780bef30a14d77163ef9bc5e0cc283d 2026-11-08 M10u-r2 full suites PASS (ho
 8bfd9f41ec912072d2b28d0a117a98e3fadb323c 2026-11-08 M10x build/test.sh/smoke/package PASS; hook suite PASS with only the native_source step skipped (892 PASS lines); native_source_override_smoke line 239 timing assertion still fails in this container (links neither camera_ref nor actor_writer)
 e1551285ad38bd16b3fd5d6c7877e67803242b7f 2026-11-08 M10y full suites PASS (hook suite complete incl. native_source_override_smoke)
 5ec94c3107d77418d90e05d096ab1259d7896012 2026-11-08 M10z-r2 full suites PASS (hook suite complete)
+f337454abe5c90ac34337b76fecd9b13d7e7b00c 2026-11-09 M10z-r3 full suites PASS (hook suite complete)
