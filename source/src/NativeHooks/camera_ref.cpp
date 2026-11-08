@@ -1099,8 +1099,12 @@ void gfStep() {
   if (!gfL.init || qpcSec(now - gfL.last) > 0.1) { gfL.init = true; gfL.last = now; std::memcpy(gfL.pLast, p, 12); gfL.vy = gfVy0.load(); gfL.vg[0] = gfL.vg[1] = gfL.vg[2] = 0;
     // M10t: launch along the wall normal (wall = down): v = sqrt(2 g h) for the released jump height.
     auto jm = gfJumpMs.load(); auto ms = GetTickCount64();
-    { auto sm = gfStopMs.load(); if (!gfL.launched && sm && ms >= sm && ms - sm < 4000 && !(jm && jm > sm)) { gfL.launched = true; gfL.pushT = 0.25f; gfStopMs.store(0);
-        msm2::writeLog("WS_GRAVITY_FORCE_STOP_PUSH off_m=0.9 hold_s=0.25 since_stop_ms=%llu", (unsigned long long)(ms - sm)); } }
+    // M10z-r6 (log 20261109-022301): the stop was never detected (the WS ended within 120 ms of the stick release), so
+    // every hold that starts without a jump release while the hero is near the face (< 0.8 m) gets the push.
+    { bool jumped = jm && ms >= jm && ms - jm < 600; float n0i[3] = {gfN0[0].load(), gfN0[1].load(), gfN0[2].load()};
+      float di = (p[0] - gfP0[0].load()) * n0i[0] + (p[1] - gfP0[1].load()) * n0i[1] + (p[2] - gfP0[2].load()) * n0i[2];
+      if (!gfL.launched && !jumped && di < 0.8f) { gfL.launched = true; gfL.pushT = 0.25f; gfStopMs.store(0);
+        msm2::writeLog("WS_GRAVITY_FORCE_STOP_PUSH off_m=0.9 hold_s=0.25 start_d=%.2f", di); } }
     if (!gfL.launched && jm && ms >= jm && ms - jm < 600) { gfL.launched = true; float h = gfJumpH.load(), v = std::sqrt(2.f * kGfG * h);
       for (int i = 0; i < 3; ++i) gfL.vg[i] = gfN0[i].load() * v;
       msm2::writeLog("WS_GRAVITY_FORCE_LAUNCH height_m=%.1f speed=%.1f since_release_ms=%llu", h, v, (unsigned long long)(ms - jm)); }
@@ -1158,8 +1162,10 @@ void gfStep() {
   // hero is kept between the wall (d >= -0.05) and 0.6 m off it.
   if (gfL.pinned && !sbBlendQpc.load(std::memory_order_relaxed)) {
     q[0] = p[0]; q[1] = p[1]; q[2] = p[2];
-    bool moving = wgiStick.load(std::memory_order_relaxed) > 0.25f;   // M10z-r4: the game's own walking is not undone
-    if (dyGame < -0.1f && !moving) { q[1] = gfL.pLast[1]; gfPinDrops.fetch_add(1, std::memory_order_relaxed); }
+    // M10z-r4: the game's own walking is not undone. M10z-r6: except during the first 1.5 s after a landing, while the
+    // game is still in its fall state (owner C: with the stick held the hero slid toward the ground after landing).
+    bool moving = wgiStick.load(std::memory_order_relaxed) > 0.25f && gfL.pinT > 1.5f;
+    if (dyGame < (gfL.pinT > 1.5f ? -0.1f : -0.01f) && !moving) { q[1] = gfL.pLast[1]; gfPinDrops.fetch_add(1, std::memory_order_relaxed); }
     float dq = (q[0] - p0[0]) * n0[0] + (q[1] - p0[1]) * n0[1] + (q[2] - p0[2]) * n0[2];
     float want = dq < -0.05f ? -0.05f : dq > 0.6f ? 0.6f : dq; for (int i = 0; i < 3; ++i) q[i] += (want - dq) * n0[i];
     gfL.vy = 0.f; for (float& c : gfL.vg) c = 0.f;
