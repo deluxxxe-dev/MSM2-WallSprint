@@ -1158,6 +1158,10 @@ DWORD WINAPI gvVerify(void*) {
 // emptied the list. Search without the estimate: while the hero falls inside the game, its vertical speed changes by
 // about -g * dt. Batches of <= 32 MiB are read twice ~40 ms apart (QPC-timed); floats in [-60, -1] whose change matches
 // -33 m/s^2 * dt (tolerance 0.35 + 30 %) are kept. Checks: the same rule over ~100 ms steps.
+// M10w (logs 20261108 A/B): one hold covered only 68-755 MB before it ended; the sweep now resumes at the next address
+// in later holds until the whole address space was read once, collecting candidates; regions > 512 MiB are no longer
+// skipped; the two reads are 25 ms apart.
+std::uintptr_t gvResume = 0; std::vector<std::uintptr_t> gvAcc; std::size_t gvAccBytes = 0;
 DWORD WINAPI gvSearch(void*) {
   std::vector<std::uintptr_t> cand; cand.reserve(20000); std::vector<float> last;
   auto t0 = qpcNow(); std::size_t bytes = 0; unsigned regions = 0; std::vector<void*> stacks;   // allocations with a guard page = thread stacks
@@ -1167,21 +1171,28 @@ DWORD WINAPI gvSearch(void*) {
     auto base = reinterpret_cast<std::uintptr_t>(mb.BaseAddress); auto end = base + mb.RegionSize; a = end;
     if (mb.State == MEM_COMMIT && (mb.Protect & PAGE_GUARD)) { stacks.push_back(mb.AllocationBase); continue; }
     if (std::find(stacks.begin(), stacks.end(), mb.AllocationBase) != stacks.end()) continue;
-    if (mb.State != MEM_COMMIT || mb.Type != MEM_PRIVATE || (mb.Protect & 0xff) != PAGE_READWRITE || mb.RegionSize > (512ull << 20)) continue;
+    if (mb.State != MEM_COMMIT || mb.Type != MEM_PRIVATE || (mb.Protect & 0xff) != PAGE_READWRITE) continue;
     ++regions; for (std::uintptr_t c = base; c < end; c += (32u << 20)) pieces.push_back({c, std::min<std::size_t>(32u << 20, end - c)}); }
   std::vector<float> A, B;
-  for (std::size_t pi = 0; pi < pieces.size() && cand.size() < 20000 && gfOn.load() && qpcSec(qpcNow() - t0) < 4.0;) {
+  std::size_t pi0 = 0; while (pi0 < pieces.size() && pieces[pi0].a < gvResume) ++pi0;
+  std::size_t pi = pi0;
+  for (; pi < pieces.size() && gvAcc.size() + cand.size() < 20000 && gfOn.load() && qpcSec(qpcNow() - t0) < 4.0;) {
     std::size_t first = pi, total = 0; while (pi < pieces.size() && total + pieces[pi].n <= (32u << 20)) total += pieces[pi++].n;
     if (pi == first) total = pieces[pi++].n;
     A.resize(total / 4); B.resize(total / 4);
     auto ta = qpcNow(); std::size_t off = 0; for (std::size_t k = first; k < pi; ++k) { if (!msm2::readMemory(pieces[k].a, A.data() + off / 4, pieces[k].n)) std::memset(A.data() + off / 4, 0, pieces[k].n); off += pieces[k].n; }
-    Sleep(40);
+    Sleep(25);
     auto tb = qpcNow(); off = 0; for (std::size_t k = first; k < pi; ++k) { if (!msm2::readMemory(pieces[k].a, B.data() + off / 4, pieces[k].n)) std::memset(B.data() + off / 4, 0, pieces[k].n); off += pieces[k].n; }
     double dt = qpcSec(tb - ta); bytes += total; off = 0;
     for (std::size_t k = first; k < pi && cand.size() < 20000; ++k) { std::size_t n = pieces[k].n / 4;
       for (std::size_t i = 0; i < n; ++i) if (gvFallStep(A[off / 4 + i], B[off / 4 + i], dt)) { cand.push_back(pieces[k].a + i * 4); if (cand.size() >= 20000) break; }
       off += pieces[k].n; } }
   std::vector<float>().swap(A); std::vector<float>().swap(B);
+  bool complete = pi >= pieces.size(); gvResume = complete ? 0 : pieces[pi].a; gvAccBytes += bytes;
+  gvAcc.insert(gvAcc.end(), cand.begin(), cand.end());
+  msm2::writeLog("WS_VELOCITY_SEARCH sweep regions=%u this_hold_mb=%zu total_mb=%zu new=%zu collected=%zu complete=%u next=0x%llx ms=%.0f", regions, bytes >> 20, gvAccBytes >> 20, cand.size(), gvAcc.size(), unsigned(complete), (unsigned long long)gvResume, qpcSec(qpcNow() - t0) * 1000.0);
+  if (!complete && gvAcc.size() < 20000) { gvState.store(0); return 0; }   // continue the sweep in the next hold
+  cand.swap(gvAcc); gvAcc.clear(); gvAccBytes = 0; gvResume = 0;
   unsigned p1 = unsigned(cand.size());
   last.resize(cand.size()); for (std::size_t i = 0; i < cand.size(); ++i) msm2::readMemory(cand[i], &last[i], 4);
   msm2::writeLog("WS_VELOCITY_SEARCH phase=1 rule=fall_step regions=%u bytes_mb=%zu candidates=%u game_vy_est=%.2f ms=%.0f", regions, bytes >> 20, p1, gfVyGame.load(), qpcSec(qpcNow() - t0) * 1000.0);
@@ -1401,6 +1412,7 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     if (m && now - maskStart > 20000) { ws::drive::stickMask.store(false); msm2::writeLog("WS_L3_STAND off reason=timeout"); maskStart = 0; } }
   if (wsNow && nOk) {
     std::memcpy(gbN, n, sizeof gbN);
+    for (int i = 0; i < 3; ++i) gfP0[i].store(hero.position[i]);   // M10w: landing plane = last on-wall WS position
     if (gbState >= 2 && sgLocked.exchange(false)) msm2::writeLog("WS_GRAVITY_LOCK off reason=new_ws");
     for (int i = 0; i < 3; ++i) { std::uint32_t bits; std::memcpy(&bits, &n[i], 4); sgSubBits[i].store(bits); }
     sgSubBlock.store(gbAddr); sgSubActive.store(true); sgAirPhase.store(false); gbAirCam.store(false); gbHoldA.store(true); gbActive = true;
@@ -1410,7 +1422,7 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     if (l3Press) { sgLocked.store(true); ws::drive::stickMask.store(true); msm2::writeLog("WS_GRAVITY_LOCK on n=%.3f,%.3f,%.3f", n[0], n[1], n[2]); msm2::writeLog("WS_L3_STAND on (left stick reads neutral until re-pressed)"); }
   } else if (gbState == 1 && !wsNow) {
     gbState = 2; gbStart = now; gbSetUp(gbN); prevOk = false; sgAirPhase.store(true); gbAirCam.store(true); sgGameLanded.store(false);
-    for (int i = 0; i < 3; ++i) { gfP0[i].store(hero.position[i]); gfN0[i].store(gbN[i]); } gfVy0.store(vOk ? vy : 0.f); gfContact.store(false); sbBlendQpc.store(0);
+    for (int i = 0; i < 3; ++i) gfN0[i].store(gbN[i]);   // M10w: gfP0 keeps the last WS (on-wall) position; at hold start the jump has already moved the hero 200-300 ms gfVy0.store(vOk ? vy : 0.f); gfContact.store(false); sbBlendQpc.store(0);
     gfGen.fetch_add(1); gfOn.store(ws::drive::wsGravityForce.load() && !sgLocked.load()); if (gfOn.load()) gfStartThread();
     gvHero.store(hero.hero); gfVyGame.store(0); gfVyGameQpc.store(0);
     if (gfOn.load() && gvState.load() == 2) { unsigned i = gvNext.fetch_add(1); if (i < gvCandN.load()) { gvTestAddr.store(gvCand[i]); gvTestWrites.store(0); msm2::writeLog("WS_VELOCITY_TEST start idx=%u addr=0x%llx", i, (unsigned long long)gvCand[i]); } else gvState.store(3); }   // M10s: no force while locked (stand on the wall)
@@ -1419,7 +1431,7 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     bool velStop = !(gfOn.load() && gfFrames.load() > 0) && vOk && prevOk && now - gbStart >= 150 && prevVy < -3.f && vy > -0.7f;   // M10u: stores make the sampled speed jump
     if (gfOn.load() && gvState.load() == 4 && now - gbStart >= 250 && !gvTestAddr.load()) { gvState.store(5);
       if (HANDLE h = CreateThread(nullptr, 0, gvVerify, nullptr, 0, nullptr)) CloseHandle(h); else gvState.store(4); }
-    if (gfOn.load() && gvState.load() == 0 && gvSearches.load() < 6 && now - gbStart >= 250 && !gvTestAddr.load()) { gvState.store(1); gvSearches.fetch_add(1);
+    if (gfOn.load() && gvState.load() == 0 && gvSearches.load() < 40 && now - gbStart >= 250 && !gvTestAddr.load()) { gvState.store(1); gvSearches.fetch_add(1);
       if (HANDLE h = CreateThread(nullptr, 0, gvSearch, nullptr, 0, nullptr)) { SetThreadPriority(h, THREAD_PRIORITY_BELOW_NORMAL); CloseHandle(h); } else gvState.store(0); }
     static std::uint64_t slowSince = 0; float sp = std::sqrt(motion.velocity.x * motion.velocity.x + motion.velocity.y * motion.velocity.y + motion.velocity.z * motion.velocity.z);
     if (!vOk || sp > 0.3f || sgLocked.load()) slowSince = 0; else if (!slowSince) slowSince = now;
