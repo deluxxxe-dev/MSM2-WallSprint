@@ -18,6 +18,7 @@
 #include <cwchar>
 #include <unordered_map>
 #include <vector>
+#include <mutex>
 #include "NativeHooks/camera_ref.hpp"
 #include "msm2/actor_writer.hpp"
 #include "msm2/ws_settings.hpp"
@@ -1130,6 +1131,31 @@ void gfStep() {
 std::atomic<int> gvState{0};   // 0 idle, 1 searching, 2 have candidates, 3 done
 std::uintptr_t gvCand[16]{}; std::atomic<unsigned> gvCandN{0}, gvNext{0};
 std::atomic<std::uintptr_t> gvHero{0};
+std::mutex gvMu; std::vector<std::uintptr_t> gvP1; std::vector<float> gvP1Last; int gvRounds = 0;
+// M10u-r2 (log 20261108-165727): phase 1 took 1.7-2.3 s and every hold ended before a check ran (rounds=0). Checks now
+// continue in later holds: each needs a fresh game vertical speed < -6 m/s; 3 checks (100 ms apart) in total.
+DWORD WINAPI gvVerify(void*) {
+  std::lock_guard<std::mutex> g(gvMu);
+  gvState.store(5);
+  auto fresh = [] { auto q = gfVyGameQpc.load(); return q && qpcSec(qpcNow() - q) < 0.08 && gfVyGame.load() < -6.f; };
+  float prevV = 0; bool havePrev = false;   // within one hold the candidate must change like the estimate
+  while (gvRounds < 3 && !gvP1.empty()) { Sleep(100); if (!fresh() || !gfOn.load()) break; float v = gfVyGame.load(); ++gvRounds;
+    std::vector<std::uintptr_t> keep; std::vector<float> kl;
+    for (std::size_t i = 0; i < gvP1.size(); ++i) { float f; if (!msm2::readMemory(gvP1[i], &f, 4)) continue;
+      bool ok = f != gvP1Last[i] && std::fabs(f - v) < 1.2f && (!havePrev || std::fabs((f - gvP1Last[i]) - (v - prevV)) < 1.0f);
+      if (ok) { keep.push_back(gvP1[i]); kl.push_back(f); } }
+    prevV = v; havePrev = true;
+    gvP1.swap(keep); gvP1Last.swap(kl);
+    msm2::writeLog("WS_VELOCITY_SEARCH phase=2 check=%d game_vy=%.2f remaining=%zu", gvRounds, v, gvP1.size()); }
+  if (gvP1.empty()) { gvState.store(0); return 0; }   // nothing left: a new search in a later hold (<= 4)
+  if (gvRounds < 3) { gvState.store(4); return 0; }   // continue in the next hold
+  auto hero = gvHero.load(), tr = gfTransform.load();
+  unsigned n = 0; for (std::size_t i = 0; i < gvP1.size() && n < 16; ++i) { gvCand[n++] = gvP1[i];
+    msm2::writeLog("WS_VELOCITY_CANDIDATE idx=%u addr=0x%llx hero_off=%lld transform_off=%lld value=%.3f", n - 1, (unsigned long long)gvP1[i], (long long)(gvP1[i] - hero), (long long)(gvP1[i] - tr), gvP1Last[i]); }
+  msm2::writeLog("WS_VELOCITY_SEARCH survivors=%zu listed=%u", gvP1.size(), n);
+  gvCandN.store(n); gvState.store(2);
+  return 0;
+}
 DWORD WINAPI gvSearch(void*) {
   auto vyNow = [] { return gfVyGame.load(); };
   auto fresh = [] { auto q = gfVyGameQpc.load(); return q && qpcSec(qpcNow() - q) < 0.08; };
@@ -1148,20 +1174,13 @@ DWORD WINAPI gvSearch(void*) {
       bytes += n;
       if (!fresh()) continue;
       float v = vyNow(); if (!(v < -6.f)) continue;
-      for (std::size_t i = 0; i < n / 4; ++i) { float f = buf[i]; if (f < v + 0.6f && f > v - 0.6f) { cand.push_back(c + i * 4); if (cand.size() >= 20000) break; } } } }
+      for (std::size_t i = 0; i < n / 4; ++i) { float f = buf[i]; if (f < v + 1.5f && f > v - 1.5f) { cand.push_back(c + i * 4); if (cand.size() >= 20000) break; } } } }
   unsigned p1 = unsigned(cand.size());
   last.resize(cand.size()); for (std::size_t i = 0; i < cand.size(); ++i) msm2::readMemory(cand[i], &last[i], 4);
-  int rounds = 0;
-  for (int round = 0; round < 3 && !cand.empty(); ++round) { Sleep(100); if (!fresh()) break; float v = vyNow(); ++rounds;
-    std::vector<std::uintptr_t> keep; std::vector<float> kl;
-    for (std::size_t i = 0; i < cand.size(); ++i) { float f; if (!msm2::readMemory(cand[i], &f, 4)) continue; if (f != last[i] && std::fabs(f - v) < 0.4f) { keep.push_back(cand[i]); kl.push_back(f); } }
-    cand.swap(keep); last.swap(kl); }
-  auto hero = gvHero.load(), tr = gfTransform.load();
-  msm2::writeLog("WS_VELOCITY_SEARCH regions=%u bytes_mb=%zu phase1=%u rounds=%d survivors=%zu game_vy=%.2f ms=%.0f", regions, bytes >> 20, p1, rounds, rounds < 3 ? std::size_t(0) : cand.size(), gfVyGame.load(), qpcSec(qpcNow() - t0) * 1000.0);
-  if (rounds < 3) cand.clear();   // the hold ended before the checks finished: search again later
-  unsigned n = 0; for (auto c : cand) { if (n >= 16) break; gvCand[n++] = c;
-    msm2::writeLog("WS_VELOCITY_CANDIDATE idx=%u addr=0x%llx hero_off=%lld transform_off=%lld value=%.3f", n - 1, (unsigned long long)c, (long long)(c - hero), (long long)(c - tr), last[n - 1]); }
-  gvCandN.store(n); gvState.store(n ? 2 : 0);   // nothing found: search again in a later hold (<= 4 searches)
+  msm2::writeLog("WS_VELOCITY_SEARCH phase=1 regions=%u bytes_mb=%zu candidates=%u game_vy=%.2f ms=%.0f", regions, bytes >> 20, p1, gfVyGame.load(), qpcSec(qpcNow() - t0) * 1000.0);
+  { std::lock_guard<std::mutex> g(gvMu); gvP1.swap(cand); gvP1Last.swap(last); gvRounds = 0; }
+  gvState.store(gvP1.empty() ? 0 : 4);   // M10u-r2: the checks run during this or a later hold (address stays valid for the hero)
+  if (!gvP1.empty()) gvVerify(nullptr);
   return 0;
 }
 // M10s (log 20261108-113806): the hero setter is called only in bursts (17 calls in tests 1-6, substituted_calls=0),
@@ -1391,6 +1410,8 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     msm2::writeLog("WS_GRAVITY_TEST start test=%u n=%.3f,%.3f,%.3f locked=%u", gbTests, gbN[0], gbN[1], gbN[2], unsigned(sgLocked.load()));
   } else if (gbState >= 2) {
     bool velStop = !(gfOn.load() && gfFrames.load() > 0) && vOk && prevOk && now - gbStart >= 150 && prevVy < -3.f && vy > -0.7f;   // M10u: stores make the sampled speed jump
+    if (gfOn.load() && gvState.load() == 4 && gfVyGame.load() < -6.f && !gvTestAddr.load()) { gvState.store(5);
+      if (HANDLE h = CreateThread(nullptr, 0, gvVerify, nullptr, 0, nullptr)) CloseHandle(h); else gvState.store(4); }
     if (gfOn.load() && gvState.load() == 0 && gvSearches.load() < 4 && gfVyGame.load() < -8.f && !gvTestAddr.load()) { gvState.store(1); gvSearches.fetch_add(1);
       if (HANDLE h = CreateThread(nullptr, 0, gvSearch, nullptr, 0, nullptr)) { SetThreadPriority(h, THREAD_PRIORITY_BELOW_NORMAL); CloseHandle(h); } else gvState.store(0); }
     static std::uint64_t slowSince = 0; float sp = std::sqrt(motion.velocity.x * motion.velocity.x + motion.velocity.y * motion.velocity.y + motion.velocity.z * motion.velocity.z);
