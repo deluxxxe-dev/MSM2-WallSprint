@@ -54,4 +54,4 @@ d603245b56845a8cafbac67c0eb3074bceeb919c 2026-11-07 build+test.sh+smoke+hooks+pa
 df9fd3c53392528dfd759315f44aa16be8663703 2026-11-08 M10s full suites PASS
 415bf1df49553b53e20e4e85fb6681d806358b92 2026-11-08 M10t full suites PASS
 36e6f0f45132f244f2a9dad9b74a4af23a3e28b3 2026-11-08 M10u full suites PASS
-fe6369fbe780bef30a14d77163ef9bc5e0cc283d 2026-11-08 M10u-r2 full suites PASS
+fe6369fbe780bef30a14d77163ef9bc5e0cc283d 2026-11-08 M10u-r2 full suites PASS (hook suite: first run failed native_source_override_smoke timing assertion line 239, file unchanged by M10u-r2; rerun PASS)
