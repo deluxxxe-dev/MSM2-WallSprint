@@ -731,7 +731,8 @@ void wsChargeStep(WgiReading* r, bool a) {
           float h = 15.f + 24.f * std::fmin(1.f, float(hold - 500) / 600.f); float v = std::sqrt(2.f * 32.f * h);
           if (HANDLE th = CreateThread(nullptr, 0, m9Launch, reinterpret_cast<void*>(std::uintptr_t(v * 100.f)), 0, nullptr)) { CloseHandle(th); set = true; } }
         else if (k > 1.f && !ws::drive::wsVelocityWrite.load()) set = jcSetSpeed(k);   // M8j fallback
-        if (chLogs++ < 60) msm2::writeLog("WS_CHARGE_JUMP event=release hold_ms=%llu mode=%s k=%.2f strength_written=%u variant=%s", (unsigned long long)hold, k > 1.f ? "charge" : "normal", k, unsigned(set),
+        static unsigned jumpNo = 0; ++jumpNo;
+        if (chLogs++ < 200) msm2::writeLog("WS_CHARGE_JUMP event=release jump_no=%u hold_ms=%llu mode=%s k=%.2f strength_written=%u variant=%s", jumpNo, (unsigned long long)hold, k > 1.f ? "charge" : "normal", k, unsigned(set),
           !set ? "none" : jcLastVariant.load() == 0 ? "InSpeedMax" : jcLastVariant.load() == 1 ? "Speed" : "GenBoost");
         chState.store(kChGive); chGiveUntil.store(now + 60); r->buttons |= 0x4u; }
       break;
@@ -1045,7 +1046,7 @@ bool gfWritePos(std::uintptr_t tr, float* q) {
   MEMORY_BASIC_INFORMATION mb{}; if (!VirtualQuery(reinterpret_cast<void*>(tr + 0x30), &mb, sizeof mb) || (mb.Protect & 0xff) != PAGE_READWRITE) return false;
   DirectStore d{tr + 0x30, q}; return ws_guarded_call(directStoreCb, &d);
 }
-std::atomic<bool> gfOn{false}, gfContact{false}; std::atomic<unsigned> gfGen{0};
+std::atomic<bool> gfOn{false}, gfContact{false}; std::atomic<unsigned> gfGen{0}, gfContactGen{0};
 std::atomic<float> gfP0[3]{}, gfN0[3]{}, gfVy0{0}, gfStandoff{-1.f};
 std::atomic<std::uint64_t> gfFrames{0}, gfWrites{0}, gfReadFails{0}, gfClamps{0};
 std::atomic<float> gfDyGameSum{0}; std::atomic<unsigned> gfSampleLogs{0};
@@ -1060,7 +1061,7 @@ void sbBlendStep() {
   float l = std::sqrt(up[0] * up[0] + up[1] * up[1] + up[2] * up[2]); if (!(l > 1e-3f)) return;
   for (int i = 0; i < 3; ++i) { up[i] /= l; std::uint32_t bits; std::memcpy(&bits, &up[i], 4); sgSubBits[i].store(bits, std::memory_order_relaxed); }
 }
-struct GfLocal { unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
+struct GfLocal { unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
 // M10u: velocity search. The game's own vertical speed is estimated from its per-frame steps between our stores
 // (gfVyGame); gvTestAddr (set by the search) gets the model's vertical speed each tick during a test hold.
 std::atomic<float> gfVyGame{0}; std::atomic<std::int64_t> gfVyGameQpc{0}; std::atomic<std::uintptr_t> gvTestAddr{0}; std::atomic<std::uint64_t> gvTestWrites{0};
@@ -1112,10 +1113,12 @@ void gfStep() {
     float vn = gfL.vg[0] * n0[0] + gfL.vg[1] * n0[1] + gfL.vg[2] * n0[2]; if (vn < 0) for (int i = 0; i < 3; ++i) gfL.vg[i] -= vn * n0[i];
     if (locked) gfL.vy = 0.f;
     else if (gfL.left) {   // M10u: landed back on the wall: stay there (no world gravity) for 1.5 s so a new WS can start
-      if (!gfL.pinned) { gfL.pinned = true; gfL.pinT = 0; msm2::writeLog("WS_GRAVITY_FORCE_WALL_LANDED t=%.2f plane=%s ws_standoff=%.2f", gfL.t, gfStandoff.load() >= -0.5f ? "wall_point_0x338" : "ws_position", gfStandoff.load()); }
+      if (!gfL.pinned) { gfL.pinned = true; gfL.pinT = 0; gfL.pinPresses = wgiPresses.load(); msm2::writeLog("WS_GRAVITY_FORCE_WALL_LANDED t=%.2f plane=%s ws_standoff=%.2f", gfL.t, gfStandoff.load() >= -0.5f ? "wall_point_0x338" : "ws_position", gfStandoff.load()); }
       gfL.vy = 0.f; for (float& c : gfL.vg) c = 0.f; }
   }
-  if (gfL.pinned) { gfL.pinT += dt; if (gfL.pinT > 1.5f) gfContact.store(true); }
+  // M10y (owner: after landing the hero fell to the ground after a few seconds): stay on the wall until a new WS starts
+  // (worker), A is pressed (jump off; vanilla gravity resumes) or 30 s.
+  if (gfL.pinned) { gfL.pinT += dt; if (gfL.pinT > 30.f || wgiPresses.load(std::memory_order_relaxed) != gfL.pinPresses) { gfContactGen.store(gfL.gen); gfContact.store(true); } }
   if (auto ta = gvTestAddr.load(std::memory_order_relaxed)) { FloatStore fs{ta, gfL.vy + gfL.vg[1]}; if (ws_guarded_call(floatStoreCb, &fs)) gvTestWrites.fetch_add(1, std::memory_order_relaxed); }
   if (!gfWritePos(tr, q)) { gfReadFails.fetch_add(1); return; }
   gfWrites.fetch_add(1, std::memory_order_relaxed); gfFrames.fetch_add(1, std::memory_order_relaxed);
@@ -1428,8 +1431,11 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     if (l3Press) { sgLocked.store(true); ws::drive::stickMask.store(true); msm2::writeLog("WS_GRAVITY_LOCK on n=%.3f,%.3f,%.3f", n[0], n[1], n[2]); msm2::writeLog("WS_L3_STAND on (left stick reads neutral until re-pressed)"); }
   } else if (gbState == 1 && !wsNow) {
     gbState = 2; gbStart = now; gbSetUp(gbN); prevOk = false; sgAirPhase.store(true); gbAirCam.store(true); sgGameLanded.store(false);
-    for (int i = 0; i < 3; ++i) gfN0[i].store(gbN[i]);   // M10w: gfP0 keeps the last WS (on-wall) position; at hold start the jump has already moved the hero 200-300 ms gfVy0.store(vOk ? vy : 0.f); gfContact.store(false); sbBlendQpc.store(0);
-    gfGen.fetch_add(1); gfOn.store(ws::drive::wsGravityForce.load() && !sgLocked.load()); if (gfOn.load()) gfStartThread();
+    // M10w: gfP0 keeps the last WS (on-wall) position; at hold start the jump has already moved the hero 200-300 ms.
+    // M10y: these resets were swallowed by that comment in M10w/M10x (same line).
+    for (int i = 0; i < 3; ++i) gfN0[i].store(gbN[i]);
+    gfVy0.store(vOk ? vy : 0.f); gfContact.store(false); sbBlendQpc.store(0);
+    gfContactGen.store(gfGen.fetch_add(1) + 1 + 0x80000000u); gfOn.store(ws::drive::wsGravityForce.load() && !sgLocked.load()); if (gfOn.load()) gfStartThread();
     gvHero.store(hero.hero); gfVyGame.store(0); gfVyGameQpc.store(0);
     if (gfOn.load() && gvState.load() == 2) { unsigned i = gvNext.fetch_add(1); if (i < gvCandN.load()) { gvTestAddr.store(gvCand[i]); gvTestWrites.store(0); msm2::writeLog("WS_VELOCITY_TEST start idx=%u addr=0x%llx", i, (unsigned long long)gvCand[i]); } else gvState.store(3); }   // M10s: no force while locked (stand on the wall)
     msm2::writeLog("WS_GRAVITY_TEST start test=%u n=%.3f,%.3f,%.3f locked=%u", gbTests, gbN[0], gbN[1], gbN[2], unsigned(sgLocked.load()));
@@ -1442,7 +1448,7 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     static std::uint64_t slowSince = 0; float sp = std::sqrt(motion.velocity.x * motion.velocity.x + motion.velocity.y * motion.velocity.y + motion.velocity.z * motion.velocity.z);
     if (!vOk || sp > 0.3f || sgLocked.load()) slowSince = 0; else if (!slowSince) slowSince = now;
     if (sgGameLanded.exchange(false)) gbEnd("landed_game", now, false);        // the game blends to its own gravity
-    else if (gfContact.exchange(false)) gbEnd("wall_contact", now, true);       // M10q: back on the wall it left
+    else if (gfContact.exchange(false) && gfContactGen.load() == gfGen.load()) gbEnd("wall_contact", now, true);   // M10y: only this hold's contact       // M10q: back on the wall it left
     else if (sgLocked.load() && std::fabs((hero.position[0] - gfP0[0].load()) * gfN0[0].load() + (hero.position[1] - gfP0[1].load()) * gfN0[1].load() + (hero.position[2] - gfP0[2].load()) * gfN0[2].load()) > 1.5f)
       gbEnd("lock_left_wall", now, true);                                        // M10s: the lock ends once the hero is off that wall
     else if (gbState == 2 && gfOn.load() && gfFrames.load() > 0 && slowSince && now - slowSince >= 400 && now - gbStart >= 500) gbEnd("stalled", now, true);   // M10q: no 8 s lag when stuck
