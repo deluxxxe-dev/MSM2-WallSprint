@@ -15,6 +15,9 @@ Route plan (analysis/M8_JUMP_PLAN_20261106.md): (a) gravity direction via the ga
 (SetGravityVector RVA 0x35132A0, chain load64(load64(owner+0xF0)+0xF8)+0x5F4) -> if the hero gravity can be pointed at
 the wall, the vanilla jump arc (YBoost/TimeToPeak) may follow it (req. 2+3 with the existing config writes);
 (b) charge motion via an in-memory animset entry switch at release; (c) fallback: position-driven (kinematic) jump.
+Owner spec change 2026-11-08 (supersedes the L3 lock below): the L3 gravity lock is cancelled. Once WS sets a new
+gravity direction, that face is the ground permanently (stopping or walking keeps it) until the hero moves to a new face
+(new WS) or presses A (cancel, gravity returns to vanilla).
 Owner additions 2026-11-08 (may come after the current push):
 - Gravity lock mode (L3 during WS): stand upright on the wall and walk on it like on the ground, also while stopped
   (owner reference: Nexus Mods marvelsspiderman2 mod 1002; page not reachable from the cloud session). L3 during WS
