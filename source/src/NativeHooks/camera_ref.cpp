@@ -697,7 +697,7 @@ enum : int { kChIdle, kChHold, kChGive, kChSwallow };
 std::atomic<int> chState{kChIdle}; std::atomic<std::uint64_t> chStart{0}, chGiveUntil{0}; unsigned chLogs{};
 // M10t: the jump height of the last WS jump release (normal 1.8 m, charge 15 -> 39 m like the ground curve) for the
 // wall-gravity launch along the wall normal.
-std::atomic<float> gfJumpH{0}; std::atomic<std::uint64_t> gfJumpMs{0};
+std::atomic<float> gfJumpH{0}; std::atomic<std::uint64_t> gfJumpMs{0}, gfStopMs{0};
 float chargeK(std::uint64_t ms) {
   if (ms < 500) return 1.f;
   float h = 15.f + 24.f * std::fmin(1.f, float(ms - 500) / 600.f);
@@ -769,8 +769,11 @@ HRESULT STDMETHODCALLTYPE wgiReadDetour(void* self, WgiReading* r) {
       if (ws::drive::wsGravityForce.load() && !killed.load() && wsActiveNow(nowh) && chState.load() == kChIdle && !a) {
         if (m < 0.2f) { if (!neutralSince) neutralSince = nowh;
           auto sess = wsSessionStartMs.load();
-          if (nowh - neutralSince >= 120 && hopSession != sess && nowh - sess > 600) { hopSession = sess; hopUntil = nowh + 60; r->buttons |= 0x4u;
-            gfJumpH.store(0.4f); gfJumpMs.store(nowh); wsStopHops.fetch_add(1); } }
+          // M10z-r5 (log 20261109-014651): the injected A tap gave no jump (the game pulled the hero into the crawl). The stop is
+          // now handled by the force: the next hold first holds the hero 0.9 m off the face for 0.25 s (crawl contact lost),
+          // then the wall gravity brings it back to land on the face.
+          if (nowh - neutralSince >= 120 && hopSession != sess && nowh - sess > 600) { hopSession = sess; (void)hopUntil;
+            gfStopMs.store(nowh); wsStopHops.fetch_add(1); } }
         else neutralSince = 0; }
       else neutralSince = 0; }
     wgiRt.store(r->rt, std::memory_order_relaxed);
@@ -1065,7 +1068,7 @@ bool gfWritePos(std::uintptr_t tr, float* q) {
 std::atomic<bool> gfOn{false}, gfContact{false}; std::atomic<unsigned> gfGen{0}, gfContactGen{0};
 std::atomic<float> gfP0[3]{}, gfN0[3]{}, gfVy0{0}, gfStandoff{-1.f};
 std::atomic<std::uint64_t> gfFrames{0}, gfWrites{0}, gfReadFails{0}, gfClamps{0};
-std::atomic<float> gfDyGameSum{0}; std::atomic<unsigned> gfSampleLogs{0}, gfMoveLogs{0}; std::atomic<std::uint64_t> gfPinDrops{0}, gfFaceJumps{0};
+std::atomic<float> gfDyGameSum{0}; std::atomic<unsigned> gfSampleLogs{0}, gfMoveLogs{0}, gfFaceJumpLogs{0}; std::atomic<std::uint64_t> gfPinDrops{0}, gfFaceJumps{0};
 // M10q: seamless return. While blending, the up for the next call is computed per call (smoothstep over 2 s).
 std::atomic<std::int64_t> sbBlendQpc{0}; std::atomic<float> sbN[3]{};
 std::int64_t qpcNow() { LARGE_INTEGER q; QueryPerformanceCounter(&q); return q.QuadPart; }
@@ -1077,7 +1080,7 @@ void sbBlendStep() {
   float l = std::sqrt(up[0] * up[0] + up[1] * up[1] + up[2] * up[2]); if (!(l > 1e-3f)) return;
   for (int i = 0; i < 3; ++i) { up[i] /= l; std::uint32_t bits; std::memcpy(&bits, &up[i], 4); sgSubBits[i].store(bits, std::memory_order_relaxed); }
 }
-struct GfLocal { unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
+struct GfLocal { unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}; unsigned holdLogs{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
 // M10u: velocity search. The game's own vertical speed is estimated from its per-frame steps between our stores
 // (gfVyGame); gvTestAddr (set by the search) gets the model's vertical speed each tick during a test hold.
 std::atomic<float> gfVyGame{0}; std::atomic<std::int64_t> gfVyGameQpc{0}; std::atomic<std::uintptr_t> gvTestAddr{0}; std::atomic<std::uint64_t> gvTestWrites{0};
@@ -1096,6 +1099,8 @@ void gfStep() {
   if (!gfL.init || qpcSec(now - gfL.last) > 0.1) { gfL.init = true; gfL.last = now; std::memcpy(gfL.pLast, p, 12); gfL.vy = gfVy0.load(); gfL.vg[0] = gfL.vg[1] = gfL.vg[2] = 0;
     // M10t: launch along the wall normal (wall = down): v = sqrt(2 g h) for the released jump height.
     auto jm = gfJumpMs.load(); auto ms = GetTickCount64();
+    { auto sm = gfStopMs.load(); if (!gfL.launched && sm && ms >= sm && ms - sm < 4000 && !(jm && jm > sm)) { gfL.launched = true; gfL.pushT = 0.25f; gfStopMs.store(0);
+        msm2::writeLog("WS_GRAVITY_FORCE_STOP_PUSH off_m=0.9 hold_s=0.25 since_stop_ms=%llu", (unsigned long long)(ms - sm)); } }
     if (!gfL.launched && jm && ms >= jm && ms - jm < 600) { gfL.launched = true; float h = gfJumpH.load(), v = std::sqrt(2.f * kGfG * h);
       for (int i = 0; i < 3; ++i) gfL.vg[i] = gfN0[i].load() * v;
       msm2::writeLog("WS_GRAVITY_FORCE_LAUNCH height_m=%.1f speed=%.1f since_release_ms=%llu", h, v, (unsigned long long)(ms - jm)); }
@@ -1135,13 +1140,18 @@ void gfStep() {
   }
   // M10y (owner: after landing the hero fell to the ground after a few seconds): stay on the wall until a new WS starts
   // (worker), A is pressed (jump off; vanilla gravity resumes) or 30 s.
+  if (gfL.pushT > 0.f) { gfL.pushT -= dt; gfL.left = false; gfL.pinned = false; gfL.t = 0; for (float& c : gfL.vg) c = 0.f; gfL.vy = 0.f;
+    float dd = (q[0] - p0[0]) * n0[0] + (q[1] - p0[1]) * n0[1] + (q[2] - p0[2]) * n0[2]; if (dd < 0.9f) for (int i = 0; i < 3; ++i) q[i] += (0.9f - dd) * n0[i]; }
   if (gfL.pinned) gfL.pinT += dt;   // M10z: stays on the wall; B (worker) ends it
   // M10z-r4 (owner C: jumps from the face barely rose): the pin capped the distance at 0.6 m. A on the face now releases
   // the pin and launches along the normal like the WS jump (1.8 m); the landing check restarts.
   if (gfL.pinned && !sbBlendQpc.load(std::memory_order_relaxed) && wgiPresses.load(std::memory_order_relaxed) != gfL.pinPresses) {
     gfL.pinned = false; gfL.left = false; gfL.t = 0; gfL.vy = 0.f; float v = std::sqrt(2.f * kGfG * 1.8f);
     for (int i = 0; i < 3; ++i) gfL.vg[i] = n0[i] * v;
-    gfFaceJumps.fetch_add(1); msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP speed=%.1f", v); }
+    gfFaceJumps.fetch_add(1); gfL.faceJumpT = 0.f; msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP speed=%.1f", v); }
+  if (gfL.faceJumpT >= 0.f) { gfL.faceJumpT += dt; if (gfL.faceJumpT > 1.6f) gfL.faceJumpT = -1.f;
+    else if ((gfL.frames % 10) == 0 && gfFaceJumpLogs.fetch_add(1) < 400)
+      msm2::writeLog("WS_FACE_JUMP_SAMPLE t=%.2f game_pos=%.3f,%.3f,%.3f set_pos=%.3f,%.3f,%.3f vg=%.2f,%.2f,%.2f plane_d=%.2f stick=%.2f pinned=%u", gfL.faceJumpT, p[0], p[1], p[2], q[0], q[1], q[2], gfL.vg[0], gfL.vg[1], gfL.vg[2], d, wgiStick.load(), unsigned(gfL.pinned)); }
   // M10z-r3 (log 20261109-000226): on the wall the game treats the face as ground (stand/walk/stairs motions, dy_game 0 on
   // most steps) but drops the hero ~0.5 m on some steps (shaking); the full height freeze also blocked up/down moves.
   // While pinned the game's own position is used; only steps that drop more than 0.1 m in world y are undone, and the
@@ -1168,7 +1178,7 @@ void gfStep() {
     msm2::writeLog("WS_FACE_MOVE_SAMPLE frame=%u stick=%.2f step_n=%.4f step_up=%.4f step_side=%.4f plane_d=%.3f store_dn=%.4f store_dy=%.4f",
       gfL.frames, wgiStick.load(), g[0] * n0[0] + g[1] * n0[1] + g[2] * n0[2], g[0] * wu[0] + g[1] * wu[1] + g[2] * wu[2], g[0] * ws[0] + g[1] * ws[1] + g[2] * ws[2], d,
       (q[0] - p[0]) * n0[0] + (q[1] - p[1]) * n0[1] + (q[2] - p[2]) * n0[2], q[1] - p[1]); }
-  if ((gfL.frames % 25) == 1 && gfSampleLogs.fetch_add(1) < 160)
+  if ((gfL.frames % 25) == 1 && gfL.holdLogs < 60 && gfSampleLogs.fetch_add(1) < 2000 && ++gfL.holdLogs)   // M10z-r5: 60 per hold
     msm2::writeLog("WS_GRAVITY_FORCE_SAMPLE frame=%u dt_ms=%.1f game_pos=%.3f,%.3f,%.3f dy_game=%.4f set_pos=%.3f,%.3f,%.3f vg=%.2f,%.2f,%.2f vy=%.2f plane_d=%.2f up=%.3f,%.3f,%.3f locked=%u model=%u",
       gfL.frames, dt * 1000.f, p[0], p[1], p[2], dyGame, q[0], q[1], q[2], gfL.vg[0], gfL.vg[1], gfL.vg[2], gfL.vy, d, u[0], u[1], u[2], unsigned(locked), unsigned(gfL.model));
   std::memcpy(gfL.pLast, q, 12);
