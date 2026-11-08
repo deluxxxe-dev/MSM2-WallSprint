@@ -1052,7 +1052,7 @@ bool gfWritePos(std::uintptr_t tr, float* q) {
 std::atomic<bool> gfOn{false}, gfContact{false}; std::atomic<unsigned> gfGen{0}, gfContactGen{0};
 std::atomic<float> gfP0[3]{}, gfN0[3]{}, gfVy0{0}, gfStandoff{-1.f};
 std::atomic<std::uint64_t> gfFrames{0}, gfWrites{0}, gfReadFails{0}, gfClamps{0};
-std::atomic<float> gfDyGameSum{0}; std::atomic<unsigned> gfSampleLogs{0};
+std::atomic<float> gfDyGameSum{0}; std::atomic<unsigned> gfSampleLogs{0}; std::atomic<std::uint64_t> gfPinDrops{0};
 // M10q: seamless return. While blending, the up for the next call is computed per call (smoothstep over 2 s).
 std::atomic<std::int64_t> sbBlendQpc{0}; std::atomic<float> sbN[3]{};
 std::int64_t qpcNow() { LARGE_INTEGER q; QueryPerformanceCounter(&q); return q.QuadPart; }
@@ -1123,6 +1123,17 @@ void gfStep() {
   // M10y (owner: after landing the hero fell to the ground after a few seconds): stay on the wall until a new WS starts
   // (worker), A is pressed (jump off; vanilla gravity resumes) or 30 s.
   if (gfL.pinned) gfL.pinT += dt;   // M10z: stays on the wall; B (worker) ends it
+  // M10z-r3 (log 20261109-000226): on the wall the game treats the face as ground (stand/walk/stairs motions, dy_game 0 on
+  // most steps) but drops the hero ~0.5 m on some steps (shaking); the full height freeze also blocked up/down moves.
+  // While pinned the game's own position is used; only steps that drop more than 0.1 m in world y are undone, and the
+  // hero is kept between the wall (d >= -0.05) and 0.6 m off it.
+  if (gfL.pinned && !sbBlendQpc.load(std::memory_order_relaxed)) {
+    q[0] = p[0]; q[1] = p[1]; q[2] = p[2];
+    if (dyGame < -0.1f) { q[1] = gfL.pLast[1]; gfPinDrops.fetch_add(1, std::memory_order_relaxed); }
+    float dq = (q[0] - p0[0]) * n0[0] + (q[1] - p0[1]) * n0[1] + (q[2] - p0[2]) * n0[2];
+    float want = dq < -0.05f ? -0.05f : dq > 0.6f ? 0.6f : dq; for (int i = 0; i < 3; ++i) q[i] += (want - dq) * n0[i];
+    gfL.vy = 0.f; for (float& c : gfL.vg) c = 0.f;
+  }
   if (sbBlendQpc.load(std::memory_order_relaxed)) { sbBlendStep(); float u2[3]; for (int i = 0; i < 3; ++i) { std::uint32_t b = sgSubBits[i].load(std::memory_order_relaxed); std::memcpy(&u2[i], &b, 4); }
     float want[9] = {-u2[0], -u2[1], -u2[2], u2[0], u2[1], u2[2], u2[0], u2[1], u2[2]}; gbWrite(want); }   // M10z: smooth return per tick
   if (auto ta = gvTestAddr.load(std::memory_order_relaxed)) { FloatStore fs{ta, gfL.vy + gfL.vg[1]}; if (ws_guarded_call(floatStoreCb, &fs)) gvTestWrites.fetch_add(1, std::memory_order_relaxed); }
@@ -1392,8 +1403,8 @@ std::atomic<unsigned> gvSearches{0};
 void gfSummary(const char* why) {
   if (auto ta = gvTestAddr.exchange(0)) msm2::writeLog("WS_VELOCITY_TEST end addr=0x%llx writes=%llu frames=%llu dy_game_sum=%.3f (baseline: holds without a test)", (unsigned long long)ta, (unsigned long long)gvTestWrites.load(), (unsigned long long)gfFrames.load(), gfDyGameSum.load());
   if (!gfOn.exchange(false) && !gfFrames.load()) return;
-  msm2::writeLog("WS_GRAVITY_FORCE_END reason=%s frames=%llu set_position_calls=%llu read_fails=%llu plane_clamps=%llu dy_game_sum=%.3f launch_model=%u set_position_fn=%u route=%d game_airborne_frames_only=1",
-    why, (unsigned long long)gfFrames.load(), (unsigned long long)gfWrites.load(), (unsigned long long)gfReadFails.load(), (unsigned long long)gfClamps.load(), gfDyGameSum.load(), unsigned(gfModelUsed.exchange(false)), unsigned(spFn.load() != nullptr), gfMode.load());
+  msm2::writeLog("WS_GRAVITY_FORCE_END reason=%s pin_drops_undone=%llu frames=%llu set_position_calls=%llu read_fails=%llu plane_clamps=%llu dy_game_sum=%.3f launch_model=%u set_position_fn=%u route=%d game_airborne_frames_only=1",
+    why, (unsigned long long)gfPinDrops.exchange(0), (unsigned long long)gfFrames.load(), (unsigned long long)gfWrites.load(), (unsigned long long)gfReadFails.load(), (unsigned long long)gfClamps.load(), gfDyGameSum.load(), unsigned(gfModelUsed.exchange(false)), unsigned(spFn.load() != nullptr), gfMode.load());
   gfFrames.store(0); gfWrites.store(0); gfReadFails.store(0); gfClamps.store(0); gfDyGameSum.store(0);
 }
 void gbEnd(const char* why, std::uint64_t now, bool writeVanilla = true) {
