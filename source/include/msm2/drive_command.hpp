@@ -31,6 +31,9 @@ inline std::atomic<bool> wsGravityDuringWs{false};
 // M10o: WallRun wall normal (owner+0x398), published every WallRun update by actor_writer.
 inline std::atomic<float> wallN[3]{};
 inline std::atomic<std::uint64_t> wallNMs{0};
+// M10x: WallRun wall contact point (owner+0x338; the hero stands ~0.5 m off it during WR), published with wallN.
+inline std::atomic<float> wallP[3]{};
+inline std::atomic<bool> wallPOk{false};
 // M10q: real wall gravity after a WS jump: per-frame Transform::SetPosition correction on the game thread (world-y
 // gravity removed, gravity along -wall normal added). WALLSPRINT_WS_GRAVITY_FORCE, default 0.
 inline std::atomic<bool> wsGravityForce{false};

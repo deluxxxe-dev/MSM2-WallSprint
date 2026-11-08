@@ -1046,7 +1046,7 @@ bool gfWritePos(std::uintptr_t tr, float* q) {
   DirectStore d{tr + 0x30, q}; return ws_guarded_call(directStoreCb, &d);
 }
 std::atomic<bool> gfOn{false}, gfContact{false}; std::atomic<unsigned> gfGen{0};
-std::atomic<float> gfP0[3]{}, gfN0[3]{}, gfVy0{0};
+std::atomic<float> gfP0[3]{}, gfN0[3]{}, gfVy0{0}, gfStandoff{-1.f};
 std::atomic<std::uint64_t> gfFrames{0}, gfWrites{0}, gfReadFails{0}, gfClamps{0};
 std::atomic<float> gfDyGameSum{0}; std::atomic<unsigned> gfSampleLogs{0};
 // M10q: seamless return. While blending, the up for the next call is computed per call (smoothstep over 2 s).
@@ -1112,7 +1112,7 @@ void gfStep() {
     float vn = gfL.vg[0] * n0[0] + gfL.vg[1] * n0[1] + gfL.vg[2] * n0[2]; if (vn < 0) for (int i = 0; i < 3; ++i) gfL.vg[i] -= vn * n0[i];
     if (locked) gfL.vy = 0.f;
     else if (gfL.left) {   // M10u: landed back on the wall: stay there (no world gravity) for 1.5 s so a new WS can start
-      if (!gfL.pinned) { gfL.pinned = true; gfL.pinT = 0; msm2::writeLog("WS_GRAVITY_FORCE_WALL_LANDED t=%.2f", gfL.t); }
+      if (!gfL.pinned) { gfL.pinned = true; gfL.pinT = 0; msm2::writeLog("WS_GRAVITY_FORCE_WALL_LANDED t=%.2f plane=%s ws_standoff=%.2f", gfL.t, gfStandoff.load() >= -0.5f ? "wall_point_0x338" : "ws_position", gfStandoff.load()); }
       gfL.vy = 0.f; for (float& c : gfL.vg) c = 0.f; }
   }
   if (gfL.pinned) { gfL.pinT += dt; if (gfL.pinT > 1.5f) gfContact.store(true); }
@@ -1412,7 +1412,13 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     if (m && now - maskStart > 20000) { ws::drive::stickMask.store(false); msm2::writeLog("WS_L3_STAND off reason=timeout"); maskStart = 0; } }
   if (wsNow && nOk) {
     std::memcpy(gbN, n, sizeof gbN);
-    for (int i = 0; i < 3; ++i) gfP0[i].store(hero.position[i]);   // M10w: landing plane = last on-wall WS position
+    // M10x (owner 2026-11-08): the fall stopped just before the wall: the WS position is ~0.5 m off the wall (WR standoff).
+    // Landing plane = the WallRun wall contact point (owner+0x338) when it is fresh and near the hero, else the WS position.
+    { bool usedWall = false;
+      if (fromWr && ws::drive::wallPOk.load()) { float wp[3] = {ws::drive::wallP[0].load(), ws::drive::wallP[1].load(), ws::drive::wallP[2].load()};
+        float off = (hero.position[0] - wp[0]) * n[0] + (hero.position[1] - wp[1]) * n[1] + (hero.position[2] - wp[2]) * n[2];
+        if (off > -0.2f && off < 2.0f) { for (int i = 0; i < 3; ++i) gfP0[i].store(wp[i]); usedWall = true; gfStandoff.store(off); } }
+      if (!usedWall) { for (int i = 0; i < 3; ++i) gfP0[i].store(hero.position[i]); gfStandoff.store(-1.f); } }
     if (gbState >= 2 && sgLocked.exchange(false)) msm2::writeLog("WS_GRAVITY_LOCK off reason=new_ws");
     for (int i = 0; i < 3; ++i) { std::uint32_t bits; std::memcpy(&bits, &n[i], 4); sgSubBits[i].store(bits); }
     sgSubBlock.store(gbAddr); sgSubActive.store(true); sgAirPhase.store(false); gbAirCam.store(false); gbHoldA.store(true); gbActive = true;
@@ -1431,7 +1437,7 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     bool velStop = !(gfOn.load() && gfFrames.load() > 0) && vOk && prevOk && now - gbStart >= 150 && prevVy < -3.f && vy > -0.7f;   // M10u: stores make the sampled speed jump
     if (gfOn.load() && gvState.load() == 4 && now - gbStart >= 250 && !gvTestAddr.load()) { gvState.store(5);
       if (HANDLE h = CreateThread(nullptr, 0, gvVerify, nullptr, 0, nullptr)) CloseHandle(h); else gvState.store(4); }
-    if (gfOn.load() && gvState.load() == 0 && gvSearches.load() < 40 && now - gbStart >= 250 && !gvTestAddr.load()) { gvState.store(1); gvSearches.fetch_add(1);
+    if (gfOn.load() && gvState.load() == 0 && ws::drive::velocityProbe.load() && gvSearches.load() < 40 && now - gbStart >= 250 && !gvTestAddr.load()) { gvState.store(1); gvSearches.fetch_add(1);
       if (HANDLE h = CreateThread(nullptr, 0, gvSearch, nullptr, 0, nullptr)) { SetThreadPriority(h, THREAD_PRIORITY_BELOW_NORMAL); CloseHandle(h); } else gvState.store(0); }
     static std::uint64_t slowSince = 0; float sp = std::sqrt(motion.velocity.x * motion.velocity.x + motion.velocity.y * motion.velocity.y + motion.velocity.z * motion.velocity.z);
     if (!vOk || sp > 0.3f || sgLocked.load()) slowSince = 0; else if (!slowSince) slowSince = now;
