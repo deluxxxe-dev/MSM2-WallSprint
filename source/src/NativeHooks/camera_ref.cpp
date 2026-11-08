@@ -1098,7 +1098,7 @@ void gfStep() {
     gfL.vy = std::isfinite(v) ? std::fmax(-25.f, std::fmin(25.f, v)) : gfVy0.load();   // launch vertical speed
     gfL.vh[0] = (p[0] - gfL.pLast[0]) / dt; gfL.vh[1] = (p[2] - gfL.pLast[2]) / dt;
     float hl = std::sqrt(gfL.vh[0] * gfL.vh[0] + gfL.vh[1] * gfL.vh[1]); if (!std::isfinite(hl)) { gfL.vh[0] = gfL.vh[1] = 0; } else if (hl > 30.f) { gfL.vh[0] *= 30.f / hl; gfL.vh[1] *= 30.f / hl; } }
-  else if (!gfL.model) { // if SetPosition resets the game's own motion, its horizontal step collapses: carry the launch speed in the model
+  else if (false) { // M10v: removed (log 20261108-172911: misfired and carried up to 30 m/s for the whole hold; direct stores keep the game velocity)
     float hl = std::sqrt(gfL.vh[0] * gfL.vh[0] + gfL.vh[1] * gfL.vh[1]), dx = p[0] - gfL.pLast[0], dz = p[2] - gfL.pLast[2];
     if (hl > 2.f && std::sqrt(dx * dx + dz * dz) / dt < 0.2f * hl) { gfL.model = true; gfModelUsed.store(true); } }
   float bx = gfL.model ? gfL.pLast[0] + gfL.vh[0] * dt : p[0], bz = gfL.model ? gfL.pLast[2] + gfL.vh[1] * dt : p[2];
@@ -1134,19 +1134,17 @@ std::atomic<std::uintptr_t> gvHero{0};
 std::mutex gvMu; std::vector<std::uintptr_t> gvP1; std::vector<float> gvP1Last; int gvRounds = 0;
 // M10u-r2 (log 20261108-165727): phase 1 took 1.7-2.3 s and every hold ended before a check ran (rounds=0). Checks now
 // continue in later holds: each needs a fresh game vertical speed < -6 m/s; 3 checks (100 ms apart) in total.
+bool gvFallStep(float a, float b, double dt) { if (!(a < -1.f && a > -60.f && b < -1.f && b > -60.f)) return false; float e = float(-33.0 * dt), d = b - a; return std::fabs(d - e) < 0.35f + 0.3f * std::fabs(e); }
 DWORD WINAPI gvVerify(void*) {
   std::lock_guard<std::mutex> g(gvMu);
   gvState.store(5);
-  auto fresh = [] { auto q = gfVyGameQpc.load(); return q && qpcSec(qpcNow() - q) < 0.08 && gfVyGame.load() < -6.f; };
-  float prevV = 0; bool havePrev = false;   // within one hold the candidate must change like the estimate
-  while (gvRounds < 3 && !gvP1.empty()) { Sleep(100); if (!fresh() || !gfOn.load()) break; float v = gfVyGame.load(); ++gvRounds;
+  // M10v: refresh the values first (they may come from an earlier hold), then up to 3 fall-rule checks ~100 ms apart.
+  auto tl = qpcNow(); for (std::size_t i = 0; i < gvP1.size(); ++i) msm2::readMemory(gvP1[i], &gvP1Last[i], 4);
+  while (gvRounds < 3 && !gvP1.empty()) { Sleep(100); if (!gfOn.load()) break; auto tn = qpcNow(); double dt = qpcSec(tn - tl); tl = tn; ++gvRounds;
     std::vector<std::uintptr_t> keep; std::vector<float> kl;
-    for (std::size_t i = 0; i < gvP1.size(); ++i) { float f; if (!msm2::readMemory(gvP1[i], &f, 4)) continue;
-      bool ok = f != gvP1Last[i] && std::fabs(f - v) < 1.2f && (!havePrev || std::fabs((f - gvP1Last[i]) - (v - prevV)) < 1.0f);
-      if (ok) { keep.push_back(gvP1[i]); kl.push_back(f); } }
-    prevV = v; havePrev = true;
+    for (std::size_t i = 0; i < gvP1.size(); ++i) { float f; if (!msm2::readMemory(gvP1[i], &f, 4)) continue; if (gvFallStep(gvP1Last[i], f, dt)) { keep.push_back(gvP1[i]); kl.push_back(f); } }
     gvP1.swap(keep); gvP1Last.swap(kl);
-    msm2::writeLog("WS_VELOCITY_SEARCH phase=2 check=%d game_vy=%.2f remaining=%zu", gvRounds, v, gvP1.size()); }
+    msm2::writeLog("WS_VELOCITY_SEARCH phase=2 check=%d dt_ms=%.0f remaining=%zu", gvRounds, dt * 1000.0, gvP1.size()); }
   if (gvP1.empty()) { gvState.store(0); return 0; }   // nothing left: a new search in a later hold (<= 4)
   if (gvRounds < 3) { gvState.store(4); return 0; }   // continue in the next hold
   auto hero = gvHero.load(), tr = gfTransform.load();
@@ -1156,28 +1154,37 @@ DWORD WINAPI gvVerify(void*) {
   gvCandN.store(n); gvState.store(2);
   return 0;
 }
+// M10v (log 20261108-172911): the step-based speed estimate jumped (e.g. -9.7 -> -19.7 m/s in 0.1 s) and every check
+// emptied the list. Search without the estimate: while the hero falls inside the game, its vertical speed changes by
+// about -g * dt. Batches of <= 32 MiB are read twice ~40 ms apart (QPC-timed); floats in [-60, -1] whose change matches
+// -33 m/s^2 * dt (tolerance 0.35 + 30 %) are kept. Checks: the same rule over ~100 ms steps.
 DWORD WINAPI gvSearch(void*) {
-  auto vyNow = [] { return gfVyGame.load(); };
-  auto fresh = [] { auto q = gfVyGameQpc.load(); return q && qpcSec(qpcNow() - q) < 0.08; };
-  std::vector<std::uintptr_t> cand; cand.reserve(20000); std::vector<float> last; std::vector<float> buf(16384);
+  std::vector<std::uintptr_t> cand; cand.reserve(20000); std::vector<float> last;
   auto t0 = qpcNow(); std::size_t bytes = 0; unsigned regions = 0; std::vector<void*> stacks;   // allocations with a guard page = thread stacks
-  for (std::uintptr_t a = 0x10000; a < 0x7FFFFFFF0000ull && qpcSec(qpcNow() - t0) < 3.0 && cand.size() < 20000 && gfOn.load();) {
+  struct Piece { std::uintptr_t a; std::size_t n; }; std::vector<Piece> pieces;
+  for (std::uintptr_t a = 0x10000; a < 0x7FFFFFFF0000ull;) {
     MEMORY_BASIC_INFORMATION mb{}; if (!VirtualQuery(reinterpret_cast<void*>(a), &mb, sizeof mb)) break;
     auto base = reinterpret_cast<std::uintptr_t>(mb.BaseAddress); auto end = base + mb.RegionSize; a = end;
     if (mb.State == MEM_COMMIT && (mb.Protect & PAGE_GUARD)) { stacks.push_back(mb.AllocationBase); continue; }
     if (std::find(stacks.begin(), stacks.end(), mb.AllocationBase) != stacks.end()) continue;
     if (mb.State != MEM_COMMIT || mb.Type != MEM_PRIVATE || (mb.Protect & 0xff) != PAGE_READWRITE || mb.RegionSize > (512ull << 20)) continue;
-    ++regions;
-    for (std::uintptr_t c = base; c < end && cand.size() < 20000; c += buf.size() * 4) {
-      std::size_t n = std::min<std::size_t>(buf.size() * 4, end - c);
-      if (!msm2::readMemory(c, buf.data(), n)) continue;
-      bytes += n;
-      if (!fresh()) continue;
-      float v = vyNow(); if (!(v < -6.f)) continue;
-      for (std::size_t i = 0; i < n / 4; ++i) { float f = buf[i]; if (f < v + 1.5f && f > v - 1.5f) { cand.push_back(c + i * 4); if (cand.size() >= 20000) break; } } } }
+    ++regions; for (std::uintptr_t c = base; c < end; c += (32u << 20)) pieces.push_back({c, std::min<std::size_t>(32u << 20, end - c)}); }
+  std::vector<float> A, B;
+  for (std::size_t pi = 0; pi < pieces.size() && cand.size() < 20000 && gfOn.load() && qpcSec(qpcNow() - t0) < 4.0;) {
+    std::size_t first = pi, total = 0; while (pi < pieces.size() && total + pieces[pi].n <= (32u << 20)) total += pieces[pi++].n;
+    if (pi == first) total = pieces[pi++].n;
+    A.resize(total / 4); B.resize(total / 4);
+    auto ta = qpcNow(); std::size_t off = 0; for (std::size_t k = first; k < pi; ++k) { if (!msm2::readMemory(pieces[k].a, A.data() + off / 4, pieces[k].n)) std::memset(A.data() + off / 4, 0, pieces[k].n); off += pieces[k].n; }
+    Sleep(40);
+    auto tb = qpcNow(); off = 0; for (std::size_t k = first; k < pi; ++k) { if (!msm2::readMemory(pieces[k].a, B.data() + off / 4, pieces[k].n)) std::memset(B.data() + off / 4, 0, pieces[k].n); off += pieces[k].n; }
+    double dt = qpcSec(tb - ta); bytes += total; off = 0;
+    for (std::size_t k = first; k < pi && cand.size() < 20000; ++k) { std::size_t n = pieces[k].n / 4;
+      for (std::size_t i = 0; i < n; ++i) if (gvFallStep(A[off / 4 + i], B[off / 4 + i], dt)) { cand.push_back(pieces[k].a + i * 4); if (cand.size() >= 20000) break; }
+      off += pieces[k].n; } }
+  std::vector<float>().swap(A); std::vector<float>().swap(B);
   unsigned p1 = unsigned(cand.size());
   last.resize(cand.size()); for (std::size_t i = 0; i < cand.size(); ++i) msm2::readMemory(cand[i], &last[i], 4);
-  msm2::writeLog("WS_VELOCITY_SEARCH phase=1 regions=%u bytes_mb=%zu candidates=%u game_vy=%.2f ms=%.0f", regions, bytes >> 20, p1, gfVyGame.load(), qpcSec(qpcNow() - t0) * 1000.0);
+  msm2::writeLog("WS_VELOCITY_SEARCH phase=1 rule=fall_step regions=%u bytes_mb=%zu candidates=%u game_vy_est=%.2f ms=%.0f", regions, bytes >> 20, p1, gfVyGame.load(), qpcSec(qpcNow() - t0) * 1000.0);
   { std::lock_guard<std::mutex> g(gvMu); gvP1.swap(cand); gvP1Last.swap(last); gvRounds = 0; }
   gvState.store(gvP1.empty() ? 0 : 4);   // M10u-r2: the checks run during this or a later hold (address stays valid for the hero)
   if (!gvP1.empty()) gvVerify(nullptr);
@@ -1410,9 +1417,9 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     msm2::writeLog("WS_GRAVITY_TEST start test=%u n=%.3f,%.3f,%.3f locked=%u", gbTests, gbN[0], gbN[1], gbN[2], unsigned(sgLocked.load()));
   } else if (gbState >= 2) {
     bool velStop = !(gfOn.load() && gfFrames.load() > 0) && vOk && prevOk && now - gbStart >= 150 && prevVy < -3.f && vy > -0.7f;   // M10u: stores make the sampled speed jump
-    if (gfOn.load() && gvState.load() == 4 && gfVyGame.load() < -6.f && !gvTestAddr.load()) { gvState.store(5);
+    if (gfOn.load() && gvState.load() == 4 && now - gbStart >= 250 && !gvTestAddr.load()) { gvState.store(5);
       if (HANDLE h = CreateThread(nullptr, 0, gvVerify, nullptr, 0, nullptr)) CloseHandle(h); else gvState.store(4); }
-    if (gfOn.load() && gvState.load() == 0 && gvSearches.load() < 4 && gfVyGame.load() < -8.f && !gvTestAddr.load()) { gvState.store(1); gvSearches.fetch_add(1);
+    if (gfOn.load() && gvState.load() == 0 && gvSearches.load() < 6 && now - gbStart >= 250 && !gvTestAddr.load()) { gvState.store(1); gvSearches.fetch_add(1);
       if (HANDLE h = CreateThread(nullptr, 0, gvSearch, nullptr, 0, nullptr)) { SetThreadPriority(h, THREAD_PRIORITY_BELOW_NORMAL); CloseHandle(h); } else gvState.store(0); }
     static std::uint64_t slowSince = 0; float sp = std::sqrt(motion.velocity.x * motion.velocity.x + motion.velocity.y * motion.velocity.y + motion.velocity.z * motion.velocity.z);
     if (!vOk || sp > 0.3f || sgLocked.load()) slowSince = 0; else if (!slowSince) slowSince = now;
