@@ -692,6 +692,9 @@ DWORD WINAPI m9Launch(void* arg) {
 std::atomic<double> wgiRt{0}; std::atomic<unsigned> wgiL3Edges{0};
 enum : int { kChIdle, kChHold, kChGive, kChSwallow };
 std::atomic<int> chState{kChIdle}; std::atomic<std::uint64_t> chStart{0}, chGiveUntil{0}; unsigned chLogs{};
+// M10t: the jump height of the last WS jump release (normal 1.8 m, charge 15 -> 39 m like the ground curve) for the
+// wall-gravity launch along the wall normal.
+std::atomic<float> gfJumpH{0}; std::atomic<std::uint64_t> gfJumpMs{0};
 float chargeK(std::uint64_t ms) {
   if (ms < 500) return 1.f;
   float h = 15.f + 24.f * std::fmin(1.f, float(ms - 500) / 600.f);
@@ -720,6 +723,7 @@ void wsChargeStep(WgiReading* r, bool a) {
       r->buttons &= ~0x4u; chargeHoldRt(r);
       if (!ws) { chState.store(kChSwallow); if (chLogs++ < 60) msm2::writeLog("WS_CHARGE_JUMP event=ws_ended_while_held hold_ms=%llu", (unsigned long long)(now - chStart.load())); break; }
       if (!a) { auto hold = now - chStart.load(); float k = chargeK(hold); bool set = false;
+        gfJumpH.store(hold < 500 ? 1.8f : 15.f + 24.f * std::fmin(1.f, float(hold - 500) / 600.f)); gfJumpMs.store(now);
         if (k > 1.f && ws::drive::wsVelocityWrite.load() && m9Launches.fetch_add(1) < 200) {
           float h = 15.f + 24.f * std::fmin(1.f, float(hold - 500) / 600.f); float v = std::sqrt(2.f * 32.f * h);
           if (HANDLE th = CreateThread(nullptr, 0, m9Launch, reinterpret_cast<void*>(std::uintptr_t(v * 100.f)), 0, nullptr)) { CloseHandle(th); set = true; } }
@@ -1053,22 +1057,31 @@ void sbBlendStep() {
   float l = std::sqrt(up[0] * up[0] + up[1] * up[1] + up[2] * up[2]); if (!(l > 1e-3f)) return;
   for (int i = 0; i < 3; ++i) { up[i] /= l; std::uint32_t bits; std::memcpy(&bits, &up[i], 4); sgSubBits[i].store(bits, std::memory_order_relaxed); }
 }
-struct GfLocal { unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}; bool left{}, model{}; unsigned frames{}; } gfL;
+struct GfLocal { unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}; bool left{}, model{}, launched{}; unsigned frames{}; } gfL;
 std::atomic<bool> gfModelUsed{false};
 void gfStep() {
   auto tr = gfTransform.load(std::memory_order_relaxed);
   if (!tr || !gfOn.load(std::memory_order_relaxed) || killed.load(std::memory_order_relaxed)) return;
   unsigned gen = gfGen.load(); if (gen != gfL.gen) { gfL = {}; gfL.gen = gen; }
   float p[4]{}; if (!msm2::readMemory(tr + 0x30, p, 16) || !std::isfinite(p[0]) || !std::isfinite(p[1]) || !std::isfinite(p[2])) { gfReadFails.fetch_add(1); return; }
+  // M10t (log 20261108-130228): the force ran while the hero was still on a wall (vanilla WallRun/crawl) and froze its
+  // height there (shaking, re-attach failed). Pause while WallRun updates arrive.
+  { auto wn = ws::drive::wallNMs.load(std::memory_order_relaxed); auto ms = GetTickCount64(); if (wn && (wn >= ms || ms - wn < 80)) { gfL.init = false; return; } }
   auto now = qpcNow();
-  if (!gfL.init || qpcSec(now - gfL.last) > 0.1) { gfL.init = true; gfL.last = now; std::memcpy(gfL.pLast, p, 12); gfL.vy = gfVy0.load(); gfL.vg[0] = gfL.vg[1] = gfL.vg[2] = 0; return; }
+  if (!gfL.init || qpcSec(now - gfL.last) > 0.1) { gfL.init = true; gfL.last = now; std::memcpy(gfL.pLast, p, 12); gfL.vy = gfVy0.load(); gfL.vg[0] = gfL.vg[1] = gfL.vg[2] = 0;
+    // M10t: launch along the wall normal (wall = down): v = sqrt(2 g h) for the released jump height.
+    auto jm = gfJumpMs.load(); auto ms = GetTickCount64();
+    if (!gfL.launched && jm && ms >= jm && ms - jm < 600) { gfL.launched = true; float h = gfJumpH.load(), v = std::sqrt(2.f * kGfG * h);
+      for (int i = 0; i < 3; ++i) gfL.vg[i] = gfN0[i].load() * v;
+      msm2::writeLog("WS_GRAVITY_FORCE_LAUNCH height_m=%.1f speed=%.1f since_release_ms=%llu", h, v, (unsigned long long)(ms - jm)); }
+    return; }
   float dt = float(qpcSec(now - gfL.last)); if (dt < 0.002f) return;    // second call in the same frame
   if (dt > 0.05f) { dt = 0.05f; }
-  gfL.last = now;
+  gfL.last = now; gfL.t += dt;
   if (++gfL.frames > 6000) return;
   float u[3]; for (int i = 0; i < 3; ++i) { std::uint32_t b = sgSubBits[i].load(std::memory_order_relaxed); std::memcpy(&u[i], &b, 4); }
   for (int i = 0; i < 3; ++i) gfL.vg[i] -= kGfG * u[i] * dt;
-  float vl = std::sqrt(gfL.vg[0] * gfL.vg[0] + gfL.vg[1] * gfL.vg[1] + gfL.vg[2] * gfL.vg[2]); if (vl > 30.f) for (float& c : gfL.vg) c *= 30.f / vl;
+  float vl = std::sqrt(gfL.vg[0] * gfL.vg[0] + gfL.vg[1] * gfL.vg[1] + gfL.vg[2] * gfL.vg[2]); if (vl > 60.f) for (float& c : gfL.vg) c *= 60.f / vl;
   float dyGame = p[1] - gfL.pLast[1];
   if (gfL.frames <= 4) { float v = dyGame / dt;   // first 4 frames follow the game (takeoff), then the speed is kept
     gfL.vy = std::isfinite(v) ? std::fmax(-25.f, std::fmin(25.f, v)) : gfVy0.load();   // launch vertical speed
@@ -1081,7 +1094,7 @@ void gfStep() {
   alignas(16) float q[4] = {bx + gfL.vg[0] * dt, gfL.pLast[1] + (gfL.vy + gfL.vg[1]) * dt, bz + gfL.vg[2] * dt, 1.f};
   float n0[3] = {gfN0[0].load(), gfN0[1].load(), gfN0[2].load()}, p0[3] = {gfP0[0].load(), gfP0[1].load(), gfP0[2].load()};
   float d = (q[0] - p0[0]) * n0[0] + (q[1] - p0[1]) * n0[1] + (q[2] - p0[2]) * n0[2];
-  if (d > 0.4f) gfL.left = true;
+  if (d > 0.4f || gfL.t > 0.15f) gfL.left = true;   // M10t: back at the wall after 150 ms = landed on it
   bool locked = sgLocked.load(std::memory_order_relaxed);
   if (d < 0.f || (gfL.left && d < 0.05f)) {
     float want = locked ? 0.f : 0.05f; if (d < want) { for (int i = 0; i < 3; ++i) q[i] += (want - d) * n0[i]; gfClamps.fetch_add(1); }
