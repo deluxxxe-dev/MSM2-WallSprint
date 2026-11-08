@@ -181,7 +181,11 @@ CRAWL_STAND_SWAPS_BY_INPUT = {
         'characters/hero/hero_spiderman/animations/crawl_creep_backwards_rp_outro_spiderman.animclip',
     ),
 }
-CLIP_SWAPS = CLIP_SWAPS + tuple((src, t) for src, ts in CRAWL_STAND_SWAPS_BY_INPUT.items() for t in ts)
+# M10s (owner 2026-11-08): vanilla wall crawl must keep its own motion; standing/walking is wanted only in the L3 lock.
+# A stage file cannot switch by state, so the mapping is OFF until a runtime clip switch exists (kept for that work).
+CRAWL_STAND_ENABLED = False
+if CRAWL_STAND_ENABLED:
+    CLIP_SWAPS = CLIP_SWAPS + tuple((src, t) for src, ts in CRAWL_STAND_SWAPS_BY_INPUT.items() for t in ts)
 CLIP_MIN, CLIP_MAX = 1024, 1024 * 1024
 # M6d (2026-11-05): frame the WS camera like the ground camera (M6f: standard Offset* values, see CAMERA_PATCH). Vanilla camera_wallrun_aimcontext
 # (CameraAimContextConfig, owner-extracted, sha pinned) gets the TraversalOffset*/TraversalPivotHeight values of

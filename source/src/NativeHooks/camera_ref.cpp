@@ -1065,7 +1065,7 @@ void gfStep() {
   float dt = float(qpcSec(now - gfL.last)); if (dt < 0.002f) return;    // second call in the same frame
   if (dt > 0.05f) { dt = 0.05f; }
   gfL.last = now;
-  if (++gfL.frames > 1500) return;
+  if (++gfL.frames > 6000) return;
   float u[3]; for (int i = 0; i < 3; ++i) { std::uint32_t b = sgSubBits[i].load(std::memory_order_relaxed); std::memcpy(&u[i], &b, 4); }
   for (int i = 0; i < 3; ++i) gfL.vg[i] -= kGfG * u[i] * dt;
   float vl = std::sqrt(gfL.vg[0] * gfL.vg[0] + gfL.vg[1] * gfL.vg[1] + gfL.vg[2] * gfL.vg[2]); if (vl > 30.f) for (float& c : gfL.vg) c *= 30.f / vl;
@@ -1091,11 +1091,29 @@ void gfStep() {
   if (!gfWritePos(tr, q)) { gfReadFails.fetch_add(1); return; }
   gfWrites.fetch_add(1, std::memory_order_relaxed); gfFrames.fetch_add(1, std::memory_order_relaxed);
   gfDyGameSum.store(gfDyGameSum.load(std::memory_order_relaxed) + dyGame, std::memory_order_relaxed);
-  if ((gfL.frames % 6) == 1 && gfSampleLogs.fetch_add(1) < 120)
+  if ((gfL.frames % 25) == 1 && gfSampleLogs.fetch_add(1) < 160)
     msm2::writeLog("WS_GRAVITY_FORCE_SAMPLE frame=%u dt_ms=%.1f game_pos=%.3f,%.3f,%.3f dy_game=%.4f set_pos=%.3f,%.3f,%.3f vg=%.2f,%.2f,%.2f vy=%.2f plane_d=%.2f up=%.3f,%.3f,%.3f locked=%u model=%u",
       gfL.frames, dt * 1000.f, p[0], p[1], p[2], dyGame, q[0], q[1], q[2], gfL.vg[0], gfL.vg[1], gfL.vg[2], gfL.vy, d, u[0], u[1], u[2], unsigned(locked), unsigned(gfL.model));
   std::memcpy(gfL.pLast, q, 12);
 }
+// M10s (log 20261108-113806): the hero setter is called only in bursts (17 calls in tests 1-6, substituted_calls=0),
+// so the force never ran from the detour. It now runs on its own thread (~500 Hz high-resolution waitable timer, only
+// while a hold has the force on). Each tick re-bases on the current position, so a tick lost to the game's own write
+// only drops that tick's correction.
+std::atomic<bool> gfThreadRunning{false};
+DWORD WINAPI gfThread(void*) {
+  HANDLE t = CreateWaitableTimerExW(nullptr, nullptr, 0x00000002 /*CREATE_WAITABLE_TIMER_HIGH_RESOLUTION*/, TIMER_ALL_ACCESS);
+  SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
+  while (gfOn.load() && !killed.load()) {
+    gfStep();
+    if (t) { LARGE_INTEGER due; due.QuadPart = -10000; if (SetWaitableTimer(t, &due, 0, nullptr, nullptr, FALSE)) { WaitForSingleObject(t, 20); continue; } }
+    Sleep(1);
+  }
+  if (t) CloseHandle(t);
+  gfThreadRunning.store(false);
+  return 0;
+}
+void gfStartThread() { if (!gfThreadRunning.exchange(true)) { if (HANDLE h = CreateThread(nullptr, 0, gfThread, nullptr, 0, nullptr)) CloseHandle(h); else gfThreadRunning.store(false); } }
 // Transform::SetPosition: template AOB "0F 10 51 ?? 4C 8B C1", exactly one match in executable sections, and the match
 // must be a pdata function begin. Background thread, once.
 DWORD WINAPI spResolve(void* imgp) {
@@ -1124,19 +1142,17 @@ std::uintptr_t sgDetour(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r
   // M10p: ground contact by the game itself. In the air phase the game passing an up that turns toward vertical while the
   // hero's vertical speed is ~0 means it landed: stop substituting in this frame and let the game blend to its gravity.
   // (also when locked: a landing ends the lock)
-  bool gameVertical = false;   // M10r: the game treats the hero as airborne (no own wall/crawl up)
   if (doSub && sgAirPhase.load(std::memory_order_relaxed)) { std::uint32_t inb[3];
     if (msm2::readMemory(rdx, inb, sizeof inb)) { float in[3]; std::memcpy(in, inb, 12); float sb[3]; for (int i = 0; i < 3; ++i) { std::uint32_t b = sgSubBits[i].load(); std::memcpy(&sb[i], &b, 4); }
       // M10q: with the position force the game's own up turning vertical is its timed reset, not a landing (the model
       // keeps the vertical speed small), so only a surface the game itself attaches to (another non-vertical up) ends it.
       bool force = gfOn.load(std::memory_order_relaxed);
       bool otherWall = std::isfinite(in[1]) && std::fabs(in[1]) < 0.9f && in[0] * sb[0] + in[1] * sb[1] + in[2] * sb[2] < 0.95f;
-      gameVertical = std::isfinite(in[1]) && in[1] > 0.9f;
       bool vertical = !force && !sgLocked.load(std::memory_order_relaxed) && std::isfinite(in[1]) && in[1] > sb[1] + 0.05f && std::fabs(sgLastVy.load(std::memory_order_relaxed)) < 2.f;
       if (otherWall || vertical) { doSub = false; sgSubActive.store(false); sgGameLanded.store(true); } } }
   if (doSub) { sub[0] = sgSubBits[0].load(); sub[1] = sgSubBits[1].load(); sub[2] = sgSubBits[2].load(); sgSubCalls.fetch_add(1, std::memory_order_relaxed); }
   auto r = sgOrig(rcx, doSub ? reinterpret_cast<std::uintptr_t>(sub) : rdx, r8, r9);
-  if (doSub && sgAirPhase.load(std::memory_order_relaxed)) { sbBlendStep(); if (gameVertical) gfStep(); }   // M10q (game thread, after the original)
+  if (doSub && sgAirPhase.load(std::memory_order_relaxed)) sbBlendStep();   // M10q (after the original)
   // M10l: M10k's chain block was not a setter block. Hero identification: the first block that receives a non-vertical up
   // (|y| < 0.9; only a character on a wall/ceiling, i.e. the crawling hero) becomes the hero block for the session.
   if (rcx && !doSub) { float in[3]{}; if (msm2::readMemory(rdx, in, sizeof in) && std::isfinite(in[1]) && std::fabs(in[1]) < 0.9f) {
@@ -1299,7 +1315,7 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
   } else if (gbState == 1 && !wsNow) {
     gbState = 2; gbStart = now; gbSetUp(gbN); prevOk = false; sgAirPhase.store(true); gbAirCam.store(true); sgGameLanded.store(false);
     for (int i = 0; i < 3; ++i) { gfP0[i].store(hero.position[i]); gfN0[i].store(gbN[i]); } gfVy0.store(vOk ? vy : 0.f); gfContact.store(false); sbBlendQpc.store(0);
-    gfGen.fetch_add(1); gfOn.store(ws::drive::wsGravityForce.load());
+    gfGen.fetch_add(1); gfOn.store(ws::drive::wsGravityForce.load() && !sgLocked.load()); if (gfOn.load()) gfStartThread();   // M10s: no force while locked (stand on the wall)
     msm2::writeLog("WS_GRAVITY_TEST start test=%u n=%.3f,%.3f,%.3f locked=%u", gbTests, gbN[0], gbN[1], gbN[2], unsigned(sgLocked.load()));
   } else if (gbState >= 2) {
     bool velStop = vOk && prevOk && now - gbStart >= 150 && prevVy < -3.f && vy > -0.7f;
@@ -1307,7 +1323,9 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     if (!vOk || sp > 0.3f || sgLocked.load()) slowSince = 0; else if (!slowSince) slowSince = now;
     if (sgGameLanded.exchange(false)) gbEnd("landed_game", now, false);        // the game blends to its own gravity
     else if (gfContact.exchange(false)) gbEnd("wall_contact", now, true);       // M10q: back on the wall it left
-    else if (gbState == 2 && gfOn.load() && slowSince && now - slowSince >= 400 && now - gbStart >= 500) gbEnd("stalled", now, true);   // M10q: no 8 s lag when stuck
+    else if (sgLocked.load() && std::fabs((hero.position[0] - gfP0[0].load()) * gfN0[0].load() + (hero.position[1] - gfP0[1].load()) * gfN0[1].load() + (hero.position[2] - gfP0[2].load()) * gfN0[2].load()) > 1.5f)
+      gbEnd("lock_left_wall", now, true);                                        // M10s: the lock ends once the hero is off that wall
+    else if (gbState == 2 && gfOn.load() && gfFrames.load() > 0 && slowSince && now - slowSince >= 400 && now - gbStart >= 500) gbEnd("stalled", now, true);   // M10q: no 8 s lag when stuck
     else if (velStop) gbEnd("landed_velocity", now, true);
     else if (gbState == 2) {
       if (wgiRt.load() > 0.5) gbStart = now;                                   // web swing keeps the hold
