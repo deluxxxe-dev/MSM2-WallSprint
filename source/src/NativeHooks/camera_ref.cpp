@@ -160,6 +160,7 @@ bool liveCamera(std::uintptr_t m, const msm2::Snapshot& hero, float& distance) {
   float dx = p[0] - hero.position[0], dy = p[1] - hero.position[1], dz = p[2] - hero.position[2];
   distance = std::sqrt(dx * dx + dy * dy + dz * dz); return std::isfinite(distance) && distance < 30.f;
 }
+extern std::atomic<bool> gbHoldA;
 void selectCamera(const msm2::Snapshot& hero, std::uint64_t now) {
   std::uintptr_t seen[9]{}; unsigned n = 0;
   auto add = [&](std::uintptr_t m) { if (!m) return; for (unsigned i = 0; i < n; ++i) if (seen[i] == m) return; seen[n++] = m; };
@@ -168,6 +169,9 @@ void selectCamera(const msm2::Snapshot& hero, std::uint64_t now) {
   std::uintptr_t best = 0; float bestD = 1e9f, curD = 0; bool curOk = liveCamera(ws_camref_this, hero, curD);
   for (unsigned i = 0; i < n; ++i) { float d; if (liveCamera(seen[i], hero, d) && d < bestD) { bestD = d; best = seen[i]; } }
   std::uintptr_t pick = curOk ? ws_camref_this : best;
+  // M10z-r8 (log 20261109-025529): after a face jump the camera was > 30 m from the hero, no manager counted as live and
+  // the WS camera was dropped for 9 s. During a gravity hold the current manager is kept.
+  if (!pick && ws_camref_this && gbHoldA.load()) pick = ws_camref_this;
   if (pick != ws_camref_this) { ++selectChanges;
     msm2::writeLog("WS_CAMERA_SELECT manager=0x%llx previous=0x%llx distinct_callers=%u distance=%.2f changes=%u", (unsigned long long)pick, (unsigned long long)ws_camref_this, n, pick ? bestD : 0.f, selectChanges);
     if (engagedManager.load() && engagedManager.load() != pick) restore("camera_manager_changed");
@@ -1566,6 +1570,16 @@ namespace msm2::camera_ref {
 void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
   if (!verified || !image || imageSize <= kEntryRva + 64) { writeLog("WS_CAMERA_REF admitted=0 reason=build_or_image_unverified"); return; }
   sgInstall(image, imageSize);
+  // M10z-r8: one-time code capture of the hero position writer and its callers (pdata bounds, <= 4 KiB each) for offline
+  // tracing of where the new position (and the fall velocity) comes from. Log only; derived findings go to analysis/.
+  { const std::uintptr_t rvas[] = {0x2CFC900, 0x351EEA7, 0x3519E10};
+    for (auto rva : rvas) { if (rva >= imageSize) continue; DWORD64 fb = 0; auto* fe = RtlLookupFunctionEntry(image + rva, &fb, nullptr);
+      if (!fe || fb != image) { writeLog("WS_CODE_DUMP rva=0x%llx pdata=0", (unsigned long long)rva); continue; }
+      std::uintptr_t b = image + fe->BeginAddress, e = image + fe->EndAddress; if (e <= b || e - b > 4096) e = b + 4096;
+      writeLog("WS_CODE_DUMP rva=0x%llx begin=0x%lx end=0x%lx size=%llu", (unsigned long long)rva, (unsigned long)fe->BeginAddress, (unsigned long)fe->EndAddress, (unsigned long long)(e - b));
+      for (std::uintptr_t a = b; a < e; a += 32) { unsigned char buf[32]{}; std::size_t n = std::min<std::uintptr_t>(32, e - a); if (!readMemory(a, buf, n)) break;
+        char hex[65]{}; for (std::size_t i = 0; i < n; ++i) std::snprintf(hex + 2 * i, 3, "%02x", buf[i]);
+        writeLog("WS_CODE_DUMP_BYTES begin=0x%lx off=0x%llx hex=%s", (unsigned long)fe->BeginAddress, (unsigned long long)(a - b), hex); } } }
   target = image + kEntryRva;
   DWORD64 base = 0; auto* f = RtlLookupFunctionEntry(target, &base, nullptr);
   unsigned char entry[64]{}; char hash[65]{};
