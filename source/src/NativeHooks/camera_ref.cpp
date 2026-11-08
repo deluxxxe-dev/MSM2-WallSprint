@@ -1625,6 +1625,15 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   // horizontal part is parallel to travel for a forward stick and perpendicular for a sideways stick
   // (travel = sign(sx) * h * cross(forward, up)). Accepted once per process; then used for camera-relative WS input.
   selectCamera(snapshot, now);
+  // M10z-r7 (log 20261109-023914): during a face-as-ground hold the game switched the camera manager; the WS camera was
+  // restored (`camera_manager_changed`) and never engaged again (engaging only ran on WS updates). While the wall
+  // gravity is held, the WS camera is engaged on the current manager.
+  if (gbHoldA.load() && !killed.load() && installed.load() && !engagedManager.load()) { auto m = ws_camref_this;
+    unsigned char cur = 0;
+    if (m && m <= UINTPTR_MAX - 0x400 && writableByte(m + kActorRelativeFlag) && readMemory(m + kActorRelativeFlag, &cur, 1)) {
+      savedFlag.store(cur); *reinterpret_cast<volatile unsigned char*>(m + kActorRelativeFlag) = 1;
+      engagedManager.store(m); engages.fetch_add(1); ws_camera_engage_ms.store(now);
+      static unsigned reLogs = 0; if (reLogs++ < 20) writeLog("WS_CAMERA_REF reengage reason=gravity_hold manager=0x%llx", (unsigned long long)m); } }
   m6GroundTurn(snapshot, motion, stick, now);
   m6Framing(snapshot, motion, now);
   m6SetterLog(snapshot, now);
