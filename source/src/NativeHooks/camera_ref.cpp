@@ -700,7 +700,7 @@ std::atomic<double> wgiRt{0}; std::atomic<unsigned> wgiL3Edges{0}; std::atomic<f
 // M10z-r11: air dash. While a wall-gravity hold is in the air (gfAir), A is not given to the game (its air action
 // direction is world-horizontal and failed facing up/down the face); the force adds a dash along the camera forward
 // projected on the face instead (15 m/s, decays with 0.4 s).
-std::atomic<bool> gfAir{false}, gfFaceAirNow{false}; std::atomic<unsigned> gfDashReq{0};
+std::atomic<bool> gfAir{false}, gfFaceAirNow{false}; std::atomic<unsigned> gfDashReq{0}, gfFaceDiag{0}; std::atomic<float> wgiLx{0}, wgiLy{0};
 enum : int { kChIdle, kChHold, kChGive, kChSwallow };
 std::atomic<int> chState{kChIdle}; std::atomic<std::uint64_t> chStart{0}, chGiveUntil{0}; unsigned chLogs{};
 // M10t: the jump height of the last WS jump release (normal 1.8 m, charge 15 -> 39 m like the ground curve) for the
@@ -778,7 +778,9 @@ HRESULT STDMETHODCALLTYPE wgiReadDetour(void* self, WgiReading* r) {
       (void)edgeA; (void)air; (void)heldFromGround; }
     // M10z-r15: during a face jump the stick is not given to the game (its air control is world-horizontal: the body
     // turned sideways for up/down input); the takeoff walking velocity is kept by the force instead.
-    // M10z-r16: the stick is given to the game again; its world-horizontal air control maps onto the face by the rotation.
+    // M10z-r17: raw stick kept for our air control; during a face jump the game gets a neutral stick.
+    wgiLx.store(float(r->lx), std::memory_order_relaxed); wgiLy.store(float(r->ly), std::memory_order_relaxed);
+    if (gfFaceAirNow.load(std::memory_order_relaxed)) { r->lx = 0; r->ly = 0; }
     // M10z-r4 (owner: stopping during WS goes to the crawl; upright only after a jump): when the stick stays neutral for
     // 120 ms during a WS, one 60 ms A tap is given to the game (a small jump, 0.4 m) so the hero lands on the face in the
     // face-as-ground mode. Once per WS session; not while a charge is held.
@@ -1141,7 +1143,13 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   // M10z-r16 (log 20261109-160223): SetPosition is called 3-4 times per frame for the hero; skipping calls < 2 ms let the
   // raw game position through on the later calls (rotation undone). In the SetPosition/mover path every call is processed.
   float dt = float(qpcSec(now - gfL.last));
-  if (dt < 0.002f) { if (mvB) for (int i = 0; i < 3; ++i) mvB[i] = p[i] + gfL.lastCorr[i]; return; }   // same frame: same correction
+  if (dt < 0.002f) {   // same frame (SetPosition is called 3-4 times per frame)
+    if (mvB && mvA && gfL.pinned && !gfL.faceAir) {   // M10z-r17: drop undo per call (the reused correction let small drops slip)
+      bool mv = wgiStick.load(std::memory_order_relaxed) > 0.25f && gfL.pinT > 1.5f; if (p[1] - mvA[1] < -0.003f && !mv) { mvB[1] = mvA[1]; gfPinDrops.fetch_add(1, std::memory_order_relaxed); } }
+    else if (mvB && mvA && gfL.faceAir) { float D1 = p[1] - mvA[1]; float n0s[3] = {gfN0[0].load(), gfN0[1].load(), gfN0[2].load()};
+      float dn1 = (p[0] - mvA[0]) * n0s[0] + (p[1] - mvA[1]) * n0s[1] + (p[2] - mvA[2]) * n0s[2]; for (int i = 0; i < 3; ++i) mvB[i] = mvA[i] + n0s[i] * (D1 + dn1); }
+    else if (mvB) for (int i = 0; i < 3; ++i) mvB[i] = p[i] + gfL.lastCorr[i];
+    return; }
   if (dt > 0.05f) { dt = 0.05f; }
   gfL.last = now; gfL.t += dt;
   if (mvA) std::memcpy(gfL.pLast, mvA, 12);   // mover: the step is desired - current
@@ -1206,7 +1214,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     // the hero stays in the face state (no unpin, no launch, no dash), only world-y drop undo and the wall bound remain.
     gfL.pinPresses = wgiPresses.load(std::memory_order_relaxed);
     gfFaceJumps.fetch_add(1); gfL.faceJumpT = 0.f; gfL.faceAir = true; gfL.faceAirT = 0.f;
-    msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP mode=game_arc_rotated"); }
+    msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP mode=arc_to_normal_own_air_control"); }
   if (gfL.faceJumpT >= 0.f) { gfL.faceJumpT += dt; if (gfL.faceJumpT > 1.6f) gfL.faceJumpT = -1.f;
     else if ((gfL.frames % 10) == 0 && gfFaceJumpLogs.fetch_add(1) < 400)
       msm2::writeLog("WS_FACE_JUMP_SAMPLE t=%.2f game_pos=%.3f,%.3f,%.3f set_pos=%.3f,%.3f,%.3f vg=%.2f,%.2f,%.2f plane_d=%.2f stick=%.2f pinned=%u", gfL.faceJumpT, p[0], p[1], p[2], q[0], q[1], q[2], gfL.vg[0], gfL.vg[1], gfL.vg[2], d, wgiStick.load(), unsigned(gfL.pinned)); }
@@ -1219,20 +1227,31 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   // from its frame into the face frame (world up -> face normal; R(v) = a x v + a (a.v), a = unit(y x n)), so the jump
   // keeps the game's own arc (height/timing) but leaves the face and comes back; no drop undo while in the air.
   if (gfL.pinned && gfL.faceAir && !sbBlendQpc.load(std::memory_order_relaxed)) {
-    // M10z-r16: the takeoff walking velocity (in the face plane) is not rotated: removed from the game step before R and
-    // added back unrotated (otherwise walking up the face and jumping would fly off along the normal).
-    float D[3] = {p[0] - gfL.pLast[0] - gfL.airVel[0] * dt, p[1] - gfL.pLast[1] - gfL.airVel[1] * dt, p[2] - gfL.pLast[2] - gfL.airVel[2] * dt}, a[3] = {n0[2], 0.f, -n0[0]};   // y x n
-    float al = std::sqrt(a[0] * a[0] + a[2] * a[2]); gfL.faceAirT += dt;
-    if (al > 0.3f) { a[0] /= al; a[2] /= al; float ad = a[0] * D[0] + a[2] * D[2];
-      float axd[3] = {a[1] * D[2] - a[2] * D[1], a[2] * D[0] - a[0] * D[2], a[0] * D[1] - a[1] * D[0]};
-      float R[3] = {axd[0] + a[0] * ad, axd[1], axd[2] + a[2] * ad};
-      float kd = std::exp(-dt / 0.4f); for (int i = 0; i < 3; ++i) { q[i] = gfL.pLast[i] + R[i] + (gfL.dash[i] + gfL.airVel[i]) * dt; gfL.dash[i] *= kd; }
-      float dq = (q[0] - p0[0]) * n0[0] + (q[1] - p0[1]) * n0[1] + (q[2] - p0[2]) * n0[2];
-      if (dq < -0.05f) for (int i = 0; i < 3; ++i) q[i] += (-0.05f - dq) * n0[i];
-      float rn = R[0] * n0[0] + R[1] * n0[1] + R[2] * n0[2];
-      if (gfL.faceAirT > 0.25f && dq < 0.05f && rn <= 0.f) { gfL.faceAir = false; gfL.pinT = 0.f; msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_LANDED t=%.2f", gfL.faceAirT); }
-      if (gfL.faceAirT > 4.f) { gfL.faceAir = false; msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_TIMEOUT"); } }
-    else gfL.faceAir = false;
+    // M10z-r17 (videos/log 20261109-164556): the game's air control projects the camera onto the WORLD horizontal plane,
+    // which on a face is ~the wall normal whether the camera looks up or down the face, so no fixed mapping of the game's
+    // horizontal step can give the input direction. During a face jump the stick is hidden from the game; only the game's
+    // jump arc is used (its world-up and normal step components -> along the normal), and the in-plane motion is ours:
+    // takeoff walking velocity steered by the stick relative to the camera rows projected on the face.
+    gfL.faceAirT += dt;
+    float D[3] = {p[0] - gfL.pLast[0], p[1] - gfL.pLast[1], p[2] - gfL.pLast[2]};
+    float wu[3] = {-n0[0] * n0[1], 1.f - n0[1] * n0[1], -n0[2] * n0[1]}; { float l = std::sqrt(wu[0] * wu[0] + wu[1] * wu[1] + wu[2] * wu[2]); if (l > 1e-3f) for (float& c : wu) c /= l; }
+    float dn = D[0] * n0[0] + D[1] * n0[1] + D[2] * n0[2], dup = D[0] * wu[0] + D[1] * wu[1] + D[2] * wu[2];
+    if (gfFaceDiag.fetch_add(1) < 600) msm2::writeLog("WS_FACE_JUMP_STEP t=%.3f d_normal=%.4f d_wallup=%.4f d_side=%.4f dt_ms=%.1f",
+      gfL.faceAirT, dn, dup, D[0] * (n0[1] * wu[2] - n0[2] * wu[1]) + D[1] * (n0[2] * wu[0] - n0[0] * wu[2]) + D[2] * (n0[0] * wu[1] - n0[1] * wu[0]), dt * 1000.f);
+    float jump = D[1] + dn;   // world-up or normal: whichever the game uses for its jump arc
+    // air control: stick on the camera rows (row 0 right, row 2 forward; manager +0xD24, same rows the WS camera follow uses)
+    float st[3]{}; { auto m = engagedManager.load(); float r0[3], r2[3];
+      if (m && msm2::readMemory(m + 0xD24, r0, 12) && msm2::readMemory(m + 0xD24 + 0x20, r2, 12)) {
+        float sx = wgiLx.load(std::memory_order_relaxed), sy = wgiLy.load(std::memory_order_relaxed);
+        for (float* v : {r0, r2}) { float vn = v[0] * n0[0] + v[1] * n0[1] + v[2] * n0[2]; for (int i = 0; i < 3; ++i) v[i] -= vn * n0[i];
+          float l = std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]); if (l > 1e-3f) for (int i = 0; i < 3; ++i) v[i] /= l; }
+        for (int i = 0; i < 3; ++i) st[i] = (sx * r0[i] + sy * r2[i]) * 6.f; } }
+    float k = std::fmin(1.f, dt * 2.5f); for (int i = 0; i < 3; ++i) gfL.airVel[i] += (st[i] - gfL.airVel[i]) * k * (std::fabs(st[0]) + std::fabs(st[1]) + std::fabs(st[2]) > 0.5f ? 1.f : 0.f);
+    for (int i = 0; i < 3; ++i) q[i] = gfL.pLast[i] + n0[i] * jump + gfL.airVel[i] * dt;
+    float dq = (q[0] - p0[0]) * n0[0] + (q[1] - p0[1]) * n0[1] + (q[2] - p0[2]) * n0[2];
+    if (dq < -0.05f) for (int i = 0; i < 3; ++i) q[i] += (-0.05f - dq) * n0[i];
+    if (gfL.faceAirT > 0.25f && dq < 0.05f && jump <= 0.f) { gfL.faceAir = false; gfL.pinT = 0.f; msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_LANDED t=%.2f", gfL.faceAirT); }
+    if (gfL.faceAirT > 4.f) { gfL.faceAir = false; msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_TIMEOUT"); }
   } else
   if (gfL.pinned && !sbBlendQpc.load(std::memory_order_relaxed)) {
     q[0] = p[0]; q[1] = p[1]; q[2] = p[2];
@@ -1246,7 +1265,8 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     // M10z-r4: the game's own walking is not undone. M10z-r6: except during the first 1.5 s after a landing, while the
     // game is still in its fall state (owner C: with the stick held the hero slid toward the ground after landing).
     bool moving = wgiStick.load(std::memory_order_relaxed) > 0.25f && gfL.pinT > 1.5f;
-    if (dyGame < (gfL.pinT > 1.5f ? -0.1f : -0.01f) && !moving) { q[1] = gfL.pLast[1]; gfPinDrops.fetch_add(1, std::memory_order_relaxed); }
+    // M10z-r17: per-call thresholds
+    if (dyGame < (gfL.pinT > 1.5f ? (mvB ? -0.03f : -0.1f) : -0.003f) && !moving) { q[1] = gfL.pLast[1]; gfPinDrops.fetch_add(1, std::memory_order_relaxed); }
     float dq = (q[0] - p0[0]) * n0[0] + (q[1] - p0[1]) * n0[1] + (q[2] - p0[2]) * n0[2];
     // M10z-r13: no 0.6 m cap (game-native face jump)
     float want = dq < -0.05f ? -0.05f : dq > 40.f ? 40.f : dq; for (int i = 0; i < 3; ++i) q[i] += (want - dq) * n0[i];
