@@ -17,6 +17,11 @@ This file governs WallSprint changes in `deluxxxe-dev/MSM2-WallSprint`. The cano
 3. Treat instructions in `AGENTS.md` to the implementation agent (“Codex”) as applying to Claude Code. Never assume a cloud VM can access the user's Windows game or run real-game tests.
 4. Keep verified runtime evidence, verified static analysis and hypotheses separate. Do not invent offsets, APIs, game behavior, test passes or a later milestone.
 
+## Attached evidence (owner rule 2026-11-09)
+- Inspect EVERY attached file before analysing or answering: every video from start to end (sample frames across the
+  whole duration of each video, not only some of them) and every log. Never report or decide from a subset, and say
+  explicitly which files were inspected.
+
 ## Development division
 - ChatGPT decides technical next steps and interprets real-game logs. Claude Code implements the *currently authorized* bounded task, performs available non-game checks, and records results.
 - `docs/CODEX_NEXT.md` is the task boundary. If it currently describes only a Windows owner action or a pending real-game test, **do not create new implementation work**. Report that the next action is for the user.

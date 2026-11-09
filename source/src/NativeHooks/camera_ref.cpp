@@ -700,7 +700,7 @@ std::atomic<double> wgiRt{0}; std::atomic<unsigned> wgiL3Edges{0}; std::atomic<f
 // M10z-r11: air dash. While a wall-gravity hold is in the air (gfAir), A is not given to the game (its air action
 // direction is world-horizontal and failed facing up/down the face); the force adds a dash along the camera forward
 // projected on the face instead (15 m/s, decays with 0.4 s).
-std::atomic<bool> gfAir{false}, gfFaceAirNow{false}; std::atomic<unsigned> gfDashReq{0}, gfFaceDiag{0}; std::atomic<float> wgiLx{0}, wgiLy{0};
+std::atomic<bool> gfAir{false}, gfFaceAirNow{false}; std::atomic<unsigned> gfDashReq{0}, gfFaceDiag{0}, gfZipLogs{0}; std::atomic<float> wgiLx{0}, wgiLy{0};
 enum : int { kChIdle, kChHold, kChGive, kChSwallow };
 std::atomic<int> chState{kChIdle}; std::atomic<std::uint64_t> chStart{0}, chGiveUntil{0}; unsigned chLogs{};
 // M10t: the jump height of the last WS jump release (normal 1.8 m, charge 15 -> 39 m like the ground curve) for the
@@ -1239,6 +1239,10 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     if (gfFaceDiag.fetch_add(1) < 600) msm2::writeLog("WS_FACE_JUMP_STEP t=%.3f d_normal=%.4f d_wallup=%.4f d_side=%.4f dt_ms=%.1f",
       gfL.faceAirT, dn, dup, D[0] * (n0[1] * wu[2] - n0[2] * wu[1]) + D[1] * (n0[2] * wu[0] - n0[0] * wu[2]) + D[2] * (n0[0] * wu[1] - n0[1] * wu[0]), dt * 1000.f);
     float jump = D[1] + dn;   // world-up or normal: whichever the game uses for its jump arc
+    // M10z-r17b: the air A web zip moves the game horizontally fast (world-horizontal facing); its speed is kept and the
+    // direction is the stick/camera direction on the face (else the current in-plane velocity direction).
+    float Dh[3] = {D[0], 0.f, D[2]}; float dhl = std::sqrt(Dh[0] * Dh[0] + Dh[2] * Dh[2]); bool zip = dt > 1e-4f && dhl / dt > 8.f;
+    if (zip) jump = D[1];
     // air control: stick on the camera rows (row 0 right, row 2 forward; manager +0xD24, same rows the WS camera follow uses)
     float st[3]{}; { auto m = engagedManager.load(); float r0[3], r2[3];
       if (m && msm2::readMemory(m + 0xD24, r0, 12) && msm2::readMemory(m + 0xD24 + 0x20, r2, 12)) {
@@ -1248,6 +1252,9 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
         for (int i = 0; i < 3; ++i) st[i] = (sx * r0[i] + sy * r2[i]) * 6.f; } }
     float k = std::fmin(1.f, dt * 2.5f); for (int i = 0; i < 3; ++i) gfL.airVel[i] += (st[i] - gfL.airVel[i]) * k * (std::fabs(st[0]) + std::fabs(st[1]) + std::fabs(st[2]) > 0.5f ? 1.f : 0.f);
     for (int i = 0; i < 3; ++i) q[i] = gfL.pLast[i] + n0[i] * jump + gfL.airVel[i] * dt;
+    if (zip) { float z[3] = {st[0], st[1], st[2]}; float zl = std::sqrt(z[0] * z[0] + z[1] * z[1] + z[2] * z[2]);
+      if (zl < 0.5f) { for (int i = 0; i < 3; ++i) z[i] = gfL.airVel[i]; zl = std::sqrt(z[0] * z[0] + z[1] * z[1] + z[2] * z[2]); }
+      if (zl > 0.1f) { for (int i = 0; i < 3; ++i) q[i] += z[i] / zl * dhl; if (gfZipLogs.fetch_add(1) < 60) msm2::writeLog("WS_FACE_ZIP_REDIRECT speed=%.1f dir=%.2f,%.2f,%.2f", dhl / dt, z[0] / zl, z[1] / zl, z[2] / zl); } }
     float dq = (q[0] - p0[0]) * n0[0] + (q[1] - p0[1]) * n0[1] + (q[2] - p0[2]) * n0[2];
     if (dq < -0.05f) for (int i = 0; i < 3; ++i) q[i] += (-0.05f - dq) * n0[i];
     if (gfL.faceAirT > 0.25f && dq < 0.05f && jump <= 0.f) { gfL.faceAir = false; gfL.pinT = 0.f; msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_LANDED t=%.2f", gfL.faceAirT); }
