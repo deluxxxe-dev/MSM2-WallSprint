@@ -41,4 +41,6 @@ inline std::atomic<bool> wsGravityForce{false};
 inline std::atomic<bool> stickMask{false};
 // M10z-r9: drive the wall gravity through the hero mover (RVA 0x3519E10) desired position. WALLSPRINT_WS_GRAVITY_MOVER, default 0.
 inline std::atomic<bool> wsGravityMover{false};
+// M10z-r15: compute the hero position inside Transform::SetPosition (RVA 0x2CFC900). WALLSPRINT_WS_GRAVITY_SETPOS, default 0.
+inline std::atomic<bool> wsGravitySetPos{false};
 }
