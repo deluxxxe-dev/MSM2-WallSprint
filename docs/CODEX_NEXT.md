@@ -1,86 +1,96 @@
-# Next task — M13: remove jerks (stop transition, re-approach loop, walking down) + face jump speed + web zip direction
+# Next task — M14: frame bug, stop that ends standing, jump facing, zip direction, game ground/air state snapshot
 
 Branch `codex/v01c20-edi-value-provenance` (no main merge, no force-push). Previous task text:
-`analysis/CODEX_NEXT_ARCHIVE_M12_20261111.md`. Read first: `analysis/M12_OWNER_RESULT_20261111.md` (evidence for every
-item), then `analysis/M11_OWNER_RESULT_20261111.md` and the M10z sections at the end of
+`analysis/CODEX_NEXT_ARCHIVE_M13_20261111.md`. Read first: `analysis/M13_OWNER_RESULT_20261111.md` (evidence and the
+assessment for every item), then `analysis/M12_OWNER_RESULT_20261111.md` and the M10z sections at the end of
 `analysis/M8_JUMP_PLAN_20261106.md`.
 
-Owner (2026-11-11): stop from WS is now stable; its remaining jerks must go, and the other items continue in parallel. Minimum requirement of the mod: on a wall the hero moves exactly like on the
-ground, no shaking or jerks. Terms: WS = Wall Sprint (this mod), WR = vanilla Wall Run.
-Accepted, do not regress: walking on the face in all four directions; stop from WS ends standing (3 of 3).
+Owner goal: on a wall the hero moves exactly like on the ground, no shaking or jerks; the changed gravity stays until B.
+Terms: WS = Wall Sprint (this mod), WR = vanilla Wall Run.
+Accepted, do not regress: walking on the face in all directions; no re-approach loop (0 `REAPPROACH` in the M13 run);
+stop without jerk; walking jumps move ~2 m in the stick direction.
 
-All code is in `source/src/NativeHooks/camera_ref.cpp` (`gfStep`, `sp2Detour`, `m10GravityTest`). Keep exact-build
+All code is in `source/src/NativeHooks/camera_ref.cpp` (`gfStep`, `sp2Detour`, `wgiReadDetour`). Keep exact-build
 guards, F8 kill, INI switches, code defaults OFF. One commit per task, push after each.
+Procedure change (owner question, analysis section 6): no more tuning of air-model numbers in this task. Tasks 1-4 fix
+measured causes; task 5 reads the game state that later air work (falling, landing timing) needs.
 
-## Task 1 — walking toward the ground must never be clipped by the fall guard
-Fact: the 6 m/s per-frame budget clips normal walking/running steps (analysis section 3).
-Do: the guard exists only to stop an unbounded fall. Replace the budget by a fall detector: allow any downward step
-while the stick is pushed, unless the downward speed (per frame) exceeds 9 m/s OR increased in each of the last 6 frames
-by more than 0.2 m/s (gravity signature, 33 m/s^2 ~ 0.55 m/s per frame). Only then undo that frame's downward part.
-Neutral stick: unchanged (no downward motion). Log every undo while the stick is pushed (speed, reason), cap 100.
-Acceptance: `WS_FACE_MOVE_SAMPLE` has no `store_dy` while walking down; owner sees no hitch.
-
-## Task 2 — the plane must follow the wall under the hero; no re-approach loop
-Fact: the plane point is frozen at the hold start and is wrong by 0.18 m elsewhere on the wall, so the M12 re-approach
-fires every 0.4 s (analysis section 2).
+## Task 1 — frame boundary bug (cause of the walking-down hitch)
+Fact: the 3-4 hero SetPosition calls of one frame are 2.0-2.2 ms apart; `newFrame` uses a 2 ms gap, so later calls of
+the same frame start a "frame" with dt ~2 ms; the fall guard then sees 10-41 m/s and undoes normal walking steps
+(100 `WS_FACE_FALL_UNDO`, analysis section 2).
 Do:
-1. While pinned and not in a face jump, when the game leaves the hero at rest (no game step along the normal for 5
-   frames), take the hero's current distance as the wall there: move the plane point along the normal so that plane_d
-   becomes 0 (low-pass, <= 0.05 m per frame). Log changes > 0.05 m (`WS_GRAVITY_FORCE_PLANE event=follow`).
-2. Re-approach only when the hero is farther than 0.3 m from the (followed) plane for > 0.2 s, and at most once per
-   second. Log the reason.
-Acceptance: no `REAPPROACH` lines while the hero stands or walks; face jumps still land.
+1. A new frame starts only when the gap since the previous hero SetPosition call is >= 5 ms. dt of a frame = time between
+   the first calls of two consecutive frames. Apply it to every per-frame quantity (force model, fall guard, follow,
+   walk samples, samples' dt_ms).
+2. Count per hold the maximum gap inside a frame and the minimum frame dt; print both in `WS_GRAVITY_FORCE_END`
+   (`max_intra_frame_gap_ms`, `min_frame_dt_ms`).
+Acceptance: no `WS_FACE_FALL_UNDO` while walking down; `dt_ms` in samples >= 5; owner sees no hitch.
 
-## Task 3 — one landing per stop
-Fact: each stop is push 0.9 m -> land -> game moves the hero out 0.3-1.2 m -> re-approach -> land, three times in 0.4 s
-(analysis section 1).
-Do, in this order, one owner run each (decision by `WALL_LANDED` count per stop and the owner video):
-A. Shorten the path: stop push 0.9 m / 0.25 s -> 0.5 m / 0.12 s; approach speed toward the face capped at 4 m/s; after
-   `WALL_LANDED` ignore the game's outward step (keep plane_d <= 0.02 m) for 0.3 s instead of letting the hero drift out.
-   Expected: exactly one `WALL_LANDED` per stop.
-B. Only if A still shows more than one landing or the hero does not stand: log for 0.6 s after the first landing, per
-   frame, the game's step split into normal / wall-up / side and plane_d (`WS_STOP_TRACE`, <= 240 lines) and stop;
-   report the trace instead of guessing.
-Camera jerk during the stop: record what is seen, do not change camera code in this task.
+## Task 2 — stop ends standing (one air phase the game detects)
+Fact: the 0.12 s push lands at 0.11-0.16 s without the game ever leaving its wall-contact state -> crawl pose, game
+position frozen. M12 (0.9 m / 0.25 s push) and every face jump from the crawl ended standing (analysis section 1).
+Do: replace the stop push by a stop hop through the existing face-jump air model: launch along the normal with
+v = sqrt(2 g 0.5 m), in-plane velocity 0, neutral stick to the game during the hop, one landing (`FACE_JUMP_LANDED`
+path). Keep the 0.3 s outward-step limit after the landing. Log `WS_GRAVITY_FORCE_STOP_HOP height_m=0.5 airtime_s=`.
+Acceptance: standing after every stop, exactly one landing per stop, 0 `REAPPROACH`.
 
-## Task 4 — face jump: ground-like directional speed
-Fact: takeoff in-plane speed is the instantaneous walking step at the press (1.0-5.2 m/s; up jumps 1.0-1.8 m/s); a face
-jump lasts ~0.4 s, so the hero drifts 0.4-2 m (owner: slow drift, unlike a ground directional jump). The takeoff
-direction already matches walking (analysis section 4). Owner also saw all jumps travel "into the screen".
+## Task 3 — body facing at the face jump takeoff
+Fact: the game gets the neutral stick only after takeoff (`gfFaceAirNow`); on the A press frame it reads the real stick.
+HYPOTHESIS: the game's jump start turns the body toward the world-horizontal projection of the stick = the side axis on
+a face (owner: up -> right, down -> left).
 Do:
-1. Takeoff speed = mean in-plane walking speed over the last 0.3 s (not one step), with a floor of 5 m/s whenever the
-   stick is pushed (> 0.5) and a walking direction is known; keep the direction as now.
-2. Face jump airtime: launch along the normal for 1.8 m height as now; keep the in-plane velocity constant in the air
-   (no decay) unless the stick steers.
-3. Trace each face jump: at takeoff and at landing log the hero position split into (e_up, e_side, normal) relative to
-   the takeoff point, the takeoff velocity, the stick and the source (`WS_FACE_JUMP_TRACE`, <= 60). This checks the
-   owner's "into the screen" against the logged direction.
-Acceptance: walking or standing-with-stick jumps travel ~2 m or more in the stick/walking direction with the same arc
-feel as a ground jump.
-Body facing during jumps (game yaw, world-horizontal) stays out of scope; record what the owner sees.
+1. While the hero stands on the face in the hold (pinned, not in the air), on the WGI read in which A goes down, give the
+   game a neutral stick already in that read and keep it neutral until 0.1 s after landing. A itself still reaches the
+   game. Our own air control keeps the raw stick (unchanged).
+2. Log `WS_FACE_JUMP_FACING` per jump (<= 40): hero forward (Actor axes forward or Transform+0x20 row, whichever the code
+   already reads) projected on (e_up, e_side) at the press, at takeoff + 0.1 s, at landing; plus the walking direction at
+   the press. Also log the arc: peak delta_n and the time of the peak.
+Decision table (for the analysis, not for this code): forward stays the walking direction -> facing solved; forward still
+turns to the side -> the turn is set by the game independent of the stick -> next task writes the rotation.
 
-## Task 5 — web zip: stable direction
-Fact: the zip uses the walking-learned mapping (h, theta) of the last 2 s, which changes between zips because the game
-camera swings after each zip: h/theta -1/177, +1/136, -1/-18, -1/126 deg in one run; stick left once went to the right
-(analysis section 5). The game's own zip motion/facing is also still visible.
+## Task 4 — web zip direction from the takeoff, not from the 2 s mapping
+Fact: zip directions used the frozen learned theta (73.7 / 155.7 deg for down / left, wrong by 90 / 20 deg) while the
+takeoff walking direction of the same jumps was correct; mirror agreement was 0-40 % (analysis section 4).
 Do:
-1. Freeze the mapping at the face jump takeoff (h, theta at that moment) and use the frozen mapping for steering and
-   the zip of that jump; never update it in the air.
-2. h may change only after >= 30 consistent samples (>= 80 % agreement) across >= 60 degrees of stick angle; theta
-   keeps the 2 s mean but only from samples taken while the stick was held steady (direction change < 20 degrees).
-3. Log in `WS_FACE_ZIP` the frozen h/theta and the takeoff time.
-Acceptance: zips with up/down/left/right go to the same sides as walking with the same stick in that camera pose.
-The camera swing and web line visual stay out of scope.
+1. At a face-jump takeoff with source=walk, compute the jump's own mapping from that one pair: theta_t = angle of the
+   walking direction on the face (e_up, e_side) minus h * angle of the stick, h = the current mirror only if
+   mirror_agree / mirror_total >= 0.8, else the last h that met 0.8 in this hold (start value +1).
+2. The zip of that jump uses theta_t and that h. Standing jumps (source=none) use the last theta_t/h of this hold that
+   is < 10 s old, else the current model (as now).
+3. `WS_FACE_ZIP` adds `theta_takeoff_deg`, `h_used`, `mapping_source=takeoff|recent_takeoff|model`.
+Acceptance: zip with stick up/down/left/right goes the same way as walking with that stick. The body turn during the zip
+is the game's and stays (logged by task 3's facing line at the zip too).
+
+## Task 5 — read-only snapshot of the game's ground / air state (decides falling and landing work)
+Fact: the game does not move an airborne hero while the gravity is a wall up, and our infinite plane clamp holds the hero
+above nothing after walking off the wall (DontFall). Falling and landing on any surface need the game's own ground/air
+state (analysis sections 5-6). Read-only diagnostic; no write.
+Do:
+1. Every 0.25 s while the hero exists (with or without a hold), copy the hero object bytes 0x000-0xFFF with a guarded
+   read (stop at the first unreadable 0x100 block, log the readable size once) into a ring of 240 snapshots with a label:
+   F = hold, pinned, not in a face jump, stick < 0.2; W = hold, pinned, walking (stick > 0.5, game step > 0);
+   J = hold, face jump in the air (t 0.1-0.3 s after takeoff); H = hold, pinned, stick > 0.5 and game step 0 for >= 10
+   frames (stuck or walked off the wall); G = no hold, world-vertical gravity, |game y step| < 0.002 m for 10 frames;
+   A = no hold, world-vertical gravity, falling (y speed < -3 m/s from positions); other = no label.
+2. When the hold ends by B and again at game exit, for each 4-byte offset classify it (byte flag / small int / float /
+   pointer-like) and report offsets whose values separate {F, W, G} from {J, A} with no overlap (and say where H falls),
+   at most 64 lines `WS_STATE_CANDIDATE off=0x.. type= ground_values= air_values= H_values=`. Also print the label counts.
+3. Same for the hero Transform object bytes 0x00-0xFF (rotation rows), label-wise means for J vs W
+   (`WS_STATE_TRANSFORM`), <= 16 lines.
+Acceptance: the log has label counts with >= 4 snapshots for each of F, W, J, G, A and the candidate list (empty is a
+valid result). No gameplay change.
 
 ## Not in scope (recorded, later tasks)
-Body facing during jumps, zip camera swing and web line visual, charge jump, velocity search, mover editing, live camera
-search, L3 lock.
+Falling after walking off the wall and landing on other surfaces (needs task 5), jump arc/landing timing, rotation writes,
+zip camera swing and web line visual, charge jump, velocity search, mover editing, live camera search, L3 lock.
 
 ## Order and reporting
-Task 1, Task 2, Task 3A, Task 4, Task 5 (one commit each, push after each). Cloud verification and handoff as before: build, test.sh, smoke_windows, test_hooks_windows
-(record flaky reruns exactly), package, `docs/CLOUD_VERIFIED.txt`, `docs/CODEX_RESULT.md`, analysis file. Finish with
-STATUS / CHANGED / RESULT / NEED; NEED lists the owner test: `Update-WS.cmd` -> Install mods -> Run modded game; ~20 s
-idle in freeroam; WS -> stop x3 (wait 3 s standing after each); stand still on the face 10 s; walk up/down/left/right
-5 s each, then walk a long way (> 20 m) along the wall and stand 10 s there; walking jumps and standing jumps with
-the stick up/down/left/right x2; web zips up/down/left/right; return the newest
+Task 1, Task 2, Task 3, Task 4, Task 5 (one commit each, push after each). Cloud verification and handoff as before:
+build, test.sh, smoke_windows, test_hooks_windows (record flaky reruns exactly), package, `docs/CLOUD_VERIFIED.txt`,
+`docs/CODEX_RESULT.md`, analysis file. Finish with STATUS / CHANGED / RESULT / NEED; NEED lists the owner test:
+`Update-WS.cmd` -> Install mods -> Run modded game; ~20 s idle in freeroam; WS -> stop x3 (wait 3 s standing after each);
+walk toward the ground 5 s twice (once with the camera turned 180 deg), then up/left/right 5 s each; walking jumps
+up/down/left/right once each and one standing jump; web zips up/down/left/right; walk off the edge of the wall once and
+wait 3 s, then B; without WS on the street: stand 3 s, run 3 s, jump twice; return the newest
 `logs\MSM2-WS-v0.1c48-<timestamp>.log` and captioned videos.
