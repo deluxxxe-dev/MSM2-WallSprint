@@ -1,11 +1,11 @@
-# Next task — M13: remove jerks in the face-as-ground state (stop transition, re-approach loop, walking down)
+# Next task — M13: remove jerks (stop transition, re-approach loop, walking down) + face jump speed + web zip direction
 
 Branch `codex/v01c20-edi-value-provenance` (no main merge, no force-push). Previous task text:
 `analysis/CODEX_NEXT_ARCHIVE_M12_20261111.md`. Read first: `analysis/M12_OWNER_RESULT_20261111.md` (evidence for every
 item), then `analysis/M11_OWNER_RESULT_20261111.md` and the M10z sections at the end of
 `analysis/M8_JUMP_PLAN_20261106.md`.
 
-Owner priority from now: **no jerks**. Minimum requirement of the mod: on a wall the hero moves exactly like on the
+Owner (2026-11-11): stop from WS is now stable; its remaining jerks must go, and the other items continue in parallel. Minimum requirement of the mod: on a wall the hero moves exactly like on the
 ground, no shaking or jerks. Terms: WS = Wall Sprint (this mod), WR = vanilla Wall Run.
 Accepted, do not regress: walking on the face in all four directions; stop from WS ends standing (3 of 3).
 
@@ -43,14 +43,44 @@ B. Only if A still shows more than one landing or the hero does not stand: log f
    report the trace instead of guessing.
 Camera jerk during the stop: record what is seen, do not change camera code in this task.
 
+## Task 4 — face jump: ground-like directional speed
+Fact: takeoff in-plane speed is the instantaneous walking step at the press (1.0-5.2 m/s; up jumps 1.0-1.8 m/s); a face
+jump lasts ~0.4 s, so the hero drifts 0.4-2 m (owner: slow drift, unlike a ground directional jump). The takeoff
+direction already matches walking (analysis section 4). Owner also saw all jumps travel "into the screen".
+Do:
+1. Takeoff speed = mean in-plane walking speed over the last 0.3 s (not one step), with a floor of 5 m/s whenever the
+   stick is pushed (> 0.5) and a walking direction is known; keep the direction as now.
+2. Face jump airtime: launch along the normal for 1.8 m height as now; keep the in-plane velocity constant in the air
+   (no decay) unless the stick steers.
+3. Trace each face jump: at takeoff and at landing log the hero position split into (e_up, e_side, normal) relative to
+   the takeoff point, the takeoff velocity, the stick and the source (`WS_FACE_JUMP_TRACE`, <= 60). This checks the
+   owner's "into the screen" against the logged direction.
+Acceptance: walking or standing-with-stick jumps travel ~2 m or more in the stick/walking direction with the same arc
+feel as a ground jump.
+Body facing during jumps (game yaw, world-horizontal) stays out of scope; record what the owner sees.
+
+## Task 5 — web zip: stable direction
+Fact: the zip uses the walking-learned mapping (h, theta) of the last 2 s, which changes between zips because the game
+camera swings after each zip: h/theta -1/177, +1/136, -1/-18, -1/126 deg in one run; stick left once went to the right
+(analysis section 5). The game's own zip motion/facing is also still visible.
+Do:
+1. Freeze the mapping at the face jump takeoff (h, theta at that moment) and use the frozen mapping for steering and
+   the zip of that jump; never update it in the air.
+2. h may change only after >= 30 consistent samples (>= 80 % agreement) across >= 60 degrees of stick angle; theta
+   keeps the 2 s mean but only from samples taken while the stick was held steady (direction change < 20 degrees).
+3. Log in `WS_FACE_ZIP` the frozen h/theta and the takeoff time.
+Acceptance: zips with up/down/left/right go to the same sides as walking with the same stick in that camera pose.
+The camera swing and web line visual stay out of scope.
+
 ## Not in scope (recorded, later tasks)
-Face jump speed/feel and body facing, web zip direction and camera swing, charge jump, velocity search, mover editing,
-live camera search, L3 lock. Do not change the M12 jump/zip direction code in this task.
+Body facing during jumps, zip camera swing and web line visual, charge jump, velocity search, mover editing, live camera
+search, L3 lock.
 
 ## Order and reporting
-Task 1, Task 2, Task 3A. Cloud verification and handoff as before: build, test.sh, smoke_windows, test_hooks_windows
+Task 1, Task 2, Task 3A, Task 4, Task 5 (one commit each, push after each). Cloud verification and handoff as before: build, test.sh, smoke_windows, test_hooks_windows
 (record flaky reruns exactly), package, `docs/CLOUD_VERIFIED.txt`, `docs/CODEX_RESULT.md`, analysis file. Finish with
 STATUS / CHANGED / RESULT / NEED; NEED lists the owner test: `Update-WS.cmd` -> Install mods -> Run modded game; ~20 s
 idle in freeroam; WS -> stop x3 (wait 3 s standing after each); stand still on the face 10 s; walk up/down/left/right
-5 s each, then walk a long way (> 20 m) along the wall and stand 10 s there; return the newest
+5 s each, then walk a long way (> 20 m) along the wall and stand 10 s there; walking jumps and standing jumps with
+the stick up/down/left/right x2; web zips up/down/left/right; return the newest
 `logs\MSM2-WS-v0.1c48-<timestamp>.log` and captioned videos.
