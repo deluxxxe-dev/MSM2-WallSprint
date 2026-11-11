@@ -700,7 +700,7 @@ std::atomic<double> wgiRt{0}; std::atomic<unsigned> wgiL3Edges{0}; std::atomic<f
 // M10z-r11: air dash. While a wall-gravity hold is in the air (gfAir), A is not given to the game (its air action
 // direction is world-horizontal and failed facing up/down the face); the force adds a dash along the camera forward
 // projected on the face instead (15 m/s, decays with 0.4 s).
-std::atomic<bool> gfAir{false}, gfFaceAirNow{false}; std::atomic<unsigned> gfDashReq{0}, gfFaceDiag{0}, gfZipLogs{0}, gfZipReq{0}; extern std::atomic<float> wgiLx, wgiLy;
+std::atomic<bool> gfAir{false}, gfFaceAirNow{false}; std::atomic<unsigned> gfDashReq{0}, gfFaceDiag{0}, gfZipLogs{0}, gfZipReq{0}, gfFaceInLogs{0}; extern std::atomic<float> wgiLx, wgiLy;
 enum : int { kChIdle, kChHold, kChGive, kChSwallow };
 std::atomic<int> chState{kChIdle}; std::atomic<std::uint64_t> chStart{0}, chGiveUntil{0}; unsigned chLogs{};
 // M10t: the jump height of the last WS jump release (normal 1.8 m, charge 15 -> 39 m like the ground curve) for the
@@ -1233,6 +1233,11 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   if (gfL.pinned && !gfL.faceAir && !sbBlendQpc.load(std::memory_order_relaxed) && wgiPresses.load(std::memory_order_relaxed) != gfL.pinPresses) {
     for (int i = 0; i < 3; ++i) gfL.airVel[i] = gfL.moveDirT < 0.2f ? gfL.moveVel[i] : 0.f;   // M10z-r15: keep the walking velocity
     { float v = std::sqrt(2.f * kGfG * 1.8f); for (int i = 0; i < 3; ++i) gfL.vg[i] = n0[i] * v; for (float& c : gfL.dash) c = 0.f; }   // M10z-r18 launch
+    // M10z-r19: the in-plane takeoff direction comes from the stick (verified WS camera mapping), not from the game's face walk.
+    { float st[3]; faceAirDir(n0, st); float pp[3]{}, rr[3]{}; bool ax = faceScreenAxes(n0, pp, rr);
+      for (int i = 0; i < 3; ++i) gfL.airVel[i] = st[i] * 5.f;
+      if (gfFaceInLogs.fetch_add(1) < 60) msm2::writeLog("WS_FACE_JUMP_INPUT stick=%.2f,%.2f axes=%u screen_fwd=%.2f,%.2f,%.2f screen_right=%.2f,%.2f,%.2f dir=%.2f,%.2f,%.2f n=%.2f,%.2f,%.2f",
+        wgiLx.load(), wgiLy.load(), unsigned(ax), pp[0], pp[1], pp[2], rr[0], rr[1], rr[2], st[0], st[1], st[2], n0[0], n0[1], n0[2]); }
     // M10z-r13 (owner irregular run: with no stores the game's own face jump was smooth): the face jump is the game's;
     // the hero stays in the face state (no unpin, no launch, no dash), only world-y drop undo and the wall bound remain.
     gfL.pinPresses = wgiPresses.load(std::memory_order_relaxed);
@@ -1256,7 +1261,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     gfL.faceAirT += dt;
     for (int i = 0; i < 3; ++i) gfL.vg[i] -= kGfG * n0[i] * dt;
     float st[3]{}; faceAirDir(n0, st);
-    if (std::fabs(st[0]) + std::fabs(st[1]) + std::fabs(st[2]) > 0.3f) { float k = std::fmin(1.f, dt * 2.5f); for (int i = 0; i < 3; ++i) gfL.airVel[i] += (st[i] * 6.f - gfL.airVel[i]) * k; }
+    if (std::fabs(st[0]) + std::fabs(st[1]) + std::fabs(st[2]) > 0.3f) { float k = std::fmin(1.f, dt * 6.f); for (int i = 0; i < 3; ++i) gfL.airVel[i] += (st[i] * 5.f - gfL.airVel[i]) * k; }
     { unsigned zr = gfZipReq.load(std::memory_order_relaxed); if (gfL.zipSeen == 0) gfL.zipSeen = zr;
       if (zr != gfL.zipSeen) { gfL.zipSeen = zr; float z[3] = {st[0], st[1], st[2]}; float zl = std::sqrt(z[0] * z[0] + z[1] * z[1] + z[2] * z[2]);
         if (zl < 0.3f) { for (int i = 0; i < 3; ++i) z[i] = gfL.airVel[i]; zl = std::sqrt(z[0] * z[0] + z[1] * z[1] + z[2] * z[2]); }
@@ -1297,7 +1302,8 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   if (mvB) {   // M10z-r9: landing also when the sweep stops our motion into the face for 3 calls
     float an = (mvA[0] - p0[0]) * n0[0] + (mvA[1] - p0[1]) * n0[1] + (mvA[2] - p0[2]) * n0[2];
     float vn = gfL.vg[0] * n0[0] + gfL.vg[1] * n0[1] + gfL.vg[2] * n0[2];
-    if (!gfL.pinned && gfL.left && vn < -1.f && std::fabs(an - gmB.lastAn) < 0.005f) { if (++gmB.n >= 3) { gfL.pinned = true; gfL.pinT = 0; gfL.pinPresses = wgiPresses.load(); for (float& c : gfL.vg) c = 0.f; gfL.vy = 0.f;
+    // M10z-r19 (log 20261111-165651 test 2: landed at d = 0.87 m, hero kept the fall state): only the mover path may use it.
+    if (ws::drive::wsGravityMover.load(std::memory_order_relaxed) && !gfL.pinned && gfL.left && vn < -1.f && std::fabs(an - gmB.lastAn) < 0.005f) { if (++gmB.n >= 3) { gfL.pinned = true; gfL.pinT = 0; gfL.pinPresses = wgiPresses.load(); for (float& c : gfL.vg) c = 0.f; gfL.vy = 0.f;
         msm2::writeLog("WS_GRAVITY_FORCE_WALL_LANDED t=%.2f plane=mover_sweep_blocked d=%.2f", gfL.t, an); } }
     else gmB.n = 0;
     gmB.lastAn = an;
