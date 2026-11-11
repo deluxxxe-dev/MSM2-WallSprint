@@ -1,0 +1,263 @@
+{
+  "date_jst": "2026-11-12",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "baseline": "e660a629f0fc8f81b3b3176628435cf5d800c8b4",
+  "implementation_commits": {
+    "1": "fa6a9ecb28645d4f719cb71b83a9201d699d2328",
+    "2": "6190feede54a3efc069ede19839eafe2f1bb97ff",
+    "3": "b1b296809c3ac0d6acc0deba4a9fb39897f52a50",
+    "4": "f7887123e100186775c4daaf4c55ad6ee82b9f32",
+    "5": "314b0142568d4044ceb1958b0d2e374a8528a7b9"
+  },
+  "qa_commits": [
+    "10026db7d7524194265c001d769a47fa8883a30b",
+    "8199385f0db40874aabfae8eaa0e6cf93ad3a434",
+    "f1845eb238e472c3b5ccf31e1f4ff47d3e4c3fec"
+  ],
+  "source_tree": "5ce84df07b883e3a58fcf421ce0b055c095fd042",
+  "commands": {
+    "build": {
+      "exit_code": 0,
+      "log_sha256": "2fcafa762422bd4268f07550b25185c191d67f3e49eb5d993b261033a099ee8b",
+      "PASS": 0,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": [],
+      "cwd": "source",
+      "command": "bash tools/build_windows.sh",
+      "attempts": 1
+    },
+    "portable": {
+      "exit_code": 0,
+      "log_sha256": "5aaee90e477c0ee449b5ddb3f0701f3725c5ea1e8f74dd6b0d414b552f8fce72",
+      "PASS": 59,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": [],
+      "cwd": "source",
+      "command": "bash tools/test.sh",
+      "attempts": 1
+    },
+    "smoke": {
+      "exit_code": 0,
+      "log_sha256": "ac877e7f7a87e76a3e786ddc33902ee3c3ebf7dd217226a29157834385caf625",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": [],
+      "cwd": "source",
+      "command": "bash tools/smoke_windows.sh",
+      "attempts": 1
+    },
+    "hooks": {
+      "exit_code": 0,
+      "log_sha256": "f9ef1f631ef20282a3716f33bc503bfb273e51db4984ee3850f122a90a6d547e",
+      "PASS": 907,
+      "SKIP": 5,
+      "UNAVAILABLE": 17,
+      "FAIL": 0,
+      "assertions": [],
+      "cwd": "source",
+      "command": "bash tools/test_hooks_windows.sh",
+      "attempts": 2
+    },
+    "package": {
+      "exit_code": 0,
+      "log_sha256": "ea15817b51246d679491e1c29c49dd38d0c8380d21b99f892b09c1c67e3baa45",
+      "PASS": 2,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": [],
+      "cwd": "source",
+      "command": "python3 tools/package.py",
+      "attempts": 1
+    }
+  },
+  "final_source_hook_attempts": {
+    "hooks-attempt1": {
+      "exit_code": 143,
+      "log_sha256": "0411b3da99394210b410055908f902936f148f1a6405549f78be3f651c552822",
+      "PASS": 12,
+      "SKIP": 2,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    },
+    "hooks-attempt2": {
+      "exit_code": 0,
+      "log_sha256": "f9ef1f631ef20282a3716f33bc503bfb273e51db4984ee3850f122a90a6d547e",
+      "PASS": 907,
+      "SKIP": 5,
+      "UNAVAILABLE": 17,
+      "FAIL": 0,
+      "assertions": []
+    }
+  },
+  "final_source_hook_retries": 1,
+  "orientation_isolated_retries": {
+    "orientation-retry1": {
+      "exit_code": 3,
+      "log_sha256": "52333210f7bd372b06abc0ff49c6e037fc326d4720246b591e0d69e420220925",
+      "PASS": 0,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": [
+        "Assertion failed: windows[0].hits>0, file src/msm2/orientation_trace_smoke.cpp, line 35"
+      ]
+    },
+    "orientation-retry2": {
+      "exit_code": 0,
+      "log_sha256": "5b891020e4b045d5d7c9d62b20055cefad88d97478ef1bac17c6cd033fe49abb",
+      "PASS": 1,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    }
+  },
+  "hooks_attempt1_hang": {
+    "reason": "unchanged independent orientation_trace_smoke produced no final output/progress for multiple minutes",
+    "processes": [
+      [
+        71903,
+        "03:22",
+        "/workspace/MSM2-WallSprint/source/build/windows/orientation_trace_smoke.exe"
+      ]
+    ],
+    "root": 71517,
+    "before_stop": "12 PASS; no assertion failure observed; suite incomplete"
+  },
+  "hooks_repeat_scope": "Final-tree canonical attempt1 stuck in independent orientation_trace_smoke for3m22s; deliberately terminated143,12 PASS, no assertion observed before termination. Unchanged isolated binary under120s outer watchdog: first exit3/windows[0].hits>0 line35 (42 native calls,captured0),second exit0/PASS1. Canonical full attempt2 repeated unchanged. camera_ref not linked by this fixture; precise nondeterminism cause UNKNOWN. No source/assertion/window/freshness/gate change or manually skipped suite step.",
+  "artifacts": {
+    "source/build/windows/WallSprint.dll": {
+      "bytes": 17473416,
+      "sha256": "46c2c72ccda5fe0bfb102586570535a5a3a1b7189ab0fbcbde9398501f445c95"
+    },
+    "source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled": {
+      "bytes": 3226437,
+      "sha256": "24e6115233cbeab8b4f9aaf963d00598345b49f4f394c5800d83c45c1370562c"
+    }
+  },
+  "artifact_checks": [
+    "CRC",
+    "exact three members",
+    "built/packaged DLL equality",
+    "both shipped WS face switches1"
+  ],
+  "pre_native_tree_validation": {
+    "source_tree": "5944e8b7f79b5bf285adfcd12c9c6e7c27556a78",
+    "runs": {
+      "build": {
+        "exit_code": 0,
+        "log_sha256": "2fcafa762422bd4268f07550b25185c191d67f3e49eb5d993b261033a099ee8b",
+        "PASS": 0,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "FAIL": 0,
+        "assertions": []
+      },
+      "portable": {
+        "exit_code": 0,
+        "log_sha256": "9377a568104642863db43e259051adb72bf6af4450c47f03d3dea19ca74792ef",
+        "PASS": 59,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "FAIL": 0,
+        "assertions": []
+      },
+      "smoke": {
+        "exit_code": 0,
+        "log_sha256": "ac877e7f7a87e76a3e786ddc33902ee3c3ebf7dd217226a29157834385caf625",
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "FAIL": 0,
+        "assertions": []
+      },
+      "package": {
+        "exit_code": 0,
+        "log_sha256": "ea15817b51246d679491e1c29c49dd38d0c8380d21b99f892b09c1c67e3baa45",
+        "PASS": 2,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "FAIL": 0,
+        "assertions": []
+      },
+      "hooks-attempt1": {
+        "exit_code": 143,
+        "log_sha256": "3762818af703d1bf336d15c9936cbee8aa502fa124bb2a312c81af11ce7b9be9",
+        "PASS": 16,
+        "SKIP": 3,
+        "UNAVAILABLE": 0,
+        "FAIL": 0,
+        "assertions": []
+      }
+    },
+    "reason": "Native evidence boundary audit: worker polls must not provide game fall or three-frame landing evidence. Hook run deliberately terminated143 after16 PASS, no assertion failure observed; all suites repeated on final source."
+  },
+  "pre_identity_tree_validation": {
+    "source_tree": "a3fbe0a001544a7c5d64893e6ad232539d84d267",
+    "runs": {
+      "build": {
+        "exit_code": 0,
+        "log_sha256": "2fcafa762422bd4268f07550b25185c191d67f3e49eb5d993b261033a099ee8b",
+        "PASS": 0,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "FAIL": 0,
+        "assertions": []
+      },
+      "portable": {
+        "exit_code": 0,
+        "log_sha256": "0be4800983b3df08695b12f6e6cad0040629769c7a3a9f9fcb303e0630485de7",
+        "PASS": 59,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "FAIL": 0,
+        "assertions": []
+      },
+      "smoke": {
+        "exit_code": 0,
+        "log_sha256": "ac877e7f7a87e76a3e786ddc33902ee3c3ebf7dd217226a29157834385caf625",
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "FAIL": 0,
+        "assertions": []
+      },
+      "package": {
+        "exit_code": 0,
+        "log_sha256": "ea15817b51246d679491e1c29c49dd38d0c8380d21b99f892b09c1c67e3baa45",
+        "PASS": 2,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "FAIL": 0,
+        "assertions": []
+      },
+      "hooks-attempt1": {
+        "exit_code": 143,
+        "log_sha256": "e02ebb0f982d948ab33a27ae5dcd34c9a6124fd19372e5bdd7767216b4f7de25",
+        "PASS": 29,
+        "SKIP": 3,
+        "UNAVAILABLE": 0,
+        "FAIL": 0,
+        "assertions": []
+      }
+    },
+    "reason": "Final review found the axes writer needed pinned hold/phase/native-call Transform identities; incomplete owned hook run terminated143 before mutation. No assertion failure observed. All five suites repeated on final tree; aborted run is not a hook PASS or CLOUD_VERIFIED source tree."
+  },
+  "focused_checks": "Production per-task Windows Werror cross-compiles and actual-helper ASan/UBSan fixtures passed. Initial four-rise fixture double-counted threshold crossing; corrected explicit sequence without changing production threshold. Fixture indentation and duplicate-local-name compile issues fixed without assertion/gate relaxation. QA adds actual hop integration, stick/gap refusals, scale preservation and final identity binding/native frame endpoint evidence.",
+  "owner_game_acceptance": "UNKNOWN",
+  "engine_ground_probe_interpretation": "HYPOTHESIS: three game-down speeds<2 after fall may indicate contact; no alternate rule invented",
+  "rendered_rotation_ownership": "UNKNOWN: owner decision uses overwritten_next_call and video; no additional search",
+  "stop_hop_domain": "measured signed distance finite0..0.8m; other starts refuse; solved target0.35s quantized to native frame",
+  "snapshot_queries": "ground F/W/G >=10 each vs A>=10, independently vs H>=5; J/L information only;64 candidates/query",
+  "safety": "Existing exact-build/SHA/pdata, F8/INI/default-OFF and B/new-WS endings retained; new facing switch shipped1. Writer only captured hold/phase/native-call Transform,4000 committed xyz-row writes/hold, W and validated row scales preserved.",
+  "wisdoms_reference": "d79bdcbbb4a1f8c9367063a5b59b6af3d502bef4; canonical M15 correction already present; no new runtime fact or cross-repository edit in M16",
+  "raw_user_evidence": "Only committed M15/M14 derived analyses supplied; no raw log/video attached to this cloud turn."
+}

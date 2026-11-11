@@ -157,3 +157,23 @@ failure observed) for this correction; build/59 portable/7 smoke/package had
 passed on that tree. These prior results are retained separately, never used to
 certify the final tree. All five suites are repeated after this audit. No test
 threshold/deadline changed and no incomplete hook run is treated as PASS.
+
+
+## Final cloud verification / handoff
+Final source5ce84df07b883e3a58fcf421ce0b055c095fd042, native-evidence QA f1845eb:
+Windows build,59 portable,7 smoke,907 hooks,2 package PASS; all final commands
+exit0,5 existing private-input SKIP/17 UNAVAILABLE retained, no manual skip/test
+weakening. Final-tree hooks attempt1 hung at orientation_trace and terminated143
+after12 PASS; unchanged isolated attempt1 exit3 at windows[0].hits>0 line35,
+attempt2 PASS, then canonical full attempt2 PASS. Exact history in JSON; cause
+UNKNOWN, camera_ref not linked, no deadline/assertion/gate changed. CRC/exact member set/current DLL equality/required
+shipped keys verified. Exact full commits/commands/log/artifact hashes and both
+prior-tree deliberate143 terminations are in M16_CLOUD_VALIDATION_20261112.json.
+Neither partial hook run is a certificate; all suites repeated after corrections.
+
+Wisdoms canonical d79bdcbbb4a1f8c9367063a5b59b6af3d502bef4 consulted; its M15
+correction already distinguishes game-owned WORLD-down fall from WS-controlled
+face-jump zero steps. No new actual engine fact/cross-repository edit in this
+cloud implementation. Owner game acceptance/ground-probe and rendered rotation
+ownership remain UNKNOWN. See current CODEX_RESULT for the exact one-run owner
+sequence, decision evidence, stops/row/type guards and deferred scopes.

@@ -1,3 +1,161 @@
+# M16 result — face fall, small stop hop, bounded air facing and steady mappings (2026-11-12 JST)
+
+STATUS: implementation pushed to `codex/v01c20-edi-value-provenance`; final cloud
+verification below. Owner game acceptance UNKNOWN. Task baseline e660a62;
+M15/M14 derived results and current repository/CLAUDE instructions read. No raw
+owner log/video was attached to this cloud turn. No game/owner-PC execution,
+main merge or force push. Both seamless movement and retained face-gravity
+falling until B/new WS remain mandatory, not claimed complete from cloud tests.
+
+## Ordered task commits
+
+| Task | Commit | Resulting behavior |
+|---|---|---|
+| 1 | `fa6a9ec` | Four rising game world-down speed frames>6m/s (rise>=0.25/frame) release the plane. Carry pre-fall walking velocity, ignore game positions, integrate -u once. Three speeds<2 end via game_fall_ended; closing to original plane within0.02m is the other defined landing. |
+| 2 | `6190fee` | Solve stop-only launch/gravity for actual d0, apex d0+0.15m and plane return at0.35s. Normal face-jump gravity33 unchanged. Logs d0/v/g_hop. |
+| 3 | `b1b2968` | Code-default0/shipped1 WS_FACE_AIR_FACING; coherent handedness-preserving Transform xyz row experiment on native hero calls during face air/fall,4000 writes/hold, W untouched; per-phase overwrite/deviation counts. |
+| 4 | `f788712` | Cached walking pairs require continuous0.3s, stick AND walking angle span<10deg and speed>2m/s. Direct walking takeoff preserved without poisoning cache. Log pair_steady_s. |
+| 5 | `314b014` | Independent ground{F,W,G} vs A and vs H queries (H minimum5); J reference-only; L released face fall,420 total slots in seven60-snapshot reservoirs. |
+
+Each task was committed/pushed separately in order. QA10026db preserves row
+lengths, rechecks current WS inside the store and strengthens hop integration/
+steady-cache tests. Identity audit8199385 pins the writer to hold-start AND
+phase-start Transform/generation, and the ACTUAL current native-call Transform;
+it cannot follow a republished snapshot to a new Hero. Published task commits
+remain intact. Native-evidence audit f1845eb requires both frame endpoints to
+be native hero calls: worker polls and the first call after them cannot train
+pairs or produce a false three-frame landing. Final source tree:
+`5ce84df07b883e3a58fcf421ce0b055c095fd042`.
+
+All gameplay/diagnostic logic is in `source/src/NativeHooks/camera_ref.cpp`;
+`drive_command.hpp`, `telemetry.cpp`, `mod/WallSprint.ini` only wire the required
+new INI switch. Actual-helper tests: `test_face_walkoff.py`,
+`test_face_landing.py`, `test_face_physics.py`, `test_face_air_facing.py`,
+`test_face_control.py`, `test_state_snapshots.py`, wired into `tools/test.sh`.
+Analysis: `analysis/M16_FACE_CONTROL_20261112.md`; exact commits/commands/log/
+artifact hashes: `analysis/M16_CLOUD_VALIDATION_20261112.json`.
+
+## Admission, corrections and unresolved acceptance
+
+M15's broad "game air steps are zero" claim is corrected: game-owned airborne
+motion under wall up can fall in WORLD down; WS-controlled face jumps were the
+observed zero-step case. Wisdoms d79bdcb already records this M15 correction and
+was consulted. No new runtime engine fact or cross-repo edit is claimed here.
+
+Face fall does not take the game's world-down speed as launch velocity, does not
+undo its own fall, and ignores desired game positions on every hero SetPosition
+call (later calls cannot integrate again). General gravity33 along held -u and
+the30m/s total velocity/zip cap remain. Original-plane landing requires closing
+to it, not moving farther below it. The game-fall-ended landing is exactly the
+specified HYPOTHESIS; no contact/collision certificate or extra rule is invented.
+WS_FACE_FALL gives release/land/end time, up/planar velocity and plane distance,
+plus valid native game y/up/planar steps every fifth model frame,<=300 sample
+lines/hold. Fall t is accumulated valid-frame time; gaps are not bridged. If another
+surface never ends the fall, inspect that bounded near-contact trace; do not
+substitute another guessed rule. No new native hook/signature, mover or search.
+
+Stop arc: r=sqrt(0.3)+sqrt(2*(0.15+d0)); g_hop=r*r/0.35², v=sqrt(0.3*g_hop).
+Measured finite d0 in0..0.8m is admitted; other starts refuse this hop. Last-step
+integration is truncated to0.35s and landing occurs on the first native frame
+at/after it. Actual airtime logs carry frame quantization. No A injection or
+normal-jump change. Standing/no-visible-shift remains an owner check; if crawl
+returns, report it, with airtime the next variable rather than height tuning.
+
+Air facing verifies the current right/up/forward rows before the first write,
+uses their sign, preserves their lengths and every W bit, and stores only nine
+xyz floats. Noncoherent/nonfinite/unreadable/nonwritable/identity-changed inputs
+refuse. Full readback equality is rechecked inside the guarded callback, along
+with F8/hold/phase/native identity/new WS/switch gates. Worker/mover paths have no
+native call identity and cannot write. Targets use takeoff planar/known walking
+or WS-travel direction, retarget to zip direction; unknown directions refuse.
+Per-phase WS_FACE_AIR_FACING writes/overwritten_next_call/max_dev_deg are evidence,
+not rendered-body ownership proof. Landing's final correction/readback is before
+phase termination; no rotation store or restore is made after landing. B/new WS/
+F8 end it. If the game overwrites almost every call and the owner still sees a
+turn, report that decision; do not search further in this task.
+
+Stable cached pairs span an actual continuous0.3s window, with circular pairwise
+spans<10deg for both angles. Turning/slow/gap samples retain the previous stable
+pair. Model/none uses any-age stable cache or regression only if none exists.
+Direct walking takeoff remains its accepted single pair, logs steady_s=0 and
+cannot update the stable cache. No camera/regression tuning.
+
+Snapshots remain guarded/read-only,50ms, newest60/label F/W/J/H/G/A/L. Two query
+coverage/count lines distinguish uncovered empty from covered empty. A requires
+its own10, H its own5 and both require10 each F/W/G; J/L do not block or certify
+a query. They are printed for information only. At most64 candidates/query;
+selected full value sets fit their bounds, and missing selected data refuses.
+No offset/semantic/write permission inferred. Existing W-vector correlations,
+finite J/W Transform means and B/60s/loss/exit reports remain. No raw buffers in
+logs/Git. Actual candidates/coverage are UNKNOWN until owner evidence.
+
+Exact-build/SHA/pdata, INI/default-OFF code, F8 and B/new-WS endings retained.
+Only the requested new facing switch is newly shipped1. No camera jerk, lateral
+animation lag, zip camera/web-line, charge, velocity search, mover editing,
+live camera search or L3 work; their causes are not solved by these changes.
+
+## Final cloud validation and repeat accounting
+
+Final source5ce84df: Windows build PASS; portable59 PASS; smoke7 PASS;
+full hooks907 PASS (5 existing private-input SKIP/17 UNAVAILABLE notices);
+package2 PASS, every final command exit0. No manually skipped
+suite step, weakened assertion, freshness deadline or admission gate. Final-tree
+canonical hooks attempt1 hung in unchanged orientation_trace_smoke for3m22s and
+was terminated143 after12 PASS. Same isolated binary: attempt1 exit3 at
+windows[0].hits>0,line35 (native calls42,captured0); attempt2 PASS/exit0. Full
+canonical attempt2 then passed907 on the same tree. Precise cause UNKNOWN; this
+fixture does not link camera_ref. The isolated outer120s watchdog changes no
+fixture window/assertion and did not expire. Exact failures/retries are in JSON.
+CRC/exact three archive members/current built DLL equality/both required shipped
+face switch keys passed. Exact hashes/counts/commits are in the validation JSON.
+Output: `source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled`;
+virtual release active member remains `MSM2-WS-v0.1c48.script`. No archive is
+placed inside Mods Library. CLOUD_VERIFIED lists only the final tested tree.
+
+Two earlier trees completed build/59 portable/7 smoke/package, but their hook
+runs were each deliberately terminated143 after16 PASS for concrete review
+corrections: phase/hold/native-call identity binding, then native frame endpoint
+evidence. No assertion failure observed in those partial runs; neither run is a
+hook PASS or cloud certificate. All five suites were rerun on final source.
+These earlier runs are source-change repeats, separate from the final-tree
+orientation failure/retry above; exact log hashes and
+statuses for all prior/final runs are retained in JSON. New fixture compile/
+sequence issues and their corrections are recorded in M16_FACE_CONTROL.
+
+## Owner test / decision evidence
+
+Run installed `MSM2-WS/Update-WS.cmd` -> Overstrike **Install mods** ->
+**Run modded game**. Update-WS fetches/builds/tests/deploys/opens the manager;
+desktop Mod-Tools launchers only launch. No old SETPOS0 comparison or identical
+M15 capture requested.
+
+1. Freeroam idle~20s.
+2. WS -> stop x3; wait3s after each. Verify standing and reduced visible shift;
+   return crawl/shift if present. Do not adjust height; next variable is airtime.
+3. Walking jumps up/down/left/right x2.
+4. Standing with stick pushed, jump and web zip up/down/left/right.
+5. Walk off the SIDE edge of a face; fall3s, then B. Verify fall along held face
+   gravity, with no world-down/hover or immediate false landing.
+6. Again walk off a TOP or BOTTOM edge toward another surface and let the hero
+   land. If landing never triggers, capture contact in video and the bounded
+   game-step trace; no guessed alternate contact rule is requested.
+7. Without WS on the street, **no RT**: stand3s,move3s,jump twice,step off a rooftop.
+8. Return newest `logs\MSM2-WS-v0.1c48-<timestamp>.log` and captioned videos.
+
+Assess WS_FACE_FALL release/land/end reason,t,v_u,v_plane,plane_d and game-step
+trace; stop d0/v/g_hop and~0.35s actual airtime; WS_FACE_JUMP_FACING landing vs
+walking forward; WS_FACE_AIR_FACING writes/overwritten_next_call/max_dev_deg;
+zip theta/source/pair_age_s/pair_steady_s; independent A/H comparison coverage
+and candidates with J/L information only. If nearly every call is overwritten
+and visible turns remain, report that result; do not search elsewhere in M16.
+
+Actual seamless motion, standing/shift, rendered orientation, mappings, other-
+surface contact and diagnostic offsets remain UNKNOWN until this owner run.
+Camera takeoff jerk, lateral landing-animation lag, zip camera/web line and other
+listed later tasks are recorded, not solved or advanced here.
+
+---
+
 # M15 result — single gravity, walking-pair mapping, state coverage and walk-off release (2026-11-12 JST)
 
 STATUS: implementation pushed on `codex/v01c20-edi-value-provenance`; final cloud
