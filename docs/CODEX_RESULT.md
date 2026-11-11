@@ -1,3 +1,113 @@
+# M12 result — stop plane and learned face-walking directions (2026-11-11 JST)
+
+STATUS: implementation/push complete; cloud validation below; actual owner-game
+acceptance UNKNOWN. Branch `codex/v01c20-edi-value-provenance`, no main merge/force.
+M11 downward walking is owner-accepted and preserved. M11 SETPOS=0 comparison is
+superseded and must not be requested again for this task.
+
+## Changes and implementation commits
+
+Task2 first: `4420744` — `camera_ref.cpp` publishes the on-WS candidate plane once
+at hold start, logs point/source on start/landing/>0.05m changes, reapproaches
+pinned non-faceAir rest >0.15m sustained >0.1s, and clamps every stop-push output
+(first/later/final push frame) to0.9m from that plane. Existing landing rule stays.
+
+Task1 second: `2979f6c` — face directions use a64-sample circular rotation/mirror
+fit from the game's per-frame face walking. No camera matrix/position reference
+remains in face axes/air direction/zip. Only eligible walking frames with raw
+stick>0.5 and planar speed>1m/s train; current frame anchors include later calls,
+subtract WS-applied corrections and pair the prior interval's raw stick. Mirror
+selection needs>=60deg span and lower circular variance over<=20s samples;
+rotation uses<=2s residuals while walking. Existing previous mirror starts+1.
+
+Takeoff keeps <0.3s measured walking velocity exactly on its first frame;
+otherwise the <20s model gives5m/s along the stick, otherwise straight normal
+jump. Air steering/active-stick zip use the model. Neutral zip uses current
+planar velocity, otherwise no added impulse.0 is no longer mistaken for an
+uninitialized zip-request counter. One input log per jump/zip includes angles,
+mirror, count/age, source, basis-relative direction and speed; no camPos fields.
+
+Known limit: rotating the camera while standing still or airborne keeps the last
+walking mapping. Walk again to refresh it; expire after20s. This task does not
+find a live camera, alter body yaw/camera swing/web line/charge height, search
+velocity, edit mover or restore L3 lock. Code defaults OFF, INI/F8/exact-build/
+pdata/SHA guards and WS-only updater isolation remain. Accepted M11 budget
+helper is byte-identical and its first/later-call thresholds/tests are preserved.
+
+Files: `source/src/NativeHooks/camera_ref.cpp`, `source/tools/test_face_control.py`,
+`source/tools/test_face_landing.py`, `source/tools/test.sh`,
+`analysis/M12_FACE_CONTROL_20261111.md`, `analysis/M12_CLOUD_VALIDATION_20261111.json`,
+`docs/CLOUD_VERIFIED.txt`, this result. Source details/limits in the M12 analysis.
+No raw logs/videos were attached to this cloud task; committed derived reports
+were read. Wisdoms was consulted in-session. No new runtime engine fact or
+cross-project edit was made; stale face-camera findings may be synchronized into
+Wisdoms by the owner/ChatGPT separately (cross-repository writes not authorized).
+
+## Validation
+
+Final tested `HEAD:source`: `85a140729f80c5a4524407050d104eb03758a0b5`.
+Production task2-only cross-compile and actual-helper ASan/UBSan tests passed
+before its push; full suites below validate both tasks together, unchanged tests.
+
+| Command (cwd source) | Result |
+|---|---|
+| `bash tools/build_windows.sh` | exit0, production warnings-as-errors |
+| `bash tools/test.sh` | exit0,44 PASS lines plus4 selector unittest cases |
+| `bash tools/smoke_windows.sh` | exit0,7 PASS lines under Wine |
+| `bash tools/test_hooks_windows.sh` attempt1 | exit3, position_orientation_integration.exe assertion at native_source_override_smoke.cpp:154 |
+| same canonical hooks attempt2 | exit0,907 PASS /5 SKIP /17 UNAVAILABLE |
+| `python3 tools/package.py` | exit0, CRC/member set/exact built DLL independently checked |
+| `git diff --check` | PASS |
+
+Initial assertion: `msm2::sample(actual) &&
+ws::dot(ws::diag::actorAxes(actual.prefix).up,normal) > .999f` in the
+WALLSPRINT_REAL_POSITION_WATCH_TEST variant. The unchanged entire canonical suite
+passed on one retry; no assertions, gates, deadlines or steps were modified or
+skipped. This historical fixture does not link camera_ref.cpp. Optional private
+historical captures/native-Windows evidence remain unavailable; those rows are
+not game passes. Early cwd-only invocation mistakes, exact counts/log hashes,
+retry and artifact hashes are recorded in M12_CLOUD_VALIDATION_20261111.json.
+
+Final source tree is listed in CLOUD_VERIFIED only after the complete retry
+passed. No production source changed between build, portable checks, smoke,
+package and hooks attempts; object timestamp confirmed the final log-field edit
+preceded camera_ref compilation.
+
+Generated package:
+`source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled` (package0.1.73;
+deployed active member `MSM2-WS-v0.1c48.script`). SHA256:
+`f9327b7aba04cd823b404ed9090265ccaee6b952bacd294f462fae07f9f9a1d5`.
+DLL SHA256:
+`48a5222a3eff2cdda9570c3b8384bb09d874fe3958bd23572b7d357a113b0b73`.
+These are generated outputs; committed source reproduces the package via the
+existing updater. Historical c48 packager wording is not evidence of the current
+experimental runtime's write behavior; the authorized M12 changes are above.
+No ZIP download or cloud access to the owner's game drive is required.
+
+## NEED — owner after publication
+
+1. Run installed `MSM2-WS/Update-WS.cmd`; Overstrike: Install mods -> Run modded
+   game. Use normal packaged SETPOS=1, mover0. Wait ~20s in freeroam.
+2. WS -> stop3 times. Each should rest within+-0.05m of the logged fixed plane,
+   with near-zero pin drop undos and a standing pose (video acceptance pending).
+3. Walk on the face up/down/left/right for a few seconds each to train the model.
+   Then walking jumps and standing jumps in all4 directions, twice each; web zip
+   in all4 directions. Caption videos with direction and walking/standing/zip.
+   After rotating the camera while still/airborne, walk again to refresh the
+   mapping. A >20s-old model deliberately stops supplying planar launch/steering.
+4. Return the newest complete `logs/MSM2-WS-v0.1c48-<timestamp>.log` plus captioned
+   videos. Directory is `<game>/Mods Library/Mods-Developing/MSM2-WS/logs`.
+   The former SETPOS=0 comparison is no longer needed. No conditional later fix
+   or extra experiment was implemented beyond current CODEX_NEXT.
+
+Implementation commits4420744 and2979f6c were pushed in the required order.
+Remote HEAD2979f6c was checked after those pushes. The final docs/analysis record
+is pushed and checked against local HEAD before the final response; it changes
+no tested source/runtime bytes, so the full pipeline is not repeated for it.
+
+---
+Historical results below are retained; M12 above is the current result.
+
 # M11 result — face screen axes and downward walking (2026-11-11 JST)
 
 STATUS: implementation and cloud checks complete; actual Windows/game acceptance pending.

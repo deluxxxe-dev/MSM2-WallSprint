@@ -1,0 +1,102 @@
+{
+  "date_jst": "2026-11-11",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "task2_commit": "44207440c50013ff4fe97230f97cf1f863b5a295",
+  "task1_commit": "2979f6c0d84191bddb0c36ceef8322040190bb67",
+  "source_tree": "85a140729f80c5a4524407050d104eb03758a0b5",
+  "commands": {
+    "build": {
+      "cwd": "source",
+      "command": "bash tools/build_windows.sh",
+      "exit_code": 0,
+      "log_sha256": "2fcafa762422bd4268f07550b25185c191d67f3e49eb5d993b261033a099ee8b",
+      "PASS": 0,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "failed_assertions": []
+    },
+    "portable": {
+      "cwd": "source",
+      "command": "bash tools/test.sh",
+      "exit_code": 0,
+      "log_sha256": "fbb3178facd3b617b351a3780ea404c8f19a1099f1504a32c9a074f3e12bfce7",
+      "PASS": 44,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "failed_assertions": []
+    },
+    "smoke": {
+      "cwd": "source",
+      "command": "bash tools/smoke_windows.sh",
+      "exit_code": 0,
+      "log_sha256": "ac877e7f7a87e76a3e786ddc33902ee3c3ebf7dd217226a29157834385caf625",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "failed_assertions": []
+    },
+    "package": {
+      "cwd": "source",
+      "command": "python3 tools/package.py",
+      "exit_code": 0,
+      "log_sha256": "ea15817b51246d679491e1c29c49dd38d0c8380d21b99f892b09c1c67e3baa45",
+      "PASS": 2,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "failed_assertions": []
+    },
+    "hooks": {
+      "cwd": "source",
+      "command": "bash tools/test_hooks_windows.sh",
+      "attempts": [
+        {
+          "exit_code": 3,
+          "log_sha256": "3023396523a2e2f2dbdacf37077f8aadf9411243b75c6d6b44d958b40a06a3da",
+          "PASS": 30,
+          "SKIP": 3,
+          "UNAVAILABLE": 0,
+          "FAIL": 0,
+          "failed_assertions": [
+            "Assertion failed: msm2::sample(actual)&&ws::dot(ws::diag::actorAxes(actual.prefix).up,normal)>.999f, file src/msm2/native_source_override_smoke.cpp, line 154\r"
+          ]
+        },
+        {
+          "exit_code": 0,
+          "log_sha256": "490e37bdd4cd5355f08901aa6afe31c1a31d4b5fc07dc995f8be10ab4d5fc858",
+          "PASS": 907,
+          "SKIP": 5,
+          "UNAVAILABLE": 17,
+          "FAIL": 0,
+          "failed_assertions": []
+        }
+      ],
+      "retry_count": 1,
+      "notes": "First position_orientation_integration.exe (WALLSPRINT_REAL_POSITION_WATCH_TEST variant) failed native_source_override_smoke.cpp:154; unchanged canonical full retry passed. No test bodies, gates, deadlines, sources or skipped steps were changed. This fixture does not link changed camera_ref.cpp."
+    }
+  },
+  "artifacts": {
+    "source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled": {
+      "sha256": "f9327b7aba04cd823b404ed9090265ccaee6b952bacd294f462fae07f9f9a1d5",
+      "bytes": 3099869
+    },
+    "source/build/windows/WallSprint.dll": {
+      "sha256": "48a5222a3eff2cdda9570c3b8384bb09d874fe3958bd23572b7d357a113b0b73",
+      "bytes": 15322217
+    }
+  },
+  "owner_windows_game_acceptance": "UNKNOWN",
+  "owner_accepted_m11_budget_helper_unchanged": true,
+  "setup_notes": [
+    "Pre-build log-speed edit initially used a root-relative path from source cwd and raised FileNotFoundError; corrected before camera_ref compilation (source mtime09:46:07UTC; object mtime09:46:40UTC).",
+    "Initial test launcher used tools/test.sh from repository root and exited127 before any test ran; corrected to source cwd. Actual portable/build/smoke/package suites each ran once."
+  ],
+  "artifact_checks": [
+    "package CRC valid",
+    "only info.json/WallSprint.ini/WallSprint.dll",
+    "packaged DLL equals newly built DLL"
+  ]
+}

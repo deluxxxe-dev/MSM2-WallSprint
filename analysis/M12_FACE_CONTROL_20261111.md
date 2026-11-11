@@ -81,3 +81,15 @@ fixtures). Pure Task2 tests remain in the portable suite.
 
 Shared Wisdoms was consulted earlier in this session. No new reusable engine
 fact is claimed from these cloud fixtures; no shared/SF/other repository edit.
+
+## Final cloud validation / publication
+Final source tree85a140729f80c5a4524407050d104eb03758a0b5: build,portable44 PASS
+plus4 selector unittest cases, Windows smoke7 PASS and package exit0. Hooks first
+failed in unchanged position_orientation_integration.exe at
+native_source_override_smoke.cpp:154 (Actor Up dot normal >.999). Entire canonical
+retry passed907 PASS/5 SKIP/17 UNAVAILABLE. No test body/gate/deadline/step was
+changed or skipped. Exact attempts/setup notes/log and artifact hashes are in
+M12_CLOUD_VALIDATION_20261111.json. CLOUD_VERIFIED is added only after full retry
+passed. Task2 commit4420744 then Task1 commit2979f6c pushed in that order; final
+record is docs-only and cannot alter tested runtime/source. Owner game acceptance
+is UNKNOWN; one normal run as in CODEX_RESULT, no SETPOS=0 repeat.
