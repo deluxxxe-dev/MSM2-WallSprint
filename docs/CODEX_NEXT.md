@@ -1,64 +1,56 @@
-# Next task — M12: face jump/zip direction from the game's own face walking; stop must end on the wall
+# Next task — M13: remove jerks in the face-as-ground state (stop transition, re-approach loop, walking down)
 
 Branch `codex/v01c20-edi-value-provenance` (no main merge, no force-push). Previous task text:
-`analysis/CODEX_NEXT_ARCHIVE_M11_20261111.md`. Read first: `analysis/M11_OWNER_RESULT_20261111.md` (evidence for
-everything below), then `analysis/M11_FACE_CONTROL_20261111.md`, `analysis/M10Z_R19_RESULT_20261111.md` and the M10z
-sections at the end of `analysis/M8_JUMP_PLAN_20261106.md`.
+`analysis/CODEX_NEXT_ARCHIVE_M12_20261111.md`. Read first: `analysis/M12_OWNER_RESULT_20261111.md` (evidence for every
+item), then `analysis/M11_OWNER_RESULT_20261111.md` and the M10z sections at the end of
+`analysis/M8_JUMP_PLAN_20261106.md`.
 
-Owner goal (minimum requirement of the mod): on a wall the hero moves exactly like on the ground, no shaking or jerks.
-Terms: WS = Wall Sprint (this mod), WR = vanilla Wall Run. M11 task 2 (walking down the face) is accepted: do not change it.
+Owner priority from now: **no jerks**. Minimum requirement of the mod: on a wall the hero moves exactly like on the
+ground, no shaking or jerks. Terms: WS = Wall Sprint (this mod), WR = vanilla Wall Run.
+Accepted, do not regress: walking on the face in all four directions; stop from WS ends standing (3 of 3).
 
-All code is in `source/src/NativeHooks/camera_ref.cpp` (`gfStep`, `faceScreenAxes`, `faceAirDir`, `sp2Detour`,
-`wgiReadDetour`, `m10GravityTest`). Keep exact-build guards, F8 kill, INI switches, code defaults OFF. One commit per task.
+All code is in `source/src/NativeHooks/camera_ref.cpp` (`gfStep`, `sp2Detour`, `m10GravityTest`). Keep exact-build
+guards, F8 kill, INI switches, code defaults OFF. One commit per task, push after each.
 
-## Task 1 — stick direction on the face from the game's own walking (face jump, air steering, web zip)
-Fact: the camera manager matrix/position (`ws_camref_this` +0xD24..+0xD54) is stale while the hero stands on the face
-(analysis section 2). Remove it from `faceScreenAxes` / `faceAirDir` / the zip. The only verified reference is the
-game's own face walking, which follows the stick correctly.
+## Task 1 — walking toward the ground must never be clipped by the fall guard
+Fact: the 6 m/s per-frame budget clips normal walking/running steps (analysis section 3).
+Do: the guard exists only to stop an unbounded fall. Replace the budget by a fall detector: allow any downward step
+while the stick is pushed, unless the downward speed (per frame) exceeds 9 m/s OR increased in each of the last 6 frames
+by more than 0.2 m/s (gravity signature, 33 m/s^2 ~ 0.55 m/s per frame). Only then undo that frame's downward part.
+Neutral stick: unchanged (no downward motion). Log every undo while the stick is pushed (speed, reason), cap 100.
+Acceptance: `WS_FACE_MOVE_SAMPLE` has no `store_dy` while walking down; owner sees no hitch.
+
+## Task 2 — the plane must follow the wall under the hero; no re-approach loop
+Fact: the plane point is frozen at the hold start and is wrong by 0.18 m elsewhere on the wall, so the M12 re-approach
+fires every 0.4 s (analysis section 2).
 Do:
-1. Face basis: `e_up` = world up projected on the face (normalised), `e_side = cross(n, e_up)`.
-2. Walking samples: while pinned, not in a face jump, raw stick magnitude > 0.5 and the game's in-plane step speed
-   > 1 m/s (step since the previous frame, per frame not per SetPosition call): stick angle `a_s = atan2(sx, sy)`,
-   step angle `a_w = atan2(dot(step, e_side), dot(step, e_up))`.
-3. Model: direction angle = `h * a_s + theta`, h = +-1 (mirror), theta = rotation. Keep a ring of the last 64 samples
-   (age <= 20 s). Fit both h = +1 and h = -1 (theta = circular mean of `a_w - h * a_s`), choose the h with the smaller
-   circular variance when the samples span >= 60 degrees of stick angle; otherwise keep the previous h (initial +1).
-   theta is always the circular mean of the samples of the last 2 s (so it follows camera turns while walking).
-4. Use:
-   - Face jump takeoff: if a walking sample is younger than 0.3 s, in-plane velocity = the game's current walking
-     velocity (direction and speed as measured); else if the model is younger than 20 s, 5 m/s along the model
-     direction of the stick; else zero (straight jump).
-   - Air steering and web zip impulse: model direction of the current stick (zip with a neutral stick: current in-plane
-     velocity direction, else no impulse).
-5. Log once per face jump and per zip: stick, a_s, h, theta (deg), sample count/age, source (walk / model / none) and the
-   resulting direction in (e_up, e_side) components. Remove the camPos fields.
-Acceptance (owner videos with captions up/down/left/right): walking in a direction and jumping continues in that
-direction; standing jumps and web zips with the stick held go where the same stick direction walks.
-Known limit (record it, do not solve here): if the camera turns while the hero is airborne or standing still, the
-model keeps the last walking mapping.
+1. While pinned and not in a face jump, when the game leaves the hero at rest (no game step along the normal for 5
+   frames), take the hero's current distance as the wall there: move the plane point along the normal so that plane_d
+   becomes 0 (low-pass, <= 0.05 m per frame). Log changes > 0.05 m (`WS_GRAVITY_FORCE_PLANE event=follow`).
+2. Re-approach only when the hero is farther than 0.3 m from the (followed) plane for > 0.2 s, and at most once per
+   second. Log the reason.
+Acceptance: no `REAPPROACH` lines while the hero stands or walks; face jumps still land.
 
-## Task 2 — stop from WS must end at the wall
-Fact: failures rest pinned 0.56 m in front of the wall-point plane with zero model velocity (analysis section 3).
-Do:
-1. Log the plane point `gfP0` (and its source) at hold start, at `WALL_LANDED`, and whenever it changes by > 0.05 m.
-2. Do not move `gfP0` while a hold is in the air phase (between hold start and landing); take it once at hold start.
-3. Pinned but off the wall: if pinned, not in a face jump, and the distance to the current plane is > 0.15 m for
-   > 0.1 s, clear the pin and continue the wall-gravity fall toward the plane (landing rule unchanged), instead of
-   holding the hero in the air. Log `WS_GRAVITY_FORCE_REAPPROACH d=`.
-4. Limit the stop push to the requested 0.9 m (currently peaks at 2.4-2.7 m): clamp the pushed distance.
-Acceptance: `WS -> stop` three times in one run: each ends with rest plane_d within +-0.05 m, `pin_drops_undone` near 0
-and the standing pose (owner video).
-The SETPOS=0 comparison of M11 task 3 is no longer needed.
+## Task 3 — one landing per stop
+Fact: each stop is push 0.9 m -> land -> game moves the hero out 0.3-1.2 m -> re-approach -> land, three times in 0.4 s
+(analysis section 1).
+Do, in this order, one owner run each (decision by `WALL_LANDED` count per stop and the owner video):
+A. Shorten the path: stop push 0.9 m / 0.25 s -> 0.5 m / 0.12 s; approach speed toward the face capped at 4 m/s; after
+   `WALL_LANDED` ignore the game's outward step (keep plane_d <= 0.02 m) for 0.3 s instead of letting the hero drift out.
+   Expected: exactly one `WALL_LANDED` per stop.
+B. Only if A still shows more than one landing or the hero does not stand: log for 0.6 s after the first landing, per
+   frame, the game's step split into normal / wall-up / side and plane_d (`WS_STOP_TRACE`, <= 240 lines) and stop;
+   report the trace instead of guessing.
+Camera jerk during the stop: record what is seen, do not change camera code in this task.
 
-## Not in scope
-Finding the live camera, body yaw during jumps, the camera swing and web line of the zip, charge-jump height,
-velocity search, mover editing, L3 lock.
+## Not in scope (recorded, later tasks)
+Face jump speed/feel and body facing, web zip direction and camera swing, charge jump, velocity search, mover editing,
+live camera search, L3 lock. Do not change the M12 jump/zip direction code in this task.
 
 ## Order and reporting
-Task 2 first (smaller), then Task 1; push after each. Cloud verification and handoff as in the archived M11 text
-("Verification and handoff"): build, test.sh, smoke_windows, test_hooks_windows (record flaky reruns exactly),
-package, `docs/CLOUD_VERIFIED.txt`, `docs/CODEX_RESULT.md`, analysis file. Finish with STATUS / CHANGED / RESULT / NEED;
-NEED lists the owner test: `Update-WS.cmd` -> Install mods -> Run modded game; ~20 s idle in freeroam; WS -> stop x3;
-walk on the face in four directions for a few seconds each (this also trains the mapping); walking jumps and standing
-jumps up/down/left/right x2; web zips up/down/left/right; return the newest `logs\MSM2-WS-v0.1c48-<timestamp>.log` and
-captioned videos.
+Task 1, Task 2, Task 3A. Cloud verification and handoff as before: build, test.sh, smoke_windows, test_hooks_windows
+(record flaky reruns exactly), package, `docs/CLOUD_VERIFIED.txt`, `docs/CODEX_RESULT.md`, analysis file. Finish with
+STATUS / CHANGED / RESULT / NEED; NEED lists the owner test: `Update-WS.cmd` -> Install mods -> Run modded game; ~20 s
+idle in freeroam; WS -> stop x3 (wait 3 s standing after each); stand still on the face 10 s; walk up/down/left/right
+5 s each, then walk a long way (> 20 m) along the wall and stand 10 s there; return the newest
+`logs\MSM2-WS-v0.1c48-<timestamp>.log` and captioned videos.
