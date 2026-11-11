@@ -1,51 +1,59 @@
-# Next task — M1b: TurnMaxDown 90 only (M1 result: down movement works, see analysis/C48_M1_RUNTIME_RESULT_20261104.md)
+# Next task — M11: face-as-ground control fixes (direction mapping, walking down, stop landing)
 
-Status: M5c ACCEPTED. M5d (turn-around) and M5e (entry camera dive) DEFERRED (analysis/M5D_TURNAROUND_20261105.md, analysis/M5E_CAMERA_DISTANCE_20261105.md). M6 ACTIVE: natural turning (analysis/M6_TURNING_20261105.md). Earlier: M3, M4 DONE.
+Branch `codex/v01c20-edi-value-provenance` (no main merge, no force-push). Previous task text:
+`analysis/CODEX_NEXT_ARCHIVE_20261111.md`. Read first: `analysis/M10Z_R19_RESULT_20261111.md` (evidence for every item
+below) and the M10z sections at the end of `analysis/M8_JUMP_PLAN_20261106.md`. Shared facts:
+`MSM2-Wisdoms/docs/WALLSPRINT_INTERNALS.md` ("Wall gravity hold findings", "Hero position writer and character mover").
 
-## M4 acceptance sweep (one owner session, no code change)
-1 stop: release stick on the wall for ~5 s. 2 detach: jump off and end WR normally (body upright again?). 3 another wall facing a different compass direction: directions and left/right correct? 4 reach a wall edge/corner (just observe). 5 ground sprint after WS still normal. 6 fast travel or reload after WS (no leftover effects).
-Decision: each failing item becomes one bounded fix task; all pass -> stage 2 camera.
- M2 core DONE 2026-11-04 (sprint pose on wall via clip swap + orientation override). Next: M3 free 360-degree direction — step 1 owner diagonal-input run, analyse logged travel angles. Earlier: M1 DONE 2026-11-04 (M1c accepted: no sideways drift, straight down works). Next: M2 animation/posture — plan in analysis/M2_ANIMATION_PLAN_20261104.md (M2a clip swap). Step 1 was an owner-side asset name listing (configs/anim containing 'wallrun'/'wall_run'/'sprint'); no code until a candidate asset exists. Previously: M1c ACTIVE (TurnGain 0 + TurnMaxDown 90 via ws_assets.py; decision table in analysis/C48_M1_RUNTIME_RESULT_20261104.md). Sideways WR drifts to straight-down with TurnMaxDown 90. M1b DONE 2026-11-04 (straight-down works). Steering stage now auto-deployed by Update-WS (docs/LOCAL_WORKSPACE.md). Next: M2 animation/posture discovery. Earlier: M1 run done 2026-11-04 (speed changed, down possible but diagonal). M1b package: steering TurnMaxDown 90, no speed change. Owner replaces the M1 stage with M1b, one WallRun (same sequence), reports whether travel is straight down / angle. Then M2 (animation/posture). Text below is the original M1 spec.
+Owner goal (minimum requirement of the mod): on a wall the hero moves exactly like on the ground, with no shaking or
+jerks. WS face stays the ground until a new WS or B (Xbox B). Terms: WS = Wall Sprint (this mod), WR = vanilla Wall Run.
 
-# (original) M1
+All code is in `source/src/NativeHooks/camera_ref.cpp` (force model `gfStep`, SetPosition hook `sp2Detour`, WGI input
+hook `wgiReadDetour`, worker `m10GravityTest`). Keep exact-build guards (pdata + sha checks), F8 kill, INI switches and
+default-OFF code defaults. One hypothesis -> one change -> one owner run; each task below is its own commit.
 
-Branch `codex/v01c20-edi-value-provenance`; no main merge. Previous c48 task text: `analysis/C48_CODEX_NEXT_ARCHIVE_20261104.md`.
+## Task 1 — screen axes on the face (fixes face jump + web zip direction)
+Problem: `faceScreenAxes()` is 90 degrees off in the face-as-ground state (analysis section 1).
+Do:
+1. Stop using camera matrix rows. Compute the screen-forward direction on the face from positions:
+   `p = normalize(proj_face(heroPos - camPos))`, camPos = camera manager `ws_camref_this` + 0xD54 (position row used by
+   the M6g camera follow in `actor_writer.cpp`), heroPos = Transform+0x30. If |proj| < 0.2 keep the last valid p.
+2. `screen_right = cross(p, n) * s`, s = +-1. Determine s at runtime instead of assuming it: while the hero walks on the
+   face (pinned, not faceAir) the game's own walking is correct, so compare the game's in-plane step direction with the
+   stick: accumulate sign(dot(step, cross(p, n)) * stick_x) over samples with |stick_x| > 0.7; use the majority once
+   >= 20 samples agree >= 80 %; until then s = `ws_camera_handedness`. Log the decision once.
+3. Keep `WS_FACE_JUMP_INPUT` and add camPos, heroPos and s to it.
+Acceptance (owner video, camera looking down the face): stick up -> toward the top of the screen, down -> bottom,
+left/right -> left/right, for face jumps and web zips, also after the camera has turned.
 
-## Direction (owner-approved 2026-11-04)
+## Task 2 — walking toward the ground on the face
+Problem: all downward game steps are undone (analysis section 2).
+Do: replace the per-call rules with a per-frame budget. Group SetPosition calls into frames (gap >= 2 ms starts a
+frame). Per frame allow a total downward world-y change of `6 m/s * frame_dt` when the stick is pushed (> 0.25) and the
+last landing is older than 0.3 s; otherwise 0. Apply the budget across all calls of the frame (first and later calls
+alike). Keep "no store when nothing is corrected".
+Acceptance: `WS_FACE_MOVE_SAMPLE` shows downward steps passing (store_dy = 0) while the stick points down the face;
+no slide when the stick is neutral; owner can walk down, up and sideways at the same speed.
 
-Extend vanilla WallRun instead of replacing it. Current blocker: pressing down yields ~-12° and left/right oscillation, also with WS OFF
-(`TurnMaxDown=12` correlation only). Stop adding diagnostics that do not change which route is chosen. One hypothesis, one change, one game run.
+## Task 3 — stop from WS must stand on the face
+Problem: after the stop push the game stays in its falling state (analysis section 3). Cause unknown; decide by test.
+Step A (no code): ask the owner for one run with `WALLSPRINT_WS_GRAVITY_SETPOS=0` in `WallSprint.ini` (thread path as
+in M10z-r6..r14): stop from WS 3 times. Decision table:
+| Result | Meaning | Next |
+|---|---|---|
+| stands with SETPOS=0 | the SetPosition path prevents the game's grounding | in the SetPosition path, after `WALL_LANDED` pass the game's value through unchanged (no plane clamp, no drop undo) until the game's own step is zero for 5 frames or 0.5 s passed |
+| still falling | not the path | log the game's steps (normal / wall-up / side) for 1 s after `WALL_LANDED` and test landing with a real approach: keep gravity toward the face until the game's step along -n is blocked for 3 frames instead of pinning at 0.05 m |
+Do not add an A injection (rejected in M10z-r5: the game pulled the hero into the crawl).
 
-Owner decisions: reversible/bounded gameplay writes are permitted; modified vanilla configs may be distributed
-(record concerns in `docs/DISTRIBUTION_RISKS.md`); logs are returned in the Claude Code session, not via ChatGPT.
-Frozen: RequestSimpleMotion/GravityOrientationOwner, ground-Sprint name route, c36-c43 CFG/slot/DR6 ownership proofs.
+## Not in scope
+Body yaw during jumps, the camera swing after a web zip, the web line visual, charge-jump height, velocity search,
+mover editing (`WALLSPRINT_WS_GRAVITY_MOVER` stays 0), L3 lock (cancelled by the owner).
 
-## Experiment
-
-Package `MSM2-WS-M1-DownLimit` built by `source/tools/build_wallrun_m1_experiment.py` from owner-extracted vanilla files:
-
-- steering Standard: `TurnMaxDown` 12 -> 60 (the only steering change);
-- speed Standard (positive control): `SettleSpeedMax/Min` x2 in all 10 field structs. Field names are inferred (HYPOTHESIS).
-
-Pins: steering SHA256 `32418c21...b7b`, speed SHA256 `cc07f41b...90c`. The builder fails closed on layout/value self-checks.
-c48 (read-only) runs unchanged in the same session. Package stays out of Git.
-
-## Owner run (one session, WS ON)
-
-Install package + WS via Overstrike, WallRun: right -> reverse left -> reverse right -> hold down -> end. Return the newest
-`MSM2-WS-v0.1c48-*.log` and say (a) did WallRun speed visibly change, (b) could Spider-Man move downward / what angle.
-
-## Decision table (predeclared)
-
-| Observation | Meaning | Next |
-| --- | --- | --- |
-| speed changed AND down works | config loaded, TurnMaxDown is the limit | M1 done; tune value; then repo cleanup |
-| speed changed, down unchanged | config loaded, TurnMaxDown not the limit | route B: bounded write of the `+0x250` threshold inputs from the existing Update thunk (see c48 counters) |
-| speed unchanged | config not loaded/selected | fix install path or choose another field; no native work |
-| c48 counters both 0 | `+0x250` thresholds not active in reversal/down | close the +0x250 branch |
-
-Route B (if reached) needs: single field, WallRun session only, hard count cap, automatic restore, default OFF, F8 stop, one test.
-
-## Do not
-
-Do not repeat TurnSpeed probes, c73, ON/OFF comparisons, or add observers beyond what the decision table needs.
+## Verification and handoff
+Cloud: `tools/build_windows.sh`, `tools/test.sh`, `tools/smoke_windows.sh`, `tools/test_hooks_windows.sh`
+(`native_source_override_smoke` and `orientation_trace_smoke` are timing-flaky in fresh containers; rerun and record
+exactly what happened), `tools/package.py`; append the source tree to `docs/CLOUD_VERIFIED.txt`; update
+`docs/CODEX_RESULT.md` and the analysis file; push to the branch. Owner test: `Update-WS.cmd` -> Install mods -> Run
+modded game; wait ~20 s in freeroam; then WS -> stop x3, face walk in four directions, face jumps up/down/left/right
+x2, web zip in four directions; return the newest `logs\MSM2-WS-v0.1c48-<timestamp>.log` and videos with English titles.
+Inspect every attached log and video completely before analysing (CLAUDE.md "Attached evidence").
