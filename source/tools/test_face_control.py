@@ -5,7 +5,7 @@ import subprocess
 root = Path(__file__).resolve().parents[1]
 code = (root / 'src/NativeHooks/camera_ref.cpp').read_text()
 model = code.split('// M12_WALK_MODEL_BEGIN:', 1)[1].split('\n', 1)[1].split('// M12_WALK_MODEL_END', 1)[0]
-budget = code.split('// M11_DOWN_BUDGET_BEGIN:', 1)[1].split('\n', 1)[1].split('// M11_DOWN_BUDGET_END', 1)[0]
+budget = code.split('// M13_FALL_GUARD_BEGIN:', 1)[1].split('\n', 1)[1].split('// M13_FALL_GUARD_END', 1)[0]
 tests = r'''
 void train(FaceWalkModel& m,double time,double angle,int hand,double theta,float speed=4.f) {
  float n[3]={1,0,0}, step[3]={0,float(std::cos(hand*angle+theta)*speed*0.02),float(std::sin(hand*angle+theta)*speed*0.02)};
@@ -70,23 +70,20 @@ int main() {
  assert(!faceZipDirection(empty,20,0,1,n,velocity,out,fallback)); // untrained active stick never invents a direction
  float zero[3]={0,0,0};assert(!faceZipDirection(empty,20,0,0,n,zero,out,fallback));
  puts("PASS: M12 zip model direction, neutral velocity fallback, no-direction/no-velocity refusal");
-  FaceDownBudget b;
-  b.begin(1.f/60.f,true,1.f); // 0.1m total across four calls, including later walking steps
-  float y=10.f;
-  for (int i=0;i<4;++i) { float want=y-0.02f; float got=b.apply(y,want,true,1.f); assert(got==want); y=got; }
-  assert(near(b.remaining,0.02f));
-  float got=b.apply(y,y-0.2f,true,1.f); assert(near(got,y-0.02f));
-  assert(near(b.remaining,0)); assert(b.apply(got,got-0.1f,true,1.f)==got);
-  b.begin(1.f/60.f,true,1.f); assert(near(b.remaining,0.1f)); // next frame only
-  b.begin(1.f/60.f,false,1.f); assert(b.apply(10,9.99f,false,1.f)==10); // neutral no slide
-  b.begin(1.f/60.f,true,0.3f); assert(b.apply(10,9.99f,true,0.3f)==10); // landing guard
-  b.begin(1.f/60.f,true,0.31f); assert(b.apply(10,9.99f,true,0.31f)==9.99f);
-  assert(b.apply(10,10.1f,true,1.f)==10.1f); // rise never replenishes allowance
-  assert(near(b.remaining,0.09f));
-  assert(b.apply(10,9.99f,false,1.f)==10); assert(near(b.remaining,0)); // neutral revokes remainder
-  b.begin(0.2f,true,1.f); assert(near(b.remaining,0.3f)); // existing dt cap
-  b.begin(NAN,true,1.f); assert(near(b.remaining,0));
-  puts("PASS: M11 shared downward frame budget/neutral/landing/no replenishment");
+  FaceFallGuard g;
+  for(int i=0;i<20;++i) { g.begin(0.016f,true); assert(g.apply(10,9.92f,true)==9.92f); assert(g.apply(9.92f,9.89f,true)==9.89f); }
+  g.begin(0.08f,true);assert(g.apply(10,9.4f,true)==9.4f); // longer frame,7.5m/s allowed
+  g={};g.begin(0.016f,true);assert(g.apply(10,9.92f,true)==9.92f);
+  assert(near(g.apply(9.92f,9.83f,true),10)); // >9m/s restores earlier + current downward parts
+  assert(std::string(g.reason)=="speed_over_9");
+  assert(g.apply(10,9.99f,true)==10); // blocked remainder of same frame
+  g={};
+  for(int i=0;i<6;++i) { g.begin(0.02f,true); float want=10.f-(2.f+i*0.3f)*0.02f; assert(g.apply(10,want,true)==want); }
+  g.begin(0.02f,true);assert(g.apply(10,10.f-3.8f*0.02f,true)==10);
+  assert(std::string(g.reason)=="accelerating_six_frames");
+  g.begin(0.02f,false);assert(g.apply(10,9.99f,false)==10);assert(g.apply(10,10.01f,false)==10.01f);
+  g.begin(0.02f,true);assert(g.apply(10,9.90f,true)==9.90f && g.rises==0);
+  puts("PASS: M13 unrestricted ordinary downward frames, fall speed/6 rises, neutral and whole-frame undo");
 }
 '''
 (root / 'build').mkdir(exist_ok=True)
