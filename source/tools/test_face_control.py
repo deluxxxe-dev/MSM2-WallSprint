@@ -98,6 +98,9 @@ int main() {
  float turned[3]={0,0,0.08f};assert(actual.observe(300.32,0,1,turned,0.016,n));assert(!history.remember(actual)&&history.recentTime==savedTime);
  for(int i=1;i<20;++i){assert(actual.observe(300.32+i*0.016,0,1,turned,0.016,n));history.remember(actual);}
  assert(history.recentTime>savedTime&&history.recentSteady>=0.3);
+ double turnCache=history.recentTime;assert(actual.observe(300.64,1,0,turned,0.016,n));assert(!history.remember(actual)&&history.recentTime==turnCache);
+ assert(actual.observe(301,0,1,turned,0.016,n));assert(!history.remember(actual)); // gap cannot manufacture0.3s stability
+
  FaceWalkModel slowModel;float slowStep[3]={0,0.12f,0};for(int i=0;i<30;++i){slowModel.observe(500+i*0.016,0,1,slowStep,0.08,n);assert(!history.remember(slowModel));}
  FaceTakeoffHistory absent;absent.freeze(recent,unreliable,200,"model",1,0,n,walked);assert(std::string(recent.mappingSource)=="model");
  FaceTakeoffHistory initial;unreliable.agreeing=0;initial.freeze(pair,unreliable,10,"walk",-1,0,n,velocity);

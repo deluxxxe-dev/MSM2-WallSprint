@@ -4,6 +4,7 @@ import subprocess
 root=Path(__file__).resolve().parents[1]
 code=(root/'src/NativeHooks/camera_ref.cpp').read_text()
 helpers=code.split('// M12_LANDING_BEGIN:',1)[1].split('\n',1)[1].split('// M12_LANDING_END',1)[0]
+helpers+=code.split('// M15_PHYSICS_BEGIN:',1)[1].split('\n',1)[1].split('// M15_PHYSICS_END',1)[0]
 tests=r'''
 int main() {
  float plane[3]={3,4,5}, n[3]={1,0,0}, q[3]={5.7f,10,20};
@@ -31,6 +32,9 @@ int main() {
  for(float d0:{0.f,0.45f,0.79f}){assert(arc.solve(d0));
   assert(std::fabs(arc.v*arc.v/(2*arc.gravity)-0.15f)<1e-5f);
   assert(std::fabs(d0+arc.v*0.35f-0.5f*arc.gravity*0.35f*0.35f)<1e-5f);
+  float position[3]={d0,0,0},velocity[3]={arc.v,0,0},planar[3]{},impulse[3]{};float peak=d0;
+  for(int frame=0;frame<70;++frame){float next[3];faceAirStep(next,position,velocity,n,planar,impulse,arc.gravity,0.005f);peak=std::fmax(peak,next[0]);for(int k=0;k<3;++k)position[k]=next[k];}
+  assert(std::fabs(position[0])<1e-4f && std::fabs(peak-d0-0.15f)<0.001f);
  }
  assert(!arc.solve(-0.01f)&&!arc.solve(NAN)&&!arc.solve(1));
  puts("PASS: M16 stop-hop own gravity solves0.15m rise and0.35s plane landing for measured d0, zero planar/dash");

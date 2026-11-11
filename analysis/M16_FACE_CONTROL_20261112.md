@@ -112,3 +112,13 @@ with ground not blocking A, L reservoir/label and retained street coverage.
 Initial new fixture indentation warning fixed without weakening assertions;
 production compile and all affected actual-helper suites pass. Actual candidate
 lists/engine ground-probe interpretation remain UNKNOWN pending owner log.
+
+## Final QA before full verification
+Recheck active WS inside the guarded axes-store callback as well as before the
+read, so a newly published WS cannot enter the writer between those gates.
+Preserve each validated row's original length while changing its direction;
+owned scaled-row tests ensure no scale/W change. The normal observed unit rows
+still become the requested right/up/forward. Added actual faceAirStep integration
+of solved hops (5ms to0.35s, apex+0.15), and explicit stick-turn/gap steady-cache
+refusals. No new gameplay constants, signatures or later systems. Published
+ordered task commits remain intact; all full suites certify this follow-up tree.

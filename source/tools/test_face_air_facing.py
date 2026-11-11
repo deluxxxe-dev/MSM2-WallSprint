@@ -17,6 +17,7 @@ int main(){
  assert(!facing.prepare(out,rows,true,true)); // target retained, no gratuitous write
  float mirrored[12]={-1,0,0,11,0,1,0,22,0,0,1,33};FaceAirFacing left;assert(left.begin(f,n));assert(left.prepare(mirrored,out,true,true));assert(left.sign==-1&&out[2]==1);
  assert(!left.prepare(rows,out,true,true)); // changed sign never borrows initial handedness
+ float scaled[12]={1.05f,0,0,12,0,0.95f,0,13,0,0,1.1f,14};FaceAirFacing size;assert(size.begin(f,n)&&size.prepare(scaled,out,true,true));assert(std::fabs(out[2]+1.05f)<1e-5f&&std::fabs(out[5]-0.95f)<1e-5f&&std::fabs(out[8]-1.1f)<1e-5f);
  FaceAirFacing cap;assert(cap.begin(f,n));float original[12]={1,0,0,77,0,1,0,88,0,0,1,99};
  for(int i=0;i<4000;++i){assert(cap.prepare(original,out,true,true));cap.committed();}
  assert(!cap.prepare(original,out,true,true)&&cap.holdWrites==4000);assert(cap.begin(f,n));assert(!cap.prepare(original,out,true,true)); // cap survives per-jump reset
