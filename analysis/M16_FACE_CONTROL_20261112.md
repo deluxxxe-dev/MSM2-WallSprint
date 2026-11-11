@@ -122,3 +122,21 @@ still become the requested right/up/forward. Added actual faceAirStep integratio
 of solved hops (5ms to0.35s, apex+0.15), and explicit stick-turn/gap steady-cache
 refusals. No new gameplay constants, signatures or later systems. Published
 ordered task commits remain intact; all full suites certify this follow-up tree.
+
+## Additional phase-identity audit
+During final review, the existing force target was found to be republished from
+each Hero snapshot, not only at hold start. Pin the axes experiment to its
+phase-start Transform AND force generation; verify both before reads and again
+inside the guarded store. A changed phase identity ends rotation observation/
+writes instead of allowing an old target direction to follow a new Hero.
+The already-running hook suite on treea3fbe0a was deliberately terminated (143,
+16 PASS before termination; no assertion failure observed), and all five suites
+are rerun on the final corrected tree. The prior build/59 portable/7 smoke/
+package passed but do not certify this final tree. No test gate/deadline is
+changed, and no partial hook run is used for CLOUD_VERIFIED.
+
+The identity audit also binds the phase to the hold-start Transform and checks
+that it equals the ACTUAL current native call's Transform (thread-local scope),
+not merely the latest snapshot publication. A phase cannot begin on a switched
+Hero under a stale hold. Worker/mover callbacks have no native-call identity and
+cannot enter the writer. No change to the older force model's target policy.

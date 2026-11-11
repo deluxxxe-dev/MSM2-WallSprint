@@ -1725,25 +1725,30 @@ bool faceAirDir(const float* n, float* out) {
 }
 std::atomic<bool> gfWalkoffActive{false};std::atomic<float> gfWalkoffSpeed{0},gfWalkoffDistance{0},gfFallUp{0},gfFallPlanar{0},gfFallTime{0};std::atomic<unsigned> gfWalkoffFrames{0};
 void walkoffEnd(const char* why){if(gfWalkoffActive.exchange(false))msm2::writeLog("WS_FACE_FALL event=end reason=%s t=%.3f v_u=%.3f v_plane=%.3f plane_d=%.3f frames=%u",why,gfFallTime.load(),gfFallUp.load(),gfFallPlanar.load(),gfWalkoffDistance.load(),gfWalkoffFrames.load());}
-thread_local bool faceFacingNativeCall=false;
-struct FaceFacingCallScope {bool old{faceFacingNativeCall};FaceFacingCallScope(){faceFacingNativeCall=true;}~FaceFacingCallScope(){faceFacingNativeCall=old;}};
+thread_local std::uintptr_t faceFacingNativeTransform=0;
+struct FaceFacingCallScope {std::uintptr_t old{faceFacingNativeTransform};explicit FaceFacingCallScope(std::uintptr_t tr){faceFacingNativeTransform=tr;}~FaceFacingCallScope(){faceFacingNativeTransform=old;}};
+std::atomic<std::uintptr_t> airFacingTransform{0},airFacingHoldTransform{0};std::atomic<unsigned> airFacingGeneration{0};
 std::atomic<bool> airFacingRun{false};std::atomic<unsigned> airFacingWrites{0},airFacingOverwritten{0};std::atomic<float> airFacingMaxDev{0};
-void airFacingEnd(const char* reason){if(airFacingRun.exchange(false))msm2::writeLog("WS_FACE_AIR_FACING writes=%u overwritten_next_call=%u max_dev_deg=%.3f reason=%s",airFacingWrites.load(),airFacingOverwritten.load(),airFacingMaxDev.load(),reason);}
+void airFacingEnd(const char* reason){if(airFacingRun.exchange(false))msm2::writeLog("WS_FACE_AIR_FACING writes=%u overwritten_next_call=%u max_dev_deg=%.3f reason=%s",airFacingWrites.load(),airFacingOverwritten.load(),airFacingMaxDev.load(),reason);airFacingTransform.store(0);}
 void airFacingBegin(const float* direction,const float* normal){
   airFacingEnd("new_air_phase");
-  if(!ws::drive::wsFaceAirFacing.load()||!gfL.airFacing.begin(direction,normal))return;
+  auto tr=airFacingHoldTransform.load();
+  if(!ws::drive::wsFaceAirFacing.load()||!tr||gfTransform.load()!=tr||gfL.gen!=gfGen.load()||!gfL.airFacing.begin(direction,normal))return;
+  airFacingTransform.store(tr);airFacingGeneration.store(gfL.gen);
   airFacingWrites.store(0);airFacingOverwritten.store(0);airFacingMaxDev.store(0);airFacingRun.store(true);
 }
 struct FaceAxesStore {std::uintptr_t tr{};unsigned gen{};const float* expected{};const float* rows{};bool wrote{};};
 void faceAxesStoreCb(void* raw){auto& c=*static_cast<FaceAxesStore*>(raw);
-  if(killed.load()||!gfOn.load()||wsActiveNow(GetTickCount64())||!ws::drive::wsFaceAirFacing.load()||gfGen.load()!=c.gen||gfTransform.load()!=c.tr||!airFacingRun.load()||!(gfFaceAirNow.load()||gfWalkoffActive.load()))return;
+  if(faceFacingNativeTransform!=c.tr||killed.load()||!gfOn.load()||wsActiveNow(GetTickCount64())||!ws::drive::wsFaceAirFacing.load()||gfGen.load()!=c.gen||gfTransform.load()!=c.tr||airFacingTransform.load()!=c.tr||airFacingGeneration.load()!=c.gen||!airFacingRun.load()||!(gfFaceAirNow.load()||gfWalkoffActive.load()))return;
   if(std::memcmp(reinterpret_cast<const void*>(c.tr),c.expected,48))return;
   for(int row=0;row<3;++row)std::memcpy(reinterpret_cast<void*>(c.tr+16*row),c.rows+4*row,12); // Never store W.
   c.wrote=true;
 }
 void airFacingStep(){
-  if(!faceFacingNativeCall||!airFacingRun.load()||killed.load()||!gfOn.load()||!ws::drive::wsFaceAirFacing.load()||wsActiveNow(GetTickCount64())||!(gfFaceAirNow.load()||gfWalkoffActive.load()))return;
-  auto tr=gfTransform.load();if(!tr||tr>UINTPTR_MAX-48||gfL.gen!=gfGen.load())return;
+  if(!faceFacingNativeTransform||!airFacingRun.load()||killed.load()||!gfOn.load()||!ws::drive::wsFaceAirFacing.load()||wsActiveNow(GetTickCount64())||!(gfFaceAirNow.load()||gfWalkoffActive.load()))return;
+  auto tr=faceFacingNativeTransform;if(!tr||tr>UINTPTR_MAX-48||gfL.gen!=gfGen.load())return;
+  if(tr!=gfTransform.load()||tr!=airFacingHoldTransform.load()){airFacingEnd("hold_identity_changed");return;}
+  if(tr!=airFacingTransform.load()||gfL.gen!=airFacingGeneration.load()){airFacingEnd("phase_identity_changed");return;}
   float rows[12],target[12];if(!msm2::readMemory(tr,rows,48)){gfL.airFacing.previousWrite=false;return;}
   bool wanted=gfL.airFacing.prepare(rows,target,true,true);
   if(wanted){bool writable=true;for(int row=0;row<3;++row)writable=writable&&writableByte(tr+16*row)&&writableByte(tr+16*row+11);
@@ -2233,7 +2238,7 @@ std::uintptr_t sp2Detour(std::uintptr_t tr, std::uintptr_t pos, std::uintptr_t r
         stateFrames.call(qpcSec(qpcNow()),A,context);
       }
       float Bn[4]={B[0],B[1],B[2],1.f};
-      if(force){FaceFacingCallScope facingScope;sp2HeroCalls.fetch_add(1,std::memory_order_relaxed);gmQpc.store(qpcNow(),std::memory_order_relaxed);gfStep(A,Bn);airFacingStep();}
+      if(force){FaceFacingCallScope facingScope(tr);sp2HeroCalls.fetch_add(1,std::memory_order_relaxed);gmQpc.store(qpcNow(),std::memory_order_relaxed);gfStep(A,Bn);airFacingStep();}
       if(captured){stateFrames.applied(B,Bn);frameLock.unlock();}
       if(force&&(Bn[0]!=B[0]||Bn[1]!=B[1]||Bn[2]!=B[2])){sp2Edits.fetch_add(1,std::memory_order_relaxed);return sp2Orig(tr,reinterpret_cast<std::uintptr_t>(Bn),r8,r9);}
     }
@@ -2556,6 +2561,7 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     for (int i = 0; i < 3; ++i) { gfP0[i].store(gbPlane[i]); gfN0[i].store(gbN[i]); }
     gfPlaneFromWall.store(gbPlaneFromWall); gfStandoff.store(gbPlaneStandoff); gfLogPlane("hold_start");
     gfVy0.store(vOk ? vy : 0.f); gfContact.store(false); sbBlendQpc.store(0);
+    airFacingHoldTransform.store(hero.transform);
     gfContactGen.store(gfGen.fetch_add(1) + 1 + 0x80000000u); gfOn.store(ws::drive::wsGravityForce.load() && !sgLocked.load()); if (gfOn.load()) gfStartThread();
     gvHero.store(hero.hero); gfVyGame.store(0); gfVyGameQpc.store(0);
     if (gfOn.load() && gvState.load() == 2) { unsigned i = gvNext.fetch_add(1); if (i < gvCandN.load()) { gvTestAddr.store(gvCand[i]); gvTestWrites.store(0); msm2::writeLog("WS_VELOCITY_TEST start idx=%u addr=0x%llx", i, (unsigned long long)gvCand[i]); } else gvState.store(3); }   // M10s: no force while locked (stand on the wall)
