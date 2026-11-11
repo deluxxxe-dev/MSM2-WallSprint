@@ -69,3 +69,27 @@ walk/model/none and existing input logs remain. Owned helpers test mean vs one
 sample, pushed floor, constant-speed steering through turns, zero-origin and
 three-axis landing projection. Body yaw/visible "into screen" outcome remain
 UNKNOWN until captioned owner video, not inferred from source vectors.
+
+## Task 5 — stable mirror gate, steady samples and frozen air mapping
+A separate takeoff snapshot stores h/theta/validity and QPC takeoff time. Only
+face jump takeoff writes it. All air steering and zip directions use that snapshot;
+mutating/expiring the live walking fit cannot change an in-progress jump. Zip/input
+logs expose frozen_h/frozen_theta_deg/takeoff_time_s/mapping_valid plus agreement
+counts. No live camera search or camera/zip-animation replacement is added.
+
+Rotation's2s mean now uses only steady-stick samples (<20deg change from the
+previous eligible frame, <=100ms gap). Mirror fitting also uses these steady
+samples. Lower circular variance alone cannot flip h: at least30 agreeing inliers,
+>=80% of eligible fit samples and>=60deg span among those inliers are required.
+Agreement is defined as wrapped residual within20deg of the candidate circular
+mean (authored tolerance, not an engine fact). Ties/narrow/short/noisy evidence
+retain the previous h. All64-ring/20s/neutral/stale/untrained refusals remain;
+speed averaging uses qualified walking samples even when their stick is changing.
+
+Owned tests cover exactly30 inliers,30/40 rejection then80% acceptance, direction
+transition exclusion, both mirrors/cardinals with held inputs, wrap/2s/64-ring/
+expiry, a deliberately mutated live fit after snapshot and unchanged frozen
+steering/zip. Prior fall/plane/stop/mean/trace fixtures still pass. Each task's
+production camera_ref.cpp cross-compile used the existing warnings-as-errors
+flags. Full final pipeline follows the fifth commit; no game acceptance is
+claimed from these independently owned mathematical/fixture inputs.

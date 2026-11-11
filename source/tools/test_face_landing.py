@@ -1,4 +1,4 @@
-"""Owned M12 stop/plane tests compile the actual pure production helpers."""
+"""Owned M13 stop/plane tests compile the actual pure production helpers."""
 from pathlib import Path
 import subprocess
 root=Path(__file__).resolve().parents[1]

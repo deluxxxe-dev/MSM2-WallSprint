@@ -792,7 +792,7 @@ HRESULT STDMETHODCALLTYPE wgiReadDetour(void* self, WgiReading* r) {
         if (m < 0.2f) { if (!neutralSince) neutralSince = nowh;
           auto sess = wsSessionStartMs.load();
           // M10z-r5 (log 20261109-014651): the injected A tap gave no jump (the game pulled the hero into the crawl). The stop is
-          // now handled by the force: the next hold first holds the hero 0.9 m off the face for 0.25 s (crawl contact lost),
+          // now handled by the force: M13 holds the hero 0.5 m off the face for 0.12 s (crawl contact lost),
           // then the wall gravity brings it back to land on the face.
           if (nowh - neutralSince >= 120 && hopSession != sess && nowh - sess > 600) { hopSession = sess; (void)hopUntil;
             gfStopMs.store(nowh); wsStopHops.fetch_add(1); } }
@@ -1117,9 +1117,9 @@ bool faceBasis(const float* n, float* up, float* side) {
   return true;
 }
 struct FaceWalkModel {
-  struct Sample { double time{}, stick{}, walk{}; float speed{}; } ring[64]{};
+  struct Sample { double time{}, stick{}, walk{}; float speed{}; bool steady{}; } ring[64]{};
   unsigned next{}, used{}; int hand{1}; double theta{}, updated{}; bool valid{}, hasWalk{};
-  double lastWalk{}; float velocity[3]{};
+  double lastWalk{},previousStick{},previousStickTime{}; bool haveStick{}; unsigned fitSamples{},agreeing{}; bool fitSpan{}; float velocity[3]{};
   unsigned count(double now) const {
     unsigned total=0; for(unsigned i=0;i<used;++i) if(now>=ring[i].time && now-ring[i].time<=20.0) ++total;
     return total;
@@ -1129,7 +1129,10 @@ struct FaceWalkModel {
   bool observe(double now, float sx, float sy, const float* step, double dt, const float* n) {
     float up[3],side[3];
     if (!std::isfinite(now) || !std::isfinite(sx) || !std::isfinite(sy) || sx*sx+sy*sy<=0.25f ||
-        !std::isfinite(dt) || dt<0.002 || dt>0.1 || !faceBasis(n,up,side)) return false;
+        !std::isfinite(dt) || dt<0.002 || dt>0.1 || !faceBasis(n,up,side)) { haveStick=false; return false; }
+    double angle=std::atan2(double(sx),double(sy));
+    bool steady=haveStick && now>=previousStickTime && now-previousStickTime<=0.1 && std::fabs(std::remainder(angle-previousStick,2*kFacePi))<20*kFacePi/180;
+    previousStick=angle;previousStickTime=now;haveStick=true;
     double u=0,s=0; for(int i=0;i<3;++i) {
       if (!std::isfinite(step[i])) return false;
       u+=double(step[i])*up[i]; s+=double(step[i])*side[i];
@@ -1137,25 +1140,31 @@ struct FaceWalkModel {
     double speed=std::hypot(u,s)/dt;
     if (!std::isfinite(speed) || !std::isfinite(float(speed)) || speed<=1.0) return false;
     float measured[3]; for(int i=0;i<3;++i) { measured[i]=float((u*up[i]+s*side[i])/dt); if(!std::isfinite(measured[i])) return false; }
-    double angle=std::atan2(double(sx),double(sy));
-    ring[next]={now,angle,std::atan2(s,u),float(speed)}; next=(next+1)%64; if(used<64) ++used;
+    ring[next]={now,angle,std::atan2(s,u),float(speed),steady}; next=(next+1)%64; if(used<64) ++used;
     hasWalk=true; lastWalk=now;
     for(int i=0;i<3;++i) velocity[i]=measured[i];
-    double c[2]{},v[2]{}; unsigned total=0; bool span=false;
+    double c[2]{},v[2]{}; unsigned total=0;
     for(unsigned i=0;i<used;++i) {
-      const auto& a=ring[i]; if(now<a.time || now-a.time>20.0) continue;
+      const auto& a=ring[i]; if(!a.steady || now<a.time || now-a.time>20.0) continue;
       ++total;
       for(int h=0;h<2;++h) { double d=a.walk-(h==0 ? 1 : -1)*a.stick; c[h]+=std::cos(d); v[h]+=std::sin(d); }
-      for(unsigned j=0;j<i;++j) {
-        const auto& b=ring[j]; if(now<b.time || now-b.time>20.0) continue;
-        if(std::fabs(std::remainder(a.stick-b.stick,2*kFacePi))>=kFacePi/3.0-1e-6) span=true;
-      }
     }
-    // Circular variance = 1 - resultant/total. Ties retain the previous mirror.
-    if(span && total) { double plus=std::hypot(c[0],v[0])/total, minus=std::hypot(c[1],v[1])/total;
-      if(std::fabs(plus-minus)>1e-6) hand=plus>minus ? 1 : -1; }
+    int candidate=hand;
+    if(total && std::fabs(std::hypot(c[0],v[0])-std::hypot(c[1],v[1]))>1e-6)
+      candidate=std::hypot(c[0],v[0])>std::hypot(c[1],v[1]) ? 1 : -1;
+    int index=candidate==1 ? 0 : 1;
+    double center=std::atan2(v[index],c[index]);
+    bool inlier[64]{}; agreeing=0;fitSamples=total;fitSpan=false;
+    // Authored agreement tolerance: residual within20deg of candidate circular mean.
+    for(unsigned i=0;i<used;++i) { const auto& a=ring[i];
+      inlier[i]=a.steady && now>=a.time && now-a.time<=20.0 && std::fabs(std::remainder(a.walk-candidate*a.stick-center,2*kFacePi))<=20*kFacePi/180;
+      if(inlier[i]) ++agreeing;
+    }
+    for(unsigned i=0;i<used;++i) if(inlier[i]) for(unsigned j=0;j<i;++j) if(inlier[j])
+      if(std::fabs(std::remainder(ring[i].stick-ring[j].stick,2*kFacePi))>=kFacePi/3.0-1e-6) fitSpan=true;
+    if(candidate!=hand && agreeing>=30 && agreeing*5>=total*4 && fitSpan) hand=candidate;
     double tc=0,ts=0;
-    for(unsigned i=0;i<used;++i) { const auto& a=ring[i]; if(now<a.time || now-a.time>2.0) continue;
+    for(unsigned i=0;i<used;++i) { const auto& a=ring[i]; if(!a.steady || now<a.time || now-a.time>2.0) continue;
       double d=a.walk-hand*a.stick; tc+=std::cos(d); ts+=std::sin(d); }
     if(std::hypot(tc,ts)>1e-6) { theta=std::atan2(ts,tc); updated=now; valid=true; }
     return true;
@@ -1185,6 +1194,19 @@ struct FaceWalkModel {
     return source;
   }
 };
+// Only takeoff may replace this snapshot; every air-steer/zip in that jump uses it.
+struct FaceAirMapping {
+  int hand{1}; double theta{},takeoff{}; bool valid{};
+  void freeze(const FaceWalkModel& model,double now) { hand=model.hand;theta=model.theta;takeoff=now;valid=model.fresh(now); }
+  bool direction(float sx,float sy,const float* n,float* out) const {
+    for(int i=0;i<3;++i) out[i]=0;
+    float up[3],side[3];
+    if(!valid || !std::isfinite(sx) || !std::isfinite(sy) || sx*sx+sy*sy<=0.04f || !faceBasis(n,up,side)) return false;
+    double angle=hand*std::atan2(double(sx),double(sy))+theta;
+    for(int i=0;i<3;++i) out[i]=float(std::cos(angle)*up[i]+std::sin(angle)*side[i]);
+    return true;
+  }
+};
 // Frame anchors use current Transform BEFORE this frame's first SetPosition call, not its first desired-current delta.
 // Subtract our own committed corrections over the interval, so later game calls contribute once, and drop/plane stores do not train the fit.
 struct FaceWalkFrame {
@@ -1204,9 +1226,9 @@ struct FaceWalkFrame {
     for(int i=0;i<3;++i) correction[i]+=corrected[i]-desired[i];
   }
 };
-bool faceZipDirection(const FaceWalkModel& model, double now, float sx, float sy, const float* n, const float* currentVelocity, float* out, bool& fallback) {
+bool faceZipDirection(const FaceAirMapping& model, float sx, float sy, const float* n, const float* currentVelocity, float* out, bool& fallback) {
   fallback=false;
-  if(model.direction(now,sx,sy,n,out)) return true;
+  if(model.direction(sx,sy,n,out)) return true;
   if(!std::isfinite(sx) || !std::isfinite(sy) || sx*sx+sy*sy>0.04f) return false;
   float up[3],side[3]; if(!faceBasis(n,up,side)) return false;
   double u=0,s=0; for(int i=0;i<3;++i) { if(!std::isfinite(currentVelocity[i])) return false; u+=double(currentVelocity[i])*up[i]; s+=double(currentVelocity[i])*side[i]; }
@@ -1333,7 +1355,7 @@ struct FaceStopControl {
   }
 };
 // M12_LANDING_END
-struct GfLocal { FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
+struct GfLocal { FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
 void gfLogPlane(const char* event) {
   msm2::writeLog("WS_GRAVITY_FORCE_PLANE event=%s point=%.3f,%.3f,%.3f source=%s",
     event, gfP0[0].load(), gfP0[1].load(), gfP0[2].load(), gfPlaneFromWall.load() ? "wall_point_0x338" : "ws_position_minus_0.5n");
@@ -1350,8 +1372,7 @@ std::atomic<bool> gfModelUsed{false};
 void gbWrite(const float* v);
 // M12: axes are the learned rotation/mirror of the game's own face walking; no camera-manager reads.
 bool faceScreenAxes(const float* n, float* p, float* r) {
-  double now=qpcSec(qpcNow());
-  return gfL.walk.direction(now,0.f,1.f,n,p) && gfL.walk.direction(now,1.f,0.f,n,r);
+  return gfL.airMapping.direction(0.f,1.f,n,p) && gfL.airMapping.direction(1.f,0.f,n,r);
 }
 std::atomic<float> wgiLx{0}, wgiLy{0};
 bool faceAirDir(const float* n, float* out) {
@@ -1366,9 +1387,9 @@ void faceInputLog(const char* event, const float* n, const float* velocity, cons
   float up[3]{},side[3]{}; faceBasis(n,up,side);
   float u=0,s=0; for(int i=0;i<3;++i) { u+=velocity[i]*up[i]; s+=velocity[i]*side[i]; }
   float speed=std::hypot(u,s), sx=wgiLx.load(),sy=wgiLy.load();
-  msm2::writeLog("%s stick=%.2f,%.2f a_s=%.6f h=%d theta_deg=%.2f sample_count=%u sample_age_s=%.3f model_age_s=%.3f source=%s dir_up=%.3f dir_side=%.3f speed=%.3f velocity_fallback=%u",
-    event,sx,sy,std::atan2(sx,sy),gfL.walk.hand,gfL.walk.theta*180.0/kFacePi,gfL.walk.count(now),gfL.walk.age(now),
-    gfL.walk.valid ? now-gfL.walk.updated : -1.0,source,speed>1e-4f ? u/speed : 0.f,speed>1e-4f ? s/speed : 0.f,speed,unsigned(velocityFallback));
+  msm2::writeLog("%s stick=%.2f,%.2f a_s=%.6f h=%d theta_deg=%.2f sample_count=%u sample_age_s=%.3f model_age_s=%.3f source=%s dir_up=%.3f dir_side=%.3f speed=%.3f velocity_fallback=%u frozen_h=%d frozen_theta_deg=%.2f takeoff_time_s=%.6f mapping_valid=%u mirror_agree=%u mirror_total=%u",
+    event,sx,sy,std::atan2(sx,sy),gfL.airMapping.hand,gfL.airMapping.theta*180.0/kFacePi,gfL.walk.count(now),gfL.walk.age(now),
+    gfL.walk.valid ? now-gfL.walk.updated : -1.0,source,speed>1e-4f ? u/speed : 0.f,speed>1e-4f ? s/speed : 0.f,speed,unsigned(velocityFallback),gfL.airMapping.hand,gfL.airMapping.theta*180.0/kFacePi,gfL.airMapping.takeoff,unsigned(gfL.airMapping.valid),gfL.walk.agreeing,gfL.walk.fitSamples);
 }
 std::atomic<unsigned> gfJumpTraceLogs{0};
 void faceJumpTrace(const char* event,const float* p,const float* n,double now,bool terminal=false) {
@@ -1543,6 +1564,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   if (gfL.pinned && !gfL.faceAir && !sbBlendQpc.load(std::memory_order_relaxed) && wgiPresses.load(std::memory_order_relaxed) != gfL.pinPresses) {
     gfL.stop.active=false;
     gfL.airSource=gfL.walk.takeoff(qpcSec(now),wgiLx.load(),wgiLy.load(),n0,gfL.airVel);
+    gfL.airMapping.freeze(gfL.walk,qpcSec(now));
     { float v = std::sqrt(2.f * kGfG * 1.8f); for (int i = 0; i < 3; ++i) gfL.vg[i] = n0[i] * v; for (float& c : gfL.dash) c = 0.f; }
     { float v[3]; for(int i=0;i<3;++i) v[i]=gfL.airVel[i]+gfL.vg[i];
       gfL.jumpTrace.start(qpcSec(now),mvA ? mvA : p,v,wgiLx.load(),wgiLy.load(),gfL.airSource);
@@ -1578,7 +1600,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
       if (zr != gfL.zipSeen) { gfL.zipSeen = zr; float z[3]{}, velocity[3];
         for(int i=0;i<3;++i) velocity[i]=gfL.airVel[i]+gfL.dash[i];
         bool fallback=false;
-        bool impulse=faceZipDirection(gfL.walk,qpcSec(now),wgiLx.load(),wgiLy.load(),n0,velocity,z,fallback);
+        bool impulse=faceZipDirection(gfL.airMapping,wgiLx.load(),wgiLy.load(),n0,velocity,z,fallback);
         const char* source=impulse ? (fallback ? gfL.airSource : "model") : "none";
         if(impulse) for(int i=0;i<3;++i) gfL.dash[i]=z[i]*18.f;
         faceInputLog("WS_FACE_ZIP",n0,impulse ? gfL.dash : z,source,qpcSec(now),fallback);

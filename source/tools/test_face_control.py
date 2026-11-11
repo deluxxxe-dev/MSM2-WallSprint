@@ -1,11 +1,11 @@
-"""Compile actual M12 walking-fit and preserved M11 budget helpers with owned data."""
+"""Compile actual walking-fit, jump and fall helpers with owned data."""
 from pathlib import Path
 import subprocess
 
 root = Path(__file__).resolve().parents[1]
 code = (root / 'src/NativeHooks/camera_ref.cpp').read_text()
 model = code.split('// M12_WALK_MODEL_BEGIN:', 1)[1].split('\n', 1)[1].split('// M12_WALK_MODEL_END', 1)[0]
-budget = code.split('// M13_FALL_GUARD_BEGIN:', 1)[1].split('\n', 1)[1].split('// M13_FALL_GUARD_END', 1)[0]
+guard = code.split('// M13_FALL_GUARD_BEGIN:', 1)[1].split('\n', 1)[1].split('// M13_FALL_GUARD_END', 1)[0]
 tests = r'''
 void train(FaceWalkModel& m,double time,double angle,int hand,double theta,float speed=4.f) {
  float n[3]={1,0,0}, step[3]={0,float(std::cos(hand*angle+theta)*speed*0.02),float(std::sin(hand*angle+theta)*speed*0.02)};
@@ -28,7 +28,7 @@ int main() {
  puts("PASS: M12 face basis, untrained/slow/weak stick/nonfinite/gap refusal");
  for(int hand : {1,-1}) {
   FaceWalkModel m;
-  for(int i=0;i<48;++i) train(m,10+i*0.02,(i%4)*kFacePi/2,hand,0.7,3.7f);
+  for(int i=0;i<48;++i) train(m,10+i*0.02,(i/12)*kFacePi/2,hand,0.7,3.7f);
   assert(m.hand==hand && m.count(10.94)==48);
   for(int i=0;i<4;++i) checkDirection(m,11.0,i*kFacePi/2,hand*i*kFacePi/2+0.7);
   assert(std::string(m.takeoff(11.0,0,1,n,out))=="walk");
@@ -41,14 +41,21 @@ int main() {
  for(int i=0;i<8;++i) train(narrow,10+i*0.02,i*0.05,-1,0.5);
  assert(narrow.hand==1); // <60deg stick span cannot choose the other mirror
  FaceWalkModel oldMirror;oldMirror.hand=-1;train(oldMirror,10,0.3,-1,0.4);assert(oldMirror.hand==-1);
- FaceWalkModel threshold;train(threshold,10,0,-1,0.5);train(threshold,10.02,kFacePi/3,-1,0.5);assert(threshold.hand==-1);
- FaceWalkModel wrap;train(wrap,10,0,1,179*kFacePi/180);train(wrap,10.02,0,1,-179*kFacePi/180);
+ FaceWalkModel threshold;
+ for(int i=0;i<31;++i) { train(threshold,10+i*0.02,i<16 ? 0 : kFacePi/3,-1,0.5);assert(threshold.hand==1); }
+ train(threshold,10.62,kFacePi/3,-1,0.5);assert(threshold.hand==-1 && threshold.agreeing==30);
+ FaceWalkModel noisy;
+ for(int i=0;i<44;++i) { double angle=i<6 || (i>=12 && i<28) ? 0 : kFacePi/3;train(noisy,10+i*0.02,angle,-1,i<12 ? kFacePi : 0); }
+ assert(noisy.hand==1 && noisy.agreeing==30 && noisy.fitSamples==40); //30/40<80%, refuses change
+ for(int i=0;i<10;++i)train(noisy,10.88+i*0.02,kFacePi/3,-1,0);
+ assert(noisy.hand==-1);
+ FaceWalkModel wrap;train(wrap,9.98,0,1,179*kFacePi/180);train(wrap,10,0,1,179*kFacePi/180);train(wrap,10.02,0,1,-179*kFacePi/180);
  assert(std::fabs(std::fabs(wrap.theta)-kFacePi)<1e-5);
  FaceWalkModel turning;
- for(int i=0;i<4;++i) train(turning,10+i*0.02,i*kFacePi/2,1,0.1);
- train(turning,13,0,1,1.0); assert(std::fabs(turning.theta-1.0)<1e-5); // theta uses only last2s
+ for(int i=0;i<40;++i) train(turning,10+i*0.02,(i/10)*kFacePi/2,1,0.1);
+ train(turning,13,0,1,1.0);train(turning,13.02,0,1,1.0); assert(std::fabs(turning.theta-1.0)<1e-5); // theta uses only last2s
  checkDirection(turning,16,0,1.0); // no new walking => no camera-based update while still/airborne
- for(int i=0;i<100;++i)train(turning,14+i*0.02,(i%4)*kFacePi/2,1,1.0);
+ for(int i=0;i<100;++i)train(turning,14+i*0.02,((i/25)%4)*kFacePi/2,1,1.0);
  assert(turning.used==64 && turning.count(16)==64);
  puts("PASS: M12 60deg mirror gate, previous mirror, angle wrap,2s rotation window,64-ring and stationary freeze");
  FaceWalkFrame frame;FaceWalkModel frameModel;
@@ -62,14 +69,23 @@ int main() {
  frame.advance(10.04,pos,true,0,1,n,frameModel);assert(frameModel.used==1); // faceAir/unpinned interval excluded
  pos[1]+=0.08f;frame.advance(10.06,pos,true,0,1,n,frameModel);assert(frameModel.used==2);
  puts("PASS: M12 per-frame game walking includes later calls, excludes own correction/air interval and pairs stick");
+ FaceAirMapping frozen,untrained;frozen.freeze(turning,16);untrained.freeze(empty,20);
  bool fallback=false; float velocity[3]={5,0,3};
- assert(faceZipDirection(turning,16,0,1,n,velocity,out,fallback) && !fallback);
+ assert(faceZipDirection(frozen,0,1,n,velocity,out,fallback) && !fallback);
  assert(near(out[1],float(std::cos(1.0))) && near(out[2],float(std::sin(1.0))));
- assert(faceZipDirection(empty,20,0,0,n,velocity,out,fallback) && fallback);
+ assert(faceZipDirection(untrained,0,0,n,velocity,out,fallback) && fallback);
  assert(near(out[0],0) && near(out[1],0) && near(out[2],1)); // neutral current velocity, normal component removed
- assert(!faceZipDirection(empty,20,0,1,n,velocity,out,fallback)); // untrained active stick never invents a direction
- float zero[3]={0,0,0};assert(!faceZipDirection(empty,20,0,0,n,zero,out,fallback));
+ assert(!faceZipDirection(untrained,0,1,n,velocity,out,fallback)); // untrained active stick never invents a direction
+ float zero[3]={0,0,0};assert(!faceZipDirection(untrained,0,0,n,zero,out,fallback));
  puts("PASS: M12 zip model direction, neutral velocity fallback, no-direction/no-velocity refusal");
+ FaceWalkModel steadyOnly;train(steadyOnly,10,0,1,1);train(steadyOnly,10.02,0,1,1);
+ double heldTheta=steadyOnly.theta;
+ train(steadyOnly,10.04,kFacePi/2,1,2);assert(std::fabs(steadyOnly.theta-heldTheta)<1e-6); // direction transition excluded
+ for(int i=0;i<50;++i)train(turning,17+i*0.02,0,1,-0.8);
+ assert(std::fabs(turning.theta-frozen.theta)>0.1);
+ assert(frozen.direction(0,1,n,out));assert(near(out[1],float(std::cos(1.0)))&&near(out[2],float(std::sin(1.0))));
+ assert(frozen.takeoff==16 && frozen.hand==1); // live fit changes cannot affect this jump
+ puts("PASS: M13 30-inlier/80percent mirror gate, steady-only rotation and immutable takeoff mapping");
   FaceWalkModel mean;train(mean,10,0,1,0,1.5f);train(mean,10.02,0,1,0,3.5f);train(mean,10.04,0,1,0,4.f);
   assert(near(mean.meanSpeed(10.1),3.f));
   assert(std::string(mean.takeoff(10.1,0,0,n,out))=="walk" && near(out[1],3.f));
@@ -94,11 +110,12 @@ int main() {
   assert(std::string(g.reason)=="accelerating_six_frames");
   g.begin(0.02f,false);assert(g.apply(10,9.99f,false)==10);assert(g.apply(10,10.01f,false)==10.01f);
   g.begin(0.02f,true);assert(g.apply(10,9.90f,true)==9.90f && g.rises==0);
+  g.resetMotion();assert(g.dt==0.02f && g.apply(10,9.90f,true)==9.90f); // landing keeps frame dt
   puts("PASS: M13 unrestricted ordinary downward frames, fall speed/6 rises, neutral and whole-frame undo");
 }
 '''
 (root / 'build').mkdir(exist_ok=True)
 unit = root / 'build/face_control_tests.cpp'
-unit.write_text('#include <algorithm>\n#include <cmath>\n#include <cassert>\n#include <cstdio>\n#include <string>\nbool near(float a,float b){return std::fabs(a-b)<1e-5f;}\n' + model + budget + tests)
+unit.write_text('#include <algorithm>\n#include <cmath>\n#include <cassert>\n#include <cstdio>\n#include <string>\nbool near(float a,float b){return std::fabs(a-b)<1e-5f;}\n' + model + guard + tests)
 subprocess.run(['g++', '-std=c++17', '-Wall', '-Wextra', '-Werror', '-pedantic', '-fsanitize=address,undefined', '-g', str(unit), '-o', str(root/'build/face_control_tests')], check=True)
 subprocess.run([str(root/'build/face_control_tests')], check=True)
