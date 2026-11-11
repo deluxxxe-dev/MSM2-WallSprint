@@ -1291,6 +1291,17 @@ struct FaceJumpTrace {
   }
 };
 // M12_WALK_MODEL_END
+// M15_PHYSICS_BEGIN: both production integration sites share these tested steps.
+void generalGravityStep(float* v,const float* up,float g,float dt,bool faceAirFrame) {
+  if(faceAirFrame)return;
+  for(int i=0;i<3;++i)v[i]-=g*up[i]*dt;
+  float speed=std::hypot(v[0],v[1],v[2]);if(speed>30.f)for(int i=0;i<3;++i)v[i]*=30.f/speed;
+}
+void faceAirStep(float* q,const float* previous,float* v,const float* normal,const float* planar,float* dash,float g,float dt) {
+  float decay=std::exp(-dt/0.5f);
+  for(int i=0;i<3;++i){v[i]-=g*normal[i]*dt;q[i]=previous[i]+(v[i]+planar[i]+dash[i])*dt;dash[i]*=decay;}
+}
+// M15_PHYSICS_END
 // M13_FALL_GUARD_BEGIN: raw negative frame motion is allowed unless it has a fall signature.
 struct FaceFallGuard {
   float dt{}, rawY{}, passedDown{}, speed{}, previousSpeed{}; unsigned rises{};
@@ -1738,8 +1749,8 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   float n0[3] = {gfN0[0].load(), gfN0[1].load(), gfN0[2].load()}, p0[3] = {gfP0[0].load(), gfP0[1].load(), gfP0[2].load()};
   if(gfL.facing.sample(qpcSec(now),mvA ? mvA : p,n0))faceFacingLog("takeoff_plus_0.1");
   float u[3]; for (int i = 0; i < 3; ++i) { std::uint32_t b = sgSubBits[i].load(std::memory_order_relaxed); std::memcpy(&u[i], &b, 4); }
-  for (int i = 0; i < 3; ++i) gfL.vg[i] -= kGfG * u[i] * dt;
-  float vl = std::sqrt(gfL.vg[0] * gfL.vg[0] + gfL.vg[1] * gfL.vg[1] + gfL.vg[2] * gfL.vg[2]); if (vl > 30.f) for (float& c : gfL.vg) c *= 30.f / vl;
+  bool faceAirFrame=gfL.pinned && !sbBlendQpc.load() && (gfL.faceAir || wgiPresses.load()!=gfL.pinPresses);
+  generalGravityStep(gfL.vg,u,kGfG,dt,faceAirFrame);
   if(gfL.stop.active && !gfL.pinned && !gfL.faceAir && gfL.pushT<=0.f) capStopVelocity(gfL.vg,n0);
   float dyGame = p[1] - gfL.pLast[1];
   if (p[0] != gfL.pLast[0] || p[1] != gfL.pLast[1] || p[2] != gfL.pLast[2]) {   // the game stepped since our last store
@@ -1843,7 +1854,6 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     // walk velocity steered by the learned face mapping (faceAirDir), air A = web zip impulse. The game animates.
     bool takeoffFrame=gfL.faceAirT==0.f;
     gfL.faceAirT += dt;
-    for (int i = 0; i < 3; ++i) gfL.vg[i] -= kGfG * n0[i] * dt;
     float st[3]{}; bool mapped=!gfL.stopHop && faceAirDir(n0, st);
     if (mapped && !takeoffFrame) { gfL.airSource="model"; steerFaceVelocity(gfL.airVel,st,dt,n0); }
     { unsigned zr = gfZipReq.load(std::memory_order_relaxed);
@@ -1857,8 +1867,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
         faceFacingLog("zip");
         faceInputLog("WS_FACE_ZIP",n0,impulse ? gfL.dash : z,source,qpcSec(now),fallback);
       } }
-    float kd = std::exp(-dt / 0.5f);
-    for (int i = 0; i < 3; ++i) { q[i] = gfL.pLast[i] + (gfL.vg[i] + gfL.airVel[i] + gfL.dash[i]) * dt; gfL.dash[i] *= kd; }
+    faceAirStep(q,gfL.pLast,gfL.vg,n0,gfL.airVel,gfL.dash,kGfG,dt);
     float dq = (q[0] - p0[0]) * n0[0] + (q[1] - p0[1]) * n0[1] + (q[2] - p0[2]) * n0[2];
     float vn = gfL.vg[0] * n0[0] + gfL.vg[1] * n0[1] + gfL.vg[2] * n0[2];
     if (dq < 0.f) for (int i = 0; i < 3; ++i) q[i] -= dq * n0[i];
