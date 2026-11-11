@@ -5,7 +5,9 @@ Branch `codex/v01c20-edi-value-provenance` (no main merge, no force-push). Previ
 assessment for every item), then `analysis/M12_OWNER_RESULT_20261111.md` and the M10z sections at the end of
 `analysis/M8_JUMP_PLAN_20261106.md`.
 
-Owner goal: on a wall the hero moves exactly like on the ground, no shaking or jerks; the changed gravity stays until B.
+Owner must-haves (both mandatory): (1) on a wall the hero moves exactly like on the ground, no shaking or jerks;
+(2) in the air after jumping or stepping off a face the changed gravity is kept and the hero falls along it until a new
+WS or B (never hovering, never world down). Task 5 exists to make (2) implementable; falling is the next task after it.
 Terms: WS = Wall Sprint (this mod), WR = vanilla Wall Run.
 Accepted, do not regress: walking on the face in all directions; no re-approach loop (0 `REAPPROACH` in the M13 run);
 stop without jerk; walking jumps move ~2 m in the stick direction.

@@ -22,6 +22,12 @@ This file governs WallSprint changes in `deluxxxe-dev/MSM2-WallSprint`. The cano
   whole duration of each video, not only some of them) and every log. Never report or decide from a subset, and say
   explicitly which files were inspected.
 
+## Owner must-haves (owner rule 2026-11-11)
+1. Seamless motion: on a wall the hero moves exactly like on the ground, with no shaking or jerks.
+2. The changed gravity is kept in the air too: after jumping or stepping off a face, the hero keeps the face gravity and
+   falls along it (not world down, not hovering) until a new WS or B. This is a core requirement, not an option.
+Every task plan and acceptance must keep both.
+
 ## Codex handoff (owner rule 2026-11-11)
 - When implementation is handed to Codex, put the complete instructions in the repository (`docs/CODEX_NEXT.md` plus the
   referenced `analysis/` files), commit and push them, and give the owner only a minimal paste message for Codex:
