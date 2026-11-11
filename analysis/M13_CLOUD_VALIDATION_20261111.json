@@ -1,0 +1,103 @@
+{
+  "date_jst": "2026-11-11",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "baseline": "4031bd0",
+  "implementation_commits": {
+    "1": "16acb3526ced612cc7125610c5109a6bfe9b7329",
+    "2": "2785b5dfdb27913144a0c2845324a5d04852928f",
+    "3A": "20cace83beb2a997c4e153498677bbefa8aca052",
+    "4": "bb40fa40eb467c4dae90f0c2ba5aeca1a3e369ba",
+    "5": "a88602cd54ce231f64feac5ee8b19c6476665b30"
+  },
+  "source_tree": "2a843a94b16fd93f2648ca5a9cd47efe8ab5aa15",
+  "commands": {
+    "build": {
+      "cwd": "source",
+      "command": "bash tools/build_windows.sh",
+      "exit_code": 0,
+      "attempts": 1,
+      "log_sha256": "2fcafa762422bd4268f07550b25185c191d67f3e49eb5d993b261033a099ee8b",
+      "PASS": 0,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "failed_assertions": []
+    },
+    "portable": {
+      "cwd": "source",
+      "command": "bash tools/test.sh",
+      "exit_code": 0,
+      "attempts": 1,
+      "log_sha256": "94ac15cb41484cac06f173d97a9e5a78f3ccf026f4d099f0c8d4a7f143f6d478",
+      "PASS": 47,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "failed_assertions": []
+    },
+    "smoke": {
+      "cwd": "source",
+      "command": "bash tools/smoke_windows.sh",
+      "exit_code": 0,
+      "attempts": 1,
+      "log_sha256": "ac877e7f7a87e76a3e786ddc33902ee3c3ebf7dd217226a29157834385caf625",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "failed_assertions": []
+    },
+    "hooks": {
+      "cwd": "source",
+      "command": "bash tools/test_hooks_windows.sh",
+      "exit_code": 0,
+      "attempts": 1,
+      "log_sha256": "b183c9016aeb346358b03786d2b94ef043254db905d03919ce1686c4f3f7e43d",
+      "PASS": 907,
+      "SKIP": 5,
+      "UNAVAILABLE": 17,
+      "FAIL": 0,
+      "failed_assertions": []
+    },
+    "package": {
+      "cwd": "source",
+      "command": "python3 tools/package.py",
+      "exit_code": 0,
+      "attempts": 1,
+      "log_sha256": "ea15817b51246d679491e1c29c49dd38d0c8380d21b99f892b09c1c67e3baa45",
+      "PASS": 2,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "failed_assertions": []
+    }
+  },
+  "artifacts": {
+    "source/build/windows/WallSprint.dll": {
+      "bytes": 15353193,
+      "sha256": "caef8b0f527893714e4db0c45e4b0750111e3b08db407c291a33148359461989"
+    },
+    "source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled": {
+      "bytes": 3113827,
+      "sha256": "d9c04e031ab2ef25d013b188ae992b0401ba1c1d93878a750f69b644c8af0e23"
+    }
+  },
+  "hooks_retries": 0,
+  "owner_windows_game_acceptance": "UNKNOWN",
+  "task3B": "NOT_IMPLEMENTED_PENDING_3A_OWNER_RESULT",
+  "implementation_choices": {
+    "fall_stick_threshold": 0.25,
+    "quiet_normal_tolerance_m": 0.002,
+    "plane_low_pass": 0.25,
+    "mirror_agreement_residual_degrees": 20,
+    "mirror_minimum_inliers": 30,
+    "mirror_agreement_percent": 80,
+    "mirror_inlier_stick_span_degrees": 60
+  },
+  "artifact_checks": [
+    "CRC",
+    "exact member set",
+    "packaged DLL equals newly built DLL"
+  ],
+  "focused_checks": "Each task used actual pure helpers under ASan/UBSan plus camera_ref.cpp cross-compile with the existing production warnings-as-errors flags before its push. Some focused checks were repeated after deliberate source refinements; no focused failures and no final-suite reruns."
+}

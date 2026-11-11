@@ -1,3 +1,116 @@
+# M13 result — jerk guards, jump speed and frozen zip mapping (2026-11-11 JST)
+
+STATUS: five implementation tasks committed/pushed; cloud validation below;
+actual owner-game acceptance UNKNOWN. Branch `codex/v01c20-edi-value-provenance`.
+No main merge, force push, local Windows deployment or runtime acceptance claim.
+M12 accepted four-direction walking and standing after3/3 stops are the baseline.
+
+## Changes, one commit/push per task in required order
+
+| Task | Commit | Resulting source behavior |
+|---|---|---|
+| 1 | `16acb35` | Replace6m/s budget with cumulative raw frame fall detector: >9m/s or six consecutive >0.2m/s rises; restore the detected frame's downward parts, neutral unchanged;100 pushed-undo logs. Actual elapsed dt is used for detection. |
+| 2 | `2785b5d` | Five quiet game frames permit25% local plane adaptation, at most0.05m/frame;>0.05m cumulative movement logs follow. Reapproach needs actual current rest>0.3m/>0.2s and>=1s between attempts. |
+| 3A | `20cace8` | Stop push0.5m/0.12s,4m/s airborne normal approach with shared-frame distance floor, no landing during push, first stop landing's0.3s outward clamp at plane_d<=0.02m. |
+| 4 | `bb40fa4` | Mean qualified walking speed over0.3s, minimum5m/s for pushed stick with known direction; constant-speed planar steering, no neutral decay; bounded takeoff/landing relative trace. |
+| 5 | `a88602c` | Copy h/theta/validity/time once at takeoff for all air steering/zips; h changes only with>=30 inliers,>=80% agreement and>=60deg span;2s rotation mean uses steady-stick samples. |
+
+Production code is only `source/src/NativeHooks/camera_ref.cpp`.
+`source/tools/test_face_control.py` and `test_face_landing.py` compile actual pure
+helpers against owned data and remain in the existing portable suite. Analysis:
+`analysis/M13_FACE_CONTROL_20261111.md`; exact validation/log/artifact hashes:
+`analysis/M13_CLOUD_VALIDATION_20261111.json`. Final documentation changes are
+this file, CLOUD_VERIFIED and the M13 analysis/validation record.
+
+Completed-frame game steps subtract WS-applied corrections, including later
+SetPosition calls; plane follow uses pre-call actual Hero position, not a desired
+outward step that may subsequently be rejected. Rest tolerance2mm, plane low-pass
+25%, and mirror agreement residual20deg are authored implementation choices,
+not verified engine constants. Mirror evidence/steady rotation use the bounded64
+sample/20s walking ring. Untrained/expired source still refuses planar direction.
+Zip logs expose frozen_h/frozen_theta_deg/takeoff_time_s and mirror counts.
+WS_FACE_JUMP_TRACE cap60 logs capture takeoff-relative up/side/normal displacement,
+full takeoff velocity, stick and source. WS_FACE_FALL_UNDO cap100 captures every
+pushed-stick undo until the cap; move samples expose speed/rises/blocked state.
+
+Task3A is the only landing experiment implemented. Task3B requires the owner A
+result first: if repeated landings or no standing remain, the next task logs the
+specified0.6s/240-line WS_STOP_TRACE and stops, instead of guessing another fix.
+No Task3B instrumentation or extra gameplay experiment was added now.
+
+Normal jump launch expression/arc integration is retained; actual peak/airtime
+and >=2m directional travel remain game measurements. Camera turns while still
+or airborne keep the previous walking mapping; air mapping is immutable through
+that jump. Body yaw, camera jerk/swing, web-line visual, charge, velocity search,
+mover edits and L3 are outside scope. Exact-build/pdata/SHA, F8, INI/default-OFF
+code guards and WS-only updater isolation remain. Mover remains0. No new native
+hook/signature, live camera search or shared/SF modification.
+
+No raw owner attachment was supplied here: the committed M12/M11/M10z derived
+reports were used. Owned cloud fixtures do not prove game improvement. No new
+runtime engine fact or Wisdoms edit is claimed; prior in-session Wisdoms context
+was consulted and cross-repository writes were not authorized.
+
+## Validation
+
+Final tested source tree: `2a843a94b16fd93f2648ca5a9cd47efe8ab5aa15`.
+Each task's camera_ref production Windows cross-compile and focused helper tests
+passed before its push. Full final commands run from `source/`:
+
+| Command | Result |
+|---|---|
+| `bash tools/build_windows.sh` | exit0, production warnings-as-errors |
+| `bash tools/test.sh` | exit0,47 PASS lines plus4 selector unittest cases |
+| `bash tools/smoke_windows.sh` | exit0,7 PASS lines under Wine |
+| `bash tools/test_hooks_windows.sh` | exit0 first attempt,907 PASS /5 SKIP /17 UNAVAILABLE |
+| `python3 tools/package.py` | exit0, CRC/member set/exact newly built DLL independently checked |
+| `git diff --check` | PASS |
+
+No final-suite failures, timing flakes, reruns, assertion/deadline changes or
+skipped steps. Optional historical private captures/native-Windows evidence
+remain unavailable and are not game passes. CLOUD_VERIFIED is appended only
+after this complete final pipeline passed. Tested source is unchanged by final
+docs/analysis recording, so no extra full-suite repetition is required.
+
+Generated package:
+`source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled` (package0.1.73;
+normal deployment exposes one `MSM2-WS-v0.1c48.script`). Package SHA256:
+`d9c04e031ab2ef25d013b188ae992b0401ba1c1d93878a750f69b644c8af0e23`.
+DLL SHA256:
+`caef8b0f527893714e4db0c45e4b0750111e3b08db407c291a33148359461989`.
+These remain generated build outputs; committed source reproduces them through
+Update-WS. Historical c48 package-manifest wording is not evidence of current
+experimental runtime write behavior. No ZIP download or cloud game-drive edit.
+
+## NEED — one normal owner run after publication
+
+1. Run installed `MSM2-WS/Update-WS.cmd` -> Overstrike Install mods -> Run modded
+   game. Keep normal packaged SETPOS=1/mover0. Wait ~20s in freeroam.
+2. WS -> stop3 times, waiting3s standing after each. Then stand still on the
+   face10s. Capture hero and camera jerks/standing in video. Decision: exactly
+   one WALL_LANDED per stop and standing -> accept3A; repeats/no standing ->
+   task3B trace-only follow-up, without guessing another movement change.
+3. Walk up/down/left/right5s each; then travel>20m along the wall and stand10s
+   there. Check down walking has no hitch/guard undo and quiet rest has no
+   periodic REAPPROACH. This walking also trains the direction model.
+4. Walking jumps and standing-with-stick jumps up/down/left/right twice each;
+   web zips up/down/left/right. Caption input direction and walking/standing/zip;
+   record visible body facing/camera behavior without assuming it proves travel.
+   If camera turns while still/airborne, walk again to update the next takeoff's
+   mapping. This jump's mapping remains frozen.
+5. Return the newest complete `logs/MSM2-WS-v0.1c48-<timestamp>.log` and captioned
+   videos. Directory: `<game>/Mods Library/Mods-Developing/MSM2-WS/logs`.
+   No SETPOS=0 comparison or other extra experiment is requested.
+
+All five implementation commits were pushed separately in order. GitHub HEAD
+`a88602cd54ce231f64feac5ee8b19c6476665b30` was checked after those pushes. Final
+record commit is pushed and checked against local HEAD before the chat handoff;
+it changes no tested source/runtime bytes. User Windows/game installation and
+acceptance are still pending, not performed by Git publication.
+
+---
+Historical results below are retained; M13 above is the current result.
+
 # M12 result — stop plane and learned face-walking directions (2026-11-11 JST)
 
 STATUS: implementation/push complete; cloud validation below; actual owner-game

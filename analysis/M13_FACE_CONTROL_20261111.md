@@ -93,3 +93,15 @@ steering/zip. Prior fall/plane/stop/mean/trace fixtures still pass. Each task's
 production camera_ref.cpp cross-compile used the existing warnings-as-errors
 flags. Full final pipeline follows the fifth commit; no game acceptance is
 claimed from these independently owned mathematical/fixture inputs.
+
+## Final cloud validation
+Final source2a843a94b16fd93f2648ca5a9cd47efe8ab5aa15: build, portable47 PASS plus4
+selector cases, smoke7 PASS, hooks907 PASS/5 SKIP/17 UNAVAILABLE, package/CRC/member
+set/exact built DLL audit all exit0. All final suites passed first attempt; no
+timing failure, retry, skipped step or test relaxation. Commands/log/artifact
+hashes and full ordered implementation commits are in
+M13_CLOUD_VALIDATION_20261111.json. CLOUD_VERIFIED added only after all passed.
+Implementation commits16acb35/2785b5d/20cace8/bb40fa4/a88602c pushed individually
+in order; final docs record changes no tested source. Actual owner acceptance
+remains UNKNOWN. CODEX_RESULT contains the one combined normal run and3A-vs-3B
+decision; no conditional3B code or extra owner experiment is added prematurely.
