@@ -701,6 +701,11 @@ std::atomic<double> wgiRt{0}; std::atomic<unsigned> wgiL3Edges{0}; std::atomic<f
 // direction is world-horizontal and failed facing up/down the face); the force adds a dash along the camera forward
 // projected on the face instead (15 m/s, decays with 0.4 s).
 std::atomic<bool> gfAir{false}, gfFaceAirNow{false}; std::atomic<unsigned> gfDashReq{0}, gfFaceDiag{0}, gfZipLogs{0}, gfZipReq{0}; extern std::atomic<float> wgiLx, wgiLy;
+extern std::atomic<bool> gfOn; extern std::atomic<unsigned> gfGen;
+std::atomic<bool> gfPinnedNow{false},gfFaceMaskLatched{false};
+std::atomic<std::uint64_t> gfFaceMaskUntil{0};
+void faceFacingPress(float sx,float sy);
+bool shouldNeutralFaceStick(bool hold,bool ws,bool killedNow,bool air,bool latched,std::uint64_t now,std::uint64_t until);
 enum : int { kChIdle, kChHold, kChGive, kChSwallow };
 std::atomic<int> chState{kChIdle}; std::atomic<std::uint64_t> chStart{0}, chGiveUntil{0}; unsigned chLogs{};
 // M10t: the jump height of the last WS jump release (normal 1.8 m, charge 15 -> 39 m like the ground curve) for the
@@ -760,7 +765,12 @@ HRESULT STDMETHODCALLTYPE wgiReadDetour(void* self, WgiReading* r) {
   wgiReads.fetch_add(1, std::memory_order_relaxed);
   if (SUCCEEDED(hr) && r) {
     bool a = (r->buttons & 0x4u) != 0;
-    if (a && !wgiA.exchange(true)) { auto now = GetTickCount64(); xgPress.store(now); wgiPresses.fetch_add(1);
+    wgiLx.store(float(r->lx),std::memory_order_relaxed);wgiLy.store(float(r->ly),std::memory_order_relaxed);
+    if (a && !wgiA.exchange(true)) { auto now = GetTickCount64();
+      if(gfOn.load() && gfPinnedNow.load() && !gfFaceAirNow.load() && !wsActiveNow(now) && !killed.load()) {
+        gfFaceMaskLatched.store(true);faceFacingPress(float(r->lx),float(r->ly));
+      }
+      xgPress.store(now); wgiPresses.fetch_add(1);
       if (wgiLogs.fetch_add(1) < 80) { auto kp = jiPress.load(); auto last = lastWsMs.load();
         msm2::writeLog("WS_INPUT_GAME_A module=WGI since_ws_seen_press_ms=%lld ws=%u engaged=%u since_ws_update_ms=%lld charge_state=%d charge_enabled=%u",
           kp ? (long long)(now - kp) : -1ll, unsigned(wsActiveNow(now)), unsigned(engagedManager.load() != 0), last ? (long long)now - (long long)last : -1ll, chState.load(), unsigned(ws::drive::wsChargeJump.load())); } }
@@ -780,8 +790,8 @@ HRESULT STDMETHODCALLTYPE wgiReadDetour(void* self, WgiReading* r) {
     // M10z-r15: during a face jump the stick is not given to the game (its air control is world-horizontal: the body
     // turned sideways for up/down input); the takeoff walking velocity is kept by the force instead.
     // M10z-r17: raw stick kept for our air control; during a face jump the game gets a neutral stick.
-    wgiLx.store(float(r->lx), std::memory_order_relaxed); wgiLy.store(float(r->ly), std::memory_order_relaxed);
-    if (gfFaceAirNow.load(std::memory_order_relaxed)) { r->lx = 0; r->ly = 0; }
+    auto maskNow=GetTickCount64();
+    if(shouldNeutralFaceStick(gfOn.load(),wsActiveNow(maskNow),killed.load(),gfFaceAirNow.load(),gfFaceMaskLatched.load(),maskNow,gfFaceMaskUntil.load())) { r->lx=0;r->ly=0; }
     // M10z-r4 (owner: stopping during WS goes to the crawl; upright only after a jump): when the stick stays neutral for
     // 120 ms during a WS, one 60 ms A tap is given to the game (a small jump, 0.4 m) so the hero lands on the face in the
     // face-as-ground mode. Once per WS session; not while a charge is held.
@@ -1376,7 +1386,29 @@ struct HeroFrameClock {
 };
 // M14_FRAME_CLOCK_END
 std::atomic<double> gfMaxIntraMs{0},gfMinFrameMs{0};
-struct GfLocal { bool stopHop{}; double stopHopTakeoff{}; HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
+// M14_FACING_BEGIN: press masking and sampled normal-arc evidence, no rotation write.
+bool shouldNeutralFaceStick(bool hold,bool ws,bool killedNow,bool air,bool latched,std::uint64_t now,std::uint64_t until) {
+  return hold && !ws && !killedNow && (air || latched || now<until);
+}
+struct FaceFacingProbe {
+  bool active{},delayed{}; unsigned id{}; double takeoff{},peakTime{}; float origin[3]{},peak{},walkUp{},walkSide{};
+  void begin(unsigned press,double now,const float* p,float up,float side) {
+    active=true;delayed=false;id=press;takeoff=now;peakTime=0;peak=0;walkUp=up;walkSide=side;
+    for(int i=0;i<3;++i) origin[i]=p[i];
+  }
+  bool sample(double now,const float* p,const float* n) {
+    if(!active) return false;
+    float len=std::hypot(n[0],n[1],n[2]);
+    if(len>0.9f && len<1.1f) { float delta=0;for(int i=0;i<3;++i)delta+=(p[i]-origin[i])*n[i]/len;
+      if(std::isfinite(delta) && delta>peak) {peak=delta;peakTime=now-takeoff;} }
+    if(!delayed && now-takeoff>=0.1) {delayed=true;return true;}
+    return false;
+  }
+};
+// M14_FACING_END
+std::atomic<unsigned> gfFacingLogs{0},gfFacingPressId{0},gfFacingPressGen{0},gfFacingWalkGen{0},gfFacingWalkSeq{0};
+std::atomic<float> gfFacingWalk[3]{},gfFacingPressUp{0},gfFacingPressSide{0};
+struct GfLocal { FaceFacingProbe facing{}; bool stopHop{}; double stopHopTakeoff{}; HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
 void gfLogPlane(const char* event) {
   msm2::writeLog("WS_GRAVITY_FORCE_PLANE event=%s point=%.3f,%.3f,%.3f source=%s",
     event, gfP0[0].load(), gfP0[1].load(), gfP0[2].load(), gfPlaneFromWall.load() ? "wall_point_0x338" : "ws_position_minus_0.5n");
@@ -1411,6 +1443,33 @@ void faceInputLog(const char* event, const float* n, const float* velocity, cons
   msm2::writeLog("%s stick=%.2f,%.2f a_s=%.6f h=%d theta_deg=%.2f sample_count=%u sample_age_s=%.3f model_age_s=%.3f source=%s dir_up=%.3f dir_side=%.3f speed=%.3f velocity_fallback=%u frozen_h=%d frozen_theta_deg=%.2f takeoff_time_s=%.6f mapping_valid=%u mirror_agree=%u mirror_total=%u",
     event,sx,sy,std::atan2(sx,sy),gfL.airMapping.hand,gfL.airMapping.theta*180.0/kFacePi,gfL.walk.count(now),gfL.walk.age(now),
     gfL.walk.valid ? now-gfL.walk.updated : -1.0,source,speed>1e-4f ? u/speed : 0.f,speed>1e-4f ? s/speed : 0.f,speed,unsigned(velocityFallback),gfL.airMapping.hand,gfL.airMapping.theta*180.0/kFacePi,gfL.airMapping.takeoff,unsigned(gfL.airMapping.valid),gfL.walk.agreeing,gfL.walk.fitSamples);
+}
+void facingComponents(const float* walking,float* forward,float* walk,bool& valid) {
+  float n[3]={gfN0[0].load(),gfN0[1].load(),gfN0[2].load()},up[3],side[3],f[3]{};
+  auto tr=gfTransform.load();valid=tr && tr<=UINTPTR_MAX-0x2c && faceBasis(n,up,side) && msm2::readMemory(tr+0x20,f,12);
+  forward[0]=forward[1]=walk[0]=walk[1]=0.f;
+  if(valid) for(int i=0;i<3;++i) { if(!std::isfinite(f[i])) {valid=false;break;} forward[0]+=f[i]*up[i];forward[1]+=f[i]*side[i]; }
+  if(faceBasis(n,up,side)) for(int i=0;i<3;++i){walk[0]+=walking[i]*up[i];walk[1]+=walking[i]*side[i];}
+}
+void faceFacingPress(float sx,float sy) {
+  float walking[3]{},f[2],w[2];bool walkValid=false;
+  for(int attempt=0;attempt<2;++attempt) { auto seq=gfFacingWalkSeq.load(std::memory_order_acquire);if(seq&1u)continue;
+    for(int i=0;i<3;++i)walking[i]=gfFacingWalk[i].load(std::memory_order_relaxed);
+    if(seq==gfFacingWalkSeq.load(std::memory_order_acquire)){walkValid=gfFacingWalkGen.load()==gfGen.load();break;}
+  }
+  if(!walkValid)for(float& x:walking)x=0;
+  bool valid=false;facingComponents(walking,f,w,valid);
+  gfFacingPressUp.store(w[0]);gfFacingPressSide.store(w[1]);gfFacingPressGen.store(gfGen.load());
+  unsigned id=gfFacingPressId.fetch_add(1,std::memory_order_release)+1;
+  if(gfFacingLogs.fetch_add(1)<40) msm2::writeLog("WS_FACE_JUMP_FACING event=press id=%u forward_read=%u forward_up=%.3f forward_side=%.3f walk_read=%u walking_up=%.3f walking_side=%.3f stick=%.2f,%.2f peak_delta_n=0 peak_time_s=0 source=transform_0x20 phase=WGI_press",
+    id,unsigned(valid),f[0],f[1],unsigned(walkValid),w[0],w[1],sx,sy);
+}
+void faceFacingLog(const char* event,bool terminal=false) {
+  if(!gfL.facing.active)return;
+  float unused[3]{},f[2],w[2];bool valid=false;facingComponents(unused,f,w,valid);
+  if(gfFacingLogs.fetch_add(1)<40) msm2::writeLog("WS_FACE_JUMP_FACING event=%s id=%u forward_read=%u forward_up=%.3f forward_side=%.3f walking_up=%.3f walking_side=%.3f peak_delta_n=%.3f peak_time_s=%.3f source=transform_0x20 phase=pre_position_callback",
+    event,gfL.facing.id,unsigned(valid),f[0],f[1],gfL.facing.walkUp,gfL.facing.walkSide,gfL.facing.peak,gfL.facing.peakTime);
+  if(terminal)gfL.facing.active=false;
 }
 std::atomic<unsigned> gfJumpTraceLogs{0};
 void faceJumpTrace(const char* event,const float* p,const float* n,double now,bool terminal=false) {
@@ -1508,11 +1567,15 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     float speed=std::sqrt(gfL.walk.velocity[0]*gfL.walk.velocity[0]+gfL.walk.velocity[1]*gfL.walk.velocity[1]+gfL.walk.velocity[2]*gfL.walk.velocity[2]);
     for(int i=0;i<3;++i) { gfL.moveVel[i]=gfL.walk.velocity[i]; gfL.moveDir[i]=gfL.walk.velocity[i]/speed; }
     gfL.moveDirT=0.f;
+    gfFacingWalkSeq.fetch_add(1,std::memory_order_acq_rel);
+    for(int i=0;i<3;++i)gfFacingWalk[i].store(gfL.moveDir[i],std::memory_order_relaxed);
+    gfFacingWalkGen.store(gfL.gen);gfFacingWalkSeq.fetch_add(1,std::memory_order_release);
   } else gfL.moveDirT+=dt;
   gfL.last = now; gfL.t += dt;
   if (mvA) std::memcpy(gfL.pLast, mvA, 12);   // mover: the step is desired - current
   ++gfL.frames;   // M10z: no cap (the face stays the ground)
   float n0[3] = {gfN0[0].load(), gfN0[1].load(), gfN0[2].load()}, p0[3] = {gfP0[0].load(), gfP0[1].load(), gfP0[2].load()};
+  if(gfL.facing.sample(qpcSec(now),mvA ? mvA : p,n0))faceFacingLog("takeoff_plus_0.1");
   float u[3]; for (int i = 0; i < 3; ++i) { std::uint32_t b = sgSubBits[i].load(std::memory_order_relaxed); std::memcpy(&u[i], &b, 4); }
   for (int i = 0; i < 3; ++i) gfL.vg[i] -= kGfG * u[i] * dt;
   float vl = std::sqrt(gfL.vg[0] * gfL.vg[0] + gfL.vg[1] * gfL.vg[1] + gfL.vg[2] * gfL.vg[2]); if (vl > 30.f) for (float& c : gfL.vg) c *= 30.f / vl;
@@ -1589,6 +1652,8 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     gfL.stop.active=false;
     gfL.airSource=gfL.walk.takeoff(qpcSec(now),wgiLx.load(),wgiLy.load(),n0,gfL.airVel);
     gfL.airMapping.freeze(gfL.walk,qpcSec(now));
+    unsigned facingId=gfFacingPressGen.load()==gfL.gen ? gfFacingPressId.load(std::memory_order_acquire) : 0;
+    gfL.facing.begin(facingId,qpcSec(now),mvA ? mvA : p,gfFacingPressUp.load(),gfFacingPressSide.load());
     { float v = std::sqrt(2.f * kGfG * 1.8f); for (int i = 0; i < 3; ++i) gfL.vg[i] = n0[i] * v; for (float& c : gfL.dash) c = 0.f; }
     { float v[3]; for(int i=0;i<3;++i) v[i]=gfL.airVel[i]+gfL.vg[i];
       gfL.jumpTrace.start(qpcSec(now),mvA ? mvA : p,v,wgiLx.load(),wgiLy.load(),gfL.airSource);
@@ -1628,6 +1693,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
         bool impulse=faceZipDirection(gfL.airMapping,wgiLx.load(),wgiLy.load(),n0,velocity,z,fallback);
         const char* source=impulse ? (fallback ? gfL.airSource : "model") : "none";
         if(impulse) for(int i=0;i<3;++i) gfL.dash[i]=z[i]*18.f;
+        faceFacingLog("zip");
         faceInputLog("WS_FACE_ZIP",n0,impulse ? gfL.dash : z,source,qpcSec(now),fallback);
       } }
     float kd = std::exp(-dt / 0.5f);
@@ -1638,7 +1704,8 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     if (gfL.faceAirT > 0.1f && dq < 0.02f && vn <= 0.f) { gfL.faceAir = false; gfL.pinT = 0.f; gfL.fallGuard.resetMotion(); for (float& c : gfL.vg) c = 0.f; for (float& c : gfL.dash) c = 0.f;
       if(gfL.stopHop) { gfL.stop.landed(qpcSec(now));gfL.stopHop=false;
         msm2::writeLog("WS_GRAVITY_FORCE_STOP_HOP event=landing height_m=0.5 airtime_s=%.3f",qpcSec(now)-gfL.stopHopTakeoff); }
-      faceJumpTrace("landing",q,n0,qpcSec(now),true); gfLogPlane("FACE_JUMP_LANDED"); msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_LANDED t=%.2f", gfL.faceAirT); }
+      gfFaceMaskLatched.store(false);gfFaceMaskUntil.store(GetTickCount64()+100);
+      faceFacingLog("landing",true);faceJumpTrace("landing",q,n0,qpcSec(now),true); gfLogPlane("FACE_JUMP_LANDED"); msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_LANDED t=%.2f", gfL.faceAirT); }
     if (gfL.faceAirT > 6.f) { faceJumpTrace("timeout",q,n0,qpcSec(now),true); gfL.faceAir = false; for (float& c : gfL.vg) c = 0.f; msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_TIMEOUT"); }
   } else
   if (gfL.pinned && !sbBlendQpc.load(std::memory_order_relaxed)) {
@@ -1673,6 +1740,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   else { if (!gfWritePos(tr, q)) { gfReadFails.fetch_add(1); return; } positionApplied=true; }
   gfWrites.fetch_add(1, std::memory_order_relaxed); gfFrames.fetch_add(1, std::memory_order_relaxed);
   gfDyGameSum.store(gfDyGameSum.load(std::memory_order_relaxed) + dyGame, std::memory_order_relaxed);
+  gfPinnedNow.store(gfL.pinned,std::memory_order_relaxed);
   gfFaceAirNow.store(gfL.faceAir,std::memory_order_relaxed);
   gfAir.store(!gfL.pinned || gfL.faceAir,std::memory_order_relaxed);
   gfL.walkFrame.applied(p,positionApplied ? q : p,gfL.pinned && !gfL.faceAir);
@@ -2008,7 +2076,7 @@ void gbSetUp(const float* up) { float want[9] = {-up[0], -up[1], -up[2], up[0], 
   for (int i = 0; i < 3; ++i) { std::uint32_t bits; std::memcpy(&bits, &up[i], 4); sgSubBits[i].store(bits); } }
 std::atomic<unsigned> gvSearches{0};
 void gfSummary(const char* why) {
-  gfAir.store(false);gfFaceAirNow.store(false);
+  gfAir.store(false);gfFaceAirNow.store(false);gfPinnedNow.store(false);gfFaceMaskLatched.store(false);gfFaceMaskUntil.store(0);
   gmReport(why); for (auto& h : gmVelHits) h.store(0); gmVelSamples.store(0);
   if (auto ta = gvTestAddr.exchange(0)) msm2::writeLog("WS_VELOCITY_TEST end addr=0x%llx writes=%llu frames=%llu dy_game_sum=%.3f (baseline: holds without a test)", (unsigned long long)ta, (unsigned long long)gvTestWrites.load(), (unsigned long long)gfFrames.load(), gfDyGameSum.load());
   if (!gfOn.exchange(false) && !gfFrames.load()) return;

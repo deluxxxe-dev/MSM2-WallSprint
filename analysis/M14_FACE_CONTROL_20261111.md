@@ -37,3 +37,24 @@ normal speed/zero planar motion; existing air-isolation/landing-limit fixtures
 and production cross-compile pass. Standing/exactly-one-landing/no REAPPROACH
 remain owner checks. Owner must-have no-hover/face-gravity fall remains binding;
 current M14 explicitly defers that implementation until Task5 state evidence.
+
+## Task 3 — neutral on the press read, sampled facing/arc
+Raw WGI stick is published before the A edge counter. A physical face press
+latches neutralization in that same read; A still passes to the game. Air and
+post-landing100ms keep it neutral, with explicit no-hold/active-WS/F8/cancel
+passthrough/cleanup. No rotation write or A injection is added.
+
+WS_FACE_JUMP_FACING (40 records/process) reads existing Transform+0x20 forward
+with guards, projected on face-up/side at WGI press, takeoff+>=0.1s, landing and
+zip. The press's walking direction comes from bounded atomic publication of the
+last same-hold frame direction; generation and read-valid flags distinguish
+unavailable evidence. Later records carry that press direction. Peak delta_n
+and its QPC age are sampled from actual pre-call Hero positions, not a claim of
+continuous analytic peak. Logs name source=transform_0x20 and phase explicitly;
+this is not independent rendered-body/animation facing proof.
+
+Pure policy/peak tests and production cross-compile pass. Initial portable helper
+compilation missed <cstdint> in its owned harness; the include was corrected,
+then tests passed with assertions unchanged. Runtime decision remains: retained
+walking-facing vs side turn independent of stick; the latter requires a later
+explicitly authorized rotation task. No outcome is inferred from cloud fixtures.
