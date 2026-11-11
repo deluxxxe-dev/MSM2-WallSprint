@@ -10,8 +10,9 @@ including the takeoff frame. Face-air integrates gravity and position through
 one shared production helper, used by the owned ASan/UBSan numerical fixture.
 Jump1.8m peaks around0.33s; hop0.5m around0.175s; normal return times are tested.
 Stop hop height stays0.5m; no arc/animation timing tuning.
-Other states audited: generic unpinned launch/reapproach/blend have one general
-subtraction; pinned rest/walking discard general velocity and use game motion;
+Other states audited: generic unpinned launch/reapproach have one general
+subtraction; a live force/blend overlap has at most one; force-off orientation-
+only blend integrates none; pinned rest/walking discard general velocity and use game motion;
 face jump and stop hop formerly got two and now get only face gravity; same-frame
 callbacks integrate none; init/stall rebase integrate none. Air dash/zip add an
 impulse, not another gravity source. Speed cap30 remains on general integration.
@@ -101,3 +102,22 @@ all reservoirs. A cancelled walk-off atomic prevents its local state continuing
 through a new WS before generation reset. Required code-default0/shipped1 INI
 wiring is asserted by the owned walk-off fixture. Published task commits remain
 intact; final full suites certify the follow-up source tree.
+
+
+## Final cloud validation / publication handoff
+Final source tree57f081b5bfcaf1cac110b641ba0163dac02fce8f, QA commit4e6e9be:
+Windows build,57 portable,7 smoke,907 hooks,2 package PASS, all exit0; no final-
+suite manual skip/assertion relaxation. Hooks attempt1 exit3 after200 PASS at
+writer_entry_snapshot_smoke.cpp:284; unchanged isolated11 PASS then full attempt2
+PASS, same source tree.100ms freshness timing cause is a hypothesis; no gate or
+deadline changed. Five existing private-input SKIP
+and17 UNAVAILABLE notices retained. Package CRC/exact member set/current DLL
+and new shipped INI key verified. Exact hashes and full commits are in
+M15_CLOUD_VALIDATION_20261112.json. Owner actual game acceptance UNKNOWN.
+
+Wisdoms M14 gravity-audit/state-coverage note was prepared locally but its HTTPS
+push could not obtain a Username; no publication claim or credential workaround.
+Portable exact diff is preserved as M15_WISDOMS_SYNC_20261112.patch, with commit/
+base/hash in validation JSON. Project evidence remains fully persisted here.
+See current CODEX_RESULT for the one owner run, decision evidence, gravity-state
+audit and explicit obstacle/H-coverage/other-surface limitations.

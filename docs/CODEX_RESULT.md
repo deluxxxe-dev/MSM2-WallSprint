@@ -1,3 +1,126 @@
+# M15 result — single gravity, walking-pair mapping, state coverage and walk-off release (2026-11-12 JST)
+
+STATUS: implementation pushed on `codex/v01c20-edi-value-provenance`; final cloud
+verification below. Actual owner-game acceptance UNKNOWN. Starting task ca47cb5;
+M14/M13 owner-derived results read. No raw owner log/video or game execution here.
+No main merge, force-push, owner-PC deployment or completed collision claim.
+
+## Ordered task commits
+
+| Task | Commit | Resulting behavior |
+|---|---|---|
+| 1 | `180057e` | General gravity skips face-air frames; face jump/stop hop receive only one normal subtraction. Production integration helpers exercised by numerical tests. |
+| 2 | `66f986a` | Cache each qualified walking pair; non-walk jumps use it at any age, with pair_age_s, falling back to regression only without a pair this hold. Walk takeoff mapping retained. |
+| 3 | `fae5a01` | Six-rising-frame fall guard requires downward speed>6m/s; >9m/s rule and frame cumulative undo retained. |
+| 4 | `bd343d1` | 50ms snapshots, newest60 per label, three-snapshot ascent/descent A, delayed J landing exclusion, B/60s/hero-loss reports and<=16 movement-vector correlations. |
+| 5 | `737f419` | Code-default0/shipped1 WALLSPRINT_WS_FACE_WALKOFF;5-of10 walking then8 zero frames release the plane, retain planar velocity and integrate changed gravity;3 game-motion frames return to a current-position plane. |
+
+Each task was committed/pushed separately, in order. QA follow-up `4e6e9be`
+uses mean pre/post normal velocity for face-air displacement, keeping the given
+peak/time tolerances at5ms/60fps/30fps without changing gravity/launch/hop heights.
+It also resets identity after hero loss, prevents cancelled release state from
+continuing at new WS, and asserts code-default/shipped switch wiring. Published
+task commits remain intact. Final tested source tree:
+`57f081b5bfcaf1cac110b641ba0163dac02fce8f`.
+
+Production gameplay/diagnostics are in `source/src/NativeHooks/camera_ref.cpp`;
+`drive_command.hpp`, `telemetry.cpp`, `mod/WallSprint.ini` only wire the new INI.
+Actual-helper tests: `test_face_physics.py`, `test_face_walkoff.py`,
+`test_face_control.py`, `test_state_snapshots.py`, via existing `tools/test.sh`.
+Details: `analysis/M15_FACE_CONTROL_20261112.md`; exact full commit/command/log/
+artifact hashes: `analysis/M15_CLOUD_VALIDATION_20261112.json`.
+
+## Gravity-state audit and boundaries
+
+Face jump and stop hop had double gravity and now receive one face-air step.
+Generic unpinned launch/reapproach receive one general step; a live force/blend
+overlap has at most one, and force-off orientation-only blend integrates none. Pinned rest/
+walking use game position and discard generic velocity; init/stall and later
+calls in a native frame integrate none. Released walk-off receives one general
+step with no world-y launch contribution or infinite-plane clamp. Dash/zip are
+impulses, not additional gravity. Released total motion including zip is capped
+30m/s. Stop hop remains nominal0.5m; no height adjustment to force standing.
+
+Default-OFF code, exact-build/SHA/pdata admission, existing INI and F8/B/new-WS
+endings remain. The new switch alone is shipped1 as requested. Body-facing press
+mask and direct walking-takeoff mapping are retained. No rotation, camera search,
+zip camera/web-line visual, charge, velocity search, mover editing or L3 work.
+Both owner must-haves remain binding; this release is the prescribed first
+walk-off step, not proof of seamless motion or complete arbitrary-surface falling.
+
+The walk-off trigger is a kinematic proxy, not a game ground flag. A stopped
+obstacle after qualified walking can satisfy it; false release must be evaluated
+from the requested owner test/log. Three nonzero game frames are likewise a
+return proxy, not proved contact/collision. Other-surface landing remains later
+scope. No collision is invented by SetPosition integration. H may be insufficient
+because an8-frame release can precede its10-frame stuck label; logs report actual
+coverage. No candidate or proxy is promoted to engine semantics/writability.
+
+Snapshots are guarded process-local copies with per-label reservoirs; partial
+reads refuse dependent fields. A uses three valid50ms samples, abs y speed>1.5,
+world gravity/no hold. J begins takeoff+50ms and waits50ms before finalization;
+samples too close to the recorded landing are discarded. Reports require>=10
+samples of all six labels for separation candidates; uncovered empty and covered
+empty are distinguished. W vector candidates require>0.98 cosine in>=90% of at
+least10 W snapshots; unknown/zero/nonfinite samples cannot match. Only bounded
+scalar candidates/means/counts are logged; no raw buffers or private logs in Git.
+
+Wisdoms references were consulted at f55e42d. The new shared gravity audit/state-
+coverage note was prepared as a local Wisdoms commit, but its HTTPS push could
+not obtain authentication (not published). Exact commit and portable diff are
+preserved in the validation JSON and `analysis/M15_WISDOMS_SYNC_20261112.patch`;
+future connected maintenance can apply it. Project-local evidence is retained.
+
+## Final validation
+
+Windows build PASS; portable57 PASS; smoke7 PASS; complete hooks907 PASS with
+5 existing private-input SKIP and17 UNAVAILABLE notices; package2 PASS. Every
+final command returned0. Full hooks attempt1 returned3 at unchanged writer-entry
+fixture line284 after200 PASS; isolated unchanged11 PASS/exit0, then full same-tree
+attempt2 PASS. Its100ms freshness gate is a timing hypothesis, not an instrumented
+cause. No deadline/assertion/gate changed, no manually skipped step or weakened test.
+Per-task production cross-compiles passed. New fixture implementation issues
+(one indentation warning, a vector assertion after its reset) were fixed and
+recorded. Initial hooks failure and exact unchanged retries are recorded in JSON. CRC, exact three members,
+newly built/packaged DLL equality and shipped walk-off key passed.
+
+Exact package/output:
+`source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled`.
+Virtual active release member is `MSM2-WS-v0.1c48.script`; archives stay outside
+Mods Library. CLOUD_VERIFIED records only the final tested source tree57f081b.
+JSON records command/log/artifact hashes and unpublished Wisdoms sync details.
+
+## Owner acceptance sequence
+
+Run installed `MSM2-WS/Update-WS.cmd` -> Overstrike **Install mods** ->
+**Run modded game**. Update-WS fetches/builds/tests/deploys/opens the manager;
+desktop Mod-Tools launchers only launch. No old SETPOS0 comparison or identical
+M14 capture is requested.
+
+1. Freeroam idle~20s.
+2. Without WS on the street: stand3s,run3s,jump twice, then step off a rooftop
+   and fall~2s. This collects world-gravity G/A before later holds.
+3. WS -> stop x3, wait3s after each; report if the crawl remains. Keep hop0.5m.
+4. Walk on the face5s. Walking jumps up/down/left/right.
+5. Standing with the stick pushed, jump and web zip up/down/left/right.
+6. Walk into an obstacle on the face3s. Record any false WALKOFF release.
+7. Walk off the edge of the face, fall3s, then B. Check direction remains along
+   changed gravity rather than world down/hover. Side/top/bottom edges are the
+   acceptance targets; no claim of other-surface collision/landing.
+8. Return newest `logs\MSM2-WS-v0.1c48-<timestamp>.log` and captioned videos.
+   A normal game exit may add the final cached report, but B/60s/hero-loss reports
+   no longer depend on shutdown being called.
+
+Read decision evidence: jump peak~1.8m at~0.33s / landing~0.66s, stop hop~0.35s;
+non-walk jump/zip mapping_source=walk_pair with age and correct direction;
+no3-4m/s accelerating fall undo; snapshot counts>=10 each F/W/J/H/G/A and bounded
+candidate/vector lists; WALKOFF release/land/end, game step u/plane samples and
+obstacle false positives. Missing coverage and proxy/collision limitations remain
+UNKNOWN rather than manufactured PASS. Both seamless movement and face-gravity
+falling until B/new WS remain mandatory owner acceptance.
+
+---
+
 # M14 result — frame timing, stop hop, facing/zip and read-only state evidence (2026-11-11 JST)
 
 STATUS: five implementation tasks committed/pushed; final cloud checks below;

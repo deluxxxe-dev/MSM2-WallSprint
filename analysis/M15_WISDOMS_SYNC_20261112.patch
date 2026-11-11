@@ -1,0 +1,20 @@
+diff --git a/docs/WALLSPRINT_INTERNALS.md b/docs/WALLSPRINT_INTERNALS.md
+index 4d70ead..22ad692 100644
+--- a/docs/WALLSPRINT_INTERNALS.md
++++ b/docs/WALLSPRINT_INTERNALS.md
+@@ -944,3 +944,15 @@ Detail: WallSprint `analysis/M13_OWNER_RESULT_20261111.md`.
+   facing the walking direction (Transform+0x20 forward unchanged through the jump).
+ - VERIFIED-RUNTIME (M14): a 2 s regression of stick angle -> walking direction on a face is unreliable when the camera
+   turns (theta errors 80-180 deg); a single recent (stick, walking direction) pair gave correct directions.
++
++## M14 air-model gravity audit (2026-11-12, MSM2 v2.810)
++Source: WallSprint `analysis/M14_OWNER_RESULT_20261112.md`, implementation baseline781b768;
++correction/tests: `analysis/M15_FACE_CONTROL_20261112.md`.
++- VERIFIED-STATIC (mod code): generic substituted-up and face-air normal gravity both subtracted33m/s^2 in a face jump
++  or stop hop; on a face the axes coincide. This was a WallSprint integration bug, not an engine gravity constant.
++- VERIFIED-RUNTIME (owner-derived log20261112-010128): walking-jump peaks0.899-0.901m at0.151-0.172s and landings0.31-0.33s
++  match the double-gravity prediction for the mod's10.9m/s launch. Do not tune launch height to compensate for duplicate
++  integration. M15 owned fixtures integrate the production helpers at grouped-frame intervals, not game execution.
++- UNKNOWN: actual game ground/air/crawl field. M14 had incomplete F/W/J/H/G/A coverage and no separating field result;
++  an uncovered empty candidate list cannot establish that no discriminator exists. M15's per-label reservoirs, delayed
++  J trimming, vector correlations and walk-off proxy do not discover field semantics, collision or safe engine writers.

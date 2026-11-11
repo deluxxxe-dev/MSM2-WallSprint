@@ -1,0 +1,124 @@
+{
+  "date_jst": "2026-11-12",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "task_baseline": "ca47cb50fccf356609ed4576f36b47754eee90f9",
+  "owner_runtime_evidence": "analysis/M14_OWNER_RESULT_20261112.md; M13_OWNER_RESULT_20261111.md",
+  "implementation_commits": {
+    "1": "180057e188c4f5d476da3c7bbe16bf77dd15132e",
+    "2": "66f986af94be28fdfadc5bec612c8f90173377d8",
+    "3": "fae5a01af99f53566f27e7e4cdac00ba9d3a2a34",
+    "4": "bd343d15a764182f5025a586ad6a428be68b2011",
+    "5": "737f419ad7b40633510950f47a59c46017f2211c"
+  },
+  "qa_commit": "4e6e9be65d0514a5878d365f022b93057ede7c32",
+  "source_tree": "57f081b5bfcaf1cac110b641ba0163dac02fce8f",
+  "commands": {
+    "build": {
+      "cwd": "source",
+      "command": "bash tools/build_windows.sh",
+      "exit_code": 0,
+      "attempts": 1,
+      "log_sha256": "2fcafa762422bd4268f07550b25185c191d67f3e49eb5d993b261033a099ee8b",
+      "PASS": 0,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "failed_assertions": []
+    },
+    "portable": {
+      "cwd": "source",
+      "command": "bash tools/test.sh",
+      "exit_code": 0,
+      "attempts": 1,
+      "log_sha256": "818bf70c84242e4a0b73b362e78ac7c95a584a67c5125fb7da15b4a63defd41d",
+      "PASS": 57,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "failed_assertions": []
+    },
+    "smoke": {
+      "cwd": "source",
+      "command": "bash tools/smoke_windows.sh",
+      "exit_code": 0,
+      "attempts": 1,
+      "log_sha256": "ac877e7f7a87e76a3e786ddc33902ee3c3ebf7dd217226a29157834385caf625",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "failed_assertions": []
+    },
+    "hooks": {
+      "cwd": "source",
+      "command": "bash tools/test_hooks_windows.sh",
+      "exit_code": 0,
+      "attempts": 2,
+      "log_sha256": "84fbccd97efc9eb206878974711b6b07dfbb66c5a7d61b0b62285495bb960247",
+      "PASS": 907,
+      "SKIP": 5,
+      "UNAVAILABLE": 17,
+      "FAIL": 0,
+      "failed_assertions": []
+    },
+    "package": {
+      "cwd": "source",
+      "command": "python3 tools/package.py",
+      "exit_code": 0,
+      "attempts": 1,
+      "log_sha256": "ea15817b51246d679491e1c29c49dd38d0c8380d21b99f892b09c1c67e3baa45",
+      "PASS": 2,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "failed_assertions": []
+    }
+  },
+  "artifacts": {
+    "source/build/windows/WallSprint.dll": {
+      "bytes": 17150960,
+      "sha256": "f970f8bdc792ddf94936a00b0ca97763c7cf97a7be6546ea9315aa70f2aa6bef"
+    },
+    "source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled": {
+      "bytes": 3201654,
+      "sha256": "8f509212a8ff5f1b0a353f9c86bdaf720d375a014eb8f25660b76ec56b852f9f"
+    }
+  },
+  "artifact_checks": [
+    "CRC",
+    "exact three members",
+    "packaged DLL equals built DLL",
+    "new walkoff switch enabled in packaged INI"
+  ],
+  "final_suite_retries": 1,
+  "hooks_history": {
+    "attempt1": {
+      "exit_code": 3,
+      "log_sha256": "cba7456b91a0137188942548a70b67b7574bf20c2a89b7270ecfb834f099316d",
+      "PASS": 200,
+      "failure": "writer_entry_snapshot_smoke.cpp:284 msm2::writer_entry::start(expected)"
+    },
+    "isolated_unchanged_retry": {
+      "command": "bash tools/test_writer_entry.sh",
+      "exit_code": 0,
+      "log_sha256": "b269de6182084f1e5245ac3c0e2b06fc295ee835082669a732895934a5e2b888",
+      "PASS": 11
+    },
+    "interpretation": "Unchanged isolated11 PASS followed by full same-tree retry. Existing fixture100ms freshness gate; precise failed predicate not instrumented, timing cause remains hypothesis. Neither camera_ref nor its new gameplay helpers linked by writer-entry fixture. No timeout/assertion/gate altered or step skipped."
+  },
+  "focused_findings": "Initial physics fixture misleading-indentation compile warning fixed. New movement-vector fixture assertion was incorrectly after its reset; moved before reset with same assertion. Trailing-whitespace diff-check fixed. Production per-task Werror compiles passed. QA strengthens physics dt to5/16.7/33.3ms with original peak/time tolerances and trapezoidal normal displacement. No weakened assertion/guard, no manual suite skip.",
+  "owner_game_acceptance": "UNKNOWN",
+  "other_surface_contact_collision": "UNKNOWN; deferred; three-nonzero-frame return is only a proxy",
+  "obstacle_false_release": "UNKNOWN; prescribed proxy cannot distinguish all obstacles from an edge",
+  "H_coverage": "UNKNOWN; eight-frame release can precede ten-frame H labeling; never fabricate coverage",
+  "state_fields_and_move_vectors": "UNKNOWN; candidates are read-only correlations, no engine names or write permission",
+  "safety": "Existing exact-build/SHA/pdata, INI, default-OFF code, F8/B/new-WS endings preserved. Only new INI switch shipped enabled.",
+  "wisdoms_sync": {
+    "repository": "deluxxxe-dev/MSM2-Wisdoms",
+    "base": "f55e42dcde8987c74429747f1bb78f14275f0e93",
+    "local_commit": "1484dfdced0bb33342f078098406594283670ccf",
+    "publication": "PENDING: push could not read HTTPS Username; no credential values requested or copied",
+    "patch": "analysis/M15_WISDOMS_SYNC_20261112.patch",
+    "patch_sha256": "067e747c2b2ee7bfbfb17c15a0d7e6aae170e6d294d6a31ee89109b0052ccd90"
+  }
+}
