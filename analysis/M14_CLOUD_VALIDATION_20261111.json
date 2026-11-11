@@ -1,0 +1,179 @@
+{
+  "date_jst": "2026-11-11",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "baseline": "30489bc",
+  "owner_clarification_commit": "62163ef",
+  "same_branch_merge_commit": "880d5ea27b3ea5ebfb22f46a4fc29cf773b3ea1a",
+  "implementation_commits": {
+    "1": "10b67d6c3f3f24b62400b1f26f4dce0f32921cbd",
+    "2": "bb16971c50706e679ff1dca6e3dda970cf21fb49",
+    "3": "b8ea2a9dabf7127705e28d421fa5fb26969c89e0",
+    "4": "b3d9a29743bfb3f03fded3462588cd2c8d9b75c8",
+    "5": "ee029820a2a9c58f14879581aee044387d3b278c"
+  },
+  "diagnostic_clock_qa_commit": "089f9ac993526cc91ea6fca40da82f5e17ec1a9b",
+  "source_tree": "821f58802f39a72678edfabe0d99c78a177e77a1",
+  "commands": {
+    "build": {
+      "log_sha256": "2fcafa762422bd4268f07550b25185c191d67f3e49eb5d993b261033a099ee8b",
+      "PASS": 0,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "failed_assertions": [],
+      "exit_code": 0,
+      "cwd": "source",
+      "command": "bash tools/build_windows.sh",
+      "attempts_on_final_tree": 1
+    },
+    "portable": {
+      "log_sha256": "69f5ec9577c7f4673e321512f6d6c4948b99e3786e3d97e7db1726762843f915",
+      "PASS": 54,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "failed_assertions": [],
+      "exit_code": 0,
+      "cwd": "source",
+      "command": "bash tools/test.sh",
+      "attempts_on_final_tree": 1
+    },
+    "smoke": {
+      "log_sha256": "ac877e7f7a87e76a3e786ddc33902ee3c3ebf7dd217226a29157834385caf625",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "failed_assertions": [],
+      "exit_code": 0,
+      "cwd": "source",
+      "command": "bash tools/smoke_windows.sh",
+      "attempts_on_final_tree": 1
+    },
+    "hooks": {
+      "log_sha256": "c01d9564799398fb7c780e1653778c10f43deccafac9d58fee860b6ee42e0d15",
+      "PASS": 907,
+      "SKIP": 5,
+      "UNAVAILABLE": 17,
+      "FAIL": 0,
+      "failed_assertions": [],
+      "exit_code": 0,
+      "cwd": "source",
+      "command": "bash tools/test_hooks_windows.sh",
+      "attempts_on_final_tree": 1
+    },
+    "package": {
+      "log_sha256": "ea15817b51246d679491e1c29c49dd38d0c8380d21b99f892b09c1c67e3baa45",
+      "PASS": 2,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "failed_assertions": [],
+      "exit_code": 0,
+      "cwd": "source",
+      "command": "python3 tools/package.py",
+      "attempts_on_final_tree": 1
+    }
+  },
+  "artifacts": {
+    "source/build/windows/WallSprint.dll": {
+      "bytes": 16563880,
+      "sha256": "c23b2e993514d9cca7681b73158f6aa67a533cc163356b833f195f9a64f711d2"
+    },
+    "source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled": {
+      "bytes": 3178430,
+      "sha256": "6e1c03b329c9c5e0c9005f980fe0da4b657ff6b61b940c6a392b583244a97bf3"
+    }
+  },
+  "artifact_checks": [
+    "CRC",
+    "exact three-member set",
+    "packaged DLL equals newly built DLL"
+  ],
+  "prior_task5_tree_validation": {
+    "source_tree": "5c1bccb15e0fa5b51c2404cd5003e36dd5c873f1",
+    "runs": {
+      "build": {
+        "log_sha256": "2fcafa762422bd4268f07550b25185c191d67f3e49eb5d993b261033a099ee8b",
+        "PASS": 0,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "FAIL": 0,
+        "failed_assertions": [],
+        "exit_code": 0
+      },
+      "portable": {
+        "log_sha256": "8de4cda7c26c7e304a4af587b4dccfefef023e2e1ea7781a73fd89fa222d2468",
+        "PASS": 54,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "FAIL": 0,
+        "failed_assertions": [],
+        "exit_code": 0
+      },
+      "smoke_attempt1": {
+        "log_sha256": "ac877e7f7a87e76a3e786ddc33902ee3c3ebf7dd217226a29157834385caf625",
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "FAIL": 0,
+        "failed_assertions": [],
+        "exit_code": null
+      },
+      "smoke_attempt2": {
+        "log_sha256": "ac877e7f7a87e76a3e786ddc33902ee3c3ebf7dd217226a29157834385caf625",
+        "PASS": 7,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "FAIL": 0,
+        "failed_assertions": [],
+        "exit_code": 0
+      },
+      "hooks_attempt1": {
+        "log_sha256": "587ebc1fd28f1b74f498676235cb9241a9002239428f48bda3d44c93aaa3dce6",
+        "PASS": 907,
+        "SKIP": 5,
+        "UNAVAILABLE": 17,
+        "FAIL": 0,
+        "failed_assertions": [],
+        "exit_code": null
+      },
+      "hooks_attempt2": {
+        "log_sha256": "e0e1175351ff44fa95ef5bd7886b81764180f070b08ea6c9876fbf8911edb09e",
+        "PASS": 907,
+        "SKIP": 5,
+        "UNAVAILABLE": 17,
+        "FAIL": 0,
+        "failed_assertions": [],
+        "exit_code": 0
+      },
+      "package_attempt1": {
+        "log_sha256": "ea15817b51246d679491e1c29c49dd38d0c8380d21b99f892b09c1c67e3baa45",
+        "PASS": 2,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "FAIL": 0,
+        "failed_assertions": [],
+        "exit_code": null
+      },
+      "package_attempt2": {
+        "log_sha256": "ea15817b51246d679491e1c29c49dd38d0c8380d21b99f892b09c1c67e3baa45",
+        "PASS": 2,
+        "SKIP": 0,
+        "UNAVAILABLE": 0,
+        "FAIL": 0,
+        "failed_assertions": [],
+        "exit_code": 0
+      }
+    },
+    "repeat_reason": "Managed environment reattach lost exec handles while shells continued. First smoke/hooks/package numeric statuses unavailable (null); logs completed with PASS markers. Unchanged repeats with exit sidecars returned0. No assertion failed and no suite step was skipped. Then final QA corrected diagnostic J elapsed-time labeling; all five suites repeated once on the final source tree."
+  },
+  "final_tree_retries": 0,
+  "focused_checks": "Actual pure helpers with owned data under ASan/UBSan plus production camera_ref.cpp cross-compile per task. Facing fixture initially needed cstdint; two snapshot Werror indentation findings corrected. Assertions/admission gates unchanged. Final QA adds pause/future/missing/nonfinite takeoff-time refusals.",
+  "owner_windows_game_acceptance": "UNKNOWN",
+  "falling_after_step_off": "DEFERRED_BY_M14_TO_NEXT_TASK_AFTER_STATE_EVIDENCE",
+  "rotation_and_other_surface_landing": "NOT_IMPLEMENTED",
+  "state_candidate_engine_semantics": "UNKNOWN; heuristic read-only diagnostic only",
+  "raw_user_buffers_committed": false,
+  "wisdoms": "No new runtime engine fact; owner-derived evidence consulted; no cross-repository changes."
+}

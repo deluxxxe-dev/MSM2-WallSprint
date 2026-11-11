@@ -1,3 +1,128 @@
+# M14 result — frame timing, stop hop, facing/zip and read-only state evidence (2026-11-11 JST)
+
+STATUS: five implementation tasks committed/pushed; final cloud checks below;
+actual owner-game acceptance UNKNOWN. Branch `codex/v01c20-edi-value-provenance`.
+Both owner must-haves remain mandatory: seamless ground-like wall motion, and
+face-gravity falling after jump/step-off until new WS/B. Current CODEX_NEXT
+explicitly makes falling the next task after the state evidence; hovering,
+other-surface landing/collision and rotation are not claimed solved here.
+
+## Changes and ordered implementation commits
+
+| Task | Commit | Source behavior |
+|---|---|---|
+| 1 | `10b67d6` | >=5ms previous-native-call gap defines a frame; all dt consumers use elapsed first-call interval; hold summary exposes maximum intra-frame gap/minimum frame dt. Worker fallback remains independent of native call grouping. |
+| 2 | `bb16971` | Replace stop push with nominal0.5m,zero-planar face-air hop; no injected A/steering/zip impulse during it; one FACE_JUMP_LANDED path arms retained0.3s outward limit; measured hop airtime logs. |
+| 3 | `b8ea2a9` | Mask stick on the physical WGI A-edge read before publishing the jump request; raw stick/A remain available to the mod/game respectively; mask through air and100ms after landing. Guarded forward/press walking direction and sampled normal peak logs, capped40. |
+| 4 | `b3d9a29` | Derive zip theta from the actual source=walk takeoff pair, using current>=80% mirror or last trusted one; source=none may reuse a <10s pair, otherwise model fallback. Frozen source/h/theta are logged. |
+| 5 | `ee02982` | Read-only250ms,240-slot Hero/Transform snapshots with F/W/J/H/G/A labels, per-report64 separation candidates and16 finite Transform mean rows on B and normal shutdown. No candidate drives gameplay. |
+
+Final QA follow-up `089f9ac` uses actual QPC takeoff age for the diagnostic J
+window, so a long integration pause cannot falsely retain the0.1-0.3s label.
+Both stop hops and manual jumps publish the timestamp. It changes no movement
+parameter. Actual-helper tests cover pause/missing/future/non-finite cases; all
+five full suites are repeated on the corrected source tree. Published task
+commits remain intact.
+
+First task push was correctly rejected because remote gained the owner's must-
+have clarification `62163ef`. It was read/preserved by same-development-branch
+merge `880d5ea`, then pushed without force/rebase/main merge. Each later task
+was committed/pushed separately in order. No source was replaced by main.
+
+Production changes are only `source/src/NativeHooks/camera_ref.cpp`; portable
+actual-helper fixtures are `source/tools/test_face_frame.py`,
+`test_face_control.py`, `test_face_landing.py`, `test_state_snapshots.py`, wired
+through `source/tools/test.sh`. Details/limits are in
+`analysis/M14_FACE_CONTROL_20261111.md`; full commit/command/log/artifact hashes
+are in `analysis/M14_CLOUD_VALIDATION_20261111.json`. Final records update this
+file, CLOUD_VERIFIED and those analysis files.
+
+## Evidence boundaries
+
+No air-model constants/timing tuning, rotation write, falling/collision rewrite,
+new native hook/signature, camera search/swing/web-line/charge/mover/L3 work.
+Default-OFF code/INI/F8/exact-build/pdata/SHA and WS-only isolation stay intact.
+Normal launch/arc still use the existing model; nominal0.5m hop is a launch
+parameter, not a measured peak/standing/game-air-state acceptance claim.
+
+Facing reads existing Transform+0x20, with source/phase/read validity. It is not
+independent rendered-body facing proof. Zip maps can still be unavailable; no
+neutral-stick pair is invented. The1e-5m zero-step tolerance and snapshot scalar/
+pointer-pattern classifications are authored diagnostic choices, not engine facts.
+
+State labels are mod/kinematic phase labels, not discovered engine ground bits.
+The gravity-up block is guarded and already identified; unknown vertical state
+leaves G/A unlabeled. Native five-ms frame positions, subtracting mod corrections,
+provide actual ten-frame G/H histories. Worker polls never substitute for frames;
+contention/stale/identity/gap evidence is dropped. Read prefixes stop at first
+unreadable256-byte block; raw object buffers remain process-local, never dumped.
+Reports require>=4 each F/W/J/G/A before candidates; insufficient coverage is
+explicit and differs from a covered empty result. Full retained value sets are
+checked for overlap; logs show bounded examples plus distinct counts and H side.
+Pointer-like never means dereference/provenance/ownership. Transform J/W means
+carry finite counts. Normal shutdown must run to report post-B G/A data.
+
+No raw owner attachments were provided in this cloud task. Committed M13/M12/
+M10z derived evidence was read. Owned fixtures do not establish game acceptance
+or real candidate offsets. No new runtime fact or cross-repository Wisdoms write
+is claimed; previous in-session knowledge was consulted.
+
+## Validation
+
+Final source tree: `821f58802f39a72678edfabe0d99c78a177e77a1`.
+Each stage's actual-helper tests/Windows production cross-compile passed before
+push. During implementation, the new facing fixture needed <cstdint> and two new
+snapshot-code indentation warnings were fixed under Werror; no assertion/gate
+was relaxed. Final suites run from source; reattachment details/results follow.
+
+Final corrected-tree results: build PASS; portable54 PASS; Windows smoke7 PASS;
+full hooks907 PASS (5 existing SKIP /17 UNAVAILABLE evidence/private-input notices);
+package2 PASS. Every command returned0; no step was manually skipped, no final-
+tree rerun or assertion relaxation. CRC, exact three archive members and current
+built/packaged DLL byte equality passed. Output:
+`source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled` (virtual active
+member in a release ZIP is `MSM2-WS-v0.1c48.script`; archives stay outside Mods Library).
+Detailed SHA256/size/command counts are in the validation JSON.
+
+Earlier validation on task5 tree5c1bccb completed build/portable, then the managed
+environment reattached while smoke/hooks/package shells continued. Their logs
+completed with PASS markers, but lost exec handles prevent recovering those
+three numeric statuses; they remain null in the JSON. Exact unchanged repeats
+with durable exit files returned0 (hooks907 PASS). Source QA then corrected J's
+elapsed-time predicate; all five suites ran once more on final tree821f588.
+These are environment/status-recovery and deliberate source-change repeats,
+not hidden timing-failure reruns. No observed final-suite assertion failed.
+
+## Owner test / remaining acceptance
+
+Run installed `MSM2-WS/Update-WS.cmd`, then Overstrike **Install mods** ->
+**Run modded game**. Update-WS fetches/builds/tests/deploys/opens the manager;
+shared desktop Mod-Tools launchers only launch. No SETPOS0 comparison is needed.
+
+1. Idle in freeroam~20s.
+2. WS -> stop three times; wait3s standing after each. Verify standing, one
+   landing each, no jerk/reapproach.
+3. Walk toward ground5s twice, once with camera180deg; up/left/right5s each.
+4. Walking jumps up/down/left/right once each, one standing jump; web zips
+   up/down/left/right. Caption videos with the input direction and event.
+5. Walk off the wall edge once, wait3s, then B. The current infinite-plane/falling
+   issue is recorded, not an M14 solved claim.
+6. Without WS on the street, stand3s/run3s/jump twice. **Exit the game normally**
+   so the second cached state report includes post-B G/A data.
+7. Return newest `logs\MSM2-WS-v0.1c48-<timestamp>.log` and captioned videos.
+
+Decision evidence: frame dt>=5ms and no walking-down FALL_UNDO; max/min gap
+summary; stop-hop airtime/one landing/0 REAPPROACH; facing at press/+0.1/landing/
+zip vs press walking direction and sampled peak; takeoff theta/h/source vs zip;
+state counts>=4 each F/W/J/G/A and bounded candidates (covered empty is valid).
+Insufficient coverage must be reported rather than inventing candidates. A
+normal exit is necessary for the final report; process kill/crash is not proven.
+Ground/air candidate semantics and actual forward/body response remain UNKNOWN.
+The next implementation decision is face-gravity falling/landing from the owner
+state evidence; no later milestone is started by this handoff.
+
+---
+
 # M13 result — jerk guards, jump speed and frozen zip mapping (2026-11-11 JST)
 
 STATUS: five implementation tasks committed/pushed; cloud validation below;

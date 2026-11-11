@@ -127,3 +127,21 @@ and stop hops; physics integration, launch constants and gameplay are unchanged.
 Actual-helper ASan/UBSan tests cover a normal0.2s sample, a2s pause, and missing,
 future/non-finite timestamps. No published task commit is rewritten. Final full
 verification is repeated on this corrected source tree before certification.
+
+
+## Final cloud verification / handoff
+Final source tree821f58802f39a72678edfabe0d99c78a177e77a1 (QA commit089f9ac):
+build,54 portable,7 smoke,907 hooks and2 package PASS; every command exit0,
+5 historical SKIP/17 UNAVAILABLE notices retained, no final-tree rerun/skipped
+step/test weakening. CRC/exact three-member package/current DLL equality pass.
+Detailed hashes, commands and prior-tree reattachment/repeat accounting:
+`analysis/M14_CLOUD_VALIDATION_20261111.json`. Earlier first smoke/hooks/package
+numeric statuses are explicitly unknown due lost exec handles; unchanged durable-
+status repeats returned0 before the later diagnostic-only source QA. No observed
+assertion failure is hidden as a flake. Production source remains only camera_ref.
+
+Owner action and exact video/log sequence are in current CODEX_RESULT. Normal
+exit after street stand/run/jumps is required for the second state report. All
+real-game acceptance and discovered field meaning remain UNKNOWN. Falling after
+step-off/other-surface landing/rotation writes are deferred by current M14;
+both must-haves remain requirements, not claims of completion.
