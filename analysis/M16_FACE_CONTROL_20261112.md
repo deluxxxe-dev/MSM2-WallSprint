@@ -90,3 +90,25 @@ settling, slow refusal, stable any-age reuse and unchanged direct walking mappin
 The initial fixture reused an existing local name; renamed without changing
 assertions. Production compile passes. Actual standing-jump/zip direction remains
 an owner check; no camera search or regression retuning.
+
+## Task 5 — separate actual A and H questions, with released-fall L
+Independent comparisons: ground{F,W,G} vs A (each>=10), and ground vs H (H>=5,
+ground labels>=10). J is reference-only, never pooled into the target or used as
+a coverage requirement. New L=active released face fall is also reference-only.
+Seven independent newest60 reservoirs retain420 process-local snapshots.
+Each query has its own coverage/count and at most64 candidates, explicit
+comparison/target_values. J/H/L examples are printed without affecting the selected
+comparison's proof or partial-read/type validity; missing selected fields refuse.
+The legacy air_values field is authoritative only in ground_vs_A; H query marks
+it information_only and labels H_class=target_H, not a discovered air semantic.
+Full selected sets remain checked (ground<=180,target<=60), no truncation.
+
+WS_STATE_SUMMARY and two WS_STATE_COMPARISON lines distinguish insufficient
+coverage from a covered empty list. L counts and values are explicit; no field is
+named/written. Existing guarded50ms sampling, delayed J exclusion, B/60s/loss/
+exit reports, W-vector correlations and Transform means stay bounded/read-only.
+Owned tests cover independent A/H admission, H4 refusal/H5 admission, J overlap
+with ground not blocking A, L reservoir/label and retained street coverage.
+Initial new fixture indentation warning fixed without weakening assertions;
+production compile and all affected actual-helper suites pass. Actual candidate
+lists/engine ground-probe interpretation remain UNKNOWN pending owner log.

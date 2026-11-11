@@ -9,7 +9,7 @@ tests=r'''
 static StateSnapshotRing ring;
 void add(StateLabel label){
  auto& s=ring.reserve(label);std::memset(s.hero,0,sizeof s.hero);std::memset(s.transform,0,sizeof s.transform);s.heroBytes=4096;s.transformBytes=256;s.label=label; s.walking[0]=0;s.walking[1]=1;s.walking[2]=0;float movement[3]={0,4,0};std::memcpy(s.hero+32,movement,12);
- bool air=label==StateLabel::J||label==StateLabel::A;std::uint32_t flag=air ? 2 : 1,same=3;float f=air||label==StateLabel::H ? 2.f:1.f;
+ bool air=label==StateLabel::J||label==StateLabel::A;std::uint32_t flag=label==StateLabel::A ? 2 : label==StateLabel::H ? 3 : 1,same=3;float f=air||label==StateLabel::H ? 2.f:1.f;
  std::uint64_t ptr=air ? 0x12346000 : 0x12345000;
  std::memcpy(s.hero,&flag,4);std::memcpy(s.hero+4,&same,4);std::memcpy(s.hero+8,&f,4);std::memcpy(s.hero+16,&ptr,8);
  float row=label==StateLabel::J ? 3.f:1.f;for(int k=0;k<64;++k)std::memcpy(s.transform+4*k,&row,4);
@@ -50,19 +50,27 @@ int main(){
  assert(ring.coverage());auto candidates=ring.candidates();assert(candidates.size()<=64);
  bool flag=false,floating=false,pointer=false;
  for(auto c:candidates){if(c.offset==0&&c.view==StateView::Byte)flag=true;if(c.offset==8&&c.view==StateView::Float)floating=true;if(c.offset==16&&c.view==StateView::Pointer)pointer=true;assert(c.offset!=4);}
- assert(flag&&floating&&pointer);StateSeparation sets;assert(ring.separate(0,StateView::Byte,sets));assert(sets.ground.contains(1)&&sets.air.contains(2)&&sets.h.contains(1));
+ assert(flag&&floating&&pointer);StateSeparation sets;assert(ring.separate(0,StateView::Byte,sets));assert(sets.ground.contains(1)&&sets.air.contains(2)&&sets.h.contains(3));
  double means[4];unsigned n[4];ring.transformMeans(0,StateLabel::J,means,n);assert(means[0]==3&&n[0]==10);ring.transformMeans(0,StateLabel::W,means,n);assert(means[0]==1&&n[0]==10);
+ assert(ring.coverage(StateLabel::A)&&ring.coverage(StateLabel::H));
+ assert(ring.separate(0,StateView::Byte,sets,StateLabel::A)&&sets.j.contains(1)&&sets.ground.contains(1)); // J overlaps ground but is information only
+ assert(ring.separate(0,StateView::Byte,sets,StateLabel::H)&&sets.air.contains(3));
+ assert(chooseStateLabel(true,false,false,1,0,false,0,sampler.metrics,0,true)==StateLabel::L);
  unsigned match,total;assert(ring.movementVector(32,match,total)&&match==10&&total==10);
  ring.snapshots[0].heroBytes=16;assert(!ring.separate(16,StateView::Pointer,sets)); // missing any required-label byte refuses field
  ring.reset();for(int i=0;i<3;++i)add(StateLabel::F);assert(!ring.coverage()&&ring.candidates().empty());
  ring.reset();for(int i=0;i<10;++i)add(StateLabel::G);for(int i=0;i<300;++i)add(StateLabel::F);
- unsigned counts[7];ring.counts(counts);assert(counts[0]==60&&counts[4]==10&&ring.used==70);
+ unsigned counts[8];ring.counts(counts);assert(counts[0]==60&&counts[4]==10&&ring.used==70);
  ring.reset();add(StateLabel::J);auto& pending=ring.snapshots[120];pending.pending=true;pending.time=20.1;pending.takeoff=20;
  ring.resolveJ(20.14,20,0);ring.counts(counts);assert(counts[2]==0);
  ring.resolveJ(20.16,20,20.13);ring.counts(counts);assert(counts[2]==0); // <50ms before landing is discarded
  add(StateLabel::J);auto& good=ring.snapshots[121];good.pending=true;good.time=21.1;good.takeoff=21;
  ring.resolveJ(21.16,21,0);ring.counts(counts);assert(counts[2]==1);
- puts("PASS: M15 per-label60 reservoirs preserve street data, delayed J landing exclusion, vector agreement and bounded candidates");
+ ring.reset();for(StateLabel label:{StateLabel::F,StateLabel::W,StateLabel::G,StateLabel::A})for(int i=0;i<10;++i)add(label);
+ assert(ring.coverage(StateLabel::A)&&!ring.coverage(StateLabel::H));for(int i=0;i<4;++i)add(StateLabel::H);assert(!ring.coverage(StateLabel::H));add(StateLabel::H);assert(ring.coverage(StateLabel::H));
+ for(int i=0;i<100;++i)add(StateLabel::L);
+ ring.counts(counts);assert(counts[6]==60&&counts[5]==10);
+ puts("PASS: M16 separate A/H comparisons, J information only, H minimum5, L reservoir and retained street coverage");
 }
 '''
 (root/'build').mkdir(exist_ok=True)

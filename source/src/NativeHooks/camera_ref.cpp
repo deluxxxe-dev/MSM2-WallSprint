@@ -1518,7 +1518,7 @@ struct FaceAirFacing {
 };
 // M16_AIR_FACING_END
 // M14_STATE_CORE_BEGIN: owned bounded snapshots/label classification, no native reads or writes.
-enum class StateLabel:unsigned { F,W,J,H,G,A,Other };
+enum class StateLabel:unsigned { F,W,J,H,G,A,L,Other };
 enum class StateView:unsigned { Byte,Int,Float,Pointer };
 struct StateContext { bool hold{},pinned{},air{},pushed{},vertical{}; };
 struct StateFrameMetrics { double time{};float length{},dy{},vy{};unsigned quietY{},zeroPushed{};bool valid{};float direction[3]{}; };
@@ -1542,8 +1542,9 @@ struct StateFrameSampler {
 double stateAirAge(double now,double takeoff) {
   return std::isfinite(now)&&std::isfinite(takeoff)&&takeoff>0&&now>=takeoff ? now-takeoff : -1.0;
 }
-StateLabel chooseStateLabel(bool hold,bool pinned,bool air,float stick,double airTime,bool vertical,float ySpeed,const StateFrameMetrics& m,unsigned airRun=0) {
+StateLabel chooseStateLabel(bool hold,bool pinned,bool air,float stick,double airTime,bool vertical,float ySpeed,const StateFrameMetrics& m,unsigned airRun=0,bool released=false) {
   if(hold){
+    if(released)return StateLabel::L;
     if(air&&airTime>=0.05)return StateLabel::J;
     if(pinned&&!air){
       if(stick<0.2f)return StateLabel::F;
@@ -1566,41 +1567,47 @@ struct StateValues {
   bool contains(std::uint64_t v)const{for(unsigned i=0;i<used;++i)if(data[i]==v)return true;return false;}
   void add(std::uint64_t v){if(!contains(v)&&used<240)data[used++]=v;}
 };
-struct StateSeparation {StateValues ground{},air{},h{};};
+struct StateSeparation {StateValues ground{},air{},h{},j{},l{};};
 struct StateCandidate {unsigned offset{};StateView view{};unsigned score{};};
 struct StateSnapshotRing {
-  StateSnap snapshots[360]{};unsigned next[6]{},sizes[6]{},used{};
-  void reset(){for(auto& s:snapshots)s.heroBytes=s.transformBytes=0;for(unsigned i=0;i<6;++i)next[i]=sizes[i]=0;used=0;}
+  StateSnap snapshots[420]{};unsigned next[7]{},sizes[7]{},used{};
+  void reset(){for(auto& s:snapshots)s.heroBytes=s.transformBytes=0;for(unsigned i=0;i<7;++i)next[i]=sizes[i]=0;used=0;}
   StateSnap& reserve(StateLabel label){unsigned k=unsigned(label);auto& s=snapshots[k*60+next[k]];next[k]=(next[k]+1)%60;if(sizes[k]<60){++sizes[k];++used;}s.heroBytes=s.transformBytes=0;s.label=label;s.pending=false;return s;}
   void resolveJ(double now,double takeoff,double landing){for(auto& s:snapshots)if(s.heroBytes>=4&&s.label==StateLabel::J&&s.pending){
     if(s.takeoff!=takeoff || (landing>=s.takeoff && landing-s.time<0.05)){s.heroBytes=0;s.pending=false;}
     else if(now-s.time>=0.05)s.pending=false;
   }}
-  void counts(unsigned* out)const{for(unsigned i=0;i<7;++i)out[i]=0;for(const auto& s:snapshots)if(s.heroBytes>=4&&!s.pending)++out[unsigned(s.label)];}
-  bool coverage()const{unsigned c[7];counts(c);for(unsigned i=0;i<6;++i)if(c[i]<10)return false;return true;}
-  bool separate(unsigned off,StateView view,StateSeparation& out)const {
+  void counts(unsigned* out)const{for(unsigned i=0;i<8;++i)out[i]=0;for(const auto& s:snapshots)if(s.heroBytes>=4&&!s.pending)++out[unsigned(s.label)];}
+  bool coverage(StateLabel target=StateLabel::A)const{unsigned c[8];counts(c);return c[0]>=10&&c[1]>=10&&c[4]>=10&&c[unsigned(target)]>=(target==StateLabel::H ? 5u:10u);}
+  bool separate(unsigned off,StateView view,StateSeparation& out,StateLabel target=StateLabel::A)const {
     out={};unsigned width=view==StateView::Byte ? 1 : view==StateView::Pointer ? 8 : 4;
     if(view==StateView::Pointer && off%8)return false;
     bool actualPointer=false;
     for(const auto& s:snapshots){if(s.heroBytes<4||s.pending||s.label==StateLabel::Other)continue;
-      if(s.heroBytes<off+width)return false;
+      bool ground=s.label==StateLabel::F||s.label==StateLabel::W||s.label==StateLabel::G;
+      bool selected=ground||s.label==target;
+      if(s.heroBytes<off+width){if(selected)return false;continue;}
       std::uint64_t value=0;std::memcpy(&value,s.hero+off,width);
-      if(view==StateView::Int){std::int32_t v;std::memcpy(&v,s.hero+off,4);if(v < -65536 || v>65535)return false;}
-      if(view==StateView::Float){float v;std::memcpy(&v,s.hero+off,4);if(!std::isfinite(v)||(v!=0&&std::fabs(v)<1e-20f))return false;if(v==0)value=0;}
-      if(view==StateView::Pointer){if(value && (value<0x10000 || value>0x7fffffffffffULL || value%8))return false;actualPointer|=value!=0;}
+      if(selected){
+        if(view==StateView::Int){std::int32_t v;std::memcpy(&v,s.hero+off,4);if(v < -65536 || v>65535)return false;}
+        if(view==StateView::Float){float v;std::memcpy(&v,s.hero+off,4);if(!std::isfinite(v)||(v!=0&&std::fabs(v)<1e-20f))return false;if(v==0)value=0;}
+        if(view==StateView::Pointer){if(value && (value<0x10000 || value>0x7fffffffffffULL || value%8))return false;actualPointer|=value!=0;}
+      }
+      if(ground)out.ground.add(value);
+      if(s.label==target)out.air.add(value);
       if(s.label==StateLabel::H)out.h.add(value);
-      else if(s.label==StateLabel::J||s.label==StateLabel::A)out.air.add(value);
-      else out.ground.add(value);
+      if(s.label==StateLabel::J)out.j.add(value);
+      if(s.label==StateLabel::L)out.l.add(value);
     }
     if(!out.ground.used||!out.air.used||(view==StateView::Pointer&&!actualPointer))return false;
     for(unsigned i=0;i<out.ground.used;++i)if(out.air.contains(out.ground.data[i]))return false;
     return true;
   }
-  std::vector<StateCandidate> candidates()const {
-    std::vector<StateCandidate> result;if(!coverage())return result;result.reserve(64);
+  std::vector<StateCandidate> candidates(StateLabel target=StateLabel::A)const {
+    std::vector<StateCandidate> result;if(!coverage(target))return result;result.reserve(64);
     for(unsigned off=0;off<0x1000;off+=4){StateCandidate best{};bool have=false;
       for(StateView view:{StateView::Byte,StateView::Int,StateView::Float,StateView::Pointer}){StateSeparation sets;
-        if(separate(off,view,sets)){unsigned score=sets.ground.used+sets.air.used;if(!have||score<best.score){best={off,view,score};have=true;}}}
+        if(separate(off,view,sets,target)){unsigned score=sets.ground.used+sets.air.used;if(!have||score<best.score){best={off,view,score};have=true;}}}
       if(have)result.push_back(best);
     }
     std::sort(result.begin(),result.end(),[](const StateCandidate&a,const StateCandidate&b){return a.score!=b.score ? a.score<b.score : a.offset<b.offset;});
@@ -1665,15 +1672,19 @@ const char* stateHClass(const StateSeparation& sets){
 void stateReport(const char* reason){
   std::lock_guard<std::mutex> lock(stateSnapshotsMu);if(!stateSnapshots.used)return;
   stateSnapshots.resolveJ(qpcSec(qpcNow()),gfFaceTakeoffTime.load(),gfFaceLandingTime.load());
-  unsigned counts[7];stateSnapshots.counts(counts);auto candidates=stateSnapshots.candidates();
-  msm2::writeLog("WS_STATE_SUMMARY report=%s ring_used=%u F=%u W=%u J=%u H=%u G=%u A=%u other=%u coverage_complete=%u candidate_count=%u diagnostic_only=1",
-    reason,stateSnapshots.used,counts[0],counts[1],counts[2],counts[3],counts[4],counts[5],counts[6],unsigned(stateSnapshots.coverage()),unsigned(candidates.size()));
-  for(const auto& candidate:candidates){StateSeparation sets;if(!stateSnapshots.separate(candidate.offset,candidate.view,sets))continue;
-    char ground[320],air[320],h[320];stateValuesText(sets.ground,candidate.view,ground,sizeof ground);stateValuesText(sets.air,candidate.view,air,sizeof air);stateValuesText(sets.h,candidate.view,h,sizeof h);
-    const char* type=candidate.view==StateView::Byte ? "byte_flag" : candidate.view==StateView::Int ? "small_int" : candidate.view==StateView::Float ? "float" : "pointer_like";
-    const char* view=candidate.view==StateView::Byte ? "u8" : candidate.view==StateView::Pointer ? "u64" : "u32";
-    msm2::writeLog("WS_STATE_CANDIDATE report=%s off=0x%x type=%s view=%s ground_values={%s} air_values={%s} H_values={%s} H_class=%s diagnostic_only=1",
-      reason,candidate.offset,type,view,ground,air,h,stateHClass(sets));
+  unsigned counts[8];stateSnapshots.counts(counts);auto againstA=stateSnapshots.candidates(StateLabel::A),againstH=stateSnapshots.candidates(StateLabel::H);
+  msm2::writeLog("WS_STATE_SUMMARY report=%s ring_used=%u F=%u W=%u J=%u H=%u G=%u A=%u L=%u other=%u coverage_complete=%u coverage_A_complete=%u coverage_H_complete=%u candidate_count=%u candidate_count_A=%u candidate_count_H=%u diagnostic_only=1",
+    reason,stateSnapshots.used,counts[0],counts[1],counts[2],counts[3],counts[4],counts[5],counts[6],counts[7],unsigned(stateSnapshots.coverage(StateLabel::A)&&stateSnapshots.coverage(StateLabel::H)),unsigned(stateSnapshots.coverage(StateLabel::A)),unsigned(stateSnapshots.coverage(StateLabel::H)),unsigned(againstA.size()+againstH.size()),unsigned(againstA.size()),unsigned(againstH.size()));
+  for(StateLabel target:{StateLabel::A,StateLabel::H}){
+    const auto& candidates=target==StateLabel::A ? againstA:againstH;
+    msm2::writeLog("WS_STATE_COMPARISON report=%s comparison=ground_vs_%s coverage_complete=%u candidate_count=%u target_min=%u J_information_only=1",reason,target==StateLabel::A ? "A":"H",unsigned(stateSnapshots.coverage(target)),unsigned(candidates.size()),target==StateLabel::H ? 5u:10u);
+    for(const auto& candidate:candidates){StateSeparation sets;if(!stateSnapshots.separate(candidate.offset,candidate.view,sets,target))continue;
+      char ground[320],values[320],h[320],j[320],l[320];stateValuesText(sets.ground,candidate.view,ground,sizeof ground);stateValuesText(sets.air,candidate.view,values,sizeof values);stateValuesText(sets.h,candidate.view,h,sizeof h);stateValuesText(sets.j,candidate.view,j,sizeof j);stateValuesText(sets.l,candidate.view,l,sizeof l);
+      const char* type=candidate.view==StateView::Byte ? "byte_flag" : candidate.view==StateView::Int ? "small_int" : candidate.view==StateView::Float ? "float" : "pointer_like";
+      const char* view=candidate.view==StateView::Byte ? "u8" : candidate.view==StateView::Pointer ? "u64" : "u32";
+      msm2::writeLog("WS_STATE_CANDIDATE report=%s comparison=ground_vs_%s off=0x%x type=%s view=%s ground_values={%s} target_values={%s} air_values={%s} H_values={%s} J_values={%s} L_values={%s} H_class=%s diagnostic_only=1",
+        reason,target==StateLabel::A ? "A":"H",candidate.offset,type,view,ground,values,target==StateLabel::A ? values:"information_only",h,j,l,target==StateLabel::A ? stateHClass(sets):"target_H");
+    }
   }
   unsigned vectorLines=0;
   for(unsigned off=0;off+12<=0x1000&&vectorLines<16;off+=4){unsigned match,n;
@@ -2473,7 +2484,7 @@ void stateDiagnosticTick(const msm2::Snapshot& hero,std::uint64_t nowMs){
     if(lock.owns_lock()&&stateFrameTransform==hero.transform&&stateFrameEpoch==stateEpoch.load()&&stateFrameDrops==stateDrops.load())metrics=stateFrames.metrics;}
   if(now<metrics.time||now-metrics.time>0.15)metrics.valid=false;
   bool hold=gfOn.load()&&gfTransform.load()==hero.transform&&!wsActiveNow(nowMs);
-  auto label=chooseStateLabel(hold,gfPinnedNow.load(),gfFaceAirNow.load(),std::hypot(wgiLx.load(),wgiLy.load()),stateAirAge(now,gfFaceTakeoffTime.load()),vertical,ySpeed,metrics,stateRuntime.airRun.sample(!hold&&vertical,ySpeed));
+  auto label=chooseStateLabel(hold,gfPinnedNow.load(),gfFaceAirNow.load(),std::hypot(wgiLx.load(),wgiLy.load()),stateAirAge(now,gfFaceTakeoffTime.load()),vertical,ySpeed,metrics,stateRuntime.airRun.sample(!hold&&vertical,ySpeed),gfWalkoffActive.load());
   std::lock_guard<std::mutex> lock(stateSnapshotsMu);
   stateSnapshots.resolveJ(now,gfFaceTakeoffTime.load(),gfFaceLandingTime.load());
   if(label==StateLabel::Other)return;
@@ -2483,7 +2494,7 @@ void stateDiagnosticTick(const msm2::Snapshot& hero,std::uint64_t nowMs){
   snapshot.heroBytes=readStatePrefix(hero.hero,snapshot.hero,0x1000,read);
   snapshot.transformBytes=readStatePrefix(hero.transform,snapshot.transform,0x100,read);
   if(snapshot.heroBytes>=4)snapshot.label=label;
-  if(!stateRuntime.loggedSize){stateRuntime.loggedSize=true;msm2::writeLog("WS_STATE_READABLE hero_bytes=%u transform_bytes=%u block_bytes=256 cadence_ms=50 capacity_per_label=60 labels=6 ground_vertical_source=hero_gravity_block diagnostic_only=1",snapshot.heroBytes,snapshot.transformBytes);}
+  if(!stateRuntime.loggedSize){stateRuntime.loggedSize=true;msm2::writeLog("WS_STATE_READABLE hero_bytes=%u transform_bytes=%u block_bytes=256 cadence_ms=50 capacity_per_label=60 labels=7 ground_vertical_source=hero_gravity_block diagnostic_only=1",snapshot.heroBytes,snapshot.transformBytes);}
 }
 void gfSummary(const char* why) {
   airFacingEnd(why);
