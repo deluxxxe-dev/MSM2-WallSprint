@@ -21,3 +21,18 @@ per process. Move samples expose speed/rises/blocked instead of a remaining
 budget. Owned actual-helper ASan/UBSan tests cover ordinary multi-call7m/s steps,
 long-frame7.5m/s walking, whole-frame restoration on >9, sixth acceleration,
 neutral and trend reset. This is source/fixture validation, not game evidence.
+
+## Task 2 — follow quiet local wall, bound reapproach
+Completed frame displacement subtracts WS-applied corrections before testing the
+game's normal step, even with neutral stick. Five eligible pinned/non-faceAir
+frames with <=2mm absolute normal step permit plane follow (authored rest
+tolerance). Each frame removes25% of the rest distance, capped at0.05m; no follow
+while in air, after invalid/gapped samples or actual normal motion. Cumulative
+point changes>0.05m log event=follow. The hero's actual pre-call current position,
+not the game's uncommitted desired position, determines rest/reapproach distance.
+
+Reapproach now needs >0.3m for>0.2s; absolute QPC time enforces>=1s between attempts
+in a hold, including after a model-gap reset. Reason/cooldown are logged. Near
+0.18m rest adapts without reapproach. Pure helpers test quiet count, cap/sign,
+normal motion/air invalidation, convergence and cooldown. Windows production
+cross-compile passes; actual uneven-wall rest and jump landing remain pending.
