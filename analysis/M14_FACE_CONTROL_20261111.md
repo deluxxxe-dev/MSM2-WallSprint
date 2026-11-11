@@ -20,3 +20,20 @@ generation resets them. Owned actual-helper ASan/UBSan tests cover native multi-
 call frames, first-call intervals, min/max/rebase and worker/native mode switch.
 Production Windows cross-compile passes; actual walking-down hitch/undo absence
 is an owner check, not a cloud fixture claim.
+
+## Task 2 — stop hop through face-air landing
+A near-face non-jump hold now starts the existing face-air model with nominal
+height0.5m (v=sqrt(2*33*0.5)), zero planar velocity/impulse and immediate game-stick
+neutralization through the existing air flag. No A press is synthesized. Steering
+and zip impulses are excluded during this stop hop. The common plane landing
+branch is bypassed while faceAir is active; only FACE_JUMP_LANDED completes it.
+At that landing the stop's first-landing timestamp arms the retained0.3s outward
+limit. STOP_HOP takeoff/landing events include height and measured QPC airtime.
+Air flags also clear at hold cancellation and publish the completed frame state.
+
+No normal gravity/arc/timing constants were tuned. Nominal launch height is not a
+claim about measured peak or detected game air state. Pure launch tests verify
+normal speed/zero planar motion; existing air-isolation/landing-limit fixtures
+and production cross-compile pass. Standing/exactly-one-landing/no REAPPROACH
+remain owner checks. Owner must-have no-hover/face-gravity fall remains binding;
+current M14 explicitly defers that implementation until Task5 state evidence.
