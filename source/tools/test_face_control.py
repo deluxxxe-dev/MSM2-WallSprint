@@ -32,7 +32,7 @@ int main() {
   assert(m.hand==hand && m.count(10.94)==48);
   for(int i=0;i<4;++i) checkDirection(m,11.0,i*kFacePi/2,hand*i*kFacePi/2+0.7);
   assert(std::string(m.takeoff(11.0,0,1,n,out))=="walk");
-  assert(near(std::hypot(out[1],out[2]),3.7f)); // actual measured speed, even with another stick direction
+  assert(near(std::hypot(out[1],out[2]),5.f)); // pushed directional jump floor
   assert(std::string(m.takeoff(11.3,0,1,n,out))=="model");assert(near(std::hypot(out[1],out[2]),5.f));
   assert(std::string(m.takeoff(31.0,0,1,n,out))=="none");assert(m.count(31.0)==0);
  }
@@ -70,6 +70,17 @@ int main() {
  assert(!faceZipDirection(empty,20,0,1,n,velocity,out,fallback)); // untrained active stick never invents a direction
  float zero[3]={0,0,0};assert(!faceZipDirection(empty,20,0,0,n,zero,out,fallback));
  puts("PASS: M12 zip model direction, neutral velocity fallback, no-direction/no-velocity refusal");
+  FaceWalkModel mean;train(mean,10,0,1,0,1.5f);train(mean,10.02,0,1,0,3.5f);train(mean,10.04,0,1,0,4.f);
+  assert(near(mean.meanSpeed(10.1),3.f));
+  assert(std::string(mean.takeoff(10.1,0,0,n,out))=="walk" && near(out[1],3.f));
+  assert(std::string(mean.takeoff(10.1,0,1,n,out))=="walk" && near(out[1],5.f));
+  float air[3]={0,5.3f,0},target[3]={0,0,1};
+  for(int i=0;i<100;++i)steerFaceVelocity(air,target,0.016f,n);
+  assert(near(std::hypot(air[1],air[2]),5.3f));assert(air[2]>5.29f);
+  FaceJumpTrace trace;float origin[3]={2,3,4},launch[3]={10,5,0},at[3]={3,5,7},d[3],v[3];
+  trace.start(10,origin,launch,0,1,"walk");assert(trace.split(origin,n,d,v));assert(near(d[0],0)&&near(d[1],0)&&near(d[2],0));
+  assert(trace.split(at,n,d,v));assert(near(d[0],2)&&near(d[1],3)&&near(d[2],1));assert(v[0]==5&&v[1]==0&&v[2]==10);
+  puts("PASS: M13 0.3s mean/floor, constant air steering speed, takeoff-relative jump trace");
   FaceFallGuard g;
   for(int i=0;i<20;++i) { g.begin(0.016f,true); assert(g.apply(10,9.92f,true)==9.92f); assert(g.apply(9.92f,9.89f,true)==9.89f); }
   g.begin(0.08f,true);assert(g.apply(10,9.4f,true)==9.4f); // longer frame,7.5m/s allowed

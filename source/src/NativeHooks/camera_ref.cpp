@@ -1117,7 +1117,7 @@ bool faceBasis(const float* n, float* up, float* side) {
   return true;
 }
 struct FaceWalkModel {
-  struct Sample { double time{}, stick{}, walk{}; } ring[64]{};
+  struct Sample { double time{}, stick{}, walk{}; float speed{}; } ring[64]{};
   unsigned next{}, used{}; int hand{1}; double theta{}, updated{}; bool valid{}, hasWalk{};
   double lastWalk{}; float velocity[3]{};
   unsigned count(double now) const {
@@ -1135,10 +1135,10 @@ struct FaceWalkModel {
       u+=double(step[i])*up[i]; s+=double(step[i])*side[i];
     }
     double speed=std::hypot(u,s)/dt;
-    if (!std::isfinite(speed) || speed<=1.0) return false;
+    if (!std::isfinite(speed) || !std::isfinite(float(speed)) || speed<=1.0) return false;
     float measured[3]; for(int i=0;i<3;++i) { measured[i]=float((u*up[i]+s*side[i])/dt); if(!std::isfinite(measured[i])) return false; }
     double angle=std::atan2(double(sx),double(sy));
-    ring[next]={now,angle,std::atan2(s,u)}; next=(next+1)%64; if(used<64) ++used;
+    ring[next]={now,angle,std::atan2(s,u),float(speed)}; next=(next+1)%64; if(used<64) ++used;
     hasWalk=true; lastWalk=now;
     for(int i=0;i<3;++i) velocity[i]=measured[i];
     double c[2]{},v[2]{}; unsigned total=0; bool span=false;
@@ -1168,11 +1168,21 @@ struct FaceWalkModel {
     for(int i=0;i<3;++i) out[i]=float(std::cos(angle)*up[i]+std::sin(angle)*side[i]);
     return true;
   }
+  float meanSpeed(double now) const {
+    double sum=0; unsigned total=0;
+    for(unsigned i=0;i<used;++i) if(now>=ring[i].time && now-ring[i].time<=0.3) { sum+=ring[i].speed; ++total; }
+    return total ? float(sum/total) : 0.f;
+  }
   const char* takeoff(double now, float sx, float sy, const float* n, float* out) const {
-    if(hasWalk && age(now)>=0 && age(now)<0.3) { for(int i=0;i<3;++i) out[i]=velocity[i]; return "walk"; }
-    if(direction(now,sx,sy,n,out)) { for(int i=0;i<3;++i) out[i]*=5.f; return "model"; }
-    for(int i=0;i<3;++i) out[i]=0;
-    return "none";
+    const char* source="none";
+    if(hasWalk && age(now)>=0 && age(now)<0.3) { for(int i=0;i<3;++i) out[i]=velocity[i]; source="walk"; }
+    else if(direction(now,sx,sy,n,out)) source="model";
+    else { for(int i=0;i<3;++i) out[i]=0; return source; }
+    float length=std::hypot(out[0],out[1],out[2]);
+    float speed=meanSpeed(now); if(!(speed>0.f)) speed=source[0]=='w' ? length : 5.f;
+    if(std::hypot(sx,sy)>0.5f) speed=std::fmax(5.f,speed);
+    for(int i=0;i<3;++i) out[i]*=speed/length;
+    return source;
   }
 };
 // Frame anchors use current Transform BEFORE this frame's first SetPosition call, not its first desired-current delta.
@@ -1204,6 +1214,32 @@ bool faceZipDirection(const FaceWalkModel& model, double now, float sx, float sy
   for(int i=0;i<3;++i) out[i]=float((u*up[i]+s*side[i])/speed);
   fallback=true; return true;
 }
+// Direction steering keeps planar speed; neutral input calls no steering at all.
+void steerFaceVelocity(float* velocity,const float* target,float dt,const float* n) {
+  float up[3],side[3]; if(!faceBasis(n,up,side) || !std::isfinite(dt) || dt<=0.f) return;
+  double u=0,s=0,tu=0,ts=0; for(int i=0;i<3;++i) { u+=velocity[i]*up[i]; s+=velocity[i]*side[i]; tu+=target[i]*up[i]; ts+=target[i]*side[i]; }
+  if(std::hypot(tu,ts)<1e-4) return;
+  double speed=std::hypot(u,s), angle=std::atan2(s,u), goal=std::atan2(ts,tu);
+  if(speed<1e-4) { speed=5.f; angle=goal; }
+  else angle+=std::remainder(goal-angle,2*kFacePi)*std::fmin(1.f,dt*6.f);
+  for(int i=0;i<3;++i) velocity[i]=float(speed*(std::cos(angle)*up[i]+std::sin(angle)*side[i]));
+}
+struct FaceJumpTrace {
+  bool valid{}; double takeoff{}; float origin[3]{},velocity[3]{},sx{},sy{}; const char* source{"none"};
+  void start(double now,const float* p,const float* v,float x,float y,const char* why) {
+    valid=true;takeoff=now;sx=x;sy=y;source=why;
+    for(int i=0;i<3;++i){origin[i]=p[i];velocity[i]=v[i];}
+  }
+  bool split(const float* p,const float* n,float* delta,float* v) const {
+    float up[3],side[3]; if(!valid || !faceBasis(n,up,side)) return false;
+    float len=std::sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
+    for(int k=0;k<3;++k) { delta[k]=v[k]=0; for(int i=0;i<3;++i) {
+      float axis=k==0 ? up[i] : k==1 ? side[i] : n[i]/len;
+      delta[k]+=(p[i]-origin[i])*axis;v[k]+=velocity[i]*axis;
+    } }
+    return true;
+  }
+};
 // M12_WALK_MODEL_END
 // M13_FALL_GUARD_BEGIN: raw negative frame motion is allowed unless it has a fall signature.
 struct FaceFallGuard {
@@ -1297,7 +1333,7 @@ struct FaceStopControl {
   }
 };
 // M12_LANDING_END
-struct GfLocal { FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
+struct GfLocal { FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
 void gfLogPlane(const char* event) {
   msm2::writeLog("WS_GRAVITY_FORCE_PLANE event=%s point=%.3f,%.3f,%.3f source=%s",
     event, gfP0[0].load(), gfP0[1].load(), gfP0[2].load(), gfPlaneFromWall.load() ? "wall_point_0x338" : "ws_position_minus_0.5n");
@@ -1333,6 +1369,14 @@ void faceInputLog(const char* event, const float* n, const float* velocity, cons
   msm2::writeLog("%s stick=%.2f,%.2f a_s=%.6f h=%d theta_deg=%.2f sample_count=%u sample_age_s=%.3f model_age_s=%.3f source=%s dir_up=%.3f dir_side=%.3f speed=%.3f velocity_fallback=%u",
     event,sx,sy,std::atan2(sx,sy),gfL.walk.hand,gfL.walk.theta*180.0/kFacePi,gfL.walk.count(now),gfL.walk.age(now),
     gfL.walk.valid ? now-gfL.walk.updated : -1.0,source,speed>1e-4f ? u/speed : 0.f,speed>1e-4f ? s/speed : 0.f,speed,unsigned(velocityFallback));
+}
+std::atomic<unsigned> gfJumpTraceLogs{0};
+void faceJumpTrace(const char* event,const float* p,const float* n,double now,bool terminal=false) {
+  float d[3],v[3];
+  if(gfL.jumpTrace.split(p,n,d,v) && gfJumpTraceLogs.fetch_add(1)<60)
+    msm2::writeLog("WS_FACE_JUMP_TRACE event=%s t=%.3f delta_up=%.3f delta_side=%.3f delta_n=%.3f takeoff_v_up=%.3f takeoff_v_side=%.3f takeoff_v_n=%.3f stick=%.2f,%.2f stick_now=%.2f,%.2f source=%s",
+      event,now-gfL.jumpTrace.takeoff,d[0],d[1],d[2],v[0],v[1],v[2],gfL.jumpTrace.sx,gfL.jumpTrace.sy,wgiLx.load(),wgiLy.load(),gfL.jumpTrace.source);
+  if(terminal) gfL.jumpTrace.valid=false;
 }
 std::atomic<unsigned> gfFallUndoLogs{0};
 float faceGuardY(float current, float desired) {
@@ -1500,6 +1544,9 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     gfL.stop.active=false;
     gfL.airSource=gfL.walk.takeoff(qpcSec(now),wgiLx.load(),wgiLy.load(),n0,gfL.airVel);
     { float v = std::sqrt(2.f * kGfG * 1.8f); for (int i = 0; i < 3; ++i) gfL.vg[i] = n0[i] * v; for (float& c : gfL.dash) c = 0.f; }
+    { float v[3]; for(int i=0;i<3;++i) v[i]=gfL.airVel[i]+gfL.vg[i];
+      gfL.jumpTrace.start(qpcSec(now),mvA ? mvA : p,v,wgiLx.load(),wgiLy.load(),gfL.airSource);
+      faceJumpTrace("takeoff",mvA ? mvA : p,n0,qpcSec(now)); }
     gfL.zipSeen=gfZipReq.load(std::memory_order_relaxed); // zero is a valid request count, not an uninitialized sentinel
     faceInputLog("WS_FACE_JUMP_INPUT",n0,gfL.airVel,gfL.airSource,qpcSec(now));
     // M10z-r13 (owner irregular run: with no stores the game's own face jump was smooth): the face jump is the game's;
@@ -1526,7 +1573,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     gfL.faceAirT += dt;
     for (int i = 0; i < 3; ++i) gfL.vg[i] -= kGfG * n0[i] * dt;
     float st[3]{}; bool mapped=faceAirDir(n0, st);
-    if (mapped && !takeoffFrame) { gfL.airSource="model"; float k = std::fmin(1.f, dt * 6.f); for (int i = 0; i < 3; ++i) gfL.airVel[i] += (st[i] * 5.f - gfL.airVel[i]) * k; }
+    if (mapped && !takeoffFrame) { gfL.airSource="model"; steerFaceVelocity(gfL.airVel,st,dt,n0); }
     { unsigned zr = gfZipReq.load(std::memory_order_relaxed);
       if (zr != gfL.zipSeen) { gfL.zipSeen = zr; float z[3]{}, velocity[3];
         for(int i=0;i<3;++i) velocity[i]=gfL.airVel[i]+gfL.dash[i];
@@ -1542,8 +1589,8 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     float vn = gfL.vg[0] * n0[0] + gfL.vg[1] * n0[1] + gfL.vg[2] * n0[2];
     if (dq < 0.f) for (int i = 0; i < 3; ++i) q[i] -= dq * n0[i];
     if (gfL.faceAirT > 0.1f && dq < 0.02f && vn <= 0.f) { gfL.faceAir = false; gfL.pinT = 0.f; gfL.fallGuard.resetMotion(); for (float& c : gfL.vg) c = 0.f; for (float& c : gfL.dash) c = 0.f;
-      gfLogPlane("FACE_JUMP_LANDED"); msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_LANDED t=%.2f", gfL.faceAirT); }
-    if (gfL.faceAirT > 6.f) { gfL.faceAir = false; for (float& c : gfL.vg) c = 0.f; msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_TIMEOUT"); }
+      faceJumpTrace("landing",q,n0,qpcSec(now),true); gfLogPlane("FACE_JUMP_LANDED"); msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_LANDED t=%.2f", gfL.faceAirT); }
+    if (gfL.faceAirT > 6.f) { faceJumpTrace("timeout",q,n0,qpcSec(now),true); gfL.faceAir = false; for (float& c : gfL.vg) c = 0.f; msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_TIMEOUT"); }
   } else
   if (gfL.pinned && !sbBlendQpc.load(std::memory_order_relaxed)) {
     q[0] = p[0]; q[1] = p[1]; q[2] = p[2];

@@ -52,3 +52,20 @@ repeat-landing accounting and faceAir isolation. Task3A is an experiment, not an
 accepted jerk fix: owner must count WALL_LANDED and inspect the three stops. Task3B
 (0.6s/240-line trace after failed A) is deliberately NOT implemented before that
 result. Camera/standing/jerk outcome remains UNKNOWN; no camera change made.
+
+## Task 4 — directional jump speed and takeoff-relative trace
+The qualified walking ring now records speeds; takeoff uses their mean over the
+last0.3s, keeping the current known walking direction. Stick>0.5 with a known
+walking/model direction has a5m/s floor. No known direction still means zero
+planar launch. Steering turns the planar velocity without decaying its speed;
+neutral input does not change it. The normal launch expression sqrt(2*33*1.8),
+existing normal arc and landing integration are unchanged; actual height/airtime
+remain owner measurements, not a new cloud acceptance claim.
+
+WS_FACE_JUMP_TRACE logs takeoff/landing (or explicit timeout) displacement in
+wall-up/side/normal relative to the actual takeoff position, full takeoff velocity,
+original/current stick and original source; cap60 records per process. Source
+walk/model/none and existing input logs remain. Owned helpers test mean vs one
+sample, pushed floor, constant-speed steering through turns, zero-origin and
+three-axis landing projection. Body yaw/visible "into screen" outcome remain
+UNKNOWN until captioned owner video, not inferred from source vectors.
