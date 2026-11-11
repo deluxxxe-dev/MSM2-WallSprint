@@ -45,6 +45,10 @@ in M10z-r6..r14): stop from WS 3 times. Decision table:
 | still falling | not the path | log the game's steps (normal / wall-up / side) for 1 s after `WALL_LANDED` and test landing with a real approach: keep gravity toward the face until the game's step along -n is blocked for 3 frames instead of pinning at 0.05 m |
 Do not add an A injection (rejected in M10z-r5: the game pulled the hero into the crawl).
 
+## Order and reporting
+Implement Task 1 and Task 2 first (one commit each) and push. Task 3 Step A is an owner test: put its steps in NEED.
+Finish with STATUS / CHANGED / RESULT / NEED (CLAUDE.md "Finish response").
+
 ## Not in scope
 Body yaw during jumps, the camera swing after a web zip, the web line visual, charge-jump height, velocity search,
 mover editing (`WALLSPRINT_WS_GRAVITY_MOVER` stays 0), L3 lock (cancelled by the owner).

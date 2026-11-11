@@ -22,6 +22,11 @@ This file governs WallSprint changes in `deluxxxe-dev/MSM2-WallSprint`. The cano
   whole duration of each video, not only some of them) and every log. Never report or decide from a subset, and say
   explicitly which files were inspected.
 
+## Codex handoff (owner rule 2026-11-11)
+- When implementation is handed to Codex, put the complete instructions in the repository (`docs/CODEX_NEXT.md` plus the
+  referenced `analysis/` files), commit and push them, and give the owner only a minimal paste message for Codex:
+  repository, branch, and "follow docs/CODEX_NEXT.md". Do not repeat task details in the chat message.
+
 ## Development division
 - ChatGPT decides technical next steps and interprets real-game logs. Claude Code implements the *currently authorized* bounded task, performs available non-game checks, and records results.
 - `docs/CODEX_NEXT.md` is the task boundary. If it currently describes only a Windows owner action or a pending real-game test, **do not create new implementation work**. Report that the next action is for the user.
