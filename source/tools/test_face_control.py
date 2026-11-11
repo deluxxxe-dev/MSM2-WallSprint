@@ -119,12 +119,14 @@ int main() {
   assert(g.apply(10,9.99f,true)==10); // blocked remainder of same frame
   g={};
   for(int i=0;i<6;++i) { g.begin(0.02f,true); float want=10.f-(2.f+i*0.3f)*0.02f; assert(g.apply(10,want,true)==want); }
-  g.begin(0.02f,true);assert(g.apply(10,10.f-3.8f*0.02f,true)==10);
+  g.begin(0.02f,true);float low=10.f-3.8f*0.02f;assert(g.apply(10,low,true)==low);
+  g={};for(int i=0;i<6;++i){g.begin(0.02f,true);float want=10.f-(5.f+i*0.3f)*0.02f;assert(g.apply(10,want,true)==want);}
+  g.begin(0.02f,true);assert(g.apply(10,10.f-6.8f*0.02f,true)==10);
   assert(std::string(g.reason)=="accelerating_six_frames");
   g.begin(0.02f,false);assert(g.apply(10,9.99f,false)==10);assert(g.apply(10,10.01f,false)==10.01f);
   g.begin(0.02f,true);assert(g.apply(10,9.90f,true)==9.90f && g.rises==0);
   g.resetMotion();assert(g.dt==0.02f && g.apply(10,9.90f,true)==9.90f); // landing keeps frame dt
-  puts("PASS: M13 unrestricted ordinary downward frames, fall speed/6 rises, neutral and whole-frame undo");
+  puts("PASS: M15 run-start acceleration allowed below6m/s,9m/s and six-rise fall rules, neutral and whole-frame undo");
 }
 '''
 (root / 'build').mkdir(exist_ok=True)

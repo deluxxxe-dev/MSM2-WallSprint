@@ -27,3 +27,9 @@ age. Regression is used only if no pair exists this hold. Pushed non-walk launch
 velocity is reconstructed from the frozen pair too; neutral input invents none.
 Owned helper tests cover stale model/none pairs, trust, cache replacement and
 empty-history regression fallback. Production cross-compile passes.
+
+## Task 3 — walking-speed acceleration is not a fall
+The six-rising-frame rule additionally requires current downward speed>6m/s.
+The >9m/s rule and same-frame cumulative undo are unchanged. Owned actual-helper
+fixtures allow the measured3-4m/s run-start ramp and still reject a rising6.8m/s
+sequence and the independent9m/s boundary. Production cross-compile passes.

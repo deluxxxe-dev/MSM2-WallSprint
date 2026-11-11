@@ -1328,7 +1328,7 @@ struct FaceFallGuard {
     if(!walking) { frameWalking=false; havePrevious=false; rises=0; rawY=passedDown=0.f; return std::fmax(currentY,desiredY); }
     rawY+=desiredY-currentY; observed=true;
     speed=dt>0.f && std::isfinite(dt) ? std::fmax(0.f,-rawY/dt) : 0.f;
-    bool accelerating=havePrevious && rises>=5 && speed>previousSpeed+0.2f;
+    bool accelerating=havePrevious && rises>=5 && speed>6.f && speed>previousSpeed+0.2f;
     if(speed>9.f || accelerating) { falling=true; reason=speed>9.f ? "speed_over_9" : "accelerating_six_frames"; }
     if(!(dt>0.f) || !std::isfinite(dt) || !std::isfinite(speed)) { falling=true; reason="invalid_frame_time_or_speed"; }
     if(falling) {
