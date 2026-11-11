@@ -72,3 +72,48 @@ arc or game zip/body/camera behavior is altered.
 Owned helpers test same-direction reproduction, untrusted-current/last-trusted
 mirror selection, initial+1, recent-pair expiry and model fallback; production
 Windows cross-compile passes. Zip direction/game yaw acceptance is pending.
+
+## Task 5 — read-only labeled state snapshots
+Under existing exact-build/installed-hook admission, wsGravityTest INI and F8
+gates, a250ms scheduled worker cadence captures Hero[0,0x1000) in256-byte guarded
+blocks, stopping at the first unreadable block, plus Transform[0,0x100). Prefix
+size is logged once per Hero/Transform identity. A fixed240-slot ring retains
+only process-local bytes, clears on identity changes, and never dumps raw buffers.
+
+F/W/J/H/G/A are authored labels from hold/pinned/raw-stick/air-age and positions,
+not names for a verified game field. No-hold vertical gravity uses a guarded read
+of the already-identified Hero gravity-up block; missing evidence leaves G/A
+unlabeled. The existing exact SetPosition hook records current frame positions
+with the5ms grouping even without force; its kinematics subtract WS-applied
+corrections. G quiet-y and H pushed-zero require ten actual native frames, not
+worker polls. Contention drops/invalidate diagnostics instead of blocking game
+execution. Stale/identity/gap metrics refuse dependent labels. A y speed is from
+worker position differences. F/J do not fabricate missing frame measurements.
+
+B reports cached label counts and again normal camera_ref::stop reports at exit.
+Force stops before report computation. Reports require>=4 each F/W/J/G/A before
+emitting field candidates; missing coverage is explicit, distinct from a fully
+covered empty result. All recorded ground{F,W,G}/air{J,A} values must be disjoint.
+H values/class are separate. Candidate types are heuristic byte flag (u8 at each
+4-byte offset), signed-small-int/finite-float (u32) or canonical-pattern pointer-
+like (u64, no dereference). Pointer-like is not a pointer/provenance certificate.
+Fields missing in any labeled snapshot refuse. Rank by fewer distinct values,
+then offset; at most64 candidates/report. Display at most8 example values plus
+exact distinct count, but separation checks the full retained sets. Finite J/W
+Transform means and per-component counts occupy at most16 rows/report. No field
+names/ground-state semantics, gameplay decisions, writes, watches, ABI or new
+hooks are inferred or enabled by these candidates.
+
+Owned actual-helper ASan/UBSan tests cover first-unreadable/overflow boundaries,
+250ms cadence without duplicate catch-up copies, six labels/ten-frame counts,
+own-correction subtraction, disjoint flag/float/pointer-like examples/H sets,
+overlap/partial/coverage refusals, means and240 capacity. Two misleading-
+indentation Werror findings were corrected before passing production compile;
+no assertion was relaxed. All prior face/frame/landing helpers pass. Actual
+label coverage and real candidate offsets remain UNKNOWN pending owner run.
+
+The owner's simultaneous must-have clarification62163ef was merged from the
+same development branch (merge880d5ea), preserving both seamless motion and
+face-gravity falling until new WS/B. Current M14 still explicitly defers falling/
+other-surface collision/landing/rotation writes until this evidence; those goals
+are not claimed solved by snapshots or the retained infinite-plane behavior.

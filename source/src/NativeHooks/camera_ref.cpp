@@ -1426,6 +1426,145 @@ struct FaceFacingProbe {
 // M14_FACING_END
 std::atomic<unsigned> gfFacingLogs{0},gfFacingPressId{0},gfFacingPressGen{0},gfFacingWalkGen{0},gfFacingWalkSeq{0};
 std::atomic<float> gfFacingWalk[3]{},gfFacingPressUp{0},gfFacingPressSide{0};
+// M14_STATE_CORE_BEGIN: owned bounded snapshots/label classification, no native reads or writes.
+enum class StateLabel:unsigned { F,W,J,H,G,A,Other };
+enum class StateView:unsigned { Byte,Int,Float,Pointer };
+struct StateContext { bool hold{},pinned{},air{},pushed{},vertical{}; };
+struct StateFrameMetrics { double time{};float length{},dy{},vy{};unsigned quietY{},zeroPushed{};bool valid{}; };
+struct StateFrameSampler {
+  HeroFrameClock clock{};bool anchored{};float position[3]{},correction[3]{};StateContext previous{};StateFrameMetrics metrics{};
+  void reset(){anchored=false;clock={};metrics={};}
+  void call(double now,const float* p,StateContext c) {
+    if(!anchored){clock.rebase(now,true);anchored=true;for(int i=0;i<3;++i){position[i]=p[i];correction[i]=0;}previous=c;return;}
+    if(!clock.step(now,true))return;
+    float d[3];for(int i=0;i<3;++i)d[i]=p[i]-position[i]-correction[i];
+    float length=std::hypot(d[0],d[1],d[2]);double dt=clock.dt;
+    bool valid=std::isfinite(length)&&std::isfinite(dt)&&dt>=0.005&&dt<=0.1;
+    unsigned quiet=valid&&!c.hold&&c.vertical&&!previous.hold&&previous.vertical&&std::fabs(d[1])<0.002f ? std::min(10u,metrics.quietY+1) : 0;
+    unsigned zero=valid&&c.hold&&c.pinned&&!c.air&&c.pushed&&previous.hold&&previous.pinned&&!previous.air&&previous.pushed&&length<=1e-5f ? std::min(10u,metrics.zeroPushed+1) : 0;
+    metrics={now,length,d[1],valid ? float(d[1]/dt) : 0.f,quiet,zero,valid};
+    for(int i=0;i<3;++i){position[i]=p[i];correction[i]=0;}previous=c;
+  }
+  void applied(const float* wanted,const float* actual){for(int i=0;i<3;++i)correction[i]+=actual[i]-wanted[i];}
+};
+StateLabel chooseStateLabel(bool hold,bool pinned,bool air,float stick,float airTime,bool vertical,float ySpeed,const StateFrameMetrics& m) {
+  if(hold){
+    if(air&&airTime>=0.1f&&airTime<=0.3f)return StateLabel::J;
+    if(pinned&&!air){
+      if(stick<0.2f)return StateLabel::F;
+      if(stick>0.5f&&m.valid&&m.zeroPushed>=10)return StateLabel::H;
+      if(stick>0.5f&&m.valid&&m.length>1e-5f)return StateLabel::W;
+    }
+  }else if(vertical){
+    if(std::isfinite(ySpeed)&&ySpeed < -3.f)return StateLabel::A;
+    if(m.valid&&m.quietY>=10)return StateLabel::G;
+  }
+  return StateLabel::Other;
+}
+struct StateSnap { unsigned char hero[0x1000]{},transform[0x100]{};unsigned heroBytes{},transformBytes{};StateLabel label{StateLabel::Other}; };
+struct StateValues {
+  std::uint64_t data[240]{};unsigned used{};
+  bool contains(std::uint64_t v)const{for(unsigned i=0;i<used;++i)if(data[i]==v)return true;return false;}
+  void add(std::uint64_t v){if(!contains(v)&&used<240)data[used++]=v;}
+};
+struct StateSeparation {StateValues ground{},air{},h{};};
+struct StateCandidate {unsigned offset{};StateView view{};unsigned score{};};
+struct StateSnapshotRing {
+  StateSnap snapshots[240]{};unsigned next{},used{};
+  void reset(){next=used=0;}
+  StateSnap& reserve(){auto& s=snapshots[next];next=(next+1)%240;if(used<240)++used;s.heroBytes=s.transformBytes=0;s.label=StateLabel::Other;return s;}
+  void counts(unsigned* out)const{for(unsigned i=0;i<7;++i)out[i]=0;for(unsigned i=0;i<used;++i)++out[snapshots[i].heroBytes>=4 ? unsigned(snapshots[i].label) : unsigned(StateLabel::Other)];}
+  bool coverage()const{unsigned c[7];counts(c);return c[0]>=4&&c[1]>=4&&c[2]>=4&&c[4]>=4&&c[5]>=4;}
+  bool separate(unsigned off,StateView view,StateSeparation& out)const {
+    out={};unsigned width=view==StateView::Byte ? 1 : view==StateView::Pointer ? 8 : 4;
+    if(view==StateView::Pointer && off%8)return false;
+    bool actualPointer=false;
+    for(unsigned i=0;i<used;++i){const auto& s=snapshots[i];if(s.label==StateLabel::Other)continue;
+      if(s.heroBytes<off+width)return false;
+      std::uint64_t value=0;std::memcpy(&value,s.hero+off,width);
+      if(view==StateView::Int){std::int32_t v;std::memcpy(&v,s.hero+off,4);if(v < -65536 || v>65535)return false;}
+      if(view==StateView::Float){float v;std::memcpy(&v,s.hero+off,4);if(!std::isfinite(v)||(v!=0&&std::fabs(v)<1e-20f))return false;if(v==0)value=0;}
+      if(view==StateView::Pointer){if(value && (value<0x10000 || value>0x7fffffffffffULL || value%8))return false;actualPointer|=value!=0;}
+      if(s.label==StateLabel::H)out.h.add(value);
+      else if(s.label==StateLabel::J||s.label==StateLabel::A)out.air.add(value);
+      else out.ground.add(value);
+    }
+    if(!out.ground.used||!out.air.used||(view==StateView::Pointer&&!actualPointer))return false;
+    for(unsigned i=0;i<out.ground.used;++i)if(out.air.contains(out.ground.data[i]))return false;
+    return true;
+  }
+  std::vector<StateCandidate> candidates()const {
+    std::vector<StateCandidate> result;if(!coverage())return result;result.reserve(64);
+    for(unsigned off=0;off<0x1000;off+=4){StateCandidate best{};bool have=false;
+      for(StateView view:{StateView::Byte,StateView::Int,StateView::Float,StateView::Pointer}){StateSeparation sets;
+        if(separate(off,view,sets)){unsigned score=sets.ground.used+sets.air.used;if(!have||score<best.score){best={off,view,score};have=true;}}}
+      if(have)result.push_back(best);
+    }
+    std::sort(result.begin(),result.end(),[](const StateCandidate&a,const StateCandidate&b){return a.score!=b.score ? a.score<b.score : a.offset<b.offset;});
+    if(result.size()>64)result.resize(64);
+    return result;
+  }
+  void transformMeans(unsigned row,StateLabel label,double* sums,unsigned* n)const {
+    for(unsigned k=0;k<4;++k){sums[k]=0;n[k]=0;}
+    for(unsigned i=0;i<used;++i){const auto& s=snapshots[i];if(s.label!=label||s.transformBytes<row+16)continue;
+      for(unsigned k=0;k<4;++k){float v;std::memcpy(&v,s.transform+row+4*k,4);if(std::isfinite(v)){sums[k]+=v;++n[k];}}}
+    for(unsigned k=0;k<4;++k)if(n[k])sums[k]/=n[k];
+  }
+};
+struct StateCadence {
+  bool started{};std::uint64_t next{};
+  bool due(std::uint64_t now){if(!started){started=true;next=now+250;return true;}if(now<next)return false;next+=((now-next)/250+1)*250;return true;}
+};
+template<class Reader> unsigned readStatePrefix(std::uintptr_t base,unsigned char* out,unsigned bytes,Reader read){
+  if(!base||base>UINTPTR_MAX-bytes)return 0;
+  unsigned readable=0;for(unsigned off=0;off<bytes;off+=0x100){if(!read(base+off,out+off,0x100))break;readable=off+0x100;}return readable;
+}
+// M14_STATE_CORE_END
+StateSnapshotRing stateSnapshots;
+std::mutex stateSnapshotsMu,stateFramesMu;
+StateFrameSampler stateFrames;
+std::atomic<bool> stateDiagOn{false},stateVertical{false};
+std::atomic<std::uintptr_t> stateHeroTransform{0};
+std::atomic<unsigned> stateEpoch{0},stateDrops{0};
+unsigned stateFrameEpoch{},stateFrameDrops{};std::uintptr_t stateFrameTransform{};
+std::atomic<float> gfFaceAirSeconds{0};
+void stateValuesText(const StateValues& values,StateView view,char* out,std::size_t capacity){
+  std::size_t at=0;out[0]=0;
+  for(unsigned i=0;i<std::min(8u,values.used);++i){char value[64];
+    if(view==StateView::Float){std::uint32_t bits=std::uint32_t(values.data[i]);float f;std::memcpy(&f,&bits,4);std::snprintf(value,sizeof value,"%.9g",double(f));}
+    else if(view==StateView::Int){std::uint32_t bits=std::uint32_t(values.data[i]);std::int32_t v;std::memcpy(&v,&bits,4);std::snprintf(value,sizeof value,"%d",int(v));}
+    else if(view==StateView::Pointer)std::snprintf(value,sizeof value,"0x%llx",(unsigned long long)values.data[i]);
+    else std::snprintf(value,sizeof value,"%llu",(unsigned long long)values.data[i]);
+    int n=std::snprintf(out+at,capacity-at,"%s%s",i ? "," : "",value);
+    if(n<0||std::size_t(n)>=capacity-at)return;
+    at+=std::size_t(n);
+  }
+  std::snprintf(out+at,capacity-at,"%s;distinct=%u",values.used>8 ? ",..." : "",values.used);
+}
+const char* stateHClass(const StateSeparation& sets){
+  if(!sets.h.used)return "missing";
+  bool allGround=true,allAir=true,any=false;
+  for(unsigned i=0;i<sets.h.used;++i){bool g=sets.ground.contains(sets.h.data[i]),a=sets.air.contains(sets.h.data[i]);allGround&=g;allAir&=a;any|=g||a;}
+  return allGround ? "ground" : allAir ? "air" : any ? "mixed" : "other";
+}
+void stateReport(const char* reason){
+  std::lock_guard<std::mutex> lock(stateSnapshotsMu);if(!stateSnapshots.used)return;
+  unsigned counts[7];stateSnapshots.counts(counts);auto candidates=stateSnapshots.candidates();
+  msm2::writeLog("WS_STATE_SUMMARY report=%s ring_used=%u F=%u W=%u J=%u H=%u G=%u A=%u other=%u coverage_complete=%u candidate_count=%u diagnostic_only=1",
+    reason,stateSnapshots.used,counts[0],counts[1],counts[2],counts[3],counts[4],counts[5],counts[6],unsigned(stateSnapshots.coverage()),unsigned(candidates.size()));
+  for(const auto& candidate:candidates){StateSeparation sets;if(!stateSnapshots.separate(candidate.offset,candidate.view,sets))continue;
+    char ground[320],air[320],h[320];stateValuesText(sets.ground,candidate.view,ground,sizeof ground);stateValuesText(sets.air,candidate.view,air,sizeof air);stateValuesText(sets.h,candidate.view,h,sizeof h);
+    const char* type=candidate.view==StateView::Byte ? "byte_flag" : candidate.view==StateView::Int ? "small_int" : candidate.view==StateView::Float ? "float" : "pointer_like";
+    const char* view=candidate.view==StateView::Byte ? "u8" : candidate.view==StateView::Pointer ? "u64" : "u32";
+    msm2::writeLog("WS_STATE_CANDIDATE report=%s off=0x%x type=%s view=%s ground_values={%s} air_values={%s} H_values={%s} H_class=%s diagnostic_only=1",
+      reason,candidate.offset,type,view,ground,air,h,stateHClass(sets));
+  }
+  for(unsigned row=0;row<0x100;row+=16){double j[4],w[4];unsigned nj[4],nw[4];stateSnapshots.transformMeans(row,StateLabel::J,j,nj);stateSnapshots.transformMeans(row,StateLabel::W,w,nw);
+    if(!(nj[0]+nj[1]+nj[2]+nj[3]+nw[0]+nw[1]+nw[2]+nw[3]))continue;
+    msm2::writeLog("WS_STATE_TRANSFORM report=%s off=0x%x J_mean=%.9g,%.9g,%.9g,%.9g W_mean=%.9g,%.9g,%.9g,%.9g J_n=%u,%u,%u,%u W_n=%u,%u,%u,%u finite_only=1",
+      reason,row,j[0],j[1],j[2],j[3],w[0],w[1],w[2],w[3],nj[0],nj[1],nj[2],nj[3],nw[0],nw[1],nw[2],nw[3]);
+  }
+}
 struct GfLocal { FaceTakeoffHistory takeoffHistory{}; FaceFacingProbe facing{}; bool stopHop{}; double stopHopTakeoff{}; HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
 void gfLogPlane(const char* event) {
   msm2::writeLog("WS_GRAVITY_FORCE_PLANE event=%s point=%.3f,%.3f,%.3f source=%s",
@@ -1759,6 +1898,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   else { if (!gfWritePos(tr, q)) { gfReadFails.fetch_add(1); return; } positionApplied=true; }
   gfWrites.fetch_add(1, std::memory_order_relaxed); gfFrames.fetch_add(1, std::memory_order_relaxed);
   gfDyGameSum.store(gfDyGameSum.load(std::memory_order_relaxed) + dyGame, std::memory_order_relaxed);
+  gfFaceAirSeconds.store(gfL.faceAirT,std::memory_order_relaxed);
   gfPinnedNow.store(gfL.pinned,std::memory_order_relaxed);
   gfFaceAirNow.store(gfL.faceAir,std::memory_order_relaxed);
   gfAir.store(!gfL.pinned || gfL.faceAir,std::memory_order_relaxed);
@@ -1871,13 +2011,26 @@ using SetPos2Fn = std::uintptr_t (*)(std::uintptr_t, std::uintptr_t, std::uintpt
 SetPos2Fn sp2Orig{}; std::atomic<std::uint64_t> sp2HeroCalls{0}, sp2Edits{0};
 extern std::atomic<std::int64_t> gmQpc;
 std::uintptr_t sp2Detour(std::uintptr_t tr, std::uintptr_t pos, std::uintptr_t r8, std::uintptr_t r9) {
-  if (tr && pos && tr == gfTransform.load(std::memory_order_relaxed) && gfOn.load(std::memory_order_relaxed) && ws::drive::wsGravitySetPos.load(std::memory_order_relaxed) && !killed.load(std::memory_order_relaxed)) {
-    float A[3], B[3];
-    if (msm2::readMemory(tr + 0x30, A, 12) && msm2::readMemory(pos, B, 12) && std::isfinite(B[0]) && std::isfinite(B[1]) && std::isfinite(B[2])) {
-      sp2HeroCalls.fetch_add(1, std::memory_order_relaxed); gmQpc.store(qpcNow(), std::memory_order_relaxed);
-      float Bn[4] = {B[0], B[1], B[2], 1.f}; gfStep(A, Bn);
-      if (Bn[0] != B[0] || Bn[1] != B[1] || Bn[2] != B[2]) { sp2Edits.fetch_add(1, std::memory_order_relaxed); return sp2Orig(tr, reinterpret_cast<std::uintptr_t>(Bn), r8, r9); } } }
-  return sp2Orig(tr, pos, r8, r9);
+  bool force=tr&&pos&&tr==gfTransform.load(std::memory_order_relaxed)&&gfOn.load(std::memory_order_relaxed)&&ws::drive::wsGravitySetPos.load(std::memory_order_relaxed)&&!killed.load();
+  bool diagnostic=tr&&pos&&stateDiagOn.load()&&tr==stateHeroTransform.load()&&!killed.load();
+  if(force||diagnostic){float A[3],B[3];
+    if(msm2::readMemory(tr+0x30,A,12)&&msm2::readMemory(pos,B,12)&&std::isfinite(A[0])&&std::isfinite(A[1])&&std::isfinite(A[2])&&std::isfinite(B[0])&&std::isfinite(B[1])&&std::isfinite(B[2])){
+      std::unique_lock<std::mutex> frameLock(stateFramesMu,std::defer_lock);
+      bool captured=diagnostic&&frameLock.try_lock();
+      if(diagnostic&&!captured)stateDrops.fetch_add(1); // drop uncertain diagnostics, never block the game
+      if(captured){auto epoch=stateEpoch.load(),drops=stateDrops.load();
+        if(stateFrameTransform!=tr||stateFrameEpoch!=epoch||stateFrameDrops!=drops){stateFrames.reset();stateFrameTransform=tr;stateFrameEpoch=epoch;stateFrameDrops=drops;}
+        bool hold=gfOn.load()&&!wsActiveNow(GetTickCount64());
+        StateContext context{hold,gfPinnedNow.load(),gfFaceAirNow.load(),std::hypot(wgiLx.load(),wgiLy.load())>0.5f,stateVertical.load()};
+        stateFrames.call(qpcSec(qpcNow()),A,context);
+      }
+      float Bn[4]={B[0],B[1],B[2],1.f};
+      if(force){sp2HeroCalls.fetch_add(1,std::memory_order_relaxed);gmQpc.store(qpcNow(),std::memory_order_relaxed);gfStep(A,Bn);}
+      if(captured){stateFrames.applied(B,Bn);frameLock.unlock();}
+      if(force&&(Bn[0]!=B[0]||Bn[1]!=B[1]||Bn[2]!=B[2])){sp2Edits.fetch_add(1,std::memory_order_relaxed);return sp2Orig(tr,reinterpret_cast<std::uintptr_t>(Bn),r8,r9);}
+    }
+  }
+  return sp2Orig(tr,pos,r8,r9);
 }
 void sp2Install(std::uintptr_t image, std::size_t imageSize) {
   if (!image || imageSize <= kSetPosRva + 64) return;
@@ -2094,8 +2247,40 @@ std::uint64_t gbBlendStart{}; float gbN[3]{}, gbPlane[3]{}, gbPlaneStandoff{-1.f
 void gbSetUp(const float* up) { float want[9] = {-up[0], -up[1], -up[2], up[0], up[1], up[2], up[0], up[1], up[2]}; gbWrite(want);
   for (int i = 0; i < 3; ++i) { std::uint32_t bits; std::memcpy(&bits, &up[i], 4); sgSubBits[i].store(bits); } }
 std::atomic<unsigned> gvSearches{0};
+struct StateDiagnosticRuntime {
+  std::uintptr_t hero{},transform{};StateCadence cadence{};bool loggedSize{},havePosition{};double previousTime{};float previousY{};
+} stateRuntime;
+void stateDiagnosticTick(const msm2::Snapshot& hero,std::uint64_t nowMs){
+  bool admitted=installed.load()&&!killed.load()&&ws::drive::wsGravityTest.load()&&hero.hero&&hero.transform;
+  stateDiagOn.store(admitted);stateHeroTransform.store(admitted ? hero.transform : 0);
+  if(!admitted){stateVertical.store(false);stateRuntime.havePosition=false;return;}
+  if(stateRuntime.hero!=hero.hero||stateRuntime.transform!=hero.transform){
+    std::lock_guard<std::mutex> lock(stateSnapshotsMu);stateSnapshots.reset();stateRuntime={};stateRuntime.hero=hero.hero;stateRuntime.transform=hero.transform;stateEpoch.fetch_add(1);
+    msm2::writeLog("WS_STATE_RESET reason=hero_or_transform_changed diagnostic_only=1");
+  }
+  float gravityUp[3]{};
+  bool vertical=gbAddr&&gbAddr<=UINTPTR_MAX-24&&msm2::readMemory(gbAddr+12,gravityUp,12);
+  float len=std::hypot(gravityUp[0],gravityUp[1],gravityUp[2]);vertical=vertical&&len>0.95f&&len<1.05f&&gravityUp[1]>0.95f;
+  stateVertical.store(vertical);
+  double now=qpcSec(qpcNow());float ySpeed=NAN;
+  if(stateRuntime.havePosition&&now>stateRuntime.previousTime&&now-stateRuntime.previousTime<=0.5)ySpeed=float((hero.position[1]-stateRuntime.previousY)/(now-stateRuntime.previousTime));
+  stateRuntime.havePosition=std::isfinite(hero.position[1]);stateRuntime.previousY=hero.position[1];stateRuntime.previousTime=now;
+  if(!stateRuntime.cadence.due(nowMs))return;
+  StateFrameMetrics metrics{};
+  {std::unique_lock<std::mutex> lock(stateFramesMu,std::try_to_lock);
+    if(lock.owns_lock()&&stateFrameTransform==hero.transform&&stateFrameEpoch==stateEpoch.load()&&stateFrameDrops==stateDrops.load())metrics=stateFrames.metrics;}
+  if(now<metrics.time||now-metrics.time>0.15)metrics.valid=false;
+  bool hold=gfOn.load()&&gfTransform.load()==hero.transform&&!wsActiveNow(nowMs);
+  auto label=chooseStateLabel(hold,gfPinnedNow.load(),gfFaceAirNow.load(),std::hypot(wgiLx.load(),wgiLy.load()),gfFaceAirSeconds.load(),vertical,ySpeed,metrics);
+  std::lock_guard<std::mutex> lock(stateSnapshotsMu);auto& snapshot=stateSnapshots.reserve();
+  auto read=[](std::uintptr_t a,unsigned char* p,unsigned n){return msm2::readMemory(a,p,n);};
+  snapshot.heroBytes=readStatePrefix(hero.hero,snapshot.hero,0x1000,read);
+  snapshot.transformBytes=readStatePrefix(hero.transform,snapshot.transform,0x100,read);
+  if(snapshot.heroBytes>=4)snapshot.label=label;
+  if(!stateRuntime.loggedSize){stateRuntime.loggedSize=true;msm2::writeLog("WS_STATE_READABLE hero_bytes=%u transform_bytes=%u block_bytes=256 cadence_ms=250 capacity=240 ground_vertical_source=hero_gravity_block diagnostic_only=1",snapshot.heroBytes,snapshot.transformBytes);}
+}
 void gfSummary(const char* why) {
-  gfAir.store(false);gfFaceAirNow.store(false);gfPinnedNow.store(false);gfFaceMaskLatched.store(false);gfFaceMaskUntil.store(0);
+  gfAir.store(false);gfFaceAirNow.store(false);gfPinnedNow.store(false);gfFaceMaskLatched.store(false);gfFaceMaskUntil.store(0);gfFaceAirSeconds.store(0);
   gmReport(why); for (auto& h : gmVelHits) h.store(0); gmVelSamples.store(0);
   if (auto ta = gvTestAddr.exchange(0)) msm2::writeLog("WS_VELOCITY_TEST end addr=0x%llx writes=%llu frames=%llu dy_game_sum=%.3f (baseline: holds without a test)", (unsigned long long)ta, (unsigned long long)gvTestWrites.load(), (unsigned long long)gfFrames.load(), gfDyGameSum.load());
   if (!gfOn.exchange(false) && !gfFrames.load()) return;
@@ -2174,7 +2359,7 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     else if (gbState == 2) {
       // M10z-r11: on B the position stores stop at once (the model knows no ground and pushed the hero through it while
       // blending); the game falls with its own collision, only the orientation returns over 1 s.
-      if (wgiBPresses.load() != gbAPresses) { gbState = 3; gbBlendStart = now; for (int i = 0; i < 3; ++i) sbN[i].store(gbN[i]); sbBlendQpc.store(qpcNow()); gfSummary("cancel_by_B"); msm2::writeLog("WS_GRAVITY_TEST cancel_by_B test=%u held_ms=%llu", gbTests, (unsigned long long)(now - gbStart)); }
+      if (wgiBPresses.load() != gbAPresses) { gbState = 3; gbBlendStart = now; for (int i = 0; i < 3; ++i) sbN[i].store(gbN[i]); sbBlendQpc.store(qpcNow()); gfSummary("cancel_by_B"); stateReport("B"); msm2::writeLog("WS_GRAVITY_TEST cancel_by_B test=%u held_ms=%llu", gbTests, (unsigned long long)(now - gbStart)); }
       else gbSetUp(gbN);
     }
     if (gbState == 3) {
@@ -2315,6 +2500,7 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   m8ChargeMeasure(snapshot, now);
   m9VelocitySearch(snapshot, motion, now);
   m10GravityTest(snapshot, motion, now);
+  stateDiagnosticTick(snapshot,now);
   sgStatus(now);
   m5eDistance(snapshot, now);
   m5ePitch(snapshot, now);
@@ -2368,9 +2554,10 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   }
 }
 
-void kill() noexcept { gbRestoreNow(); jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("kill"); }
+void kill() noexcept { stateDiagOn.store(false);gbRestoreNow(); jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("kill"); }
 void stop() noexcept {
-  gbRestoreNow(); jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("stop");
+  stateDiagOn.store(false);gbRestoreNow(); jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("stop");
+  stateReport("exit");
   for (int m = 0; m < 4; ++m) { if (xgTarget[m]) MH_DisableHook(xgTarget[m]); if (xsTarget[m]) MH_DisableHook(xsTarget[m]); }
   if (sgTarget) sgManualUnhook();
   if (wgiReadTarget) MH_DisableHook(wgiReadTarget);
