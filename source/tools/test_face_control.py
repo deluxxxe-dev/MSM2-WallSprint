@@ -1,38 +1,75 @@
-"""Compile the actual pure M11 helpers with owned geometry, never game memory."""
+"""Compile actual M12 walking-fit and preserved M11 budget helpers with owned data."""
 from pathlib import Path
 import subprocess
 
 root = Path(__file__).resolve().parents[1]
 code = (root / 'src/NativeHooks/camera_ref.cpp').read_text()
-axes = code.split('// M11_FACE_AXES_BEGIN:', 1)[1].split('\n', 1)[1].split('// M11_FACE_AXES_END', 1)[0]
+model = code.split('// M12_WALK_MODEL_BEGIN:', 1)[1].split('\n', 1)[1].split('// M12_WALK_MODEL_END', 1)[0]
 budget = code.split('// M11_DOWN_BUDGET_BEGIN:', 1)[1].split('\n', 1)[1].split('// M11_DOWN_BUDGET_END', 1)[0]
 tests = r'''
+void train(FaceWalkModel& m,double time,double angle,int hand,double theta,float speed=4.f) {
+ float n[3]={1,0,0}, step[3]={0,float(std::cos(hand*angle+theta)*speed*0.02),float(std::sin(hand*angle+theta)*speed*0.02)};
+ assert(m.observe(time,float(std::sin(angle)),float(std::cos(angle)),step,0.02,n));
+}
+void checkDirection(const FaceWalkModel& m,double now,double angle,double expected) {
+ float n[3]={1,0,0},out[3]; assert(m.direction(now,float(std::sin(angle)),float(std::cos(angle)),n,out));
+ assert(near(out[0],0) && near(out[1],float(std::cos(expected))) && near(out[2],float(std::sin(expected))));
+}
 int main() {
-  float n[3]={1,0,0}, h[3]={0,10,0}, c[3]={3,20,0}, p[3], r[3];
-  FaceAxes a;
-  assert(a.update(n,h,c,p,r,1)); assert(near(p[1],-1) && near(r[2],1));
-  // Looking down the face: up/down map to world down/up, left/right to opposite wall-side axes.
-  assert(near(p[0],0) && near(p[2],0) && near(r[1],0));
-  c[1]=10; c[2]=-10; assert(a.update(n,h,c,p,r,1)); assert(near(p[2],1) && near(r[1],1));
-  // Degenerate projection retains last valid direction; fresh state cannot invent one.
-  c[2]=0; assert(a.update(n,h,c,p,r,1) && near(p[2],1));
-  FaceAxes empty; assert(!empty.update(n,h,c,p,r,1));
-  c[2]=NAN; assert(!a.update(n,h,c,p,r,1)); c[2]=-10;
-  float positive[3]={0,0.02f,0}, negative[3]={0,-0.02f,0};
-  for(int i=0;i<19;++i) assert(!a.observe(n,negative,1));
-  assert(a.observe(n,negative,1) && a.sign==-1);
-  assert(a.update(n,h,c,p,r,1) && near(r[1],-1));
-  assert(!a.observe(n,positive,1) && a.sign==-1); // one decision per hold/manager
-  FaceAxes mixed; assert(mixed.update(n,h,c,p,r,1));
-  for(int i=0;i<4;++i) assert(!mixed.observe(n,negative,1));
-  for(int i=0;i<15;++i) assert(!mixed.observe(n,positive,1));
-  assert(mixed.observe(n,positive,1) && mixed.sign==1); // 16/20 = 80%
-  FaceAxes abstain; assert(abstain.update(n,h,c,p,r,1));
-  for(int i=0;i<25;++i) assert(!abstain.observe(n,positive,0.7f));
-  assert(abstain.positive==0 && abstain.negative==0);
-  // Opposite stick yields the same physical handedness.
-  for(int i=0;i<19;++i) assert(!abstain.observe(n,negative,-1));
-  assert(abstain.observe(n,negative,-1) && abstain.sign==1);
+ float n[3]={1,0,0}, up[3],side[3],out[3]; assert(faceBasis(n,up,side));
+ assert(near(up[1],1) && near(side[2],1));
+ float tilted[3]={0.8f,0.1f,float(std::sqrt(0.35))};assert(faceBasis(tilted,up,side));
+ assert(near(up[0]*side[0]+up[1]*side[1]+up[2]*side[2],0));
+ FaceWalkModel empty; assert(!empty.direction(10,0,1,n,out));assert(std::string(empty.takeoff(10,0,1,n,out))=="none");
+ float slow[3]={0,0.02f,0};assert(!empty.observe(10,0,0.5f,slow,0.02,n));
+ assert(!empty.observe(10,0,1,slow,0.02,n)); // speed = 1 is insufficient
+ slow[1]=NAN;assert(!empty.observe(10,0,1,slow,0.02,n));slow[1]=0.08f;
+ assert(!empty.observe(10,0,1,slow,0.001,n));assert(!empty.observe(10,0,1,slow,0.2,n));
+ puts("PASS: M12 face basis, untrained/slow/weak stick/nonfinite/gap refusal");
+ for(int hand : {1,-1}) {
+  FaceWalkModel m;
+  for(int i=0;i<48;++i) train(m,10+i*0.02,(i%4)*kFacePi/2,hand,0.7,3.7f);
+  assert(m.hand==hand && m.count(10.94)==48);
+  for(int i=0;i<4;++i) checkDirection(m,11.0,i*kFacePi/2,hand*i*kFacePi/2+0.7);
+  assert(std::string(m.takeoff(11.0,0,1,n,out))=="walk");
+  assert(near(std::hypot(out[1],out[2]),3.7f)); // actual measured speed, even with another stick direction
+  assert(std::string(m.takeoff(11.3,0,1,n,out))=="model");assert(near(std::hypot(out[1],out[2]),5.f));
+  assert(std::string(m.takeoff(31.0,0,1,n,out))=="none");assert(m.count(31.0)==0);
+ }
+ puts("PASS: M12 both mirrors/cardinal directions, measured walking takeoff,5m/s model and20s expiry");
+ FaceWalkModel narrow;
+ for(int i=0;i<8;++i) train(narrow,10+i*0.02,i*0.05,-1,0.5);
+ assert(narrow.hand==1); // <60deg stick span cannot choose the other mirror
+ FaceWalkModel oldMirror;oldMirror.hand=-1;train(oldMirror,10,0.3,-1,0.4);assert(oldMirror.hand==-1);
+ FaceWalkModel threshold;train(threshold,10,0,-1,0.5);train(threshold,10.02,kFacePi/3,-1,0.5);assert(threshold.hand==-1);
+ FaceWalkModel wrap;train(wrap,10,0,1,179*kFacePi/180);train(wrap,10.02,0,1,-179*kFacePi/180);
+ assert(std::fabs(std::fabs(wrap.theta)-kFacePi)<1e-5);
+ FaceWalkModel turning;
+ for(int i=0;i<4;++i) train(turning,10+i*0.02,i*kFacePi/2,1,0.1);
+ train(turning,13,0,1,1.0); assert(std::fabs(turning.theta-1.0)<1e-5); // theta uses only last2s
+ checkDirection(turning,16,0,1.0); // no new walking => no camera-based update while still/airborne
+ for(int i=0;i<100;++i)train(turning,14+i*0.02,(i%4)*kFacePi/2,1,1.0);
+ assert(turning.used==64 && turning.count(16)==64);
+ puts("PASS: M12 60deg mirror gate, previous mirror, angle wrap,2s rotation window,64-ring and stationary freeze");
+ FaceWalkFrame frame;FaceWalkModel frameModel;
+ float pos[3]={0,0,0};frame.advance(10,pos,true,0,1,n,frameModel);
+ float desired[3]={0,0.02f,0};frame.applied(desired,desired,true);
+ float laterDesired[3]={0,0.04f,0},laterCorrected[3]={0,0.07f,0};frame.applied(laterDesired,laterCorrected,true);
+ pos[1]=0.09f;frame.advance(10.02,pos,true,1,0,n,frameModel);
+ assert(frameModel.used==1 && near(frameModel.velocity[1],3.f)); // all calls once; subtract +.03 own store
+ assert(std::fabs(frameModel.ring[0].stick)<1e-6); // stick belongs to measured interval, not next frame
+ frame.applied(desired,laterCorrected,false);pos[1]+=0.08f;
+ frame.advance(10.04,pos,true,0,1,n,frameModel);assert(frameModel.used==1); // faceAir/unpinned interval excluded
+ pos[1]+=0.08f;frame.advance(10.06,pos,true,0,1,n,frameModel);assert(frameModel.used==2);
+ puts("PASS: M12 per-frame game walking includes later calls, excludes own correction/air interval and pairs stick");
+ bool fallback=false; float velocity[3]={5,0,3};
+ assert(faceZipDirection(turning,16,0,1,n,velocity,out,fallback) && !fallback);
+ assert(near(out[1],float(std::cos(1.0))) && near(out[2],float(std::sin(1.0))));
+ assert(faceZipDirection(empty,20,0,0,n,velocity,out,fallback) && fallback);
+ assert(near(out[0],0) && near(out[1],0) && near(out[2],1)); // neutral current velocity, normal component removed
+ assert(!faceZipDirection(empty,20,0,1,n,velocity,out,fallback)); // untrained active stick never invents a direction
+ float zero[3]={0,0,0};assert(!faceZipDirection(empty,20,0,0,n,zero,out,fallback));
+ puts("PASS: M12 zip model direction, neutral velocity fallback, no-direction/no-velocity refusal");
   FaceDownBudget b;
   b.begin(1.f/60.f,true,1.f); // 0.1m total across four calls, including later walking steps
   float y=10.f;
@@ -50,11 +87,10 @@ int main() {
   b.begin(0.2f,true,1.f); assert(near(b.remaining,0.3f)); // existing dt cap
   b.begin(NAN,true,1.f); assert(near(b.remaining,0));
   puts("PASS: M11 shared downward frame budget/neutral/landing/no replenishment");
-  puts("PASS: M11 screen axes/camera turn/degeneracy/handedness threshold");
 }
 '''
 (root / 'build').mkdir(exist_ok=True)
 unit = root / 'build/face_control_tests.cpp'
-unit.write_text('#include <algorithm>\n#include <cmath>\n#include <cassert>\n#include <cstdio>\nbool near(float a,float b){return std::fabs(a-b)<1e-5f;}\n' + axes + budget + tests)
+unit.write_text('#include <algorithm>\n#include <cmath>\n#include <cassert>\n#include <cstdio>\n#include <string>\nbool near(float a,float b){return std::fabs(a-b)<1e-5f;}\n' + model + budget + tests)
 subprocess.run(['g++', '-std=c++17', '-Wall', '-Wextra', '-Werror', '-pedantic', '-fsanitize=address,undefined', '-g', str(unit), '-o', str(root/'build/face_control_tests')], check=True)
 subprocess.run([str(root/'build/face_control_tests')], check=True)
