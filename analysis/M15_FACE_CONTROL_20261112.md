@@ -57,3 +57,34 @@ vector correlation and existing separation/read/mean guards. An initial new
 vector fixture assertion was placed after its own ring reset; moved before reset
 without weakening the assertion. Production cross-compile and focused suites pass.
 Engine semantics, actual coverage and move intent remain UNKNOWN.
+
+## Task 5 — qualified walk-off release
+New WALLSPRINT_WS_FACE_WALKOFF code default0/shipped INI1. Gameplay logic remains
+in camera_ref; drive_command/telemetry/INI changes only wire the required setting.
+FaceWalkFrame now exposes the completed raw game step even when unpinned, with
+own corrections subtracted. The proxy uses native frames, not worker polls:
+at zero-step onset retain the preceding ten-frame history with>=5 planar steps
+>1m/s; require eight consecutive<1mm steps with stick>0.5. Stop hop/push and the
+retained post-landing0.3s stop protection cannot arm it. Invalid/gap/neutral/air
+history cannot arm; a new generation clears it. Carry the mean qualified planar
+walking velocity, unpin and bypass the infinite-plane/stop/mover-sweep clamps.
+
+General gravity integrates along unchanged substituted -u once; no world-y
+launch term or desired game step is added to released motion. Total released
+motion including the existing zip impulse is capped30m/s; dash decay is retained.
+Same-frame callbacks freeze to current position rather than integrating again.
+Three consecutive nonzero game frames (>=1mm) end release and pin a new plane
+through the current game position with current u. This is a proxy, NOT proof of
+another surface/contact/collision. B/new WS/F8/cleanup use existing endings;
+release/land/end plus every-fifth-frame game u/tangent steps are logged,<=200
+sample lines per release. Gravity substitution itself is not changed.
+
+Owned actual-helper ASan/UBSan fixtures cover5-of10/8-zero trigger, neutral/
+invalid/no-prior-walk refusal, three-step resume, planar carry, crossing the old
+plane along -u, and total speed cap including zip. Existing model/landing tests
+and production cross-compile pass. A stopped obstacle after qualified walking
+can satisfy the same proxy: false-release behavior is UNKNOWN and explicitly an
+owner test; no unsupported collision/contact discriminator is invented. H may
+remain insufficient if release occurs before its ten-zero-frame diagnostic
+threshold; label coverage is logged honestly. Other-surface landing stays later
+scope, no collision guarantee or real-game success claim.
