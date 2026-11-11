@@ -6,7 +6,7 @@ s=(r/'src/NativeHooks/camera_ref.cpp').read_text()
 core=s.split('// M15_PHYSICS_BEGIN:',1)[1].split('\n',1)[1].split('// M15_PHYSICS_END',1)[0]
 test=r"""
 int main(){
- for(float height:{1.8f,0.5f})for(float dt:{0.005f,1.f/60,1.f/30}){
+ for(float height:{1.8f})for(float dt:{0.005f,1.f/60,1.f/30}){
   float n[3]={0.8f,0,0.6f},p[3]{},v[3]={n[0]*std::sqrt(66*height),0,n[2]*std::sqrt(66*height)},dash[3]{},planar[3]{};
   float peak=0,peakTime=0,landing=0;
   for(int frame=1;frame<1000;++frame){float q[3];
@@ -22,7 +22,7 @@ int main(){
  float v[3]{},up[3]={1,0,0};generalGravityStep(v,up,33,0.016f,false);assert(std::fabs(v[0]+0.528f)<1e-5f);
  for(int i=0;i<1000;++i)generalGravityStep(v,up,33,0.016f,false);
  assert(std::fabs(v[0]+30)<1e-5f);
- puts("PASS: M15 actual general/face path single gravity at5/16.7/33.3ms,1.8m/.33s jump,.5m/.175s hop and30m/s general cap");
+ puts("PASS: M15 actual general/face path single gravity at5/16.7/33.3ms,1.8m/.33s jump and30m/s general cap");
 }
 """
 (r/'build').mkdir(exist_ok=True)

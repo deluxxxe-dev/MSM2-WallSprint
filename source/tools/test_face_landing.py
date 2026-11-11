@@ -24,10 +24,16 @@ int main() {
  stop.landed(10.2);assert(stop.firstLanding==10 && stop.landings==2); // no renewed grace window hides repeat landing
  puts("PASS: M13 stop4m/s normal approach and shared-frame floor, first-landing0.3s guard, tangent/air isolation");
  float hopNormal[3],hopPlanar[3]={5,4,3},hopDash[3]={8,7,6};
- float hopSpeed=launchStopHop(33,n,hopNormal,hopPlanar,hopDash);
- assert(near(hopSpeed,std::sqrt(33.f)) && near(hopNormal[0],hopSpeed));
+ StopHopArc arc;assert(arc.solve(0.45f));
+ float hopSpeed=launchStopHop(arc,n,hopNormal,hopPlanar,hopDash);
+ assert(near(hopSpeed,arc.v) && near(hopNormal[0],hopSpeed));
  for(int i=0;i<3;++i)assert(hopPlanar[i]==0 && hopDash[i]==0);
- puts("PASS: M14 stop hop nominal0.5m launch, zero planar motion and no stop/approach clamp in air");
+ for(float d0:{0.f,0.45f,0.79f}){assert(arc.solve(d0));
+  assert(std::fabs(arc.v*arc.v/(2*arc.gravity)-0.15f)<1e-5f);
+  assert(std::fabs(d0+arc.v*0.35f-0.5f*arc.gravity*0.35f*0.35f)<1e-5f);
+ }
+ assert(!arc.solve(-0.01f)&&!arc.solve(NAN)&&!arc.solve(1));
+ puts("PASS: M16 stop-hop own gravity solves0.15m rise and0.35s plane landing for measured d0, zero planar/dash");
  FaceReapproach r;
  for(int i=0;i<12;++i)assert(!r.step(true,0.56f,0.016f,10+i*0.016));
  assert(r.step(true,0.56f,0.016f,10.192));

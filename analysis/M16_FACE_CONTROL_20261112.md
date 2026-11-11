@@ -32,3 +32,15 @@ Production cross-compile and unchanged normal jump physics tests pass.
 M15 owner result corrects a historical broad claim: game-owned airborne motion
 under substituted up can still fall in WORLD down; only the observed WS face-
 jump path had zero game steps. Preserve this distinction in shared knowledge.
+
+## Task 2 — solve a small stop hop from actual start distance
+For h=0.15,T=0.35, let r=sqrt(2h)+sqrt(2(h+d0)); then g_hop=r²/T²,
+v=sqrt(2h*g_hop). Use the measured near-face d0 (finite0..0.8m; out-of-domain
+starts refuse this hop), not a fixed0.5m launch height. Stop hop alone uses this
+gravity, exact last integration interval and plane landing at0.35s. Normal face
+jumps keep33 and their existing landing condition. Initial/takeoff and landing
+logs include d0,v,g_hop and actual airtime. Planar/dash remain zero; no injected A.
+Owned helper tests cover d0=0,0.45,0.79, apex relative height and solved landing,
+invalid/negative/far starts and preserved normal-jump physics. Production compile
+passes. Real standing/no-visible-shift acceptance remains UNKNOWN; if crawl
+returns, report it rather than tuning height (airtime is the next variable).
