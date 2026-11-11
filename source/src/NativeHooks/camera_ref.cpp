@@ -1355,7 +1355,23 @@ struct FaceStopControl {
   }
 };
 // M12_LANDING_END
-struct GfLocal { FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
+// M14_FRAME_CLOCK_BEGIN: first-call frame dt; native grouping uses previous native-call gap.
+struct HeroFrameClock {
+  double first{},last{},dt{},maxIntra{},minDt{}; bool initialized{},nativeMode{};
+  void rebase(double now,bool native) { first=last=now;initialized=true;nativeMode=native;dt=0; }
+  bool step(double now,bool native) {
+    if(!std::isfinite(now)) return false;
+    if(!initialized || native!=nativeMode || now<last) { rebase(now,native);return false; }
+    double gap=now-last;last=now;
+    bool next=native ? gap>=0.005 : now-first>=0.005; // fallback timer polls are not Hero SetPosition calls
+    if(!next) { if(native) maxIntra=std::fmax(maxIntra,gap);return false; }
+    dt=now-first;first=now;if(minDt==0 || dt<minDt) minDt=dt;
+    return true;
+  }
+};
+// M14_FRAME_CLOCK_END
+std::atomic<double> gfMaxIntraMs{0},gfMinFrameMs{0};
+struct GfLocal { HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
 void gfLogPlane(const char* event) {
   msm2::writeLog("WS_GRAVITY_FORCE_PLANE event=%s point=%.3f,%.3f,%.3f source=%s",
     event, gfP0[0].load(), gfP0[1].load(), gfP0[2].load(), gfPlaneFromWall.load() ? "wall_point_0x338" : "ws_position_minus_0.5n");
@@ -1435,14 +1451,14 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     float want[9] = {-u2[0], -u2[1], -u2[2], u2[0], u2[1], u2[2], u2[0], u2[1], u2[2]}; gbWrite(want); return; }
   if (!tr || !gfOn.load(std::memory_order_relaxed) || killed.load(std::memory_order_relaxed)) return;
   if (!mvB && gmActive()) return;   // the mover drives this hold
-  unsigned gen = gfGen.load(); if (gen != gfL.gen) { gfL = {}; gfL.gen = gen; }
+  unsigned gen = gfGen.load(); if (gen != gfL.gen) { gfL = {}; gfL.gen = gen; gfMaxIntraMs.store(0);gfMinFrameMs.store(0); }
   float p[4]{}; if (mvB) { std::memcpy(p, mvB, 12); p[3] = 1.f; } else if (!msm2::readMemory(tr + 0x30, p, 16) || !std::isfinite(p[0]) || !std::isfinite(p[1]) || !std::isfinite(p[2])) { gfReadFails.fetch_add(1); return; }
   // M10t (log 20261108-130228): the force ran while the hero was still on a wall (vanilla WallRun/crawl) and froze its
   // height there (shaking, re-attach failed). Pause while WallRun updates arrive.
   { auto wn = ws::drive::wallNMs.load(std::memory_order_relaxed); auto ms = GetTickCount64(); if (wn && (wn >= ms || ms - wn < 80)) { gfL.init = false; return; } }
   auto now = qpcNow();
   gfCheckPlane();
-  if (!gfL.init || qpcSec(now - gfL.last) > 0.1) { gfL.init = true; gfL.last = now; gfL.callLast = now; gfL.fallGuard = {}; gfL.reapproach.offTime=0.f; gfL.follow = {}; gfL.walkFrame = {}; std::memcpy(gfL.pLast, mvA ? mvA : p, 12); gfL.vy = gfVy0.load(); gfL.vg[0] = gfL.vg[1] = gfL.vg[2] = 0;
+  if (!gfL.init || qpcSec(now - gfL.last) > 0.1) { gfL.init = true; gfL.last = now; gfL.callLast = now; gfL.frameClock.rebase(qpcSec(now),mvB!=nullptr); gfL.fallGuard = {}; gfL.reapproach.offTime=0.f; gfL.follow = {}; gfL.walkFrame = {}; std::memcpy(gfL.pLast, mvA ? mvA : p, 12); gfL.vy = gfVy0.load(); gfL.vg[0] = gfL.vg[1] = gfL.vg[2] = 0;
     // M10t: launch along the wall normal (wall = down): v = sqrt(2 g h) for the released jump height.
     auto jm = gfJumpMs.load(); auto ms = GetTickCount64();
     // M10z-r6 (log 20261109-022301): the stop was never detected (the WS ended within 120 ms of the stick release), so
@@ -1455,12 +1471,11 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
       for (int i = 0; i < 3; ++i) gfL.vg[i] = gfN0[i].load() * v;
       msm2::writeLog("WS_GRAVITY_FORCE_LAUNCH height_m=%.1f speed=%.1f since_release_ms=%llu", h, v, (unsigned long long)(ms - jm)); }
     return; }
-  // M10z-r16 (log 20261109-160223): SetPosition is called 3-4 times per frame for the hero; skipping calls < 2 ms let the
-  // raw game position through on the later calls (rotation undone). In the SetPosition/mover path every call is processed.
-  float dt = float(qpcSec(now - gfL.last));
-  // M11: a gap between consecutive calls (not elapsed from frame start) defines a new frame.
-  bool newFrame = !gfL.callLast || qpcSec(now - gfL.callLast) >= 0.002;
-  gfL.callLast = now;
+  // M14: 2.0-2.2ms-separated later calls remain in one frame; dt spans its first calls.
+  bool newFrame=gfL.frameClock.step(qpcSec(now),mvB!=nullptr);
+  gfMaxIntraMs.store(gfL.frameClock.maxIntra*1000.0,std::memory_order_relaxed);
+  gfMinFrameMs.store(gfL.frameClock.minDt*1000.0,std::memory_order_relaxed);
+  float dt=float(gfL.frameClock.dt);
   if (newFrame) gfL.stopPushFrame = gfL.pushT > 0.f;
   if (newFrame) gfL.fallGuard.begin(dt, gfL.pinned && !gfL.faceAir && wgiStick.load(std::memory_order_relaxed) > 0.25f);
   if (!newFrame) {
@@ -1476,7 +1491,6 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     }
     if (mvB) gfL.walkFrame.applied(p,mvB,gfL.pinned && !gfL.faceAir);
     return; }
-  if (dt > 0.05f) { dt = 0.05f; }
   // One sample per completed frame; include all game calls and remove our own corrections.
   float walkN[3]={gfN0[0].load(),gfN0[1].load(),gfN0[2].load()};
   gfL.walkFrame.advance(qpcSec(now),mvA ? mvA : p,gfL.pinned && !gfL.faceAir,wgiLx.load(),wgiLy.load(),walkN,gfL.walk);
@@ -1983,8 +1997,8 @@ void gfSummary(const char* why) {
   gmReport(why); for (auto& h : gmVelHits) h.store(0); gmVelSamples.store(0);
   if (auto ta = gvTestAddr.exchange(0)) msm2::writeLog("WS_VELOCITY_TEST end addr=0x%llx writes=%llu frames=%llu dy_game_sum=%.3f (baseline: holds without a test)", (unsigned long long)ta, (unsigned long long)gvTestWrites.load(), (unsigned long long)gfFrames.load(), gfDyGameSum.load());
   if (!gfOn.exchange(false) && !gfFrames.load()) return;
-  msm2::writeLog("WS_GRAVITY_FORCE_END reason=%s setpos_hero_calls=%llu setpos_edits=%llu skipped_stores=%llu pin_drops_undone=%llu face_jumps=%llu stop_hops=%llu frames=%llu set_position_calls=%llu read_fails=%llu plane_clamps=%llu dy_game_sum=%.3f launch_model=%u set_position_fn=%u route=%d game_airborne_frames_only=1",
-    why, (unsigned long long)sp2HeroCalls.exchange(0), (unsigned long long)sp2Edits.exchange(0), (unsigned long long)gfSkippedStores.exchange(0), (unsigned long long)gfPinDrops.exchange(0), (unsigned long long)gfFaceJumps.exchange(0), (unsigned long long)wsStopHops.load(), (unsigned long long)gfFrames.load(), (unsigned long long)gfWrites.load(), (unsigned long long)gfReadFails.load(), (unsigned long long)gfClamps.load(), gfDyGameSum.load(), unsigned(gfModelUsed.exchange(false)), unsigned(spFn.load() != nullptr), gfMode.load());
+  msm2::writeLog("WS_GRAVITY_FORCE_END reason=%s setpos_hero_calls=%llu setpos_edits=%llu skipped_stores=%llu pin_drops_undone=%llu face_jumps=%llu stop_hops=%llu frames=%llu set_position_calls=%llu read_fails=%llu plane_clamps=%llu dy_game_sum=%.3f launch_model=%u set_position_fn=%u route=%d game_airborne_frames_only=1 max_intra_frame_gap_ms=%.3f min_frame_dt_ms=%.3f",
+    why, (unsigned long long)sp2HeroCalls.exchange(0), (unsigned long long)sp2Edits.exchange(0), (unsigned long long)gfSkippedStores.exchange(0), (unsigned long long)gfPinDrops.exchange(0), (unsigned long long)gfFaceJumps.exchange(0), (unsigned long long)wsStopHops.load(), (unsigned long long)gfFrames.load(), (unsigned long long)gfWrites.load(), (unsigned long long)gfReadFails.load(), (unsigned long long)gfClamps.load(), gfDyGameSum.load(), unsigned(gfModelUsed.exchange(false)), unsigned(spFn.load() != nullptr), gfMode.load(),gfMaxIntraMs.load(),gfMinFrameMs.load());
   gfFrames.store(0); gfWrites.store(0); gfReadFails.store(0); gfClamps.store(0); gfDyGameSum.store(0);
 }
 void gbEnd(const char* why, std::uint64_t now, bool writeVanilla = true) {
