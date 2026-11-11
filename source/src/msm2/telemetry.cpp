@@ -103,6 +103,8 @@ Settings settings(){
  msm2::writeLog("WS_GRAVITY_FORCE enabled=%u key=WALLSPRINT_WS_GRAVITY_FORCE default=0",unsigned(ws::drive::wsGravityForce.load()));
  ws::drive::wsFaceWalkoff.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_FACE_WALKOFF",0,path.c_str())==1);
  msm2::writeLog("WS_FACE_WALKOFF enabled=%u key=WALLSPRINT_WS_FACE_WALKOFF default=0",unsigned(ws::drive::wsFaceWalkoff.load()));
+ ws::drive::wsFaceAirFacing.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_FACE_AIR_FACING",0,path.c_str())==1);
+ msm2::writeLog("WS_FACE_AIR_FACING enabled=%u key=WALLSPRINT_WS_FACE_AIR_FACING default=0",unsigned(ws::drive::wsFaceAirFacing.load()));
  ws::drive::wsGravityMover.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_GRAVITY_MOVER",0,path.c_str())==1);
  msm2::writeLog("WS_GRAVITY_MOVER enabled=%u key=WALLSPRINT_WS_GRAVITY_MOVER default=0",unsigned(ws::drive::wsGravityMover.load()));
  ws::drive::wsGravitySetPos.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_GRAVITY_SETPOS",0,path.c_str())==1);

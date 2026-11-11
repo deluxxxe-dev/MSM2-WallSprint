@@ -39,6 +39,8 @@ inline std::atomic<bool> wallPOk{false};
 inline std::atomic<bool> wsGravityForce{false};
 // M15 bounded face walk-off proxy/released-air integration; code default OFF.
 inline std::atomic<bool> wsFaceWalkoff{false};
+// M16 face-air/fall-only bounded Transform row experiment, code default OFF.
+inline std::atomic<bool> wsFaceAirFacing{false};
 // M10q: L3 stand: while set, the left stick reads neutral (WGI and the WS stick drive) until the stick is re-pressed.
 inline std::atomic<bool> stickMask{false};
 // M10z-r9: drive the wall gravity through the hero mover (RVA 0x3519E10) desired position. WALLSPRINT_WS_GRAVITY_MOVER, default 0.

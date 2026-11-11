@@ -44,3 +44,32 @@ Owned helper tests cover d0=0,0.45,0.79, apex relative height and solved landing
 invalid/negative/far starts and preserved normal-jump physics. Production compile
 passes. Real standing/no-visible-shift acceptance remains UNKNOWN; if crawl
 returns, report it rather than tuning height (airtime is the next variable).
+
+## Task 3 — bounded native-call air/fall facing experiment
+New WALLSPRINT_WS_FACE_AIR_FACING: code default0, shipped1. Minimal drive-command/
+telemetry/INI wiring; all writer logic stays in camera_ref. Targets use takeoff
+planar direction (last walking direction when neutral), stop's existing WS travel
+direction, fall's pre-signature walking velocity, or the current zip direction.
+Unknown/degenerate directions refuse. At the first potential write, guarded
+Transform0x00/0x10/0x20 reads must be unit-like, orthogonal and agree with up=n;
+(right dot(up cross forward)) supplies the retained sign, never a guessed one.
+Later inconsistent rows/sign refuse. Forward deviation>2deg permits xyz-only
+12byte row stores, preserving every W bit in memory; no Position/scale/native
+code changes. Compare current48bytes again inside the guarded callback, preflight
+all written spans and recheck switch/F8/hold/generation/Hero/air-or-fall state.
+Only the existing hero SetPosition detour may write (thread-local call scope),
+including later calls in a frame; worker/mover paths cannot write axes.
+
+4000 writes maximum per hold, retained across jump/zip retargets. Per-phase
+WS_FACE_AIR_FACING summary gives committed writes, next-call overwrite count,
+max deviation and terminal reason; zip changes target without resetting stats.
+Landing repairs, when needed, happen before phase termination and facing readback;
+after landing the writer is disabled and the game's rotation is left alone.
+B/new WS/F8/normal cleanup end via atomic published counters. No restoration
+write is added outside air/fall. A read failure drops overwrite continuity.
+Owned ASan/UBSan fixtures cover both signs, W bits, deviation/overwrite counts,
+4000-per-hold cap, phase/disabled/invalid-row/sign/direction refusal and required
+INI defaults. An initial fixture indentation warning was fixed without weakening
+assertions. Production cross-compile passes. Rendered orientation ownership and
+actual next-call overwrites remain UNKNOWN; do not search another route if the
+specified owner decision table rejects these rows.
