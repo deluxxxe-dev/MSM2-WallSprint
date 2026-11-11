@@ -33,3 +33,27 @@ The six-rising-frame rule additionally requires current downward speed>6m/s.
 The >9m/s rule and same-frame cumulative undo are unchanged. Owned actual-helper
 fixtures allow the measured3-4m/s run-start ramp and still reject a rising6.8m/s
 sequence and the independent9m/s boundary. Production cross-compile passes.
+
+## Task 4 — retained ground/air evidence
+50ms cadence; newest60 snapshots independently per F/W/J/H/G/A (360 total).
+No unlabeled raw buffer is retained. Three consecutive valid50ms samples with
+world gravity/no hold/abs(vertical speed)>1.5m/s permit A in ascent or descent;
+gaps/unknown gravity reset the run. J starts at actual takeoff+50ms; pending J
+samples wait another50ms and are discarded if the recorded landing is too near,
+so the last50ms of air is excluded without predicting a landing. Pending data
+never enters counts/candidates/means. Older finalized J survives later jumps.
+B,60s periodic, hero-loss and normal shutdown reports retain the M14 format.
+Hero identity changes reset data; missing/unknown reads cannot fabricate labels.
+Coverage requires ten samples for all six labels. Separate per-label reservoirs
+preserve early street samples through later holds. Full ground union<=180/air<=120
+fits the unchanged240-distinct-value sets; no silent truncation of separation.
+
+Hero12byte vectors at4byte-aligned offsets are compared with each W snapshot's
+native measured displacement direction. Require cosine>0.98 for>=90% of all W
+snapshots, at least10; unreadable/nonfinite/zero vectors count as nonmatches.
+Log<=16 candidate offsets with match/n; no field is interpreted or written.
+Owned fixtures cover independent reservoirs, J trailing exclusion, A streaks,
+vector correlation and existing separation/read/mean guards. An initial new
+vector fixture assertion was placed after its own ring reset; moved before reset
+without weakening the assertion. Production cross-compile and focused suites pass.
+Engine semantics, actual coverage and move intent remain UNKNOWN.

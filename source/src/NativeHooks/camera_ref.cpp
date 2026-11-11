@@ -1448,7 +1448,7 @@ std::atomic<float> gfFacingWalk[3]{},gfFacingPressUp{0},gfFacingPressSide{0};
 enum class StateLabel:unsigned { F,W,J,H,G,A,Other };
 enum class StateView:unsigned { Byte,Int,Float,Pointer };
 struct StateContext { bool hold{},pinned{},air{},pushed{},vertical{}; };
-struct StateFrameMetrics { double time{};float length{},dy{},vy{};unsigned quietY{},zeroPushed{};bool valid{}; };
+struct StateFrameMetrics { double time{};float length{},dy{},vy{};unsigned quietY{},zeroPushed{};bool valid{};float direction[3]{}; };
 struct StateFrameSampler {
   HeroFrameClock clock{};bool anchored{};float position[3]{},correction[3]{};StateContext previous{};StateFrameMetrics metrics{};
   void reset(){anchored=false;clock={};metrics={};}
@@ -1461,6 +1461,7 @@ struct StateFrameSampler {
     unsigned quiet=valid&&!c.hold&&c.vertical&&!previous.hold&&previous.vertical&&std::fabs(d[1])<0.002f ? std::min(10u,metrics.quietY+1) : 0;
     unsigned zero=valid&&c.hold&&c.pinned&&!c.air&&c.pushed&&previous.hold&&previous.pinned&&!previous.air&&previous.pushed&&length<=1e-5f ? std::min(10u,metrics.zeroPushed+1) : 0;
     metrics={now,length,d[1],valid ? float(d[1]/dt) : 0.f,quiet,zero,valid};
+    if(valid&&length>1e-5f)for(int i=0;i<3;++i)metrics.direction[i]=d[i]/length;
     for(int i=0;i<3;++i){position[i]=p[i];correction[i]=0;}previous=c;
   }
   void applied(const float* wanted,const float* actual){for(int i=0;i<3;++i)correction[i]+=actual[i]-wanted[i];}
@@ -1468,21 +1469,25 @@ struct StateFrameSampler {
 double stateAirAge(double now,double takeoff) {
   return std::isfinite(now)&&std::isfinite(takeoff)&&takeoff>0&&now>=takeoff ? now-takeoff : -1.0;
 }
-StateLabel chooseStateLabel(bool hold,bool pinned,bool air,float stick,double airTime,bool vertical,float ySpeed,const StateFrameMetrics& m) {
+StateLabel chooseStateLabel(bool hold,bool pinned,bool air,float stick,double airTime,bool vertical,float ySpeed,const StateFrameMetrics& m,unsigned airRun=0) {
   if(hold){
-    if(air&&airTime>=0.1&&airTime<=0.3)return StateLabel::J;
+    if(air&&airTime>=0.05)return StateLabel::J;
     if(pinned&&!air){
       if(stick<0.2f)return StateLabel::F;
       if(stick>0.5f&&m.valid&&m.zeroPushed>=10)return StateLabel::H;
       if(stick>0.5f&&m.valid&&m.length>1e-5f)return StateLabel::W;
     }
   }else if(vertical){
-    if(std::isfinite(ySpeed)&&ySpeed < -3.f)return StateLabel::A;
+    if(std::isfinite(ySpeed)&&std::fabs(ySpeed)>1.5f&&airRun>=3)return StateLabel::A;
     if(m.valid&&m.quietY>=10)return StateLabel::G;
   }
   return StateLabel::Other;
 }
-struct StateSnap { unsigned char hero[0x1000]{},transform[0x100]{};unsigned heroBytes{},transformBytes{};StateLabel label{StateLabel::Other}; };
+struct StateAirRun {
+  unsigned consecutive{};
+  unsigned sample(bool noHoldVertical,float speed){consecutive=noHoldVertical&&std::isfinite(speed)&&std::fabs(speed)>1.5f ? std::min(3u,consecutive+1) : 0;return consecutive;}
+};
+struct StateSnap { unsigned char hero[0x1000]{},transform[0x100]{};unsigned heroBytes{},transformBytes{};StateLabel label{StateLabel::Other};float walking[3]{};double time{},takeoff{};bool pending{}; };
 struct StateValues {
   std::uint64_t data[240]{};unsigned used{};
   bool contains(std::uint64_t v)const{for(unsigned i=0;i<used;++i)if(data[i]==v)return true;return false;}
@@ -1491,16 +1496,20 @@ struct StateValues {
 struct StateSeparation {StateValues ground{},air{},h{};};
 struct StateCandidate {unsigned offset{};StateView view{};unsigned score{};};
 struct StateSnapshotRing {
-  StateSnap snapshots[240]{};unsigned next{},used{};
-  void reset(){next=used=0;}
-  StateSnap& reserve(){auto& s=snapshots[next];next=(next+1)%240;if(used<240)++used;s.heroBytes=s.transformBytes=0;s.label=StateLabel::Other;return s;}
-  void counts(unsigned* out)const{for(unsigned i=0;i<7;++i)out[i]=0;for(unsigned i=0;i<used;++i)++out[snapshots[i].heroBytes>=4 ? unsigned(snapshots[i].label) : unsigned(StateLabel::Other)];}
-  bool coverage()const{unsigned c[7];counts(c);return c[0]>=4&&c[1]>=4&&c[2]>=4&&c[4]>=4&&c[5]>=4;}
+  StateSnap snapshots[360]{};unsigned next[6]{},sizes[6]{},used{};
+  void reset(){for(auto& s:snapshots)s.heroBytes=s.transformBytes=0;for(unsigned i=0;i<6;++i)next[i]=sizes[i]=0;used=0;}
+  StateSnap& reserve(StateLabel label){unsigned k=unsigned(label);auto& s=snapshots[k*60+next[k]];next[k]=(next[k]+1)%60;if(sizes[k]<60){++sizes[k];++used;}s.heroBytes=s.transformBytes=0;s.label=label;s.pending=false;return s;}
+  void resolveJ(double now,double takeoff,double landing){for(auto& s:snapshots)if(s.heroBytes>=4&&s.label==StateLabel::J&&s.pending){
+    if(s.takeoff!=takeoff || (landing>=s.takeoff && landing-s.time<0.05)){s.heroBytes=0;s.pending=false;}
+    else if(now-s.time>=0.05)s.pending=false;
+  }}
+  void counts(unsigned* out)const{for(unsigned i=0;i<7;++i)out[i]=0;for(const auto& s:snapshots)if(s.heroBytes>=4&&!s.pending)++out[unsigned(s.label)];}
+  bool coverage()const{unsigned c[7];counts(c);for(unsigned i=0;i<6;++i)if(c[i]<10)return false;return true;}
   bool separate(unsigned off,StateView view,StateSeparation& out)const {
     out={};unsigned width=view==StateView::Byte ? 1 : view==StateView::Pointer ? 8 : 4;
     if(view==StateView::Pointer && off%8)return false;
     bool actualPointer=false;
-    for(unsigned i=0;i<used;++i){const auto& s=snapshots[i];if(s.label==StateLabel::Other)continue;
+    for(const auto& s:snapshots){if(s.heroBytes<4||s.pending||s.label==StateLabel::Other)continue;
       if(s.heroBytes<off+width)return false;
       std::uint64_t value=0;std::memcpy(&value,s.hero+off,width);
       if(view==StateView::Int){std::int32_t v;std::memcpy(&v,s.hero+off,4);if(v < -65536 || v>65535)return false;}
@@ -1527,14 +1536,26 @@ struct StateSnapshotRing {
   }
   void transformMeans(unsigned row,StateLabel label,double* sums,unsigned* n)const {
     for(unsigned k=0;k<4;++k){sums[k]=0;n[k]=0;}
-    for(unsigned i=0;i<used;++i){const auto& s=snapshots[i];if(s.label!=label||s.transformBytes<row+16)continue;
+    for(const auto& s:snapshots){if(s.heroBytes<4||s.pending||s.label!=label||s.transformBytes<row+16)continue;
       for(unsigned k=0;k<4;++k){float v;std::memcpy(&v,s.transform+row+4*k,4);if(std::isfinite(v)){sums[k]+=v;++n[k];}}}
     for(unsigned k=0;k<4;++k)if(n[k])sums[k]/=n[k];
   }
+  bool movementVector(unsigned off,unsigned& match,unsigned& n)const {
+    match=n=0;
+    for(const auto& s:snapshots)if(s.heroBytes>=4&&!s.pending&&s.label==StateLabel::W){
+      ++n;if(s.heroBytes<off+12)continue;float v[3];std::memcpy(v,s.hero+off,12);
+      float length=std::hypot(v[0],v[1],v[2]),walking=std::hypot(s.walking[0],s.walking[1],s.walking[2]);
+      if(!std::isfinite(length)||length<1e-5f||walking<0.9f)continue;
+      double dot=0;for(int i=0;i<3;++i)dot+=double(v[i])*s.walking[i];
+      if(dot/(length*walking)>0.98)++match;
+    }
+    return n>=10 && match*10>=n*9;
+  }
+
 };
 struct StateCadence {
   bool started{};std::uint64_t next{};
-  bool due(std::uint64_t now){if(!started){started=true;next=now+250;return true;}if(now<next)return false;next+=((now-next)/250+1)*250;return true;}
+  bool due(std::uint64_t now){if(!started){started=true;next=now+50;return true;}if(now<next)return false;next+=((now-next)/50+1)*50;return true;}
 };
 template<class Reader> unsigned readStatePrefix(std::uintptr_t base,unsigned char* out,unsigned bytes,Reader read){
   if(!base||base>UINTPTR_MAX-bytes)return 0;
@@ -1548,7 +1569,7 @@ std::atomic<bool> stateDiagOn{false},stateVertical{false};
 std::atomic<std::uintptr_t> stateHeroTransform{0};
 std::atomic<unsigned> stateEpoch{0},stateDrops{0};
 unsigned stateFrameEpoch{},stateFrameDrops{};std::uintptr_t stateFrameTransform{};
-std::atomic<double> gfFaceTakeoffTime{0};
+std::atomic<double> gfFaceTakeoffTime{0},gfFaceLandingTime{0};
 void stateValuesText(const StateValues& values,StateView view,char* out,std::size_t capacity){
   std::size_t at=0;out[0]=0;
   for(unsigned i=0;i<std::min(8u,values.used);++i){char value[64];
@@ -1570,6 +1591,7 @@ const char* stateHClass(const StateSeparation& sets){
 }
 void stateReport(const char* reason){
   std::lock_guard<std::mutex> lock(stateSnapshotsMu);if(!stateSnapshots.used)return;
+  stateSnapshots.resolveJ(qpcSec(qpcNow()),gfFaceTakeoffTime.load(),gfFaceLandingTime.load());
   unsigned counts[7];stateSnapshots.counts(counts);auto candidates=stateSnapshots.candidates();
   msm2::writeLog("WS_STATE_SUMMARY report=%s ring_used=%u F=%u W=%u J=%u H=%u G=%u A=%u other=%u coverage_complete=%u candidate_count=%u diagnostic_only=1",
     reason,stateSnapshots.used,counts[0],counts[1],counts[2],counts[3],counts[4],counts[5],counts[6],unsigned(stateSnapshots.coverage()),unsigned(candidates.size()));
@@ -1580,6 +1602,9 @@ void stateReport(const char* reason){
     msm2::writeLog("WS_STATE_CANDIDATE report=%s off=0x%x type=%s view=%s ground_values={%s} air_values={%s} H_values={%s} H_class=%s diagnostic_only=1",
       reason,candidate.offset,type,view,ground,air,h,stateHClass(sets));
   }
+  unsigned vectorLines=0;
+  for(unsigned off=0;off+12<=0x1000&&vectorLines<16;off+=4){unsigned match,n;
+    if(stateSnapshots.movementVector(off,match,n)){++vectorLines;msm2::writeLog("WS_STATE_MOVE_VECTOR report=%s off=0x%x match=%u n=%u diagnostic_only=1",reason,off,match,n);}}
   for(unsigned row=0;row<0x100;row+=16){double j[4],w[4];unsigned nj[4],nw[4];stateSnapshots.transformMeans(row,StateLabel::J,j,nj);stateSnapshots.transformMeans(row,StateLabel::W,w,nw);
     if(!(nj[0]+nj[1]+nj[2]+nj[3]+nw[0]+nw[1]+nw[2]+nw[3]))continue;
     msm2::writeLog("WS_STATE_TRANSFORM report=%s off=0x%x J_mean=%.9g,%.9g,%.9g,%.9g W_mean=%.9g,%.9g,%.9g,%.9g J_n=%u,%u,%u,%u W_n=%u,%u,%u,%u finite_only=1",
@@ -1711,7 +1736,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
         gfL.launched=true;gfL.stop.start();gfL.stopHop=true;gfL.stopHopTakeoff=qpcSec(now);
         gfL.pinned=true;gfL.faceAir=true;gfL.faceAirT=0.f;gfL.pinPresses=wgiPresses.load();
         float speed=launchStopHop(kGfG,n0i,gfL.vg,gfL.airVel,gfL.dash);
-        gfL.zipSeen=gfZipReq.load();gfStopMs.store(0);gfFaceTakeoffTime.store(qpcSec(now));gfFaceAirNow.store(true);gfAir.store(true);
+        gfL.zipSeen=gfZipReq.load();gfStopMs.store(0);gfFaceLandingTime.store(0);gfFaceTakeoffTime.store(qpcSec(now));gfFaceAirNow.store(true);gfAir.store(true);
         msm2::writeLog("WS_GRAVITY_FORCE_STOP_HOP event=takeoff height_m=0.5 airtime_s=0 launch_v=%.3f",speed);
       } }
     if (!gfL.launched && jm && ms >= jm && ms - jm < 600) { gfL.launched = true; float h = gfJumpH.load(), v = std::sqrt(2.f * kGfG * h);
@@ -1848,7 +1873,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     // M10z-r13 (owner irregular run: with no stores the game's own face jump was smooth): the face jump is the game's;
     // the hero stays in the face state (no unpin, no launch, no dash), only world-y drop undo and the wall bound remain.
     gfL.pinPresses = wgiPresses.load(std::memory_order_relaxed);
-    gfFaceJumps.fetch_add(1); gfL.faceJumpT = 0.f; gfL.faceAir = true; gfL.faceAirT = 0.f; gfFaceTakeoffTime.store(qpcSec(now));
+    gfFaceJumps.fetch_add(1); gfL.faceJumpT = 0.f; gfL.faceAir = true; gfL.faceAirT = 0.f; gfFaceLandingTime.store(0);gfFaceTakeoffTime.store(qpcSec(now));
     msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP mode=arc_to_normal_own_air_control"); }
   if (gfL.faceJumpT >= 0.f) { gfL.faceJumpT += dt; if (gfL.faceJumpT > 1.6f) gfL.faceJumpT = -1.f;
     else if ((gfL.frames % 10) == 0 && gfFaceJumpLogs.fetch_add(1) < 400)
@@ -1884,12 +1909,12 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     float dq = (q[0] - p0[0]) * n0[0] + (q[1] - p0[1]) * n0[1] + (q[2] - p0[2]) * n0[2];
     float vn = gfL.vg[0] * n0[0] + gfL.vg[1] * n0[1] + gfL.vg[2] * n0[2];
     if (dq < 0.f) for (int i = 0; i < 3; ++i) q[i] -= dq * n0[i];
-    if (gfL.faceAirT > 0.1f && dq < 0.02f && vn <= 0.f) { gfL.faceAir = false; gfL.pinT = 0.f; gfL.fallGuard.resetMotion(); for (float& c : gfL.vg) c = 0.f; for (float& c : gfL.dash) c = 0.f;
+    if (gfL.faceAirT > 0.1f && dq < 0.02f && vn <= 0.f) { gfFaceLandingTime.store(qpcSec(now));gfL.faceAir = false; gfL.pinT = 0.f; gfL.fallGuard.resetMotion(); for (float& c : gfL.vg) c = 0.f; for (float& c : gfL.dash) c = 0.f;
       if(gfL.stopHop) { gfL.stop.landed(qpcSec(now));gfL.stopHop=false;
         msm2::writeLog("WS_GRAVITY_FORCE_STOP_HOP event=landing height_m=0.5 airtime_s=%.3f",qpcSec(now)-gfL.stopHopTakeoff); }
       gfFaceMaskLatched.store(false);gfFaceMaskUntil.store(GetTickCount64()+100);
       faceFacingLog("landing",true);faceJumpTrace("landing",q,n0,qpcSec(now),true); gfLogPlane("FACE_JUMP_LANDED"); msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_LANDED t=%.2f", gfL.faceAirT); }
-    if (gfL.faceAirT > 6.f) { faceJumpTrace("timeout",q,n0,qpcSec(now),true); gfL.faceAir = false; for (float& c : gfL.vg) c = 0.f; msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_TIMEOUT"); }
+    if (gfL.faceAirT > 6.f) { gfFaceLandingTime.store(qpcSec(now));faceJumpTrace("timeout",q,n0,qpcSec(now),true); gfL.faceAir = false; for (float& c : gfL.vg) c = 0.f; msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_TIMEOUT"); }
   } else
   if (gfL.pinned && !sbBlendQpc.load(std::memory_order_relaxed)) {
     q[0] = p[0]; q[1] = p[1]; q[2] = p[2];
@@ -2272,36 +2297,45 @@ void gbSetUp(const float* up) { float want[9] = {-up[0], -up[1], -up[2], up[0], 
   for (int i = 0; i < 3; ++i) { std::uint32_t bits; std::memcpy(&bits, &up[i], 4); sgSubBits[i].store(bits); } }
 std::atomic<unsigned> gvSearches{0};
 struct StateDiagnosticRuntime {
-  std::uintptr_t hero{},transform{};StateCadence cadence{};bool loggedSize{},havePosition{};double previousTime{};float previousY{};
+  std::uintptr_t hero{},transform{};StateCadence cadence{};StateAirRun airRun{};bool loggedSize{},havePosition{},lostReported{};double previousTime{};float previousY{};std::uint64_t reportAt{};
 } stateRuntime;
 void stateDiagnosticTick(const msm2::Snapshot& hero,std::uint64_t nowMs){
   bool admitted=installed.load()&&!killed.load()&&ws::drive::wsGravityTest.load()&&hero.hero&&hero.transform;
   stateDiagOn.store(admitted);stateHeroTransform.store(admitted ? hero.transform : 0);
-  if(!admitted){stateVertical.store(false);stateRuntime.havePosition=false;return;}
+  if(!admitted){
+    if(!hero.hero&&stateRuntime.hero&&!stateRuntime.lostReported){stateReport("hero_loss");stateRuntime.lostReported=true;}
+    stateVertical.store(false);stateRuntime.havePosition=false;stateRuntime.airRun={};return;
+  }
+  stateRuntime.lostReported=false;
   if(stateRuntime.hero!=hero.hero||stateRuntime.transform!=hero.transform){
-    std::lock_guard<std::mutex> lock(stateSnapshotsMu);stateSnapshots.reset();stateRuntime={};stateRuntime.hero=hero.hero;stateRuntime.transform=hero.transform;stateEpoch.fetch_add(1);
+    std::lock_guard<std::mutex> lock(stateSnapshotsMu);stateSnapshots.reset();stateRuntime={};stateRuntime.hero=hero.hero;stateRuntime.transform=hero.transform;stateRuntime.reportAt=nowMs+60000;stateEpoch.fetch_add(1);
     msm2::writeLog("WS_STATE_RESET reason=hero_or_transform_changed diagnostic_only=1");
   }
   float gravityUp[3]{};
   bool vertical=gbAddr&&gbAddr<=UINTPTR_MAX-24&&msm2::readMemory(gbAddr+12,gravityUp,12);
   float len=std::hypot(gravityUp[0],gravityUp[1],gravityUp[2]);vertical=vertical&&len>0.95f&&len<1.05f&&gravityUp[1]>0.95f;
   stateVertical.store(vertical);
-  double now=qpcSec(qpcNow());float ySpeed=NAN;
-  if(stateRuntime.havePosition&&now>stateRuntime.previousTime&&now-stateRuntime.previousTime<=0.5)ySpeed=float((hero.position[1]-stateRuntime.previousY)/(now-stateRuntime.previousTime));
-  stateRuntime.havePosition=std::isfinite(hero.position[1]);stateRuntime.previousY=hero.position[1];stateRuntime.previousTime=now;
+  if(nowMs>=stateRuntime.reportAt){stateReport("periodic_60s");stateRuntime.reportAt=nowMs+60000;}
   if(!stateRuntime.cadence.due(nowMs))return;
+  double now=qpcSec(qpcNow());float ySpeed=NAN;
+  if(stateRuntime.havePosition&&now>stateRuntime.previousTime&&now-stateRuntime.previousTime<=0.15)ySpeed=float((hero.position[1]-stateRuntime.previousY)/(now-stateRuntime.previousTime));
+  stateRuntime.havePosition=std::isfinite(hero.position[1]);stateRuntime.previousY=hero.position[1];stateRuntime.previousTime=now;
   StateFrameMetrics metrics{};
   {std::unique_lock<std::mutex> lock(stateFramesMu,std::try_to_lock);
     if(lock.owns_lock()&&stateFrameTransform==hero.transform&&stateFrameEpoch==stateEpoch.load()&&stateFrameDrops==stateDrops.load())metrics=stateFrames.metrics;}
   if(now<metrics.time||now-metrics.time>0.15)metrics.valid=false;
   bool hold=gfOn.load()&&gfTransform.load()==hero.transform&&!wsActiveNow(nowMs);
-  auto label=chooseStateLabel(hold,gfPinnedNow.load(),gfFaceAirNow.load(),std::hypot(wgiLx.load(),wgiLy.load()),stateAirAge(now,gfFaceTakeoffTime.load()),vertical,ySpeed,metrics);
-  std::lock_guard<std::mutex> lock(stateSnapshotsMu);auto& snapshot=stateSnapshots.reserve();
+  auto label=chooseStateLabel(hold,gfPinnedNow.load(),gfFaceAirNow.load(),std::hypot(wgiLx.load(),wgiLy.load()),stateAirAge(now,gfFaceTakeoffTime.load()),vertical,ySpeed,metrics,stateRuntime.airRun.sample(!hold&&vertical,ySpeed));
+  std::lock_guard<std::mutex> lock(stateSnapshotsMu);
+  stateSnapshots.resolveJ(now,gfFaceTakeoffTime.load(),gfFaceLandingTime.load());
+  if(label==StateLabel::Other)return;
+  auto& snapshot=stateSnapshots.reserve(label);snapshot.time=now;snapshot.takeoff=gfFaceTakeoffTime.load();snapshot.pending=label==StateLabel::J;
+  for(int i=0;i<3;++i)snapshot.walking[i]=metrics.direction[i];
   auto read=[](std::uintptr_t a,unsigned char* p,unsigned n){return msm2::readMemory(a,p,n);};
   snapshot.heroBytes=readStatePrefix(hero.hero,snapshot.hero,0x1000,read);
   snapshot.transformBytes=readStatePrefix(hero.transform,snapshot.transform,0x100,read);
   if(snapshot.heroBytes>=4)snapshot.label=label;
-  if(!stateRuntime.loggedSize){stateRuntime.loggedSize=true;msm2::writeLog("WS_STATE_READABLE hero_bytes=%u transform_bytes=%u block_bytes=256 cadence_ms=250 capacity=240 ground_vertical_source=hero_gravity_block diagnostic_only=1",snapshot.heroBytes,snapshot.transformBytes);}
+  if(!stateRuntime.loggedSize){stateRuntime.loggedSize=true;msm2::writeLog("WS_STATE_READABLE hero_bytes=%u transform_bytes=%u block_bytes=256 cadence_ms=50 capacity_per_label=60 labels=6 ground_vertical_source=hero_gravity_block diagnostic_only=1",snapshot.heroBytes,snapshot.transformBytes);}
 }
 void gfSummary(const char* why) {
   gfAir.store(false);gfFaceAirNow.store(false);gfPinnedNow.store(false);gfFaceMaskLatched.store(false);gfFaceMaskUntil.store(0);gfFaceTakeoffTime.store(0);
