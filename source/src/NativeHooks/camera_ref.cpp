@@ -1308,7 +1308,7 @@ void generalGravityStep(float* v,const float* up,float g,float dt,bool faceAirFr
 }
 void faceAirStep(float* q,const float* previous,float* v,const float* normal,const float* planar,float* dash,float g,float dt) {
   float decay=std::exp(-dt/0.5f);
-  for(int i=0;i<3;++i){v[i]-=g*normal[i]*dt;q[i]=previous[i]+(v[i]+planar[i]+dash[i])*dt;dash[i]*=decay;}
+  for(int i=0;i<3;++i){v[i]-=g*normal[i]*dt;q[i]=previous[i]+(v[i]+0.5f*g*normal[i]*dt+planar[i]+dash[i])*dt;dash[i]*=decay;}
 }
 void releasedAirStep(float* q,const float* previous,const float* velocity,float* dash,float dt) {
   float total[3];for(int i=0;i<3;++i)total[i]=velocity[i]+dash[i];
@@ -1762,6 +1762,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     sbBlendStep(); float u2[3]; for (int i = 0; i < 3; ++i) { std::uint32_t b = sgSubBits[i].load(std::memory_order_relaxed); std::memcpy(&u2[i], &b, 4); }
     float want[9] = {-u2[0], -u2[1], -u2[2], u2[0], u2[1], u2[2], u2[0], u2[1], u2[2]}; gbWrite(want); return; }
   if (!tr || !gfOn.load(std::memory_order_relaxed) || killed.load(std::memory_order_relaxed)) return;
+  if(gfL.walkoff.active&&!gfWalkoffActive.load()){gfL.walkoff={};gfL.init=false;return;}
   if (!mvB && gmActive()) return;   // the mover drives this hold
   unsigned gen = gfGen.load(); if (gen != gfL.gen) { gfL = {}; gfL.gen = gen; gfMaxIntraMs.store(0);gfMinFrameMs.store(0); }
   float p[4]{}; if (mvB) { std::memcpy(p, mvB, 12); p[3] = 1.f; } else if (!msm2::readMemory(tr + 0x30, p, 16) || !std::isfinite(p[0]) || !std::isfinite(p[1]) || !std::isfinite(p[2])) { gfReadFails.fetch_add(1); return; }
@@ -2364,7 +2365,7 @@ void stateDiagnosticTick(const msm2::Snapshot& hero,std::uint64_t nowMs){
   bool admitted=installed.load()&&!killed.load()&&ws::drive::wsGravityTest.load()&&hero.hero&&hero.transform;
   stateDiagOn.store(admitted);stateHeroTransform.store(admitted ? hero.transform : 0);
   if(!admitted){
-    if(!hero.hero&&stateRuntime.hero&&!stateRuntime.lostReported){stateReport("hero_loss");stateRuntime.lostReported=true;}
+    if(!hero.hero&&stateRuntime.hero&&!stateRuntime.lostReported){stateReport("hero_loss");stateRuntime.lostReported=true;stateRuntime.hero=stateRuntime.transform=0;}
     stateVertical.store(false);stateRuntime.havePosition=false;stateRuntime.airRun={};return;
   }
   stateRuntime.lostReported=false;

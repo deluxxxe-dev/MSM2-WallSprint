@@ -88,3 +88,16 @@ owner test; no unsupported collision/contact discriminator is invented. H may
 remain insufficient if release occurs before its ten-zero-frame diagnostic
 threshold; label coverage is logged honestly. Other-surface landing stays later
 scope, no collision guarantee or real-game success claim.
+
+## Final QA — numerical and lifetime boundaries
+The first numerical fixture used a1ms step. Strengthened it to actual grouped-
+frame intervals5ms,60fps and30fps. Face-air position now uses the mean pre/post
+normal velocity for constant gravity, avoiding semi-implicit height loss at
+ordinary frame rates. Both1.8m and0.5m peaks/times pass the original tolerances;
+launch/gravity/height constants are unchanged. This is numerical integration of
+the single-gravity task, not new arc tuning. Released-air integration is unchanged.
+Hero-loss reports also clear its identity so recovery at a recycled address resets
+all reservoirs. A cancelled walk-off atomic prevents its local state continuing
+through a new WS before generation reset. Required code-default0/shipped1 INI
+wiring is asserted by the owned walk-off fixture. Published task commits remain
+intact; final full suites certify the follow-up source tree.

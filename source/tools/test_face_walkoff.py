@@ -2,6 +2,11 @@
 from pathlib import Path
 import subprocess
 r=Path(__file__).resolve().parents[1];s=(r/'src/NativeHooks/camera_ref.cpp').read_text()
+import configparser
+ini=configparser.ConfigParser();ini.read(r/'mod/WallSprint.ini')
+assert ini.getint('WallSprint','WALLSPRINT_WS_FACE_WALKOFF')==1
+assert 'wsFaceWalkoff{false}' in (r/'include/msm2/drive_command.hpp').read_text()
+assert 'L"WALLSPRINT_WS_FACE_WALKOFF",0,' in (r/'src/msm2/telemetry.cpp').read_text()
 core=''
 for name in ['M15_PHYSICS','M15_WALKOFF']:
  core+=s.split('// '+name+'_BEGIN:',1)[1].split('\n',1)[1].split('// '+name+'_END',1)[0]
