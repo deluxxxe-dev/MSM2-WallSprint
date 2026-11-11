@@ -1,0 +1,76 @@
+{
+  "date_jst": "2026-11-11",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "task1_commit": "690f10cd9a7f3ac9c7c9ac6f317b715adf708f64",
+  "task2_commit": "b48c0c3d515432f8070f2089aa4821b11ce3bf54",
+  "source_tree": "e19184f640e3f06e69f41add5ebd66a07b86d991",
+  "commands": {
+    "build": {
+      "cwd": "source",
+      "command": "bash tools/build_windows.sh",
+      "exit_code": 0,
+      "log_sha256": "8a866b6418142b4b1385ae7068e76d61a2f9bbdad894c8f3ecefc56d160156cb",
+      "PASS": 0,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0
+    },
+    "portable": {
+      "cwd": "source",
+      "command": "bash tools/test.sh",
+      "exit_code": 0,
+      "log_sha256": "6c93f4b8e348740dc293cafd68a6259239aede54f5075b1761133e334a348b5b",
+      "PASS": 38,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0
+    },
+    "smoke": {
+      "cwd": "source",
+      "command": "bash tools/smoke_windows.sh",
+      "exit_code": 0,
+      "log_sha256": "ac877e7f7a87e76a3e786ddc33902ee3c3ebf7dd217226a29157834385caf625",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0
+    },
+    "hooks": {
+      "cwd": "source",
+      "command": "bash tools/test_hooks_windows.sh",
+      "exit_code": 0,
+      "log_sha256": "688081eb1c30da522d5f7884827b9c28f31e70ddf192b6808385c92744d9834f",
+      "PASS": 907,
+      "SKIP": 5,
+      "UNAVAILABLE": 17,
+      "FAIL": 0
+    },
+    "package": {
+      "cwd": "source",
+      "command": "python3 tools/package.py",
+      "exit_code": 0,
+      "log_sha256": "ea15817b51246d679491e1c29c49dd38d0c8380d21b99f892b09c1c67e3baa45",
+      "PASS": 2,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0
+    }
+  },
+  "artifacts": {
+    "source/build/windows/WallSprint.dll": {
+      "sha256": "be1d69d4f073241d03546b043b5785391e9c30b70c043363a33f4156993312b7",
+      "bytes": 15289111
+    },
+    "source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled": {
+      "sha256": "0d31f1e86fcedb80fdb7bf202a9f953c1bc8e34d137bb4a9b3b2bdc5c6597858",
+      "bytes": 3086395
+    }
+  },
+  "owner_windows_game_acceptance": "UNKNOWN",
+  "retries": 0,
+  "artifact_checks": [
+    "package CRC valid",
+    "only info.json/WallSprint.ini/WallSprint.dll",
+    "packaged DLL equals newly built DLL"
+  ]
+}

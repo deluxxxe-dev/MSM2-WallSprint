@@ -1,3 +1,92 @@
+# M11 result — face screen axes and downward walking (2026-11-11 JST)
+
+STATUS: implementation and cloud checks complete; actual Windows/game acceptance pending.
+Branch: `codex/v01c20-edi-value-provenance`; no main merge or force push.
+
+## Changed
+
+- Task1 commit `690f10cd9a7f3ac9c7c9ac6f317b715adf708f64`: in
+  `source/src/NativeHooks/camera_ref.cpp`, screen forward derives from the face
+  projection of Hero minus camera position, with last-valid direction for a
+  <0.2m projection. Walking determines the right-axis sign at >=20 votes/80%
+  majority; fallback remains configured handedness. Jump logs include both
+  positions and sign. History resets for a new hold/camera manager.
+- Task2 commit `b48c0c3d515432f8070f2089aa4821b11ce3bf54`: all SetPosition calls
+  in a frame share6m/s*frame_dt downward allowance, gated on stick>0.25 and
+  landing age>0.3s. Consecutive-call gap>=2ms starts a frame; existing50ms dt cap
+  remains. No upward replenishment; landings reset budget; neutral input revokes
+  remainder. Original desired position is preserved exactly within budget.
+  Bounded move samples include first/later calls and remaining allowance.
+- `source/tools/test_face_control.py` compiles the actual pure production helpers
+  with owned test positions/steps under ASan/UBSan; wired into `tools/test.sh`.
+- `analysis/M11_FACE_CONTROL_20261111.md` records evidence limits and Task3's
+  two-way decision table. This file and CLOUD_VERIFIED record validation/handoff.
+
+Exact-build/pdata/hash guards, F8 kill, INI switches, default-OFF code defaults,
+WS-only updater/isolation and mover editing0 remain. No Task3 landing fix, A
+injection, body yaw, camera swing, charge-height or velocity/mover work added.
+Wisdoms WALLSPRINT_INTERNALS.md consulted; no new runtime engine facts or shared
+infrastructure changes, so no cross-project edit is required.
+
+## Verification
+
+Run from `source/`:
+
+- `python3 tools/test_face_control.py`: PASS, position/camera-turn/degenerate axes,
+  positive/negative/mixed handedness threshold and abstention; first/later downward
+  calls, aggregate budget, neutral/landing guards, no replenishment and dt cap.
+- `bash tools/build_windows.sh`: exit0 (third-party Capstone ignored-MSVC-pragma
+  warnings only; production compilation succeeds with warnings-as-errors).
+- `bash tools/test.sh`: exit0,38 PASS lines plus4 selector unittest cases.
+- `bash tools/smoke_windows.sh`: exit0,7 PASS lines under Wine.
+- `bash tools/test_hooks_windows.sh`: exit0,907 PASS /5 SKIP /17 UNAVAILABLE.
+  No reruns, skipped steps or timing-test failures. Optional historical private
+  captures/native-Windows evidence remain unavailable; these are not game passes.
+- `python3 tools/package.py`: exit0; package CRC, exact three-member set and
+  byte-for-byte newly built DLL equality independently checked.
+- `git diff --check`: PASS. Tested source tree:
+  `e19184f640e3f06e69f41add5ebd66a07b86d991`, appended to CLOUD_VERIFIED.
+
+Detailed counts/hashes: `analysis/M11_CLOUD_VALIDATION_20261111.json`.
+Generated package: `source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled`
+(version/package0.1.73 unchanged as requested; deployment exposes the single
+`MSM2-WS-v0.1c48.script`). Package SHA256:
+`0d31f1e86fcedb80fdb7bf202a9f953c1bc8e34d137bb4a9b3b2bdc5c6597858`.
+DLL SHA256: `be1d69d4f073241d03546b043b5785391e9c30b70c043363a33f4156993312b7`.
+Generated artifacts remain build outputs; committed source reproduces them through
+Update-WS. No install ZIP download or local game-drive mutation is needed here.
+
+## NEED — owner, after publication
+
+1. Run installed `MSM2-WS/Update-WS.cmd`; Overstrike: Install mods -> Run modded
+   game. Normal SETPOS=1 run: wait ~20s in freeroam, WS -> stop3 times; walk the
+   face up/down/left/right; face jump in all4 directions twice each, including
+   after turning the camera; web zip in all4 directions. Check neutral stick does
+   not slide and downward walking is not undone. Calibration requires some
+   strong lateral-stick walking (>=20 eligible observations).
+2. Task3 StepA is a separate run, required before choosing a landing fix. Exit,
+   preserve the exact loaded WallSprint.ini (startup log identifies its path),
+   set only `WALLSPRINT_WS_GRAVITY_SETPOS=0`, restart without Install mods again,
+   wait ~20s in freeroam, and WS -> stop3 times. Report stands vs still falling.
+   Exit and restore the original INI bytes afterward. Do not change mover0.
+3. Return both complete `logs/MSM2-WS-v0.1c48-<timestamp>.log` files and videos
+   with English titles identifying normal controls vs SETPOS0 stop. Logs live in
+   `<game>/Mods Library/Mods-Developing/MSM2-WS/logs`. No raw log/video was supplied
+   in this cloud task; only the committed M10z-r19 derived evidence was inspected.
+
+Task3's conditional fixes remain unimplemented until the owner result. No claim
+of improved gameplay, grounding, Windows installation or real-game acceptance.
+
+Publication: implementation commits are already on the tracked branch (merge
+`15a05b0c28737c0ba64214c6c0d77402828455c0` includes the concurrent documentation-only
+`055c882` finish-response clarification). Successful push and ls-remote/local HEAD
+match confirmed. The following validation-record commit changes only docs/analysis;
+its publication is independently checked before the final response. Tested source
+and runtime bytes are unchanged, so no second full pipeline is needed.
+
+---
+Historical results below are retained as history; M11 above is the current result.
+
 # Result — V8 consumer thresholds accepted; c48 exact Update-entry discriminator implemented
 
 2026-11-01. Active implementation branch: `codex/v01c20-edi-value-provenance`. No main merge.

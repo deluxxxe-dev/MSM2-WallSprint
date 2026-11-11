@@ -51,3 +51,11 @@ SETPOS=0 stands or still falls. Restore the preserved INI after exiting.
 No cloud claim of Windows deployment, actual camera semantics, grounding fix or
 runtime acceptance. Exact-build/pdata/hash, F8, default-OFF code gates, INI and
 mover editing0 remain intact. Final full-suite results recorded in CODEX_RESULT.
+
+## Final cloud validation
+All five requested commands exit0; portable38 PASS plus4 selector cases, smoke7
+PASS, hooks907 PASS/5 SKIP/17 UNAVAILABLE. No retries/timing failures/skipped
+steps. Current source tree e19184f640e3f06e69f41add5ebd66a07b86d991 is listed in
+CLOUD_VERIFIED. Package CRC/member set/exact built DLL equality pass. Exact
+commands/counts/hashes in M11_CLOUD_VALIDATION_20261111.json; owner instructions
+and publication record in docs/CODEX_RESULT.md. Actual-game result UNKNOWN.
