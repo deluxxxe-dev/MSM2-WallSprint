@@ -17,3 +17,13 @@ callbacks integrate none; init/stall rebase integrate none. Air dash/zip add an
 impulse, not another gravity source. Speed cap30 remains on general integration.
 Initial new fixture compilation caught misleading indentation; formatting fixed,
 no assertions weakened. Standing after stop remains owner acceptance.
+
+## Task 2 — newest walking pair, retained through the hold
+Every qualified model observation already requires stick>0.5 and planar game
+speed>1m/s. Cache its own paired stick/walk angles immediately, with the existing
+trusted mirror. Walk takeoffs retain their direct takeoff pair. Model/none
+sources freeze the newest walking pair without age expiry; pair_age_s logs its
+age. Regression is used only if no pair exists this hold. Pushed non-walk launch
+velocity is reconstructed from the frozen pair too; neutral input invents none.
+Owned helper tests cover stale model/none pairs, trust, cache replacement and
+empty-history regression fallback. Production cross-compile passes.

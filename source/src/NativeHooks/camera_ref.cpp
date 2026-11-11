@@ -1206,8 +1206,8 @@ struct FaceWalkModel {
 };
 // Only takeoff may replace this snapshot; every air-steer/zip in that jump uses it.
 struct FaceAirMapping {
-  int hand{1}; double theta{},takeoff{}; bool valid{}; const char* mappingSource{"model"};
-  void freeze(const FaceWalkModel& model,double now) { hand=model.hand;theta=model.theta;takeoff=now;valid=model.fresh(now);mappingSource="model"; }
+  int hand{1}; double theta{},takeoff{},pairAge{-1}; bool valid{}; const char* mappingSource{"model"};
+  void freeze(const FaceWalkModel& model,double now) { hand=model.hand;theta=model.theta;takeoff=now;valid=model.fresh(now);mappingSource="model";pairAge=-1; }
   bool direction(float sx,float sy,const float* n,float* out) const {
     for(int i=0;i<3;++i) out[i]=0;
     float up[3],side[3];
@@ -1220,17 +1220,24 @@ struct FaceAirMapping {
 struct FaceTakeoffHistory {
   int trustedHand{1},recentHand{1};double recentTheta{},recentTime{};bool recentValid{};
   void track(const FaceWalkModel& model) { if(model.fitSamples && model.agreeing*5>=model.fitSamples*4) trustedHand=model.hand; }
+  void remember(const FaceWalkModel& model) {
+    track(model);if(!model.used)return;
+    const auto& sample=model.ring[(model.next+63)%64];
+    if(sample.speed<=1.f)return;
+    recentHand=trustedHand;recentTheta=std::remainder(sample.walk-trustedHand*sample.stick,2*kFacePi);
+    recentTime=sample.time;recentValid=true;
+  }
   void freeze(FaceAirMapping& out,const FaceWalkModel& model,double now,const char* source,float sx,float sy,const float* n,const float* velocity) {
     track(model);float up[3],side[3];
     if(source[0]=='w' && std::hypot(sx,sy)>0.2f && faceBasis(n,up,side)) {
       double u=0,s=0;for(int i=0;i<3;++i){u+=velocity[i]*up[i];s+=velocity[i]*side[i];}
       if(std::isfinite(u) && std::isfinite(s) && std::hypot(u,s)>1e-4) {
         recentHand=trustedHand;recentTheta=std::remainder(std::atan2(s,u)-trustedHand*std::atan2(sx,sy),2*kFacePi);recentTime=now;recentValid=true;
-        out.hand=recentHand;out.theta=recentTheta;out.takeoff=now;out.valid=true;out.mappingSource="takeoff";return;
+        out.hand=recentHand;out.theta=recentTheta;out.takeoff=now;out.valid=true;out.mappingSource="takeoff";out.pairAge=0;return;
       }
     }
-    if(source[0]=='n' && recentValid && now>=recentTime && now-recentTime<10.0) {
-      out.hand=recentHand;out.theta=recentTheta;out.takeoff=now;out.valid=true;out.mappingSource="recent_takeoff";return;
+    if(source[0]!='w' && recentValid && now>=recentTime) {
+      out.hand=recentHand;out.theta=recentTheta;out.takeoff=now;out.valid=true;out.mappingSource="walk_pair";out.pairAge=now-recentTime;return;
     }
     out.freeze(model,now);
   }
@@ -1611,9 +1618,9 @@ void faceInputLog(const char* event, const float* n, const float* velocity, cons
   float up[3]{},side[3]{}; faceBasis(n,up,side);
   float u=0,s=0; for(int i=0;i<3;++i) { u+=velocity[i]*up[i]; s+=velocity[i]*side[i]; }
   float speed=std::hypot(u,s), sx=wgiLx.load(),sy=wgiLy.load();
-  msm2::writeLog("%s stick=%.2f,%.2f a_s=%.6f h=%d theta_deg=%.2f sample_count=%u sample_age_s=%.3f model_age_s=%.3f source=%s dir_up=%.3f dir_side=%.3f speed=%.3f velocity_fallback=%u frozen_h=%d frozen_theta_deg=%.2f takeoff_time_s=%.6f mapping_valid=%u mirror_agree=%u mirror_total=%u theta_takeoff_deg=%.2f h_used=%d mapping_source=%s",
+  msm2::writeLog("%s stick=%.2f,%.2f a_s=%.6f h=%d theta_deg=%.2f sample_count=%u sample_age_s=%.3f model_age_s=%.3f source=%s dir_up=%.3f dir_side=%.3f speed=%.3f velocity_fallback=%u frozen_h=%d frozen_theta_deg=%.2f takeoff_time_s=%.6f mapping_valid=%u mirror_agree=%u mirror_total=%u theta_takeoff_deg=%.2f h_used=%d mapping_source=%s pair_age_s=%.3f",
     event,sx,sy,std::atan2(sx,sy),gfL.airMapping.hand,gfL.airMapping.theta*180.0/kFacePi,gfL.walk.count(now),gfL.walk.age(now),
-    gfL.walk.valid ? now-gfL.walk.updated : -1.0,source,speed>1e-4f ? u/speed : 0.f,speed>1e-4f ? s/speed : 0.f,speed,unsigned(velocityFallback),gfL.airMapping.hand,gfL.airMapping.theta*180.0/kFacePi,gfL.airMapping.takeoff,unsigned(gfL.airMapping.valid),gfL.walk.agreeing,gfL.walk.fitSamples,gfL.airMapping.theta*180.0/kFacePi,gfL.airMapping.hand,gfL.airMapping.mappingSource);
+    gfL.walk.valid ? now-gfL.walk.updated : -1.0,source,speed>1e-4f ? u/speed : 0.f,speed>1e-4f ? s/speed : 0.f,speed,unsigned(velocityFallback),gfL.airMapping.hand,gfL.airMapping.theta*180.0/kFacePi,gfL.airMapping.takeoff,unsigned(gfL.airMapping.valid),gfL.walk.agreeing,gfL.walk.fitSamples,gfL.airMapping.theta*180.0/kFacePi,gfL.airMapping.hand,gfL.airMapping.mappingSource,gfL.airMapping.pairAge);
 }
 void facingComponents(const float* walking,float* forward,float* walk,bool& valid) {
   float n[3]={gfN0[0].load(),gfN0[1].load(),gfN0[2].load()},up[3],side[3],f[3]{};
@@ -1736,6 +1743,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   gfL.walkFrame.advance(qpcSec(now),mvA ? mvA : p,gfL.pinned && !gfL.faceAir,wgiLx.load(),wgiLy.load(),walkN,gfL.walk);
   gfL.takeoffHistory.track(gfL.walk);
   if(gfL.walk.hasWalk && gfL.walk.lastWalk==qpcSec(now)) {
+    gfL.takeoffHistory.remember(gfL.walk);
     float speed=std::sqrt(gfL.walk.velocity[0]*gfL.walk.velocity[0]+gfL.walk.velocity[1]*gfL.walk.velocity[1]+gfL.walk.velocity[2]*gfL.walk.velocity[2]);
     for(int i=0;i<3;++i) { gfL.moveVel[i]=gfL.walk.velocity[i]; gfL.moveDir[i]=gfL.walk.velocity[i]/speed; }
     gfL.moveDirT=0.f;
@@ -1824,6 +1832,11 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     gfL.stop.active=false;
     gfL.airSource=gfL.walk.takeoff(qpcSec(now),wgiLx.load(),wgiLy.load(),n0,gfL.airVel);
     gfL.takeoffHistory.freeze(gfL.airMapping,gfL.walk,qpcSec(now),gfL.airSource,wgiLx.load(),wgiLy.load(),n0,gfL.airVel);
+    if(gfL.airSource[0]!='w' && gfL.airMapping.mappingSource[0]=='w') {
+      float direction[3]{};bool mapped=gfL.airMapping.direction(wgiLx.load(),wgiLy.load(),n0,direction);
+      float speed=std::fmax(5.f,gfL.walk.meanSpeed(qpcSec(now)));
+      for(int i=0;i<3;++i)gfL.airVel[i]=mapped ? direction[i]*speed : 0.f;
+    }
     unsigned facingId=gfFacingPressGen.load()==gfL.gen ? gfFacingPressId.load(std::memory_order_acquire) : 0;
     gfL.facing.begin(facingId,qpcSec(now),mvA ? mvA : p,gfFacingPressUp.load(),gfFacingPressSide.load());
     { float v = std::sqrt(2.f * kGfG * 1.8f); for (int i = 0; i < 3; ++i) gfL.vg[i] = n0[i] * v; for (float& c : gfL.dash) c = 0.f; }
