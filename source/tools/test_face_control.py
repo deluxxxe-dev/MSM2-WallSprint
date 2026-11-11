@@ -68,6 +68,11 @@ int main() {
  frame.applied(desired,laterCorrected,false);pos[1]+=0.08f;
  frame.advance(10.04,pos,true,0,1,n,frameModel);assert(frameModel.used==1); // faceAir/unpinned interval excluded
  pos[1]+=0.08f;frame.advance(10.06,pos,true,0,1,n,frameModel);assert(frameModel.used==2);
+ FaceWalkFrame nativeOnly;FaceWalkModel nativeSamples;float position[3]{};
+ nativeOnly.advance(600,position,true,0,1,n,nativeSamples,false);position[1]=0.08f;
+ nativeOnly.advance(600.016,position,true,0,1,n,nativeSamples,true);assert(!nativeOnly.gameValid&&!nativeSamples.hasWalk);
+ position[1]+=0.08f;nativeOnly.advance(600.032,position,true,0,1,n,nativeSamples,true);assert(nativeOnly.gameValid&&nativeSamples.hasWalk);
+ position[1]+=0.08f;nativeOnly.advance(600.048,position,true,0,1,n,nativeSamples,false);assert(!nativeOnly.gameValid);
  puts("PASS: M12 per-frame game walking includes later calls, excludes own correction/air interval and pairs stick");
  FaceAirMapping frozen,untrained;frozen.freeze(turning,16);untrained.freeze(empty,20);
  bool fallback=false; float velocity[3]={5,0,3};

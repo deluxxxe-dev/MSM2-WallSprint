@@ -1251,17 +1251,17 @@ struct FaceTakeoffHistory {
 // Frame anchors use current Transform BEFORE this frame's first SetPosition call, not its first desired-current delta.
 // Subtract our own committed corrections over the interval, so later game calls contribute once, and drop/plane stores do not train the fit.
 struct FaceWalkFrame {
-  double start{}; float position[3]{}, correction[3]{}, sx{},sy{}, normalStep{},gameStep[3]{}; bool anchored{},eligible{},normalValid{},gameValid{};
-  void advance(double now, const float* current, bool walking, float x, float y, const float* n, FaceWalkModel& model) {
+  double start{}; float position[3]{}, correction[3]{}, sx{},sy{}, normalStep{},gameStep[3]{}; bool anchored{},eligible{},normalValid{},gameValid{},nativeAnchor{};
+  void advance(double now, const float* current, bool walking, float x, float y, const float* n, FaceWalkModel& model,bool native=true) {
     normalValid=gameValid=false;
     if(anchored){for(int i=0;i<3;++i)gameStep[i]=current[i]-position[i]-correction[i];
-      gameValid=now-start>=0.005&&now-start<=0.1&&std::isfinite(std::hypot(gameStep[0],gameStep[1],gameStep[2]));}
-    if(anchored && eligible && walking) { float step[3]; for(int i=0;i<3;++i) step[i]=current[i]-position[i]-correction[i];
+      gameValid=native&&nativeAnchor&&now-start>=0.005&&now-start<=0.1&&std::isfinite(std::hypot(gameStep[0],gameStep[1],gameStep[2]));}
+    if(anchored && native&&nativeAnchor&&eligible && walking) { float step[3]; for(int i=0;i<3;++i) step[i]=current[i]-position[i]-correction[i];
       double len=std::sqrt(double(n[0])*n[0]+double(n[1])*n[1]+double(n[2])*n[2]);
       normalStep=float((double(step[0])*n[0]+double(step[1])*n[1]+double(step[2])*n[2])/len);
       normalValid=std::isfinite(normalStep) && len>0.9 && len<1.1 && now-start>=0.002 && now-start<=0.1;
       model.observe(now,sx,sy,step,now-start,n); }
-    start=now; sx=x; sy=y; anchored=true; eligible=walking;
+    start=now; sx=x; sy=y; anchored=true;nativeAnchor=native;eligible=walking;
     for(int i=0;i<3;++i) { position[i]=current[i]; correction[i]=0; }
   }
   void applied(const float* desired, const float* corrected, bool walking) {
@@ -1899,7 +1899,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     return; }
   // One sample per completed frame; include all game calls and remove our own corrections.
   float walkN[3]={gfN0[0].load(),gfN0[1].load(),gfN0[2].load()};
-  gfL.walkFrame.advance(qpcSec(now),mvA ? mvA : p,gfL.pinned && !gfL.faceAir,wgiLx.load(),wgiLy.load(),walkN,gfL.walk);
+  gfL.walkFrame.advance(qpcSec(now),mvA ? mvA : p,gfL.pinned && !gfL.faceAir,wgiLx.load(),wgiLy.load(),walkN,gfL.walk,faceFacingNativeTransform==tr&&mvA&&mvB);
   gfL.takeoffHistory.track(gfL.walk);
   if(gfL.walk.hasWalk && gfL.walk.lastWalk==qpcSec(now)) {
     gfL.takeoffHistory.remember(gfL.walk);
@@ -2090,7 +2090,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     gfFallUp.store(vu);gfFallPlanar.store(planar);gfFallTime.store(gfL.walkoff.elapsed);
     gfWalkoffSpeed.store(std::sqrt(total));gfWalkoffDistance.store(distance);gfWalkoffFrames.store(gfL.walkoff.frames);
     if(walkoffEvent)msm2::writeLog("WS_FACE_FALL event=%s reason=%s t=%.3f v_u=%.3f v_plane=%.3f plane_d=%.3f frames=%u",walkoffEvent==1 ? "release":"land",walkoffEvent==1 ? "world_down_accelerating_four" : walkoffEvent==2 ? "game_fall_ended":"original_face_plane",gfL.walkoff.elapsed,vu,planar,distance,gfL.walkoff.frames);
-    if(gfL.walkoff.active&&gfL.walkoff.frames%5==0&&gfL.walkoff.logs<300){++gfL.walkoff.logs;
+    if(gfL.walkoff.active&&gfL.walkFrame.gameValid&&gfL.walkoff.frames%5==0&&gfL.walkoff.logs<300){++gfL.walkoff.logs;
       float along=0;for(int i=0;i<3;++i)along+=gfL.walkFrame.gameStep[i]*u[i];float tangent[3];for(int i=0;i<3;++i)tangent[i]=gfL.walkFrame.gameStep[i]-along*u[i];
       msm2::writeLog("WS_FACE_FALL event=sample reason=fall t=%.3f v_u=%.3f v_plane=%.3f plane_d=%.3f game_step_y=%.6f game_step_u=%.6f game_step_plane=%.6f game_step_valid=%u",gfL.walkoff.elapsed,vu,planar,distance,gfL.walkFrame.gameStep[1],along,std::hypot(tangent[0],tangent[1],tangent[2]),unsigned(gfL.walkFrame.gameValid));}
   }

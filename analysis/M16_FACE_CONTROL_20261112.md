@@ -140,3 +140,20 @@ that it equals the ACTUAL current native call's Transform (thread-local scope),
 not merely the latest snapshot publication. A phase cannot begin on a switched
 Hero under a stale hold. Worker/mover callbacks have no native-call identity and
 cannot enter the writer. No change to the older force model's target policy.
+
+## Native-evidence boundary audit
+The background force fallback also calls FaceWalkFrame. Mark its anchor as
+non-native and require BOTH interval endpoints to come from actual hero
+SetPosition calls before a game step can train pairs or drive fall signature/
+quiet landing. A worker interval or the first call after it cannot fabricate a
+game frame; invalid evidence resets the three-quiet counter. Actual-helper tests
+exercise worker->native bridging and repeated invalid active-fall samples.
+Bounded game-step logs likewise require valid native evidence. Force integration
+may continue along held gravity during missing game calls, but it cannot invent
+contact. Integrated valid-frame time is used for face-fall t; gaps are not bridged.
+
+The hook suite on5944e8b was deliberately terminated143 (16 PASS/no assertion
+failure observed) for this correction; build/59 portable/7 smoke/package had
+passed on that tree. These prior results are retained separately, never used to
+certify the final tree. All five suites are repeated after this audit. No test
+threshold/deadline changed and no incomplete hook run is treated as PASS.

@@ -24,6 +24,7 @@ int main(){
   assert(std::hypot(q[0]-p[0],q[1]-p[1],q[2]-p[2])<=30*0.0161f);for(int j=0;j<3;++j)p[j]=q[j];}
  assert(p[0]<-20 && p[1]>5 && p[2]==0); // crosses old plane; no world-down gravity
  dash[0]=-18;float q[3];releasedAirStep(q,p,v,dash,0.016f);assert(std::hypot(q[0]-p[0],q[1]-p[1])<=30*0.0161f);
+ for(int i=0;i<20;++i)assert(w.step(false,false,1,zero,0.016f,up)==0&&w.active&&w.quiet==0); // worker/no native evidence cannot land
  assert(w.step(false,true,1,zero,0.016f,up)==0);assert(w.step(false,true,1,zero,0.016f,up)==0);
  assert(w.step(false,true,1,zero,0.016f,up)==2&&!w.active);
  assert(faceFallPlaneLanding(0.03f,0.01f,-1));assert(!faceFallPlaneLanding(-0.01f,-0.015f,-1));
