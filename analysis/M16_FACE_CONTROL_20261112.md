@@ -73,3 +73,20 @@ INI defaults. An initial fixture indentation warning was fixed without weakening
 assertions. Production cross-compile passes. Rendered orientation ownership and
 actual next-call overwrites remain UNKNOWN; do not search another route if the
 specified owner decision table rejects these rows.
+
+## Task 4 — cache only a continuous steady walking window
+A cached pair now requires>=0.3s of contiguous qualified samples, speed>2m/s
+throughout, and pairwise circular span<10deg for BOTH stick and measured walking
+direction across that whole window (including the boundary anchor). Gaps>0.1s,
+slow or turning samples refuse; the prior stable pair remains. The64-sample ring
+covers>=0.3s at the native>=5ms frame bound. Direct walking takeoff mapping remains
+as accepted, but no longer overwrites the stable cache with a transient pair.
+Non-walk takeoffs retain any-age stable pair, otherwise existing model fallback.
+Frozen pair_steady_s is logged alongside pair_age_s; direct single-pair takeoffs
+and regression explicitly carry0, not a fabricated stable duration.
+
+Owned helpers cover initial0.3s coverage, turn refusal/retained prior pair, later
+settling, slow refusal, stable any-age reuse and unchanged direct walking mapping.
+The initial fixture reused an existing local name; renamed without changing
+assertions. Production compile passes. Actual standing-jump/zip direction remains
+an owner check; no camera search or regression retuning.

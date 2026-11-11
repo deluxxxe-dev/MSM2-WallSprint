@@ -90,15 +90,19 @@ int main() {
  unreliable.hand=1;unreliable.agreeing=3;history.track(unreliable);assert(history.trustedHand==-1);
  FaceAirMapping pair;float walked[3]={0,5,0};history.freeze(pair,unreliable,10,"walk",0,-1,n,walked);
  assert(pair.hand==-1 && std::string(pair.mappingSource)=="takeoff");assert(pair.direction(0,-1,n,out)&&near(out[1],1));
- FaceAirMapping recent;history.freeze(recent,unreliable,19.99,"none",0,0,n,walked);assert(recent.valid&&std::string(recent.mappingSource)=="walk_pair");
- history.freeze(recent,unreliable,20.01,"none",0,0,n,walked);assert(std::string(recent.mappingSource)=="walk_pair" && near(recent.pairAge,10.01f));
- history.freeze(recent,unreliable,200,"model",1,0,n,walked);assert(std::string(recent.mappingSource)=="walk_pair" && recent.pairAge==190);
+ FaceAirMapping recent;history.freeze(recent,unreliable,19.99,"none",0,0,n,walked);assert(std::string(recent.mappingSource)=="model"); // direct takeoff cannot poison steady cache
+ FaceWalkModel actual;float steadyStep[3]={0,0.08f,0};
+ for(int i=0;i<20;++i){assert(actual.observe(300+i*0.016,0,1,steadyStep,0.016,n));bool stored=history.remember(actual);assert(stored==(i==19));}
+ double savedTime=history.recentTime;history.freeze(recent,unreliable,400,"none",0,1,n,walked);
+ assert(recent.pairAge>99&&recent.pairSteady>=0.3&&recent.direction(0,1,n,out)&&near(out[1],1));
+ float turned[3]={0,0,0.08f};assert(actual.observe(300.32,0,1,turned,0.016,n));assert(!history.remember(actual)&&history.recentTime==savedTime);
+ for(int i=1;i<20;++i){assert(actual.observe(300.32+i*0.016,0,1,turned,0.016,n));history.remember(actual);}
+ assert(history.recentTime>savedTime&&history.recentSteady>=0.3);
+ FaceWalkModel slowModel;float slowStep[3]={0,0.12f,0};for(int i=0;i<30;++i){slowModel.observe(500+i*0.016,0,1,slowStep,0.08,n);assert(!history.remember(slowModel));}
  FaceTakeoffHistory absent;absent.freeze(recent,unreliable,200,"model",1,0,n,walked);assert(std::string(recent.mappingSource)=="model");
- FaceWalkModel actual;assert(actual.observe(300,0,1,walked,0.016,n));history.remember(actual);
- history.freeze(recent,unreliable,400,"none",0,1,n,walked);assert(recent.pairAge==100 && recent.direction(0,1,n,out)&&near(out[1],1));
  FaceTakeoffHistory initial;unreliable.agreeing=0;initial.freeze(pair,unreliable,10,"walk",-1,0,n,velocity);
  assert(pair.hand==1); // default trusted mirror in this hold, not unreliable current -1
- puts("PASS: M15 actual walking-pair cache, model/none any-age reuse, mirror and no-pair model fallback");
+ puts("PASS: M16 0.3s steady pair cache, transient/slow refusal, preserved direct walking takeoff and any-age stable fallback");
   FaceWalkModel mean;train(mean,10,0,1,0,1.5f);train(mean,10.02,0,1,0,3.5f);train(mean,10.04,0,1,0,4.f);
   assert(near(mean.meanSpeed(10.1),3.f));
   assert(std::string(mean.takeoff(10.1,0,0,n,out))=="walk" && near(out[1],3.f));
