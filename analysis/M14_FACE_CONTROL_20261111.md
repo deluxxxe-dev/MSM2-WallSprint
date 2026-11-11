@@ -117,3 +117,13 @@ same development branch (merge880d5ea), preserving both seamless motion and
 face-gravity falling until new WS/B. Current M14 still explicitly defers falling/
 other-surface collision/landing/rotation writes until this evidence; those goals
 are not claimed solved by snapshots or the retained infinite-plane behavior.
+
+## Final QA — J window uses elapsed takeoff time
+After all five ordered task commits, source review found that the diagnostic J
+window used accumulated face-air integration time. The existing >100ms stall
+rebase can pause that clock and falsely retain J during a long pause. A follow-up
+commit uses a guarded QPC takeoff age for this diagnostic only, for manual jumps
+and stop hops; physics integration, launch constants and gameplay are unchanged.
+Actual-helper ASan/UBSan tests cover a normal0.2s sample, a2s pause, and missing,
+future/non-finite timestamps. No published task commit is rewritten. Final full
+verification is repeated on this corrected source tree before certification.

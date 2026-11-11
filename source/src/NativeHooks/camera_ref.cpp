@@ -1447,9 +1447,12 @@ struct StateFrameSampler {
   }
   void applied(const float* wanted,const float* actual){for(int i=0;i<3;++i)correction[i]+=actual[i]-wanted[i];}
 };
-StateLabel chooseStateLabel(bool hold,bool pinned,bool air,float stick,float airTime,bool vertical,float ySpeed,const StateFrameMetrics& m) {
+double stateAirAge(double now,double takeoff) {
+  return std::isfinite(now)&&std::isfinite(takeoff)&&takeoff>0&&now>=takeoff ? now-takeoff : -1.0;
+}
+StateLabel chooseStateLabel(bool hold,bool pinned,bool air,float stick,double airTime,bool vertical,float ySpeed,const StateFrameMetrics& m) {
   if(hold){
-    if(air&&airTime>=0.1f&&airTime<=0.3f)return StateLabel::J;
+    if(air&&airTime>=0.1&&airTime<=0.3)return StateLabel::J;
     if(pinned&&!air){
       if(stick<0.2f)return StateLabel::F;
       if(stick>0.5f&&m.valid&&m.zeroPushed>=10)return StateLabel::H;
@@ -1527,7 +1530,7 @@ std::atomic<bool> stateDiagOn{false},stateVertical{false};
 std::atomic<std::uintptr_t> stateHeroTransform{0};
 std::atomic<unsigned> stateEpoch{0},stateDrops{0};
 unsigned stateFrameEpoch{},stateFrameDrops{};std::uintptr_t stateFrameTransform{};
-std::atomic<float> gfFaceAirSeconds{0};
+std::atomic<double> gfFaceTakeoffTime{0};
 void stateValuesText(const StateValues& values,StateView view,char* out,std::size_t capacity){
   std::size_t at=0;out[0]=0;
   for(unsigned i=0;i<std::min(8u,values.used);++i){char value[64];
@@ -1690,7 +1693,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
         gfL.launched=true;gfL.stop.start();gfL.stopHop=true;gfL.stopHopTakeoff=qpcSec(now);
         gfL.pinned=true;gfL.faceAir=true;gfL.faceAirT=0.f;gfL.pinPresses=wgiPresses.load();
         float speed=launchStopHop(kGfG,n0i,gfL.vg,gfL.airVel,gfL.dash);
-        gfL.zipSeen=gfZipReq.load();gfStopMs.store(0);gfFaceAirNow.store(true);gfAir.store(true);
+        gfL.zipSeen=gfZipReq.load();gfStopMs.store(0);gfFaceTakeoffTime.store(qpcSec(now));gfFaceAirNow.store(true);gfAir.store(true);
         msm2::writeLog("WS_GRAVITY_FORCE_STOP_HOP event=takeoff height_m=0.5 airtime_s=0 launch_v=%.3f",speed);
       } }
     if (!gfL.launched && jm && ms >= jm && ms - jm < 600) { gfL.launched = true; float h = gfJumpH.load(), v = std::sqrt(2.f * kGfG * h);
@@ -1821,7 +1824,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     // M10z-r13 (owner irregular run: with no stores the game's own face jump was smooth): the face jump is the game's;
     // the hero stays in the face state (no unpin, no launch, no dash), only world-y drop undo and the wall bound remain.
     gfL.pinPresses = wgiPresses.load(std::memory_order_relaxed);
-    gfFaceJumps.fetch_add(1); gfL.faceJumpT = 0.f; gfL.faceAir = true; gfL.faceAirT = 0.f;
+    gfFaceJumps.fetch_add(1); gfL.faceJumpT = 0.f; gfL.faceAir = true; gfL.faceAirT = 0.f; gfFaceTakeoffTime.store(qpcSec(now));
     msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP mode=arc_to_normal_own_air_control"); }
   if (gfL.faceJumpT >= 0.f) { gfL.faceJumpT += dt; if (gfL.faceJumpT > 1.6f) gfL.faceJumpT = -1.f;
     else if ((gfL.frames % 10) == 0 && gfFaceJumpLogs.fetch_add(1) < 400)
@@ -1898,7 +1901,6 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   else { if (!gfWritePos(tr, q)) { gfReadFails.fetch_add(1); return; } positionApplied=true; }
   gfWrites.fetch_add(1, std::memory_order_relaxed); gfFrames.fetch_add(1, std::memory_order_relaxed);
   gfDyGameSum.store(gfDyGameSum.load(std::memory_order_relaxed) + dyGame, std::memory_order_relaxed);
-  gfFaceAirSeconds.store(gfL.faceAirT,std::memory_order_relaxed);
   gfPinnedNow.store(gfL.pinned,std::memory_order_relaxed);
   gfFaceAirNow.store(gfL.faceAir,std::memory_order_relaxed);
   gfAir.store(!gfL.pinned || gfL.faceAir,std::memory_order_relaxed);
@@ -2271,7 +2273,7 @@ void stateDiagnosticTick(const msm2::Snapshot& hero,std::uint64_t nowMs){
     if(lock.owns_lock()&&stateFrameTransform==hero.transform&&stateFrameEpoch==stateEpoch.load()&&stateFrameDrops==stateDrops.load())metrics=stateFrames.metrics;}
   if(now<metrics.time||now-metrics.time>0.15)metrics.valid=false;
   bool hold=gfOn.load()&&gfTransform.load()==hero.transform&&!wsActiveNow(nowMs);
-  auto label=chooseStateLabel(hold,gfPinnedNow.load(),gfFaceAirNow.load(),std::hypot(wgiLx.load(),wgiLy.load()),gfFaceAirSeconds.load(),vertical,ySpeed,metrics);
+  auto label=chooseStateLabel(hold,gfPinnedNow.load(),gfFaceAirNow.load(),std::hypot(wgiLx.load(),wgiLy.load()),stateAirAge(now,gfFaceTakeoffTime.load()),vertical,ySpeed,metrics);
   std::lock_guard<std::mutex> lock(stateSnapshotsMu);auto& snapshot=stateSnapshots.reserve();
   auto read=[](std::uintptr_t a,unsigned char* p,unsigned n){return msm2::readMemory(a,p,n);};
   snapshot.heroBytes=readStatePrefix(hero.hero,snapshot.hero,0x1000,read);
@@ -2280,7 +2282,7 @@ void stateDiagnosticTick(const msm2::Snapshot& hero,std::uint64_t nowMs){
   if(!stateRuntime.loggedSize){stateRuntime.loggedSize=true;msm2::writeLog("WS_STATE_READABLE hero_bytes=%u transform_bytes=%u block_bytes=256 cadence_ms=250 capacity=240 ground_vertical_source=hero_gravity_block diagnostic_only=1",snapshot.heroBytes,snapshot.transformBytes);}
 }
 void gfSummary(const char* why) {
-  gfAir.store(false);gfFaceAirNow.store(false);gfPinnedNow.store(false);gfFaceMaskLatched.store(false);gfFaceMaskUntil.store(0);gfFaceAirSeconds.store(0);
+  gfAir.store(false);gfFaceAirNow.store(false);gfPinnedNow.store(false);gfFaceMaskLatched.store(false);gfFaceMaskUntil.store(0);gfFaceTakeoffTime.store(0);
   gmReport(why); for (auto& h : gmVelHits) h.store(0); gmVelSamples.store(0);
   if (auto ta = gvTestAddr.exchange(0)) msm2::writeLog("WS_VELOCITY_TEST end addr=0x%llx writes=%llu frames=%llu dy_game_sum=%.3f (baseline: holds without a test)", (unsigned long long)ta, (unsigned long long)gvTestWrites.load(), (unsigned long long)gfFrames.load(), gfDyGameSum.load());
   if (!gfOn.exchange(false) && !gfFrames.load()) return;

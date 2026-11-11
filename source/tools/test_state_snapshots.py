@@ -27,6 +27,12 @@ int main(){
  assert(chooseStateLabel(true,true,false,0.1f,0,false,0,sampler.metrics)==StateLabel::F);
  assert(chooseStateLabel(true,true,true,1,0.2f,false,0,sampler.metrics)==StateLabel::J);
  assert(chooseStateLabel(true,true,true,1,0.4f,false,0,sampler.metrics)==StateLabel::Other);
+ // Model integration may freeze across a >100ms pause: J must still expire by QPC time.
+ assert(chooseStateLabel(true,true,true,1,stateAirAge(100.2,100),false,0,sampler.metrics)==StateLabel::J);
+ assert(chooseStateLabel(true,true,true,1,stateAirAge(102,100),false,0,sampler.metrics)==StateLabel::Other);
+ for(double stamp:{0.0,103.0,double(NAN),double(INFINITY)})assert(stateAirAge(102,stamp)<0);
+ assert(stateAirAge(NAN,100)<0);
+
  unsigned reads=0;unsigned char bytes[0x400]{};
  auto reader=[&](std::uintptr_t a,unsigned char*,unsigned n){++reads;assert(n==0x100);return a<0x1200;};
  assert(readStatePrefix(0x1000,bytes,0x400,reader)==0x200 && reads==3);
