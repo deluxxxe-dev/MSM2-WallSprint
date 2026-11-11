@@ -1206,8 +1206,8 @@ struct FaceWalkModel {
 };
 // Only takeoff may replace this snapshot; every air-steer/zip in that jump uses it.
 struct FaceAirMapping {
-  int hand{1}; double theta{},takeoff{}; bool valid{};
-  void freeze(const FaceWalkModel& model,double now) { hand=model.hand;theta=model.theta;takeoff=now;valid=model.fresh(now); }
+  int hand{1}; double theta{},takeoff{}; bool valid{}; const char* mappingSource{"model"};
+  void freeze(const FaceWalkModel& model,double now) { hand=model.hand;theta=model.theta;takeoff=now;valid=model.fresh(now);mappingSource="model"; }
   bool direction(float sx,float sy,const float* n,float* out) const {
     for(int i=0;i<3;++i) out[i]=0;
     float up[3],side[3];
@@ -1215,6 +1215,24 @@ struct FaceAirMapping {
     double angle=hand*std::atan2(double(sx),double(sy))+theta;
     for(int i=0;i<3;++i) out[i]=float(std::cos(angle)*up[i]+std::sin(angle)*side[i]);
     return true;
+  }
+};
+struct FaceTakeoffHistory {
+  int trustedHand{1},recentHand{1};double recentTheta{},recentTime{};bool recentValid{};
+  void track(const FaceWalkModel& model) { if(model.fitSamples && model.agreeing*5>=model.fitSamples*4) trustedHand=model.hand; }
+  void freeze(FaceAirMapping& out,const FaceWalkModel& model,double now,const char* source,float sx,float sy,const float* n,const float* velocity) {
+    track(model);float up[3],side[3];
+    if(source[0]=='w' && std::hypot(sx,sy)>0.2f && faceBasis(n,up,side)) {
+      double u=0,s=0;for(int i=0;i<3;++i){u+=velocity[i]*up[i];s+=velocity[i]*side[i];}
+      if(std::isfinite(u) && std::isfinite(s) && std::hypot(u,s)>1e-4) {
+        recentHand=trustedHand;recentTheta=std::remainder(std::atan2(s,u)-trustedHand*std::atan2(sx,sy),2*kFacePi);recentTime=now;recentValid=true;
+        out.hand=recentHand;out.theta=recentTheta;out.takeoff=now;out.valid=true;out.mappingSource="takeoff";return;
+      }
+    }
+    if(source[0]=='n' && recentValid && now>=recentTime && now-recentTime<10.0) {
+      out.hand=recentHand;out.theta=recentTheta;out.takeoff=now;out.valid=true;out.mappingSource="recent_takeoff";return;
+    }
+    out.freeze(model,now);
   }
 };
 // Frame anchors use current Transform BEFORE this frame's first SetPosition call, not its first desired-current delta.
@@ -1408,7 +1426,7 @@ struct FaceFacingProbe {
 // M14_FACING_END
 std::atomic<unsigned> gfFacingLogs{0},gfFacingPressId{0},gfFacingPressGen{0},gfFacingWalkGen{0},gfFacingWalkSeq{0};
 std::atomic<float> gfFacingWalk[3]{},gfFacingPressUp{0},gfFacingPressSide{0};
-struct GfLocal { FaceFacingProbe facing{}; bool stopHop{}; double stopHopTakeoff{}; HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
+struct GfLocal { FaceTakeoffHistory takeoffHistory{}; FaceFacingProbe facing{}; bool stopHop{}; double stopHopTakeoff{}; HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
 void gfLogPlane(const char* event) {
   msm2::writeLog("WS_GRAVITY_FORCE_PLANE event=%s point=%.3f,%.3f,%.3f source=%s",
     event, gfP0[0].load(), gfP0[1].load(), gfP0[2].load(), gfPlaneFromWall.load() ? "wall_point_0x338" : "ws_position_minus_0.5n");
@@ -1440,9 +1458,9 @@ void faceInputLog(const char* event, const float* n, const float* velocity, cons
   float up[3]{},side[3]{}; faceBasis(n,up,side);
   float u=0,s=0; for(int i=0;i<3;++i) { u+=velocity[i]*up[i]; s+=velocity[i]*side[i]; }
   float speed=std::hypot(u,s), sx=wgiLx.load(),sy=wgiLy.load();
-  msm2::writeLog("%s stick=%.2f,%.2f a_s=%.6f h=%d theta_deg=%.2f sample_count=%u sample_age_s=%.3f model_age_s=%.3f source=%s dir_up=%.3f dir_side=%.3f speed=%.3f velocity_fallback=%u frozen_h=%d frozen_theta_deg=%.2f takeoff_time_s=%.6f mapping_valid=%u mirror_agree=%u mirror_total=%u",
+  msm2::writeLog("%s stick=%.2f,%.2f a_s=%.6f h=%d theta_deg=%.2f sample_count=%u sample_age_s=%.3f model_age_s=%.3f source=%s dir_up=%.3f dir_side=%.3f speed=%.3f velocity_fallback=%u frozen_h=%d frozen_theta_deg=%.2f takeoff_time_s=%.6f mapping_valid=%u mirror_agree=%u mirror_total=%u theta_takeoff_deg=%.2f h_used=%d mapping_source=%s",
     event,sx,sy,std::atan2(sx,sy),gfL.airMapping.hand,gfL.airMapping.theta*180.0/kFacePi,gfL.walk.count(now),gfL.walk.age(now),
-    gfL.walk.valid ? now-gfL.walk.updated : -1.0,source,speed>1e-4f ? u/speed : 0.f,speed>1e-4f ? s/speed : 0.f,speed,unsigned(velocityFallback),gfL.airMapping.hand,gfL.airMapping.theta*180.0/kFacePi,gfL.airMapping.takeoff,unsigned(gfL.airMapping.valid),gfL.walk.agreeing,gfL.walk.fitSamples);
+    gfL.walk.valid ? now-gfL.walk.updated : -1.0,source,speed>1e-4f ? u/speed : 0.f,speed>1e-4f ? s/speed : 0.f,speed,unsigned(velocityFallback),gfL.airMapping.hand,gfL.airMapping.theta*180.0/kFacePi,gfL.airMapping.takeoff,unsigned(gfL.airMapping.valid),gfL.walk.agreeing,gfL.walk.fitSamples,gfL.airMapping.theta*180.0/kFacePi,gfL.airMapping.hand,gfL.airMapping.mappingSource);
 }
 void facingComponents(const float* walking,float* forward,float* walk,bool& valid) {
   float n[3]={gfN0[0].load(),gfN0[1].load(),gfN0[2].load()},up[3],side[3],f[3]{};
@@ -1563,6 +1581,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   // One sample per completed frame; include all game calls and remove our own corrections.
   float walkN[3]={gfN0[0].load(),gfN0[1].load(),gfN0[2].load()};
   gfL.walkFrame.advance(qpcSec(now),mvA ? mvA : p,gfL.pinned && !gfL.faceAir,wgiLx.load(),wgiLy.load(),walkN,gfL.walk);
+  gfL.takeoffHistory.track(gfL.walk);
   if(gfL.walk.hasWalk && gfL.walk.lastWalk==qpcSec(now)) {
     float speed=std::sqrt(gfL.walk.velocity[0]*gfL.walk.velocity[0]+gfL.walk.velocity[1]*gfL.walk.velocity[1]+gfL.walk.velocity[2]*gfL.walk.velocity[2]);
     for(int i=0;i<3;++i) { gfL.moveVel[i]=gfL.walk.velocity[i]; gfL.moveDir[i]=gfL.walk.velocity[i]/speed; }
@@ -1651,7 +1670,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   if (gfL.pinned && !gfL.faceAir && !sbBlendQpc.load(std::memory_order_relaxed) && wgiPresses.load(std::memory_order_relaxed) != gfL.pinPresses) {
     gfL.stop.active=false;
     gfL.airSource=gfL.walk.takeoff(qpcSec(now),wgiLx.load(),wgiLy.load(),n0,gfL.airVel);
-    gfL.airMapping.freeze(gfL.walk,qpcSec(now));
+    gfL.takeoffHistory.freeze(gfL.airMapping,gfL.walk,qpcSec(now),gfL.airSource,wgiLx.load(),wgiLy.load(),n0,gfL.airVel);
     unsigned facingId=gfFacingPressGen.load()==gfL.gen ? gfFacingPressId.load(std::memory_order_acquire) : 0;
     gfL.facing.begin(facingId,qpcSec(now),mvA ? mvA : p,gfFacingPressUp.load(),gfFacingPressSide.load());
     { float v = std::sqrt(2.f * kGfG * 1.8f); for (int i = 0; i < 3; ++i) gfL.vg[i] = n0[i] * v; for (float& c : gfL.dash) c = 0.f; }

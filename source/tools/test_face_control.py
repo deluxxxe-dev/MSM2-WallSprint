@@ -86,6 +86,15 @@ int main() {
  assert(frozen.direction(0,1,n,out));assert(near(out[1],float(std::cos(1.0)))&&near(out[2],float(std::sin(1.0))));
  assert(frozen.takeoff==16 && frozen.hand==1); // live fit changes cannot affect this jump
  puts("PASS: M13 30-inlier/80percent mirror gate, steady-only rotation and immutable takeoff mapping");
+ FaceTakeoffHistory history;FaceWalkModel unreliable;unreliable.hand=-1;unreliable.agreeing=9;unreliable.fitSamples=10;history.track(unreliable);
+ unreliable.hand=1;unreliable.agreeing=3;history.track(unreliable);assert(history.trustedHand==-1);
+ FaceAirMapping pair;float walked[3]={0,5,0};history.freeze(pair,unreliable,10,"walk",0,-1,n,walked);
+ assert(pair.hand==-1 && std::string(pair.mappingSource)=="takeoff");assert(pair.direction(0,-1,n,out)&&near(out[1],1));
+ FaceAirMapping recent;history.freeze(recent,unreliable,19.99,"none",0,0,n,walked);assert(recent.valid&&std::string(recent.mappingSource)=="recent_takeoff");
+ history.freeze(recent,unreliable,20.01,"none",0,0,n,walked);assert(std::string(recent.mappingSource)=="model");
+ FaceTakeoffHistory initial;unreliable.agreeing=0;initial.freeze(pair,unreliable,10,"walk",-1,0,n,velocity);
+ assert(pair.hand==1); // default trusted mirror in this hold, not unreliable current -1
+ puts("PASS: M14 takeoff-pair zip mapping, trusted mirror fallback,10s recent pair and model fallback");
   FaceWalkModel mean;train(mean,10,0,1,0,1.5f);train(mean,10.02,0,1,0,3.5f);train(mean,10.04,0,1,0,4.f);
   assert(near(mean.meanSpeed(10.1),3.f));
   assert(std::string(mean.takeoff(10.1,0,0,n,out))=="walk" && near(out[1],3.f));

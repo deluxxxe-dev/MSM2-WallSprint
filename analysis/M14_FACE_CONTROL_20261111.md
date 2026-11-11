@@ -58,3 +58,17 @@ compilation missed <cstdint> in its owned harness; the include was corrected,
 then tests passed with assertions unchanged. Runtime decision remains: retained
 walking-facing vs side turn independent of stick; the latter requires a later
 explicitly authorized rotation task. No outcome is inferred from cloud fixtures.
+
+## Task 4 — walking-pair takeoff mapping for zip
+A source=walk takeoff with a non-neutral raw stick and a finite planar velocity
+constructs theta_t directly from that one pair. h uses the current mirror at>=80%
+agreement, otherwise the last mirror that met80% in this hold (initial+1).
+Confidence history is updated during walking, not only at jump presses.
+Source=none standing takeoffs reuse a valid pair younger than10s; otherwise the
+current model remains the fallback. Neutral/zero-vector pairs cannot poison the
+cache. Everything is copied into the jump's air snapshot, with mapping_source,
+theta_takeoff_deg and h_used logs; facing is sampled at zip as well. No air speed,
+arc or game zip/body/camera behavior is altered.
+Owned helpers test same-direction reproduction, untrusted-current/last-trusted
+mirror selection, initial+1, recent-pair expiry and model fallback; production
+Windows cross-compile passes. Zip direction/game yaw acceptance is pending.
