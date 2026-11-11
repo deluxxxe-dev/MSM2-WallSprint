@@ -26,6 +26,8 @@ This file governs WallSprint changes in `deluxxxe-dev/MSM2-WallSprint`. The cano
 - When implementation is handed to Codex, put the complete instructions in the repository (`docs/CODEX_NEXT.md` plus the
   referenced `analysis/` files), commit and push them, and give the owner only a minimal paste message for Codex:
   repository, branch, and "follow docs/CODEX_NEXT.md". Do not repeat task details in the chat message.
+- Every finish response still lists the owner's concrete test steps and the log/videos to return in NEED (also when
+  the implementation is handed to Codex: state which test is for now and which is after the Codex push).
 
 ## Development division
 - ChatGPT decides technical next steps and interprets real-game logs. Claude Code implements the *currently authorized* bounded task, performs available non-game checks, and records results.
