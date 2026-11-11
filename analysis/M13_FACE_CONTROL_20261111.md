@@ -36,3 +36,19 @@ in a hold, including after a model-gap reset. Reason/cooldown are logged. Near
 0.18m rest adapts without reapproach. Pure helpers test quiet count, cap/sign,
 normal motion/air invalidation, convergence and cooldown. Windows production
 cross-compile passes; actual uneven-wall rest and jump landing remain pending.
+
+## Task 3A only — shorter single-landing stop experiment
+Push is0.5m for0.12s, including same-frame/final-call clamps. No landing is
+reported during a controlled push. Stop approach normal velocity is capped4m/s;
+a shared-frame normal-distance floor also prevents multiple SetPosition calls
+from multiplying the inward approach. At the first stop landing, pinned outputs
+are limited to plane_d<=0.02m for0.3s (both first/later calls), leaving tangents
+unchanged. The landing contact/grace clamp is distinct from the airborne approach
+speed cap. The first timestamp is not renewed by later landings. Face jumps
+leave this stop-only policy; their launch/arc is not capped by it.
+
+Owned tests cover speed/tangent preservation, repeated-call floor, grace timeout,
+repeat-landing accounting and faceAir isolation. Task3A is an experiment, not an
+accepted jerk fix: owner must count WALL_LANDED and inspect the three stops. Task3B
+(0.6s/240-line trace after failed A) is deliberately NOT implemented before that
+result. Camera/standing/jerk outcome remains UNKNOWN; no camera change made.
