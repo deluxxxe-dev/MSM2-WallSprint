@@ -1,0 +1,123 @@
+{
+  "date_jst": "2026-11-13",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "baseline": "6c771b7f6f060c8146336637a3d30e385232b6f6",
+  "implementation_commits": {
+    "1": "1f7a025868e0f2d7e0618470ea8e0b7b1d1eae2c",
+    "2": "ee5e0327ccf7d41ec67d84474d48cd51ec7c30de",
+    "3": "b172203ad5795a158411d68979e6fc85fcb04939"
+  },
+  "qa_commits": [],
+  "source_tree": "13cca1484309e28aa6ee6a11ae6861ea71df8d93",
+  "commands": {
+    "build": {
+      "command": "bash tools/build_windows.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "2fcafa762422bd4268f07550b25185c191d67f3e49eb5d993b261033a099ee8b",
+      "PASS": 0,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    },
+    "portable": {
+      "command": "bash tools/test.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "996ef81a5179c8b4845a88cc67f0162028e83d8dd0bdefd3e5dd8854c45b47c0",
+      "PASS": 70,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    },
+    "smoke": {
+      "command": "bash tools/smoke_windows.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "ac877e7f7a87e76a3e786ddc33902ee3c3ebf7dd217226a29157834385caf625",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    },
+    "package": {
+      "command": "python3 tools/package.py",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "ea15817b51246d679491e1c29c49dd38d0c8380d21b99f892b09c1c67e3baa45",
+      "PASS": 2,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    },
+    "hooks": {
+      "command": "bash tools/test_hooks_windows.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "654bf5add045e14b89755d527ac0922ad64362fd6f32cddfe215590c0f9ed4a0",
+      "PASS": 907,
+      "SKIP": 5,
+      "UNAVAILABLE": 17,
+      "FAIL": 0,
+      "assertions": [],
+      "attempts": 1
+    }
+  },
+  "final_source_hook_attempts": {
+    "hooks-attempt1": {
+      "command": "bash tools/test_hooks_windows.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "654bf5add045e14b89755d527ac0922ad64362fd6f32cddfe215590c0f9ed4a0",
+      "PASS": 907,
+      "SKIP": 5,
+      "UNAVAILABLE": 17,
+      "FAIL": 0,
+      "assertions": []
+    }
+  },
+  "artifact_check": {
+    "members": [
+      "info.json",
+      "WallSprint.ini",
+      "WallSprint.dll"
+    ],
+    "crc": "PASS",
+    "dll_matches_build": true,
+    "enabled_switches": {
+      "WALLSPRINT_WS_FACE_CAMERA_MAP": 1,
+      "WALLSPRINT_WS_FACE_AIR_FACING": 1,
+      "WALLSPRINT_WS_FACE_WALKOFF": 1
+    },
+    "dll": {
+      "path": "source/build/windows/WallSprint.dll",
+      "bytes": 31979671,
+      "sha256": "10191f811a4d8caeb195eedd00e13e6475185a3da90c170a35c249baaa6bd6fa"
+    },
+    "script_disabled": {
+      "path": "source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled",
+      "bytes": 3355463,
+      "sha256": "bdc996b3cb3e393d349f7ac89dc46ad26f2c65f99a84583e244d28b06d7b7063"
+    }
+  },
+  "fixture_triage": {
+    "final_suites": "See per-attempt records; no deadline/assertion changes or manual skips.",
+    "development": "Initial helper extraction duplicated nested StopDebounce; fixed extraction. Step1 production Werror misleading indentation corrected in step2. No assertion/deadline relaxation."
+  },
+  "wisdoms": {
+    "consulted_main": "3817f5e495292e935d74a5b76d59c639c02c85cc",
+    "status": "Canonical WALLSPRINT_INTERNALS already includes supplied M16 contact/hop and camera observations; no new cloud runtime fact/cross-repo edit."
+  },
+  "owner_game": "UNKNOWN; no game execution in cloud. Required owner run in CODEX_RESULT.",
+  "limitations": [
+    "Owner stop/standing acceptance UNKNOWN.",
+    "Frozen end-state carry remains unknown/zero if native frame evidence was unavailable at capture.",
+    "Trace speed is model output; corrected pose trace is not animation ownership proof.",
+    "Expiry plus debounce/polling precedes admission; trace never fabricates earlier rows.",
+    "Blend uses current game rows; actual visual continuity remains unverified."
+  ]
+}

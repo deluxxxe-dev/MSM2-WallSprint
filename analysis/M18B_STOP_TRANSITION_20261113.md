@@ -42,3 +42,21 @@ Owned tests cover clean non-extension, repeated90deg deviations and hard total
 bound. Production Werror compile passes. Actual pose continuity remains UNKNOWN.
 No raw proprietary capture or new engine fact was produced; shared Wisdoms
 3817f5e was consulted and is not edited by this bounded WS task.
+
+## Cloud verification on final source tree
+
+`build_windows.sh` PASS; `test.sh` **70 PASS**; `smoke_windows.sh` **7 PASS**;
+`test_hooks_windows.sh` **907 PASS**,5 historical private-data SKIP and17
+UNAVAILABLE (no owner runtime fixtures); `package.py` **2 PASS**. Final-source
+hook attempts: 1. Exact per-attempt exits/log hashes/assertions are in the validation
+JSON. No manual skips, fixture deadline extension or assertion relaxation.
+
+Package: `source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled`.
+CRC PASS; exactly info.json/WallSprint.ini/WallSprint.dll; packaged DLL equals
+the new build and FACE_CAMERA_MAP/AIR_FACING/WALKOFF all1. DLL SHA256
+`10191f811a4d8caeb195eedd00e13e6475185a3da90c170a35c249baaa6bd6fa`;
+package SHA256 `bdc996b3cb3e393d349f7ac89dc46ad26f2c65f99a84583e244d28b06d7b7063`.
+Artifact/log hashes identify cloud outputs; they do not replace real-game proof.
+
+Final source tree `13cca1484309e28aa6ee6a11ae6861ea71df8d93`; task commits and QA persisted above.
+Real-game owner acceptance remains UNKNOWN.

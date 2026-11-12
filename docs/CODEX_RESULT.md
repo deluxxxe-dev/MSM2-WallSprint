@@ -1,3 +1,73 @@
+# M18b result — real stop end, working trace and face-only rotation (2026-11-13 JST)
+
+STATUS: three ordered steps committed/pushed to
+`codex/v01c20-edi-value-provenance`. Baseline6c771b7. Read M18 derived owner result
+in full and M17 section1. No raw log/video attached to this cloud turn; no claim
+of independently inspecting the raw attachments, game execution or owner-PC
+deployment. Both seamless motion and retained changed gravity remain mandatory.
+New owner acceptance remains UNKNOWN. No main merge, force push or cross-repo edit.
+
+| Step | Commit | Change |
+|---|---|---|
+| 1 | 1f7a025 | Pending stop must remain WS-inactive0.15s; callback identity detects resumes even between polls. Save end-state velocity/forward before delay. Resumed WS cancels stop rows/force without blend. Confirmed stop bypasses WR-freshness pause so WR callbacks cannot stretch its arc. |
+| 2 | ee5e032 | Trace budget resets per hold, first3 stops, every native frame,100 lines/stop for1.5s. Pre-write game rows vs corrected rows and written flag; missing sample reason once/stop. |
+| 3 | b172203 | Face normal remains up. Native game up>10deg delays forward-only blend in0.1s increments: hold<=.8s plus.2s blend, total<=1.0s postlanding. Log extended_s. |
+
+Exact source tree `13cca1484309e28aa6ee6a11ae6861ea71df8d93`.
+Production changes only `source/src/NativeHooks/camera_ref.cpp`; owned actual-
+helper tests in `source/tools/test_stop_transition.py`. Analysis:
+`analysis/M18B_STOP_TRANSITION_20261113.md`; exact commands/hashes/artifacts:
+`analysis/M18B_CLOUD_VALIDATION_20261113.json`.
+
+M18 release guard, linear in-plane deceleration (owner observed.81-.93m),0.8m
+normal apex and.35s model return are retained. Jump-release holds keep their
+previous immediate route. No jump/zip/fall algorithm, camera/mapping, new ABI,
+engine offset or native hook. Existing exact-build/SHA/pdata/INI/default-OFF/F8,
+identity/handedness/XYZ-only and4000 write cap remain. New WS releases stop rows
+immediately and disables its old force before the next hold; no delayed blend.
+
+The explicit debounce follows the existing150ms WS-active freshness predicate;
+its0.15s is continuous *inactive* time, with100ms telemetry polling granularity.
+Cancellation means no hold_start/hop from that pending end. End carry requires a
+real fresh native sample at capture, same Transform; missing evidence stays
+carry_valid0 rather than fabricated. Frozen end-state removes debounce-induced
+sample ageing. Current native rows supply projected forward blend, never up.
+Trace clock is independent of model frame-count changes, preventing silent loss.
+Trace retains M18's last-WS-callback time origin/1.5s extent, so hold admission
+following expiry/debounce has no invented earlier rows. It logs stop_model speed,
+raw game-step validity and pre-write vs corrected pose separately. Unavailable
+reason is read_failed/invalid_rows/no_native_call/episode_not_started once/stop.
+Native hook trace is bounded; no worker pose is presented as native evidence.
+
+Initial nested-marker test extraction was duplicated and corrected. Production
+step1 Werror found misleading indentation, fixed in step2. No assertion/deadline
+relaxation. Shared Wisdoms3817f5e consulted; supplied M18 facts stay in WS analysis,
+no new runtime engine fact established in cloud and no cross-repo publication.
+
+NEED: `MSM2-WS/Update-WS.cmd` -> Install mods -> Run modded game. Three times:
+start WS with RT, run2s, release RT AND the stick, wait3s, B. One short video
+covering all three stops and newest `logs\MSM2-WS-v0.1c48-<timestamp>.log`.
+Acceptance: one hop per real WS end, airtime~.355s, carry_valid1; trace present
+for each stop, up_dot_n>=.99 in written frames; owner sees no jerk and still stands.
+No20s idle wait or P2-P6 test requested.
+
+## Cloud verification on final source tree
+
+`build_windows.sh` PASS; `test.sh` **70 PASS**; `smoke_windows.sh` **7 PASS**;
+`test_hooks_windows.sh` **907 PASS**,5 historical private-data SKIP and17
+UNAVAILABLE (no owner runtime fixtures); `package.py` **2 PASS**. Final-source
+hook attempts: 1. Exact per-attempt exits/log hashes/assertions are in the validation
+JSON. No manual skips, fixture deadline extension or assertion relaxation.
+
+Package: `source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled`.
+CRC PASS; exactly info.json/WallSprint.ini/WallSprint.dll; packaged DLL equals
+the new build and FACE_CAMERA_MAP/AIR_FACING/WALKOFF all1. DLL SHA256
+`10191f811a4d8caeb195eedd00e13e6475185a3da90c170a35c249baaa6bd6fa`;
+package SHA256 `bdc996b3cb3e393d349f7ac89dc46ad26f2c65f99a84583e244d28b06d7b7063`.
+Artifact/log hashes identify cloud outputs; they do not replace real-game proof.
+
+---
+
 # M18 result — stop transition P1 only (2026-11-12 JST)
 
 STATUS: four ordered steps implemented and pushed on
