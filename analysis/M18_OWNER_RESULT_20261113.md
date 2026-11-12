@@ -3,10 +3,12 @@
 Inspected in full: the log (21631 lines) and the video WS_Stop.mp4 (11.2 s, 6 frames/s over the whole duration).
 Owner: "still not smooth". Scope: P1 (stop jerk) only.
 
-## Video
-- 0-2.2 s: the hero on a glass face, short motion, crouch; 2.3-3.0 s black frames (recording); 3.2-4.8 s the hero moves
-  along the face, hops with arms spread; 5.0-9.5 s the hero stays in the arms-spread air pose almost without motion;
-  9.6-11 s moves again and ends standing/crouching. The long air pose matches hold session 1 below.
+## Video (re-inspected over the whole duration at 10 frames/s; black frames are the owner's cut markers)
+- Clip 1 (0-2.3 s): stop from WS; 0.9-1.0 s hop with arms spread; 1.1 s crouched landing; 1.2-2.3 s stands up and
+  stands on the face. The pose change air -> crouch happens within ~0.1 s.
+- Clip 2 (3.2-11.1 s): WS run; 4.5-4.7 s hop with arms spread; 4.8-9.6 s the hero stays ~5 s in the arms-spread air pose
+  with almost no motion; 9.7-10.7 s landing (crouch) and 10.8-11.1 s standing. It does land in the end. The ~5 s air pose
+  matches hold session 1 below (repeated WS ends and hops while one WR session continued).
 
 ## 1. Session 1 (16:40:57-16:41:47): WS end flickers, overlapping stop hops (VERIFIED-RUNTIME)
 - 29 `ws_end` in 50 s while one vanilla WR session (session_timeline id=1, 50.0 s) stayed active. Every WS end started a
