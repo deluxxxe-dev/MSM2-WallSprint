@@ -77,7 +77,7 @@ swing, web line visual, charge jump, velocity search, mover editing, L3 lock.
 Task 1 to Task 5 (one commit each, push after each). Cloud verification and handoff as before: build, test.sh,
 smoke_windows, test_hooks_windows (record flaky reruns exactly), package, `docs/CLOUD_VERIFIED.txt`,
 `docs/CODEX_RESULT.md`, analysis file. Finish with STATUS / CHANGED / RESULT / NEED; NEED lists the owner test:
-`Update-WS.cmd` -> Install mods -> Run modded game; ~20 s idle in freeroam; WS -> stop x3 (wait 3 s after each); walking
+`Update-WS.cmd` -> Install mods -> Run modded game; (no idle wait needed: the old 20 s freeroam idle served M10g/M10h idle diagnostics that are no longer used); WS -> stop x3 (wait 3 s after each); walking
 jumps up/down/left/right x2 (watch for falling through the face); walk 5 s while turning the camera slowly in a full
 circle (for task 4), then standing jump + zip up/down/left/right after turning the camera to a new angle each time; walk
 off the side edge of a face and fall 3 s, B; on a building whose face has a step (a ledge sticking out), walk off the
