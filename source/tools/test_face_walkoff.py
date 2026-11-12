@@ -15,8 +15,12 @@ int main(){
  FaceWalkoff w;float up[3]={1,0,0},move[3]={0,0.08f,0},zero[3]{};
  for(int i=0;i<10;++i)assert(w.step(true,true,1,move,0.016f,up)==0);
  for(int i=0;i<100;++i)assert(w.step(true,true,1,zero,0.016f,up)==0); // zero-step obstacle cannot release
- float fall[3]={0,0,0};
- for(int i=0;i<4;++i){fall[1]=-(6.4f+i*0.4f)*0.016f;int event=w.step(true,true,1,fall,0.016f,up);assert(event==(i==3 ? 1:0));}
+ float fall[3]={0,0,0};bool released=false;
+ for(int i=1;i<=30;++i){float noise=i%3==0 ? 4.f : i%3==1 ? -2.f:-2.f;fall[1]=-(26.f*i*0.016f+noise)*0.016f;
+   if(w.step(true,true,1,fall,0.016f,up)==1){released=true;break;}}
+ assert(released&&w.detector.delay>=0&&w.detector.delay<=0.2);
+ FaceFallWindow flat;for(int i=1;i<=100;++i)assert(!flat.push(10+i*0.016,6*0.016,0.016));
+ FaceFallWindow gap;for(int i=1;i<=20;++i)gap.push(20+i*0.016,0,0.016);assert(!gap.push(21,1,0.016));assert(!gap.ready);
  assert(w.active&&std::fabs(w.carry[1]-5)<1e-5f);
  for(int i=0;i<20;++i){fall[1]=-(10.7f+i*0.4f)*0.016f;assert(w.step(false,true,0,fall,0.016f,up)==0&&w.active);}
  float p[3]{},v[3]={0,5,0},dash[3]{};
@@ -38,7 +42,7 @@ int main(){
  FaceWalkoff deep;deep.active=true;for(int i=0;i<10;++i)assert(deep.step(false,true,0,zero,0.016f,up,-1)==0&&deep.active);
  assert(deep.step(false,true,0,zero,0.016f,up,0)==2);
  puts("PASS: M17 probe0.20s/0.10m budget preserves planar travel, +u contact rollback class and deep quiet-landing refusal");
- puts("PASS: M16 four rising world-down frames release, steady/zero/invalid refuse, continued world fall never repins, three slow frames land");
+ puts("PASS: M17 noisy0.1s windows detect within0.2s, steady6m/s/gaps refuse, continued world fall never repins");
  puts("PASS: M16 face fall ignores game displacement, carries pre-fall walking velocity, caps30m/s and contact probe retains original-plane rollback");
 }
 """

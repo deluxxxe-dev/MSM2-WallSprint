@@ -30,3 +30,23 @@ native feedback before clean, push thresholds, rollback classification and deep
 quiet-landing refusal. The production Werror compile initially found the retired
 plane-only helper unused; removed that obsolete helper/test with its retired
 behavior. All retained/new tests and production compile pass.
+
+## Task 2 — rolling game-down velocity
+Replace four consecutive per-frame rises with overlap-weighted displacement/time
+means over[now-0.1,now] and[now-0.2,now-0.1]. Both windows require complete native
+coverage. Trigger current>3m/s and increase>1.5m/s, using actual QPC sample times;
+invalid/gap/ineligible history resets. Log detect_delay_s from first full window
+>1 in the current episode, and both means. If downward walking already exceeded1
+for a long time, this literal episode age can include walking; it is not a
+fabricated estimate of the physical fall onset. Steady<=6 does not trigger.
+
+Launch carry is reconstructed from the newest ten qualified walking samples
+BEFORE the first detection window, with a64-entry bounded history; insufficient
+pre-window evidence gives zero, never the game's early fall velocity. The first
+new noisy fixture exposed contamination by low-speed early-fall samples; the
+pre-window selection fixes it and the same carry assertion passes. Formatting
+warnings were fixed under Werror, without changing assertions/thresholds.
+Owned tests cover noisy26m/s² onset/delay<=0.2, steady6m/s, gap refusal and
+continued/deep/contact behavior. Production compile passes. Physical onset,
+no false walking probes and the resulting contact classification remain owner
+acceptance; probe safety is retained independently of detector noise.
