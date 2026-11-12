@@ -9,6 +9,7 @@ python3 tools/test_face_camera_map.py
 python3 tools/test_face_air_facing.py
 python3 tools/test_face_walkoff.py
 python3 tools/test_face_physics.py
+python3 tools/test_position_mirrors.py
 python3 tools/test_state_snapshots.py
 python3 tools/test_face_frame.py
 python3 tools/test_face_landing.py

@@ -188,6 +188,7 @@ void run(){
   msm2::writer::drainLogs();
   if(pressed(VK_F9,f9)){msm2::writeLog("F9 telemetry stop; all WallSprint writes stopping");break;}
   bool dump=pressed(VK_F10,f10);unsigned markers=markerEvents(keys);auto now=GetTickCount64();
+  msm2::camera_ref::diagnosticPoll();
   if(!markers&&!dump&&now-lastSample<100&&(!config.orientation||now-lastOrientation<config.interval)){msm2::hooks::drain(recentAvailable?&recent:nullptr,recentMotion,lastSample);continue;}
   lastSample=now;++id;msm2::Snapshot sample{};bool available=ready&&msm2::sample(sample);
   auto motion=history.update(available,sample.hero,sample.transform,{sample.position[0],sample.position[1],sample.position[2]},now);

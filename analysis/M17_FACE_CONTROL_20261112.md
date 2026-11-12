@@ -95,3 +95,38 @@ Owned actual-helper ASan/UBSan fixtures validate a known candidate across3 poses
 invalid rows and256 ring overwrites; required INI defaults are checked. Production
 compile caught formatting warnings, fixed without changing test conditions.
 Actual setter mapping, sample coverage and zip direction remain UNKNOWN.
+
+## Task 5 — position mirrors only, guarded one-hop objects
+At each admitted snapshot, copy Transform position from its guarded0x30 row.
+Read hero pointers only in[0,0x400),8-aligned/canonical/non-null, skip self and
+duplicates, at most64 DISTINCT attempted objects. Read at most0x200 bytes per
+object, stopping at first unreadable0x100 block; no recursive chase. Partial or
+unreadable data cannot silently disappear from G/W match denominators. Buffers
+are process-local in the existing static seven-label reservoir (about16MiB),
+never on a native stack or dumped to logs/Git.
+
+Query 12byte,4-aligned vectors in hero0..0xFFF and those objects. Require>=10 G
+and W snapshots and>=90% matches within Euclidean0.05m of Transform position in
+EACH label. Every retained G/W snapshot counts, including missing/bad reads.
+Child identity is the pointer-role offset AND exact address; changed identities
+cannot fabricate J/L lag. Print L/J mean distances with valid sample counts (NaN
+when unavailable), rank larger L/J lag first and cap32 lines. These are bounded
+correlations, NOT camera ownership/controller semantics or permission to write.
+A summary gives label/position coverage and an explicit covered/unknown empty
+list. No candidate position is used by movement/camera code.
+
+The main telemetry sample/tick is100ms, so merely setting StateCadence50ms was
+insufficient. Add a small diagnosticPoll declaration/call in the existing10ms
+worker loop; all capture logic remains camera_ref, gated by installed exact-
+build/!F8/existing default-OFF gravity-test INI and50ms cadence. It samples a
+fresh Hero at50ms without increasing other camera/gameplay tick rates or adding
+a thread/hook. The slower duplicate state tick is removed. Existing B/60s/loss/
+exit reports/labels/finite Transform means remain. Production A/H and old intent
+queries are retired after the supplied M16 covered-empty result; historical owned
+helper tests remain but no real first4KiB ground/air search is repeated.
+
+Owned ASan/UBSan tests cover root/child matches and real lag,90% denominators,
+invalid Transform samples, address/path changes,32 cap,64 attempted objects,
+noncanonical/duplicate/unreadable blocks and no deeper chase. Formatting Werror
+findings were fixed, assertions preserved. Production compile passes; actual
+camera/controller mirror list and true50ms in-game cadence remain owner checks.

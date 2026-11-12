@@ -9,6 +9,8 @@ void configure(bool verified, std::uintptr_t image, std::size_t imageSize);
 void onWallSprintUpdate() noexcept;
 // Worker thread (100 ms): restore the flag after WallSprint ends; read-only camera-forward scan on the ground.
 void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool available, float stickX, float stickY, bool stick) noexcept;
+// Fast worker poll; bounded read-only state capture at50ms, default OFF via existing gravity-test gate.
+void diagnosticPoll() noexcept;
 void kill() noexcept;
 void stop() noexcept;
 }

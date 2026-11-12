@@ -17,6 +17,7 @@
 #include <cstring>
 #include <cwchar>
 #include <unordered_map>
+#include <map>
 #include <vector>
 #include <mutex>
 #include "NativeHooks/camera_ref.hpp"
@@ -1655,7 +1656,9 @@ struct StateAirRun {
   unsigned consecutive{};
   unsigned sample(bool noHoldVertical,float speed){consecutive=noHoldVertical&&std::isfinite(speed)&&std::fabs(speed)>1.5f ? std::min(3u,consecutive+1) : 0;return consecutive;}
 };
-struct StateSnap { unsigned char hero[0x1000]{},transform[0x100]{};unsigned heroBytes{},transformBytes{};StateLabel label{StateLabel::Other};float walking[3]{};double time{},takeoff{};bool pending{}; };
+struct PositionChild {std::uintptr_t address{};unsigned heroOffset{},readable{};unsigned char bytes[0x200]{};};
+struct PositionMirror {unsigned heroOffset{},offset{},matchG{},matchW{},totalG{},totalW{},nL{},nJ{};std::uintptr_t address{};double meanL{NAN},meanJ{NAN};};
+struct StateSnap { unsigned char hero[0x1000]{},transform[0x100]{};unsigned heroBytes{},transformBytes{};StateLabel label{StateLabel::Other};float walking[3]{};double time{},takeoff{};bool pending{},positionValid{};float position[3]{};unsigned childCount{},childAttempts{};PositionChild children[64]{}; };
 struct StateValues {
   std::uint64_t data[240]{};unsigned used{};
   bool contains(std::uint64_t v)const{for(unsigned i=0;i<used;++i)if(data[i]==v)return true;return false;}
@@ -1666,7 +1669,7 @@ struct StateCandidate {unsigned offset{};StateView view{};unsigned score{};};
 struct StateSnapshotRing {
   StateSnap snapshots[420]{};unsigned next[7]{},sizes[7]{},used{};
   void reset(){for(auto& s:snapshots)s.heroBytes=s.transformBytes=0;for(unsigned i=0;i<7;++i)next[i]=sizes[i]=0;used=0;}
-  StateSnap& reserve(StateLabel label){unsigned k=unsigned(label);auto& s=snapshots[k*60+next[k]];next[k]=(next[k]+1)%60;if(sizes[k]<60){++sizes[k];++used;}s.heroBytes=s.transformBytes=0;s.label=label;s.pending=false;return s;}
+  StateSnap& reserve(StateLabel label){unsigned k=unsigned(label);auto& s=snapshots[k*60+next[k]];next[k]=(next[k]+1)%60;if(sizes[k]<60){++sizes[k];++used;}s.heroBytes=s.transformBytes=0;s.label=label;s.pending=false;s.positionValid=false;s.childCount=s.childAttempts=0;return s;}
   void resolveJ(double now,double takeoff,double landing){for(auto& s:snapshots)if(s.heroBytes>=4&&s.label==StateLabel::J&&s.pending){
     if(s.takeoff!=takeoff || (landing>=s.takeoff && landing-s.time<0.05)){s.heroBytes=0;s.pending=false;}
     else if(now-s.time>=0.05)s.pending=false;
@@ -1725,6 +1728,33 @@ struct StateSnapshotRing {
     }
     return n>=10 && match*10>=n*9;
   }
+  std::vector<PositionMirror> positionMirrors()const {
+    unsigned countsByLabel[8];counts(countsByLabel);unsigned totalG=countsByLabel[unsigned(StateLabel::G)],totalW=countsByLabel[unsigned(StateLabel::W)];
+    std::vector<PositionMirror> result;if(totalG<10||totalW<10)return result;
+    using Key=std::pair<unsigned,std::uintptr_t>;struct Presence{unsigned g{},w{};};std::map<Key,Presence> identities;
+    identities[{0xffffffffu,0}]={totalG,totalW};
+    for(const auto& s:snapshots)if(s.heroBytes>=4&&!s.pending&&s.positionValid&&(s.label==StateLabel::G||s.label==StateLabel::W)){
+      for(unsigned j=0;j<s.childCount;++j){const auto& child=s.children[j];auto& count=identities[{child.heroOffset,child.address}];if(s.label==StateLabel::G)++count.g;else ++count.w;}}
+    for(const auto& item:identities){if(item.second.g*10<totalG*9||item.second.w*10<totalW*9)continue;
+      struct View{const StateSnap* snapshot{};const unsigned char* bytes{};unsigned size{};};std::vector<View> views;views.reserve(used);
+      unsigned maxBytes=item.first.first==0xffffffffu ? 0x1000:0x200;
+      for(const auto& s:snapshots){if(s.heroBytes<4||s.pending||!s.positionValid)continue;
+        if(item.first.first==0xffffffffu)views.push_back({&s,s.hero,s.heroBytes});
+        else for(unsigned j=0;j<s.childCount;++j){const auto& c=s.children[j];if(c.heroOffset==item.first.first&&c.address==item.first.second){views.push_back({&s,c.bytes,c.readable});break;}}}
+      for(unsigned off=0;off+12<=maxBytes;off+=4){PositionMirror candidate;candidate.heroOffset=item.first.first;candidate.address=item.first.second;candidate.offset=off;candidate.totalG=totalG;candidate.totalW=totalW;double sumL=0,sumJ=0;
+        for(const auto& view:views){if(view.size<off+12)continue;float v[3];std::memcpy(v,view.bytes+off,12);const auto& s=*view.snapshot;
+          double distance=std::hypot(double(v[0])-s.position[0],double(v[1])-s.position[1],double(v[2])-s.position[2]);if(!std::isfinite(distance))continue;
+          if(s.label==StateLabel::G&&distance<=0.05)++candidate.matchG;
+          if(s.label==StateLabel::W&&distance<=0.05)++candidate.matchW;
+          if(s.label==StateLabel::L){sumL+=distance;++candidate.nL;}if(s.label==StateLabel::J){sumJ+=distance;++candidate.nJ;}}
+        if(candidate.matchG*10<totalG*9||candidate.matchW*10<totalW*9)continue;
+        candidate.meanL=candidate.nL ? sumL/candidate.nL : NAN;candidate.meanJ=candidate.nJ ? sumJ/candidate.nJ : NAN;result.push_back(candidate);
+      }
+    }
+    std::sort(result.begin(),result.end(),[](const PositionMirror& a,const PositionMirror& b){double la=a.nL ? a.meanL:-1,lb=b.nL ? b.meanL:-1;if(la!=lb)return la>lb;double ja=a.nJ ? a.meanJ:-1,jb=b.nJ ? b.meanJ:-1;if(ja!=jb)return ja>jb;return a.heroOffset!=b.heroOffset ? a.heroOffset<b.heroOffset : a.offset<b.offset;});
+    if(result.size()>32)result.resize(32);
+    return result;
+  }
 
 };
 struct StateCadence {
@@ -1735,6 +1765,18 @@ template<class Reader> unsigned readStatePrefix(std::uintptr_t base,unsigned cha
   if(!base||base>UINTPTR_MAX-bytes)return 0;
   unsigned readable=0;for(unsigned off=0;off<bytes;off+=0x100){if(!read(base+off,out+off,0x100))break;readable=off+0x100;}return readable;
 }
+template<class Reader> void capturePositionObjects(StateSnap& s,std::uintptr_t hero,Reader read){
+  s.positionValid=false;s.childCount=s.childAttempts=0;
+  if(s.transformBytes<0x3c)return;
+  std::memcpy(s.position,s.transform+0x30,12);
+  s.positionValid=std::isfinite(std::hypot(s.position[0],s.position[1],s.position[2]));if(!s.positionValid)return;
+  std::uintptr_t seen[64]{};
+  for(unsigned off=0;off+8<=std::min(0x400u,s.heroBytes)&&s.childAttempts<64;off+=8){std::uintptr_t address{};std::memcpy(&address,s.hero+off,8);
+    if(address==hero||address<0x10000||address>0x7fffffffffffULL||address%8)continue;
+    bool duplicate=false;for(unsigned i=0;i<s.childAttempts;++i)duplicate|=seen[i]==address;if(duplicate)continue;
+    seen[s.childAttempts++]=address;auto& child=s.children[s.childCount];child.address=address;child.heroOffset=off;child.readable=readStatePrefix(address,child.bytes,0x200,read);if(child.readable>=12)++s.childCount;
+  }
+}
 // M14_STATE_CORE_END
 StateSnapshotRing stateSnapshots;
 std::mutex stateSnapshotsMu,stateFramesMu;
@@ -1744,45 +1786,16 @@ std::atomic<std::uintptr_t> stateHeroTransform{0};
 std::atomic<unsigned> stateEpoch{0},stateDrops{0};
 unsigned stateFrameEpoch{},stateFrameDrops{};std::uintptr_t stateFrameTransform{};
 std::atomic<double> gfFaceTakeoffTime{0},gfFaceLandingTime{0};
-void stateValuesText(const StateValues& values,StateView view,char* out,std::size_t capacity){
-  std::size_t at=0;out[0]=0;
-  for(unsigned i=0;i<std::min(8u,values.used);++i){char value[64];
-    if(view==StateView::Float){std::uint32_t bits=std::uint32_t(values.data[i]);float f;std::memcpy(&f,&bits,4);std::snprintf(value,sizeof value,"%.9g",double(f));}
-    else if(view==StateView::Int){std::uint32_t bits=std::uint32_t(values.data[i]);std::int32_t v;std::memcpy(&v,&bits,4);std::snprintf(value,sizeof value,"%d",int(v));}
-    else if(view==StateView::Pointer)std::snprintf(value,sizeof value,"0x%llx",(unsigned long long)values.data[i]);
-    else std::snprintf(value,sizeof value,"%llu",(unsigned long long)values.data[i]);
-    int n=std::snprintf(out+at,capacity-at,"%s%s",i ? "," : "",value);
-    if(n<0||std::size_t(n)>=capacity-at)return;
-    at+=std::size_t(n);
-  }
-  std::snprintf(out+at,capacity-at,"%s;distinct=%u",values.used>8 ? ",..." : "",values.used);
-}
-const char* stateHClass(const StateSeparation& sets){
-  if(!sets.h.used)return "missing";
-  bool allGround=true,allAir=true,any=false;
-  for(unsigned i=0;i<sets.h.used;++i){bool g=sets.ground.contains(sets.h.data[i]),a=sets.air.contains(sets.h.data[i]);allGround&=g;allAir&=a;any|=g||a;}
-  return allGround ? "ground" : allAir ? "air" : any ? "mixed" : "other";
-}
 void stateReport(const char* reason){
   std::lock_guard<std::mutex> lock(stateSnapshotsMu);if(!stateSnapshots.used)return;
   stateSnapshots.resolveJ(qpcSec(qpcNow()),gfFaceTakeoffTime.load(),gfFaceLandingTime.load());
-  unsigned counts[8];stateSnapshots.counts(counts);auto againstA=stateSnapshots.candidates(StateLabel::A),againstH=stateSnapshots.candidates(StateLabel::H);
-  msm2::writeLog("WS_STATE_SUMMARY report=%s ring_used=%u F=%u W=%u J=%u H=%u G=%u A=%u L=%u other=%u coverage_complete=%u coverage_A_complete=%u coverage_H_complete=%u candidate_count=%u candidate_count_A=%u candidate_count_H=%u diagnostic_only=1",
-    reason,stateSnapshots.used,counts[0],counts[1],counts[2],counts[3],counts[4],counts[5],counts[6],counts[7],unsigned(stateSnapshots.coverage(StateLabel::A)&&stateSnapshots.coverage(StateLabel::H)),unsigned(stateSnapshots.coverage(StateLabel::A)),unsigned(stateSnapshots.coverage(StateLabel::H)),unsigned(againstA.size()+againstH.size()),unsigned(againstA.size()),unsigned(againstH.size()));
-  for(StateLabel target:{StateLabel::A,StateLabel::H}){
-    const auto& candidates=target==StateLabel::A ? againstA:againstH;
-    msm2::writeLog("WS_STATE_COMPARISON report=%s comparison=ground_vs_%s coverage_complete=%u candidate_count=%u target_min=%u J_information_only=1",reason,target==StateLabel::A ? "A":"H",unsigned(stateSnapshots.coverage(target)),unsigned(candidates.size()),target==StateLabel::H ? 5u:10u);
-    for(const auto& candidate:candidates){StateSeparation sets;if(!stateSnapshots.separate(candidate.offset,candidate.view,sets,target))continue;
-      char ground[320],values[320],h[320],j[320],l[320];stateValuesText(sets.ground,candidate.view,ground,sizeof ground);stateValuesText(sets.air,candidate.view,values,sizeof values);stateValuesText(sets.h,candidate.view,h,sizeof h);stateValuesText(sets.j,candidate.view,j,sizeof j);stateValuesText(sets.l,candidate.view,l,sizeof l);
-      const char* type=candidate.view==StateView::Byte ? "byte_flag" : candidate.view==StateView::Int ? "small_int" : candidate.view==StateView::Float ? "float" : "pointer_like";
-      const char* view=candidate.view==StateView::Byte ? "u8" : candidate.view==StateView::Pointer ? "u64" : "u32";
-      msm2::writeLog("WS_STATE_CANDIDATE report=%s comparison=ground_vs_%s off=0x%x type=%s view=%s ground_values={%s} target_values={%s} air_values={%s} H_values={%s} J_values={%s} L_values={%s} H_class=%s diagnostic_only=1",
-        reason,target==StateLabel::A ? "A":"H",candidate.offset,type,view,ground,values,target==StateLabel::A ? values:"information_only",h,j,l,target==StateLabel::A ? stateHClass(sets):"target_H");
-    }
-  }
-  unsigned vectorLines=0;
-  for(unsigned off=0;off+12<=0x1000&&vectorLines<16;off+=4){unsigned match,n;
-    if(stateSnapshots.movementVector(off,match,n)){++vectorLines;msm2::writeLog("WS_STATE_MOVE_VECTOR report=%s off=0x%x match=%u n=%u diagnostic_only=1",reason,off,match,n);}}
+  unsigned counts[8];stateSnapshots.counts(counts);auto mirrors=stateSnapshots.positionMirrors();unsigned positionG=0,positionW=0;
+  for(const auto& sample:stateSnapshots.snapshots)if(sample.heroBytes>=4&&!sample.pending&&sample.positionValid){positionG+=sample.label==StateLabel::G;positionW+=sample.label==StateLabel::W;}
+  msm2::writeLog("WS_STATE_SUMMARY report=%s ring_used=%u F=%u W=%u J=%u H=%u G=%u A=%u L=%u other=%u candidate_count_A=0 candidate_count_H=0 ground_air_search_retired=1 position_mirror_count=%u diagnostic_only=1",
+    reason,stateSnapshots.used,counts[0],counts[1],counts[2],counts[3],counts[4],counts[5],counts[6],counts[7],unsigned(mirrors.size()));
+  msm2::writeLog("WS_POSITION_MIRROR_SUMMARY report=%s G=%u W=%u L=%u J=%u position_G=%u position_W=%u coverage_complete=%u candidate_count=%u max_objects=64 pointer_depth=1 tolerance_m=0.05 minimum_G_W=10 diagnostic_only=1",reason,counts[4],counts[1],counts[6],counts[2],positionG,positionW,unsigned(counts[4]>=10&&counts[1]>=10&&positionG*10>=counts[4]*9&&positionW*10>=counts[1]*9),unsigned(mirrors.size()));
+  for(const auto& mirror:mirrors){char object[80];if(mirror.heroOffset==0xffffffffu)std::snprintf(object,sizeof object,"hero");else std::snprintf(object,sizeof object,"hero_ptr_0x%x@0x%llx",mirror.heroOffset,(unsigned long long)mirror.address);
+    msm2::writeLog("WS_POSITION_MIRROR obj=%s off=0x%x G_match=%u/%u W_match=%u/%u L_mean_dist=%.6f J_mean_dist=%.6f L_n=%u J_n=%u report=%s diagnostic_only=1",object,mirror.offset,mirror.matchG,mirror.totalG,mirror.matchW,mirror.totalW,mirror.meanL,mirror.meanJ,mirror.nL,mirror.nJ,reason);}
   for(unsigned row=0;row<0x100;row+=16){double j[4],w[4];unsigned nj[4],nw[4];stateSnapshots.transformMeans(row,StateLabel::J,j,nj);stateSnapshots.transformMeans(row,StateLabel::W,w,nw);
     if(!(nj[0]+nj[1]+nj[2]+nj[3]+nw[0]+nw[1]+nw[2]+nw[3]))continue;
     msm2::writeLog("WS_STATE_TRANSFORM report=%s off=0x%x J_mean=%.9g,%.9g,%.9g,%.9g W_mean=%.9g,%.9g,%.9g,%.9g J_n=%u,%u,%u,%u W_n=%u,%u,%u,%u finite_only=1",
@@ -2641,6 +2654,7 @@ void stateDiagnosticTick(const msm2::Snapshot& hero,std::uint64_t nowMs){
   auto read=[](std::uintptr_t a,unsigned char* p,unsigned n){return msm2::readMemory(a,p,n);};
   snapshot.heroBytes=readStatePrefix(hero.hero,snapshot.hero,0x1000,read);
   snapshot.transformBytes=readStatePrefix(hero.transform,snapshot.transform,0x100,read);
+  capturePositionObjects(snapshot,hero.hero,read);
   if(snapshot.heroBytes>=4)snapshot.label=label;
   if(!stateRuntime.loggedSize){stateRuntime.loggedSize=true;msm2::writeLog("WS_STATE_READABLE hero_bytes=%u transform_bytes=%u block_bytes=256 cadence_ms=50 capacity_per_label=60 labels=7 ground_vertical_source=hero_gravity_block diagnostic_only=1",snapshot.heroBytes,snapshot.transformBytes);}
 }
@@ -2834,6 +2848,11 @@ void onWallSprintUpdate() noexcept {
   engagedManager.store(manager); engages.fetch_add(1); ws_camera_engage_ms.store(GetTickCount64());
 }
 
+void diagnosticPoll() noexcept {
+  if(!installed.load()||killed.load()||!ws::drive::wsGravityTest.load())return;
+  static StateCadence cadence;auto now=GetTickCount64();if(!cadence.due(now))return;
+  msm2::Snapshot snapshot{};msm2::sample(snapshot);stateDiagnosticTick(snapshot,now);
+}
 void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool available, float sx, float sy, bool stick) noexcept {
   auto now = GetTickCount64();
   if (engagedManager.load()) {
@@ -2869,7 +2888,6 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   m8ChargeMeasure(snapshot, now);
   m9VelocitySearch(snapshot, motion, now);
   m10GravityTest(snapshot, motion, now);
-  stateDiagnosticTick(snapshot,now);
   sgStatus(now);
   m5eDistance(snapshot, now);
   m5ePitch(snapshot, now);

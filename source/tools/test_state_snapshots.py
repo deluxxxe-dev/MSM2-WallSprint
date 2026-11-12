@@ -74,6 +74,6 @@ int main(){
 }
 '''
 (root/'build').mkdir(exist_ok=True)
-p=root/'build/state_snapshot_tests.cpp';p.write_text('#include <algorithm>\n#include <cmath>\n#include <cstdint>\n#include <cstring>\n#include <cstdio>\n#include <cassert>\n#include <vector>\n#include <initializer_list>\nbool near(float a,float b){return std::fabs(a-b)<1e-5f;}\n'+clock+core+tests)
+p=root/'build/state_snapshot_tests.cpp';p.write_text('#include <map>\n#include <algorithm>\n#include <cmath>\n#include <cstdint>\n#include <cstring>\n#include <cstdio>\n#include <cassert>\n#include <vector>\n#include <initializer_list>\nbool near(float a,float b){return std::fabs(a-b)<1e-5f;}\n'+clock+core+tests)
 subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-pedantic','-fsanitize=address,undefined',str(p),'-o',str(root/'build/state_snapshot_tests')],check=True)
 subprocess.run([str(root/'build/state_snapshot_tests')],check=True)
