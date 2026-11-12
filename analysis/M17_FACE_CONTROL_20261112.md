@@ -130,3 +130,20 @@ invalid Transform samples, address/path changes,32 cap,64 attempted objects,
 noncanonical/duplicate/unreadable blocks and no deeper chase. Formatting Werror
 findings were fixed, assertions preserved. Production compile passes; actual
 camera/controller mirror list and true50ms in-game cadence remain owner checks.
+
+## Final QA before full verification
+Do not assume setter rows form a mutually orthogonal camera rotation: the
+existing M6s evidence has row0 held while row2 changes. Evaluate all eight
+hypotheses independently; a degenerate projected row invalidates its candidates
+only. Each admitted candidate needs its OWN40 samples/three separated row2
+poses/median<10. Add candidate_n and camera_owner to check lines. Tests preserve
+usable row2 hypotheses when row0 is zero or nonorthogonal. Native stop-position
+freeze evidence is unchanged; if native callbacks cease, the existing worker
+can finish the observation as UNKNOWN after1s, never as frozen/standing proof.
+Focused camera/landing fixtures and production Werror compile pass.
+
+Consulted canonical Wisdoms main3817f5e495292e935d74a5b76d59c639c02c85cc
+(WALLSPRINT_INTERNALS): it already records M16 false-fall/contact and stop-hop
+runtime facts plus Transform/camera lag. No new engine fact established in cloud,
+no duplicate shared edit or publication claim. All new models remain hypotheses
+until the requested owner run; bounded vector matches remain correlations.

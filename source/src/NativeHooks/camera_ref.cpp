@@ -1573,11 +1573,14 @@ struct FaceAirFacing {
 // M17_CAMERA_MAP_BEGIN: eight bounded hypotheses, admitted only by observed walking.
 struct CameraFaceMap {
   struct Sample{float error[8]{},direction[3]{};} samples[256]{};
-  std::uint64_t edges[256][4]{};unsigned used{},next{},validMask{};std::uintptr_t owner{};float normal[3]{},medianError[8]{};
-  void reset(std::uintptr_t source,const float* n){used=next=validMask=0;owner=source;std::memset(edges,0,sizeof edges);for(int i=0;i<3;++i)normal[i]=n[i];FaceAirFacing::unit(normal);for(float& e:medianError)e=999;}
+  std::uint64_t edges[256][4]{};unsigned used{},next{},validMask{},candidateSamples[8]{};std::uintptr_t owner{};float normal[3]{},medianError[8]{999,999,999,999,999,999,999,999};
+  void reset(std::uintptr_t source,const float* n){used=next=validMask=0;owner=source;std::memset(edges,0,sizeof edges);for(int i=0;i<3;++i)normal[i]=n[i];FaceAirFacing::unit(normal);for(float& e:medianError)e=999;for(unsigned& count:candidateSamples)count=0;}
   void sync(std::uintptr_t source,const float* n){float u[3]={n[0],n[1],n[2]};if(!FaceAirFacing::unit(u))return;if(owner!=source||FaceAirFacing::dot(u,normal)<0.999f)reset(source,n);}
-  static bool coherent(const float* m,const float* n){float axes[3][3];for(int r=0;r<3;++r){for(int i=0;i<3;++i)axes[r][i]=m[4*r+i];float len=std::hypot(axes[r][0],axes[r][1],axes[r][2]);if(!std::isfinite(len)||len<0.8f||len>1.2f)return false;FaceAirFacing::unit(axes[r]);}
-    float up[3]={n[0],n[1],n[2]};return FaceAirFacing::unit(up)&&FaceAirFacing::dot(axes[1],up)>0.95f&&std::fabs(FaceAirFacing::dot(axes[0],axes[1]))<0.1f&&std::fabs(FaceAirFacing::dot(axes[0],axes[2]))<0.1f&&std::fabs(FaceAirFacing::dot(axes[1],axes[2]))<0.1f;}
+  static bool coherent(const float* m,const float* n){
+    for(int r=0;r<3;++r)for(int i=0;i<3;++i)if(!std::isfinite(m[4*r+i]))return false;
+    float up[3]={n[0],n[1],n[2]},rowUp[3]={m[4],m[5],m[6]},row2[3]={m[8],m[9],m[10]};
+    return FaceAirFacing::unit(up)&&FaceAirFacing::unit(rowUp)&&FaceAirFacing::unit(row2)&&FaceAirFacing::dot(rowUp,up)>0.95f;
+  }
   static bool predict(unsigned candidate,const float* m,float sx,float sy,const float* n,float* out){
     if(candidate>=8||!std::isfinite(sx)||!std::isfinite(sy)||std::hypot(sx,sy)<=0.2f)return false;
     float up[3]={n[0],n[1],n[2]};if(!FaceAirFacing::unit(up))return false;unsigned row=candidate/2<2 ? 8:0;float sign=(candidate/2)%2 ? -1.f:1.f;
@@ -1586,25 +1589,29 @@ struct CameraFaceMap {
     for(int i=0;i<3;++i)out[i]=sy*forward[i]+sx*hand*right[i];
     return FaceAirFacing::unit(out);
   }
-  bool threeDirections()const{
-    for(unsigned i=0;i<used;++i)for(unsigned j=0;j<i;++j)if(edges[i][j/64]&(std::uint64_t(1)<<(j%64)))
-      for(int word=0;word<4;++word)if(edges[i][word]&edges[j][word])return true;
+  bool threeDirections(int candidate=-1)const{
+    std::uint64_t valid[4]{};for(unsigned i=0;i<used;++i)if(candidate<0||samples[i].error[candidate]>=0)valid[i/64]|=std::uint64_t(1)<<(i%64);
+    for(unsigned i=0;i<used;++i)if(valid[i/64]&(std::uint64_t(1)<<(i%64)))for(unsigned j=0;j<i;++j)if((valid[j/64]&(std::uint64_t(1)<<(j%64)))&&(edges[i][j/64]&(std::uint64_t(1)<<(j%64))))
+      for(int word=0;word<4;++word)if(edges[i][word]&edges[j][word]&valid[word])return true;
     return false;
   }
   bool observe(const float* m,float sx,float sy,const float* actual,const float* n,float* errors){
     if(!coherent(m,n))return false;
     float wanted[3]={actual[0],actual[1],actual[2]};if(!FaceAirFacing::unit(wanted))return false;
-    for(unsigned c=0;c<8;++c){float predicted[3];if(!predict(c,m,sx,sy,n,predicted))return false;errors[c]=std::acos(std::fmax(-1.f,std::fmin(1.f,FaceAirFacing::dot(predicted,wanted))))*180.f/3.14159265358979323846f;}
+    bool any=false;for(unsigned c=0;c<8;++c){float predicted[3];errors[c]=-1;if(!predict(c,m,sx,sy,n,predicted))continue;errors[c]=std::acos(std::fmax(-1.f,std::fmin(1.f,FaceAirFacing::dot(predicted,wanted))))*180.f/3.14159265358979323846f;any=true;}if(!any)return false;
     unsigned at=next;next=(next+1)%256;used=std::min(256u,used+1);auto& entry=samples[at];for(int c=0;c<8;++c)entry.error[c]=errors[c];for(int i=0;i<3;++i)entry.direction[i]=m[8+i];FaceAirFacing::unit(entry.direction);
     for(auto& word:edges[at])word=0;
     for(unsigned j=0;j<used;++j)if(j!=at){auto bitAt=std::uint64_t(1)<<(at%64),bitJ=std::uint64_t(1)<<(j%64);bool apart=FaceAirFacing::dot(entry.direction,samples[j].direction)<0.8660254037844386;
       if(apart){edges[at][j/64]|=bitJ;edges[j][at/64]|=bitAt;}else edges[j][at/64]&=~bitAt;}
-    validMask=0;bool coverage=used>=40&&threeDirections();
-    for(unsigned c=0;c<8;++c){float values[256];for(unsigned i=0;i<used;++i)values[i]=samples[i].error[c];unsigned middle=used/2;std::nth_element(values,values+middle,values+used);float med=values[middle];if(used%2==0)med=(med+*std::max_element(values,values+middle))*0.5f;medianError[c]=med;if(coverage&&med<10.f)validMask|=1u<<c;}
+    validMask=0;
+    for(unsigned c=0;c<8;++c){float values[256];unsigned count=0;for(unsigned i=0;i<used;++i)if(samples[i].error[c]>=0)values[count++]=samples[i].error[c];candidateSamples[c]=count;medianError[c]=999;if(!count)continue;
+      unsigned middle=count/2;std::nth_element(values,values+middle,values+count);float med=values[middle];if(count%2==0)med=(med+*std::max_element(values,values+middle))*0.5f;medianError[c]=med;
+      if(count>=40&&threeDirections(int(c))&&med<10.f)validMask|=1u<<c;}
     return true;
   }
   int choose(const float* m,float sx,float sy,const float* n,float* out,const char*& reason)const{
-    if(!validMask){reason=used<40 ? "samples_lt_40" : !threeDirections() ? "camera_directions_lt_3":"median_not_lt_10";return -1;}
+    if(!validMask){bool samplesReady=false,directionsReady=false;for(int c=0;c<8;++c)if(candidateSamples[c]>=40){samplesReady=true;directionsReady|=threeDirections(c);}
+      reason=!samplesReady ? "samples_lt_40" : !directionsReady ? "camera_directions_lt_3":"median_not_lt_10";return -1;}
     int best=-1;for(int c=0;c<8;++c)if((validMask&(1u<<c))&&(best<0||medianError[c]<medianError[best]))best=c;
     if(!coherent(m,n)||!predict(unsigned(best),m,sx,sy,n,out)){reason="current_basis_or_stick_invalid";return -1;}
     for(int c=0;c<8;++c)if(c!=best&&(validMask&(1u<<c))&&medianError[c]<=medianError[best]+0.1f){float other[3];if(!predict(unsigned(c),m,sx,sy,n,other)||FaceAirFacing::dot(out,other)<0.9993908270190958){reason="ambiguous_current_direction";return -1;}}
@@ -1836,13 +1843,13 @@ void cameraMapObserve(bool steady,const float* n,double now){
   const auto& sample=gfL.walk.ring[(gfL.walk.next+63)%64];if(sample.speed<=2.f)return;float sx=float(std::sin(sample.stick)),sy=float(std::cos(sample.stick));
   if(have){gfL.cameraMap.sync(owner,n);float down=gfL.walkFrame.gameValid ? -gfL.walkFrame.gameStep[1]/gfL.frameDt : 99.f;
     bool qualified=steady&&down<=6.f&&now>=gfL.fallIgnoreUntil;
-    if(qualified){if(!gfL.cameraMap.observe(matrix,sx,sy,gfL.walk.velocity,n,errors))reason="matrix_incoherent";else reason="sampled_steady";}
+    if(qualified){if(!gfL.cameraMap.observe(matrix,sx,sy,gfL.walk.velocity,n,errors))reason="source_rows_invalid";else reason="sampled_steady";}
     else{reason=steady ? "fall_or_landing_guard":"walking_not_steady";for(unsigned c=0;c<8;++c){float predicted[3],actual[3]={gfL.walk.velocity[0],gfL.walk.velocity[1],gfL.walk.velocity[2]};if(CameraFaceMap::predict(c,matrix,sx,sy,n,predicted)&&FaceAirFacing::unit(actual))errors[c]=std::acos(std::fmax(-1.f,std::fmin(1.f,FaceAirFacing::dot(predicted,actual))))*180.f/3.14159265358979323846f;}}
   }
   if(now-gfL.cameraCheckTime<0.5||cameraMapChecks.load()>=200)return;
   gfL.cameraCheckTime=now;if(cameraMapChecks.fetch_add(1)>=200)return;
-  msm2::writeLog("WS_CAMERA_MAP_CHECK errors_deg=%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f median_deg=%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f n=%u camera_directions_ge_3=%u valid_mask=0x%x reason=%s steady=%u r0=%.3f,%.3f,%.3f r1=%.3f,%.3f,%.3f r2=%.3f,%.3f,%.3f source=setter_m0 fresh=%u",
-    errors[0],errors[1],errors[2],errors[3],errors[4],errors[5],errors[6],errors[7],gfL.cameraMap.medianError[0],gfL.cameraMap.medianError[1],gfL.cameraMap.medianError[2],gfL.cameraMap.medianError[3],gfL.cameraMap.medianError[4],gfL.cameraMap.medianError[5],gfL.cameraMap.medianError[6],gfL.cameraMap.medianError[7],gfL.cameraMap.used,unsigned(gfL.cameraMap.threeDirections()),gfL.cameraMap.validMask,reason,unsigned(steady),have ? matrix[0]:0,have ? matrix[1]:0,have ? matrix[2]:0,have ? matrix[4]:0,have ? matrix[5]:0,have ? matrix[6]:0,have ? matrix[8]:0,have ? matrix[9]:0,have ? matrix[10]:0,unsigned(have));
+  msm2::writeLog("WS_CAMERA_MAP_CHECK errors_deg=%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f median_deg=%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f n=%u camera_directions_ge_3=%u valid_mask=0x%x reason=%s steady=%u r0=%.3f,%.3f,%.3f r1=%.3f,%.3f,%.3f r2=%.3f,%.3f,%.3f source=setter_m0 fresh=%u camera_owner=0x%llx candidate_n=%u,%u,%u,%u,%u,%u,%u,%u",
+    errors[0],errors[1],errors[2],errors[3],errors[4],errors[5],errors[6],errors[7],gfL.cameraMap.medianError[0],gfL.cameraMap.medianError[1],gfL.cameraMap.medianError[2],gfL.cameraMap.medianError[3],gfL.cameraMap.medianError[4],gfL.cameraMap.medianError[5],gfL.cameraMap.medianError[6],gfL.cameraMap.medianError[7],gfL.cameraMap.used,unsigned(gfL.cameraMap.threeDirections()),gfL.cameraMap.validMask,reason,unsigned(steady),have ? matrix[0]:0,have ? matrix[1]:0,have ? matrix[2]:0,have ? matrix[4]:0,have ? matrix[5]:0,have ? matrix[6]:0,have ? matrix[8]:0,have ? matrix[9]:0,have ? matrix[10]:0,unsigned(have),(unsigned long long)owner,gfL.cameraMap.candidateSamples[0],gfL.cameraMap.candidateSamples[1],gfL.cameraMap.candidateSamples[2],gfL.cameraMap.candidateSamples[3],gfL.cameraMap.candidateSamples[4],gfL.cameraMap.candidateSamples[5],gfL.cameraMap.candidateSamples[6],gfL.cameraMap.candidateSamples[7]);
 }
 // M12: axes are the learned rotation/mirror of the game's own face walking; no camera-manager reads.
 bool faceScreenAxes(const float* n, float* p, float* r) {
@@ -2054,8 +2061,8 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   // One sample per completed frame; include all game calls and remove our own corrections.
   float walkN[3]={gfN0[0].load(),gfN0[1].load(),gfN0[2].load()};
   gfL.walkFrame.advance(qpcSec(now),mvA ? mvA : p,gfL.pinned && !gfL.faceAir,wgiLx.load(),wgiLy.load(),walkN,gfL.walk,faceFacingNativeTransform==tr&&mvA&&mvB);
-  if(faceFacingNativeTransform==tr){
-    int suspect=gfL.standProbe.sample(qpcSec(now),gfL.walkFrame.gameValid,std::hypot(wgiLx.load(),wgiLy.load())<0.2f,gfL.pinned&&!gfL.faceAir,std::hypot(gfL.walkFrame.gameStep[0],gfL.walkFrame.gameStep[1],gfL.walkFrame.gameStep[2]));
+  if(faceFacingNativeTransform==tr||(gfL.standProbe.active&&qpcSec(now)-gfL.standProbe.start>=1.0&&!gmActive())){
+    int suspect=gfL.standProbe.sample(qpcSec(now),faceFacingNativeTransform==tr&&gfL.walkFrame.gameValid,std::hypot(wgiLx.load(),wgiLy.load())<0.2f,gfL.pinned&&!gfL.faceAir,std::hypot(gfL.walkFrame.gameStep[0],gfL.walkFrame.gameStep[1],gfL.walkFrame.gameStep[2]));
     if(suspect>=0)msm2::writeLog("WS_GRAVITY_FORCE_STOP_HOP event=post_landing apex_m=0.8 crawl_suspect=%s neutral_window_s=%.3f native_samples=%u metric=raw_game_step threshold_m=0.00001",suspect==2 ? "unknown" : suspect==1 ? "1":"0",qpcSec(now)-gfL.standProbe.start,gfL.standProbe.samples);
   }
   gfL.takeoffHistory.track(gfL.walk);

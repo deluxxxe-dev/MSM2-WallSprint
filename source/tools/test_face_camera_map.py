@@ -13,6 +13,8 @@ int main(){
  CameraFaceMap map;map.sync(100,n);
  for(int i=0;i<60;++i){matrix((i/20)*pi/3,m);float sx=std::sin(i*pi/4),sy=std::cos(i*pi/4);assert(CameraFaceMap::predict(1,m,sx,sy,n,actual));assert(map.observe(m,sx,sy,actual,n,errors));if(i<40)assert(!map.validMask);}
  assert(map.used==60&&map.threeDirections()&&(map.validMask&2));assert(map.choose(m,1,0,n,out,why)==1&&std::string(why)=="validated");
+ CameraFaceMap partial;partial.sync(100,n);for(int i=0;i<60;++i){matrix((i/20)*pi/3,m);float sx=std::sin(i*pi/4),sy=std::cos(i*pi/4);CameraFaceMap::predict(1,m,sx,sy,n,actual);m[0]=m[1]=m[2]=0;assert(partial.observe(m,sx,sy,actual,n,errors));}assert((partial.validMask&2)&&partial.candidateSamples[4]==0&&partial.choose(m,1,0,n,out,why)==1);
+ CameraFaceMap constantRight;constantRight.sync(100,n);for(int i=0;i<60;++i){matrix((i/20)*pi/3,m);float sx=std::sin(i*pi/4),sy=std::cos(i*pi/4);CameraFaceMap::predict(1,m,sx,sy,n,actual);m[0]=m[1]=0;m[2]=1;assert(constantRight.observe(m,sx,sy,actual,n,errors));}assert(constantRight.validMask&2);
  CameraFaceMap onePose;onePose.sync(100,n);matrix(0,m);for(int i=0;i<60;++i){CameraFaceMap::predict(1,m,1,0,n,actual);assert(onePose.observe(m,1,0,actual,n,errors));}assert(!onePose.validMask&&!onePose.threeDirections());
  CameraFaceMap ambiguous;ambiguous.sync(100,n);for(int i=0;i<60;++i){matrix((i/20)*pi/3,m);CameraFaceMap::predict(1,m,0,1,n,actual);assert(ambiguous.observe(m,0,1,actual,n,errors));}
  assert((ambiguous.validMask&3)==3);assert(ambiguous.choose(m,0,1,n,out,why)>=0);assert(ambiguous.choose(m,1,0,n,out,why)<0&&std::string(why)=="ambiguous_current_direction");
