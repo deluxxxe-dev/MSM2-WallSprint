@@ -31,3 +31,14 @@ normal velocity. Normal hop arc unchanged; add exact integral of v0*(1-t/.35)
 through the final truncated timestep, log v_plane0/valid and landing distance.
 At5m/s, expected travel.875m; identity/gaps/integral tests and Werror compile pass.
 No jump/zip/fall/mapping behavior change. Actual takeoff continuity is owner check.
+
+Step4: native post-correction trace every second admitted model frame, first3
+stop episodes only,<=60 lines each, through1.5s from last WS callback timestamp
+(the existing WS-end convention). The hold begins after WS expiry, so initial
+~.15-.25s has no fabricated stop trace. Logs plane distance, model planar speed
+(labelled v_source=stop_model), corrected up/forward projections, raw game-step
+normal/tangent magnitude and validity, writes and release block flag/count.
+Unknown reads cannot manufacture pose evidence. Budget tests and Werror pass.
+Decision: initial jerk -> b hop shape next; landing jerk -> c rotation; late jerk
+-> d release guard. b is unchanged here. Owner: Update-WS -> Install mods -> Run;
+WS-stop3x wait3s each, one video, latest versioned timestamped log. No idle wait.
