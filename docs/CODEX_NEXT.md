@@ -1,3 +1,6 @@
+# ON HOLD (owner test first) — do not implement M18c until the owner test in
+# `analysis/WS_GROUND_SPRINT_DIRECTION_20261113.md` is analysed. The next action is the owner's, not Codex's.
+
 # Next task — M18c: the stop hop must also start when the hero is already on the face (P1 only)
 
 Branch `codex/v01c20-edi-value-provenance` (no main merge, no force-push). Previous task text:
