@@ -50,3 +50,16 @@ Owned tests cover noisy26m/s² onset/delay<=0.2, steady6m/s, gap refusal and
 continued/deep/contact behavior. Production compile passes. Physical onset,
 no false walking probes and the resulting contact classification remain owner
 acceptance; probe safety is retained independently of detector noise.
+
+## Task 3 — absolute stop apex and bounded post-landing observation
+The stop hop solves h=0.8-d0, r=sqrt(2h)+sqrt(1.6), g_hop=r²/0.35²,
+v=sqrt(2h*g_hop). Thus apex is0.8m from the plane, not start+0.15m, with the
+same0.35s return. Near-face d0>=0 and<0.8 is admitted; out-of-domain starts refuse.
+Normal face jump remains33/1.8m. Logs include apex/d0/v/g and actual airtime.
+After a hop landing, observe a continuous native1s neutral/pinned window:
+all raw game steps<1e-5m gives crawl_suspect=1, movement gives0, unavailable/gap/
+new input/new air reports unknown. This is a suspicion metric, not a body-pose
+classifier; the video decides stands/crawls. Probe samples never come from worker
+polls. If it crawls, report it;0.95 is the next experiment, not implemented here.
+Owned actual integration/math, frozen/gap/input observation and unchanged normal
+jump fixtures pass, as does production compile.

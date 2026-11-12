@@ -30,14 +30,17 @@ int main() {
  assert(near(hopSpeed,arc.v) && near(hopNormal[0],hopSpeed));
  for(int i=0;i<3;++i)assert(hopPlanar[i]==0 && hopDash[i]==0);
  for(float d0:{0.f,0.45f,0.79f}){assert(arc.solve(d0));
-  assert(std::fabs(arc.v*arc.v/(2*arc.gravity)-0.15f)<1e-5f);
+  assert(std::fabs(d0+arc.v*arc.v/(2*arc.gravity)-0.8f)<1e-5f);
   assert(std::fabs(d0+arc.v*0.35f-0.5f*arc.gravity*0.35f*0.35f)<1e-5f);
   float position[3]={d0,0,0},velocity[3]={arc.v,0,0},planar[3]{},impulse[3]{};float peak=d0;
   for(int frame=0;frame<70;++frame){float next[3];faceAirStep(next,position,velocity,n,planar,impulse,arc.gravity,0.005f);peak=std::fmax(peak,next[0]);for(int k=0;k<3;++k)position[k]=next[k];}
-  assert(std::fabs(position[0])<1e-4f && std::fabs(peak-d0-0.15f)<0.001f);
+  assert(std::fabs(position[0])<1e-4f && std::fabs(peak-0.8f)<0.001f);
  }
  assert(!arc.solve(-0.01f)&&!arc.solve(NAN)&&!arc.solve(1));
- puts("PASS: M16 stop-hop own gravity solves0.15m rise and0.35s plane landing for measured d0, zero planar/dash");
+ StopStandProbe posture;posture.begin(10);for(int i=1;i<63;++i)assert(posture.sample(10+i*0.016,true,true,true,0)==-1);assert(posture.sample(11.008,true,true,true,0)==1);
+ posture.begin(20);assert(posture.sample(20.016,true,false,true,0)==2);posture.begin(30);assert(posture.sample(30.2,true,true,true,0)==2);
+
+ puts("PASS: M17 stop-hop own gravity solves absolute0.8m apex and0.35s landing, zero planar/dash");
  FaceReapproach r;
  for(int i=0;i<12;++i)assert(!r.step(true,0.56f,0.016f,10+i*0.016));
  assert(r.step(true,0.56f,0.016f,10.192));
