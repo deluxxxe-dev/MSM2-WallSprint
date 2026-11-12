@@ -63,3 +63,35 @@ classifier; the video decides stands/crawls. Probe samples never come from worke
 polls. If it crawls, report it;0.95 is the next experiment, not implemented here.
 Owned actual integration/math, frozen/gap/input observation and unchanged normal
 jump fixtures pass, as does production compile.
+
+## Task 4 — validate eight live setter-m0 hypotheses before use
+Existing setter capture publishes coherent m0/m1 with a serialized odd/even
+sequence, owner and timestamp; a busy capture is dropped, never mixed. New code
+does not write the setter or discover another camera. New CAMERA_MAP switch is
+code-default0/shipped1. Current m0 must be fresh<=150ms, finite unit-like coherent
+rows with row1 matching face up. Owner/normal change resets validation.
+
+While native walking>2m/s, predict from projected row2,-row2,row0,-row0, each with
+both signs of forward x n. Only the existing continuous0.3s steady input/walk
+window trains samples; post-landing/contact guard and world-down>6 evidence
+cannot train on a fall. Keep256 samples, eight median errors. Admission is
+median<10deg over>=40 samples with three row2 directions pairwise>30deg apart.
+A bounded adjacency-bitset triangle test checks the three-direction condition
+exactly. Lowest admitted median is used; tied candidates must agree for the
+CURRENT stick, otherwise fallback rather than guessing unobserved handedness.
+Old mapping remains the fallback; no unvalidated basis changes steering/zips.
+
+Live mapping is evaluated from the latest coherent matrix for each steering/zip,
+logged mapping_source=camera_live only when used. Invalid/stale/unreadable/busy/
+owner-reset/sample/coverage/median/ambiguous reasons are explicit. Takeoff's
+accepted walking direction and existing neutral-velocity zip fallback remain.
+WS_CAMERA_MAP_CHECK every0.5s while walking,<=200/process, shows8 latest errors,
+8 medians, rows,n,coverage/mask/qualification/reason even when not yet steady.
+A5s full camera circle may fail the0.3s steadiness requirement; report that data,
+not fabricated admission. No camera angle or candidate-position write.
+
+Owned actual-helper ASan/UBSan fixtures validate a known candidate across3 poses,
+40-sample and single-pose refusals, ambiguous current directions, owner reset,
+invalid rows and256 ring overwrites; required INI defaults are checked. Production
+compile caught formatting warnings, fixed without changing test conditions.
+Actual setter mapping, sample coverage and zip direction remain UNKNOWN.

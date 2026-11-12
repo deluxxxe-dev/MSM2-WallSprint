@@ -255,6 +255,7 @@ std::atomic<std::uint64_t> angleHoldWrites{0}, angleManual{0};
 std::atomic<std::uint64_t> exitBlendWrites{0}; std::atomic<bool> gbAirCam{false};
 std::atomic<std::uint64_t> setCalls{0}; std::atomic<std::uintptr_t> setRcx{0}, setRdx{0}, setR8{0};
 std::atomic<float> setM[2][16]{}; std::atomic<unsigned> setMOk{0}; std::atomic<bool> setInstalled{false}; std::uintptr_t setTarget{};
+std::atomic<unsigned> setMatrixSeq{0};std::atomic<std::uint64_t> setMatrixMs{0};std::atomic<std::uintptr_t> setMatrixOwner{0};std::atomic_flag setMatrixWriter=ATOMIC_FLAG_INIT;
 unsigned setLogs{}; std::uint64_t setLastLog{};
 void m6SetterLog(const msm2::Snapshot& hero, std::uint64_t now) {
   if (!setInstalled.load() || now - setLastLog < 500 || setLogs >= 120) return;
@@ -350,9 +351,11 @@ extern "C" std::uintptr_t ws_camset_record(std::uintptr_t rcx, std::uintptr_t rd
   if (kSetterPreserveFlags && setYawLock.load(std::memory_order_relaxed) && !ws::drive::cameraAutoCenter.load(std::memory_order_relaxed) && engagedManager.load() && !killed.load()) {
     outR9 = r9 | 3; if (outR9 != r9) flagWrites.fetch_add(1, std::memory_order_relaxed); }
   setCalls.fetch_add(1, std::memory_order_relaxed); setRcx.store(rcx, std::memory_order_relaxed); setRdx.store(rdx, std::memory_order_relaxed); setR8.store(r8, std::memory_order_relaxed);
+  if(setMatrixWriter.test_and_set(std::memory_order_acquire))return outR9;
+  setMatrixSeq.fetch_add(1,std::memory_order_acq_rel);
   unsigned ok = 0; std::uintptr_t ptr[2]{rdx, r8};
   for (int k = 0; k < 2; ++k) { float m[16]; if (ptr[k] > 0x10000 && ptr[k] < UINTPTR_MAX - 64 && msm2::readMemory(ptr[k], m, sizeof m)) { ok |= 1u << k; for (int i = 0; i < 16; ++i) setM[k][i].store(m[i], std::memory_order_relaxed); } }
-  setMOk.store(ok, std::memory_order_relaxed);
+  setMOk.store(ok, std::memory_order_relaxed);setMatrixMs.store(GetTickCount64());setMatrixOwner.store(rcx);setMatrixSeq.fetch_add(1,std::memory_order_release);setMatrixWriter.clear(std::memory_order_release);
   return outR9;
 }
 namespace {
@@ -1566,6 +1569,48 @@ struct FaceAirFacing {
   void committed(){++writes;++holdWrites;previousWrite=true;}
 };
 // M16_AIR_FACING_END
+// M17_CAMERA_MAP_BEGIN: eight bounded hypotheses, admitted only by observed walking.
+struct CameraFaceMap {
+  struct Sample{float error[8]{},direction[3]{};} samples[256]{};
+  std::uint64_t edges[256][4]{};unsigned used{},next{},validMask{};std::uintptr_t owner{};float normal[3]{},medianError[8]{};
+  void reset(std::uintptr_t source,const float* n){used=next=validMask=0;owner=source;std::memset(edges,0,sizeof edges);for(int i=0;i<3;++i)normal[i]=n[i];FaceAirFacing::unit(normal);for(float& e:medianError)e=999;}
+  void sync(std::uintptr_t source,const float* n){float u[3]={n[0],n[1],n[2]};if(!FaceAirFacing::unit(u))return;if(owner!=source||FaceAirFacing::dot(u,normal)<0.999f)reset(source,n);}
+  static bool coherent(const float* m,const float* n){float axes[3][3];for(int r=0;r<3;++r){for(int i=0;i<3;++i)axes[r][i]=m[4*r+i];float len=std::hypot(axes[r][0],axes[r][1],axes[r][2]);if(!std::isfinite(len)||len<0.8f||len>1.2f)return false;FaceAirFacing::unit(axes[r]);}
+    float up[3]={n[0],n[1],n[2]};return FaceAirFacing::unit(up)&&FaceAirFacing::dot(axes[1],up)>0.95f&&std::fabs(FaceAirFacing::dot(axes[0],axes[1]))<0.1f&&std::fabs(FaceAirFacing::dot(axes[0],axes[2]))<0.1f&&std::fabs(FaceAirFacing::dot(axes[1],axes[2]))<0.1f;}
+  static bool predict(unsigned candidate,const float* m,float sx,float sy,const float* n,float* out){
+    if(candidate>=8||!std::isfinite(sx)||!std::isfinite(sy)||std::hypot(sx,sy)<=0.2f)return false;
+    float up[3]={n[0],n[1],n[2]};if(!FaceAirFacing::unit(up))return false;unsigned row=candidate/2<2 ? 8:0;float sign=(candidate/2)%2 ? -1.f:1.f;
+    float forward[3];for(int i=0;i<3;++i)forward[i]=sign*m[row+i];float along=FaceAirFacing::dot(forward,up);for(int i=0;i<3;++i)forward[i]-=along*up[i];if(!FaceAirFacing::unit(forward))return false;
+    float right[3];FaceAirFacing::cross(forward,up,right);float hand=candidate%2 ? -1.f:1.f;
+    for(int i=0;i<3;++i)out[i]=sy*forward[i]+sx*hand*right[i];
+    return FaceAirFacing::unit(out);
+  }
+  bool threeDirections()const{
+    for(unsigned i=0;i<used;++i)for(unsigned j=0;j<i;++j)if(edges[i][j/64]&(std::uint64_t(1)<<(j%64)))
+      for(int word=0;word<4;++word)if(edges[i][word]&edges[j][word])return true;
+    return false;
+  }
+  bool observe(const float* m,float sx,float sy,const float* actual,const float* n,float* errors){
+    if(!coherent(m,n))return false;
+    float wanted[3]={actual[0],actual[1],actual[2]};if(!FaceAirFacing::unit(wanted))return false;
+    for(unsigned c=0;c<8;++c){float predicted[3];if(!predict(c,m,sx,sy,n,predicted))return false;errors[c]=std::acos(std::fmax(-1.f,std::fmin(1.f,FaceAirFacing::dot(predicted,wanted))))*180.f/3.14159265358979323846f;}
+    unsigned at=next;next=(next+1)%256;used=std::min(256u,used+1);auto& entry=samples[at];for(int c=0;c<8;++c)entry.error[c]=errors[c];for(int i=0;i<3;++i)entry.direction[i]=m[8+i];FaceAirFacing::unit(entry.direction);
+    for(auto& word:edges[at])word=0;
+    for(unsigned j=0;j<used;++j)if(j!=at){auto bitAt=std::uint64_t(1)<<(at%64),bitJ=std::uint64_t(1)<<(j%64);bool apart=FaceAirFacing::dot(entry.direction,samples[j].direction)<0.8660254037844386;
+      if(apart){edges[at][j/64]|=bitJ;edges[j][at/64]|=bitAt;}else edges[j][at/64]&=~bitAt;}
+    validMask=0;bool coverage=used>=40&&threeDirections();
+    for(unsigned c=0;c<8;++c){float values[256];for(unsigned i=0;i<used;++i)values[i]=samples[i].error[c];unsigned middle=used/2;std::nth_element(values,values+middle,values+used);float med=values[middle];if(used%2==0)med=(med+*std::max_element(values,values+middle))*0.5f;medianError[c]=med;if(coverage&&med<10.f)validMask|=1u<<c;}
+    return true;
+  }
+  int choose(const float* m,float sx,float sy,const float* n,float* out,const char*& reason)const{
+    if(!validMask){reason=used<40 ? "samples_lt_40" : !threeDirections() ? "camera_directions_lt_3":"median_not_lt_10";return -1;}
+    int best=-1;for(int c=0;c<8;++c)if((validMask&(1u<<c))&&(best<0||medianError[c]<medianError[best]))best=c;
+    if(!coherent(m,n)||!predict(unsigned(best),m,sx,sy,n,out)){reason="current_basis_or_stick_invalid";return -1;}
+    for(int c=0;c<8;++c)if(c!=best&&(validMask&(1u<<c))&&medianError[c]<=medianError[best]+0.1f){float other[3];if(!predict(unsigned(c),m,sx,sy,n,other)||FaceAirFacing::dot(out,other)<0.9993908270190958){reason="ambiguous_current_direction";return -1;}}
+    reason="validated";return best;
+  }
+};
+// M17_CAMERA_MAP_END
 // M14_STATE_CORE_BEGIN: owned bounded snapshots/label classification, no native reads or writes.
 enum class StateLabel:unsigned { F,W,J,H,G,A,L,Other };
 enum class StateView:unsigned { Byte,Int,Float,Pointer };
@@ -1744,7 +1789,7 @@ void stateReport(const char* reason){
       reason,row,j[0],j[1],j[2],j[3],w[0],w[1],w[2],w[3],nj[0],nj[1],nj[2],nj[3],nw[0],nw[1],nw[2],nw[3]);
   }
 }
-struct GfLocal { FaceAirFacing airFacing{};FaceWalkoff walkoff{};FaceContactProbe probe{};double fallIgnoreUntil{}; FaceTakeoffHistory takeoffHistory{}; FaceFacingProbe facing{}; bool stopHop{};StopHopArc hopArc{};StopStandProbe standProbe{}; double stopHopTakeoff{}; HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
+struct GfLocal { CameraFaceMap cameraMap{};bool cameraLiveUsed{};int cameraCandidate{-1};const char* cameraReason{"not_checked"};double cameraCheckTime{-1}; FaceAirFacing airFacing{};FaceWalkoff walkoff{};FaceContactProbe probe{};double fallIgnoreUntil{}; FaceTakeoffHistory takeoffHistory{}; FaceFacingProbe facing{}; bool stopHop{};StopHopArc hopArc{};StopStandProbe standProbe{}; double stopHopTakeoff{}; HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
 void gfLogPlane(const char* event) {
   msm2::writeLog("WS_GRAVITY_FORCE_PLANE event=%s point=%.3f,%.3f,%.3f source=%s",
     event, gfP0[0].load(), gfP0[1].load(), gfP0[2].load(), gfPlaneFromWall.load() ? "wall_point_0x338" : "ws_position_minus_0.5n");
@@ -1759,6 +1804,33 @@ std::atomic<float> gfVyGame{0}; std::atomic<std::int64_t> gfVyGameQpc{0}; std::a
 struct FloatStore { std::uintptr_t a; float v; }; void floatStoreCb(void* c) { auto* k = static_cast<FloatStore*>(c); *reinterpret_cast<volatile float*>(k->a) = k->v; }
 std::atomic<bool> gfModelUsed{false};
 void gbWrite(const float* v);
+std::atomic<unsigned> cameraMapChecks{0};
+bool capturedCameraMatrix(float* matrix,std::uintptr_t& owner,const char*& reason){
+  if(!setInstalled.load()){reason="setter_not_installed";return false;}
+  for(int attempt=0;attempt<2;++attempt){unsigned seq=setMatrixSeq.load(std::memory_order_acquire);if(seq&1u)continue;unsigned ok=setMOk.load();auto time=setMatrixMs.load();owner=setMatrixOwner.load();for(int i=0;i<16;++i)matrix[i]=setM[0][i].load(std::memory_order_relaxed);
+    if(seq!=setMatrixSeq.load(std::memory_order_acquire))continue;
+    auto now=GetTickCount64();if(!(ok&1u)||!owner){reason="matrix_unreadable";return false;}if(now<time||now-time>150){reason="matrix_stale";return false;}reason="fresh";return true;}
+  reason="matrix_publication_busy";return false;
+}
+bool cameraLiveDirection(const float* n,float sx,float sy,float* out){
+  gfL.cameraLiveUsed=false;gfL.cameraCandidate=-1;
+  if(!ws::drive::wsFaceCameraMap.load()){gfL.cameraReason="disabled";return false;}
+  float matrix[16];std::uintptr_t owner{};if(!capturedCameraMatrix(matrix,owner,gfL.cameraReason))return false;
+  gfL.cameraMap.sync(owner,n);gfL.cameraCandidate=gfL.cameraMap.choose(matrix,sx,sy,n,out,gfL.cameraReason);gfL.cameraLiveUsed=gfL.cameraCandidate>=0;return gfL.cameraLiveUsed;
+}
+void cameraMapObserve(bool steady,const float* n,double now){
+  float matrix[16],errors[8];for(float& e:errors)e=-1;std::uintptr_t owner{};const char* reason="unavailable";bool have=capturedCameraMatrix(matrix,owner,reason);
+  const auto& sample=gfL.walk.ring[(gfL.walk.next+63)%64];if(sample.speed<=2.f)return;float sx=float(std::sin(sample.stick)),sy=float(std::cos(sample.stick));
+  if(have){gfL.cameraMap.sync(owner,n);float down=gfL.walkFrame.gameValid ? -gfL.walkFrame.gameStep[1]/gfL.frameDt : 99.f;
+    bool qualified=steady&&down<=6.f&&now>=gfL.fallIgnoreUntil;
+    if(qualified){if(!gfL.cameraMap.observe(matrix,sx,sy,gfL.walk.velocity,n,errors))reason="matrix_incoherent";else reason="sampled_steady";}
+    else{reason=steady ? "fall_or_landing_guard":"walking_not_steady";for(unsigned c=0;c<8;++c){float predicted[3],actual[3]={gfL.walk.velocity[0],gfL.walk.velocity[1],gfL.walk.velocity[2]};if(CameraFaceMap::predict(c,matrix,sx,sy,n,predicted)&&FaceAirFacing::unit(actual))errors[c]=std::acos(std::fmax(-1.f,std::fmin(1.f,FaceAirFacing::dot(predicted,actual))))*180.f/3.14159265358979323846f;}}
+  }
+  if(now-gfL.cameraCheckTime<0.5||cameraMapChecks.load()>=200)return;
+  gfL.cameraCheckTime=now;if(cameraMapChecks.fetch_add(1)>=200)return;
+  msm2::writeLog("WS_CAMERA_MAP_CHECK errors_deg=%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f median_deg=%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f n=%u camera_directions_ge_3=%u valid_mask=0x%x reason=%s steady=%u r0=%.3f,%.3f,%.3f r1=%.3f,%.3f,%.3f r2=%.3f,%.3f,%.3f source=setter_m0 fresh=%u",
+    errors[0],errors[1],errors[2],errors[3],errors[4],errors[5],errors[6],errors[7],gfL.cameraMap.medianError[0],gfL.cameraMap.medianError[1],gfL.cameraMap.medianError[2],gfL.cameraMap.medianError[3],gfL.cameraMap.medianError[4],gfL.cameraMap.medianError[5],gfL.cameraMap.medianError[6],gfL.cameraMap.medianError[7],gfL.cameraMap.used,unsigned(gfL.cameraMap.threeDirections()),gfL.cameraMap.validMask,reason,unsigned(steady),have ? matrix[0]:0,have ? matrix[1]:0,have ? matrix[2]:0,have ? matrix[4]:0,have ? matrix[5]:0,have ? matrix[6]:0,have ? matrix[8]:0,have ? matrix[9]:0,have ? matrix[10]:0,unsigned(have));
+}
 // M12: axes are the learned rotation/mirror of the game's own face walking; no camera-manager reads.
 bool faceScreenAxes(const float* n, float* p, float* r) {
   return gfL.airMapping.direction(0.f,1.f,n,p) && gfL.airMapping.direction(1.f,0.f,n,r);
@@ -1768,7 +1840,9 @@ bool faceAirDir(const float* n, float* out) {
   for(int i=0;i<3;++i) out[i]=0;
   float sx=wgiLx.load(std::memory_order_relaxed), sy=wgiLy.load(std::memory_order_relaxed);
   float mag=std::hypot(sx,sy), p[3],r[3];
-  if(!std::isfinite(mag) || mag<=0.2f || !faceScreenAxes(n,p,r)) return false;
+  if(!std::isfinite(mag) || mag<=0.2f)return false;
+  if(cameraLiveDirection(n,sx,sy,out))return true;
+  if(!faceScreenAxes(n,p,r))return false;
   for(int i=0;i<3;++i) out[i]=(sx*r[i]+sy*p[i])/mag;
   return true;
 }
@@ -1810,9 +1884,9 @@ void faceInputLog(const char* event, const float* n, const float* velocity, cons
   float up[3]{},side[3]{}; faceBasis(n,up,side);
   float u=0,s=0; for(int i=0;i<3;++i) { u+=velocity[i]*up[i]; s+=velocity[i]*side[i]; }
   float speed=std::hypot(u,s), sx=wgiLx.load(),sy=wgiLy.load();
-  msm2::writeLog("%s stick=%.2f,%.2f a_s=%.6f h=%d theta_deg=%.2f sample_count=%u sample_age_s=%.3f model_age_s=%.3f source=%s dir_up=%.3f dir_side=%.3f speed=%.3f velocity_fallback=%u frozen_h=%d frozen_theta_deg=%.2f takeoff_time_s=%.6f mapping_valid=%u mirror_agree=%u mirror_total=%u theta_takeoff_deg=%.2f h_used=%d mapping_source=%s pair_age_s=%.3f pair_steady_s=%.3f",
+  msm2::writeLog("%s stick=%.2f,%.2f a_s=%.6f h=%d theta_deg=%.2f sample_count=%u sample_age_s=%.3f model_age_s=%.3f source=%s dir_up=%.3f dir_side=%.3f speed=%.3f velocity_fallback=%u frozen_h=%d frozen_theta_deg=%.2f takeoff_time_s=%.6f mapping_valid=%u mirror_agree=%u mirror_total=%u theta_takeoff_deg=%.2f h_used=%d mapping_source=%s pair_age_s=%.3f pair_steady_s=%.3f camera_map_reason=%s camera_candidate=%d camera_map_n=%u",
     event,sx,sy,std::atan2(sx,sy),gfL.airMapping.hand,gfL.airMapping.theta*180.0/kFacePi,gfL.walk.count(now),gfL.walk.age(now),
-    gfL.walk.valid ? now-gfL.walk.updated : -1.0,source,speed>1e-4f ? u/speed : 0.f,speed>1e-4f ? s/speed : 0.f,speed,unsigned(velocityFallback),gfL.airMapping.hand,gfL.airMapping.theta*180.0/kFacePi,gfL.airMapping.takeoff,unsigned(gfL.airMapping.valid),gfL.walk.agreeing,gfL.walk.fitSamples,gfL.airMapping.theta*180.0/kFacePi,gfL.airMapping.hand,gfL.airMapping.mappingSource,gfL.airMapping.pairAge,gfL.airMapping.pairSteady);
+    gfL.walk.valid ? now-gfL.walk.updated : -1.0,source,speed>1e-4f ? u/speed : 0.f,speed>1e-4f ? s/speed : 0.f,speed,unsigned(velocityFallback),gfL.airMapping.hand,gfL.airMapping.theta*180.0/kFacePi,gfL.airMapping.takeoff,unsigned(gfL.airMapping.valid),gfL.walk.agreeing,gfL.walk.fitSamples,gfL.airMapping.theta*180.0/kFacePi,gfL.airMapping.hand,gfL.cameraLiveUsed ? "camera_live":gfL.airMapping.mappingSource,gfL.airMapping.pairAge,gfL.airMapping.pairSteady,gfL.cameraReason,gfL.cameraCandidate,gfL.cameraMap.used);
 }
 void facingComponents(const float* walking,float* forward,float* walk,bool& valid) {
   float n[3]={gfN0[0].load(),gfN0[1].load(),gfN0[2].load()},up[3],side[3],f[3]{};
@@ -1884,8 +1958,9 @@ void faceZipImpulse(const float* n0,std::int64_t now){
       if (zr != gfL.zipSeen) { gfL.zipSeen = zr; float z[3]{}, velocity[3];
         for(int i=0;i<3;++i) velocity[i]=(gfL.walkoff.active ? gfL.vg[i] : gfL.airVel[i])+gfL.dash[i];
         bool fallback=false;
-        bool impulse=faceZipDirection(gfL.airMapping,wgiLx.load(),wgiLy.load(),n0,velocity,z,fallback);
-        const char* source=impulse ? (fallback ? gfL.airSource : "model") : "none";
+        bool live=cameraLiveDirection(n0,wgiLx.load(),wgiLy.load(),z);
+        bool impulse=live||faceZipDirection(gfL.airMapping,wgiLx.load(),wgiLy.load(),n0,velocity,z,fallback);
+        const char* source=impulse ? (live ? "camera_live" : fallback ? gfL.airSource : "model") : "none";
         if(impulse){for(int i=0;i<3;++i)gfL.dash[i]=z[i]*18.f;
           if(airFacingRun.load())gfL.airFacing.target(z,n0);else airFacingBegin(z,n0);}
         faceFacingLog("zip");
@@ -1972,7 +2047,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   }
   gfL.takeoffHistory.track(gfL.walk);
   if(gfL.walk.hasWalk && gfL.walk.lastWalk==qpcSec(now)) {
-    gfL.takeoffHistory.remember(gfL.walk);
+    bool steadyPair=gfL.takeoffHistory.remember(gfL.walk);gfL.frameDt=dt;cameraMapObserve(steadyPair,walkN,qpcSec(now));
     float speed=std::sqrt(gfL.walk.velocity[0]*gfL.walk.velocity[0]+gfL.walk.velocity[1]*gfL.walk.velocity[1]+gfL.walk.velocity[2]*gfL.walk.velocity[2]);
     for(int i=0;i<3;++i) { gfL.moveVel[i]=gfL.walk.velocity[i]; gfL.moveDir[i]=gfL.walk.velocity[i]/speed; }
     gfL.moveDirT=0.f;
@@ -2081,7 +2156,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   // M10z-r15: a press in the air (dash) re-triggered the face jump (log 20261109-154640 06:48:44): only from the face.
   if (gfL.faceAir) gfL.pinPresses = wgiPresses.load(std::memory_order_relaxed);
   if (gfL.pinned && !gfL.faceAir && !sbBlendQpc.load(std::memory_order_relaxed) && wgiPresses.load(std::memory_order_relaxed) != gfL.pinPresses) {
-    gfL.stop.active=false;
+    gfL.stop.active=false;gfL.cameraLiveUsed=false;gfL.cameraReason="takeoff_frozen";
     gfL.airSource=gfL.walk.takeoff(qpcSec(now),wgiLx.load(),wgiLy.load(),n0,gfL.airVel);
     gfL.takeoffHistory.freeze(gfL.airMapping,gfL.walk,qpcSec(now),gfL.airSource,wgiLx.load(),wgiLy.load(),n0,gfL.airVel);
     if(gfL.airSource[0]!='w' && gfL.airMapping.mappingSource[0]=='w') {
@@ -2122,7 +2197,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     float airDt=gfL.stopHop ? std::fmax(0.f,std::fmin(dt,0.35f-gfL.faceAirT)) : dt;
     gfL.faceAirT += dt;
     float st[3]{}; bool mapped=!gfL.stopHop && faceAirDir(n0, st);
-    if (mapped && !takeoffFrame) { gfL.airSource="model"; steerFaceVelocity(gfL.airVel,st,dt,n0); }
+    if (mapped && !takeoffFrame) { gfL.airSource=gfL.cameraLiveUsed ? "camera_live":"model"; steerFaceVelocity(gfL.airVel,st,dt,n0); }
     faceZipImpulse(n0,now);
     faceAirStep(q,gfL.pLast,gfL.vg,n0,gfL.airVel,gfL.dash,gfL.stopHop ? gfL.hopArc.gravity : kGfG,airDt);
     float dq = (q[0] - p0[0]) * n0[0] + (q[1] - p0[1]) * n0[1] + (q[2] - p0[2]) * n0[2];
