@@ -42,3 +42,21 @@ Unknown reads cannot manufacture pose evidence. Budget tests and Werror pass.
 Decision: initial jerk -> b hop shape next; landing jerk -> c rotation; late jerk
 -> d release guard. b is unchanged here. Owner: Update-WS -> Install mods -> Run;
 WS-stop3x wait3s each, one video, latest versioned timestamped log. No idle wait.
+
+## Cloud verification on final source tree
+
+`build_windows.sh` PASS; `test.sh` **68 PASS**; `smoke_windows.sh` **7 PASS**;
+`test_hooks_windows.sh` **907 PASS**,5 historical private-data SKIP and17
+UNAVAILABLE (no owner runtime fixtures); `package.py` **2 PASS**. Final-source
+hook attempts: 1. Exact per-attempt exits/log hashes/assertions are in the validation
+JSON. No manual skips, fixture deadline extension or assertion relaxation.
+
+Package: `source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled`.
+CRC PASS; exactly info.json/WallSprint.ini/WallSprint.dll; packaged DLL equals
+the new build and FACE_CAMERA_MAP/AIR_FACING/WALKOFF all1. DLL SHA256
+`fc6e9510380411c761be66a0ce940018e2166b8ea044de9b84b1338f69a3872b`;
+package SHA256 `65845dbea7777584e95aae4d061c718a5d0d30d7ad2eacd546b538d9f590b5a2`.
+Artifact/log hashes identify cloud outputs; they do not replace real-game proof.
+
+Final source tree `008123838be3cc594f5e364c64bb8af96a3a6c86`; task commits and QA persisted above.
+Real-game owner acceptance remains UNKNOWN.

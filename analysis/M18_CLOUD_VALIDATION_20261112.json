@@ -1,0 +1,118 @@
+{
+  "date_jst": "2026-11-12",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "baseline": "d5998ce5e0b228fb82fcbcdf9d4331d128a967b5",
+  "implementation_commits": {
+    "1": "ddd923537e941ef9fc66961d580a541d8e68f2b8",
+    "2": "2354141ad09712cec49446fa385432017fe4e37f",
+    "3": "4be6410a521cad5d7139c4ff202af8aae3d122e2",
+    "4": "f90dc351e3c029ede302e63435568f747b4e6796"
+  },
+  "qa_commits": [],
+  "source_tree": "008123838be3cc594f5e364c64bb8af96a3a6c86",
+  "commands": {
+    "build": {
+      "command": "bash tools/build_windows.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "2fcafa762422bd4268f07550b25185c191d67f3e49eb5d993b261033a099ee8b",
+      "PASS": 0,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    },
+    "portable": {
+      "command": "bash tools/test.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "c565217b5fa93cf191d3d092c4ecfb6399082cc06ad1e4076a3175d6c53f3e0b",
+      "PASS": 68,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    },
+    "smoke": {
+      "command": "bash tools/smoke_windows.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "ac877e7f7a87e76a3e786ddc33902ee3c3ebf7dd217226a29157834385caf625",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    },
+    "package": {
+      "command": "python3 tools/package.py",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "ea15817b51246d679491e1c29c49dd38d0c8380d21b99f892b09c1c67e3baa45",
+      "PASS": 2,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    },
+    "hooks": {
+      "command": "bash tools/test_hooks_windows.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "960c53f06c977baaaae99ff71cebdb3a1a288341fec2fc6d953f0a9feedcd0e7",
+      "PASS": 907,
+      "SKIP": 5,
+      "UNAVAILABLE": 17,
+      "FAIL": 0,
+      "assertions": [],
+      "attempts": 1
+    }
+  },
+  "final_source_hook_attempts": {
+    "hooks-attempt1": {
+      "command": "bash tools/test_hooks_windows.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "960c53f06c977baaaae99ff71cebdb3a1a288341fec2fc6d953f0a9feedcd0e7",
+      "PASS": 907,
+      "SKIP": 5,
+      "UNAVAILABLE": 17,
+      "FAIL": 0,
+      "assertions": []
+    }
+  },
+  "artifact_check": {
+    "members": [
+      "info.json",
+      "WallSprint.ini",
+      "WallSprint.dll"
+    ],
+    "crc": "PASS",
+    "dll_matches_build": true,
+    "dll": {
+      "path": "source/build/windows/WallSprint.dll",
+      "bytes": 31949679,
+      "sha256": "fc6e9510380411c761be66a0ce940018e2166b8ea044de9b84b1338f69a3872b"
+    },
+    "script_disabled": {
+      "path": "source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled",
+      "bytes": 3341374,
+      "sha256": "65845dbea7777584e95aae4d061c718a5d0d30d7ad2eacd546b538d9f590b5a2"
+    }
+  },
+  "fixture_triage": {
+    "final_suites": "See per-attempt records; no deadline/assertion changes or manual skips."
+  },
+  "wisdoms": {
+    "consulted_main": "3817f5e495292e935d74a5b76d59c639c02c85cc",
+    "status": "Canonical WALLSPRINT_INTERNALS already includes supplied M16 contact/hop and camera observations; no new cloud runtime fact/cross-repo edit."
+  },
+  "owner_game": "UNKNOWN; no game execution in cloud. Required owner run in CODEX_RESULT.",
+  "limitations": [
+    "Owner stop/standing acceptance UNKNOWN.",
+    "Carry is zero when native frame evidence is missing/stale; logged carry_valid0.",
+    "Trace speed is model output; corrected pose trace is not animation ownership proof.",
+    "First .15-.25s after last WS callback may precede hold admission; no fabricated trace.",
+    "Blend uses current game rows; actual visual continuity remains unverified."
+  ]
+}

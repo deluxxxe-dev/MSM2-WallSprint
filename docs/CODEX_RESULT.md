@@ -1,3 +1,66 @@
+# M18 result — stop transition P1 only (2026-11-12 JST)
+
+STATUS: four ordered steps implemented and pushed on
+`codex/v01c20-edi-value-provenance`; real-game acceptance UNKNOWN.
+Baseline d5998ce; M17_OWNER_RESULT read fully (derived log, no video attached).
+Repository/CLAUDE instructions unchanged, Wisdoms3817f5e consulted; no new engine
+fact established or cross-repository edit. Both seamless motion and retained
+changed gravity remain mandatory. No owner-PC/game execution or deployment.
+
+| Step | Commit | Change |
+|---|---|---|
+| 1 | ddd9235 | Disable release from stop until landing+1.5s, then while raw stick<.2 and no A since stop; count/log blocked frames. Existing fall guard continues. |
+| 2 | 2354141 | Stop-only native axes writer keeps actual takeoff forward projected on face/up=n through landing+.4s, then normalised forward blend for.2s. Original handedness/XYZ lengths/W/identity/cap preserved. |
+| 3 | 4be6410 | Capture last native frame velocity, project tangent, integrate linear deceleration to zero by.35s landing. Log v_plane0/carry_valid and distance. |
+| 4 | f90dc35 | First3 stops, every2nd model frame,<=60 lines each through1.5s from last WS callback. Position, corrected pose, raw game-step/validity, model speed, writes/block state. |
+
+Only production `source/src/NativeHooks/camera_ref.cpp`, new
+`source/tools/test_stop_transition.py` and test.sh changed. Stop hop apex0.8m and
+normal arc timing remain; jumps/zips/fall algorithms/camera/mapping untouched.
+Existing exact-build/SHA/pdata/INI/default-OFF/F8/B/new-WS checks remain. Stop
+writer extends existing FACE_AIR_FACING admission, no new switch/hook/native ABI.
+Stop-only coherent-row handling can correct world-up rows; ordinary air-facing
+still rejects those rows. It never writes W.4000-per-hold cap unchanged.
+
+The native tracker is read-only within existing setter hook; it also observes
+WS before force starts. Atomic coherent publication avoids worker/native storage
+races. Same Transform/fresh<=.1s required, else zero carry with carry_valid0.
+Stop trace v_plane is explicitly stop_model, not measured physical velocity.
+Initial hold admission follows WS expiry, so the trace does not fabricate the
+first~.15-.25s after last WS callback. Missing native feedback/rows stays unknown.
+Incoming rotation deviation maxima are before correction; trace shows corrected
+pose. Current game rows supply blend target; actual final visual continuity is
+not established by synthetic row tests. Partial cancellation can end summaries.
+
+Verification details/hashes: `analysis/M18_CLOUD_VALIDATION_20261112.json`;
+implementation reasoning: `analysis/M18_STOP_TRANSITION_20261112.md`.
+Package `source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled`.
+
+NEED: installed `MSM2-WS/Update-WS.cmd` -> Overstrike Install mods -> Run modded
+game. WS -> stop x3, wait3s each; one short video covering all three stops and
+newest `logs\MSM2-WS-v0.1c48-<timestamp>.log`. No20s freeroam wait.
+Acceptance: no positional/rotation jerk, still stands, trace up_dot_n>=.99,
+no release, smoothly falling planar speed. Decision: start jerk -> b hop shape;
+landing jerk -> c rotation; ~.7s late -> d release not blocked. Report which;
+do not adjust b or P2-P6 in this task.
+
+## Cloud verification on final source tree
+
+`build_windows.sh` PASS; `test.sh` **68 PASS**; `smoke_windows.sh` **7 PASS**;
+`test_hooks_windows.sh` **907 PASS**,5 historical private-data SKIP and17
+UNAVAILABLE (no owner runtime fixtures); `package.py` **2 PASS**. Final-source
+hook attempts: 1. Exact per-attempt exits/log hashes/assertions are in the validation
+JSON. No manual skips, fixture deadline extension or assertion relaxation.
+
+Package: `source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled`.
+CRC PASS; exactly info.json/WallSprint.ini/WallSprint.dll; packaged DLL equals
+the new build and FACE_CAMERA_MAP/AIR_FACING/WALKOFF all1. DLL SHA256
+`fc6e9510380411c761be66a0ce940018e2166b8ea044de9b84b1338f69a3872b`;
+package SHA256 `65845dbea7777584e95aae4d061c718a5d0d30d7ad2eacd546b538d9f590b5a2`.
+Artifact/log hashes identify cloud outputs; they do not replace real-game proof.
+
+---
+
 # M17 result — safe release, prompt fall, 0.8m stop, live mapping and position mirrors (2026-11-12 JST)
 
 STATUS: implementation pushed to `codex/v01c20-edi-value-provenance`; cloud
