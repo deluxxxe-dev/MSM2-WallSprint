@@ -1522,6 +1522,19 @@ struct StopTraceBudget {
   unsigned frames{},lines{};
   bool due(double elapsed,unsigned episode){if(episode>3||elapsed<0||elapsed>1.5||lines>=60)return false;if(++frames%2)return false;++lines;return true;}
 };
+// M18B_DEBOUNCE_BEGIN: poll-independent callback identity cancels even a missed resume.
+struct StopDebounce {
+  bool seen{},pending{};double off{};unsigned long long token{};
+  unsigned sample(bool ws,unsigned long long update,double now){
+    unsigned event=0;
+    if(pending&&(ws||update!=token)){event|=1;pending=false;if(update!=token)seen=true;}
+    if(ws){seen=true;return event;}
+    if(seen&&!pending){seen=false;pending=true;off=now;token=update;event|=4;}
+    if(pending&&now-off>=0.15-1e-9){pending=false;event|=2;}
+    return event;
+  }
+};
+// M18B_DEBOUNCE_END
 // M18_STOP_END
 // M12_LANDING_END
 // M14_FRAME_CLOCK_BEGIN: first-call frame dt; native grouping uses previous native-call gap.
@@ -1639,6 +1652,10 @@ void sampleStopMotion(std::uintptr_t tr,double now,const float* p){
   for(int i=0;i<3;++i)stopMotionVelocity[i].store(stopNativeMotion.velocity[i]);
   stopMotionSeq.fetch_add(1);stopMotionWriter.clear();
 }
+struct StopEndSnapshot {std::uintptr_t transform{};double time{};float velocity[3]{},forward[3]{};bool carryValid{},forwardValid{};};
+StopEndSnapshot stopEndSnapshot;
+std::atomic<bool> stopEndReady{false};std::atomic<bool> stopHopRun{false};std::atomic<unsigned> stopDebounceLogs{0};
+StopDebounce stopDebounce;
 bool readStopMotion(std::uintptr_t tr,double now,const float* n,float* out){
   auto seq=stopMotionSeq.load();if(seq%2)return false;StopMotion snapshot;snapshot.owner=stopMotionOwner.load();snapshot.sampleTime=stopMotionTime.load();snapshot.valid=seq!=0;
   for(int i=0;i<3;++i)snapshot.velocity[i]=stopMotionVelocity[i].load();
@@ -2112,7 +2129,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   float p[4]{}; if (mvB) { std::memcpy(p, mvB, 12); p[3] = 1.f; } else if (!msm2::readMemory(tr + 0x30, p, 16) || !std::isfinite(p[0]) || !std::isfinite(p[1]) || !std::isfinite(p[2])) { gfReadFails.fetch_add(1); return; }
   // M10t (log 20261108-130228): the force ran while the hero was still on a wall (vanilla WallRun/crawl) and froze its
   // height there (shaking, re-attach failed). Pause while WallRun updates arrive.
-  { auto wn = ws::drive::wallNMs.load(std::memory_order_relaxed); auto ms = GetTickCount64(); if (wn && (wn >= ms || ms - wn < 80)) { gfL.init = false; return; } }
+  { auto wn = ws::drive::wallNMs.load(std::memory_order_relaxed); auto ms = GetTickCount64(); if (!stopEndReady.load()&&!gfL.stopHop&&wn && (wn >= ms || ms - wn < 80)) { gfL.init = false; return; } }
   auto now = qpcNow();
   gfCheckPlane();
   if (!gfL.init || qpcSec(now - gfL.last) > 0.1) { gfL.init = true; gfL.last = now; gfL.callLast = now; gfL.frameClock.rebase(qpcSec(now),mvB!=nullptr); gfL.fallGuard = {}; gfL.reapproach.offTime=0.f; gfL.follow = {}; gfL.walkFrame = {}; std::memcpy(gfL.pLast, mvA ? mvA : p, 12); if(!gfL.walkoff.active){gfL.vy = gfVy0.load();gfL.vg[0]=gfL.vg[1]=gfL.vg[2]=0;}else gfL.vy=0;
@@ -2123,13 +2140,14 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     { bool jumped = jm && ms >= jm && ms - jm < 600; float n0i[3] = {gfN0[0].load(), gfN0[1].load(), gfN0[2].load()};
       float di = (p[0] - gfP0[0].load()) * n0i[0] + (p[1] - gfP0[1].load()) * n0i[1] + (p[2] - gfP0[2].load()) * n0i[2];
       if (!gfL.launched && !jumped && di < 0.8f && gfL.hopArc.solve(di)) {
-        gfL.launched=true;gfL.stop.start();gfL.stopHop=true;gfL.stopHopTakeoff=qpcSec(now);gfL.stopEpisode.begin(qpcSec(now)-double(ms>=lastWsMs.load() ? ms-lastWsMs.load():0)/1000.0,wgiPresses.load());gfL.stopTraceId=stopTraceEpisodes.fetch_add(1)+1;gfL.stopTrace={};
+        gfL.launched=true;gfL.stop.start();gfL.stopHop=true;stopHopRun.store(true);gfL.stopHopTakeoff=qpcSec(now);gfL.stopEpisode.begin(qpcSec(now)-double(ms>=lastWsMs.load() ? ms-lastWsMs.load():0)/1000.0,wgiPresses.load());gfL.stopTraceId=stopTraceEpisodes.fetch_add(1)+1;gfL.stopTrace={};
         gfL.pinned=true;gfL.faceAir=true;gfL.faceAirT=0.f;gfL.pinPresses=wgiPresses.load();
         float speed=launchStopHop(gfL.hopArc,n0i,gfL.vg,gfL.airVel,gfL.dash);
-        float carry[3]{};bool carryValid=readStopMotion(tr,qpcSec(now),n0i,carry);float planeSpeed=gfL.stopDecel.begin(carry);
+        float carry[3]{};bool carryValid=stopEndSnapshot.transform==tr&&stopEndSnapshot.carryValid;
+        if(carryValid)std::memcpy(carry,stopEndSnapshot.velocity,12);float planeSpeed=gfL.stopDecel.begin(carry);
         gfL.zipSeen=gfZipReq.load();gfStopMs.store(0);gfFaceLandingTime.store(0);gfFaceTakeoffTime.store(qpcSec(now));gfFaceAirNow.store(true);gfAir.store(true);
         float facingDirection[3]{};
-        if(msm2::readMemory(tr+0x20,facingDirection,12)){airFacingBegin(facingDirection,n0i);
+        if(stopEndSnapshot.transform==tr&&stopEndSnapshot.forwardValid){std::memcpy(facingDirection,stopEndSnapshot.forward,12);airFacingBegin(facingDirection,n0i);
           if(airFacingRun.load()){gfL.stopRotation.begin(gfL.airFacing.forward,gfL.airFacing.up);stopMaxUp.store(0);stopMaxFwd.store(0);stopFacingRun.store(true);}}
         msm2::writeLog("WS_GRAVITY_FORCE_STOP_HOP event=takeoff apex_m=0.8 airtime_s=0 launch_v=%.3f d0=%.3f v=%.3f g_hop=%.3f v_plane0=%.3f carry_valid=%u",speed,gfL.hopArc.d0,gfL.hopArc.v,gfL.hopArc.gravity,planeSpeed,unsigned(carryValid));
       } }
@@ -2329,7 +2347,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     if (gfL.stopHop ? gfL.faceAirT>=0.35f : (gfL.faceAirT > 0.1f && dq < 0.02f && vn <= 0.f)) {
       airFacingStep();
       if(gfL.stopHop){float landingD=facePlaneDistance(q,p0,n0);for(int i=0;i<3;++i)q[i]-=landingD*n0[i];} gfFaceLandingTime.store(qpcSec(now));gfL.fallIgnoreUntil=qpcSec(now)+0.5;gfL.faceAir = false; gfL.pinT = 0.f; gfL.fallGuard.resetMotion(); for (float& c : gfL.vg) c = 0.f; for (float& c : gfL.dash) c = 0.f;
-      if(gfL.stopHop) { gfL.stopEpisode.landing=qpcSec(now);gfL.stopRotation.landing=qpcSec(now);gfL.stop.landed(qpcSec(now));gfL.stopHop=false;gfL.standProbe.begin(qpcSec(now));
+      if(gfL.stopHop) { gfL.stopEpisode.landing=qpcSec(now);gfL.stopRotation.landing=qpcSec(now);gfL.stop.landed(qpcSec(now));gfL.stopHop=false;stopHopRun.store(false);gfL.standProbe.begin(qpcSec(now));
         msm2::writeLog("WS_GRAVITY_FORCE_STOP_HOP event=landing apex_m=0.8 airtime_s=%.3f d0=%.3f v=%.3f g_hop=%.3f in_plane_distance=%.4f",qpcSec(now)-gfL.stopHopTakeoff,gfL.hopArc.d0,gfL.hopArc.v,gfL.hopArc.gravity,gfL.stopDecel.distance); }
       gfFaceMaskLatched.store(false);gfFaceMaskUntil.store(GetTickCount64()+100);
       faceFacingLog("landing",true);if(!stopFacingRun.load())airFacingEnd("face_landing");faceJumpTrace("landing",q,n0,qpcSec(now),true); gfLogPlane("FACE_JUMP_LANDED"); msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_LANDED t=%.2f", gfL.faceAirT); }
@@ -2771,6 +2789,7 @@ void stateDiagnosticTick(const msm2::Snapshot& hero,std::uint64_t nowMs){
   if(!stateRuntime.loggedSize){stateRuntime.loggedSize=true;msm2::writeLog("WS_STATE_READABLE hero_bytes=%u transform_bytes=%u block_bytes=256 cadence_ms=50 capacity_per_label=60 labels=7 ground_vertical_source=hero_gravity_block diagnostic_only=1",snapshot.heroBytes,snapshot.transformBytes);}
 }
 void gfSummary(const char* why) {
+  stopEndReady.store(false);stopHopRun.store(false);
   airFacingEnd(why);
   walkoffEnd(why);
   gfAir.store(false);gfFaceAirNow.store(false);gfPinnedNow.store(false);gfFaceMaskLatched.store(false);gfFaceMaskUntil.store(0);gfFaceTakeoffTime.store(0);
@@ -2804,6 +2823,16 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     if (m && !maskStart) { maskStart = now; }
     if (!m && maskStart) { msm2::writeLog("WS_L3_STAND off reason=stick_repressed held_ms=%llu", (unsigned long long)(now - maskStart)); maskStart = 0; }
     if (m && now - maskStart > 20000) { ws::drive::stickMask.store(false); msm2::writeLog("WS_L3_STAND off reason=timeout"); maskStart = 0; } }
+  auto jumpEndMs=gfJumpMs.load();bool jumpEnd=jumpEndMs&&now>=jumpEndMs&&now-jumpEndMs<600;
+  unsigned debounceEvent=0;
+  if(gbState==1||wsNow){double seconds=double(now)/1000.0;double priorOff=stopDebounce.off;
+    debounceEvent=stopDebounce.sample(wsNow,lastWsMs.load(),seconds);
+    if((debounceEvent&1)&&stopDebounceLogs.fetch_add(1)<60)msm2::writeLog("WS_STOP_TRACE event=debounce cancelled ws_off_s=%.4f",seconds-priorOff);
+    if(debounceEvent&4){stopEndSnapshot={};stopEndSnapshot.transform=hero.transform;stopEndSnapshot.time=qpcSec(qpcNow());
+      stopEndSnapshot.carryValid=readStopMotion(hero.transform,stopEndSnapshot.time,gbN,stopEndSnapshot.velocity);
+      stopEndSnapshot.forwardValid=msm2::readMemory(hero.transform+0x20,stopEndSnapshot.forward,12);}
+    if((debounceEvent&2)&&stopDebounceLogs.fetch_add(1)<60)msm2::writeLog("WS_STOP_TRACE event=debounce kept ws_off_s=%.4f",seconds-stopDebounce.off);
+  }
   if (wsNow && nOk) {
     airFacingEnd("new_ws");walkoffEnd("new_ws");
     std::memcpy(gbN, n, sizeof gbN);
@@ -2824,7 +2853,8 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
       else { msm2::writeLog("WS_GRAVITY_TEST ws_again test=%u n=%.3f,%.3f,%.3f", gbTests, n[0], n[1], n[2]); }
       gbState = 1; }
     (void)l3Press;   // M10z (owner 2026-11-08): the L3 gravity lock is cancelled; every WS gravity is now kept (see below)
-  } else if (gbState == 1 && !wsNow) {
+  } else if (gbState == 1 && !wsNow && ((debounceEvent&2)||jumpEnd)) {
+    stopEndReady.store(!jumpEnd&&(debounceEvent&2));
     gbState = 2; gbStart = now; gbSetUp(gbN); prevOk = false; sgAirPhase.store(true); gbAirCam.store(true); sgGameLanded.store(false);
     // M12: publish the last on-WS plane once per hold, before starting its force. Freeze it through landing.
     for (int i = 0; i < 3; ++i) { gfP0[i].store(gbPlane[i]); gfN0[i].store(gbN[i]); }
@@ -2950,6 +2980,10 @@ void onWallSprintUpdate() noexcept {
   // blend starts from the final frame instead of following the rotating actor axes (camera dived to the feet).
   if (nowMs - lastWsMs.load() > 300) wsSessionStartMs.store(nowMs);
   lastWsMs.store(nowMs);
+  if(stopHopRun.exchange(false)||stopFacingRun.load()){
+    stopEndReady.store(false);airFacingEnd("new_ws_stop_cancelled");gfFaceAirNow.store(false);gfAir.store(false);gfPinnedNow.store(false);gfOn.store(false);
+    msm2::writeLog("WS_STOP_TRACE event=cancel reason=new_ws rows_released=1 blend=0");
+  }
   if (engagedManager.load() == manager) return;
   if (nowMs - wsSessionStartMs.load() < kEngageDelayMs) { delayedUpdates.fetch_add(1); return; }
   if (engagedManager.load()) restore("manager_changed");

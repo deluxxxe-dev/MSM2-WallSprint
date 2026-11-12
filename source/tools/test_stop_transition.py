@@ -6,7 +6,10 @@ code=(root/'src/NativeHooks/camera_ref.cpp').read_text()
 def helper(mark):return code.split('// '+mark+'_BEGIN:',1)[1].split('\n',1)[1].split('// '+mark+'_END',1)[0]
 helpers=helper('M18_STOP')+helper('M16_AIR_FACING')+helper('M18_ROTATION')+helper('M18_DECEL')
 tests=r'''
-int main(){StopEpisode s;assert(!s.block(1,0,1));s.begin(10,3);
+int main(){StopDebounce debounce;assert(debounce.sample(true,1,1)==0);assert(debounce.sample(false,1,1.1)==4);assert(debounce.sample(true,2,1.2)==1);assert(debounce.sample(false,2,1.3)==4);assert(debounce.sample(false,2,1.449)==0);assert(debounce.sample(false,2,1.45)==2);assert(debounce.sample(false,2,2)==0);
+StopDebounce missed;missed.sample(true,3,1);missed.sample(false,3,2);assert(missed.sample(false,4,2.1)==5);assert(missed.sample(false,4,2.25)==2);
+puts("PASS: M18b debounce waits0.15s, cancels resumed/missed WS callbacks, keeps once and rearms");
+StopEpisode s;assert(!s.block(1,0,1));s.begin(10,3);
 assert(s.block(10.1,1,4));s.landing=10.35;assert(s.block(11.849,1,4));
 assert(s.block(11.85,0,3));assert(s.report(11.86));assert(!s.report(12));
 assert(!s.block(12,.2f,3));assert(!s.block(12,0,3));
