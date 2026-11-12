@@ -23,6 +23,12 @@ facing.committed();facing.holdWrites=4000;assert(!facing.prepare(rows,out,true,t
 StopRotation rotation;rotation.begin(f,n);rotation.landing=10;float goal[12]={0,0,1,7, 1,0,0,8, 0,1,0,9},v[3];
 assert(rotation.target(10.399,goal,v)&&v[2]==1);assert(rotation.target(10.5,goal,v));assert(std::fabs(v[1]-.70710678f)<1e-5f&&std::fabs(v[2]-.70710678f)<1e-5f);
 assert(!rotation.target(10.601,goal,v));
+StopRotation extended;extended.begin(f,n);extended.landing=20;
+assert(extended.target(20.4,rows,v)&&std::fabs(extended.hold-.5)<1e-8&&v[2]==1);
+assert(extended.target(20.7,rows,v)&&std::fabs(extended.hold-.8)<1e-8);
+assert(extended.target(20.99,rows,v));assert(!extended.target(21.001,rows,v));
+assert(extended.hold<=.8);
+puts("PASS: M18b divergent game up extends stop hold in0.1s steps, max1.0s total, up never blended");
 StopMotion motion;float p[3]={0,0,0};motion.observe(1,1,p);p[1]=.05f;motion.observe(1,1.01,p);float carry[3]{};assert(motion.take(1,1.01,n,carry)&&std::fabs(carry[1]-5)<1e-4f);assert(!motion.take(2,1.01,n,carry));assert(!motion.take(1,1.2,n,carry));
 StopDeceleration decel;float initial[3]={0,5,0};assert(decel.begin(initial)==5);float q[3]{};
 for(int i=0;i<35;++i)decel.integrate(q,q,i*.01,.01f);

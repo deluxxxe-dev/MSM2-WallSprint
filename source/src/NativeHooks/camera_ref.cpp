@@ -1602,13 +1602,15 @@ struct FaceAirFacing {
 // M16_AIR_FACING_END
 // M18_ROTATION_BEGIN: projected normalised blend, only for the stop continuation.
 struct StopRotation {
-  double landing{-1};float forward[3]{},normal[3]{};
-  void begin(const float* f,const float* n){landing=-1;for(int i=0;i<3;++i){forward[i]=f[i];normal[i]=n[i];}}
-  bool target(double now,const float* rows,float* out)const{
-    if(landing>=0&&now>=landing+0.6)return false;
+  double landing{-1},hold{0.4};float forward[3]{},normal[3]{};
+  void begin(const float* f,const float* n){landing=-1;hold=0.4;for(int i=0;i<3;++i){forward[i]=f[i];normal[i]=n[i];}}
+  bool target(double now,const float* rows,float* out){
+    float gameUp[3]={rows[4],rows[5],rows[6]};bool deviates=FaceAirFacing::unit(gameUp)&&FaceAirFacing::dot(gameUp,normal)<0.984807753f;
+    if(landing>=0&&deviates)while(hold<0.8-1e-9&&now>=landing+hold-1e-9)hold=std::fmin(0.8,hold+0.1);
+    if(landing>=0&&now>=landing+hold+0.2-1e-9)return false;
     float game[3]={rows[8],rows[9],rows[10]},along=FaceAirFacing::dot(game,normal);
     for(int i=0;i<3;++i)game[i]-=along*normal[i];
-    float t=landing<0 ? 0.f:float(std::fmax(0.0,std::fmin(1.0,(now-landing-0.4)/0.2)));
+    float t=landing<0 ? 0.f:float(std::fmax(0.0,std::fmin(1.0,(now-landing-hold)/0.2)));
     if(!FaceAirFacing::unit(game))t=0;
     for(int i=0;i<3;++i)out[i]=(1-t)*forward[i]+t*game[i];
     if(!FaceAirFacing::unit(out))for(int i=0;i<3;++i)out[i]=forward[i];
@@ -1968,9 +1970,9 @@ std::atomic<std::uintptr_t> airFacingTransform{0},airFacingHoldTransform{0};std:
 std::atomic<std::uint64_t> stopTraceStartMs{0};std::atomic<bool> stopTraceStarted{false},stopTraceFailure{false};std::atomic<unsigned> stopTraceSamples{0};
 void stopTraceMissing(const char* reason){if(!stopTraceFailure.exchange(true))msm2::writeLog("WS_STOP_TRACE event=unavailable reason=%s",reason);}
 void stopTracePoll(std::uint64_t now){auto start=stopTraceStartMs.load();if(start&&now>=start&&now-start>=1500&&!stopTraceSamples.load())stopTraceMissing(stopTraceStarted.load() ? "no_native_call":"episode_not_started");}
-std::atomic<bool> stopFacingRun{false};std::atomic<float> stopMaxUp{0},stopMaxFwd{0};
+std::atomic<bool> stopFacingRun{false};std::atomic<float> stopMaxUp{0},stopMaxFwd{0},stopExtended{0};
 std::atomic<bool> airFacingRun{false};std::atomic<unsigned> airFacingWrites{0},airFacingOverwritten{0};std::atomic<float> airFacingMaxDev{0};
-void airFacingEnd(const char* reason){if(stopFacingRun.exchange(false))msm2::writeLog("WS_STOP_TRACE event=rotation writes=%u max_up_dev_deg=%.3f max_fwd_dev_deg=%.3f blend_s=0.2 reason=%s",airFacingWrites.load(),stopMaxUp.load(),stopMaxFwd.load(),reason);if(airFacingRun.exchange(false))msm2::writeLog("WS_FACE_AIR_FACING writes=%u overwritten_next_call=%u max_dev_deg=%.3f reason=%s",airFacingWrites.load(),airFacingOverwritten.load(),airFacingMaxDev.load(),reason);airFacingTransform.store(0);}
+void airFacingEnd(const char* reason){if(stopFacingRun.exchange(false))msm2::writeLog("WS_STOP_TRACE event=rotation writes=%u max_up_dev_deg=%.3f max_fwd_dev_deg=%.3f blend_s=0.2 extended_s=%.3f reason=%s",airFacingWrites.load(),stopMaxUp.load(),stopMaxFwd.load(),stopExtended.load(),reason);if(airFacingRun.exchange(false))msm2::writeLog("WS_FACE_AIR_FACING writes=%u overwritten_next_call=%u max_dev_deg=%.3f reason=%s",airFacingWrites.load(),airFacingOverwritten.load(),airFacingMaxDev.load(),reason);airFacingTransform.store(0);}
 void airFacingBegin(const float* direction,const float* normal){
   airFacingEnd("new_air_phase");
   auto tr=airFacingHoldTransform.load();
@@ -1992,7 +1994,9 @@ void airFacingStep(){
   if(tr!=airFacingTransform.load()||gfL.gen!=airFacingGeneration.load()){airFacingEnd("phase_identity_changed");return;}
   float rows[12],target[12];if(!msm2::readMemory(tr,rows,48)){gfL.airFacing.previousWrite=false;return;}
   bool stop=stopFacingRun.load();
-  if(stop){float direction[3];if(!gfL.stopRotation.target(qpcSec(qpcNow()),rows,direction)){airFacingEnd("stop_blend_complete");return;}
+  if(stop){double priorHold=gfL.stopRotation.hold;float direction[3];bool continuing=gfL.stopRotation.target(qpcSec(qpcNow()),rows,direction);stopExtended.store(float(gfL.stopRotation.hold-0.4));
+    if(!continuing){airFacingEnd("stop_blend_complete");return;}
+    if(gfL.stopRotation.hold>priorHold)msm2::writeLog("WS_STOP_TRACE event=rotation_extended extended_s=%.3f total_window_s=%.3f",gfL.stopRotation.hold-0.4,gfL.stopRotation.hold+0.2);
     float up[3]={rows[4],rows[5],rows[6]},fwd[3]={rows[8],rows[9],rows[10]};
     if(FaceAirFacing::unit(up))stopMaxUp.store(std::fmax(stopMaxUp.load(),std::acos(std::fmax(-1.f,std::fmin(1.f,FaceAirFacing::dot(up,gfL.stopRotation.normal))))*180.f/float(kFacePi)));
     if(FaceAirFacing::unit(fwd))stopMaxFwd.store(std::fmax(stopMaxFwd.load(),std::acos(std::fmax(-1.f,std::fmin(1.f,FaceAirFacing::dot(fwd,gfL.stopRotation.forward))))*180.f/float(kFacePi)));
@@ -2153,7 +2157,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
         gfL.zipSeen=gfZipReq.load();gfStopMs.store(0);gfFaceLandingTime.store(0);gfFaceTakeoffTime.store(qpcSec(now));gfFaceAirNow.store(true);gfAir.store(true);
         float facingDirection[3]{};
         if(stopEndSnapshot.transform==tr&&stopEndSnapshot.forwardValid){std::memcpy(facingDirection,stopEndSnapshot.forward,12);airFacingBegin(facingDirection,n0i);
-          if(airFacingRun.load()){gfL.stopRotation.begin(gfL.airFacing.forward,gfL.airFacing.up);stopMaxUp.store(0);stopMaxFwd.store(0);stopFacingRun.store(true);}}
+          if(airFacingRun.load()){gfL.stopRotation.begin(gfL.airFacing.forward,gfL.airFacing.up);stopMaxUp.store(0);stopMaxFwd.store(0);stopExtended.store(0);stopFacingRun.store(true);}}
         msm2::writeLog("WS_GRAVITY_FORCE_STOP_HOP event=takeoff apex_m=0.8 airtime_s=0 launch_v=%.3f d0=%.3f v=%.3f g_hop=%.3f v_plane0=%.3f carry_valid=%u",speed,gfL.hopArc.d0,gfL.hopArc.v,gfL.hopArc.gravity,planeSpeed,unsigned(carryValid));
       } }
     if (!gfL.launched && jm && ms >= jm && ms - jm < 600) { gfL.launched = true; float h = gfJumpH.load(), v = std::sqrt(2.f * kGfG * h);

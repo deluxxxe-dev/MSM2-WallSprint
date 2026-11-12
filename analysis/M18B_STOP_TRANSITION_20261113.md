@@ -30,3 +30,15 @@ pre-write pose are separate fields. Model speed remains labelled stop_model.
 Owned budget tests pass, production Werror compile passes. No trace side effect
 on game movement or camera. Cancellation also disables a completed stop's force
 on resumed WS, so pending debounce cannot reuse an old stop hold.
+
+Step3: keep up=n for the entire stop writer lifetime. Only projected forward is
+normalised/interpolated; game up never becomes the output up. At the planned
+blend start, native pre-write up deviating>10deg extends hold in.1s steps up to
+.8s holding+.2s blend=1.0s total after landing. This defers forward blend while
+the game still requests world up, avoiding repeated restarts of an already
+completed blend. Log extension and final extended_s; retain existing small-error
+write refusal, coherent row/handedness/identity/XYZ-only and4000-write cap/F8.
+Owned tests cover clean non-extension, repeated90deg deviations and hard total
+bound. Production Werror compile passes. Actual pose continuity remains UNKNOWN.
+No raw proprietary capture or new engine fact was produced; shared Wisdoms
+3817f5e was consulted and is not edited by this bounded WS task.
