@@ -30,8 +30,8 @@ assert(std::fabs(q[1]-.875f)<1e-5f&&std::fabs(decel.distance-.875f)<1e-5f&&decel
 assert(q[0]==0&&q[2]==0);
 puts("PASS: M18 native frame motion identity/freshness and exact linear5-to0 stop integral0.875m at0.35s");
 puts("PASS: M18 stop rotation corrects world-up rows with preserved handedness/W/cap, holds0.4s then normalised0.2s blend");
-StopTraceBudget budget;unsigned count=0;for(int i=0;i<1000;++i)count+=budget.due(i*.001,1);assert(count==60);budget={};assert(!budget.due(1.501,1)&&!budget.due(.1,4));
-puts("PASS: M18 trace budget every second frame,1.5s and three-by60 ceiling");
+StopTraceBudget budget;unsigned count=0;for(int i=0;i<1000;++i)count+=budget.due(i*.001,1);assert(count==100);budget={};assert(!budget.due(1.501,1)&&!budget.due(.1,4));
+puts("PASS: M18 trace budget every native frame,1.5s and per-hold three-by100 ceiling");
 puts("PASS: M18 stop release guard covers hop plus1.5s, neutral/no-A continuation, motion/A expiry and per-stop count");}
 '''
 unit=root/'build/stop_transition_tests.cpp'

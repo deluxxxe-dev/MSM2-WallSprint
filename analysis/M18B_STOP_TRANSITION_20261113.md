@@ -18,4 +18,15 @@ A confirmed stop bypasses the old WR-freshness pause (only stop): continuing WR
 callbacks must not stretch the stop arc. Existing non-stop WR/jump routes remain.
 Owned tests cover cancellation, missed resumes, exact boundary and single keep.
 Test helper extraction initially duplicated a nested marker; fixed extraction,
-no assertion relaxation. Production Werror compile passes.
+no assertion relaxation. Production Werror initially found a misleading-indentation warning; fixed in step2, which passes the compile.
+
+Step2: trace counts are local to GfLocal/hold generation (first3 stops), each
+native frame for1.5s,100 lines. Independent native frame clock avoids the model
+frame-counter comparison that silently lost data. Read game XYZ rows BEFORE
+gfStep/axes writes; compare corrected rows afterwards and report written0/1.
+One unavailable reason per stop: read_failed/invalid_rows/no_native_call/
+episode_not_started, including fallback worker/summary. Corrected pose and raw
+pre-write pose are separate fields. Model speed remains labelled stop_model.
+Owned budget tests pass, production Werror compile passes. No trace side effect
+on game movement or camera. Cancellation also disables a completed stop's force
+on resumed WS, so pending debounce cannot reuse an old stop hold.
