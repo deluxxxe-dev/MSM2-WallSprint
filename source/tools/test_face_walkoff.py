@@ -8,7 +8,7 @@ assert ini.getint('WallSprint','WALLSPRINT_WS_FACE_WALKOFF')==1
 assert 'wsFaceWalkoff{false}' in (r/'include/msm2/drive_command.hpp').read_text()
 assert 'L"WALLSPRINT_WS_FACE_WALKOFF",0,' in (r/'src/msm2/telemetry.cpp').read_text()
 core=''
-for name in ['M15_PHYSICS','M16_FALL']:
+for name in ['M15_PHYSICS','M16_FALL','M17_CONTACT']:
  core+=s.split('// '+name+'_BEGIN:',1)[1].split('\n',1)[1].split('// '+name+'_END',1)[0]
 test=r"""
 int main(){
@@ -27,12 +27,19 @@ int main(){
  for(int i=0;i<20;++i)assert(w.step(false,false,1,zero,0.016f,up)==0&&w.active&&w.quiet==0); // worker/no native evidence cannot land
  assert(w.step(false,true,1,zero,0.016f,up)==0);assert(w.step(false,true,1,zero,0.016f,up)==0);
  assert(w.step(false,true,1,zero,0.016f,up)==2&&!w.active);
- assert(faceFallPlaneLanding(0.03f,0.01f,-1));assert(!faceFallPlaneLanding(-0.01f,-0.015f,-1));
- assert(!faceFallPlaneLanding(0.1f,0.08f,-1));assert(!faceFallPlaneLanding(0.01f,0.02f,1));
  FaceWalkoff steady;for(int i=0;i<20;++i){fall[1]=-5.5f*0.016f;assert(steady.step(true,true,1,fall,0.016f,up)==0);}
  steady.step(true,false,1,fall,0.016f,up);assert(!steady.havePrevious);
+ FaceContactProbe probe;float origin[3]{},normal[3]={1,0,0},at[3]{},wanted[3];probe.begin(10,origin,normal,at);
+ for(int i=0;i<10;++i){for(int k=0;k<3;++k)wanted[k]=at[k];wanted[0]-=0.03f;wanted[1]+=0.01f;probe.limit(at,wanted,normal);for(int k=0;k<3;++k)at[k]=wanted[k];}
+ assert(std::fabs(at[0]+0.1f)<1e-5f&&at[1]>0.09f&&probe.used<=0.10001f);
+ assert(probe.contact(0.02f,-0.1f)==1&&probe.contact(0.01f,-0.1f)==0&&probe.contact(0.02f,0.1f)==0);
+ assert(!probe.advance(10.19)&&!probe.advance(10.21));probe.observe(10.21);assert(probe.advance(10.21));assert(probe.contact(0.02f,-5)==2);
+ float before=probe.before[0];wanted[0]=at[0]-1;probe.limit(at,wanted,normal);assert(wanted[0]<-1&&probe.before[0]==at[0]&&before>=at[0]);
+ FaceWalkoff deep;deep.active=true;for(int i=0;i<10;++i)assert(deep.step(false,true,0,zero,0.016f,up,-1)==0&&deep.active);
+ assert(deep.step(false,true,0,zero,0.016f,up,0)==2);
+ puts("PASS: M17 probe0.20s/0.10m budget preserves planar travel, +u contact rollback class and deep quiet-landing refusal");
  puts("PASS: M16 four rising world-down frames release, steady/zero/invalid refuse, continued world fall never repins, three slow frames land");
- puts("PASS: M16 face fall ignores game displacement, carries pre-fall walking velocity, caps30m/s and only closes to original plane");
+ puts("PASS: M16 face fall ignores game displacement, carries pre-fall walking velocity, caps30m/s and contact probe retains original-plane rollback");
 }
 """
 (r/'build').mkdir(exist_ok=True);p=r/'build/face_walkoff_tests.cpp'
