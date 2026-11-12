@@ -1,3 +1,96 @@
+# M17 result — safe release, prompt fall, 0.8m stop, live mapping and position mirrors (2026-11-12 JST)
+
+STATUS: implementation pushed to `codex/v01c20-edi-value-provenance`; cloud
+verification below. Owner game acceptance UNKNOWN. Baseline b992148; both M16
+owner-result parts, M15 result and repository/CLAUDE instructions read. No raw
+owner log/video attached, no game/owner-PC execution, main merge or force push.
+Both smooth ground-like face movement and retained changed-gravity falling until
+B/new WS remain mandatory; cloud helpers cannot establish those game outcomes.
+
+## Ordered implementation
+
+| Task | Commit | Resulting behavior |
+|---|---|---|
+| 1 | `26f7ed9` | First0.20s release probe caps cumulative -u travel0.10m. +u game push>0.01m below original plane aborts to ORIGINAL plane and suppresses1s; full-fall contact rolls back to pre-step position. Quiet landing requires original_d>-.05. Face/stop landing suppresses release0.5s. |
+| 2 | `4c687cf` | Native overlap-weighted0.1s world-down velocity windows; current>3 and increase>1.5 start probe. Log delay from first full window>1. Preserve pre-fall carry, reject invalid/gapped data. |
+| 3 | `ca75745` | Stop-only absolute0.8m apex, own solved gravity/launch and0.35s return. Observe native neutral game position for1s: frozen -> crawl_suspect1; missing/input/gap -> unknown. Next0.95m experiment deferred. |
+| 4 | `239b4f9` | Eight live setter-m0 hypotheses, steady0.3s walking. Each needs median<10deg,>=40 samples and three row2 directions pairwise>30deg. Shipped FACE_CAMERA_MAP1/code-default0; validated mapping for zips/air steering, fallback with reason. |
+| 5 | `4bb43f2` | Read-only50ms hero+bounded64 one-hop position mirrors,>=90% EACH G/W within0.05m. Report<=32 with L/J distances/counts. Retire supplied covered-empty first4KiB ground/air runtime query. |
+
+Each task was committed/pushed in order. QA `79cd0bb` evaluates candidates
+independently: a nonorthogonal/degenerate row0 does not reject usable row2
+hypotheses; each candidate keeps its own valid sample/pose coverage. Ambiguous
+current direction falls back. Missing post-stop native feedback times out as
+UNKNOWN rather than inventing a frozen-position result. Source tree:
+`db323df9a6433dfc8f7967b1fb2e3bc346f556c1`.
+
+Files: gameplay/diagnostics in `source/src/NativeHooks/camera_ref.cpp`; INI/load
+plumbing in `drive_command.hpp`, `telemetry.cpp`, `mod/WallSprint.ini`. The main
+worker samples at100ms, so minimal `camera_ref.hpp`/telemetry diagnosticPoll wiring
+uses its existing10ms loop to perform guarded diagnostics at50ms; other ticks
+unchanged. No new native hook/thread/signature. Actual-helper tests and test.sh
+cover contact budget, noisy detection, steady6m/s refusal, stop apex/observation,
+candidate medians/direction coverage, mirrors/denominators/identity/read bounds.
+Details: `analysis/M17_FACE_CONTROL_20261112.md`; machine-readable validation:
+`analysis/M17_CLOUD_VALIDATION_20261112.json`.
+
+## Limits and admission
+
+Exact-build/SHA/pdata/INI/F8, default-OFF code admission and B/new WS endings are
+preserved. The accepted face walking/takeoff and bounded native air-facing rows
+remain. Stop hop is separate from normal face jump physics. No candidate position
+write, mover/velocity search, camera-follow fix, producer traversal or deferred
+mechanic is added. Fresh native feedback must complete the probe: worker time is
+not a collision certificate. Before-step rollback is a safety hypothesis, not a
+verified collision position. First window>1 delay can include prior downward
+walking; do not mislabel it as independently measured physical fall onset.
+Pre-fall carry with insufficient qualified history is conservatively zero.
+
+Mirror read bounds: hero0..FFF, pointers0..3FF at8-byte alignment, canonical
+non-null/deduplicated, at most64 attempted objects, guarded512byte prefix and no
+recursion. Missing/invalid G/W data stays in the90% denominator. Address/path
+identity changes cannot manufacture L/J lag. Finite distance means report sample
+counts; missing observations remain unknown. Empty list is a covered/unknown
+bounded result, never proof that no controller position exists. Native-owned
+walking samples train camera mapping, never worker corrections/early fall.
+
+Canonical Wisdoms main3817f5e already records M16 false-fall/contact, hop and
+Transform/camera observations; consulted without duplicate edit. No new runtime
+engine fact was established in cloud. All gameplay acceptance remains UNKNOWN.
+
+## Owner run
+
+Run installed `MSM2-WS/Update-WS.cmd`, then Overstrike **Install mods** ->
+**Run modded game**. Idle ~20s in freeroam. WS -> stop x3, wait3s after each;
+walking jumps up/down/left/right x2 and watch for falling through the face.
+Walk5s while slowly turning the camera through a full circle. Then standing
+jump + zip up/down/left/right, turning to a NEW camera angle before each.
+Walk off a side edge, fall3s, B. On a building with a protruding ledge/step,
+walk off that ledge toward the RECESSED part of the SAME face and land on it.
+Without WS, on the street with NO RT: stand3s, move3s, jump twice.
+Return newest `logs\MSM2-WS-v0.1c48-<timestamp>.log` and captioned videos.
+Decision: no penetration plus probe_clean on genuine walkoff; detect_delay<=.2s
+without release during steady down-face walking; stop stands -> keep0.8, crawls
+-> next task0.95; live validated candidate works OR check lines explain no
+candidate; mirror list (including empty) supplies next read-only conclusion.
+
+## Cloud verification on final source tree
+
+`build_windows.sh` PASS; `test.sh` **64 PASS**; `smoke_windows.sh` **7 PASS**;
+`test_hooks_windows.sh` **907 PASS**,5 historical private-data SKIP and17
+UNAVAILABLE (no owner runtime fixtures); `package.py` **2 PASS**. Final-source
+hook attempts: 1. Exact per-attempt exits/log hashes/assertions are in the validation
+JSON. No manual skips, fixture deadline extension or assertion relaxation.
+
+Package: `source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled`.
+CRC PASS; exactly info.json/WallSprint.ini/WallSprint.dll; packaged DLL equals
+the new build and FACE_CAMERA_MAP/AIR_FACING/WALKOFF all1. DLL SHA256
+`a8bb540564dd319c858097153210bcd05f9c287e2931e04f98972cb4ebe8cec7`;
+package SHA256 `7c391adeea99d648c89acc41de298880203202fb24e23728a9cde00eec5bd40c`.
+Artifact/log hashes identify cloud outputs; they do not replace real-game proof.
+
+---
+
 # M16 result — face fall, small stop hop, bounded air facing and steady mappings (2026-11-12 JST)
 
 STATUS: implementation pushed to `codex/v01c20-edi-value-provenance`; final cloud

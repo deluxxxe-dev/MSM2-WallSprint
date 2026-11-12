@@ -1,0 +1,132 @@
+{
+  "date_jst": "2026-11-12",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "baseline": "b992148ce3795f3ec3353292a4f2e77d697f8ccf",
+  "implementation_commits": {
+    "1": "26f7ed9e39917c0a5b4b5e534533f90d5e031b2c",
+    "2": "4c687cf1482f80dd3633168b0fac8e359719a7f5",
+    "3": "ca757457e4d8f64b304837269f94b558f617d04a",
+    "4": "239b4f95a26a54dbd5587950d5224b626fd77c0b",
+    "5": "4bb43f2a0c72cb0a951291225ad403ca6cf56b10"
+  },
+  "qa_commits": [
+    "79cd0bbcfb39003e42bd93c88d72768349800e56"
+  ],
+  "source_tree": "db323df9a6433dfc8f7967b1fb2e3bc346f556c1",
+  "commands": {
+    "build": {
+      "command": "bash tools/build_windows.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "2fcafa762422bd4268f07550b25185c191d67f3e49eb5d993b261033a099ee8b",
+      "PASS": 0,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    },
+    "portable": {
+      "command": "bash tools/test.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "ee2ae5e842f9ac80446d45f3d53aff76b7e6d4d4c3ce75e854c70dcf558264d5",
+      "PASS": 64,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    },
+    "smoke": {
+      "command": "bash tools/smoke_windows.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "ac877e7f7a87e76a3e786ddc33902ee3c3ebf7dd217226a29157834385caf625",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    },
+    "package": {
+      "command": "python3 tools/package.py",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "ea15817b51246d679491e1c29c49dd38d0c8380d21b99f892b09c1c67e3baa45",
+      "PASS": 2,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    },
+    "hooks": {
+      "command": "bash tools/test_hooks_windows.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "a47898cd1894b7502aa01eddab2d0c7d8a0916e2b7459fdbdd1e2b990bee7c9a",
+      "PASS": 907,
+      "SKIP": 5,
+      "UNAVAILABLE": 17,
+      "FAIL": 0,
+      "assertions": [],
+      "attempts": 1
+    }
+  },
+  "final_source_hook_attempts": {
+    "hooks-attempt1": {
+      "command": "bash tools/test_hooks_windows.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "a47898cd1894b7502aa01eddab2d0c7d8a0916e2b7459fdbdd1e2b990bee7c9a",
+      "PASS": 907,
+      "SKIP": 5,
+      "UNAVAILABLE": 17,
+      "FAIL": 0,
+      "assertions": []
+    }
+  },
+  "artifact_check": {
+    "members": [
+      "info.json",
+      "WallSprint.ini",
+      "WallSprint.dll"
+    ],
+    "crc": "PASS",
+    "dll_matches_build": true,
+    "enabled_switches": {
+      "WALLSPRINT_WS_FACE_CAMERA_MAP": 1,
+      "WALLSPRINT_WS_FACE_AIR_FACING": 1,
+      "WALLSPRINT_WS_FACE_WALKOFF": 1
+    },
+    "dll": {
+      "path": "source/build/windows/WallSprint.dll",
+      "bytes": 31906136,
+      "sha256": "a8bb540564dd319c858097153210bcd05f9c287e2931e04f98972cb4ebe8cec7"
+    },
+    "script_disabled": {
+      "path": "source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled",
+      "bytes": 3322436,
+      "sha256": "7c391adeea99d648c89acc41de298880203202fb24e23728a9cde00eec5bd40c"
+    }
+  },
+  "fixture_triage": {
+    "task1": "Retired original-plane-only landing helper removed after Werror unused-function; all retained assertions preserved.",
+    "task2": "Initial carry fixture exposed fall-signature samples replacing launch carry; corrected by native pre-fall timestamp cutoff. Original assertion preserved.",
+    "task4": "Werror formatting fixed; final QA tests zero/nonorthogonal row0 independently of usable row2 hypotheses.",
+    "task5": "Werror formatting fixed; denominator fixture restores its altered W snapshot before testing address-identity changes. Assertions preserved.",
+    "final_suites": "See final_source_hook_attempts; no fixture deadline/assertion changes or manual skips."
+  },
+  "wisdoms": {
+    "consulted_main": "3817f5e495292e935d74a5b76d59c639c02c85cc",
+    "status": "Canonical WALLSPRINT_INTERNALS already includes supplied M16 contact/hop and camera observations; no new cloud runtime fact/cross-repo edit."
+  },
+  "owner_game": "UNKNOWN; no game execution in cloud. Required owner run in CODEX_RESULT.",
+  "limitations": [
+    "Probe before-step rollback is a safety hypothesis, not verified collision position.",
+    "detect_delay_s is literal age since first full window>1 and can include preceding downward walking.",
+    "Pre-fall carry with insufficient qualified history is zero.",
+    "Freeze is crawl suspicion, not animation-state proof; missing native feedback is UNKNOWN.",
+    "Camera validation may refuse all candidates or ambiguous current direction; fallback reasons logged.",
+    "Mirrors are read-only correlations; no candidate ownership/writability claim or write.",
+    "50ms actual game cadence and all gameplay acceptance await owner."
+  ]
+}

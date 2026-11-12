@@ -147,3 +147,21 @@ Consulted canonical Wisdoms main3817f5e495292e935d74a5b76d59c639c02c85cc
 runtime facts plus Transform/camera lag. No new engine fact established in cloud,
 no duplicate shared edit or publication claim. All new models remain hypotheses
 until the requested owner run; bounded vector matches remain correlations.
+
+## Cloud verification on final source tree
+
+`build_windows.sh` PASS; `test.sh` **64 PASS**; `smoke_windows.sh` **7 PASS**;
+`test_hooks_windows.sh` **907 PASS**,5 historical private-data SKIP and17
+UNAVAILABLE (no owner runtime fixtures); `package.py` **2 PASS**. Final-source
+hook attempts: 1. Exact per-attempt exits/log hashes/assertions are in the validation
+JSON. No manual skips, fixture deadline extension or assertion relaxation.
+
+Package: `source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled`.
+CRC PASS; exactly info.json/WallSprint.ini/WallSprint.dll; packaged DLL equals
+the new build and FACE_CAMERA_MAP/AIR_FACING/WALKOFF all1. DLL SHA256
+`a8bb540564dd319c858097153210bcd05f9c287e2931e04f98972cb4ebe8cec7`;
+package SHA256 `7c391adeea99d648c89acc41de298880203202fb24e23728a9cde00eec5bd40c`.
+Artifact/log hashes identify cloud outputs; they do not replace real-game proof.
+
+Final source tree `db323df9a6433dfc8f7967b1fb2e3bc346f556c1`; task commits and QA persisted above.
+Real-game owner acceptance remains UNKNOWN.
