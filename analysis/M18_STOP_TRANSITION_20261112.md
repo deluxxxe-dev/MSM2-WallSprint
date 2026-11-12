@@ -21,3 +21,13 @@ face-air admission remains unchanged. W lanes untouched,4000/hold cap/F8 retaine
 Per-stop rotation summary counts writes and maximum incoming up/forward deviation.
 Owned world-up/handedness/W/cap/blend tests and existing air-facing tests pass;
 production Werror compile passes. Actual visual continuity remains UNKNOWN.
+
+Step3: read-only first-native-call frame position tracker covers WS and the hold,
+not only force-enabled calls (force starts after WS ends). Coherent atomic
+publication lets the existing worker read last-frame velocity without racing
+native tracker storage. Require same Transform and<=.1s freshness; unavailable
+carry is zero and explicitly carry_valid0, never guessed from input. Project out
+normal velocity. Normal hop arc unchanged; add exact integral of v0*(1-t/.35)
+through the final truncated timestep, log v_plane0/valid and landing distance.
+At5m/s, expected travel.875m; identity/gaps/integral tests and Werror compile pass.
+No jump/zip/fall/mapping behavior change. Actual takeoff continuity is owner check.

@@ -1599,6 +1599,49 @@ struct StopRotation {
   }
 };
 // M18_ROTATION_END
+// M18_DECEL_BEGIN: first-native-call to first-native-call displacement, bounded freshness.
+struct StopMotion {
+  std::uintptr_t owner{};double first{},last{},sampleTime{};bool anchored{},valid{};float position[3]{},velocity[3]{};
+  void observe(std::uintptr_t tr,double now,const float* p){
+    if(owner!=tr||!anchored||now<last||now-last>0.1){owner=tr;first=last=now;anchored=true;valid=false;for(int i=0;i<3;++i)position[i]=p[i];return;}
+    double gap=now-last;last=now;if(gap<0.005)return;
+    double dt=now-first;valid=dt>=0.005&&dt<=0.1;
+    for(int i=0;i<3;++i){velocity[i]=float((p[i]-position[i])/dt);position[i]=p[i];}
+    valid=valid&&std::isfinite(std::hypot(velocity[0],velocity[1],velocity[2]));sampleTime=first=now;
+  }
+  bool take(std::uintptr_t tr,double now,const float* n,float* out)const{
+    bool ok=valid&&owner==tr&&now>=sampleTime&&now-sampleTime<=0.1;float along=ok ? FaceAirFacing::dot(velocity,n):0;
+    for(int i=0;i<3;++i)out[i]=ok ? velocity[i]-along*n[i]:0;
+    return ok;
+  }
+};
+struct StopDeceleration {
+  float initial[3]{},distance{};bool seeded{};
+  float begin(const float* v){seeded=true;distance=0;for(int i=0;i<3;++i)initial[i]=v[i];return std::hypot(v[0],v[1],v[2]);}
+  void integrate(float* q,const float* previous,double elapsed,float dt){
+    float t0=float(std::fmax(0.0,std::fmin(0.35,elapsed))),t1=std::fmin(0.35f,t0+dt);
+    float area=(t1-t0)*(1-(t0+t1)/(2*0.35f));
+    for(int i=0;i<3;++i)q[i]+=initial[i]*area;
+    (void)previous;distance+=std::hypot(initial[0],initial[1],initial[2])*area;
+  }
+  float speed(double elapsed)const{return std::hypot(initial[0],initial[1],initial[2])*float(std::fmax(0.0,1-elapsed/0.35));}
+};
+// M18_DECEL_END
+thread_local StopMotion stopNativeMotion;
+std::atomic_flag stopMotionWriter=ATOMIC_FLAG_INIT;std::atomic<unsigned> stopMotionSeq{0};std::atomic<std::uintptr_t> stopMotionOwner{0};std::atomic<double> stopMotionTime{0};std::atomic<float> stopMotionVelocity[3]{};
+void sampleStopMotion(std::uintptr_t tr,double now,const float* p){
+  stopNativeMotion.observe(tr,now,p);if(!stopNativeMotion.valid||stopMotionWriter.test_and_set())return;
+  stopMotionSeq.fetch_add(1);stopMotionOwner.store(tr);stopMotionTime.store(stopNativeMotion.sampleTime);
+  for(int i=0;i<3;++i)stopMotionVelocity[i].store(stopNativeMotion.velocity[i]);
+  stopMotionSeq.fetch_add(1);stopMotionWriter.clear();
+}
+bool readStopMotion(std::uintptr_t tr,double now,const float* n,float* out){
+  auto seq=stopMotionSeq.load();if(seq%2)return false;StopMotion snapshot;snapshot.owner=stopMotionOwner.load();snapshot.sampleTime=stopMotionTime.load();snapshot.valid=seq!=0;
+  for(int i=0;i<3;++i)snapshot.velocity[i]=stopMotionVelocity[i].load();
+  if(seq!=stopMotionSeq.load())return false;
+  return snapshot.take(tr,now,n,out);
+}
+
 
 // M17_CAMERA_MAP_BEGIN: eight bounded hypotheses, admitted only by observed walking.
 struct CameraFaceMap {
@@ -1839,7 +1882,7 @@ void stateReport(const char* reason){
       reason,row,j[0],j[1],j[2],j[3],w[0],w[1],w[2],w[3],nj[0],nj[1],nj[2],nj[3],nw[0],nw[1],nw[2],nw[3]);
   }
 }
-struct GfLocal { CameraFaceMap cameraMap{};bool cameraLiveUsed{};int cameraCandidate{-1};const char* cameraReason{"not_checked"};double cameraCheckTime{-1}; FaceAirFacing airFacing{};FaceWalkoff walkoff{};FaceContactProbe probe{};double fallIgnoreUntil{}; FaceTakeoffHistory takeoffHistory{}; FaceFacingProbe facing{}; StopRotation stopRotation{};StopEpisode stopEpisode{};bool stopHop{};StopHopArc hopArc{};StopStandProbe standProbe{}; double stopHopTakeoff{}; HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
+struct GfLocal { CameraFaceMap cameraMap{};bool cameraLiveUsed{};int cameraCandidate{-1};const char* cameraReason{"not_checked"};double cameraCheckTime{-1}; FaceAirFacing airFacing{};FaceWalkoff walkoff{};FaceContactProbe probe{};double fallIgnoreUntil{}; FaceTakeoffHistory takeoffHistory{}; FaceFacingProbe facing{}; StopDeceleration stopDecel{};StopRotation stopRotation{};StopEpisode stopEpisode{};bool stopHop{};StopHopArc hopArc{};StopStandProbe standProbe{}; double stopHopTakeoff{}; HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
 void gfLogPlane(const char* event) {
   msm2::writeLog("WS_GRAVITY_FORCE_PLANE event=%s point=%.3f,%.3f,%.3f source=%s",
     event, gfP0[0].load(), gfP0[1].load(), gfP0[2].load(), gfPlaneFromWall.load() ? "wall_point_0x338" : "ws_position_minus_0.5n");
@@ -2067,11 +2110,12 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
         gfL.launched=true;gfL.stop.start();gfL.stopHop=true;gfL.stopHopTakeoff=qpcSec(now);gfL.stopEpisode.begin(qpcSec(now),wgiPresses.load());
         gfL.pinned=true;gfL.faceAir=true;gfL.faceAirT=0.f;gfL.pinPresses=wgiPresses.load();
         float speed=launchStopHop(gfL.hopArc,n0i,gfL.vg,gfL.airVel,gfL.dash);
+        float carry[3]{};bool carryValid=readStopMotion(tr,qpcSec(now),n0i,carry);float planeSpeed=gfL.stopDecel.begin(carry);
         gfL.zipSeen=gfZipReq.load();gfStopMs.store(0);gfFaceLandingTime.store(0);gfFaceTakeoffTime.store(qpcSec(now));gfFaceAirNow.store(true);gfAir.store(true);
         float facingDirection[3]{};
         if(msm2::readMemory(tr+0x20,facingDirection,12)){airFacingBegin(facingDirection,n0i);
           if(airFacingRun.load()){gfL.stopRotation.begin(gfL.airFacing.forward,gfL.airFacing.up);stopMaxUp.store(0);stopMaxFwd.store(0);stopFacingRun.store(true);}}
-        msm2::writeLog("WS_GRAVITY_FORCE_STOP_HOP event=takeoff apex_m=0.8 airtime_s=0 launch_v=%.3f d0=%.3f v=%.3f g_hop=%.3f",speed,gfL.hopArc.d0,gfL.hopArc.v,gfL.hopArc.gravity);
+        msm2::writeLog("WS_GRAVITY_FORCE_STOP_HOP event=takeoff apex_m=0.8 airtime_s=0 launch_v=%.3f d0=%.3f v=%.3f g_hop=%.3f v_plane0=%.3f carry_valid=%u",speed,gfL.hopArc.d0,gfL.hopArc.v,gfL.hopArc.gravity,planeSpeed,unsigned(carryValid));
       } }
     if (!gfL.launched && jm && ms >= jm && ms - jm < 600) { gfL.launched = true; float h = gfJumpH.load(), v = std::sqrt(2.f * kGfG * h);
       for (int i = 0; i < 3; ++i) gfL.vg[i] = gfN0[i].load() * v;
@@ -2262,6 +2306,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     if (mapped && !takeoffFrame) { gfL.airSource=gfL.cameraLiveUsed ? "camera_live":"model"; steerFaceVelocity(gfL.airVel,st,dt,n0); }
     faceZipImpulse(n0,now);
     faceAirStep(q,gfL.pLast,gfL.vg,n0,gfL.airVel,gfL.dash,gfL.stopHop ? gfL.hopArc.gravity : kGfG,airDt);
+    if(gfL.stopHop)gfL.stopDecel.integrate(q,gfL.pLast,double(gfL.faceAirT-dt),airDt);
     float dq = (q[0] - p0[0]) * n0[0] + (q[1] - p0[1]) * n0[1] + (q[2] - p0[2]) * n0[2];
     float vn = gfL.vg[0] * n0[0] + gfL.vg[1] * n0[1] + gfL.vg[2] * n0[2];
     if (dq < 0.f) for (int i = 0; i < 3; ++i) q[i] -= dq * n0[i];
@@ -2269,7 +2314,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
       airFacingStep();
       if(gfL.stopHop){float landingD=facePlaneDistance(q,p0,n0);for(int i=0;i<3;++i)q[i]-=landingD*n0[i];} gfFaceLandingTime.store(qpcSec(now));gfL.fallIgnoreUntil=qpcSec(now)+0.5;gfL.faceAir = false; gfL.pinT = 0.f; gfL.fallGuard.resetMotion(); for (float& c : gfL.vg) c = 0.f; for (float& c : gfL.dash) c = 0.f;
       if(gfL.stopHop) { gfL.stopEpisode.landing=qpcSec(now);gfL.stopRotation.landing=qpcSec(now);gfL.stop.landed(qpcSec(now));gfL.stopHop=false;gfL.standProbe.begin(qpcSec(now));
-        msm2::writeLog("WS_GRAVITY_FORCE_STOP_HOP event=landing apex_m=0.8 airtime_s=%.3f d0=%.3f v=%.3f g_hop=%.3f",qpcSec(now)-gfL.stopHopTakeoff,gfL.hopArc.d0,gfL.hopArc.v,gfL.hopArc.gravity); }
+        msm2::writeLog("WS_GRAVITY_FORCE_STOP_HOP event=landing apex_m=0.8 airtime_s=%.3f d0=%.3f v=%.3f g_hop=%.3f in_plane_distance=%.4f",qpcSec(now)-gfL.stopHopTakeoff,gfL.hopArc.d0,gfL.hopArc.v,gfL.hopArc.gravity,gfL.stopDecel.distance); }
       gfFaceMaskLatched.store(false);gfFaceMaskUntil.store(GetTickCount64()+100);
       faceFacingLog("landing",true);if(!stopFacingRun.load())airFacingEnd("face_landing");faceJumpTrace("landing",q,n0,qpcSec(now),true); gfLogPlane("FACE_JUMP_LANDED"); msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_LANDED t=%.2f", gfL.faceAirT); }
     if (gfL.faceAirT > 6.f) { airFacingEnd("air_timeout"); gfFaceLandingTime.store(qpcSec(now));faceJumpTrace("timeout",q,n0,qpcSec(now),true); gfL.faceAir = false; for (float& c : gfL.vg) c = 0.f; msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_TIMEOUT"); }
@@ -2431,8 +2476,10 @@ extern std::atomic<std::int64_t> gmQpc;
 std::uintptr_t sp2Detour(std::uintptr_t tr, std::uintptr_t pos, std::uintptr_t r8, std::uintptr_t r9) {
   bool force=tr&&pos&&tr==gfTransform.load(std::memory_order_relaxed)&&gfOn.load(std::memory_order_relaxed)&&ws::drive::wsGravitySetPos.load(std::memory_order_relaxed)&&!killed.load();
   bool diagnostic=tr&&pos&&stateDiagOn.load()&&tr==stateHeroTransform.load()&&!killed.load();
-  if(force||diagnostic){float A[3],B[3];
+  bool stopSample=tr&&pos&&tr==gfTransform.load()&&gbHoldA.load()&&ws::drive::wsGravityForce.load()&&ws::drive::wsGravitySetPos.load()&&!killed.load();
+  if(force||diagnostic||stopSample){float A[3],B[3];
     if(msm2::readMemory(tr+0x30,A,12)&&msm2::readMemory(pos,B,12)&&std::isfinite(A[0])&&std::isfinite(A[1])&&std::isfinite(A[2])&&std::isfinite(B[0])&&std::isfinite(B[1])&&std::isfinite(B[2])){
+      if(stopSample)sampleStopMotion(tr,qpcSec(qpcNow()),A);
       std::unique_lock<std::mutex> frameLock(stateFramesMu,std::defer_lock);
       bool captured=diagnostic&&frameLock.try_lock();
       if(diagnostic&&!captured)stateDrops.fetch_add(1); // drop uncertain diagnostics, never block the game
