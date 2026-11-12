@@ -11,3 +11,13 @@ Existing fall guard still runs. Once per episode log blocked frame count after
 mandatory window (later total appears in trace); reset on new hold generation.
 Owned lifetime/boundary tests and production Werror compile pass.
 Wisdoms canonical3817f5e consulted; no new engine fact established in cloud.
+
+Step2: stop only extends the existing identity-pinned native XYZ axes writer
+through landing+.4s, then projected normalised forward blend to current game
+rows over.2s, up held at n and reorthogonalised with original handedness/lengths.
+Takeoff uses actual Transform forward, not the WS travel command. Stop continuation
+admits coherent orthogonal game rows whose up swung toward world up; ordinary
+face-air admission remains unchanged. W lanes untouched,4000/hold cap/F8 retained.
+Per-stop rotation summary counts writes and maximum incoming up/forward deviation.
+Owned world-up/handedness/W/cap/blend tests and existing air-facing tests pass;
+production Werror compile passes. Actual visual continuity remains UNKNOWN.

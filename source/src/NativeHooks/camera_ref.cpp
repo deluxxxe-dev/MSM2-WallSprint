@@ -1568,21 +1568,38 @@ struct FaceAirFacing {
     float along=dot(f,u);for(int i=0;i<3;++i)v[i]=f[i]-along*u[i];if(!unit(v))return false;
     for(int i=0;i<3;++i){up[i]=u[i];forward[i]=v[i];}previousWrite=false;return true;}
   bool begin(const float* f,const float* n){active=false;checked=previousWrite=false;writes=overwritten=0;maxDev=0;active=target(f,n);return active;}
-  bool prepare(const float* rows,float* out,bool enabled,bool phase){
+  bool prepare(const float* rows,float* out,bool enabled,bool phase,bool stop=false){
     if(!enabled||!phase||!active){previousWrite=false;return false;}
     float axes[3][3],lengths[3];for(int r=0;r<3;++r){for(int i=0;i<3;++i)axes[r][i]=rows[4*r+i];float len=std::hypot(axes[r][0],axes[r][1],axes[r][2]);
       if(!std::isfinite(len)||len<0.8f||len>1.2f){previousWrite=false;return false;}lengths[r]=len;for(float& x:axes[r])x/=len;}
-    if(std::fabs(dot(axes[0],axes[1]))>0.1f||std::fabs(dot(axes[0],axes[2]))>0.1f||std::fabs(dot(axes[1],axes[2]))>0.1f||dot(axes[1],up)<0.95f){previousWrite=false;return false;}
+    if(std::fabs(dot(axes[0],axes[1]))>0.1f||std::fabs(dot(axes[0],axes[2]))>0.1f||std::fabs(dot(axes[1],axes[2]))>0.1f||(!stop&&dot(axes[1],up)<0.95f)){previousWrite=false;return false;}
     float right[3];cross(axes[1],axes[2],right);float handed=dot(right,axes[0]);if(std::fabs(handed)<0.95f){previousWrite=false;return false;}
     int currentSign=handed>0 ? 1:-1;if(!checked){sign=currentSign;checked=true;}else if(currentSign!=sign){previousWrite=false;return false;}
     float cosine=std::fmax(-1.f,std::fmin(1.f,dot(axes[2],forward)));float deviation=std::acos(cosine)*180.f/3.14159265358979323846f;
     maxDev=std::fmax(maxDev,deviation);bool turned=deviation>2.f;if(previousWrite&&turned)++overwritten;previousWrite=false;
-    if(!turned||holdWrites>=4000)return false;
+    if((!turned&&(!stop||dot(axes[1],up)>0.9999f))||holdWrites>=4000)return false;
     std::memcpy(out,rows,48);cross(up,forward,right);for(int i=0;i<3;++i){out[i]=sign*right[i]*lengths[0];out[4+i]=up[i]*lengths[1];out[8+i]=forward[i]*lengths[2];}return true;
   }
   void committed(){++writes;++holdWrites;previousWrite=true;}
 };
 // M16_AIR_FACING_END
+// M18_ROTATION_BEGIN: projected normalised blend, only for the stop continuation.
+struct StopRotation {
+  double landing{-1};float forward[3]{},normal[3]{};
+  void begin(const float* f,const float* n){landing=-1;for(int i=0;i<3;++i){forward[i]=f[i];normal[i]=n[i];}}
+  bool target(double now,const float* rows,float* out)const{
+    if(landing>=0&&now>=landing+0.6)return false;
+    float game[3]={rows[8],rows[9],rows[10]},along=FaceAirFacing::dot(game,normal);
+    for(int i=0;i<3;++i)game[i]-=along*normal[i];
+    float t=landing<0 ? 0.f:float(std::fmax(0.0,std::fmin(1.0,(now-landing-0.4)/0.2)));
+    if(!FaceAirFacing::unit(game))t=0;
+    for(int i=0;i<3;++i)out[i]=(1-t)*forward[i]+t*game[i];
+    if(!FaceAirFacing::unit(out))for(int i=0;i<3;++i)out[i]=forward[i];
+    return true;
+  }
+};
+// M18_ROTATION_END
+
 // M17_CAMERA_MAP_BEGIN: eight bounded hypotheses, admitted only by observed walking.
 struct CameraFaceMap {
   struct Sample{float error[8]{},direction[3]{};} samples[256]{};
@@ -1822,7 +1839,7 @@ void stateReport(const char* reason){
       reason,row,j[0],j[1],j[2],j[3],w[0],w[1],w[2],w[3],nj[0],nj[1],nj[2],nj[3],nw[0],nw[1],nw[2],nw[3]);
   }
 }
-struct GfLocal { CameraFaceMap cameraMap{};bool cameraLiveUsed{};int cameraCandidate{-1};const char* cameraReason{"not_checked"};double cameraCheckTime{-1}; FaceAirFacing airFacing{};FaceWalkoff walkoff{};FaceContactProbe probe{};double fallIgnoreUntil{}; FaceTakeoffHistory takeoffHistory{}; FaceFacingProbe facing{}; StopEpisode stopEpisode{};bool stopHop{};StopHopArc hopArc{};StopStandProbe standProbe{}; double stopHopTakeoff{}; HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
+struct GfLocal { CameraFaceMap cameraMap{};bool cameraLiveUsed{};int cameraCandidate{-1};const char* cameraReason{"not_checked"};double cameraCheckTime{-1}; FaceAirFacing airFacing{};FaceWalkoff walkoff{};FaceContactProbe probe{};double fallIgnoreUntil{}; FaceTakeoffHistory takeoffHistory{}; FaceFacingProbe facing{}; StopRotation stopRotation{};StopEpisode stopEpisode{};bool stopHop{};StopHopArc hopArc{};StopStandProbe standProbe{}; double stopHopTakeoff{}; HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; } gfL;
 void gfLogPlane(const char* event) {
   msm2::writeLog("WS_GRAVITY_FORCE_PLANE event=%s point=%.3f,%.3f,%.3f source=%s",
     event, gfP0[0].load(), gfP0[1].load(), gfP0[2].load(), gfPlaneFromWall.load() ? "wall_point_0x338" : "ws_position_minus_0.5n");
@@ -1884,8 +1901,9 @@ void walkoffEnd(const char* why){if(gfWalkoffActive.exchange(false))msm2::writeL
 thread_local std::uintptr_t faceFacingNativeTransform=0;
 struct FaceFacingCallScope {std::uintptr_t old{faceFacingNativeTransform};explicit FaceFacingCallScope(std::uintptr_t tr){faceFacingNativeTransform=tr;}~FaceFacingCallScope(){faceFacingNativeTransform=old;}};
 std::atomic<std::uintptr_t> airFacingTransform{0},airFacingHoldTransform{0};std::atomic<unsigned> airFacingGeneration{0};
+std::atomic<bool> stopFacingRun{false};std::atomic<float> stopMaxUp{0},stopMaxFwd{0};
 std::atomic<bool> airFacingRun{false};std::atomic<unsigned> airFacingWrites{0},airFacingOverwritten{0};std::atomic<float> airFacingMaxDev{0};
-void airFacingEnd(const char* reason){if(airFacingRun.exchange(false))msm2::writeLog("WS_FACE_AIR_FACING writes=%u overwritten_next_call=%u max_dev_deg=%.3f reason=%s",airFacingWrites.load(),airFacingOverwritten.load(),airFacingMaxDev.load(),reason);airFacingTransform.store(0);}
+void airFacingEnd(const char* reason){if(stopFacingRun.exchange(false))msm2::writeLog("WS_STOP_TRACE event=rotation writes=%u max_up_dev_deg=%.3f max_fwd_dev_deg=%.3f blend_s=0.2 reason=%s",airFacingWrites.load(),stopMaxUp.load(),stopMaxFwd.load(),reason);if(airFacingRun.exchange(false))msm2::writeLog("WS_FACE_AIR_FACING writes=%u overwritten_next_call=%u max_dev_deg=%.3f reason=%s",airFacingWrites.load(),airFacingOverwritten.load(),airFacingMaxDev.load(),reason);airFacingTransform.store(0);}
 void airFacingBegin(const float* direction,const float* normal){
   airFacingEnd("new_air_phase");
   auto tr=airFacingHoldTransform.load();
@@ -1895,18 +1913,25 @@ void airFacingBegin(const float* direction,const float* normal){
 }
 struct FaceAxesStore {std::uintptr_t tr{};unsigned gen{};const float* expected{};const float* rows{};bool wrote{};};
 void faceAxesStoreCb(void* raw){auto& c=*static_cast<FaceAxesStore*>(raw);
-  if(faceFacingNativeTransform!=c.tr||killed.load()||!gfOn.load()||wsActiveNow(GetTickCount64())||!ws::drive::wsFaceAirFacing.load()||gfGen.load()!=c.gen||gfTransform.load()!=c.tr||airFacingTransform.load()!=c.tr||airFacingGeneration.load()!=c.gen||!airFacingRun.load()||!(gfFaceAirNow.load()||gfWalkoffActive.load()))return;
+  if(faceFacingNativeTransform!=c.tr||killed.load()||!gfOn.load()||wsActiveNow(GetTickCount64())||!ws::drive::wsFaceAirFacing.load()||gfGen.load()!=c.gen||gfTransform.load()!=c.tr||airFacingTransform.load()!=c.tr||airFacingGeneration.load()!=c.gen||!airFacingRun.load()||!(gfFaceAirNow.load()||gfWalkoffActive.load()||stopFacingRun.load()))return;
   if(std::memcmp(reinterpret_cast<const void*>(c.tr),c.expected,48))return;
   for(int row=0;row<3;++row)std::memcpy(reinterpret_cast<void*>(c.tr+16*row),c.rows+4*row,12); // Never store W.
   c.wrote=true;
 }
 void airFacingStep(){
-  if(!faceFacingNativeTransform||!airFacingRun.load()||killed.load()||!gfOn.load()||!ws::drive::wsFaceAirFacing.load()||wsActiveNow(GetTickCount64())||!(gfFaceAirNow.load()||gfWalkoffActive.load()))return;
+  if(!faceFacingNativeTransform||!airFacingRun.load()||killed.load()||!gfOn.load()||!ws::drive::wsFaceAirFacing.load()||wsActiveNow(GetTickCount64())||!(gfFaceAirNow.load()||gfWalkoffActive.load()||stopFacingRun.load()))return;
   auto tr=faceFacingNativeTransform;if(!tr||tr>UINTPTR_MAX-48||gfL.gen!=gfGen.load())return;
   if(tr!=gfTransform.load()||tr!=airFacingHoldTransform.load()){airFacingEnd("hold_identity_changed");return;}
   if(tr!=airFacingTransform.load()||gfL.gen!=airFacingGeneration.load()){airFacingEnd("phase_identity_changed");return;}
   float rows[12],target[12];if(!msm2::readMemory(tr,rows,48)){gfL.airFacing.previousWrite=false;return;}
-  bool wanted=gfL.airFacing.prepare(rows,target,true,true);
+  bool stop=stopFacingRun.load();
+  if(stop){float direction[3];if(!gfL.stopRotation.target(qpcSec(qpcNow()),rows,direction)){airFacingEnd("stop_blend_complete");return;}
+    float up[3]={rows[4],rows[5],rows[6]},fwd[3]={rows[8],rows[9],rows[10]};
+    if(FaceAirFacing::unit(up))stopMaxUp.store(std::fmax(stopMaxUp.load(),std::acos(std::fmax(-1.f,std::fmin(1.f,FaceAirFacing::dot(up,gfL.stopRotation.normal))))*180.f/float(kFacePi)));
+    if(FaceAirFacing::unit(fwd))stopMaxFwd.store(std::fmax(stopMaxFwd.load(),std::acos(std::fmax(-1.f,std::fmin(1.f,FaceAirFacing::dot(fwd,gfL.stopRotation.forward))))*180.f/float(kFacePi)));
+    gfL.airFacing.target(direction,gfL.stopRotation.normal);
+  }
+  bool wanted=gfL.airFacing.prepare(rows,target,true,true,stop);
   if(wanted){bool writable=true;for(int row=0;row<3;++row)writable=writable&&writableByte(tr+16*row)&&writableByte(tr+16*row+11);
     FaceAxesStore context{tr,gfL.gen,rows,target,false};
     if(writable&&ws_guarded_call(faceAxesStoreCb,&context)&&context.wrote)gfL.airFacing.committed();
@@ -2043,7 +2068,9 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
         gfL.pinned=true;gfL.faceAir=true;gfL.faceAirT=0.f;gfL.pinPresses=wgiPresses.load();
         float speed=launchStopHop(gfL.hopArc,n0i,gfL.vg,gfL.airVel,gfL.dash);
         gfL.zipSeen=gfZipReq.load();gfStopMs.store(0);gfFaceLandingTime.store(0);gfFaceTakeoffTime.store(qpcSec(now));gfFaceAirNow.store(true);gfAir.store(true);
-        float facingDirection[3]={ws::drive::dir[0].load(),ws::drive::dir[1].load(),ws::drive::dir[2].load()};airFacingBegin(facingDirection,n0i);
+        float facingDirection[3]{};
+        if(msm2::readMemory(tr+0x20,facingDirection,12)){airFacingBegin(facingDirection,n0i);
+          if(airFacingRun.load()){gfL.stopRotation.begin(gfL.airFacing.forward,gfL.airFacing.up);stopMaxUp.store(0);stopMaxFwd.store(0);stopFacingRun.store(true);}}
         msm2::writeLog("WS_GRAVITY_FORCE_STOP_HOP event=takeoff apex_m=0.8 airtime_s=0 launch_v=%.3f d0=%.3f v=%.3f g_hop=%.3f",speed,gfL.hopArc.d0,gfL.hopArc.v,gfL.hopArc.gravity);
       } }
     if (!gfL.launched && jm && ms >= jm && ms - jm < 600) { gfL.launched = true; float h = gfJumpH.load(), v = std::sqrt(2.f * kGfG * h);
@@ -2241,10 +2268,10 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     if (gfL.stopHop ? gfL.faceAirT>=0.35f : (gfL.faceAirT > 0.1f && dq < 0.02f && vn <= 0.f)) {
       airFacingStep();
       if(gfL.stopHop){float landingD=facePlaneDistance(q,p0,n0);for(int i=0;i<3;++i)q[i]-=landingD*n0[i];} gfFaceLandingTime.store(qpcSec(now));gfL.fallIgnoreUntil=qpcSec(now)+0.5;gfL.faceAir = false; gfL.pinT = 0.f; gfL.fallGuard.resetMotion(); for (float& c : gfL.vg) c = 0.f; for (float& c : gfL.dash) c = 0.f;
-      if(gfL.stopHop) { gfL.stopEpisode.landing=qpcSec(now);gfL.stop.landed(qpcSec(now));gfL.stopHop=false;gfL.standProbe.begin(qpcSec(now));
+      if(gfL.stopHop) { gfL.stopEpisode.landing=qpcSec(now);gfL.stopRotation.landing=qpcSec(now);gfL.stop.landed(qpcSec(now));gfL.stopHop=false;gfL.standProbe.begin(qpcSec(now));
         msm2::writeLog("WS_GRAVITY_FORCE_STOP_HOP event=landing apex_m=0.8 airtime_s=%.3f d0=%.3f v=%.3f g_hop=%.3f",qpcSec(now)-gfL.stopHopTakeoff,gfL.hopArc.d0,gfL.hopArc.v,gfL.hopArc.gravity); }
       gfFaceMaskLatched.store(false);gfFaceMaskUntil.store(GetTickCount64()+100);
-      faceFacingLog("landing",true);airFacingEnd("face_landing");faceJumpTrace("landing",q,n0,qpcSec(now),true); gfLogPlane("FACE_JUMP_LANDED"); msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_LANDED t=%.2f", gfL.faceAirT); }
+      faceFacingLog("landing",true);if(!stopFacingRun.load())airFacingEnd("face_landing");faceJumpTrace("landing",q,n0,qpcSec(now),true); gfLogPlane("FACE_JUMP_LANDED"); msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_LANDED t=%.2f", gfL.faceAirT); }
     if (gfL.faceAirT > 6.f) { airFacingEnd("air_timeout"); gfFaceLandingTime.store(qpcSec(now));faceJumpTrace("timeout",q,n0,qpcSec(now),true); gfL.faceAir = false; for (float& c : gfL.vg) c = 0.f; msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_TIMEOUT"); }
   } else
   if (gfL.pinned && !sbBlendQpc.load(std::memory_order_relaxed)) {
