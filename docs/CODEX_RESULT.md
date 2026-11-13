@@ -1,3 +1,78 @@
+# M19 result — face WR start observation; conditional refusal not evidenced (2026-11-13 JST)
+
+STATUS: step1 implemented/pushed on `codex/v01c20-edi-value-provenance` as
+`b6d1138cdad2d0c3060a70c1da0bd04de64331c8`. Baseline8b46e87. Step2 has no
+evidenced refusal/skip contract; CODEX_NEXT explicitly says to stop after step1
+in that case. Step2 and step3 are NOT implemented. No claim that WR starts are
+suppressed or that sprint/stop is fixed. Actual call site remains UNKNOWN until
+the next owner log; WS_FACE_WR_START records hook and caller_rva without guessing.
+
+Read WS_GROUND_SPRINT_RESULT and DIRECTION in full, current task and unchanged
+repository/CLAUDE rules. No raw attachments/game execution/owner-PC deployment.
+Both seamless motion and retained changed gravity remain mandatory. No main
+merge, force push or cross-repo edit. Existing M18b stop behavior is untouched.
+
+## Changed
+Native Init/Entry queue capture tags the latest admitted native face frame in
+reserved slot payload, preserving Slot size/offsets and original tail jumps.
+No native diagnostic callback, new game hook or typed signature. Worker dispatch
+runs after existing complete-hook/epoch/snapshot checks and before duplicate
+lifecycle filtering. It reports<=40 WS_FACE_WR_START with held model time,
+planar native game-step speed, movement direction projected up/side, raw stick,
+RT (-1 unavailable), init|entry, caller_rva/validity, owner and Hero Transform,
+generation, native thread, sample age. Pre-WR eligibility travels with the queue
+event, so a subsequent WR/WS transition cannot relabel it using worker-current
+state.64 coherent atomic records; <=100ms freshness (+5ms coarse-clock tolerance),
+missing/overwritten/invalid evidence refuses. Game-step speed is displacement/time,
+not a read of a typed engine velocity. Owner/Hero association stays unproven.
+Exact-build/pdata/SHA/INI/default-OFF/F8, hold/pinned/not-air/not-stop gate retained.
+No jump, zip, fall, camera, mapping, stop-hop or ground-sprint movement edits.
+
+Files: camera_ref.cpp; existing hook_capture.hpp/.cpp, hook_thunks.S,
+wallrun_hooks.cpp; owned hook_abi_smoke.cpp, test_face_wr_start.py and test.sh.
+Source tree `0db97ccd30a438acccb53bcb291d93a04e3c42a6`.
+Analysis: `analysis/M19_FACE_WR_START_20261113.md`; exact commands/artifact hashes:
+`analysis/M19_CLOUD_VALIDATION_20261113.json`.
+
+## Missing evidence / stopping boundary
+Init/Entry thunks ALWAYS tail-jump to the authenticated trampoline. The existing
+BEFORE_ENABLE log explicitly says no_typed_game_signature1. Update's guarded
+wrapper fallback also continues native execution; recording/writer refusal is
+not native WR-start refusal. No evidenced early-exit branch, return value/width,
+caller rejection semantics or initialization/cleanup obligations was found in
+repository ABI/refusal references. Return0/RET or suppressing observation would
+invent behavior and cannot establish safe WR suppression. FACE_NO_WR INI and
+WS_FACE_WR_REFUSED are intentionally absent rather than claiming a working veto.
+Next evidence: actual hook/caller_rva, then exact authenticated caller/callee
+refusal contract. The read-only diagnostic does not grant that permission.
+This follows CODEX_NEXT's explicit conditional stop; no user approval is needed
+to finish the authorized read-only implementation/verification/publication.
+Wisdoms WALLSPRINT_INTERNALS3817f5e consulted; no new runtime engine fact produced
+in cloud, no shared edit claimed. Runtime WR refusal remains unimplemented.
+
+NEED: installed `MSM2-WS/Update-WS.cmd` -> Overstrike Install mods -> Run modded
+game. Stand on a face: WS, stop, A jump if crawling. Hold RT+stick UP the face3s,
+release BOTH, wait2s; repeat DOWN and SIDEWAYS. One short video and newest
+`logs\MSM2-WS-v0.1c48-<timestamp>.log`. This run collects WR-start call sites;
+WR may still start. Do not interpret it as acceptance of a suppression fix.
+
+## Cloud verification on final source tree
+
+`build_windows.sh` PASS; `test.sh` **71 PASS**; `smoke_windows.sh` **7 PASS**;
+`test_hooks_windows.sh` **907 PASS**,5 historical private-data SKIP and17
+UNAVAILABLE (no owner runtime fixtures); `package.py` **2 PASS**. Final-source
+hook attempts: 1. Exact per-attempt exits/log hashes/assertions are in the validation
+JSON. No manual skips, fixture deadline extension or assertion relaxation.
+
+Package: `source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled`.
+CRC PASS; exactly info.json/WallSprint.ini/WallSprint.dll; packaged DLL equals
+the new build and FACE_CAMERA_MAP/AIR_FACING/WALKOFF all1. DLL SHA256
+`eac064c4c2b503dd1646c0485ee7bc1a1220d16fec23f65d409833b4c1da1643`;
+package SHA256 `b4255cd70587e6248811c7bece8ce9d5e44dca74154efb830a1ab4b847a15d2b`.
+Artifact/log hashes identify cloud outputs; they do not replace real-game proof.
+
+---
+
 # M18b result — real stop end, working trace and face-only rotation (2026-11-13 JST)
 
 STATUS: three ordered steps committed/pushed to

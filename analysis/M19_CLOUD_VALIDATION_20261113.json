@@ -1,0 +1,127 @@
+{
+  "date_jst": "2026-11-13",
+  "branch": "codex/v01c20-edi-value-provenance",
+  "baseline": "8b46e8775831f766fb995ae44f0f2b8023e6a283",
+  "implementation_commits": {
+    "1": "b6d1138cdad2d0c3060a70c1da0bd04de64331c8"
+  },
+  "qa_commits": [],
+  "source_tree": "0db97ccd30a438acccb53bcb291d93a04e3c42a6",
+  "commands": {
+    "build": {
+      "command": "bash tools/build_windows.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "2fcafa762422bd4268f07550b25185c191d67f3e49eb5d993b261033a099ee8b",
+      "PASS": 0,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    },
+    "portable": {
+      "command": "bash tools/test.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "c4aff92f86a097e824e427ebf42326b2fe0147758c8241a493e7e4c92a5c1c20",
+      "PASS": 71,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    },
+    "smoke": {
+      "command": "bash tools/smoke_windows.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "ac877e7f7a87e76a3e786ddc33902ee3c3ebf7dd217226a29157834385caf625",
+      "PASS": 7,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    },
+    "package": {
+      "command": "python3 tools/package.py",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "ea15817b51246d679491e1c29c49dd38d0c8380d21b99f892b09c1c67e3baa45",
+      "PASS": 2,
+      "SKIP": 0,
+      "UNAVAILABLE": 0,
+      "FAIL": 0,
+      "assertions": []
+    },
+    "hooks": {
+      "command": "bash tools/test_hooks_windows.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "d88661d104356bfb2590db32d5ef1e3da9e947182df2667eae7f4577b1bdea3f",
+      "PASS": 907,
+      "SKIP": 5,
+      "UNAVAILABLE": 17,
+      "FAIL": 0,
+      "assertions": [],
+      "attempts": 1
+    }
+  },
+  "final_source_hook_attempts": {
+    "hooks-attempt1": {
+      "command": "bash tools/test_hooks_windows.sh",
+      "cwd": "source",
+      "exit_code": 0,
+      "log_sha256": "d88661d104356bfb2590db32d5ef1e3da9e947182df2667eae7f4577b1bdea3f",
+      "PASS": 907,
+      "SKIP": 5,
+      "UNAVAILABLE": 17,
+      "FAIL": 0,
+      "assertions": []
+    }
+  },
+  "artifact_check": {
+    "members": [
+      "info.json",
+      "WallSprint.ini",
+      "WallSprint.dll"
+    ],
+    "crc": "PASS",
+    "dll_matches_build": true,
+    "enabled_switches": {
+      "WALLSPRINT_WS_FACE_CAMERA_MAP": 1,
+      "WALLSPRINT_WS_FACE_AIR_FACING": 1,
+      "WALLSPRINT_WS_FACE_WALKOFF": 1
+    },
+    "face_no_wr_switch": "absent; no refusal implemented",
+    "dll": {
+      "path": "source/build/windows/WallSprint.dll",
+      "bytes": 32026705,
+      "sha256": "eac064c4c2b503dd1646c0485ee7bc1a1220d16fec23f65d409833b4c1da1643"
+    },
+    "script_disabled": {
+      "path": "source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled",
+      "bytes": 3368657,
+      "sha256": "b4255cd70587e6248811c7bece8ce9d5e44dca74154efb830a1ab4b847a15d2b"
+    }
+  },
+  "fixture_triage": {
+    "final_suites": "See per-attempt records; no deadline/assertion changes or manual skips."
+  },
+  "wisdoms": {
+    "consulted_main": "3817f5e495292e935d74a5b76d59c639c02c85cc",
+    "status": "Canonical WALLSPRINT_INTERNALS already includes supplied M16 contact/hop and camera observations; no new cloud runtime fact/cross-repo edit."
+  },
+  "owner_game": "UNKNOWN; no game execution in cloud. Required owner run in CODEX_RESULT.",
+  "limitations": [
+    "Step2 and step3 unimplemented under explicit conditional stop: no evidenced Init/Entry refusal contract.",
+    "Runtime hook/caller_rva awaits owner log; no fabricated call site.",
+    "Tagged evidence is latest native face frame within100ms, not instantaneous engine state or typed velocity.",
+    "Native owner/Hero association and causal refusal remain unproven.",
+    "Missing/overwritten/old face frame and queue loss cannot become positive evidence."
+  ],
+  "conditional_stop": {
+    "step1": "implemented",
+    "step2": "not implemented: no evidenced Init/Entry early-exit/return/caller-rejection contract",
+    "step3": "not implemented: CODEX_NEXT says stop after step1 if refusal evidence absent",
+    "runtime_call_site": "UNKNOWN until owner WS_FACE_WR_START hook/caller_rva log"
+  }
+}

@@ -56,3 +56,21 @@ No jump/zip/fall/camera/mapping/stop-hop changes. Read-only observation only.
 Wisdoms WALLSPRINT_INTERNALS3817f5e consulted; no new runtime engine fact or
 cross-repository edit is claimed. Runtime effect of WR refusal remains UNKNOWN
 because refusal is deliberately absent under the task's conditional instruction.
+
+## Cloud verification on final source tree
+
+`build_windows.sh` PASS; `test.sh` **71 PASS**; `smoke_windows.sh` **7 PASS**;
+`test_hooks_windows.sh` **907 PASS**,5 historical private-data SKIP and17
+UNAVAILABLE (no owner runtime fixtures); `package.py` **2 PASS**. Final-source
+hook attempts: 1. Exact per-attempt exits/log hashes/assertions are in the validation
+JSON. No manual skips, fixture deadline extension or assertion relaxation.
+
+Package: `source/output/MSM2-WS-v0.1c48/MSM2-WS-v0.1c48.script.disabled`.
+CRC PASS; exactly info.json/WallSprint.ini/WallSprint.dll; packaged DLL equals
+the new build and FACE_CAMERA_MAP/AIR_FACING/WALKOFF all1. DLL SHA256
+`eac064c4c2b503dd1646c0485ee7bc1a1220d16fec23f65d409833b4c1da1643`;
+package SHA256 `b4255cd70587e6248811c7bece8ce9d5e44dca74154efb830a1ab4b847a15d2b`.
+Artifact/log hashes identify cloud outputs; they do not replace real-game proof.
+
+Final source tree `0db97ccd30a438acccb53bcb291d93a04e3c42a6`; task commits and QA persisted above.
+Real-game owner acceptance remains UNKNOWN.
