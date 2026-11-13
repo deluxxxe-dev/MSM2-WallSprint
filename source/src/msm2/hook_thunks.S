@@ -55,6 +55,12 @@
  mov eax,DWORD PTR gs:[0x48]
  mov DWORD PTR [r10+36],eax
  mov DWORD PTR [r10+32],\kind
+ # M19 read-only face-frame tag in reserved payload. No call/return/signature change.
+ xor eax,eax
+ .if \kind == 0 || \kind == 1
+ mov rax,QWORD PTR ws_face_wr_diagnostic_tag[rip]
+ .endif
+ mov QWORD PTR [r10+40],rax
  lea rax,[r8+1]
  # x86-64 store-release publishes payload; C++ consumer uses acquire.
  mov QWORD PTR [r10],rax
@@ -192,6 +198,7 @@ ws_hook_update:
  mov eax,DWORD PTR gs:[0x48]
  mov DWORD PTR [r10+36],eax
  mov DWORD PTR [r10+32],2
+ mov QWORD PTR [r10+40],0
  lea rax,[r8+1]
  # x86-64 store-release publishes payload; C++ consumer uses acquire.
  mov QWORD PTR [r10],rax

@@ -5,6 +5,7 @@ mkdir -p build logs
 
 # Fail fast on the active c48 read-only WallRun scalar/threshold/config/version/package contract
 # (including the dormant c45 presence-hook identity/safety contract) before long suites.
+python3 tools/test_face_wr_start.py
 python3 tools/test_stop_transition.py
 python3 tools/test_face_camera_map.py
 python3 tools/test_face_air_facing.py

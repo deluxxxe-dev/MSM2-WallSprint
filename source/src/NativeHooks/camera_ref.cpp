@@ -21,6 +21,7 @@
 #include <vector>
 #include <mutex>
 #include "NativeHooks/camera_ref.hpp"
+#include "msm2/hook_capture.hpp"
 #include "msm2/actor_writer.hpp"
 #include "msm2/ws_settings.hpp"
 #include "msm2/drive_command.hpp"
@@ -2022,6 +2023,43 @@ void stopTraceSample(const float* p,const float* gameRows,bool gameValid,bool wr
   msm2::writeLog("WS_STOP_TRACE t=%.4f plane_d=%.4f v_plane=%.4f up_dot_n=%.6f fwd_up=%.6f fwd_side=%.6f game_step_n=%.6f game_step_plane=%.6f writes=%u release_blocked=%u episode=%u game_step_valid=%u blocked_frames=%u v_source=stop_model game_up_dot_n=%.6f game_fwd_up=%.6f game_fwd_side=%.6f written=%u",
     elapsed,facePlaneDistance(p,plane,n),gfL.stopDecel.speed(now-gfL.stopHopTakeoff),FaceAirFacing::dot(up,n),FaceAirFacing::dot(fwd,vertical),FaceAirFacing::dot(fwd,side),stepN,std::hypot(tangent[0],tangent[1],tangent[2]),airFacingWrites.load(),unsigned(gfL.stopReleaseBlocked),gfL.stopTraceId,unsigned(gfL.walkFrame.gameValid),gfL.stopEpisode.blocked,FaceAirFacing::dot(gameUp,n),FaceAirFacing::dot(gameFwd,vertical),FaceAirFacing::dot(gameFwd,side),unsigned(written));
 }
+// M19_WR_START_BEGIN: read-only evidence attached to the actual lifecycle queue event.
+struct FaceWrEvidence {
+  float velocity[3]{},normal[3]{},sx{},sy{},rt{-1};double ms{},holdTime{};std::uintptr_t transform{};unsigned generation{};
+  bool fresh(double when)const{return std::isfinite(when)&&when>=ms-5&&when-ms<=100;}
+  bool metrics(float& speed,float& up,float& side)const{
+    float vertical[3]{},horizontal[3]{};if(!faceBasis(normal,vertical,horizontal))return false;
+    float along=0;for(int i=0;i<3;++i)along+=velocity[i]*normal[i];float tangent[3];for(int i=0;i<3;++i)tangent[i]=velocity[i]-along*normal[i];
+    speed=std::hypot(tangent[0],tangent[1],tangent[2]);up=side=0;
+    if(!std::isfinite(speed))return false;
+    if(speed>1e-5f)for(int i=0;i<3;++i){up+=tangent[i]*vertical[i]/speed;side+=tangent[i]*horizontal[i]/speed;}
+    return true;
+  }
+};
+// M19_WR_START_END
+struct FaceWrSlot {std::atomic<std::uint64_t> tag{0};std::atomic<double> ms{0},hold{0};std::atomic<std::uintptr_t> tr{0};std::atomic<unsigned> gen{0};std::atomic<float> v[3]{},n[3]{},sx{0},sy{0},rt{-1};};
+FaceWrSlot faceWrFrames[64];std::atomic<std::uint64_t> faceWrSequence{0};std::atomic_flag faceWrWriter=ATOMIC_FLAG_INIT;
+std::atomic<unsigned> faceWrLogs{0};std::uintptr_t faceWrImage{},faceWrImageSize{};
+void faceWrPublish(bool frame){
+  bool eligible=installed.load()&&!killed.load()&&ws::drive::wsGravityTest.load()&&gfOn.load()&&gfPinnedNow.load()&&!gfFaceAirNow.load()&&!stopHopRun.load()&&!wsActiveNow(GetTickCount64());
+  if(!eligible){ws_face_wr_diagnostic_tag.store(0);return;}
+  if(!frame||!gfL.walkFrame.gameValid)return;
+  if(faceWrWriter.test_and_set())return;
+  auto id=faceWrSequence.fetch_add(1)+1;auto& a=faceWrFrames[id%64];a.tag.store(0);a.ms.store(double(GetTickCount64()));a.hold.store(gfL.t);a.tr.store(gfTransform.load());a.gen.store(gfL.gen);
+  for(int i=0;i<3;++i){a.v[i].store(gfL.walkFrame.gameStep[i]/gfL.frameDt);a.n[i].store(gfN0[i].load());}
+  a.sx.store(wgiLx.load());a.sy.store(wgiLy.load());a.rt.store(wgiReadTarget ? float(wgiRt.load()):-1.f);a.tag.store(id);ws_face_wr_diagnostic_tag.store(id);faceWrWriter.clear();
+}
+void faceWrEvent(const ws::capture::Event& event,double when) noexcept {
+  if(!installed.load()||killed.load()||!ws::drive::wsGravityTest.load())return;
+  auto id=event.faceTag;auto& a=faceWrFrames[id%64];if(a.tag.load()!=id)return;
+  FaceWrEvidence e;e.ms=a.ms.load();e.holdTime=a.hold.load();e.transform=a.tr.load();e.generation=a.gen.load();e.sx=a.sx.load();e.sy=a.sy.load();e.rt=a.rt.load();
+  for(int i=0;i<3;++i){e.velocity[i]=a.v[i].load();e.normal[i]=a.n[i].load();}
+  if(a.tag.load()!=id||!e.fresh(when))return;
+  float speed=0,up=0,side=0;if(!e.metrics(speed,up,side)||faceWrLogs.fetch_add(1)>=40)return;
+  bool callerOk=event.caller>=faceWrImage&&event.caller-faceWrImage<faceWrImageSize;
+  msm2::writeLog("WS_FACE_WR_START t=%.4f speed=%.4f move_dir_up=%.6f move_dir_side=%.6f stick=%.3f,%.3f rt=%.3f hook=%s caller_rva=0x%llx caller_valid=%u owner=0x%llx transform=0x%llx generation=%u face_sample_age_ms=%.3f native_thread=%u source=tagged_native_face_frame read_only=1",
+    e.holdTime,speed,up,side,e.sx,e.sy,e.rt,event.kind==0 ? "init":"entry",(unsigned long long)(callerOk ? event.caller-faceWrImage:0),unsigned(callerOk),(unsigned long long)event.self,(unsigned long long)e.transform,e.generation,when-e.ms,event.thread);
+}
 void faceInputLog(const char* event, const float* n, const float* velocity, const char* source, double now, bool velocityFallback=false) {
   float up[3]{},side[3]{}; faceBasis(n,up,side);
   float u=0,s=0; for(int i=0;i<3;++i) { u+=velocity[i]*up[i]; s+=velocity[i]*side[i]; }
@@ -2536,7 +2574,7 @@ std::uintptr_t sp2Detour(std::uintptr_t tr, std::uintptr_t pos, std::uintptr_t r
       if(force){FaceFacingCallScope facingScope(tr);sp2HeroCalls.fetch_add(1,std::memory_order_relaxed);gmQpc.store(qpcNow(),std::memory_order_relaxed);static thread_local HeroFrameClock traceClock;static thread_local std::uintptr_t traceOwner=0;
         double traceNow=qpcSec(qpcNow());if(traceOwner!=tr){traceClock={};traceOwner=tr;}
         bool traceFrame=traceClock.step(traceNow,true);float gameRows[12]{};bool gameValid=msm2::readMemory(tr,gameRows,48);auto beforeWrites=airFacingWrites.load();
-        gfStep(A,Bn);airFacingStep();if(traceFrame)stopTraceSample(Bn,gameRows,gameValid,airFacingWrites.load()>beforeWrites);}
+        gfStep(A,Bn);airFacingStep();if(traceFrame)stopTraceSample(Bn,gameRows,gameValid,airFacingWrites.load()>beforeWrites);faceWrPublish(traceFrame);}
       if(captured){stateFrames.applied(B,Bn);frameLock.unlock();}
       if(force&&(Bn[0]!=B[0]||Bn[1]!=B[1]||Bn[2]!=B[2])){sp2Edits.fetch_add(1,std::memory_order_relaxed);return sp2Orig(tr,reinterpret_cast<std::uintptr_t>(Bn),r8,r9);}
     }
@@ -2801,6 +2839,7 @@ void stateDiagnosticTick(const msm2::Snapshot& hero,std::uint64_t nowMs){
   if(!stateRuntime.loggedSize){stateRuntime.loggedSize=true;msm2::writeLog("WS_STATE_READABLE hero_bytes=%u transform_bytes=%u block_bytes=256 cadence_ms=50 capacity_per_label=60 labels=7 ground_vertical_source=hero_gravity_block diagnostic_only=1",snapshot.heroBytes,snapshot.transformBytes);}
 }
 void gfSummary(const char* why) {
+  ws_face_wr_diagnostic_tag.store(0);
   stopTracePoll(GetTickCount64()+1500);stopEndReady.store(false);stopHopRun.store(false);
   airFacingEnd(why);
   walkoffEnd(why);
@@ -2970,7 +3009,8 @@ void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
   sp2Install(image, imageSize);  // M10z-r15 hero SetPosition
   if (MH_CreateHook(reinterpret_cast<void*>(target), reinterpret_cast<void*>(&ws_camref_thunk), &ws_camref_original) != MH_OK) return;
   installed = MH_EnableHook(reinterpret_cast<void*>(target)) == MH_OK;
-  if (installed.load()) ws_wallsprint_update_listener.store(&onWallSprintUpdate, std::memory_order_release);
+  if (installed.load()) {ws_wallsprint_update_listener.store(&onWallSprintUpdate, std::memory_order_release);
+    faceWrImage=image;faceWrImageSize=imageSize;ws::capture::faceEventListener.store(&faceWrEvent,std::memory_order_release);}
   if (installed.load() && imageSize > kSetterRva + 64) {
     setTarget = image + kSetterRva; DWORD64 sb = 0; auto* sf = RtlLookupFunctionEntry(setTarget, &sb, nullptr);
     unsigned char se[64]{}; char sh[65]{};
@@ -2993,7 +3033,7 @@ void onWallSprintUpdate() noexcept {
   // orientation override has rotated the hero onto the wall (entry 0.70 s + 0.25 s rotation), so the camera
   // blend starts from the final frame instead of following the rotating actor axes (camera dived to the feet).
   if (nowMs - lastWsMs.load() > 300) wsSessionStartMs.store(nowMs);
-  lastWsMs.store(nowMs);
+  lastWsMs.store(nowMs);ws_face_wr_diagnostic_tag.store(0);
   if(stopHopRun.exchange(false)||stopFacingRun.load()||stopEndReady.load()){
     stopEndReady.store(false);airFacingEnd("new_ws_stop_cancelled");gfFaceAirNow.store(false);gfAir.store(false);gfPinnedNow.store(false);gfOn.store(false);
     msm2::writeLog("WS_STOP_TRACE event=cancel reason=new_ws rows_released=1 blend=0");
@@ -3101,8 +3141,9 @@ void tick(const msm2::Snapshot& snapshot, const ws::diag::Motion& motion, bool a
   }
 }
 
-void kill() noexcept { stateDiagOn.store(false);gbRestoreNow(); jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("kill"); }
+void kill() noexcept { ws_face_wr_diagnostic_tag.store(0);ws::capture::faceEventListener.store(nullptr); stateDiagOn.store(false);gbRestoreNow(); jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("kill"); }
 void stop() noexcept {
+  ws_face_wr_diagnostic_tag.store(0);ws::capture::faceEventListener.store(nullptr);
   stateDiagOn.store(false);gbRestoreNow(); jcRestoreNow(); killed = true; ws_wallsprint_update_listener.store(nullptr); restore("stop");
   stateReport("exit");
   for (int m = 0; m < 4; ++m) { if (xgTarget[m]) MH_DisableHook(xgTarget[m]); if (xsTarget[m]) MH_DisableHook(xsTarget[m]); }

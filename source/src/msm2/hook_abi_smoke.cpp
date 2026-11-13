@@ -68,6 +68,7 @@ int main(){
  void* targets[]={reinterpret_cast<void*>(&integerTarget),reinterpret_cast<void*>(&floatTarget),reinterpret_cast<void*>(&vectorTarget),reinterpret_cast<void*>(&ws_test_probe_target)};
  void (*thunks[])()={ws_hook_init,ws_hook_entry,ws_hook_update,ws_hook_deinit};
  for(int i=0;i<4;++i){assert(MH_CreateHook(targets[i],reinterpret_cast<void*>(thunks[i]),&ws_hook_originals[i])==MH_OK);assert(MH_EnableHook(targets[i])==MH_OK);}
+ ws_face_wr_diagnostic_tag.store(0x12345678);
  ws_hook_recording.store(1);
  if(avx)ws_write_dispatch_enabled=1;
  unsigned oldMxcsr=_mm_getcsr();unsigned short originalControl=0,control=0;__asm__ volatile("fnstcw %0":"=m"(originalControl));control=(originalControl&~0x300u)|0x200u;__asm__ volatile("fldcw %0; fld1"::"m"(control));
@@ -75,8 +76,9 @@ int main(){
  double x87=0;__asm__ volatile("fstpl %0":"=m"(x87));assert(x87==1.);unsigned short afterControl=0;__asm__ volatile("fnstcw %0":"=m"(afterControl));assert(afterControl==control&&_mm_getcsr()==oldMxcsr);__asm__ volatile("fldcw %0"::"m"(originalControl));
  float result[4];_mm_storeu_ps(result,vector(x,y));assert(std::memcmp(result,expectedVector,sizeof(result))==0);
  if(avx){ws_test_invoke_probe(reinterpret_cast<void*>(&ws_test_probe_target));for(unsigned i=0;i<11;++i){auto mask=i==7?0x8c5ull:~0ull;assert((ws_test_gprs[i]&mask)==(gp[i]&mask));}assert(std::memcmp(ws_test_vectors,vectors.data(),sizeof(ws_test_vectors))==0);assert(ws_test_result==0x77aabbcc11223344ull);}
- ws::capture::Event event;unsigned seen[4]{};while(ws::capture::pop(event)){assert(event.kind<4&&event.caller&&event.tsc&&event.thread==GetCurrentThreadId());++seen[event.kind];}
+ ws::capture::Event event;unsigned seen[4]{};while(ws::capture::pop(event)){assert(event.kind<4&&event.caller&&event.tsc&&event.thread==GetCurrentThreadId());assert(event.faceTag==((event.kind==0||event.kind==1) ? 0x12345678u:0u));++seen[event.kind];}
  assert(seen[0]==1&&seen[1]==1&&seen[2]==1&&seen[3]==unsigned(avx));
+ ws_face_wr_diagnostic_tag.store(0);
  const unsigned iterations=5000,threadCount=4;std::atomic<unsigned> completed{0};std::vector<std::thread> threads;
  auto droppedBefore=ws::capture::dropped();std::uint64_t captured=0;
  for(unsigned t=1;t<=threadCount;++t)threads.emplace_back([&,t]{for(unsigned i=0;i<iterations;++i){auto value=integer(reinterpret_cast<void*>(std::uintptr_t(t)),11,22,33,44,55);assert(value==((t^11u)+3*22+5*33+7*44+11*55));}++completed;});

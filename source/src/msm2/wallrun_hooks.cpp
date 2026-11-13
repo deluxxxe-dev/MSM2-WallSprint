@@ -180,7 +180,7 @@ void drain(const Snapshot* snapshot,const ws::diag::Motion& motion,std::uint64_t
  ws::capture::Event e{};unsigned count=0;
  while(count++<ws::capture::capacity&&ws::capture::pop(e)){
   if(e.kind>=4||!verifiedAvailable||!snapshot||e.tsc<=resetFloorTsc)continue;
-  double when=eventMs(e.tsc,now);auto before=observer.context(when);
+  double when=eventMs(e.tsc,now);ws::capture::observeFaceEvent(e,when);auto before=observer.context(when);
   if(e.kind==0&&before.wallRunActive){clearSessions(e.self==before.wallRunOwner?"unexpected_duplicate_init":"candidate_owner_mismatch");resetFloorTsc=readTsc();stateLog(when);continue;}
   if(before.wallRunActive&&e.self!=before.wallRunOwner){clearSessions("candidate_owner_mismatch");resetFloorTsc=readTsc();stateLog(when);continue;}
   if(e.kind==3&&before.wallRunActive){auto it=sessions.find(e.self);if(it!=sessions.end())videoSample(it->second,*snapshot,motion,snapshotMs);objectSummary("verified_deinit");surfaceTracker.finish(objectFields,before.wallRunSessionId,when,writeLog);msm2::source::finish(before.wallRunSessionId,when);}
