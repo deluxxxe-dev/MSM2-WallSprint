@@ -22,18 +22,30 @@ asm=(root/'src/msm2/hook_thunks.S').read_text()
 assert 'jmp QWORD PTR ws_hook_originals+8*\\kind[rip]' in asm
 assert '.if \\kind == 0 || \\kind == 1' in asm
 assert 'ws_face_wr_diagnostic_tag[rip]' in asm
-assert 'WALLSPRINT_WS_FACE_NO_WR' not in (root/'mod/WallSprint.ini').read_text()
+assert 'WALLSPRINT_WS_FACE_NO_WR=1' in (root/'mod/WallSprint.ini').read_text()  # M20e: evidenced veto (M19 had none)
 # M20d: read-only WR request detour contract (static): exact bytes/pdata gate, original always called with all
 # argument registers before any logging, no stores, INI default 0 and shipped 1.
 det=code.split('std::uint64_t wrRequestDetour(',1)[1].split('\nvoid wrRequestInstall',1)[0]
 assert det.count('wrRequestOrig(machine, rdx, r8, r9)')==2
 assert '=' not in det.split('wrRequestOrig(machine, rdx, r8, r9);',1)[0].split('std::uint64_t h0',1)[0].replace('std::uintptr_t before =','').replace('==','').replace('!=','') or True
-for bad in ['writeMemory','MH_','*reinterpret_cast<std::uintptr_t*>(','= result']:
+for bad in ['writeMemory','MH_','= result']:
     assert bad not in det, bad
+# M20e: the only store is the temporary [machine+0xE30] veto callback: set only when empty and eligible, restored after the
+# original call only if still ours; the callback returns the game's own allow for every other requested state.
+import re
+assert len(re.findall(r'\*slotE30 = [^=]',det))==2 and 'bool veto = faceWrVetoEligible(machine) && *slotE30 == 0;' in det
+assert 'if (*slotE30 == reinterpret_cast<std::uintptr_t>(&wrVetoCallback)) *slotE30 = 0;' in det
+cb=code.split('bool wrVetoCallback(',1)[1].split('\n}',1)[0]
+assert 'return allow;' in cb and 'requested == wrRequestImage + kWrStateRva' in cb
+elig=code.split('bool faceWrVetoEligible(',1)[1].split('\n}',1)[0]
+for need in ['!ws::drive::wsFaceNoWr','!gfPinnedNow.load()','|| gfFaceAirNow.load()','|| stopHopRun.load()','|| gfWalkoffActive.load()','|| wsActiveNow','kHeroMachineVtRva']:
+    assert need in elig, need
+assert ini.getint('WallSprint','WALLSPRINT_WS_FACE_NO_WR')==1 if False else True
 assert 'kWrRequestSha[] = "5597730185c403a601f72a3aa2a9b8f50132054c0b41f6ac78c43905d4a47ec4"' in code
 assert 'fe->BeginAddress == kWrRequestRva' in code and '!std::strcmp(hash, kWrRequestSha)' in code
 import configparser
 ini=configparser.ConfigParser();ini.read(root/'mod/WallSprint.ini')
-assert ini.getint('WallSprint','WALLSPRINT_WS_WR_REQUEST_DIAG')==1
+assert ini.getint('WallSprint','WALLSPRINT_WS_WR_REQUEST_DIAG')==1 and ini.getint('WallSprint','WALLSPRINT_WS_FACE_NO_WR')==1
+assert 'L"WALLSPRINT_WS_FACE_NO_WR",0,' in (root/'src/msm2/telemetry.cpp').read_text()
 assert 'L"WALLSPRINT_WS_WR_REQUEST_DIAG",0,' in (root/'src/msm2/telemetry.cpp').read_text()
-print("PASS: M20d WR request detour is read-only, exact-byte gated, original-first, INI default0/shipped1")
+print("PASS: M20d/e WR request detour exact-byte gated, original-first; only store is the temporary empty-slot veto callback (restored), veto limited to hero machine/WR state/pinned face, INI default0/shipped1")

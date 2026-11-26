@@ -91,3 +91,4 @@ a1cb4f2bd957b89d9f1cfa050cedacb80cf6a21b 2026-11-26 build+test.sh+package PASS; 
 0db5961a46a6b45e39010272eb567953ad9ab975 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M20b windowed locomotion-down limit, WR caller code capture; by Claude Code)
 f02f0e26fc2ba00cfb6c5896a77a81d7ab8bcf6c 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M20c read-only WR transition caller scan; by Claude Code)
 27ed18882779bb875a2f9de6bf717d0a234fb4b4 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M20d read-only WR request detour; by Claude Code)
+bd6710373b01bb7464d88cba9adfb5e26b0055e6 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M20e WR veto on the face; by Claude Code)

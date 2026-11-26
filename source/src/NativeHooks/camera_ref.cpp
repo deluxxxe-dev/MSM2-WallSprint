@@ -2691,19 +2691,45 @@ constexpr char kWrRequestSha[] = "5597730185c403a601f72a3aa2a9b8f50132054c0b41f6
 using WrRequestFn = std::uint64_t (*)(std::uintptr_t, std::uintptr_t, std::uintptr_t, std::uintptr_t);
 WrRequestFn wrRequestOrig = nullptr; std::uintptr_t wrRequestImage = 0, wrRequestImageSize = 0; std::atomic<unsigned> wrRequestLogs{0};
 std::uint64_t wrRequestRva(std::uintptr_t p) { return p >= wrRequestImage && p - wrRequestImage < wrRequestImageSize ? p - wrRequestImage : 0; }
+// M20e: veto of the vanilla WR start while the hero stands on a face in the hold (phase B). Evidence (log 20261126-133537,
+// analysis/M20C_WR_TRANSITION_20261126.md): every WR start on the face came from the hero traversal machine (vtable RVA
+// 0x85EA4A8) requesting the state descriptor RVA 0xB467FD0, with no callback at [machine+0xE30]. Static: 0x36825E0 calls
+// [machine+0xE30](owner, current, requested, context, allow) when non-null and, on the path that reaches the transition at
+// 0x36827AC, skips the transition when the result is 0 (0x368279A: test r14b; je 0x3682AA3). The veto callback is placed
+// in [machine+0xE30] only for the duration of one original call, only when that slot is empty, and restored right after;
+// it returns the game's own `allow` for every other request.
+constexpr std::uintptr_t kHeroMachineVtRva = 0x85EA4A8, kWrStateRva = 0xB467FD0;
+std::atomic<unsigned> wrVetoes{0}, wrVetoLogs{0}, wrVetoIgnored{0}; thread_local bool wrVetoFired = false;
+bool wrVetoCallback(std::uintptr_t, std::uintptr_t, std::uintptr_t requested, std::uintptr_t, bool allow) {
+  if (requested == wrRequestImage + kWrStateRva) { wrVetoFired = true; return false; }
+  return allow;
+}
+bool faceWrVetoEligible(std::uintptr_t machine) {
+  if (!ws::drive::wsFaceNoWr.load(std::memory_order_relaxed) || !gfOn.load() || !gfPinnedNow.load() || gfFaceAirNow.load() || stopHopRun.load() || gfWalkoffActive.load() || wsActiveNow(GetTickCount64())) return false;
+  std::uintptr_t vt = *reinterpret_cast<const std::uintptr_t*>(machine);
+  return wrRequestRva(vt) == kHeroMachineVtRva && wrVetoes.load(std::memory_order_relaxed) < 2000;
+}
 std::uint64_t wrRequestDetour(std::uintptr_t machine, std::uintptr_t rdx, std::uintptr_t r8, std::uintptr_t r9) {
   if (!ws::drive::wsWrRequestDiag.load(std::memory_order_relaxed) || killed.load(std::memory_order_relaxed) || !machine) return wrRequestOrig(machine, rdx, r8, r9);
   // The original itself reads [machine+0xE1D], [machine+0x10] and [machine+0xE30] on entry/path 1, so these reads stay
   // inside the object the game already uses.
   std::uintptr_t before = *reinterpret_cast<const std::uintptr_t*>(machine + 0x70);
   std::uint64_t h0 = ws_hook_head.load(std::memory_order_acquire);
+  auto* slotE30 = reinterpret_cast<std::uintptr_t*>(machine + 0xE30);
+  bool veto = faceWrVetoEligible(machine) && *slotE30 == 0;
+  if (veto) { wrVetoFired = false; *slotE30 = reinterpret_cast<std::uintptr_t>(&wrVetoCallback); }
   std::uint64_t result = wrRequestOrig(machine, rdx, r8, r9);
+  if (veto) { if (*slotE30 == reinterpret_cast<std::uintptr_t>(&wrVetoCallback)) *slotE30 = 0;
+    if (wrVetoFired) { wrVetoes.fetch_add(1);
+      if (wrVetoLogs.fetch_add(1) < 40) msm2::writeLog("WS_FACE_WR_REFUSED machine=0x%llx state_before=0x%llx state_after=0x%llx result=0x%llx stick=%.2f,%.2f rt=%.2f count=%u",
+        (unsigned long long)machine, (unsigned long long)before, (unsigned long long)*reinterpret_cast<const std::uintptr_t*>(machine + 0x70), (unsigned long long)result, wgiLx.load(), wgiLy.load(), wgiReadTarget ? float(wgiRt.load()) : -1.f, wrVetoes.load()); } }
   std::uint64_t h1 = ws_hook_head.load(std::memory_order_acquire);
   if (h1 == h0 || h1 - h0 > 64) return result;
   std::uint32_t thread = GetCurrentThreadId(); bool init = false, entry = false; std::uintptr_t initSelf = 0;
   for (std::uint64_t i = h0; i < h1; ++i) { const auto& slot = ws_hook_slots[i & (ws::capture::capacity - 1)];
     if (slot.thread != thread) continue;
     if (slot.kind == 0) { init = true; initSelf = slot.self; } else if (slot.kind == 1) entry = true; }
+  if (init && veto && wrVetoFired && wrVetoIgnored.fetch_add(1) < 20) msm2::writeLog("WS_FACE_WR_VETO_IGNORED machine=0x%llx reason=wr_init_despite_callback_false", (unsigned long long)machine);
   if (!init || wrRequestLogs.fetch_add(1) >= 60) return result;
   std::uintptr_t owner = *reinterpret_cast<const std::uintptr_t*>(machine + 0x10), after = *reinterpret_cast<const std::uintptr_t*>(machine + 0x70);
   std::uintptr_t callback = *reinterpret_cast<const std::uintptr_t*>(machine + 0xE30), vt = *reinterpret_cast<const std::uintptr_t*>(machine);
