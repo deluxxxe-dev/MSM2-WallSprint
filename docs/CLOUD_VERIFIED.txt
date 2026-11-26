@@ -89,3 +89,4 @@ db323df9a6433dfc8f7967b1fb2e3bc346f556c1 2026-11-12 build+test.sh+smoke+hooks+pa
 0db97ccd30a438acccb53bcb291d93a04e3c42a6 2026-11-13 build+test.sh+smoke+hooks+package PASS (M19 read-only tagged face WR start diagnostic; conditional stop after step1; hooks attempts=1)
 a1cb4f2bd957b89d9f1cfa050cedacb80cf6a21b 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine aborts in this container) (M20 locomotion-down exemption, WR-start state diagnostic; by Claude Code)
 0db5961a46a6b45e39010272eb567953ad9ab975 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M20b windowed locomotion-down limit, WR caller code capture; by Claude Code)
+f02f0e26fc2ba00cfb6c5896a77a81d7ab8bcf6c 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M20c read-only WR transition caller scan; by Claude Code)

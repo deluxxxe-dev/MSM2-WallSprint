@@ -2,6 +2,33 @@
 
 This file records deferred user-facing features that should be implemented only after the underlying movement/ownership foundation is safe enough. It does not authorize bypassing the current analysis gates.
 
+## Current roadmap (owner decisions 2026-11-26; supersedes older orderings where they conflict)
+
+Core idea (verified 2026-11-13/26): once the hero stands on a face with the hero gravity up = face normal
+("face-as-ground"), the game's own ground locomotion runs and stops there (walk and RT sprint ~10 m/s in all directions,
+natural stop). WallSprint should therefore become "the game's ground movement on a rotated ground", with the rotation of
+gravity and body done smoothly, never by hops.
+
+Owner requirements:
+- Entry into face-as-ground from the AIR (jump/swing/zip to a wall) and from the GROUND (running into a wall), both
+  without a hop: gravity and body rotate naturally onto the new face.
+- WS reaching the edge of a face, without a jump/fall, wraps naturally around onto the adjacent face (convex corner);
+  ground -> wall is the concave version of the same transfer. Wall -> face at another angle is the same problem, so the
+  ground entry may be implemented together with corner transfer.
+- Stop from WS = the game's own sprint stop (no crawl, no hop). The changed gravity is kept in the air until a new WS or B
+  (falls go along it).
+
+Phases:
+| Phase | Scope | State 2026-11-26 |
+|---|---|---|
+| A | Face-as-ground locomotion on one face: walk/sprint/stop in all directions, no false fall handling | Done (M20/M20b, owner OK up/down/side) |
+| B | Keep the game from starting a vanilla WR while the hero stands on the face (intermittent at an up-sprint start) | Evidence collection: WR start goes through state-transition helper 0x367E5B0; the deciding caller is one level up (M20c scan) |
+| C | Entry from the air: reaching a wall while airborne lands on the face standing (gravity set before contact or WR start replaced), no hop | Next after B evidence |
+| D | Smooth gravity/body rotation while grounded: convex corner wrap to the adjacent face and concave entry ground -> wall (and wall -> other faces) without a hop | After C; needs a grounded gravity-rotation experiment first |
+| E | Air behaviour on the rotated gravity: falls with the camera following (P4), no pass-through on other buildings (P5) | Later |
+| F | Jumps and web zip on the face (P2/P3/P6), then parkour, swing, combat per the older stages | Later |
+The stop hop (M15-M18) stays only as a fallback until C/D replace the WR-based WS.
+
 ## Owner requirements 2026-11-07 (authoritative, methods free)
 Concept: the wall is treated as the ground; WS should perform like ground movement.
 Mandatory, in this order unless implementation needs reorder:

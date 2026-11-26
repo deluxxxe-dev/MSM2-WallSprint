@@ -19,3 +19,14 @@ Owner: up, side and down all fine. Question: the face sprint feels slightly slow
 - So the decision to start WR is made by the caller of 0x367E5B0, one level up; the M19 diagnostic records only the
   immediate return address. A WR refusal needs that upstream caller (next evidence: a bounded return-address chain at the
   WR Init call while standing on the face).
+
+## M20c (implemented by Claude Code, 2026-11-26)
+- Read-only background scan at load: every direct E8/E9 rel32 call/jump to RVA 0x367E5B0 in executable sections
+  (`WS_WR_TRANSITION_CALLER site_rva= op= func_begin= func_end= pdata=`, <= 64) and up to 0x200 bytes before each of the
+  first 12 sites (`WS_WR_TRANSITION_BYTES`), then `WS_WR_TRANSITION_SCAN direct_sites=`. Purpose: find the caller that
+  decides the WR start (phase B). If the helper is only reached indirectly, direct_sites=0 and a return-address chain is
+  the next evidence.
+- Checks: build PASS (prebuilt capstone), test.sh PASS (84), package PASS (script.disabled sha256
+  e188ad83c1c5bc0febf08881672a83333b2acc88995058876df3b98919691261, DLL
+  cb941c380bf494763c8b67579bcfa83d60f0a20b2dc0ad3c0cdf29fe13023d21); smoke/hooks UNAVAILABLE (wine). Tree f02f0e26fc2ba00cfb6c5896a77a81d7ab8bcf6c.
+- Roadmap updated: `docs/FEATURE_ROADMAP.md` "Current roadmap (owner decisions 2026-11-26)".

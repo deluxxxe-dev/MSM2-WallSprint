@@ -2691,6 +2691,28 @@ void gmInstall(std::uintptr_t image, std::size_t imageSize) {
   msm2::writeLog("WS_MOVER_HOOK installed=%u rva=0x3519e10 sha256=%s enabled=%u", unsigned(ok), hash[0] ? hash : "none", unsigned(ws::drive::wsGravityMover.load()));
 }
 void gfStartThread() { if (!gfThreadRunning.exchange(true)) { if (HANDLE h = CreateThread(nullptr, 0, gfThread, nullptr, 0, nullptr)) CloseHandle(h); else gfThreadRunning.store(false); } }
+// M20c: read-only scan for direct calls/jumps to the state-transition helper RVA 0x367E5B0 (the function whose calls
+// start WR Init/Entry, analysis/M20B_OWNER_RESULT_20261126.md). Logs every E8/E9 rel32 site in executable sections with
+// its pdata function, and dumps up to 0x200 bytes before each of the first 12 sites. Background thread, once. Log only.
+DWORD WINAPI wrCallerScan(void* imgp) {
+  auto image = reinterpret_cast<std::uintptr_t>(imgp); const std::uintptr_t target = image + 0x367E5B0;
+  auto* dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(image); auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(image + dos->e_lfanew);
+  auto* sec = IMAGE_FIRST_SECTION(nt); unsigned sites = 0;
+  for (unsigned i = 0; i < nt->FileHeader.NumberOfSections && sites < 64; ++i) { if (!(sec[i].Characteristics & IMAGE_SCN_MEM_EXECUTE)) continue;
+    auto* b = reinterpret_cast<const unsigned char*>(image + sec[i].VirtualAddress); std::size_t n = sec[i].Misc.VirtualSize; if (n < 5) continue;
+    for (std::size_t k = 0; k + 5 <= n && sites < 64; ++k) { unsigned char op = b[k]; if (op != 0xE8 && op != 0xE9) continue;
+      std::int32_t rel; std::memcpy(&rel, b + k + 1, 4); std::uintptr_t at = reinterpret_cast<std::uintptr_t>(b + k);
+      if (at + 5 + std::intptr_t(rel) != target) continue;
+      ++sites; DWORD64 fb = 0; auto* fe = RtlLookupFunctionEntry(at, &fb, nullptr); bool pd = fe && fb == image;
+      std::uintptr_t rva = at - image, fbeg = pd ? fe->BeginAddress : 0, fend = pd ? fe->EndAddress : 0;
+      msm2::writeLog("WS_WR_TRANSITION_CALLER site_rva=0x%llx op=%s func_begin=0x%llx func_end=0x%llx pdata=%u", (unsigned long long)rva, op == 0xE8 ? "call" : "jmp", (unsigned long long)fbeg, (unsigned long long)fend, unsigned(pd));
+      if (sites <= 12) { std::uintptr_t from = rva > 0x200 ? rva - 0x200 : 0; if (pd && from < fbeg) from = fbeg;
+        for (std::uintptr_t a = from; a < rva + 0x10; a += 32) { unsigned char buf[32]{}; std::size_t m = std::min<std::uintptr_t>(32, rva + 0x10 - a); if (!msm2::readMemory(image + a, buf, m)) break;
+          char hex[65]{}; for (std::size_t j = 0; j < m; ++j) std::snprintf(hex + 2 * j, 3, "%02x", buf[j]);
+          msm2::writeLog("WS_WR_TRANSITION_BYTES site_rva=0x%llx rva=0x%llx hex=%s", (unsigned long long)rva, (unsigned long long)a, hex); } } } }
+  msm2::writeLog("WS_WR_TRANSITION_SCAN target_rva=0x367e5b0 direct_sites=%u capped=%u read_only=1", sites, unsigned(sites >= 64));
+  return 0;
+}
 // Transform::SetPosition: template AOB "0F 10 51 ?? 4C 8B C1", exactly one match in executable sections, and the match
 // must be a pdata function begin. Background thread, once.
 DWORD WINAPI spResolve(void* imgp) {
@@ -3056,6 +3078,7 @@ void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
       for (std::uintptr_t a = b; a < e; a += 32) { unsigned char buf[32]{}; std::size_t n = std::min<std::uintptr_t>(32, e - a); if (!readMemory(a, buf, n)) break;
         char hex[65]{}; for (std::size_t i = 0; i < n; ++i) std::snprintf(hex + 2 * i, 3, "%02x", buf[i]);
         writeLog("WS_CODE_DUMP_BYTES begin=0x%lx off=0x%llx hex=%s", (unsigned long)fe->BeginAddress, (unsigned long long)(a - b), hex); } } }
+  if (0x367E5B0 < imageSize) { if (HANDLE h = CreateThread(nullptr, 0, wrCallerScan, reinterpret_cast<void*>(image), 0, nullptr)) CloseHandle(h); }
   // M20b: one-time read-only capture around the WR Init/Entry call sites seen while standing on a face
   // (WS_FACE_WR_START caller_rva 0x367e6af / 0x367e6ce, log 20261126-122944): the caller's bounds and the code before the
   // calls, for offline analysis of the WR start decision. Log only; derived findings go to analysis/.
