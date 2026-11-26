@@ -659,7 +659,9 @@ std::atomic<std::uint64_t> wgiReads{0}, wgiPresses{0}, wgiVibs{0}, wgiHidden{0};
 // M10z-r2: B button (Xbox B, GamepadButtons 0x8) rising edges: cancels the kept WS gravity (owner: B, not A).
 std::atomic<std::uint64_t> wgiBPresses{0};
 // M21d (owner 2026-11-26): only a short B press (released within 0.3 s) cancels the face; B held is the edge-wrap modifier.
-std::atomic<std::uint64_t> wgiBTaps{0},wgiBDownMs{0};std::atomic<bool> wgiBDown{false};constexpr std::uint64_t kBTapMs=300;
+std::atomic<std::uint64_t> wgiBTaps{0},wgiBDownMs{0};std::atomic<bool> wgiBDown{false};
+// M21e (owner 2026-11-26): LB (WGI LeftShoulder 0x400) replaces B as the edge-wrap button.
+std::atomic<bool> wgiLbDown{false};constexpr std::uint64_t kBTapMs=300;
 WgiVibration wgiLastVib{-1, -1, -1, -1};
 // M8j (2026-11-07): WS charge jump, controller only. M8i VERIFIED the game reads the pad through WGI
 // GetCurrentReading (~77/s, A seen with 0 ms delay). While WS is active an A press is hidden from the game; on release
@@ -818,7 +820,7 @@ HRESULT STDMETHODCALLTYPE wgiReadDetour(void* self, WgiReading* r) {
     wgiRt.store(r->rt, std::memory_order_relaxed);
     { bool b = (r->buttons & 0x8u) != 0; static std::atomic<bool> prevB{false}; bool was = prevB.exchange(b); if (b && !was) { wgiBPresses.fetch_add(1); wgiBDownMs.store(GetTickCount64()); }
       if (!b && was && GetTickCount64() - wgiBDownMs.load() < kBTapMs) wgiBTaps.fetch_add(1);
-      wgiBDown.store(b); }
+      wgiBDown.store(b); wgiLbDown.store((r->buttons & 0x400u) != 0); }
     { bool l3 = (r->buttons & 0x1000u) != 0; static std::atomic<bool> prevL3{false}; bool was = prevL3.exchange(l3); if (l3 && !was) wgiL3Edges.fetch_add(1); }   // M10p gravity lock
     // M10q L3 stand: the left stick reads neutral until it was released (< 0.25) and pushed again (> 0.4).
     { static bool sawNeutral = false; double m2 = r->lx * r->lx + r->ly * r->ly;
@@ -1718,7 +1720,7 @@ constexpr std::uint64_t kBCancelBlockMs=1500,kTransferSettleMs=1000;
 // M21c: hold start time (game-thread readable) and a face-to-face transfer request posted by the same-face callback.
 // M21d: outer-edge wrap. A walk-off whose release leaves the face plane (no wall behind it) while B is held becomes a
 // face transfer onto the face whose normal is the in-plane travel direction (the face around the edge).
-struct EdgeWrap { bool armed{},requested{}; double t{}; float p[3]{},delay{}; } gfWrap; std::atomic<unsigned> gfWrapLogs{0};
+struct EdgeWrap { bool armed{},requested{},stopped{}; double t{}; float p[3]{},delay{},dir[3]{},speed{}; } gfWrap; std::atomic<bool> geWrapHold{false};std::atomic<float> geFromN[3]{};std::atomic<std::uint64_t> geTransferMs{0}; std::atomic<unsigned> gfWrapLogs{0};
 std::atomic<std::uint64_t> geHoldStartMs{0};std::atomic<bool> geTransfer{false};std::atomic<unsigned> geTransferRefused{0};constexpr float kSameFaceCos=0.9396926f,kSameFacePlane=0.6f;
 std::atomic<bool> stopEndReady{false};std::atomic<bool> stopHopRun{false};std::atomic<unsigned> stopDebounceLogs{0};
 StopDebounce stopDebounce;
@@ -2331,9 +2333,16 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   if(walkoffEvent==1){
     gfL.probe.begin(qpcSec(now),p0,n0,mvA ? mvA : p);
     gfWrap={};gfWrap.armed=true;gfWrap.t=qpcSec(now);gfWrap.delay=gfL.walkoff.detector.delay;for(int i=0;i<3;++i)gfWrap.p[i]=(mvA ? mvA : p)[i];
+    { float c[3]={gfL.walkoff.carry[0],gfL.walkoff.carry[1],gfL.walkoff.carry[2]};float cn=c[0]*n0[0]+c[1]*n0[1]+c[2]*n0[2];
+      for(int i=0;i<3;++i)c[i]-=cn*n0[i];
+      gfWrap.speed=std::hypot(c[0],c[1],c[2]);
+      if(gfWrap.speed>1e-3f&&std::isfinite(gfWrap.speed))for(int i=0;i<3;++i)gfWrap.dir[i]=c[i]/gfWrap.speed; }
     msm2::writeLog("WS_FACE_FALL_DETECT window_speed=%.3f previous_window_speed=%.3f detect_delay_s=%.3f native_window_s=0.1",gfL.walkoff.detector.speed,gfL.walkoff.detector.previous,gfL.walkoff.detector.delay);
     gfL.pinned=false;gfL.vy=0;gfL.model=false;gfL.airSource="walkoff";gfL.stop={};gfL.fallGuard.resetMotion();
     for(int i=0;i<3;++i){gfL.vg[i]=gfL.walkoff.carry[i];gfL.dash[i]=0;}
+    // M21e (log 20261126-170335 07:43:59.4): the carried 13.7 m/s took the hero 4.7 m past the edge before the wrap.
+    // With LB held the in-plane carry stops at the release; only the normal part stays.
+    if(wgiLbDown.load()&&ws::drive::wsGroundEntry.load(std::memory_order_relaxed)){float vn=gfL.vg[0]*n0[0]+gfL.vg[1]*n0[1]+gfL.vg[2]*n0[2];for(int i=0;i<3;++i)gfL.vg[i]=vn*n0[i];gfWrap.stopped=true;}
     gfL.takeoffHistory.freeze(gfL.airMapping,gfL.walk,qpcSec(now),"none",wgiLx.load(),wgiLy.load(),n0,gfL.vg);
     gfL.zipSeen=gfZipReq.load();gfLastReleaseMs.store(double(GetTickCount64()));gfWalkoffActive.store(true);airFacingBegin(gfL.walkoff.carry,n0);
   }else if(walkoffEvent==2){
@@ -2419,17 +2428,25 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     // the detector delay) so the hero meets the real face first. Without B the game keeps its own ledge behaviour.
     if(gfWrap.armed&&!gfWrap.requested&&ws::drive::wsGroundEntry.load(std::memory_order_relaxed)){
       double since=qpcSec(now)-gfWrap.t;float dist=facePlaneDistance(mvA ? mvA : p,p0,n0);
-      float d[3]={gfL.walkoff.carry[0],gfL.walkoff.carry[1],gfL.walkoff.carry[2]};float dn=d[0]*n0[0]+d[1]*n0[1]+d[2]*n0[2];
-      for(int i=0;i<3;++i)d[i]-=dn*n0[i];
-      float speed=std::hypot(d[0],d[1],d[2]);
-      if(since>1.0||!(speed>1.f)||!std::isfinite(speed))gfWrap.armed=false;
-      else if(gfL.probe.clean&&dist<-0.3f&&wgiBDown.load()){
-        gfWrap.requested=true;float back=speed*std::fmin(0.2f,std::fmax(0.f,gfWrap.delay));
-        for(int i=0;i<3;++i){d[i]/=speed;geP[i].store(gfWrap.p[i]-d[i]*back);geN[i].store(d[i]);}
-        if(!geTransfer.exchange(true)){geVetoUntilMs.store(GetTickCount64()+1500);geReqSeq.fetch_add(1);}
-        for(int i=0;i<3;++i)gfL.vg[i]=0.f;
-        if(gfWrapLogs.fetch_add(1)<40)msm2::writeLog("WS_FACE_EDGE_WRAP event=request since_s=%.3f plane_d=%.3f speed=%.2f back_m=%.2f n=%.3f,%.3f,%.3f",since,dist,speed,back,d[0],d[1],d[2]);
-      }else if(gfL.probe.clean&&dist<-0.3f){gfWrap.armed=false;if(gfWrapLogs.fetch_add(1)<40)msm2::writeLog("WS_FACE_EDGE_WRAP event=skipped reason=b_not_held since_s=%.3f plane_d=%.3f",since,dist);}
+      // M21e: the face around an edge is snapped: a mostly vertical travel (|y| > 0.7) up -> world up (roof), down ->
+      // no wrap; otherwise the horizontal part of the travel direction (building corner). Log 170335: an unsnapped
+      // direction gave n=(0.929,0.370,0) and (-0.178,-0.853,-0.490).
+      float d[3]={gfWrap.dir[0],gfWrap.dir[1],gfWrap.dir[2]};const char* why=nullptr;
+      if(d[1]>0.7f){d[0]=0;d[1]=1;d[2]=0;}else if(d[1]<-0.7f)why="downward";else{d[1]=0;float h=std::hypot(d[0],d[2]);if(h>0.3f){d[0]/=h;d[2]/=h;}else why="no_direction";}
+      if(since>1.0||!(gfWrap.speed>1.f)||!std::isfinite(gfWrap.speed))gfWrap.armed=false;
+      else if(gfL.probe.clean&&dist<-0.3f){
+        gfWrap.armed=false;
+        if(!wgiLbDown.load())why="lb_not_held";
+        if(why){if(gfWrapLogs.fetch_add(1)<40)msm2::writeLog("WS_FACE_EDGE_WRAP event=skipped reason=%s since_s=%.3f plane_d=%.3f dir=%.3f,%.3f,%.3f",why,since,dist,gfWrap.dir[0],gfWrap.dir[1],gfWrap.dir[2]);}
+        else{
+          gfWrap.requested=true;float back=gfWrap.speed*std::fmin(0.2f,std::fmax(0.f,gfWrap.delay));
+          for(int i=0;i<3;++i){geP[i].store(gfWrap.p[i]-gfWrap.dir[i]*back);geN[i].store(d[i]);}
+          geWrapHold.store(true);
+          if(!geTransfer.exchange(true)){geVetoUntilMs.store(GetTickCount64()+1500);geReqSeq.fetch_add(1);}
+          for(int i=0;i<3;++i)gfL.vg[i]=0.f;
+          if(gfWrapLogs.fetch_add(1)<40)msm2::writeLog("WS_FACE_EDGE_WRAP event=request since_s=%.3f plane_d=%.3f speed=%.2f back_m=%.2f carry_stopped=%u dir=%.3f,%.3f,%.3f n=%.3f,%.3f,%.3f",since,dist,gfWrap.speed,back,unsigned(gfWrap.stopped),gfWrap.dir[0],gfWrap.dir[1],gfWrap.dir[2],d[0],d[1],d[2]);
+        }
+      }
     }
     faceZipImpulse(n0,now);releasedAirStep(q,mvA ? mvA : p,gfL.vg,gfL.dash,dt);gfL.probe.limit(mvA ? mvA : p,q,u);
   }
@@ -2782,6 +2799,9 @@ bool wrSameFaceCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t req
   // the old WR path flipped the hold between both faces (crawl pose, camera turning back). Another face is refused while the
   // hold settles (1 s); later it becomes a no-hop face-to-face transfer instead of the game's WR.
   bool early = GetTickCount64() - geHoldStartMs.load() < kTransferSettleMs;
+  // M21e: after a transfer, a WR back onto the face just left is refused for 1 s (no ping-pong at the edge).
+  float cb = (pn[3] * geFromN[0].load() + pn[4] * geFromN[1].load() + pn[5] * geFromN[2].load()) / nl;
+  if (std::isfinite(cb) && cb >= kSameFaceCos && GetTickCount64() - geTransferMs.load() < kTransferSettleMs) early = true;
   bool horizontal = std::fabs(pn[4] / nl) < 0.3f && std::isfinite(pn[0] + pn[1] + pn[2]);
   const char* decision = same ? "refused" : early ? "refused_settling" : horizontal ? "transfer" : "game";
   if (geSameFaceLogs.fetch_add(1) < 12) msm2::writeLog("WS_FACE_WR_SAME_FACE decision=%s cos=%.3f plane_d=%.3f n=%.3f,%.3f,%.3f", decision, c, d, pn[3] / nl, pn[4] / nl, pn[5] / nl);
@@ -3165,7 +3185,7 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     if (seq != geSeen) { geSeen = seq;
       bool transfer = geTransfer.exchange(false) && gbState == 2;
       if (transfer || (gbState == 0 && !wsNow)) {
-        float from[3] = {0, 1, 0}; if (transfer) { std::memcpy(from, gbN, sizeof from); gfSummary("face_transfer"); }
+        float from[3] = {0, 1, 0}; if (transfer) { std::memcpy(from, gbN, sizeof from); gfSummary("face_transfer"); for (int i = 0; i < 3; ++i) geFromN[i].store(from[i]); geTransferMs.store(GetTickCount64()); }
         for (int i = 0; i < 3; ++i) gbFrom[i] = from[i];
         for (int i = 0; i < 3; ++i) { gbN[i] = geN[i].load(); gbPlane[i] = geP[i].load(); }
         gbPlaneFromWall = true; gbPlaneStandoff = (hero.position[0] - gbPlane[0]) * gbN[0] + (hero.position[1] - gbPlane[1]) * gbN[1] + (hero.position[2] - gbPlane[2]) * gbN[2];
@@ -3186,7 +3206,7 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
         for (int i = 0; i < 3; ++i) { gfP0[i].store(gbPlane[i]); gfN0[i].store(gbN[i]); }
         gfPlaneFromWall.store(true); gfStandoff.store(gbPlaneStandoff); gfLogPlane("hold_start_ground_entry");
         gfVy0.store(0.f); gfContact.store(false); sbBlendQpc.store(0); airFacingHoldTransform.store(hero.transform);
-        gfEntryNoHop.store(true); geHoldStartMs.store(GetTickCount64()); geSameFaceLogs.store(0);
+        gfEntryNoHop.store(true); geHoldStartMs.store(geWrapHold.exchange(false) ? 0 : GetTickCount64()); geSameFaceLogs.store(0);
         gfContactGen.store(gfGen.fetch_add(1) + 1 + 0x80000000u); gfOn.store(ws::drive::wsGravityForce.load() && !sgLocked.load()); if (gfOn.load()) gfStartThread();
         gvHero.store(hero.hero); gfVyGame.store(0); gfVyGameQpc.store(0);
         msm2::writeLog("WS_GRAVITY_TEST start test=%u n=%.3f,%.3f,%.3f locked=0 source=ground_entry", gbTests, gbN[0], gbN[1], gbN[2]);

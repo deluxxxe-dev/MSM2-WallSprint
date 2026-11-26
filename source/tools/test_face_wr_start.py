@@ -75,12 +75,20 @@ print("PASS: M21b B-cancel WR/WS block, same-face WR refusal in unpinned hold (s
 assert 'const char* decision = same ? "refused" : early ? "refused_settling" : horizontal ? "transfer" : "game";' in sf
 assert 'if (same || early) { wrVetoFired = true; return false; }' in sf and 'if (!horizontal) return allow;' in sf
 assert 'bool transfer = geTransfer.exchange(false) && gbState == 2;' in code and 'gfSummary("face_transfer")' in code
-assert 'gbFrom[0] * (1.f - s) + gbN[0] * s' in code and code.count('geHoldStartMs.store(GetTickCount64())')==2
+assert 'gbFrom[0] * (1.f - s) + gbN[0] * s' in code and code.count('geHoldStartMs.store(')==2
 print("PASS: M21c settle refusal of other faces and no-hop face-to-face transfer from the current normal")
 
 # M21d: only a B tap (< 0.3 s) cancels; held B arms the outer-edge wrap: a walk-off that leaves the face plane by 0.3 m
 # after a clean probe within 1 s becomes a face transfer onto the travel-direction normal; without B it is only logged.
 assert 'if (!b && was && GetTickCount64() - wgiBDownMs.load() < kBTapMs) wgiBTaps.fetch_add(1);' in code and 'kBTapMs=300' in code
-assert 'else if(gfL.probe.clean&&dist<-0.3f&&wgiBDown.load()){' in code and 'if(since>1.0||!(speed>1.f)||!std::isfinite(speed))gfWrap.armed=false;' in code
-assert 'geP[i].store(gfWrap.p[i]-d[i]*back);geN[i].store(d[i]);' in code and 'reason=b_not_held' in code
+assert 'if(!wgiLbDown.load())why="lb_not_held";' in code and 'if(since>1.0||!(gfWrap.speed>1.f)||!std::isfinite(gfWrap.speed))gfWrap.armed=false;' in code
+assert 'geP[i].store(gfWrap.p[i]-gfWrap.dir[i]*back);geN[i].store(d[i]);' in code and 'wgiBDown.load()' not in code
 print("PASS: M21d B tap cancel, B-held outer-edge wrap request (plane at earliest edge), no wrap without B")
+
+# M21e: LB (0x400) is the wrap button; LB at the release stops the in-plane carry; the wrap normal is snapped (roof up,
+# no downward wrap, otherwise horizontal travel); a wrap hold accepts the real face from WR at once; no WR back to the
+# face just left for 1 s.
+assert 'wgiLbDown.store((r->buttons & 0x400u) != 0);' in code and 'gfWrap.stopped=true;' in code
+assert 'if(d[1]>0.7f){d[0]=0;d[1]=1;d[2]=0;}else if(d[1]<-0.7f)why="downward";' in code
+assert 'geHoldStartMs.store(geWrapHold.exchange(false) ? 0 : GetTickCount64())' in code and 'cb >= kSameFaceCos && GetTickCount64() - geTransferMs.load() < kTransferSettleMs' in code
+print("PASS: M21e LB wrap button, carry stop, snapped wrap normal, immediate real-face correction, no ping-pong")

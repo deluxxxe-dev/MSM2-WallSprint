@@ -98,3 +98,4 @@ bed994778eccc6845771d06701579241ad9727e5 2026-11-26 build+test.sh+package PASS; 
 7532118dbd0124efcbca40cae7c6edbbd242fb85 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21c other-face settle refusal and face-to-face transfer; by Claude Code)
 6b712134574509a008bd4cf1d7b45ff16a64e218 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21d B tap cancel, edge wrap, Update-WS closes Overstrike; by Claude Code)
 b1a49360373b247970dde36650f40c18e9828d26 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (source tree of c13b6f7 = M21d; the M20-M21d lines above recorded whole-repo trees by mistake and never matched HEAD:source; by Claude Code)
+7f755f25484e6620bca60b0486e3a4a8506c8020 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21e LB edge wrap; HEAD:source; by Claude Code)
