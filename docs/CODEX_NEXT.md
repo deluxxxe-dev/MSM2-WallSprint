@@ -1,3 +1,6 @@
+# DONE (2026-11-26, implemented by Claude Code in 413d236) — next action is the owner's test, not Codex.
+# Result and owner test: `analysis/M20_LOCOMOTION_DOWN_20261126.md`. Do not re-implement M20.
+
 # Next task — M20: the game's sprint toward the ground must not be treated as a fall
 
 Branch `codex/v01c20-edi-value-provenance` (no main merge, no force-push). Previous task text:
