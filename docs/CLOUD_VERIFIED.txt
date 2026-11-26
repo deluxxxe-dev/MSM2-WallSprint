@@ -87,3 +87,4 @@ db323df9a6433dfc8f7967b1fb2e3bc346f556c1 2026-11-12 build+test.sh+smoke+hooks+pa
 008123838be3cc594f5e364c64bb8af96a3a6c86 2026-11-12 build+test.sh+smoke+hooks+package PASS (M18 stop-only release guard, orientation continuation/blend and linear deceleration; hooks attempts=1)
 13cca1484309e28aa6ee6a11ae6861ea71df8d93 2026-11-13 build+test.sh+smoke+hooks+package PASS (M18b debounce/cancel stop, per-hold native trace and bounded rotation extension; hooks attempts=1)
 0db97ccd30a438acccb53bcb291d93a04e3c42a6 2026-11-13 build+test.sh+smoke+hooks+package PASS (M19 read-only tagged face WR start diagnostic; conditional stop after step1; hooks attempts=1)
+a1cb4f2bd957b89d9f1cfa050cedacb80cf6a21b 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine aborts in this container) (M20 locomotion-down exemption, WR-start state diagnostic; by Claude Code)

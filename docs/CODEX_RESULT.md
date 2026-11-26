@@ -1,3 +1,11 @@
+# M20 result — sprint toward the ground is not a fall (implemented by Claude Code, 2026-11-26)
+
+STATUS: implemented and pushed on `codex/v01c20-edi-value-provenance`. Details, checks and limits:
+`analysis/M20_LOCOMOTION_DOWN_20261126.md`. build + test.sh (84 PASS) + package PASS; smoke_windows and
+test_hooks_windows UNAVAILABLE in this container (wine aborts even for a hello-world exe). Real-game acceptance UNKNOWN.
+Owner test: get the hero standing on a face; RT sprint toward the ground 3 s, release, wait 2 s; the same toward the roof
+and sideways; walk off the side edge of the face, fall 2 s, B; one short video per direction; return the newest log.
+
 # M19 result — face WR start observation; conditional refusal not evidenced (2026-11-13 JST)
 
 STATUS: step1 implemented/pushed on `codex/v01c20-edi-value-provenance` as

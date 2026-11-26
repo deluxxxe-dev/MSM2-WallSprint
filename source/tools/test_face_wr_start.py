@@ -6,13 +6,15 @@ code=(root/'src/NativeHooks/camera_ref.cpp').read_text()
 basis=code[code.index('bool faceBasis('):code.index('struct FaceWalkModel')]
 helper=code.split('// M19_WR_START_BEGIN:',1)[1].split('\n',1)[1].split('// M19_WR_START_END',1)[0]
 unit=root/'build/face_wr_start_tests.cpp'
-unit.write_text('#include <cmath>\n#include <cstdint>\n#include <cassert>\n#include <cstdio>\n'+basis+helper+r'''
+unit.write_text('#include <cmath>\n#include <cstdint>\n#include <cassert>\n#include <cstdio>\n#include <string>\n'+basis+helper+r'''
 int main(){FaceWrEvidence e;e.normal[0]=1;e.velocity[0]=3;e.velocity[1]=10;e.ms=1000;
 float speed=0,up=0,side=0;assert(e.metrics(speed,up,side));assert(std::fabs(speed-10)<1e-5&&std::fabs(up-1)<1e-5&&std::fabs(side)<1e-5);
 e.velocity[1]=0;e.velocity[2]=10;assert(e.metrics(speed,up,side)&&std::fabs(speed-10)<1e-5&&std::fabs(side)==1);
 assert(e.fresh(995)&&e.fresh(1100)&&!e.fresh(1101)&&!e.fresh(994)&&!e.fresh(NAN));
 e.velocity[2]=NAN;assert(!e.metrics(speed,up,side));
-puts("PASS: M19 tagged face-event planar speed/direction, normal isolation and finite/fresh evidence guards");}
+assert(std::string(FaceWrEvidence::stateName(0))=="pinned"&&std::string(FaceWrEvidence::stateName(1))=="released"&&std::string(FaceWrEvidence::stateName(2))=="face_air"&&std::string(FaceWrEvidence::stateName(3))=="stop_hop"&&std::string(FaceWrEvidence::stateName(9))=="other");
+assert(e.sinceRelease<0&&e.state==0&&e.stepValid==1);
+puts("PASS: M20 WR-start state names/defaults");puts("PASS: M19 tagged face-event planar speed/direction, normal isolation and finite/fresh evidence guards");}
 ''')
 subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-pedantic','-fsanitize=address,undefined',str(unit),'-o',str(root/'build/face_wr_start_tests')],check=True)
 subprocess.run([str(root/'build/face_wr_start_tests')],check=True)
