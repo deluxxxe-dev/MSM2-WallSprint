@@ -110,7 +110,7 @@ print("PASS: M21g fast-travel/hero-change reset and read-only face state-change 
 # M21h: LB + the game's ledge state 0xB45E2B0 during a pinned hold = immediate wrap from the last pinned edge position
 # (request refused); no new entry from a running vanilla wall state.
 lw=code.split('bool ledgeWrap(std::uintptr_t requested) {',1)[1].split('\n}',1)[0]
-assert 'requested != wrRequestImage + kLedgeStateRva || !wgiLbDown.load()' in lw and 'if (!gfEdgeValid.load() || !gfOn.load()) return false;' in lw
+assert 'if (!edgeState || !wgiLbDown.load()' in lw and 'if (!gfEdgeValid.load() || !gfOn.load()) return false;' in lw
 assert code.count('if (ledgeWrap(requested) || holdRefuse(requested))')==4 and 'kLedgeStateRva = 0xB45E2B0' in code
 assert 'bool inWallState = curRva == 0xB465FB0 || curRva == 0xB4519A0 || curRva == kWrStateRva;' in code and '(geArmedNow.load() && !inWallState)' in code
 print("PASS: M21h ledge-state wrap with LB and no entry from a running vanilla wall state")
@@ -118,7 +118,14 @@ print("PASS: M21h ledge-state wrap with LB and no entry from a running vanilla w
 # M21i: jump/air/ledge refused for 1.5 s after a wrap request, crawl states refused while WS is armed or a hold runs
 # (temporary hold callback, restored); same-face contexts 1.5-20 deg off re-level the hold normal at most every 0.5 s.
 hr=code.split('bool holdRefuse(std::uintptr_t requested) {',1)[1].split('\n}',1)[0]
-assert 'bool refuse = (wrapping && jump) || (crawl && gbHoldA.load());' in hr
+assert 'bool refuse = (wrapping && jump) || lbJump || (crawl && gbHoldA.load() && ms - geWsExitMs.load() < 500);' in hr
 assert 'if (holdCb && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrHoldCallback)) *slotE30 = 0;' in code
 assert 'if (std::isfinite(c) && c > 0.94f && c < 0.99966f)' in code and 'now - refLast >= 500' in code
 print("PASS: M21i wrap jump refusal, crawl refusal in holds, face re-levelling from the game's wall normal")
+
+# M21j: jump/air/ledge with LB in a hold start the wrap from the edge; LB refuses the sprint jump in holds; the WR exit
+# 0xB465AB0 forces the hold start and crawl is refused only 0.5 s after it; LB walk-off wrap after 0.05 s / 0.08 m.
+assert 'bool edgeState = rr == kLedgeStateRva || rr == 0xB454950 || rr == 0xB45D6B0;' in code
+assert 'if (r == 0xB465AB0 && gbHoldA.load() && !gfOn.load())' in code and 'bool forceHold = gbState == 1 && geForceHold.exchange(false);' in code
+assert '(wgiLbDown.load()&&since>=0.05&&dist<-0.08f)' in code
+print("PASS: M21j edge-state wrap, LB jump refusal, bounded crawl refusal with forced hold at WR exit, early LB walk-off wrap")
