@@ -2868,6 +2868,16 @@ std::uint64_t wrRequestDetour(std::uintptr_t machine, std::uintptr_t rdx, std::u
     else if (wrVetoFired) { wrVetoes.fetch_add(1); wrVetoesHold.fetch_add(1); wrLogContext("face_veto", machine);
       if (wrVetoLogs.fetch_add(1) < 40) msm2::writeLog("WS_FACE_WR_REFUSED machine=0x%llx state_before=0x%llx state_after=0x%llx result=0x%llx stick=%.2f,%.2f rt=%.2f count=%u",
         (unsigned long long)machine, (unsigned long long)before, (unsigned long long)*reinterpret_cast<const std::uintptr_t*>(machine + 0x70), (unsigned long long)result, wgiLx.load(), wgiLy.load(), wgiReadTarget ? float(wgiRt.load()) : -1.f, wrVetoes.load()); } }
+  // M21g diagnostic (read-only): game state changes of the hero machine while a face hold is active, to identify the
+  // ledge vault that the game starts at a face edge (log 20261126-173439: outer/roof edges ended in the game's own jump).
+  // Also outside holds (vanilla wall crawl around corners is the reference the owner proposed), capped per session.
+  if (heroMachine) { static std::atomic<unsigned> scLogs{0};
+    std::uintptr_t now70 = *reinterpret_cast<const std::uintptr_t*>(machine + 0x70);
+    if (now70 != before && scLogs.fetch_add(1) < 400) { std::uintptr_t bv = 0, av = 0; if (before) msm2::readMemory(before, &bv, 8); if (now70) msm2::readMemory(now70, &av, 8);
+      unsigned st = gfWalkoffActive.load() ? 1u : stopHopRun.load() ? 3u : gfFaceAirNow.load() ? 2u : gfPinnedNow.load() ? 0u : 4u;
+      msm2::writeLog("WS_FACE_STATE_CHANGE from=0x%llx from_vt=0x%llx to=0x%llx to_vt=0x%llx hold=%u face_state=%s lb=%u stick=%.2f,%.2f rt=%.2f read_only=1",
+        (unsigned long long)wrRequestRva(before), (unsigned long long)wrRequestRva(bv), (unsigned long long)wrRequestRva(now70), (unsigned long long)wrRequestRva(av),
+        unsigned(gfOn.load() || gbHoldA.load()), FaceWrEvidence::stateName(st), unsigned(wgiLbDown.load()), wgiLx.load(), wgiLy.load(), wgiReadTarget ? float(wgiRt.load()) : -1.f); } }
   std::uint64_t h1 = ws_hook_head.load(std::memory_order_acquire);
   if (h1 == h0 || h1 - h0 > 64) return result;
   std::uint32_t thread = GetCurrentThreadId(); bool init = false, entry = false; std::uintptr_t initSelf = 0;
@@ -3161,6 +3171,17 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
   // M21f (log 20261126-172006 08:22:23-28): after a hero change the block was unknown, the stale armed flag kept turning
   // WR requests into entry requests that the worker could not start (4 lost wall entries in 5 s). Disarm on every exit.
   if (killed.load() || !hero.hero) { geArmedNow.store(false); if (gbState) gbEnd("killed_or_no_hero", now); return; }
+  // M21g (owner 2026-11-26): fast travel or a hero change resets the face gravity/body/camera at once. A new hero or
+  // Transform ends the state without writing into the old gravity block (it may belong to a freed hero); a jump of more
+  // than 40 m between worker ticks (teleport) ends it with the vanilla gravity written back.
+  { static std::uintptr_t lastHero = 0, lastTr = 0; static float lastP[3]{}; static bool havePos = false;
+    bool changed = havePos && (hero.hero != lastHero || hero.transform != lastTr);
+    float dx = hero.position[0] - lastP[0], dy = hero.position[1] - lastP[1], dz = hero.position[2] - lastP[2];
+    bool teleport = havePos && !changed && std::isfinite(dx + dy + dz) && dx * dx + dy * dy + dz * dz > 40.f * 40.f;
+    if ((changed || teleport) && (gbState || sgSubActive.load())) {
+      msm2::writeLog("WS_FACE_RESET reason=%s state=%d jump_m=%.1f", changed ? "hero_changed" : "teleport", gbState, std::sqrt(dx * dx + dy * dy + dz * dz));
+      geVetoUntilMs.store(0); geTransfer.store(false); gbEnd(changed ? "hero_changed" : "teleport", now, !changed); sgSubActive.store(false); }
+    lastHero = hero.hero; lastTr = hero.transform; for (int i = 0; i < 3; ++i) lastP[i] = hero.position[i]; havePos = true; }
   gbDiscover(hero, now);
   if (!ws::drive::wsGravityTest.load() || !gbAddr) { geArmedNow.store(false); if (gbState) gbEnd("disabled_or_no_block", now); return; }
   bool wsNow = engagedManager.load() != 0 && now - lastWsMs.load() < 150;

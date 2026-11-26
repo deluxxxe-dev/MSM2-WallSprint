@@ -100,3 +100,4 @@ bed994778eccc6845771d06701579241ad9727e5 2026-11-26 build+test.sh+package PASS; 
 b1a49360373b247970dde36650f40c18e9828d26 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (source tree of c13b6f7 = M21d; the M20-M21d lines above recorded whole-repo trees by mistake and never matched HEAD:source; by Claude Code)
 7f755f25484e6620bca60b0486e3a4a8506c8020 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21e LB edge wrap; HEAD:source; by Claude Code)
 a99e11206c8baa6cca6fd8a4c98a7fa12a1dab23 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21f; HEAD:source; by Claude Code)
+c92ddb3b72ac775935ebe6eac831cc814f34a667 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21g; HEAD:source; by Claude Code)

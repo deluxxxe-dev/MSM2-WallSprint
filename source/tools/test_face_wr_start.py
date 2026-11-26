@@ -98,3 +98,11 @@ print("PASS: M21e LB wrap button, carry stop, snapped wrap normal, immediate rea
 assert 'bool hideLb = lb && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && !killed.load() && (gbHoldA.load() || gfOn.load());' in code
 assert 'if (hideLb) { r->buttons &= ~0x400u;' in code and code.count('{ geArmedNow.store(false); if (gbState) gbEnd(')==2
 print("PASS: M21f LB hidden from the game during a face hold, stale entry arming cleared")
+
+# M21g: reset on hero/Transform change (no write into the old block) or a >40 m teleport (vanilla written back); read-only
+# state-change diagnostic of the hero machine during a face hold.
+assert 'gbEnd(changed ? "hero_changed" : "teleport", now, !changed);' in code and 'dx * dx + dy * dy + dz * dz > 40.f * 40.f' in code
+assert 'WS_FACE_STATE_CHANGE from=0x%llx' in code
+det2=code.split('std::uint64_t wrRequestDetour(',1)[1].split('\nvoid wrRequestInstall',1)[0]
+assert len(re.findall(r'\*slotE30 = [^=]',det2))==8
+print("PASS: M21g fast-travel/hero-change reset and read-only face state-change diagnostic")

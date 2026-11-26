@@ -1455,3 +1455,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-26: M21d (Claude Code, analysis/M21D_OWNER_RESULT_20261126.md): B tap-only cancel, B-held outer-edge wrap, Update-WS closes the shared Overstrike.
 - 2026-11-26: M21e (Claude Code, analysis/M21E_OWNER_RESULT_20261126.md): LB is the edge-wrap button; carry stops at the edge; snapped wrap normal corrected by the real WR face; no transfer ping-pong.
 - 2026-11-26: M21f (Claude Code, analysis/M21F_OWNER_RESULT_20261126.md): lost entries after a hero change fixed (stale arming), LB hidden from the game during a face hold (freeze at LB).
+- 2026-11-26: M21g (Claude Code, analysis/M21G_OWNER_RESULT_20261126.md): wrap requests fire but only after the game's ledge vault; reset on hero change/teleport; read-only state-change diagnostic for the vault and vanilla crawl corners.
