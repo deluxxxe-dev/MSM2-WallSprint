@@ -658,6 +658,8 @@ WgiReadFn wgiReadOrig{}; WgiVibFn wgiVibOrig{}; void* wgiReadTarget{}; void* wgi
 std::atomic<std::uint64_t> wgiReads{0}, wgiPresses{0}, wgiVibs{0}, wgiHidden{0}; std::atomic<bool> wgiA{false}; std::atomic<unsigned> wgiLogs{0};
 // M10z-r2: B button (Xbox B, GamepadButtons 0x8) rising edges: cancels the kept WS gravity (owner: B, not A).
 std::atomic<std::uint64_t> wgiBPresses{0};
+// M21d (owner 2026-11-26): only a short B press (released within 0.3 s) cancels the face; B held is the edge-wrap modifier.
+std::atomic<std::uint64_t> wgiBTaps{0},wgiBDownMs{0};std::atomic<bool> wgiBDown{false};constexpr std::uint64_t kBTapMs=300;
 WgiVibration wgiLastVib{-1, -1, -1, -1};
 // M8j (2026-11-07): WS charge jump, controller only. M8i VERIFIED the game reads the pad through WGI
 // GetCurrentReading (~77/s, A seen with 0 ms delay). While WS is active an A press is hidden from the game; on release
@@ -814,7 +816,9 @@ HRESULT STDMETHODCALLTYPE wgiReadDetour(void* self, WgiReading* r) {
         else neutralSince = 0; }
       else neutralSince = 0; }
     wgiRt.store(r->rt, std::memory_order_relaxed);
-    { bool b = (r->buttons & 0x8u) != 0; static std::atomic<bool> prevB{false}; bool was = prevB.exchange(b); if (b && !was) wgiBPresses.fetch_add(1); }
+    { bool b = (r->buttons & 0x8u) != 0; static std::atomic<bool> prevB{false}; bool was = prevB.exchange(b); if (b && !was) { wgiBPresses.fetch_add(1); wgiBDownMs.store(GetTickCount64()); }
+      if (!b && was && GetTickCount64() - wgiBDownMs.load() < kBTapMs) wgiBTaps.fetch_add(1);
+      wgiBDown.store(b); }
     { bool l3 = (r->buttons & 0x1000u) != 0; static std::atomic<bool> prevL3{false}; bool was = prevL3.exchange(l3); if (l3 && !was) wgiL3Edges.fetch_add(1); }   // M10p gravity lock
     // M10q L3 stand: the left stick reads neutral until it was released (< 0.25) and pushed again (> 0.4).
     { static bool sawNeutral = false; double m2 = r->lx * r->lx + r->ly * r->ly;
@@ -1712,6 +1716,9 @@ std::atomic<std::uint64_t> geVetoUntilMs{0};std::atomic<unsigned> geLogs{0};
 std::atomic<std::uint64_t> geBUntilMs{0};std::atomic<unsigned> geBVetoes{0},geSameFaceVetoes{0},geSameFaceLogs{0};
 constexpr std::uint64_t kBCancelBlockMs=1500,kTransferSettleMs=1000;
 // M21c: hold start time (game-thread readable) and a face-to-face transfer request posted by the same-face callback.
+// M21d: outer-edge wrap. A walk-off whose release leaves the face plane (no wall behind it) while B is held becomes a
+// face transfer onto the face whose normal is the in-plane travel direction (the face around the edge).
+struct EdgeWrap { bool armed{},requested{}; double t{}; float p[3]{},delay{}; } gfWrap; std::atomic<unsigned> gfWrapLogs{0};
 std::atomic<std::uint64_t> geHoldStartMs{0};std::atomic<bool> geTransfer{false};std::atomic<unsigned> geTransferRefused{0};constexpr float kSameFaceCos=0.9396926f,kSameFacePlane=0.6f;
 std::atomic<bool> stopEndReady{false};std::atomic<bool> stopHopRun{false};std::atomic<unsigned> stopDebounceLogs{0};
 StopDebounce stopDebounce;
@@ -2323,6 +2330,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     gfL.walkFrame.gameValid,wgiStick.load(),gfL.walkFrame.gameStep,dt,u,facePlaneDistance(mvA ? mvA : p,p0,n0),qpcSec(now));
   if(walkoffEvent==1){
     gfL.probe.begin(qpcSec(now),p0,n0,mvA ? mvA : p);
+    gfWrap={};gfWrap.armed=true;gfWrap.t=qpcSec(now);gfWrap.delay=gfL.walkoff.detector.delay;for(int i=0;i<3;++i)gfWrap.p[i]=(mvA ? mvA : p)[i];
     msm2::writeLog("WS_FACE_FALL_DETECT window_speed=%.3f previous_window_speed=%.3f detect_delay_s=%.3f native_window_s=0.1",gfL.walkoff.detector.speed,gfL.walkoff.detector.previous,gfL.walkoff.detector.delay);
     gfL.pinned=false;gfL.vy=0;gfL.model=false;gfL.airSource="walkoff";gfL.stop={};gfL.fallGuard.resetMotion();
     for(int i=0;i<3;++i){gfL.vg[i]=gfL.walkoff.carry[i];gfL.dash[i]=0;}
@@ -2405,6 +2413,24 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
         if (fl > 0.2f) { for (int i = 0; i < 3; ++i) gfL.dash[i] = f[i] / fl * 15.f; msm2::writeLog("WS_GRAVITY_FORCE_AIR_DASH dir=%.2f,%.2f,%.2f", f[0] / fl, f[1] / fl, f[2] / fl); } } } }
   if(gfL.walkoff.active){
     if(gfL.probe.advance(qpcSec(now)))msm2::writeLog("WS_FACE_FALL event=probe_clean reason=no_pushback t=%.3f probe_used_m=%.4f",qpcSec(now)-gfL.probe.start,gfL.probe.used);
+    // M21d (log 20261126-162138 07:26:00.645): past an outer edge the walk-off fell along the old face gravity (plane_d
+    // -0.36 m 0.23 s after the release, -171 m at the end). With B held, the face around the edge is taken as the face
+    // whose normal is the travel direction; its plane is put at the earliest possible edge (release point moved back by
+    // the detector delay) so the hero meets the real face first. Without B the game keeps its own ledge behaviour.
+    if(gfWrap.armed&&!gfWrap.requested&&ws::drive::wsGroundEntry.load(std::memory_order_relaxed)){
+      double since=qpcSec(now)-gfWrap.t;float dist=facePlaneDistance(mvA ? mvA : p,p0,n0);
+      float d[3]={gfL.walkoff.carry[0],gfL.walkoff.carry[1],gfL.walkoff.carry[2]};float dn=d[0]*n0[0]+d[1]*n0[1]+d[2]*n0[2];
+      for(int i=0;i<3;++i)d[i]-=dn*n0[i];
+      float speed=std::hypot(d[0],d[1],d[2]);
+      if(since>1.0||!(speed>1.f)||!std::isfinite(speed))gfWrap.armed=false;
+      else if(gfL.probe.clean&&dist<-0.3f&&wgiBDown.load()){
+        gfWrap.requested=true;float back=speed*std::fmin(0.2f,std::fmax(0.f,gfWrap.delay));
+        for(int i=0;i<3;++i){d[i]/=speed;geP[i].store(gfWrap.p[i]-d[i]*back);geN[i].store(d[i]);}
+        if(!geTransfer.exchange(true)){geVetoUntilMs.store(GetTickCount64()+1500);geReqSeq.fetch_add(1);}
+        for(int i=0;i<3;++i)gfL.vg[i]=0.f;
+        if(gfWrapLogs.fetch_add(1)<40)msm2::writeLog("WS_FACE_EDGE_WRAP event=request since_s=%.3f plane_d=%.3f speed=%.2f back_m=%.2f n=%.3f,%.3f,%.3f",since,dist,speed,back,d[0],d[1],d[2]);
+      }else if(gfL.probe.clean&&dist<-0.3f){gfWrap.armed=false;if(gfWrapLogs.fetch_add(1)<40)msm2::writeLog("WS_FACE_EDGE_WRAP event=skipped reason=b_not_held since_s=%.3f plane_d=%.3f",since,dist);}
+    }
     faceZipImpulse(n0,now);releasedAirStep(q,mvA ? mvA : p,gfL.vg,gfL.dash,dt);gfL.probe.limit(mvA ? mvA : p,q,u);
   }
   if (!gfL.pinned && !gfL.walkoff.active) { float k = std::exp(-dt / 0.4f); for (int i = 0; i < 3; ++i) { q[i] += gfL.dash[i] * dt; gfL.dash[i] *= k; } }
@@ -3146,11 +3172,11 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
         if (!transfer) ++gbTests;
         gbSetUp(from);
         sgSubBlock.store(gbAddr); sgSubActive.store(true); sgAirPhase.store(false); gbAirCam.store(false); gbHoldA.store(true); gbActive = true;
-        gbState = 4; gbBlendStart = now; gbAPresses = wgiBPresses.load();
+        gbState = 4; gbBlendStart = now; gbAPresses = wgiBTaps.load();
         msm2::writeLog("WS_GROUND_ENTRY event=start test=%u n=%.3f,%.3f,%.3f from=%.3f,%.3f,%.3f source=%s standoff=%.3f vy=%.2f", gbTests, gbN[0], gbN[1], gbN[2], from[0], from[1], from[2], transfer ? "face_transfer" : "ground_or_air", gbPlaneStandoff, vOk ? vy : 0.f);
       } } }
   if (gbState == 4) {
-    if (wgiBPresses.load() != gbAPresses) { geVetoUntilMs.store(0); geBUntilMs.store(GetTickCount64() + kBCancelBlockMs); gbEnd("entry_cancel_by_B", now, true); msm2::writeLog("WS_B_CANCEL event=block_start ms=%llu", (unsigned long long)kBCancelBlockMs); }
+    if (wgiBTaps.load() != gbAPresses) { geVetoUntilMs.store(0); geBUntilMs.store(GetTickCount64() + kBCancelBlockMs); gbEnd("entry_cancel_by_B", now, true); msm2::writeLog("WS_B_CANCEL event=block_start ms=%llu", (unsigned long long)kBCancelBlockMs); }
     else { float t = std::fmin(1.f, float(now - gbBlendStart) / 250.f), s = t * t * (3.f - 2.f * t);
       float up[3] = {gbFrom[0] * (1.f - s) + gbN[0] * s, gbFrom[1] * (1.f - s) + gbN[1] * s, gbFrom[2] * (1.f - s) + gbN[2] * s}; float l = std::sqrt(up[0] * up[0] + up[1] * up[1] + up[2] * up[2]);
       if (l > 1e-3f) { for (float& c : up) c /= l; gbSetUp(up); }
@@ -3200,7 +3226,7 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     gfContactGen.store(gfGen.fetch_add(1) + 1 + 0x80000000u); gfOn.store(ws::drive::wsGravityForce.load() && !sgLocked.load()); if (gfOn.load()) gfStartThread();
     gvHero.store(hero.hero); gfVyGame.store(0); gfVyGameQpc.store(0);
     if (gfOn.load() && gvState.load() == 2) { unsigned i = gvNext.fetch_add(1); if (i < gvCandN.load()) { gvTestAddr.store(gvCand[i]); gvTestWrites.store(0); msm2::writeLog("WS_VELOCITY_TEST start idx=%u addr=0x%llx", i, (unsigned long long)gvCand[i]); } else gvState.store(3); }   // M10s: no force while locked (stand on the wall)
-    gbAPresses = wgiBPresses.load(); geHoldStartMs.store(GetTickCount64()); geSameFaceLogs.store(0);
+    gbAPresses = wgiBTaps.load(); geHoldStartMs.store(GetTickCount64()); geSameFaceLogs.store(0);
     msm2::writeLog("WS_GRAVITY_TEST start test=%u n=%.3f,%.3f,%.3f locked=%u", gbTests, gbN[0], gbN[1], gbN[2], unsigned(sgLocked.load()));
   } else if (gbState >= 2) {
     bool velStop = !(gfOn.load() && gfFrames.load() > 0) && vOk && prevOk && now - gbStart >= 150 && prevVy < -3.f && vy > -0.7f;   // M10u: stores make the sampled speed jump
@@ -3220,7 +3246,7 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     else if (gbState == 2) {
       // M10z-r11: on B the position stores stop at once (the model knows no ground and pushed the hero through it while
       // blending); the game falls with its own collision, only the orientation returns over 1 s.
-      if (wgiBPresses.load() != gbAPresses) { geBUntilMs.store(GetTickCount64() + kBCancelBlockMs); msm2::writeLog("WS_B_CANCEL event=block_start ms=%llu", (unsigned long long)kBCancelBlockMs); gbState = 3; gbBlendStart = now; for (int i = 0; i < 3; ++i) sbN[i].store(gbN[i]); sbBlendQpc.store(qpcNow()); gfSummary("cancel_by_B"); stateReport("B"); msm2::writeLog("WS_GRAVITY_TEST cancel_by_B test=%u held_ms=%llu", gbTests, (unsigned long long)(now - gbStart)); }
+      if (wgiBTaps.load() != gbAPresses) { geBUntilMs.store(GetTickCount64() + kBCancelBlockMs); msm2::writeLog("WS_B_CANCEL event=block_start ms=%llu", (unsigned long long)kBCancelBlockMs); gbState = 3; gbBlendStart = now; for (int i = 0; i < 3; ++i) sbN[i].store(gbN[i]); sbBlendQpc.store(qpcNow()); gfSummary("cancel_by_B"); stateReport("B"); msm2::writeLog("WS_GRAVITY_TEST cancel_by_B test=%u held_ms=%llu", gbTests, (unsigned long long)(now - gbStart)); }
       else gbSetUp(gbN);
     }
     if (gbState == 3) {

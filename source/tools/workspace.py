@@ -237,7 +237,8 @@ def build_progress(destination,token):
 class WindowsSystem:
  def stop(self,game):
   require(os.name=='nt','Use Windows for real migration/update')
-  shared_tools().Windows().quiet(game)
+  w=shared_tools().Windows()
+  (w.update_quiet if hasattr(w,'update_quiet') else w.quiet)(game)
  def build(self,source,destination):
   require(shutil.which('wsl.exe'),'WSL2 is required; see source/BUILD.md. Build/tests are not skipped.')
   distro=os.environ.get('MSM2_WS_WSL_DISTRO') or run(['wsl.exe','--exec','printenv','WSL_DISTRO_NAME'])

@@ -7,7 +7,9 @@ $global:ModTestLaunches = @()
 $global:ModTestActivations = @()
 function Check($condition, $message) { if (-not $condition) { throw $message }; $script:checks++ }
 function Get-Process { param([string]$Name, $ErrorAction) if ($global:ModTestProcesses.ContainsKey($Name)) { $global:ModTestProcesses[$Name] } }
-function Stop-Process { throw 'The toolkit must not stop any process.' }
+$global:ModTestStopped = @()
+function Stop-Process { param([int]$Id, $ErrorAction) if (-not $global:ModTestAllowStop) { throw 'The toolkit must not stop any process.' }; $global:ModTestStopped += $Id; $global:ModTestProcesses.Remove('Overstrike') }
+function Wait-Process { param($Id, $Timeout, $ErrorAction) }
 function Start-Process { param($FilePath, $WorkingDirectory, $ArgumentList) $global:ModTestLaunches += [pscustomobject]@{File=$FilePath; Cwd=$WorkingDirectory; Args=$ArgumentList} }
 $global:ModTestShell = [pscustomobject]@{}
 $global:ModTestShell | Add-Member -MemberType ScriptMethod -Name AppActivate -Value { param($id) $global:ModTestActivations += $id; return $true }
@@ -49,6 +51,22 @@ try {
     $global:ModTestProcesses = @{}
     Run 'check'
     Check ($global:ModTestLaunches.Count -eq $before) 'Process check launched a program.'
+    # Update-WS only: closes the exact shared Overstrike, refuses a running game, never touches a foreign manager.
+    $global:ModTestAllowStop = $true
+    $global:ModTestProcesses = @{'Overstrike'=[pscustomobject]@{Path=(Join-Path $game 'Overstrike/Overstrike.exe');Id=321}}
+    Run 'update-check'
+    Check ($global:ModTestStopped -contains 321 -and -not $global:ModTestProcesses.ContainsKey('Overstrike')) 'Update check did not close the shared Overstrike.'
+    $global:ModTestStopped = @()
+    $global:ModTestProcesses = @{'Spider-Man2'=[pscustomobject]@{Path=(Join-Path $game 'Spider-Man2.exe');Id=322};'Overstrike'=[pscustomobject]@{Path=(Join-Path $game 'Overstrike/Overstrike.exe');Id=323}}
+    $blocked = $false
+    try { Run 'update-check' } catch { $blocked = $_.Exception.Message -match 'Close MSM2 before the WS update' }
+    Check ($blocked -and $global:ModTestStopped.Count -eq 0) 'Update check stopped a process while the game was running.'
+    $global:ModTestProcesses = @{'Overstrike'=[pscustomobject]@{Path=(Join-Path $temp 'foreign/Overstrike.exe');Id=324}}
+    $blocked = $false
+    try { Run 'update-check' } catch { $blocked = $_.Exception.Message -match 'different Overstrike' }
+    Check ($blocked -and $global:ModTestStopped.Count -eq 0) 'Update check stopped a foreign Overstrike.'
+    $global:ModTestAllowStop = $false
+    $global:ModTestProcesses = @{}
     # Load the production shortcut function; its host boundaries remain fake.
     . $helper -Request $request
     $desktop = Join-Path $temp 'owned desktop'

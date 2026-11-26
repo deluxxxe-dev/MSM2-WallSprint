@@ -141,7 +141,9 @@ Install/Start/Play/Open/Backup/Restore適用は `<game>/.MSM2-Mod-Tools.lock` �
 存在だけでは判定しません。全更新・起動・保存・復元を `.MSM2-Operations.guard` のOS所有権で直列化します。監査・互換用lockファイルは解放後も残り得ます。
 VerifyとRestoreの確認のみは、この変更操作用ロックを取得しません。
 PowerShellはゲームとOverstrikeのプロセス実行パスを照合し、同名の別パスや
-実行パス不明のプロセスを拒否します。強制終了は行いません。
+実行パス不明のプロセスを拒否します。3つのショートカットとBackup/Restoreは強制終了を行いません。
+例外（owner 2026-11-26）: `MSM2-WS/Update-WS.cmd` だけは、ゲームルートの共有Overstrikeが起動中なら
+そのプロセス（パス一致のみ）を終了して更新を続けます。ゲーム本体や `Check for updates` が起動中なら何も止めずに拒否します。
 
 ## 改変・保存の運用
 

@@ -66,7 +66,7 @@ sf=code.split('bool wrSameFaceCallback(',1)[1].split('\n}',1)[0]
 assert 'if (requested != wrRequestImage + kWrStateRva || !context) return allow;' in sf and 'kSameFaceCos' in sf and 'kSameFacePlane' in sf
 assert 'if (sameFace) { if (*slotE30 == reinterpret_cast<std::uintptr_t>(&wrSameFaceCallback)) *slotE30 = 0;' in det
 assert 'bool bBlock = !veto && *slotE30 == 0 && heroMachine' in det and 'GetTickCount64() < geBUntilMs.load()' in det
-assert code.count('geBUntilMs.store(GetTickCount64() + kBCancelBlockMs)')==2 and 'if (b && wsNow) wsNow = false;' in code
+assert code.count('geBUntilMs.store(GetTickCount64() + kBCancelBlockMs)')==2 and code.count('wgiBTaps.load() != gbAPresses')==2 and 'wgiBPresses.load() != gbAPresses' not in code and 'if (b && wsNow) wsNow = false;' in code
 assert 'gfL.fallIgnoreUntil = qpcSec(now) + 0.5; msm2::writeLog("WS_GROUND_ENTRY event=hold_no_hop' in code
 print("PASS: M21b B-cancel WR/WS block, same-face WR refusal in unpinned hold (slot restored), 0.5 s fall ignore after no-hop entry")
 
@@ -77,3 +77,10 @@ assert 'if (same || early) { wrVetoFired = true; return false; }' in sf and 'if 
 assert 'bool transfer = geTransfer.exchange(false) && gbState == 2;' in code and 'gfSummary("face_transfer")' in code
 assert 'gbFrom[0] * (1.f - s) + gbN[0] * s' in code and code.count('geHoldStartMs.store(GetTickCount64())')==2
 print("PASS: M21c settle refusal of other faces and no-hop face-to-face transfer from the current normal")
+
+# M21d: only a B tap (< 0.3 s) cancels; held B arms the outer-edge wrap: a walk-off that leaves the face plane by 0.3 m
+# after a clean probe within 1 s becomes a face transfer onto the travel-direction normal; without B it is only logged.
+assert 'if (!b && was && GetTickCount64() - wgiBDownMs.load() < kBTapMs) wgiBTaps.fetch_add(1);' in code and 'kBTapMs=300' in code
+assert 'else if(gfL.probe.clean&&dist<-0.3f&&wgiBDown.load()){' in code and 'if(since>1.0||!(speed>1.f)||!std::isfinite(speed))gfWrap.armed=false;' in code
+assert 'geP[i].store(gfWrap.p[i]-d[i]*back);geN[i].store(d[i]);' in code and 'reason=b_not_held' in code
+print("PASS: M21d B tap cancel, B-held outer-edge wrap request (plane at earliest edge), no wrap without B")

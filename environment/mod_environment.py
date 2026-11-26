@@ -206,6 +206,10 @@ class Windows:
     def quiet(self, game):
         self.invoke('check', game)
 
+    def update_quiet(self, game):
+        # Update-WS only (owner 2026-11-26): close the exact shared Overstrike, refuse a running game.
+        self.invoke('update-check', game)
+
     def shortcuts(self, game):
         self.invoke('shortcuts', game)
 

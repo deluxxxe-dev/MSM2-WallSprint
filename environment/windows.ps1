@@ -39,6 +39,21 @@ if ($r.action -eq 'check') {
         $details = foreach ($name in $targets.Keys) { foreach ($p in $running[$name]) { "$name PID=$($p.Id) Path=$($p.Path)" } }
         throw ('Close MSM2 and Overstrike before install/backup/restore. No process was stopped. ' + ($details -join '; '))
     }
+} elseif ($r.action -eq 'update-check') {
+    # Owner request 2026-11-26: Update-WS closes the shared Overstrike (exact game-root path only) and continues. The game
+    # and the updater must still be closed manually; a different Overstrike was already refused above.
+    if ($running['Spider-Man2'].Count -or $running['Check for updates'].Count) {
+        $details = foreach ($name in @('Spider-Man2','Check for updates')) { foreach ($p in $running[$name]) { "$name PID=$($p.Id) Path=$($p.Path)" } }
+        throw ('Close MSM2 before the WS update. No process was stopped. ' + ($details -join '; '))
+    }
+    $ids = @($running['Overstrike'] | ForEach-Object { $_.Id })
+    if ($ids.Count) {
+        foreach ($id in $ids) { Stop-Process -Id $id -ErrorAction Stop; Write-Output "Closed shared Overstrike PID=$id for the WS update." }
+        Wait-Process -Id $ids -Timeout 15 -ErrorAction SilentlyContinue
+        foreach ($p in @(Get-Process -Name 'Overstrike' -ErrorAction SilentlyContinue)) {
+            if ($ids -contains $p.Id) { throw "Shared Overstrike PID=$($p.Id) did not close; close it manually." }
+        }
+    }
 } elseif ($r.action -eq 'shortcuts') {
     $desktop = [Environment]::GetFolderPath('Desktop')
     if (-not $desktop) { throw 'Desktop folder is unavailable.' }

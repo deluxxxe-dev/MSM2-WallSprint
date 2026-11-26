@@ -96,3 +96,4 @@ c6031adf0ec71d6aab6d0979cfed3464185d41b3 2026-11-26 build+test.sh+package PASS; 
 e3fbb7f348fee32816fdb85805fd5b1ba5fb7b43 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21 no-hop ground/air wall entry, B return fix; by Claude Code)
 bed994778eccc6845771d06701579241ad9727e5 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21b B block, same-face WR refusal, entry fall grace; by Claude Code)
 7532118dbd0124efcbca40cae7c6edbbd242fb85 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21c other-face settle refusal and face-to-face transfer; by Claude Code)
+6b712134574509a008bd4cf1d7b45ff16a64e218 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21d B tap cancel, edge wrap, Update-WS closes Overstrike; by Claude Code)
