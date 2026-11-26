@@ -63,9 +63,17 @@ print("PASS: M21 ground-entry callback hero-only/empty-slot/restored, validated 
 # M21b: after B every hero WR request is refused for a fixed window and WS detection is ignored; during a hold that is not
 # pinned only a same-face WR (normal within 20 deg, plane within 0.6 m) is refused; the same-face slot is restored.
 sf=code.split('bool wrSameFaceCallback(',1)[1].split('\n}',1)[0]
-assert 'if (requested != wrRequestImage + kWrStateRva || !context) return allow;' in sf and 'if (!same) return allow;' in sf and 'kSameFaceCos' in sf and 'kSameFacePlane' in sf
+assert 'if (requested != wrRequestImage + kWrStateRva || !context) return allow;' in sf and 'kSameFaceCos' in sf and 'kSameFacePlane' in sf
 assert 'if (sameFace) { if (*slotE30 == reinterpret_cast<std::uintptr_t>(&wrSameFaceCallback)) *slotE30 = 0;' in det
 assert 'bool bBlock = !veto && *slotE30 == 0 && heroMachine' in det and 'GetTickCount64() < geBUntilMs.load()' in det
 assert code.count('geBUntilMs.store(GetTickCount64() + kBCancelBlockMs)')==2 and 'if (b && wsNow) wsNow = false;' in code
 assert 'gfL.fallIgnoreUntil = qpcSec(now) + 0.5; msm2::writeLog("WS_GROUND_ENTRY event=hold_no_hop' in code
 print("PASS: M21b B-cancel WR/WS block, same-face WR refusal in unpinned hold (slot restored), 0.5 s fall ignore after no-hop entry")
+
+# M21c: another face is refused while the hold settles (1 s), later converted into a no-hop face-to-face transfer that
+# rotates from the current hold normal; ground/air entry still rotates from world up.
+assert 'const char* decision = same ? "refused" : early ? "refused_settling" : horizontal ? "transfer" : "game";' in sf
+assert 'if (same || early) { wrVetoFired = true; return false; }' in sf and 'if (!horizontal) return allow;' in sf
+assert 'bool transfer = geTransfer.exchange(false) && gbState == 2;' in code and 'gfSummary("face_transfer")' in code
+assert 'gbFrom[0] * (1.f - s) + gbN[0] * s' in code and code.count('geHoldStartMs.store(GetTickCount64())')==2
+print("PASS: M21c settle refusal of other faces and no-hop face-to-face transfer from the current normal")
