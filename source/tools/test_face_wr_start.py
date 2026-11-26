@@ -33,8 +33,9 @@ for bad in ['writeMemory','MH_','= result']:
 # M20e: the only store is the temporary [machine+0xE30] veto callback: set only when empty and eligible, restored after the
 # original call only if still ours; the callback returns the game's own allow for every other requested state.
 import re
-assert len(re.findall(r'\*slotE30 = [^=]',det))==2 and 'bool veto = faceWrVetoEligible(machine) && *slotE30 == 0;' in det
-assert 'if (*slotE30 == reinterpret_cast<std::uintptr_t>(&wrVetoCallback)) *slotE30 = 0;' in det
+assert len(re.findall(r'\*slotE30 = [^=]',det))==4 and 'bool veto = faceWrVetoEligible(machine) && *slotE30 == 0;' in det
+assert 'if (*slotE30 == reinterpret_cast<std::uintptr_t>(&wrVetoCallback)) *slotE30 = 0;' in det and 'if (observe && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrObserveCallback)) *slotE30 = 0;' in det
+obs=code.split('bool wrObserveCallback(',1)[1].split('\n}',1)[0];assert 'return allow;' in obs and 'return false' not in obs
 cb=code.split('bool wrVetoCallback(',1)[1].split('\n}',1)[0]
 assert 'return allow;' in cb and 'requested == wrRequestImage + kWrStateRva' in cb
 elig=code.split('bool faceWrVetoEligible(',1)[1].split('\n}',1)[0]

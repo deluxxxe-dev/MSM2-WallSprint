@@ -2699,15 +2699,37 @@ std::uint64_t wrRequestRva(std::uintptr_t p) { return p >= wrRequestImage && p -
 // in [machine+0xE30] only for the duration of one original call, only when that slot is empty, and restored right after;
 // it returns the game's own `allow` for every other request.
 constexpr std::uintptr_t kHeroMachineVtRva = 0x85EA4A8, kWrStateRva = 0xB467FD0;
-std::atomic<unsigned> wrVetoes{0}, wrVetoLogs{0}, wrVetoIgnored{0}; thread_local bool wrVetoFired = false;
-bool wrVetoCallback(std::uintptr_t, std::uintptr_t, std::uintptr_t requested, std::uintptr_t, bool allow) {
-  if (requested == wrRequestImage + kWrStateRva) { wrVetoFired = true; return false; }
+std::atomic<unsigned> wrVetoes{0}, wrVetoLogs{0}, wrVetoIgnored{0}, wrVetoesHold{0}; thread_local bool wrVetoFired = false;
+// M20f: the WR request context (4th callback argument) is captured for the first requests so the wall contact data the
+// game used can be identified offline (needed for a no-hop ground -> wall entry). Read-only copy of 0x140 bytes.
+thread_local bool wrCtxCaptured = false; thread_local std::uintptr_t wrCtxPtr = 0, wrCtxOwner = 0; thread_local unsigned char wrCtxBytes[0x140];
+void wrCaptureContext(std::uintptr_t owner, std::uintptr_t context) {
+  wrCtxCaptured = context && msm2::readMemory(context, wrCtxBytes, sizeof wrCtxBytes); wrCtxPtr = context; wrCtxOwner = owner;
+}
+bool wrVetoCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t requested, std::uintptr_t context, bool allow) {
+  if (requested == wrRequestImage + kWrStateRva) { wrVetoFired = true; if (!wrCtxCaptured) wrCaptureContext(owner, context); return false; }
   return allow;
+}
+// Observe-only variant (street WR starts): returns the game's own decision unchanged.
+bool wrObserveCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t requested, std::uintptr_t context, bool allow) {
+  if (requested == wrRequestImage + kWrStateRva && !wrCtxCaptured) wrCaptureContext(owner, context);
+  return allow;
+}
+std::atomic<unsigned> wrCtxLogs{0};
+void wrLogContext(const char* why, std::uintptr_t machine) {
+  if (!wrCtxCaptured || wrCtxLogs.fetch_add(1) >= 12) return;
+  unsigned id = wrCtxLogs.load();
+  msm2::writeLog("WS_WR_CONTEXT id=%u why=%s machine=0x%llx owner=0x%llx context=0x%llx hold=%u bytes=0x140 read_only=1", id, why, (unsigned long long)machine, (unsigned long long)wrCtxOwner, (unsigned long long)wrCtxPtr, unsigned(gfOn.load()));
+  for (unsigned off = 0; off < sizeof wrCtxBytes; off += 32) { char hex[65]{}; for (unsigned j = 0; j < 32; ++j) std::snprintf(hex + 2 * j, 3, "%02x", wrCtxBytes[off + j]);
+    float f[8]; std::memcpy(f, wrCtxBytes + off, 32);
+    msm2::writeLog("WS_WR_CONTEXT_BYTES id=%u off=0x%03x hex=%s f=%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f", id, off, hex, f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7]); }
 }
 bool faceWrVetoEligible(std::uintptr_t machine) {
   if (!ws::drive::wsFaceNoWr.load(std::memory_order_relaxed) || !gfOn.load() || !gfPinnedNow.load() || gfFaceAirNow.load() || stopHopRun.load() || gfWalkoffActive.load() || wsActiveNow(GetTickCount64())) return false;
   std::uintptr_t vt = *reinterpret_cast<const std::uintptr_t*>(machine);
-  return wrRequestRva(vt) == kHeroMachineVtRva && wrVetoes.load(std::memory_order_relaxed) < 2000;
+  // M20f: cap per hold (the game re-requests WR ~3 times per frame while RT and the stick stay toward the roof; a
+  // global 2000 cap ran out after ~8 s of up-sprint in total).
+  return wrRequestRva(vt) == kHeroMachineVtRva && wrVetoesHold.load(std::memory_order_relaxed) < 200000;
 }
 std::uint64_t wrRequestDetour(std::uintptr_t machine, std::uintptr_t rdx, std::uintptr_t r8, std::uintptr_t r9) {
   if (!ws::drive::wsWrRequestDiag.load(std::memory_order_relaxed) || killed.load(std::memory_order_relaxed) || !machine) return wrRequestOrig(machine, rdx, r8, r9);
@@ -2717,10 +2739,15 @@ std::uint64_t wrRequestDetour(std::uintptr_t machine, std::uintptr_t rdx, std::u
   std::uint64_t h0 = ws_hook_head.load(std::memory_order_acquire);
   auto* slotE30 = reinterpret_cast<std::uintptr_t*>(machine + 0xE30);
   bool veto = faceWrVetoEligible(machine) && *slotE30 == 0;
+  bool observe = !veto && *slotE30 == 0 && wrCtxLogs.load(std::memory_order_relaxed) < 12 && wrRequestRva(*reinterpret_cast<const std::uintptr_t*>(machine)) == kHeroMachineVtRva;
+  wrCtxCaptured = false;
   if (veto) { wrVetoFired = false; *slotE30 = reinterpret_cast<std::uintptr_t>(&wrVetoCallback); }
+  else if (observe) *slotE30 = reinterpret_cast<std::uintptr_t>(&wrObserveCallback);
   std::uint64_t result = wrRequestOrig(machine, rdx, r8, r9);
+  if (observe && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrObserveCallback)) *slotE30 = 0;
+  if (observe) wrLogContext("street_or_other", machine);
   if (veto) { if (*slotE30 == reinterpret_cast<std::uintptr_t>(&wrVetoCallback)) *slotE30 = 0;
-    if (wrVetoFired) { wrVetoes.fetch_add(1);
+    if (wrVetoFired) { wrVetoes.fetch_add(1); wrVetoesHold.fetch_add(1); wrLogContext("face_veto", machine);
       if (wrVetoLogs.fetch_add(1) < 40) msm2::writeLog("WS_FACE_WR_REFUSED machine=0x%llx state_before=0x%llx state_after=0x%llx result=0x%llx stick=%.2f,%.2f rt=%.2f count=%u",
         (unsigned long long)machine, (unsigned long long)before, (unsigned long long)*reinterpret_cast<const std::uintptr_t*>(machine + 0x70), (unsigned long long)result, wgiLx.load(), wgiLy.load(), wgiReadTarget ? float(wgiRt.load()) : -1.f, wrVetoes.load()); } }
   std::uint64_t h1 = ws_hook_head.load(std::memory_order_acquire);
@@ -2992,6 +3019,7 @@ void gfSummary(const char* why) {
   airFacingEnd(why);
   walkoffEnd(why);
   gfLocoDownNow.store(false);
+  if (unsigned v = wrVetoesHold.exchange(0)) msm2::writeLog("WS_FACE_WR_REFUSED event=hold_end reason=%s vetoes=%u", why, v);
   if(unsigned frames=gfLocoDownFrames.exchange(0))msm2::writeLog("WS_FACE_LOCOMOTION_DOWN event=hold_end reason=%s exempt_frames=%u",why,frames);
   gfAir.store(false);gfFaceAirNow.store(false);gfPinnedNow.store(false);gfFaceMaskLatched.store(false);gfFaceMaskUntil.store(0);gfFaceTakeoffTime.store(0);
   gmReport(why); for (auto& h : gmVelHits) h.store(0); gmVelSamples.store(0);
