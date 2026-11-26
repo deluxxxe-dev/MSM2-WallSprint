@@ -33,7 +33,7 @@ for bad in ['writeMemory','MH_','= result']:
 # M20e: the only store is the temporary [machine+0xE30] veto callback: set only when empty and eligible, restored after the
 # original call only if still ours; the callback returns the game's own allow for every other requested state.
 import re
-assert len(re.findall(r'\*slotE30 = [^=]',det))==6 and 'bool veto = faceWrVetoEligible(machine) && *slotE30 == 0;' in det
+assert len(re.findall(r'\*slotE30 = [^=]',det))==8 and 'bool veto = faceWrVetoEligible(machine) && *slotE30 == 0;' in det
 assert 'if (*slotE30 == reinterpret_cast<std::uintptr_t>(&wrVetoCallback)) *slotE30 = 0;' in det and 'if (observe && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrObserveCallback)) *slotE30 = 0;' in det
 obs=code.split('bool wrObserveCallback(',1)[1].split('\n}',1)[0];assert 'return allow;' in obs and 'return false' not in obs
 cb=code.split('bool wrVetoCallback(',1)[1].split('\n}',1)[0]
@@ -59,3 +59,13 @@ assert 'if (entryCb && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrEntryCall
 assert ini.getint('WallSprint','WALLSPRINT_WS_GROUND_ENTRY')==1 and 'L"WALLSPRINT_WS_GROUND_ENTRY",0,' in (root/'src/msm2/telemetry.cpp').read_text()
 assert '!sbBlendQpc.load(std::memory_order_relaxed) && !sgLocked' in code  # B return is never cut by landed_game
 print("PASS: M21 ground-entry callback hero-only/empty-slot/restored, validated context normal, INI default0/shipped1; B return not cut")
+
+# M21b: after B every hero WR request is refused for a fixed window and WS detection is ignored; during a hold that is not
+# pinned only a same-face WR (normal within 20 deg, plane within 0.6 m) is refused; the same-face slot is restored.
+sf=code.split('bool wrSameFaceCallback(',1)[1].split('\n}',1)[0]
+assert 'if (requested != wrRequestImage + kWrStateRva || !context) return allow;' in sf and 'if (!same) return allow;' in sf and 'kSameFaceCos' in sf and 'kSameFacePlane' in sf
+assert 'if (sameFace) { if (*slotE30 == reinterpret_cast<std::uintptr_t>(&wrSameFaceCallback)) *slotE30 = 0;' in det
+assert 'bool bBlock = !veto && *slotE30 == 0 && heroMachine' in det and 'GetTickCount64() < geBUntilMs.load()' in det
+assert code.count('geBUntilMs.store(GetTickCount64() + kBCancelBlockMs)')==2 and 'if (b && wsNow) wsNow = false;' in code
+assert 'gfL.fallIgnoreUntil = qpcSec(now) + 0.5; msm2::writeLog("WS_GROUND_ENTRY event=hold_no_hop' in code
+print("PASS: M21b B-cancel WR/WS block, same-face WR refusal in unpinned hold (slot restored), 0.5 s fall ignore after no-hop entry")

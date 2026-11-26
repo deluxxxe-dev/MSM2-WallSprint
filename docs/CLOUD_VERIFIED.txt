@@ -94,3 +94,4 @@ f02f0e26fc2ba00cfb6c5896a77a81d7ab8bcf6c 2026-11-26 build+test.sh+package PASS; 
 bd6710373b01bb7464d88cba9adfb5e26b0055e6 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M20e WR veto on the face; by Claude Code)
 c6031adf0ec71d6aab6d0979cfed3464185d41b3 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M20f per-hold veto cap, WR request context capture; by Claude Code)
 e3fbb7f348fee32816fdb85805fd5b1ba5fb7b43 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21 no-hop ground/air wall entry, B return fix; by Claude Code)
+bed994778eccc6845771d06701579241ad9727e5 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21b B block, same-face WR refusal, entry fall grace; by Claude Code)

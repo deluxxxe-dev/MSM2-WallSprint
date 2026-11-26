@@ -1707,6 +1707,10 @@ StopEndSnapshot stopEndSnapshot;
 // face hold without a stop hop.
 std::atomic<bool> geArmedNow{false},gfEntryNoHop{false};std::atomic<unsigned> geReqSeq{0};std::atomic<float> geN[3]{},geP[3]{};
 std::atomic<std::uint64_t> geVetoUntilMs{0};std::atomic<unsigned> geLogs{0};
+// M21b: B cancels the face; the game would start WR/WS again at once while the stick and RT still push into the wall,
+// so every WR request of the hero machine is refused and WS detection is ignored until this time.
+std::atomic<std::uint64_t> geBUntilMs{0};std::atomic<unsigned> geBVetoes{0},geSameFaceVetoes{0},geSameFaceLogs{0};
+constexpr std::uint64_t kBCancelBlockMs=1500;constexpr float kSameFaceCos=0.9396926f,kSameFacePlane=0.6f;
 std::atomic<bool> stopEndReady{false};std::atomic<bool> stopHopRun{false};std::atomic<unsigned> stopDebounceLogs{0};
 StopDebounce stopDebounce;
 bool readStopMotion(std::uintptr_t tr,double now,const float* n,float* out){
@@ -2243,7 +2247,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     // every hold that starts without a jump release while the hero is near the face (< 0.8 m) gets the push.
     { bool jumped = jm && ms >= jm && ms - jm < 600; float n0i[3] = {gfN0[0].load(), gfN0[1].load(), gfN0[2].load()};
       float di = (p[0] - gfP0[0].load()) * n0i[0] + (p[1] - gfP0[1].load()) * n0i[1] + (p[2] - gfP0[2].load()) * n0i[2];
-      if (!gfL.launched && gfEntryNoHop.exchange(false)) { gfL.launched = true; msm2::writeLog("WS_GROUND_ENTRY event=hold_no_hop plane_d=%.3f", di); }
+      if (!gfL.launched && gfEntryNoHop.exchange(false)) { gfL.launched = true; gfL.fallIgnoreUntil = qpcSec(now) + 0.5; msm2::writeLog("WS_GROUND_ENTRY event=hold_no_hop plane_d=%.3f fall_ignore_s=0.5", di); }
       if (!gfL.launched && !jumped && di < 0.8f && gfL.hopArc.solve(di)) {
         gfL.launched=true;gfL.stop.start();gfL.stopHop=true;stopHopRun.store(true);gfL.stopHopTakeoff=qpcSec(now);gfL.stopEpisode.begin(qpcSec(now)-double(ms>=lastWsMs.load() ? ms-lastWsMs.load():0)/1000.0,wgiPresses.load());++gfL.stopTraceId;stopTraceStarted.store(true);gfL.stopTrace={};
         gfL.pinned=true;gfL.faceAir=true;gfL.faceAirT=0.f;gfL.pinPresses=wgiPresses.load();
@@ -2734,6 +2738,22 @@ bool wrEntryCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t reques
   if (geLogs.fetch_add(1) < 40) msm2::writeLog("WS_GROUND_ENTRY event=request point=%.3f,%.3f,%.3f n=%.3f,%.3f,%.3f", pn[0], pn[1], pn[2], pn[3] / nl, pn[4] / nl, pn[5] / nl);
   return false;
 }
+// M21b: during a hold that is not pinned (fall release, face air, stop hop), a WR request on the face of the hold
+// (context normal within 20 deg of the hold normal and contact point within 0.6 m of its plane) is refused: the hold
+// lands the hero again with the face gravity. A request on another face keeps the game's own decision.
+bool wrSameFaceCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t requested, std::uintptr_t context, bool allow) {
+  if (requested != wrRequestImage + kWrStateRva || !context) return allow;
+  if (!wrCtxCaptured) wrCaptureContext(owner, context);
+  float pn[6]; if (!msm2::readMemory(context + 0x2C, pn, sizeof pn)) return allow;
+  float nl = std::sqrt(pn[3] * pn[3] + pn[4] * pn[4] + pn[5] * pn[5]); if (!std::isfinite(nl) || nl < 0.95f || nl > 1.05f) return allow;
+  float n0[3] = {gfN0[0].load(), gfN0[1].load(), gfN0[2].load()};
+  float c = (pn[3] * n0[0] + pn[4] * n0[1] + pn[5] * n0[2]) / nl;
+  float d = (pn[0] - gfP0[0].load()) * n0[0] + (pn[1] - gfP0[1].load()) * n0[1] + (pn[2] - gfP0[2].load()) * n0[2];
+  bool same = std::isfinite(c + d) && c >= kSameFaceCos && std::fabs(d) <= kSameFacePlane;
+  if (geSameFaceLogs.fetch_add(1) < 40) msm2::writeLog("WS_FACE_WR_SAME_FACE decision=%s cos=%.3f plane_d=%.3f n=%.3f,%.3f,%.3f", same ? "refused" : "game", c, d, pn[3] / nl, pn[4] / nl, pn[5] / nl);
+  if (!same) return allow;
+  wrVetoFired = true; return false;
+}
 // Observe-only variant (street WR starts): returns the game's own decision unchanged.
 bool wrObserveCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t requested, std::uintptr_t context, bool allow) {
   if (requested == wrRequestImage + kWrStateRva && !wrCtxCaptured) wrCaptureContext(owner, context);
@@ -2764,19 +2784,25 @@ std::uint64_t wrRequestDetour(std::uintptr_t machine, std::uintptr_t rdx, std::u
   auto* slotE30 = reinterpret_cast<std::uintptr_t*>(machine + 0xE30);
   bool veto = faceWrVetoEligible(machine) && *slotE30 == 0;
   bool heroMachine = wrRequestRva(*reinterpret_cast<const std::uintptr_t*>(machine)) == kHeroMachineVtRva;
-  bool entryCb = !veto && *slotE30 == 0 && heroMachine && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && (geArmedNow.load() || GetTickCount64() < geVetoUntilMs.load());
-  bool observe = !veto && !entryCb && *slotE30 == 0 && wrCtxLogs.load(std::memory_order_relaxed) < 12 && heroMachine;
+  bool bBlock = !veto && *slotE30 == 0 && heroMachine && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && GetTickCount64() < geBUntilMs.load();
+  if (bBlock) veto = true;
+  bool sameFace = !veto && *slotE30 == 0 && heroMachine && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && ws::drive::wsFaceNoWr.load(std::memory_order_relaxed) && gfOn.load() && !wsActiveNow(GetTickCount64());
+  bool entryCb = !veto && !sameFace && *slotE30 == 0 && heroMachine && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && (geArmedNow.load() || GetTickCount64() < geVetoUntilMs.load());
+  bool observe = !veto && !entryCb && !sameFace && *slotE30 == 0 && wrCtxLogs.load(std::memory_order_relaxed) < 12 && heroMachine;
   wrCtxCaptured = false;
   if (veto) { wrVetoFired = false; *slotE30 = reinterpret_cast<std::uintptr_t>(&wrVetoCallback); }
+  else if (sameFace) { wrVetoFired = false; *slotE30 = reinterpret_cast<std::uintptr_t>(&wrSameFaceCallback); }
   else if (entryCb) { wrVetoFired = false; *slotE30 = reinterpret_cast<std::uintptr_t>(&wrEntryCallback); }
   else if (observe) *slotE30 = reinterpret_cast<std::uintptr_t>(&wrObserveCallback);
   std::uint64_t result = wrRequestOrig(machine, rdx, r8, r9);
   if (entryCb && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrEntryCallback)) *slotE30 = 0;
+  if (sameFace) { if (*slotE30 == reinterpret_cast<std::uintptr_t>(&wrSameFaceCallback)) *slotE30 = 0; if (wrVetoFired) { geSameFaceVetoes.fetch_add(1); wrVetoesHold.fetch_add(1); } }
   if (entryCb && wrCtxCaptured) wrLogContext("ground_entry", machine);
   if (observe && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrObserveCallback)) *slotE30 = 0;
   if (observe) wrLogContext("street_or_other", machine);
   if (veto) { if (*slotE30 == reinterpret_cast<std::uintptr_t>(&wrVetoCallback)) *slotE30 = 0;
-    if (wrVetoFired) { wrVetoes.fetch_add(1); wrVetoesHold.fetch_add(1); wrLogContext("face_veto", machine);
+    if (wrVetoFired && bBlock) geBVetoes.fetch_add(1);
+    else if (wrVetoFired) { wrVetoes.fetch_add(1); wrVetoesHold.fetch_add(1); wrLogContext("face_veto", machine);
       if (wrVetoLogs.fetch_add(1) < 40) msm2::writeLog("WS_FACE_WR_REFUSED machine=0x%llx state_before=0x%llx state_after=0x%llx result=0x%llx stick=%.2f,%.2f rt=%.2f count=%u",
         (unsigned long long)machine, (unsigned long long)before, (unsigned long long)*reinterpret_cast<const std::uintptr_t*>(machine + 0x70), (unsigned long long)result, wgiLx.load(), wgiLy.load(), wgiReadTarget ? float(wgiRt.load()) : -1.f, wrVetoes.load()); } }
   std::uint64_t h1 = ws_hook_head.load(std::memory_order_acquire);
@@ -3050,7 +3076,7 @@ void gfSummary(const char* why) {
   airFacingEnd(why);
   walkoffEnd(why);
   gfLocoDownNow.store(false);
-  if (unsigned v = wrVetoesHold.exchange(0)) msm2::writeLog("WS_FACE_WR_REFUSED event=hold_end reason=%s vetoes=%u", why, v);
+  if (unsigned v = wrVetoesHold.exchange(0)) msm2::writeLog("WS_FACE_WR_REFUSED event=hold_end reason=%s vetoes=%u same_face=%u", why, v, geSameFaceVetoes.exchange(0));
   if(unsigned frames=gfLocoDownFrames.exchange(0))msm2::writeLog("WS_FACE_LOCOMOTION_DOWN event=hold_end reason=%s exempt_frames=%u",why,frames);
   gfAir.store(false);gfFaceAirNow.store(false);gfPinnedNow.store(false);gfFaceMaskLatched.store(false);gfFaceMaskUntil.store(0);gfFaceTakeoffTime.store(0);
   gmReport(why); for (auto& h : gmVelHits) h.store(0); gmVelSamples.store(0);
@@ -3073,6 +3099,10 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
   gbDiscover(hero, now);
   if (!ws::drive::wsGravityTest.load() || !gbAddr) { if (gbState) gbEnd("disabled_or_no_block", now); return; }
   bool wsNow = engagedManager.load() != 0 && now - lastWsMs.load() < 150;
+  { static bool blocking = false; bool b = GetTickCount64() < geBUntilMs.load();
+    if (b && wsNow) wsNow = false;   // M21b: no new WS right after B
+    if (blocking && !b) msm2::writeLog("WS_B_CANCEL event=block_end wr_vetoed=%u", geBVetoes.exchange(0));
+    blocking = b; }
   float n[3]; auto wnMs = ws::drive::wallNMs.load(); bool fromWr = wnMs && wnMs >= wsSessionStartMs.load();
   for (int i = 0; i < 3; ++i) n[i] = fromWr ? ws::drive::wallN[i].load() : m9N[i].load();
   float nl = std::sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
@@ -3106,7 +3136,7 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
         msm2::writeLog("WS_GROUND_ENTRY event=start test=%u n=%.3f,%.3f,%.3f standoff=%.3f vy=%.2f", gbTests, gbN[0], gbN[1], gbN[2], gbPlaneStandoff, vOk ? vy : 0.f);
       } } }
   if (gbState == 4) {
-    if (wgiBPresses.load() != gbAPresses) { geVetoUntilMs.store(0); gbEnd("entry_cancel_by_B", now, true); }
+    if (wgiBPresses.load() != gbAPresses) { geVetoUntilMs.store(0); geBUntilMs.store(GetTickCount64() + kBCancelBlockMs); gbEnd("entry_cancel_by_B", now, true); msm2::writeLog("WS_B_CANCEL event=block_start ms=%llu", (unsigned long long)kBCancelBlockMs); }
     else { float t = std::fmin(1.f, float(now - gbBlendStart) / 250.f), s = t * t * (3.f - 2.f * t);
       float up[3] = {gbN[0] * s, (1.f - s) + gbN[1] * s, gbN[2] * s}; float l = std::sqrt(up[0] * up[0] + up[1] * up[1] + up[2] * up[2]);
       if (l > 1e-3f) { for (float& c : up) c /= l; gbSetUp(up); }
@@ -3176,7 +3206,7 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
     else if (gbState == 2) {
       // M10z-r11: on B the position stores stop at once (the model knows no ground and pushed the hero through it while
       // blending); the game falls with its own collision, only the orientation returns over 1 s.
-      if (wgiBPresses.load() != gbAPresses) { gbState = 3; gbBlendStart = now; for (int i = 0; i < 3; ++i) sbN[i].store(gbN[i]); sbBlendQpc.store(qpcNow()); gfSummary("cancel_by_B"); stateReport("B"); msm2::writeLog("WS_GRAVITY_TEST cancel_by_B test=%u held_ms=%llu", gbTests, (unsigned long long)(now - gbStart)); }
+      if (wgiBPresses.load() != gbAPresses) { geBUntilMs.store(GetTickCount64() + kBCancelBlockMs); msm2::writeLog("WS_B_CANCEL event=block_start ms=%llu", (unsigned long long)kBCancelBlockMs); gbState = 3; gbBlendStart = now; for (int i = 0; i < 3; ++i) sbN[i].store(gbN[i]); sbBlendQpc.store(qpcNow()); gfSummary("cancel_by_B"); stateReport("B"); msm2::writeLog("WS_GRAVITY_TEST cancel_by_B test=%u held_ms=%llu", gbTests, (unsigned long long)(now - gbStart)); }
       else gbSetUp(gbN);
     }
     if (gbState == 3) {
