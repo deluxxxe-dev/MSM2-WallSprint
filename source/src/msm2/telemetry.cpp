@@ -112,6 +112,11 @@ Settings settings(){
  ws::drive::wsEdgeWrap.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_EDGE_WRAP",0,path.c_str())==1);
  ws::drive::wsWrExitAssist.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_WR_EXIT_ASSIST",0,path.c_str())==1);
  ws::drive::wsFaceRelevel.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_FACE_RELEVEL",0,path.c_str())==1);
+ ws::drive::wsCrawlWr.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_CRAWL_WR",0,path.c_str())==1);
+ ws::drive::wsCrawlStand.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_CRAWL_STAND",0,path.c_str())==1);
+ ws::drive::wsEntryNoJump.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_ENTRY_NO_JUMP",0,path.c_str())==1);
+ msm2::writeLog("WS_BASELINE_FIXES crawl_wr=%u crawl_stand=%u entry_no_jump=%u keys=WALLSPRINT_WS_CRAWL_WR,WALLSPRINT_WS_CRAWL_STAND,WALLSPRINT_WS_ENTRY_NO_JUMP default=0",
+   unsigned(ws::drive::wsCrawlWr.load()),unsigned(ws::drive::wsCrawlStand.load()),unsigned(ws::drive::wsEntryNoJump.load()));
  msm2::writeLog("WS_EXPERIMENTS edge_wrap=%u wr_exit_assist=%u face_relevel=%u keys=WALLSPRINT_WS_EDGE_WRAP,WALLSPRINT_WS_WR_EXIT_ASSIST,WALLSPRINT_WS_FACE_RELEVEL default=0",
    unsigned(ws::drive::wsEdgeWrap.load()),unsigned(ws::drive::wsWrExitAssist.load()),unsigned(ws::drive::wsFaceRelevel.load()));
  ws::drive::wsFaceAirFacing.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_FACE_AIR_FACING",0,path.c_str())==1);

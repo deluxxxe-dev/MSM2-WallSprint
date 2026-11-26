@@ -33,7 +33,7 @@ for bad in ['writeMemory','MH_','= result']:
 # M20e: the only store is the temporary [machine+0xE30] veto callback: set only when empty and eligible, restored after the
 # original call only if still ours; the callback returns the game's own allow for every other requested state.
 import re
-assert len(re.findall(r'\*slotE30 = [^=]',det))==10 and 'bool veto = faceWrVetoEligible(machine) && *slotE30 == 0;' in det
+assert len(re.findall(r'\*slotE30 = [^=]',det))==10 and 'bool veto = faceWrVetoEligible(machine) && *slotE30 == 0 && !crawlWr;' in det
 assert 'if (*slotE30 == reinterpret_cast<std::uintptr_t>(&wrVetoCallback)) *slotE30 = 0;' in det and 'if (observe && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrObserveCallback)) *slotE30 = 0;' in det
 obs=code.split('bool wrObserveCallback(',1)[1].split('\n}',1)[0];assert 'return allow;' in obs and 'return false' not in obs
 cb=code.split('bool wrVetoCallback(',1)[1].split('\n}',1)[0]
@@ -111,7 +111,7 @@ print("PASS: M21g fast-travel/hero-change reset and read-only face state-change 
 # (request refused); no new entry from a running vanilla wall state.
 lw=code.split('bool ledgeWrap(std::uintptr_t requested) {',1)[1].split('\n}',1)[0]
 assert 'if (!edgeState || !wgiLbDown.load() || !ws::drive::wsEdgeWrap' in lw and 'if (!gfEdgeValid.load() || !gfOn.load()) return false;' in lw
-assert code.count('if (ledgeWrap(requested) || holdRefuse(requested))')==4 and 'kLedgeStateRva = 0xB45E2B0' in code
+assert code.count('ledgeWrap(requested) || holdRefuse(requested))')==4 and 'kLedgeStateRva = 0xB45E2B0' in code
 assert 'bool inWallState = curRva == 0xB465FB0 || curRva == 0xB4519A0 || curRva == kWrStateRva;' in code and '(geArmedNow.load() && !inWallState)' in code
 print("PASS: M21h ledge-state wrap with LB and no entry from a running vanilla wall state")
 
@@ -140,3 +140,19 @@ assert 'gfWrap.armed&&!gfWrap.requested&&ws::drive::wsEdgeWrap.load' in code and
 assert 'bool lbJump = wrapOn && r == 0xB454950' in code and 'ws::drive::wsFaceRelevel.load(std::memory_order_relaxed) && same &&' in code
 assert '(ws::drive::wsEdgeWrap.load(std::memory_order_relaxed) || ws::drive::wsWrExitAssist.load(std::memory_order_relaxed))' in code
 print("PASS: M21k post-M21c experiments gated by INI switches, all shipped OFF")
+
+# M21l: no WR veto in a hold while the game is in its crawl/wall family (freeze fix); crawl idle in a hold gives the game
+# alone a bounded 60 ms A press; the sprint jump / ledge take-off are refused during a ground entry; INI default 0, shipped 1.
+for k in ['WALLSPRINT_WS_CRAWL_WR','WALLSPRINT_WS_CRAWL_STAND','WALLSPRINT_WS_ENTRY_NO_JUMP']:
+    assert 'L"'+k+'",0,' in tel, k
+    assert ini.getint('WallSprint',k)==1, k
+assert 'bool veto = faceWrVetoEligible(machine) && *slotE30 == 0 && !crawlWr;' in code
+assert 'stRva == 0xB465FB0 || stRva == 0xB463E40 || stRva == 0xB463C10 || stRva == 0xB4635E0 || stRva == 0xB465AB0 || stRva == 0xB4633E0' in code
+assert 'if (GetTickCount64() < gcInjectUntilMs.load(std::memory_order_relaxed) && !killed.load()) r->buttons |= 0x4u;' in code
+wgi=code.split('HRESULT STDMETHODCALLTYPE wgiReadDetour(',1)[1].split('\nHRESULT STDMETHODCALLTYPE wgiVibDetour',1)[0]
+assert wgi.index('r->buttons |= 0x4u') > wgi.index('bool a = (r->buttons & 0x4u) != 0;')   # injected after every MOD read of A
+assert 'gHeroStateRva.load() == 0xB463C10 && tick - gHeroStateMs.load() >= 100 && csCount < 3' in code
+ej=code.split('bool entryJumpRefuse(std::uintptr_t requested) {',1)[1].split('\n}',1)[0]
+assert 'r != 0xB454950 && r != kLedgeStateRva' in ej and code.count('entryJumpRefuse(requested)')==4
+assert code.count('geEntryJumpUntilMs.store(0)')==2 and 'geEntryJumpUntilMs.store(GetTickCount64() + 1000);' in code
+print("PASS: M21l crawl-state WR allowed in holds, bounded game-only A in crawl idle, no game jump during a ground entry")

@@ -46,6 +46,10 @@ inline std::atomic<bool> wsGroundEntry{false};
 inline std::atomic<bool> wsEdgeWrap{false};      // LB edge wrap, LB hidden from the game, jump refusals during a wrap
 inline std::atomic<bool> wsWrExitAssist{false};  // WR exit forces the stop hold and refuses crawl for 0.5 s
 inline std::atomic<bool> wsFaceRelevel{false};   // re-level the face normal from same-face WR contexts
+// M21l (log 20261126-195525): fixes for the restored baseline.
+inline std::atomic<bool> wsCrawlWr{false};       // allow WR in a hold while the game is in its crawl/wall states (no freeze)
+inline std::atomic<bool> wsCrawlStand{false};    // in a hold, crawl idle -> one short game-only A press (stand up)
+inline std::atomic<bool> wsEntryNoJump{false};   // refuse the game's sprint jump / ledge take-off during a wall entry
 // M16 face-air/fall-only bounded Transform row experiment, code default OFF.
 inline std::atomic<bool> wsFaceAirFacing{false};
 // M17 camera mapping is read-only until walking validation admits a live basis.
