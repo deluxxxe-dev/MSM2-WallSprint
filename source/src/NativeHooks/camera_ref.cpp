@@ -1701,6 +1701,12 @@ void sampleStopMotion(std::uintptr_t tr,double now,const float* p){
 }
 struct StopEndSnapshot {std::uintptr_t transform{};double time{};float velocity[3]{},forward[3]{};bool carryValid{},forwardValid{};};
 StopEndSnapshot stopEndSnapshot;
+// M21: no-hop ground/air -> wall entry. The WR request context carries the wall contact point (+0x2C) and normal (+0x38)
+// (VERIFIED-RUNTIME log 20261126-141647: normal (-0.867,0,0.499) = the WS normal). The game thread posts a request and
+// vetoes the WR; the worker rotates the hero gravity up from world up to the wall normal over 0.25 s and then starts the
+// face hold without a stop hop.
+std::atomic<bool> geArmedNow{false},gfEntryNoHop{false};std::atomic<unsigned> geReqSeq{0};std::atomic<float> geN[3]{},geP[3]{};
+std::atomic<std::uint64_t> geVetoUntilMs{0};std::atomic<unsigned> geLogs{0};
 std::atomic<bool> stopEndReady{false};std::atomic<bool> stopHopRun{false};std::atomic<unsigned> stopDebounceLogs{0};
 StopDebounce stopDebounce;
 bool readStopMotion(std::uintptr_t tr,double now,const float* n,float* out){
@@ -2237,6 +2243,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     // every hold that starts without a jump release while the hero is near the face (< 0.8 m) gets the push.
     { bool jumped = jm && ms >= jm && ms - jm < 600; float n0i[3] = {gfN0[0].load(), gfN0[1].load(), gfN0[2].load()};
       float di = (p[0] - gfP0[0].load()) * n0i[0] + (p[1] - gfP0[1].load()) * n0i[1] + (p[2] - gfP0[2].load()) * n0i[2];
+      if (!gfL.launched && gfEntryNoHop.exchange(false)) { gfL.launched = true; msm2::writeLog("WS_GROUND_ENTRY event=hold_no_hop plane_d=%.3f", di); }
       if (!gfL.launched && !jumped && di < 0.8f && gfL.hopArc.solve(di)) {
         gfL.launched=true;gfL.stop.start();gfL.stopHop=true;stopHopRun.store(true);gfL.stopHopTakeoff=qpcSec(now);gfL.stopEpisode.begin(qpcSec(now)-double(ms>=lastWsMs.load() ? ms-lastWsMs.load():0)/1000.0,wgiPresses.load());++gfL.stopTraceId;stopTraceStarted.store(true);gfL.stopTrace={};
         gfL.pinned=true;gfL.faceAir=true;gfL.faceAirT=0.f;gfL.pinPresses=wgiPresses.load();
@@ -2710,6 +2717,23 @@ bool wrVetoCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t request
   if (requested == wrRequestImage + kWrStateRva) { wrVetoFired = true; if (!wrCtxCaptured) wrCaptureContext(owner, context); return false; }
   return allow;
 }
+// M21 entry callback (hero machine, no hold): converts a WR request into a no-hop wall entry request and vetoes it; keeps
+// vetoing WR while the entry is in progress. Every other request returns the game's own decision.
+bool wrEntryCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t requested, std::uintptr_t context, bool allow) {
+  if (requested != wrRequestImage + kWrStateRva) return allow;
+  if (!wrCtxCaptured) wrCaptureContext(owner, context);
+  auto ms = GetTickCount64();
+  if (ms < geVetoUntilMs.load()) { wrVetoFired = true; return false; }
+  if (!geArmedNow.load() || !context) return allow;
+  float pn[6]; if (!msm2::readMemory(context + 0x2C, pn, sizeof pn)) return allow;
+  float nl = std::sqrt(pn[3] * pn[3] + pn[4] * pn[4] + pn[5] * pn[5]);
+  bool ok = std::isfinite(nl) && nl > 0.95f && nl < 1.05f && std::fabs(pn[4]) < 0.3f && std::isfinite(pn[0] + pn[1] + pn[2]);
+  if (!ok) { if (geLogs.fetch_add(1) < 40) msm2::writeLog("WS_GROUND_ENTRY event=refused reason=context_normal n=%.3f,%.3f,%.3f", pn[3], pn[4], pn[5]); return allow; }
+  for (int i = 0; i < 3; ++i) { geP[i].store(pn[i]); geN[i].store(pn[3 + i] / nl); }
+  geVetoUntilMs.store(ms + 1500); geReqSeq.fetch_add(1); wrVetoFired = true;
+  if (geLogs.fetch_add(1) < 40) msm2::writeLog("WS_GROUND_ENTRY event=request point=%.3f,%.3f,%.3f n=%.3f,%.3f,%.3f", pn[0], pn[1], pn[2], pn[3] / nl, pn[4] / nl, pn[5] / nl);
+  return false;
+}
 // Observe-only variant (street WR starts): returns the game's own decision unchanged.
 bool wrObserveCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t requested, std::uintptr_t context, bool allow) {
   if (requested == wrRequestImage + kWrStateRva && !wrCtxCaptured) wrCaptureContext(owner, context);
@@ -2739,11 +2763,16 @@ std::uint64_t wrRequestDetour(std::uintptr_t machine, std::uintptr_t rdx, std::u
   std::uint64_t h0 = ws_hook_head.load(std::memory_order_acquire);
   auto* slotE30 = reinterpret_cast<std::uintptr_t*>(machine + 0xE30);
   bool veto = faceWrVetoEligible(machine) && *slotE30 == 0;
-  bool observe = !veto && *slotE30 == 0 && wrCtxLogs.load(std::memory_order_relaxed) < 12 && wrRequestRva(*reinterpret_cast<const std::uintptr_t*>(machine)) == kHeroMachineVtRva;
+  bool heroMachine = wrRequestRva(*reinterpret_cast<const std::uintptr_t*>(machine)) == kHeroMachineVtRva;
+  bool entryCb = !veto && *slotE30 == 0 && heroMachine && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && (geArmedNow.load() || GetTickCount64() < geVetoUntilMs.load());
+  bool observe = !veto && !entryCb && *slotE30 == 0 && wrCtxLogs.load(std::memory_order_relaxed) < 12 && heroMachine;
   wrCtxCaptured = false;
   if (veto) { wrVetoFired = false; *slotE30 = reinterpret_cast<std::uintptr_t>(&wrVetoCallback); }
+  else if (entryCb) { wrVetoFired = false; *slotE30 = reinterpret_cast<std::uintptr_t>(&wrEntryCallback); }
   else if (observe) *slotE30 = reinterpret_cast<std::uintptr_t>(&wrObserveCallback);
   std::uint64_t result = wrRequestOrig(machine, rdx, r8, r9);
+  if (entryCb && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrEntryCallback)) *slotE30 = 0;
+  if (entryCb && wrCtxCaptured) wrLogContext("ground_entry", machine);
   if (observe && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrObserveCallback)) *slotE30 = 0;
   if (observe) wrLogContext("street_or_other", machine);
   if (veto) { if (*slotE30 == reinterpret_cast<std::uintptr_t>(&wrVetoCallback)) *slotE30 = 0;
@@ -2842,7 +2871,9 @@ std::uintptr_t sgDetour(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r
       // keeps the vertical speed small), so only a surface the game itself attaches to (another non-vertical up) ends it.
       bool force = gfOn.load(std::memory_order_relaxed);
       bool otherWall = std::isfinite(in[1]) && std::fabs(in[1]) < 0.9f && in[0] * sb[0] + in[1] * sb[1] + in[2] * sb[2] < 0.95f;
-      bool vertical = !force && !sgLocked.load(std::memory_order_relaxed) && std::isfinite(in[1]) && in[1] > sb[1] + 0.05f && std::fabs(sgLastVy.load(std::memory_order_relaxed)) < 2.f;
+      // M21 (log 20261126-141647): during the 1 s B return (sbBlendQpc) this rule ended the blend after 0.1 s as
+      // "landed_game" and the body stayed tilted on the wall normal for 12 s; the B return always runs to the end.
+      bool vertical = !force && !sbBlendQpc.load(std::memory_order_relaxed) && !sgLocked.load(std::memory_order_relaxed) && std::isfinite(in[1]) && in[1] > sb[1] + 0.05f && std::fabs(sgLastVy.load(std::memory_order_relaxed)) < 2.f;
       // M10z-r10 (log Wall_Jump): the air A action (web zip) set another up and ended the hold; with the force the
       // face stays the ground until a new WS or B, so another surface no longer ends it.
       if ((otherWall && !force) || vertical) { doSub = false; sgSubActive.store(false); sgGameLanded.store(true); } } }
@@ -3062,6 +3093,36 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
       stopEndSnapshot.carryValid=readStopMotion(hero.transform,stopEndSnapshot.time,gbN,stopEndSnapshot.velocity);
       stopEndSnapshot.forwardValid=msm2::readMemory(hero.transform+0x20,stopEndSnapshot.forward,12);}
     if((debounceEvent&2)&&stopDebounceLogs.fetch_add(1)<60)msm2::writeLog("WS_STOP_TRACE event=debounce kept ws_off_s=%.4f",seconds-stopDebounce.off);
+  }
+  geArmedNow.store(ws::drive::wsGroundEntry.load() && gbState == 0 && !wsNow && !killed.load() && gbAddr != 0);
+  { static unsigned geSeen = 0; unsigned seq = geReqSeq.load();
+    if (seq != geSeen) { geSeen = seq;
+      if (gbState == 0 && !wsNow) {
+        for (int i = 0; i < 3; ++i) { gbN[i] = geN[i].load(); gbPlane[i] = geP[i].load(); }
+        gbPlaneFromWall = true; gbPlaneStandoff = (hero.position[0] - gbPlane[0]) * gbN[0] + (hero.position[1] - gbPlane[1]) * gbN[1] + (hero.position[2] - gbPlane[2]) * gbN[2];
+        ++gbTests; float worldUp[3] = {0, 1, 0}; gbSetUp(worldUp);
+        sgSubBlock.store(gbAddr); sgSubActive.store(true); sgAirPhase.store(false); gbAirCam.store(false); gbHoldA.store(true); gbActive = true;
+        gbState = 4; gbBlendStart = now; gbAPresses = wgiBPresses.load();
+        msm2::writeLog("WS_GROUND_ENTRY event=start test=%u n=%.3f,%.3f,%.3f standoff=%.3f vy=%.2f", gbTests, gbN[0], gbN[1], gbN[2], gbPlaneStandoff, vOk ? vy : 0.f);
+      } } }
+  if (gbState == 4) {
+    if (wgiBPresses.load() != gbAPresses) { geVetoUntilMs.store(0); gbEnd("entry_cancel_by_B", now, true); }
+    else { float t = std::fmin(1.f, float(now - gbBlendStart) / 250.f), s = t * t * (3.f - 2.f * t);
+      float up[3] = {gbN[0] * s, (1.f - s) + gbN[1] * s, gbN[2] * s}; float l = std::sqrt(up[0] * up[0] + up[1] * up[1] + up[2] * up[2]);
+      if (l > 1e-3f) { for (float& c : up) c /= l; gbSetUp(up); }
+      geVetoUntilMs.store(GetTickCount64() + 500);
+      if (t >= 1.f) {
+        gbState = 2; gbStart = now; gbSetUp(gbN); prevOk = false; sgAirPhase.store(true); gbAirCam.store(true); sgGameLanded.store(false); stopEndReady.store(false);
+        for (int i = 0; i < 3; ++i) { gfP0[i].store(gbPlane[i]); gfN0[i].store(gbN[i]); }
+        gfPlaneFromWall.store(true); gfStandoff.store(gbPlaneStandoff); gfLogPlane("hold_start_ground_entry");
+        gfVy0.store(0.f); gfContact.store(false); sbBlendQpc.store(0); airFacingHoldTransform.store(hero.transform);
+        gfEntryNoHop.store(true);
+        gfContactGen.store(gfGen.fetch_add(1) + 1 + 0x80000000u); gfOn.store(ws::drive::wsGravityForce.load() && !sgLocked.load()); if (gfOn.load()) gfStartThread();
+        gvHero.store(hero.hero); gfVyGame.store(0); gfVyGameQpc.store(0);
+        msm2::writeLog("WS_GRAVITY_TEST start test=%u n=%.3f,%.3f,%.3f locked=0 source=ground_entry", gbTests, gbN[0], gbN[1], gbN[2]);
+        msm2::writeLog("WS_GROUND_ENTRY event=hold blend_ms=%llu", (unsigned long long)(now - gbBlendStart));
+      } }
+    prevVy = vy; prevOk = vOk; return;
   }
   if (wsNow && nOk) {
     airFacingEnd("new_ws");walkoffEnd("new_ws");

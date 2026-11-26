@@ -33,7 +33,7 @@ for bad in ['writeMemory','MH_','= result']:
 # M20e: the only store is the temporary [machine+0xE30] veto callback: set only when empty and eligible, restored after the
 # original call only if still ours; the callback returns the game's own allow for every other requested state.
 import re
-assert len(re.findall(r'\*slotE30 = [^=]',det))==4 and 'bool veto = faceWrVetoEligible(machine) && *slotE30 == 0;' in det
+assert len(re.findall(r'\*slotE30 = [^=]',det))==6 and 'bool veto = faceWrVetoEligible(machine) && *slotE30 == 0;' in det
 assert 'if (*slotE30 == reinterpret_cast<std::uintptr_t>(&wrVetoCallback)) *slotE30 = 0;' in det and 'if (observe && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrObserveCallback)) *slotE30 = 0;' in det
 obs=code.split('bool wrObserveCallback(',1)[1].split('\n}',1)[0];assert 'return allow;' in obs and 'return false' not in obs
 cb=code.split('bool wrVetoCallback(',1)[1].split('\n}',1)[0]
@@ -50,3 +50,12 @@ assert ini.getint('WallSprint','WALLSPRINT_WS_WR_REQUEST_DIAG')==1 and ini.getin
 assert 'L"WALLSPRINT_WS_FACE_NO_WR",0,' in (root/'src/msm2/telemetry.cpp').read_text()
 assert 'L"WALLSPRINT_WS_WR_REQUEST_DIAG",0,' in (root/'src/msm2/telemetry.cpp').read_text()
 print("PASS: M20d/e WR request detour exact-byte gated, original-first; only store is the temporary empty-slot veto callback (restored), veto limited to hero machine/WR state/pinned face, INI default0/shipped1")
+
+# M21: entry callback only for the hero machine with an empty slot, restored after the call; returns the game's own allow
+# for every non-WR request; reads the context normal/point and validates a unit, near-horizontal normal.
+ent=code.split('bool wrEntryCallback(',1)[1].split('\n}',1)[0]
+assert 'if (requested != wrRequestImage + kWrStateRva) return allow;' in ent and 'std::fabs(pn[4]) < 0.3f' in ent and 'context + 0x2C' in ent
+assert 'if (entryCb && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrEntryCallback)) *slotE30 = 0;' in det
+assert ini.getint('WallSprint','WALLSPRINT_WS_GROUND_ENTRY')==1 and 'L"WALLSPRINT_WS_GROUND_ENTRY",0,' in (root/'src/msm2/telemetry.cpp').read_text()
+assert '!sbBlendQpc.load(std::memory_order_relaxed) && !sgLocked' in code  # B return is never cut by landed_game
+print("PASS: M21 ground-entry callback hero-only/empty-slot/restored, validated context normal, INI default0/shipped1; B return not cut")
