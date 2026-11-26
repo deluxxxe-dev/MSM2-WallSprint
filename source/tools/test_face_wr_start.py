@@ -106,3 +106,11 @@ assert 'WS_FACE_STATE_CHANGE from=0x%llx' in code
 det2=code.split('std::uint64_t wrRequestDetour(',1)[1].split('\nvoid wrRequestInstall',1)[0]
 assert len(re.findall(r'\*slotE30 = [^=]',det2))==8
 print("PASS: M21g fast-travel/hero-change reset and read-only face state-change diagnostic")
+
+# M21h: LB + the game's ledge state 0xB45E2B0 during a pinned hold = immediate wrap from the last pinned edge position
+# (request refused); no new entry from a running vanilla wall state.
+lw=code.split('bool ledgeWrap(std::uintptr_t requested) {',1)[1].split('\n}',1)[0]
+assert 'requested != wrRequestImage + kLedgeStateRva || !wgiLbDown.load()' in lw and 'if (!gfEdgeValid.load() || !gfOn.load()) return false;' in lw
+assert code.count('if (ledgeWrap(requested))')==3 and 'kLedgeStateRva = 0xB45E2B0' in code
+assert 'bool inWallState = curRva == 0xB465FB0 || curRva == 0xB4519A0 || curRva == kWrStateRva;' in code and '(geArmedNow.load() && !inWallState)' in code
+print("PASS: M21h ledge-state wrap with LB and no entry from a running vanilla wall state")

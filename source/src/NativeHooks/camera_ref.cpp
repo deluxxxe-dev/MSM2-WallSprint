@@ -1727,6 +1727,9 @@ constexpr std::uint64_t kBCancelBlockMs=1500,kTransferSettleMs=1000;
 // M21c: hold start time (game-thread readable) and a face-to-face transfer request posted by the same-face callback.
 // M21d: outer-edge wrap. A walk-off whose release leaves the face plane (no wall behind it) while B is held becomes a
 // face transfer onto the face whose normal is the in-plane travel direction (the face around the edge).
+// M21h: last pinned on-face position and in-plane travel direction (game thread), used when the game starts its
+// ledge state at a face edge.
+std::atomic<float> gfEdgeP[3]{},gfEdgeDir[3]{},gfEdgeN[3]{};std::atomic<bool> gfEdgeValid{false};std::atomic<std::uint64_t> geLedgeWrapMs{0};std::atomic<unsigned> geLedgeLogs{0};
 struct EdgeWrap { bool armed{},requested{},stopped{}; double t{}; float p[3]{},delay{},dir[3]{},speed{}; } gfWrap; std::atomic<bool> geWrapHold{false};std::atomic<float> geFromN[3]{};std::atomic<std::uint64_t> geTransferMs{0}; std::atomic<unsigned> gfWrapLogs{0};
 std::atomic<std::uint64_t> geHoldStartMs{0};std::atomic<bool> geTransfer{false};std::atomic<unsigned> geTransferRefused{0};constexpr float kSameFaceCos=0.9396926f,kSameFacePlane=0.6f;
 std::atomic<bool> stopEndReady{false};std::atomic<bool> stopHopRun{false};std::atomic<unsigned> stopDebounceLogs{0};
@@ -2565,6 +2568,10 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   gfWrites.fetch_add(1, std::memory_order_relaxed); gfFrames.fetch_add(1, std::memory_order_relaxed);
   gfDyGameSum.store(gfDyGameSum.load(std::memory_order_relaxed) + dyGame, std::memory_order_relaxed);
   gfPinnedNow.store(gfL.pinned,std::memory_order_relaxed);
+  { float mv=std::hypot(gfL.moveVel[0],gfL.moveVel[1],gfL.moveVel[2]);bool ok=gfL.pinned&&!gfL.faceAir&&gfL.moveDirT<0.3f&&mv>1.f&&std::isfinite(mv);
+    if(ok){float d[3]={gfL.moveDir[0],gfL.moveDir[1],gfL.moveDir[2]};float dn=d[0]*n0[0]+d[1]*n0[1]+d[2]*n0[2];for(int i=0;i<3;++i)d[i]-=dn*n0[i];
+      float l=std::hypot(d[0],d[1],d[2]);if(l>0.5f){for(int i=0;i<3;++i){gfEdgeP[i].store(q[i]);gfEdgeDir[i].store(d[i]/l);gfEdgeN[i].store(n0[i]);}}else ok=false;}
+    gfEdgeValid.store(ok,std::memory_order_relaxed); }
   gfFaceAirNow.store(gfL.faceAir,std::memory_order_relaxed);
   gfAir.store(!gfL.pinned || gfL.faceAir,std::memory_order_relaxed);
   gfL.walkFrame.applied(p,positionApplied ? q : p,gfL.pinned && !gfL.faceAir);
@@ -2769,13 +2776,34 @@ thread_local bool wrCtxCaptured = false; thread_local std::uintptr_t wrCtxPtr = 
 void wrCaptureContext(std::uintptr_t owner, std::uintptr_t context) {
   wrCtxCaptured = context && msm2::readMemory(context, wrCtxBytes, sizeof wrCtxBytes); wrCtxPtr = context; wrCtxOwner = owner;
 }
+// M21h (log 20261126-180817): on a face the game leaves its ground state 0xB44E0B0 for 0xB45E2B0 (ledge take-off; then
+// 0xB45D6B0 air) at a face edge, before the walk-off detector (OBSERVED-CORRELATION, also seen on vanilla ground).
+// With LB held that request is refused and the wrap starts at once from the last pinned position at the edge.
+constexpr std::uintptr_t kLedgeStateRva = 0xB45E2B0;
+bool ledgeWrap(std::uintptr_t requested) {
+  if (requested != wrRequestImage + kLedgeStateRva || !wgiLbDown.load() || !ws::drive::wsGroundEntry.load(std::memory_order_relaxed)) return false;
+  auto ms = GetTickCount64();
+  if (ms < geVetoUntilMs.load() && ms - geLedgeWrapMs.load() < 1500) return true;   // wrap already running: keep refusing
+  if (!gfEdgeValid.load() || !gfOn.load()) return false;
+  float d[3] = {gfEdgeDir[0].load(), gfEdgeDir[1].load(), gfEdgeDir[2].load()}; const char* why = nullptr;
+  if (d[1] > 0.7f) { d[0] = 0; d[1] = 1; d[2] = 0; } else if (d[1] < -0.7f) why = "downward"; else { d[1] = 0; float h = std::hypot(d[0], d[2]); if (h > 0.3f) { d[0] /= h; d[2] /= h; } else why = "no_direction"; }
+  if (why) { if (geLedgeLogs.fetch_add(1) < 40) msm2::writeLog("WS_FACE_EDGE_WRAP event=ledge_skipped reason=%s", why); return false; }
+  for (int i = 0; i < 3; ++i) { geP[i].store(gfEdgeP[i].load()); geN[i].store(d[i]); }
+  geWrapHold.store(true); geLedgeWrapMs.store(ms);
+  if (!geTransfer.exchange(true)) { geVetoUntilMs.store(ms + 1500); geReqSeq.fetch_add(1); }
+  if (geLedgeLogs.fetch_add(1) < 40) msm2::writeLog("WS_FACE_EDGE_WRAP event=ledge_request p=%.3f,%.3f,%.3f dir=%.3f,%.3f,%.3f n=%.3f,%.3f,%.3f",
+    gfEdgeP[0].load(), gfEdgeP[1].load(), gfEdgeP[2].load(), gfEdgeDir[0].load(), gfEdgeDir[1].load(), gfEdgeDir[2].load(), d[0], d[1], d[2]);
+  return true;
+}
 bool wrVetoCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t requested, std::uintptr_t context, bool allow) {
+  if (ledgeWrap(requested)) { wrVetoFired = true; return false; }
   if (requested == wrRequestImage + kWrStateRva) { wrVetoFired = true; if (!wrCtxCaptured) wrCaptureContext(owner, context); return false; }
   return allow;
 }
 // M21 entry callback (hero machine, no hold): converts a WR request into a no-hop wall entry request and vetoes it; keeps
 // vetoing WR while the entry is in progress. Every other request returns the game's own decision.
 bool wrEntryCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t requested, std::uintptr_t context, bool allow) {
+  if (ledgeWrap(requested)) return false;
   if (requested != wrRequestImage + kWrStateRva) return allow;
   if (!wrCtxCaptured) wrCaptureContext(owner, context);
   auto ms = GetTickCount64();
@@ -2794,6 +2822,7 @@ bool wrEntryCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t reques
 // (context normal within 20 deg of the hold normal and contact point within 0.6 m of its plane) is refused: the hold
 // lands the hero again with the face gravity. A request on another face keeps the game's own decision.
 bool wrSameFaceCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t requested, std::uintptr_t context, bool allow) {
+  if (ledgeWrap(requested)) { wrVetoFired = true; return false; }
   if (requested != wrRequestImage + kWrStateRva || !context) return allow;
   if (!wrCtxCaptured) wrCaptureContext(owner, context);
   float pn[6]; if (!msm2::readMemory(context + 0x2C, pn, sizeof pn)) return allow;
@@ -2850,7 +2879,12 @@ std::uint64_t wrRequestDetour(std::uintptr_t machine, std::uintptr_t rdx, std::u
   bool bBlock = !veto && *slotE30 == 0 && heroMachine && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && GetTickCount64() < geBUntilMs.load();
   if (bBlock) veto = true;
   bool sameFace = !veto && *slotE30 == 0 && heroMachine && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && ws::drive::wsFaceNoWr.load(std::memory_order_relaxed) && gfOn.load() && !wsActiveNow(GetTickCount64());
-  bool entryCb = !veto && !sameFace && *slotE30 == 0 && heroMachine && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && (geArmedNow.load() || GetTickCount64() < geVetoUntilMs.load());
+  // M21h (log 20261126-180817 09:10:03-25, video failed): during a running vanilla wall state (0xB465FB0 / 0xB4519A0 /
+  // WR 0xB467FD0) the game re-requested WR; the entry vetoed it and rotated the gravity while the game stayed in its wall
+  // state, and the hero got stuck. A new entry is not started from these states (the WR -> WS path handles them).
+  std::uintptr_t curRva = wrRequestRva(before);
+  bool inWallState = curRva == 0xB465FB0 || curRva == 0xB4519A0 || curRva == kWrStateRva;
+  bool entryCb = !veto && !sameFace && *slotE30 == 0 && heroMachine && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && ((geArmedNow.load() && !inWallState) || GetTickCount64() < geVetoUntilMs.load());
   bool observe = !veto && !entryCb && !sameFace && *slotE30 == 0 && wrCtxLogs.load(std::memory_order_relaxed) < 12 && heroMachine;
   wrCtxCaptured = false;
   if (veto) { wrVetoFired = false; *slotE30 = reinterpret_cast<std::uintptr_t>(&wrVetoCallback); }
