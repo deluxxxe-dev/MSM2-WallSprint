@@ -1,4 +1,4 @@
-# DONE (2026-11-26, implemented by Claude Code in 413d236) — next action is the owner's test, not Codex.
+# DONE (2026-11-26, M20 413d236 and M20b, implemented by Claude Code; see analysis/M20_OWNER_RESULT_20261126.md) — next action is the owner's test, not Codex.
 # Result and owner test: `analysis/M20_LOCOMOTION_DOWN_20261126.md`. Do not re-implement M20.
 
 # Next task — M20: the game's sprint toward the ground must not be treated as a fall

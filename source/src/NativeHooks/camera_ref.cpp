@@ -1352,9 +1352,14 @@ struct FaceFallWindow {
 // is pushed, the 0.3 s in-plane movement direction is within 45 deg of world down projected on the face and the world-down
 // speed stays within the measured sprint envelope (~10.2 m/s, limit 11.5 m/s).
 struct FaceLocomotionDown {
-  static constexpr float kLimit=11.5f,kCos45=0.70710678f;
+  static constexpr float kLimit=11.5f,kFrameLimit=20.f,kCos45=0.70710678f;
   float dirs[32][3]{};double times[32]{};unsigned next{},count{};bool active{},coasting{};float lastCos{},lastSpeed{},lastStick{};double coastStart{};
-  void reset(){next=count=0;active=coasting=false;lastCos=lastSpeed=0.f;}
+  // M20b: per-frame speeds jitter with the frame time (13-16 m/s single frames inside a ~10 m/s sprint), so the limit
+  // uses the world-down speed over the last 0.1 s.
+  float winDown[32]{},winDt[32]{};double winTime[32]{};unsigned winNext{},winCount{};
+  void reset(){next=count=winNext=winCount=0;active=coasting=false;lastCos=lastSpeed=0.f;}
+  float windowSpeed(double now)const{double down=0,time=0;for(unsigned j=0;j<winCount;++j){if(winTime[j]<=now-0.1||winTime[j]>now)continue;down+=winDown[j];time+=winDt[j];}
+    return time>0 ? float(std::fmax(0.0,down/time)) : 0.f;}
   bool update(bool eligible,bool valid,float stick,const float* delta,float dt,const float* up,double now){
     lastStick=stick;
     if(!eligible||!valid||!std::isfinite(stick)||!std::isfinite(dt)||dt<0.005f||dt>0.1f||!std::isfinite(now)){reset();return false;}
@@ -1366,7 +1371,8 @@ struct FaceLocomotionDown {
     if(!std::isfinite(speed)){reset();return false;}
     if(speed>1.f){for(int i=0;i<3;++i)dirs[next][i]=tangent[i]/speed;times[next]=now;next=(next+1)%32;count=std::min(32u,count+1);}
     float down[3]={u[1]*u[0],-1.f+u[1]*u[1],u[1]*u[2]},downLen=std::hypot(down[0],down[1],down[2]);
-    float previousSpeed=lastSpeed;lastSpeed=std::fmax(0.f,-delta[1]/dt);
+    winDown[winNext]=-delta[1];winDt[winNext]=dt;winTime[winNext]=now;winNext=(winNext+1)%32;winCount=std::min(32u,winCount+1);
+    float previousSpeed=windowSpeed(now-0.1);lastSpeed=windowSpeed(now);
     if(!(downLen>=0.3f)){active=coasting=false;lastCos=0;return false;}
     float mean[3]{};unsigned used=0;
     for(unsigned j=0;j<count;++j){if(times[j]<now-0.3||times[j]>now)continue;for(int i=0;i<3;++i)mean[i]+=dirs[j][i];++used;}
@@ -1375,8 +1381,9 @@ struct FaceLocomotionDown {
     bool downward=used>=3&&lastCos>=kCos45&&lastSpeed<=kLimit;
     if(stick>0.5f&&downward){active=true;coasting=false;return true;}
     // The game's own sprint stop after the stick is released keeps decelerating toward world down for ~0.5-1 s: exempt
-    // while it does not speed up (a real fall gains ~0.4 m/s per 16 ms frame) and for at most 1 s.
-    if((active||coasting)&&stick<=0.5f&&downward&&lastSpeed<=previousSpeed+0.3f){
+    // while the 0.1 s speed does not rise by more than 1 m/s against the previous 0.1 s (a real fall gains ~2.6 m/s per
+    // 0.1 s) and for at most 1 s.
+    if((active||coasting)&&stick<=0.5f&&downward&&lastSpeed<=previousSpeed+1.f){
       if(!coasting){coasting=true;coastStart=now;}
       if(now-coastStart<=1.0){active=true;return true;}
     }
@@ -2151,7 +2158,7 @@ std::atomic<bool> gfLocoDownNow{false};std::atomic<unsigned> gfLocoDownLogs{0},g
 float faceGuardY(float current, float desired) {
   bool locoDown=gfLocoDownNow.load(std::memory_order_relaxed);
   bool walking=wgiStick.load(std::memory_order_relaxed)>0.25f||locoDown;
-  float result=gfL.fallGuard.apply(current,desired,walking,locoDown ? FaceLocomotionDown::kLimit : -1.f);
+  float result=gfL.fallGuard.apply(current,desired,walking,locoDown ? FaceLocomotionDown::kFrameLimit : -1.f);
   if(result!=desired) {
     gfPinDrops.fetch_add(1,std::memory_order_relaxed);
     if(walking && gfFallUndoLogs.fetch_add(1)<100)
@@ -3049,6 +3056,18 @@ void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
       for (std::uintptr_t a = b; a < e; a += 32) { unsigned char buf[32]{}; std::size_t n = std::min<std::uintptr_t>(32, e - a); if (!readMemory(a, buf, n)) break;
         char hex[65]{}; for (std::size_t i = 0; i < n; ++i) std::snprintf(hex + 2 * i, 3, "%02x", buf[i]);
         writeLog("WS_CODE_DUMP_BYTES begin=0x%lx off=0x%llx hex=%s", (unsigned long)fe->BeginAddress, (unsigned long long)(a - b), hex); } } }
+  // M20b: one-time read-only capture around the WR Init/Entry call sites seen while standing on a face
+  // (WS_FACE_WR_START caller_rva 0x367e6af / 0x367e6ce, log 20261126-122944): the caller's bounds and the code before the
+  // calls, for offline analysis of the WR start decision. Log only; derived findings go to analysis/.
+  { const std::uintptr_t rva = 0x367E6AF;
+    DWORD64 fb = 0; auto* fe = rva < imageSize ? RtlLookupFunctionEntry(image + rva, &fb, nullptr) : nullptr;
+    if (!fe || fb != image) writeLog("WS_WR_CALLER_DUMP rva=0x%llx pdata=0", (unsigned long long)rva);
+    else { std::uintptr_t fbeg = fe->BeginAddress, fend = fe->EndAddress;
+      std::uintptr_t b = rva > fbeg + 0xC00 ? rva - 0xC00 : fbeg, e = std::min<std::uintptr_t>(fend, rva + 0x100);
+      writeLog("WS_WR_CALLER_DUMP rva=0x%llx begin=0x%llx end=0x%llx dump_from=0x%llx dump_to=0x%llx", (unsigned long long)rva, (unsigned long long)fbeg, (unsigned long long)fend, (unsigned long long)b, (unsigned long long)e);
+      for (std::uintptr_t a = b; a < e; a += 32) { unsigned char buf[32]{}; std::size_t n = std::min<std::uintptr_t>(32, e - a); if (!readMemory(image + a, buf, n)) break;
+        char hex[65]{}; for (std::size_t i = 0; i < n; ++i) std::snprintf(hex + 2 * i, 3, "%02x", buf[i]);
+        writeLog("WS_WR_CALLER_BYTES rva=0x%llx hex=%s", (unsigned long long)a, hex); } } }
   target = image + kEntryRva;
   DWORD64 base = 0; auto* f = RtlLookupFunctionEntry(target, &base, nullptr);
   unsigned char entry[64]{}; char hash[65]{};

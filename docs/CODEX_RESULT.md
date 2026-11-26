@@ -1,3 +1,9 @@
+# M20b result — down sprint jitter, WR-start caller capture (Claude Code, 2026-11-26)
+
+STATUS: implemented and pushed. `analysis/M20_OWNER_RESULT_20261126.md`. build + test.sh (84) + package PASS;
+smoke/hooks UNAVAILABLE in this container. Owner test: up/down/side sprints on the face (video for up), return the log
+(it now contains WS_WR_CALLER_DUMP/BYTES from game start).
+
 # M20 result — sprint toward the ground is not a fall (implemented by Claude Code, 2026-11-26)
 
 STATUS: implemented and pushed on `codex/v01c20-edi-value-provenance`. Details, checks and limits:
