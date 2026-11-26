@@ -33,7 +33,7 @@ for bad in ['writeMemory','MH_','= result']:
 # M20e: the only store is the temporary [machine+0xE30] veto callback: set only when empty and eligible, restored after the
 # original call only if still ours; the callback returns the game's own allow for every other requested state.
 import re
-assert len(re.findall(r'\*slotE30 = [^=]',det))==8 and 'bool veto = faceWrVetoEligible(machine) && *slotE30 == 0;' in det
+assert len(re.findall(r'\*slotE30 = [^=]',det))==10 and 'bool veto = faceWrVetoEligible(machine) && *slotE30 == 0;' in det
 assert 'if (*slotE30 == reinterpret_cast<std::uintptr_t>(&wrVetoCallback)) *slotE30 = 0;' in det and 'if (observe && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrObserveCallback)) *slotE30 = 0;' in det
 obs=code.split('bool wrObserveCallback(',1)[1].split('\n}',1)[0];assert 'return allow;' in obs and 'return false' not in obs
 cb=code.split('bool wrVetoCallback(',1)[1].split('\n}',1)[0]
@@ -104,13 +104,21 @@ print("PASS: M21f LB hidden from the game during a face hold, stale entry arming
 assert 'gbEnd(changed ? "hero_changed" : "teleport", now, !changed);' in code and 'dx * dx + dy * dy + dz * dz > 40.f * 40.f' in code
 assert 'WS_FACE_STATE_CHANGE from=0x%llx' in code
 det2=code.split('std::uint64_t wrRequestDetour(',1)[1].split('\nvoid wrRequestInstall',1)[0]
-assert len(re.findall(r'\*slotE30 = [^=]',det2))==8
+assert len(re.findall(r'\*slotE30 = [^=]',det2))==10
 print("PASS: M21g fast-travel/hero-change reset and read-only face state-change diagnostic")
 
 # M21h: LB + the game's ledge state 0xB45E2B0 during a pinned hold = immediate wrap from the last pinned edge position
 # (request refused); no new entry from a running vanilla wall state.
 lw=code.split('bool ledgeWrap(std::uintptr_t requested) {',1)[1].split('\n}',1)[0]
 assert 'requested != wrRequestImage + kLedgeStateRva || !wgiLbDown.load()' in lw and 'if (!gfEdgeValid.load() || !gfOn.load()) return false;' in lw
-assert code.count('if (ledgeWrap(requested))')==3 and 'kLedgeStateRva = 0xB45E2B0' in code
+assert code.count('if (ledgeWrap(requested) || holdRefuse(requested))')==4 and 'kLedgeStateRva = 0xB45E2B0' in code
 assert 'bool inWallState = curRva == 0xB465FB0 || curRva == 0xB4519A0 || curRva == kWrStateRva;' in code and '(geArmedNow.load() && !inWallState)' in code
 print("PASS: M21h ledge-state wrap with LB and no entry from a running vanilla wall state")
+
+# M21i: jump/air/ledge refused for 1.5 s after a wrap request, crawl states refused while WS is armed or a hold runs
+# (temporary hold callback, restored); same-face contexts 1.5-20 deg off re-level the hold normal at most every 0.5 s.
+hr=code.split('bool holdRefuse(std::uintptr_t requested) {',1)[1].split('\n}',1)[0]
+assert 'bool refuse = (wrapping && jump) || (crawl && gbHoldA.load());' in hr
+assert 'if (holdCb && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrHoldCallback)) *slotE30 = 0;' in code
+assert 'if (std::isfinite(c) && c > 0.94f && c < 0.99966f)' in code and 'now - refLast >= 500' in code
+print("PASS: M21i wrap jump refusal, crawl refusal in holds, face re-levelling from the game's wall normal")

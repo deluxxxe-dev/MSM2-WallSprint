@@ -1731,7 +1731,7 @@ constexpr std::uint64_t kBCancelBlockMs=1500,kTransferSettleMs=1000;
 // ledge state at a face edge.
 std::atomic<float> gfEdgeP[3]{},gfEdgeDir[3]{},gfEdgeN[3]{};std::atomic<bool> gfEdgeValid{false};std::atomic<std::uint64_t> geLedgeWrapMs{0};std::atomic<unsigned> geLedgeLogs{0};
 struct EdgeWrap { bool armed{},requested{},stopped{}; double t{}; float p[3]{},delay{},dir[3]{},speed{}; } gfWrap; std::atomic<bool> geWrapHold{false};std::atomic<float> geFromN[3]{};std::atomic<std::uint64_t> geTransferMs{0}; std::atomic<unsigned> gfWrapLogs{0};
-std::atomic<std::uint64_t> geHoldStartMs{0};std::atomic<bool> geTransfer{false};std::atomic<unsigned> geTransferRefused{0};constexpr float kSameFaceCos=0.9396926f,kSameFacePlane=0.6f;
+std::atomic<std::uint64_t> geHoldStartMs{0};std::atomic<float> geRefN[3]{},geRefP[3]{};std::atomic<unsigned> geRefSeq{0},geRefLogs{0};std::atomic<bool> geTransfer{false};std::atomic<unsigned> geTransferRefused{0};constexpr float kSameFaceCos=0.9396926f,kSameFacePlane=0.6f;
 std::atomic<bool> stopEndReady{false};std::atomic<bool> stopHopRun{false};std::atomic<unsigned> stopDebounceLogs{0};
 StopDebounce stopDebounce;
 bool readStopMotion(std::uintptr_t tr,double now,const float* n,float* out){
@@ -2451,7 +2451,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
         else{
           gfWrap.requested=true;float back=gfWrap.speed*std::fmin(0.2f,std::fmax(0.f,gfWrap.delay));
           for(int i=0;i<3;++i){geP[i].store(gfWrap.p[i]-gfWrap.dir[i]*back);geN[i].store(d[i]);}
-          geWrapHold.store(true);
+          geWrapHold.store(true);geLedgeWrapMs.store(GetTickCount64());
           if(!geTransfer.exchange(true)){geVetoUntilMs.store(GetTickCount64()+1500);geReqSeq.fetch_add(1);}
           for(int i=0;i<3;++i)gfL.vg[i]=0.f;
           if(gfWrapLogs.fetch_add(1)<40)msm2::writeLog("WS_FACE_EDGE_WRAP event=request since_s=%.3f plane_d=%.3f speed=%.2f back_m=%.2f carry_stopped=%u dir=%.3f,%.3f,%.3f n=%.3f,%.3f,%.3f",since,dist,gfWrap.speed,back,unsigned(gfWrap.stopped),gfWrap.dir[0],gfWrap.dir[1],gfWrap.dir[2],d[0],d[1],d[2]);
@@ -2795,15 +2795,35 @@ bool ledgeWrap(std::uintptr_t requested) {
     gfEdgeP[0].load(), gfEdgeP[1].load(), gfEdgeP[2].load(), gfEdgeDir[0].load(), gfEdgeDir[1].load(), gfEdgeDir[2].load(), d[0], d[1], d[2]);
   return true;
 }
+// M21i (log 20261126-183231): (a) during a wrap the game started its jump 0xB454950 / air 0xB45D6B0 at the edge and threw
+// the hero into the air; these and the ledge take-off are refused for 1.5 s after a wrap request. (b) From the old
+// WR -> WS path the game went WR -> 0xB465AB0 -> crawl idle 0xB463C10 -> crawl 0xB463E40, so the hold showed the crawl
+// pose; the crawl states are refused while WS is armed or a hold runs. Requests are logged (also proves whether the
+// callback sees these states).
+std::atomic<unsigned> holdRefuseLogs{0};
+bool holdRefuse(std::uintptr_t requested) {
+  if (!ws::drive::wsGroundEntry.load(std::memory_order_relaxed) || !requested) return false;
+  std::uintptr_t r = requested - wrRequestImage; auto ms = GetTickCount64();
+  bool wrapping = ms - geLedgeWrapMs.load() < 1500;
+  bool jump = r == 0xB454950 || r == 0xB45D6B0 || r == kLedgeStateRva;
+  bool crawl = r == 0xB463C10 || r == 0xB463E40 || r == 0xB4635E0 || r == 0xB4633E0;
+  bool refuse = (wrapping && jump) || (crawl && gbHoldA.load());
+  if (refuse && holdRefuseLogs.fetch_add(1) < 80) msm2::writeLog("WS_FACE_STATE_REFUSED rva=0x%llx reason=%s", (unsigned long long)r, crawl ? "crawl_in_hold" : "jump_during_wrap");
+  return refuse;
+}
+bool wrHoldCallback(std::uintptr_t, std::uintptr_t, std::uintptr_t requested, std::uintptr_t, bool allow) {
+  if (ledgeWrap(requested) || holdRefuse(requested)) return false;
+  return allow;
+}
 bool wrVetoCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t requested, std::uintptr_t context, bool allow) {
-  if (ledgeWrap(requested)) { wrVetoFired = true; return false; }
+  if (ledgeWrap(requested) || holdRefuse(requested)) { wrVetoFired = true; return false; }
   if (requested == wrRequestImage + kWrStateRva) { wrVetoFired = true; if (!wrCtxCaptured) wrCaptureContext(owner, context); return false; }
   return allow;
 }
 // M21 entry callback (hero machine, no hold): converts a WR request into a no-hop wall entry request and vetoes it; keeps
 // vetoing WR while the entry is in progress. Every other request returns the game's own decision.
 bool wrEntryCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t requested, std::uintptr_t context, bool allow) {
-  if (ledgeWrap(requested)) return false;
+  if (ledgeWrap(requested) || holdRefuse(requested)) return false;
   if (requested != wrRequestImage + kWrStateRva) return allow;
   if (!wrCtxCaptured) wrCaptureContext(owner, context);
   auto ms = GetTickCount64();
@@ -2822,7 +2842,7 @@ bool wrEntryCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t reques
 // (context normal within 20 deg of the hold normal and contact point within 0.6 m of its plane) is refused: the hold
 // lands the hero again with the face gravity. A request on another face keeps the game's own decision.
 bool wrSameFaceCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t requested, std::uintptr_t context, bool allow) {
-  if (ledgeWrap(requested)) { wrVetoFired = true; return false; }
+  if (ledgeWrap(requested) || holdRefuse(requested)) { wrVetoFired = true; return false; }
   if (requested != wrRequestImage + kWrStateRva || !context) return allow;
   if (!wrCtxCaptured) wrCaptureContext(owner, context);
   float pn[6]; if (!msm2::readMemory(context + 0x2C, pn, sizeof pn)) return allow;
@@ -2841,6 +2861,9 @@ bool wrSameFaceCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t req
   bool horizontal = std::fabs(pn[4] / nl) < 0.3f && std::isfinite(pn[0] + pn[1] + pn[2]);
   const char* decision = same ? "refused" : early ? "refused_settling" : horizontal ? "transfer" : "game";
   if (geSameFaceLogs.fetch_add(1) < 12) msm2::writeLog("WS_FACE_WR_SAME_FACE decision=%s cos=%.3f plane_d=%.3f n=%.3f,%.3f,%.3f", decision, c, d, pn[3] / nl, pn[4] / nl, pn[5] / nl);
+  // M21i (owner 2026-11-26): the face is re-levelled from the game's own wall normal: a same-face context that differs by
+  // 1.5-20 deg is published and the worker turns the hold normal toward it (at most every 0.5 s).
+  if (same && c < 0.99966f && std::fabs(d) <= kSameFacePlane) { for (int i = 0; i < 3; ++i) { geRefN[i].store(pn[3 + i] / nl); geRefP[i].store(pn[i]); } geRefSeq.fetch_add(1); }
   if (same || early) { wrVetoFired = true; return false; }
   if (!horizontal) return allow;
   if (!geTransfer.exchange(true)) { for (int i = 0; i < 3; ++i) { geP[i].store(pn[i]); geN[i].store(pn[3 + i] / nl); } geVetoUntilMs.store(GetTickCount64() + 1500); geReqSeq.fetch_add(1); }
@@ -2885,14 +2908,17 @@ std::uint64_t wrRequestDetour(std::uintptr_t machine, std::uintptr_t rdx, std::u
   std::uintptr_t curRva = wrRequestRva(before);
   bool inWallState = curRva == 0xB465FB0 || curRva == 0xB4519A0 || curRva == kWrStateRva;
   bool entryCb = !veto && !sameFace && *slotE30 == 0 && heroMachine && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && ((geArmedNow.load() && !inWallState) || GetTickCount64() < geVetoUntilMs.load());
-  bool observe = !veto && !entryCb && !sameFace && *slotE30 == 0 && wrCtxLogs.load(std::memory_order_relaxed) < 12 && heroMachine;
+  bool holdCb = !veto && !entryCb && !sameFace && *slotE30 == 0 && heroMachine && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && (gbHoldA.load() || GetTickCount64() - geLedgeWrapMs.load() < 1500);
+  bool observe = !veto && !entryCb && !sameFace && !holdCb && *slotE30 == 0 && wrCtxLogs.load(std::memory_order_relaxed) < 12 && heroMachine;
   wrCtxCaptured = false;
   if (veto) { wrVetoFired = false; *slotE30 = reinterpret_cast<std::uintptr_t>(&wrVetoCallback); }
   else if (sameFace) { wrVetoFired = false; *slotE30 = reinterpret_cast<std::uintptr_t>(&wrSameFaceCallback); }
+  else if (holdCb) *slotE30 = reinterpret_cast<std::uintptr_t>(&wrHoldCallback);
   else if (entryCb) { wrVetoFired = false; *slotE30 = reinterpret_cast<std::uintptr_t>(&wrEntryCallback); }
   else if (observe) *slotE30 = reinterpret_cast<std::uintptr_t>(&wrObserveCallback);
   std::uint64_t result = wrRequestOrig(machine, rdx, r8, r9);
   if (entryCb && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrEntryCallback)) *slotE30 = 0;
+  if (holdCb && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrHoldCallback)) *slotE30 = 0;
   if (sameFace) { if (*slotE30 == reinterpret_cast<std::uintptr_t>(&wrSameFaceCallback)) *slotE30 = 0; if (wrVetoFired) { geSameFaceVetoes.fetch_add(1); wrVetoesHold.fetch_add(1); } }
   if (entryCb && wrCtxCaptured) wrLogContext("ground_entry", machine);
   if (observe && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrObserveCallback)) *slotE30 = 0;
@@ -3331,7 +3357,15 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
       // M10z-r11: on B the position stores stop at once (the model knows no ground and pushed the hero through it while
       // blending); the game falls with its own collision, only the orientation returns over 1 s.
       if (wgiBTaps.load() != gbAPresses) { geBUntilMs.store(GetTickCount64() + kBCancelBlockMs); msm2::writeLog("WS_B_CANCEL event=block_start ms=%llu", (unsigned long long)kBCancelBlockMs); gbState = 3; gbBlendStart = now; for (int i = 0; i < 3; ++i) sbN[i].store(gbN[i]); sbBlendQpc.store(qpcNow()); gfSummary("cancel_by_B"); stateReport("B"); msm2::writeLog("WS_GRAVITY_TEST cancel_by_B test=%u held_ms=%llu", gbTests, (unsigned long long)(now - gbStart)); }
-      else gbSetUp(gbN);
+      else {
+        static unsigned refSeen = 0; static std::uint64_t refLast = 0; unsigned rs = geRefSeq.load();
+        if (rs != refSeen && now - refLast >= 500 && std::fabs(gbN[1]) < 0.5f) { refSeen = rs; refLast = now;
+          float t[3] = {geRefN[0].load(), geRefN[1].load(), geRefN[2].load()}, c = t[0] * gbN[0] + t[1] * gbN[1] + t[2] * gbN[2];
+          if (std::isfinite(c) && c > 0.94f && c < 0.99966f) { float m[3], ml = 0; for (int i = 0; i < 3; ++i) { m[i] = gbN[i] + (t[i] - gbN[i]) * 0.5f; ml += m[i] * m[i]; } ml = std::sqrt(ml);
+            if (ml > 0.5f) { for (int i = 0; i < 3; ++i) { gbN[i] = m[i] / ml; gfN0[i].store(gbN[i]); gfP0[i].store(geRefP[i].load()); }
+              if (geRefLogs.fetch_add(1) < 60) msm2::writeLog("WS_FACE_RELEVEL angle_deg=%.2f n=%.3f,%.3f,%.3f", std::acos(std::fmin(1.f, c)) * 57.29578f, gbN[0], gbN[1], gbN[2]); } } }
+        gbSetUp(gbN);
+      }
     }
     if (gbState == 3) {
       { float t = std::fmin(1.f, float(now - gbBlendStart) / 1000.f), up[3] = {gbN[0] * (1 - t), gbN[1] * (1 - t) + t, gbN[2] * (1 - t)};
