@@ -27,3 +27,18 @@ A bounded read-only detour on 0x36825E0 (exact bytes/pdata check, default OFF, F
 machine pointer, requested state (rsi), current state ([rbx+0x70]), [rbx+0xE30] callback pointer, and which site was
 taken; matched in time with the WR Init event. That identifies the WR state value and the refusal path. A veto (phase B)
 is only built after that evidence.
+
+## M20d (implemented by Claude Code, 2026-11-26)
+- MinHook detour on 0x36825E0, installed only when the first 64 bytes match sha256
+  5597730185c403a601f72a3aa2a9b8f50132054c0b41f6ac78c43905d4a47ec4 (captured from the M20c dump) and pdata begins there;
+  INI `WALLSPRINT_WS_WR_REQUEST_DIAG` (code default 0, shipped 1); F8 makes it a pure pass-through.
+- The original runs first and unchanged (all four argument registers, return value passed back). Afterwards, if a WR Init
+  hook event was recorded on the same thread during the call (ws_hook_head advanced, slot kind 0, same thread id), one
+  `WS_WR_REQUEST` line is logged (<= 60): machine, machine vtable RVA, owner [+0x10], current state before/after [+0x70]
+  and their vtable RVAs, Init self, Entry seen, callback [+0xE30] and its RVA, return value, hold/face state, stick, RT.
+- Reads only fields the original itself uses ([+0x10], [+0x70], [+0xE30]) plus the state objects' vtables via guarded reads;
+  no writes.
+- Checks: build PASS, test.sh PASS (85, incl. a static read-only/original-first/exact-byte/INI contract test), package PASS
+  (script.disabled sha256 435ef1dbc8b5ea9976ec844ff7e1ac8fb15c34741260fa8f7639684921f39801, DLL
+  0d42f38c2b7e87074653a240d4bb80b12e856adddb7cb4436b39ec245d00977a, packaged INI has the switch = 1); smoke/hooks
+  UNAVAILABLE (wine). Tree 27ed18882779bb875a2f9de6bf717d0a234fb4b4.

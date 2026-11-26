@@ -2682,6 +2682,48 @@ void gmReport(const char* why) {
   msm2::writeLog("WS_MOVER_REPORT why=%s hero_calls_in_hold=%llu interval_lt4ms=%llu interval_4_50ms=%llu interval_gt50ms=%llu calls=%llu edits=%llu hero=0x%llx vel_samples=%u top_vel_offsets=0x%x:%u,0x%x:%u,0x%x:%u,0x%x:%u,0x%x:%u,0x%x:%u", why,
     (unsigned long long)gmHeroCalls.exchange(0), (unsigned long long)gmIvShort.exchange(0), (unsigned long long)gmIvFrame.exchange(0), (unsigned long long)gmIvLong.exchange(0), (unsigned long long)gmCalls.load(), (unsigned long long)gmEdits.load(), (unsigned long long)gmHero.load(), gmVelSamples.load(), bi[0] * 4, best[0], bi[1] * 4, best[1], bi[2] * 4, best[2], bi[3] * 4, best[3], bi[4] * 4, best[4], bi[5] * 4, best[5]);
 }
+// M20d: read-only detour on the state-machine "process pending state request" routine 0x36825E0 (the only direct caller of
+// the transition helper 0x367E5B0 that starts WR Init/Entry; analysis/M20C_WR_TRANSITION_20261126.md). The original always
+// runs unchanged with all argument registers; afterwards, if a WR Init hook event was recorded on this thread during the
+// call, the machine's fields are logged once per event (<= 60). No game write, no return-value change.
+constexpr std::uintptr_t kWrRequestRva = 0x36825E0;
+constexpr char kWrRequestSha[] = "5597730185c403a601f72a3aa2a9b8f50132054c0b41f6ac78c43905d4a47ec4";
+using WrRequestFn = std::uint64_t (*)(std::uintptr_t, std::uintptr_t, std::uintptr_t, std::uintptr_t);
+WrRequestFn wrRequestOrig = nullptr; std::uintptr_t wrRequestImage = 0, wrRequestImageSize = 0; std::atomic<unsigned> wrRequestLogs{0};
+std::uint64_t wrRequestRva(std::uintptr_t p) { return p >= wrRequestImage && p - wrRequestImage < wrRequestImageSize ? p - wrRequestImage : 0; }
+std::uint64_t wrRequestDetour(std::uintptr_t machine, std::uintptr_t rdx, std::uintptr_t r8, std::uintptr_t r9) {
+  if (!ws::drive::wsWrRequestDiag.load(std::memory_order_relaxed) || killed.load(std::memory_order_relaxed) || !machine) return wrRequestOrig(machine, rdx, r8, r9);
+  // The original itself reads [machine+0xE1D], [machine+0x10] and [machine+0xE30] on entry/path 1, so these reads stay
+  // inside the object the game already uses.
+  std::uintptr_t before = *reinterpret_cast<const std::uintptr_t*>(machine + 0x70);
+  std::uint64_t h0 = ws_hook_head.load(std::memory_order_acquire);
+  std::uint64_t result = wrRequestOrig(machine, rdx, r8, r9);
+  std::uint64_t h1 = ws_hook_head.load(std::memory_order_acquire);
+  if (h1 == h0 || h1 - h0 > 64) return result;
+  std::uint32_t thread = GetCurrentThreadId(); bool init = false, entry = false; std::uintptr_t initSelf = 0;
+  for (std::uint64_t i = h0; i < h1; ++i) { const auto& slot = ws_hook_slots[i & (ws::capture::capacity - 1)];
+    if (slot.thread != thread) continue;
+    if (slot.kind == 0) { init = true; initSelf = slot.self; } else if (slot.kind == 1) entry = true; }
+  if (!init || wrRequestLogs.fetch_add(1) >= 60) return result;
+  std::uintptr_t owner = *reinterpret_cast<const std::uintptr_t*>(machine + 0x10), after = *reinterpret_cast<const std::uintptr_t*>(machine + 0x70);
+  std::uintptr_t callback = *reinterpret_cast<const std::uintptr_t*>(machine + 0xE30), vt = *reinterpret_cast<const std::uintptr_t*>(machine);
+  std::uintptr_t beforeVt = 0, afterVt = 0; if (before) msm2::readMemory(before, &beforeVt, 8); if (after) msm2::readMemory(after, &afterVt, 8);
+  unsigned state = gfWalkoffActive.load() ? 1u : stopHopRun.load() ? 3u : gfFaceAirNow.load() ? 2u : gfPinnedNow.load() ? 0u : 4u;
+  msm2::writeLog("WS_WR_REQUEST machine=0x%llx machine_vt_rva=0x%llx owner=0x%llx state_before=0x%llx state_before_vt_rva=0x%llx state_after=0x%llx state_after_vt_rva=0x%llx init_self=0x%llx entry=%u callback_e30=0x%llx callback_rva=0x%llx result=0x%llx hold=%u face_state=%s stick=%.2f,%.2f rt=%.2f read_only=1",
+    (unsigned long long)machine, (unsigned long long)wrRequestRva(vt), (unsigned long long)owner, (unsigned long long)before, (unsigned long long)wrRequestRva(beforeVt), (unsigned long long)after, (unsigned long long)wrRequestRva(afterVt),
+    (unsigned long long)initSelf, unsigned(entry), (unsigned long long)callback, (unsigned long long)wrRequestRva(callback), (unsigned long long)result, unsigned(gfOn.load()), FaceWrEvidence::stateName(state),
+    wgiLx.load(), wgiLy.load(), wgiReadTarget ? float(wgiRt.load()) : -1.f);
+  return result;
+}
+void wrRequestInstall(std::uintptr_t image, std::size_t imageSize) {
+  if (!image || imageSize <= kWrRequestRva + 64) return;
+  wrRequestImage = image; wrRequestImageSize = imageSize;
+  auto t = image + kWrRequestRva; unsigned char code[64]{}; char hash[65]{};
+  DWORD64 fb = 0; auto* fe = RtlLookupFunctionEntry(t, &fb, nullptr);
+  bool ok = fe && fb == image && fe->BeginAddress == kWrRequestRva && msm2::readMemory(t, code, sizeof code) && sha256(code, sizeof code, hash) && !std::strcmp(hash, kWrRequestSha);
+  if (ok) ok = MH_CreateHook(reinterpret_cast<void*>(t), reinterpret_cast<void*>(&wrRequestDetour), reinterpret_cast<void**>(&wrRequestOrig)) == MH_OK && MH_EnableHook(reinterpret_cast<void*>(t)) == MH_OK;
+  msm2::writeLog("WS_WR_REQUEST_HOOK installed=%u rva=0x36825e0 sha256=%s enabled=%u read_only=1", unsigned(ok), hash[0] ? hash : "none", unsigned(ws::drive::wsWrRequestDiag.load()));
+}
 void gmInstall(std::uintptr_t image, std::size_t imageSize) {
   if (!image || imageSize <= kMoverRva + 64) return;
   auto t = image + kMoverRva; unsigned char code[64]{}; char hash[65]{};
@@ -3101,6 +3143,7 @@ void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
   if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN, reinterpret_cast<LPCWSTR>(&configure), &pin)) return;
   auto init = MH_Initialize(); if (init != MH_OK && init != MH_ERROR_ALREADY_INITIALIZED) return;
   gmInstall(image, imageSize);   // M10z-r9 hero mover
+  if (ws::drive::wsWrRequestDiag.load()) wrRequestInstall(image, imageSize);   // M20d read-only WR request diagnostic
   sp2Install(image, imageSize);  // M10z-r15 hero SetPosition
   if (MH_CreateHook(reinterpret_cast<void*>(target), reinterpret_cast<void*>(&ws_camref_thunk), &ws_camref_original) != MH_OK) return;
   installed = MH_EnableHook(reinterpret_cast<void*>(target)) == MH_OK;

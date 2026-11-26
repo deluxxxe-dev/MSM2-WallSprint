@@ -39,6 +39,7 @@ inline std::atomic<bool> wallPOk{false};
 inline std::atomic<bool> wsGravityForce{false};
 // M15 bounded face walk-off proxy/released-air integration; code default OFF.
 inline std::atomic<bool> wsFaceWalkoff{false};
+inline std::atomic<bool> wsWrRequestDiag{false};
 // M16 face-air/fall-only bounded Transform row experiment, code default OFF.
 inline std::atomic<bool> wsFaceAirFacing{false};
 // M17 camera mapping is read-only until walking validation admits a live basis.

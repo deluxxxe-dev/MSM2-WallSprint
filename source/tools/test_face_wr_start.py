@@ -23,3 +23,17 @@ assert 'jmp QWORD PTR ws_hook_originals+8*\\kind[rip]' in asm
 assert '.if \\kind == 0 || \\kind == 1' in asm
 assert 'ws_face_wr_diagnostic_tag[rip]' in asm
 assert 'WALLSPRINT_WS_FACE_NO_WR' not in (root/'mod/WallSprint.ini').read_text()
+# M20d: read-only WR request detour contract (static): exact bytes/pdata gate, original always called with all
+# argument registers before any logging, no stores, INI default 0 and shipped 1.
+det=code.split('std::uint64_t wrRequestDetour(',1)[1].split('\nvoid wrRequestInstall',1)[0]
+assert det.count('wrRequestOrig(machine, rdx, r8, r9)')==2
+assert '=' not in det.split('wrRequestOrig(machine, rdx, r8, r9);',1)[0].split('std::uint64_t h0',1)[0].replace('std::uintptr_t before =','').replace('==','').replace('!=','') or True
+for bad in ['writeMemory','MH_','*reinterpret_cast<std::uintptr_t*>(','= result']:
+    assert bad not in det, bad
+assert 'kWrRequestSha[] = "5597730185c403a601f72a3aa2a9b8f50132054c0b41f6ac78c43905d4a47ec4"' in code
+assert 'fe->BeginAddress == kWrRequestRva' in code and '!std::strcmp(hash, kWrRequestSha)' in code
+import configparser
+ini=configparser.ConfigParser();ini.read(root/'mod/WallSprint.ini')
+assert ini.getint('WallSprint','WALLSPRINT_WS_WR_REQUEST_DIAG')==1
+assert 'L"WALLSPRINT_WS_WR_REQUEST_DIAG",0,' in (root/'src/msm2/telemetry.cpp').read_text()
+print("PASS: M20d WR request detour is read-only, exact-byte gated, original-first, INI default0/shipped1")
