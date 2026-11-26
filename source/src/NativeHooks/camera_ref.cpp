@@ -820,7 +820,14 @@ HRESULT STDMETHODCALLTYPE wgiReadDetour(void* self, WgiReading* r) {
     wgiRt.store(r->rt, std::memory_order_relaxed);
     { bool b = (r->buttons & 0x8u) != 0; static std::atomic<bool> prevB{false}; bool was = prevB.exchange(b); if (b && !was) { wgiBPresses.fetch_add(1); wgiBDownMs.store(GetTickCount64()); }
       if (!b && was && GetTickCount64() - wgiBDownMs.load() < kBTapMs) wgiBTaps.fetch_add(1);
-      wgiBDown.store(b); wgiLbDown.store((r->buttons & 0x400u) != 0); }
+      wgiBDown.store(b); bool lb = (r->buttons & 0x400u) != 0; wgiLbDown.store(lb);
+      // M21f (log 20261126-172006 08:23:24): the game froze at an LB press while the hero walked on a face (no MOD event
+      // ran; HYPOTHESIS: the game's own LB action under the rotated gravity). While a face hold/entry is active LB is the
+      // MOD's wrap button only and is hidden from the game.
+      static bool prevLbHidden = false; static std::atomic<unsigned> lbLogs{0};
+      bool hideLb = lb && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && !killed.load() && (gbHoldA.load() || gfOn.load());
+      if (hideLb) { r->buttons &= ~0x400u; if (!prevLbHidden && lbLogs.fetch_add(1) < 40) msm2::writeLog("WS_LB_HIDDEN event=press"); }
+      prevLbHidden = hideLb; }
     { bool l3 = (r->buttons & 0x1000u) != 0; static std::atomic<bool> prevL3{false}; bool was = prevL3.exchange(l3); if (l3 && !was) wgiL3Edges.fetch_add(1); }   // M10p gravity lock
     // M10q L3 stand: the left stick reads neutral until it was released (< 0.25) and pushed again (> 0.4).
     { static bool sawNeutral = false; double m2 = r->lx * r->lx + r->ly * r->ly;
@@ -3151,9 +3158,11 @@ void gbEnd(const char* why, std::uint64_t now, bool writeVanilla = true) {
 }
 void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, std::uint64_t now) {
   stopTracePoll(now);
-  if (killed.load() || !hero.hero) { if (gbState) gbEnd("killed_or_no_hero", now); return; }
+  // M21f (log 20261126-172006 08:22:23-28): after a hero change the block was unknown, the stale armed flag kept turning
+  // WR requests into entry requests that the worker could not start (4 lost wall entries in 5 s). Disarm on every exit.
+  if (killed.load() || !hero.hero) { geArmedNow.store(false); if (gbState) gbEnd("killed_or_no_hero", now); return; }
   gbDiscover(hero, now);
-  if (!ws::drive::wsGravityTest.load() || !gbAddr) { if (gbState) gbEnd("disabled_or_no_block", now); return; }
+  if (!ws::drive::wsGravityTest.load() || !gbAddr) { geArmedNow.store(false); if (gbState) gbEnd("disabled_or_no_block", now); return; }
   bool wsNow = engagedManager.load() != 0 && now - lastWsMs.load() < 150;
   { static bool blocking = false; bool b = GetTickCount64() < geBUntilMs.load();
     if (b && wsNow) wsNow = false;   // M21b: no new WS right after B

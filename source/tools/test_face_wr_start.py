@@ -88,7 +88,13 @@ print("PASS: M21d B tap cancel, B-held outer-edge wrap request (plane at earlies
 # M21e: LB (0x400) is the wrap button; LB at the release stops the in-plane carry; the wrap normal is snapped (roof up,
 # no downward wrap, otherwise horizontal travel); a wrap hold accepts the real face from WR at once; no WR back to the
 # face just left for 1 s.
-assert 'wgiLbDown.store((r->buttons & 0x400u) != 0);' in code and 'gfWrap.stopped=true;' in code
+assert 'bool lb = (r->buttons & 0x400u) != 0; wgiLbDown.store(lb);' in code and 'gfWrap.stopped=true;' in code
 assert 'if(d[1]>0.7f){d[0]=0;d[1]=1;d[2]=0;}else if(d[1]<-0.7f)why="downward";' in code
 assert 'geHoldStartMs.store(geWrapHold.exchange(false) ? 0 : GetTickCount64())' in code and 'cb >= kSameFaceCos && GetTickCount64() - geTransferMs.load() < kTransferSettleMs' in code
 print("PASS: M21e LB wrap button, carry stop, snapped wrap normal, immediate real-face correction, no ping-pong")
+
+# M21f: LB is hidden from the game only while a face hold/entry is active; the entry arming is cleared whenever the
+# worker cannot run an entry (no hero / no gravity block).
+assert 'bool hideLb = lb && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && !killed.load() && (gbHoldA.load() || gfOn.load());' in code
+assert 'if (hideLb) { r->buttons &= ~0x400u;' in code and code.count('{ geArmedNow.store(false); if (gbState) gbEnd(')==2
+print("PASS: M21f LB hidden from the game during a face hold, stale entry arming cleared")
