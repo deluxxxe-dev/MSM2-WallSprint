@@ -825,7 +825,7 @@ HRESULT STDMETHODCALLTYPE wgiReadDetour(void* self, WgiReading* r) {
       // ran; HYPOTHESIS: the game's own LB action under the rotated gravity). While a face hold/entry is active LB is the
       // MOD's wrap button only and is hidden from the game.
       static bool prevLbHidden = false; static std::atomic<unsigned> lbLogs{0};
-      bool hideLb = lb && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && !killed.load() && (gbHoldA.load() || gfOn.load());
+      bool hideLb = lb && ws::drive::wsEdgeWrap.load(std::memory_order_relaxed) && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && !killed.load() && (gbHoldA.load() || gfOn.load());
       if (hideLb) { r->buttons &= ~0x400u; if (!prevLbHidden && lbLogs.fetch_add(1) < 40) msm2::writeLog("WS_LB_HIDDEN event=press"); }
       prevLbHidden = hideLb; }
     { bool l3 = (r->buttons & 0x1000u) != 0; static std::atomic<bool> prevL3{false}; bool was = prevL3.exchange(l3); if (l3 && !was) wgiL3Edges.fetch_add(1); }   // M10p gravity lock
@@ -2352,7 +2352,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     for(int i=0;i<3;++i){gfL.vg[i]=gfL.walkoff.carry[i];gfL.dash[i]=0;}
     // M21e (log 20261126-170335 07:43:59.4): the carried 13.7 m/s took the hero 4.7 m past the edge before the wrap.
     // With LB held the in-plane carry stops at the release; only the normal part stays.
-    if(wgiLbDown.load()&&ws::drive::wsGroundEntry.load(std::memory_order_relaxed)){float vn=gfL.vg[0]*n0[0]+gfL.vg[1]*n0[1]+gfL.vg[2]*n0[2];for(int i=0;i<3;++i)gfL.vg[i]=vn*n0[i];gfWrap.stopped=true;}
+    if(wgiLbDown.load()&&ws::drive::wsEdgeWrap.load(std::memory_order_relaxed)&&ws::drive::wsGroundEntry.load(std::memory_order_relaxed)){float vn=gfL.vg[0]*n0[0]+gfL.vg[1]*n0[1]+gfL.vg[2]*n0[2];for(int i=0;i<3;++i)gfL.vg[i]=vn*n0[i];gfWrap.stopped=true;}
     gfL.takeoffHistory.freeze(gfL.airMapping,gfL.walk,qpcSec(now),"none",wgiLx.load(),wgiLy.load(),n0,gfL.vg);
     gfL.zipSeen=gfZipReq.load();gfLastReleaseMs.store(double(GetTickCount64()));gfWalkoffActive.store(true);airFacingBegin(gfL.walkoff.carry,n0);
   }else if(walkoffEvent==2){
@@ -2436,7 +2436,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     // -0.36 m 0.23 s after the release, -171 m at the end). With B held, the face around the edge is taken as the face
     // whose normal is the travel direction; its plane is put at the earliest possible edge (release point moved back by
     // the detector delay) so the hero meets the real face first. Without B the game keeps its own ledge behaviour.
-    if(gfWrap.armed&&!gfWrap.requested&&ws::drive::wsGroundEntry.load(std::memory_order_relaxed)){
+    if(gfWrap.armed&&!gfWrap.requested&&ws::drive::wsEdgeWrap.load(std::memory_order_relaxed)&&ws::drive::wsGroundEntry.load(std::memory_order_relaxed)){
       double since=qpcSec(now)-gfWrap.t;float dist=facePlaneDistance(mvA ? mvA : p,p0,n0);
       // M21e: the face around an edge is snapped: a mostly vertical travel (|y| > 0.7) up -> world up (roof), down ->
       // no wrap; otherwise the horizontal part of the travel direction (building corner). Log 170335: an unsnapped
@@ -2787,7 +2787,7 @@ bool ledgeWrap(std::uintptr_t requested) {
   // (09:58:31.851 jump -> 31.937 release); the jump, the air state and the ledge take-off all start the wrap with LB held.
   std::uintptr_t rr = requested - wrRequestImage;
   bool edgeState = rr == kLedgeStateRva || rr == 0xB454950 || rr == 0xB45D6B0;
-  if (!edgeState || !wgiLbDown.load() || !ws::drive::wsGroundEntry.load(std::memory_order_relaxed)) return false;
+  if (!edgeState || !wgiLbDown.load() || !ws::drive::wsEdgeWrap.load(std::memory_order_relaxed) || !ws::drive::wsGroundEntry.load(std::memory_order_relaxed)) return false;
   auto ms = GetTickCount64();
   if (ms < geVetoUntilMs.load() && ms - geLedgeWrapMs.load() < 1500) return true;   // wrap already running: keep refusing
   if (!gfEdgeValid.load() || !gfOn.load()) return false;
@@ -2815,9 +2815,10 @@ bool holdRefuse(std::uintptr_t requested) {
   bool crawl = r == 0xB463C10 || r == 0xB463E40 || r == 0xB4635E0 || r == 0xB4633E0;
   // M21j: an open-ended crawl refusal froze the hero in the WR exit 0xB465AB0 for 6 s (log 185442 09:56:40-47). The WR
   // exit starts the hold (and its hop) at once; crawl is refused only for 0.5 s after that exit.
-  if (r == 0xB465AB0 && gbHoldA.load() && !gfOn.load()) { if (ms - geWsExitMs.load() > 1500) { geWsExitMs.store(ms); geForceHold.store(true); } return false; }
-  bool lbJump = r == 0xB454950 && wgiLbDown.load() && gfOn.load();   // owner: no parkour sprint jump / swing with LB
-  bool refuse = (wrapping && jump) || lbJump || (crawl && gbHoldA.load() && ms - geWsExitMs.load() < 500);
+  bool wrapOn = ws::drive::wsEdgeWrap.load(std::memory_order_relaxed), exitOn = ws::drive::wsWrExitAssist.load(std::memory_order_relaxed);
+  if (exitOn && r == 0xB465AB0 && gbHoldA.load() && !gfOn.load()) { if (ms - geWsExitMs.load() > 1500) { geWsExitMs.store(ms); geForceHold.store(true); } return false; }
+  bool lbJump = wrapOn && r == 0xB454950 && wgiLbDown.load() && gfOn.load();   // owner: no parkour sprint jump / swing with LB
+  bool refuse = (wrapOn && wrapping && jump) || lbJump || (exitOn && crawl && gbHoldA.load() && ms - geWsExitMs.load() < 500);
   if (refuse && holdRefuseLogs.fetch_add(1) < 80) msm2::writeLog("WS_FACE_STATE_REFUSED rva=0x%llx reason=%s", (unsigned long long)r, crawl ? "crawl_after_wr_exit" : lbJump ? "jump_with_lb" : "jump_during_wrap");
   return refuse;
 }
@@ -2873,7 +2874,7 @@ bool wrSameFaceCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t req
   if (geSameFaceLogs.fetch_add(1) < 12) msm2::writeLog("WS_FACE_WR_SAME_FACE decision=%s cos=%.3f plane_d=%.3f n=%.3f,%.3f,%.3f", decision, c, d, pn[3] / nl, pn[4] / nl, pn[5] / nl);
   // M21i (owner 2026-11-26): the face is re-levelled from the game's own wall normal: a same-face context that differs by
   // 1.5-20 deg is published and the worker turns the hold normal toward it (at most every 0.5 s).
-  if (same && c < 0.99966f && std::fabs(d) <= kSameFacePlane) { for (int i = 0; i < 3; ++i) { geRefN[i].store(pn[3 + i] / nl); geRefP[i].store(pn[i]); } geRefSeq.fetch_add(1); }
+  if (ws::drive::wsFaceRelevel.load(std::memory_order_relaxed) && same && c < 0.99966f && std::fabs(d) <= kSameFacePlane) { for (int i = 0; i < 3; ++i) { geRefN[i].store(pn[3 + i] / nl); geRefP[i].store(pn[i]); } geRefSeq.fetch_add(1); }
   if (same || early) { wrVetoFired = true; return false; }
   if (!horizontal) return allow;
   if (!geTransfer.exchange(true)) { for (int i = 0; i < 3; ++i) { geP[i].store(pn[i]); geN[i].store(pn[3 + i] / nl); } geVetoUntilMs.store(GetTickCount64() + 1500); geReqSeq.fetch_add(1); }
@@ -2918,7 +2919,7 @@ std::uint64_t wrRequestDetour(std::uintptr_t machine, std::uintptr_t rdx, std::u
   std::uintptr_t curRva = wrRequestRva(before);
   bool inWallState = curRva == 0xB465FB0 || curRva == 0xB4519A0 || curRva == kWrStateRva;
   bool entryCb = !veto && !sameFace && *slotE30 == 0 && heroMachine && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && ((geArmedNow.load() && !inWallState) || GetTickCount64() < geVetoUntilMs.load());
-  bool holdCb = !veto && !entryCb && !sameFace && *slotE30 == 0 && heroMachine && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && (gbHoldA.load() || GetTickCount64() - geLedgeWrapMs.load() < 1500);
+  bool holdCb = !veto && !entryCb && !sameFace && *slotE30 == 0 && heroMachine && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && (ws::drive::wsEdgeWrap.load(std::memory_order_relaxed) || ws::drive::wsWrExitAssist.load(std::memory_order_relaxed)) && (gbHoldA.load() || GetTickCount64() - geLedgeWrapMs.load() < 1500);
   bool observe = !veto && !entryCb && !sameFace && !holdCb && *slotE30 == 0 && wrCtxLogs.load(std::memory_order_relaxed) < 12 && heroMachine;
   wrCtxCaptured = false;
   if (veto) { wrVetoFired = false; *slotE30 = reinterpret_cast<std::uintptr_t>(&wrVetoCallback); }

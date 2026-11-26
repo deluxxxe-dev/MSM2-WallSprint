@@ -1459,3 +1459,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-26: M21h (Claude Code, analysis/M21H_STATES_20261126.md): hero state map (ledge 0xB45E2B0, crawl corner 0xB4633E0); LB + ledge state = immediate wrap; no entry from a running vanilla wall state (stuck fix).
 - 2026-11-26: M21i (Claude Code, analysis/M21I_OWNER_RESULT_20261126.md): refuse game jump/air during wraps and crawl during WS holds; re-level the face from the game's wall normal.
 - 2026-11-26: M21j (Claude Code, analysis/M21J_OWNER_RESULT_20261126.md): edge-state wrap with LB (sprint jump), LB refuses the sprint jump, WR exit forces the hold with a bounded crawl refusal, earlier LB walk-off wrap.
+- 2026-11-26: M21k (Claude Code, analysis/M21K_BASELINE_RESTORE_20261126.md): owner reported regressions; every post-M21c experiment is now behind an INI switch shipped OFF, restoring the M21c behaviour plus bug fixes; version/verdict table recorded.

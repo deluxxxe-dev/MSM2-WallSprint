@@ -24,7 +24,7 @@ Phases:
 | A | Face-as-ground locomotion on one face: walk/sprint/stop in all directions, no false fall handling | Done (M20/M20b, owner OK up/down/side) |
 | B | Keep the game from starting a vanilla WR while the hero stands on the face (intermittent at an up-sprint start) | Done (M20e/f veto, M21b same-face refusal) |
 | C | Entry from the air: reaching a wall while airborne lands on the face standing (gravity set before contact or WR start replaced), no hop | Mostly done (M21/M21b; owner OK for ground/swing entry). Open: shallow-angle entry, camera distance jump, landing animation slide |
-| D | Smooth gravity/body rotation while grounded: convex corner wrap to the adjacent face and concave entry ground -> wall (and wall -> other faces) without a hop | CURRENT. Concave/other-face transfer M21c; convex wrap M21d/M21e (LB held at the edge = wrap, otherwise the game's ledge jump/fall; owner 2026-11-26) |
+| D | Smooth gravity/body rotation while grounded: convex corner wrap to the adjacent face and concave entry ground -> wall (and wall -> other faces) without a hop | CURRENT. Concave/other-face transfer M21c (accepted). Convex wrap experiments M21d-j failed (guessed geometry) and are OFF since M21k; next: real adjacent-face geometry from the vanilla crawl corner (0xB4633E0) |
 | E | Air behaviour on the rotated gravity: falls with the camera following (P4), no pass-through on other buildings (P5) | Later |
 | F | Jumps and web zip on the face (P2/P3/P6), then parkour, swing, combat per the older stages | Later |
 The stop hop (M15-M18) stays only as a fallback until C/D replace the WR-based WS.

@@ -95,7 +95,7 @@ print("PASS: M21e LB wrap button, carry stop, snapped wrap normal, immediate rea
 
 # M21f: LB is hidden from the game only while a face hold/entry is active; the entry arming is cleared whenever the
 # worker cannot run an entry (no hero / no gravity block).
-assert 'bool hideLb = lb && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && !killed.load() && (gbHoldA.load() || gfOn.load());' in code
+assert 'bool hideLb = lb && ws::drive::wsEdgeWrap.load(std::memory_order_relaxed) && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && !killed.load() && (gbHoldA.load() || gfOn.load());' in code
 assert 'if (hideLb) { r->buttons &= ~0x400u;' in code and code.count('{ geArmedNow.store(false); if (gbState) gbEnd(')==2
 print("PASS: M21f LB hidden from the game during a face hold, stale entry arming cleared")
 
@@ -110,7 +110,7 @@ print("PASS: M21g fast-travel/hero-change reset and read-only face state-change 
 # M21h: LB + the game's ledge state 0xB45E2B0 during a pinned hold = immediate wrap from the last pinned edge position
 # (request refused); no new entry from a running vanilla wall state.
 lw=code.split('bool ledgeWrap(std::uintptr_t requested) {',1)[1].split('\n}',1)[0]
-assert 'if (!edgeState || !wgiLbDown.load()' in lw and 'if (!gfEdgeValid.load() || !gfOn.load()) return false;' in lw
+assert 'if (!edgeState || !wgiLbDown.load() || !ws::drive::wsEdgeWrap' in lw and 'if (!gfEdgeValid.load() || !gfOn.load()) return false;' in lw
 assert code.count('if (ledgeWrap(requested) || holdRefuse(requested))')==4 and 'kLedgeStateRva = 0xB45E2B0' in code
 assert 'bool inWallState = curRva == 0xB465FB0 || curRva == 0xB4519A0 || curRva == kWrStateRva;' in code and '(geArmedNow.load() && !inWallState)' in code
 print("PASS: M21h ledge-state wrap with LB and no entry from a running vanilla wall state")
@@ -118,7 +118,7 @@ print("PASS: M21h ledge-state wrap with LB and no entry from a running vanilla w
 # M21i: jump/air/ledge refused for 1.5 s after a wrap request, crawl states refused while WS is armed or a hold runs
 # (temporary hold callback, restored); same-face contexts 1.5-20 deg off re-level the hold normal at most every 0.5 s.
 hr=code.split('bool holdRefuse(std::uintptr_t requested) {',1)[1].split('\n}',1)[0]
-assert 'bool refuse = (wrapping && jump) || lbJump || (crawl && gbHoldA.load() && ms - geWsExitMs.load() < 500);' in hr
+assert 'bool refuse = (wrapOn && wrapping && jump) || lbJump || (exitOn && crawl && gbHoldA.load() && ms - geWsExitMs.load() < 500);' in hr
 assert 'if (holdCb && *slotE30 == reinterpret_cast<std::uintptr_t>(&wrHoldCallback)) *slotE30 = 0;' in code
 assert 'if (std::isfinite(c) && c > 0.94f && c < 0.99966f)' in code and 'now - refLast >= 500' in code
 print("PASS: M21i wrap jump refusal, crawl refusal in holds, face re-levelling from the game's wall normal")
@@ -126,6 +126,17 @@ print("PASS: M21i wrap jump refusal, crawl refusal in holds, face re-levelling f
 # M21j: jump/air/ledge with LB in a hold start the wrap from the edge; LB refuses the sprint jump in holds; the WR exit
 # 0xB465AB0 forces the hold start and crawl is refused only 0.5 s after it; LB walk-off wrap after 0.05 s / 0.08 m.
 assert 'bool edgeState = rr == kLedgeStateRva || rr == 0xB454950 || rr == 0xB45D6B0;' in code
-assert 'if (r == 0xB465AB0 && gbHoldA.load() && !gfOn.load())' in code and 'bool forceHold = gbState == 1 && geForceHold.exchange(false);' in code
+assert 'if (exitOn && r == 0xB465AB0 && gbHoldA.load() && !gfOn.load())' in code and 'bool forceHold = gbState == 1 && geForceHold.exchange(false);' in code
 assert '(wgiLbDown.load()&&since>=0.05&&dist<-0.08f)' in code
 print("PASS: M21j edge-state wrap, LB jump refusal, bounded crawl refusal with forced hold at WR exit, early LB walk-off wrap")
+
+# M21k: every experiment after M21c is behind its own INI switch, code default 0 and shipped 0 (owner: return to the last
+# accepted behaviour); the wrap, the WR-exit assist, the re-levelling and the hold callback do nothing while they are 0.
+tel=(root/'src/msm2/telemetry.cpp').read_text()
+for k in ['WALLSPRINT_WS_EDGE_WRAP','WALLSPRINT_WS_WR_EXIT_ASSIST','WALLSPRINT_WS_FACE_RELEVEL']:
+    assert 'L"'+k+'",0,' in tel, k
+    assert ini.getint('WallSprint',k)==0, k
+assert 'gfWrap.armed&&!gfWrap.requested&&ws::drive::wsEdgeWrap.load' in code and 'wgiLbDown.load()&&ws::drive::wsEdgeWrap.load' in code
+assert 'bool lbJump = wrapOn && r == 0xB454950' in code and 'ws::drive::wsFaceRelevel.load(std::memory_order_relaxed) && same &&' in code
+assert '(ws::drive::wsEdgeWrap.load(std::memory_order_relaxed) || ws::drive::wsWrExitAssist.load(std::memory_order_relaxed))' in code
+print("PASS: M21k post-M21c experiments gated by INI switches, all shipped OFF")

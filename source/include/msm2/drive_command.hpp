@@ -42,6 +42,10 @@ inline std::atomic<bool> wsFaceWalkoff{false};
 inline std::atomic<bool> wsWrRequestDiag{false};
 inline std::atomic<bool> wsFaceNoWr{false};
 inline std::atomic<bool> wsGroundEntry{false};
+// M21k (owner 2026-11-26: restore the last accepted behaviour): experimental features added after M21c, all OFF by default.
+inline std::atomic<bool> wsEdgeWrap{false};      // LB edge wrap, LB hidden from the game, jump refusals during a wrap
+inline std::atomic<bool> wsWrExitAssist{false};  // WR exit forces the stop hold and refuses crawl for 0.5 s
+inline std::atomic<bool> wsFaceRelevel{false};   // re-level the face normal from same-face WR contexts
 // M16 face-air/fall-only bounded Transform row experiment, code default OFF.
 inline std::atomic<bool> wsFaceAirFacing{false};
 // M17 camera mapping is read-only until walking validation admits a live basis.
