@@ -111,3 +111,4 @@ b239988f568939eaa37e9d1e9476e502086587db 2026-11-28 build+test.sh+package PASS; 
 e195454c710828fdb1ea343719dc79f4e98cd5c8 2026-11-28 build+test.sh+package PASS (M21o read-only gravity chain scan; smoke/hooks not run: no Wine)
 4a89c3247b5c1592c28f9966dc5ca3023b584287 2026-11-28 build+test.sh+package PASS (M21p fast hero gravity block path; smoke/hooks not run: no Wine)
 13b84fe7a1b34e5f86e0a804c460a355b157c068 2026-11-28 build+test.sh+package PASS (M21q reload block path + first-entry camera; smoke/hooks not run: no Wine)
+49f57228f365bc55ffc2611b60c95e0c73f8a8e8 2026-11-28 build+test.sh+package PASS (M21r first-entry camera; smoke/hooks not run: no Wine)

@@ -174,11 +174,11 @@ void selectCamera(const msm2::Snapshot& hero, std::uint64_t now) {
   // M10z-r8 (log 20261109-025529): after a face jump the camera was > 30 m from the hero, no manager counted as live and
   // the WS camera was dropped for 9 s. During a gravity hold the current manager is kept.
   if (!pick && ws_camref_this && gbHoldA.load()) pick = ws_camref_this;
-  // M21q (log 20261128-200809): after a load or a fast travel the only caller's +0xD54 position stayed > 30 m away until
-  // the hero was in the air, so the first ground entry ran without the WS camera (no camera roll). During a gravity hold
-  // the single recent caller is accepted on a unit forward alone.
-  if (!pick && n == 1 && gbHoldA.load()) { float v[3]{}; if (seen[0] <= UINTPTR_MAX - 0x1000 && msm2::readMemory(seen[0] + 0xD34, v, sizeof v)) {
-    float fl = v[0] * v[0] + v[1] * v[1] + v[2] * v[2]; if (std::isfinite(fl) && fl > 0.9f && fl < 1.1f) { pick = seen[0]; bestD = -1.f; } } }
+  // M21q/M21r (logs 20261128-200809, -204631): after a load, fast travel or reload the camera block (+0xD34 forward,
+  // +0xD54 position) of the caller is filled only while the hero is in the air, so the live check failed for every ground
+  // entry (after a reload for all 8 entries) and the WS camera never engaged (no camera roll). The unit-forward fallback
+  // of M21q never fired. During a gravity hold the latest recorded caller of the camera function is used directly.
+  if (!pick && gbHoldA.load() && ws_camref_raw && ws_camref_raw <= UINTPTR_MAX - 0x1000) { pick = ws_camref_raw; bestD = -1.f; }
   if (pick != ws_camref_this) { ++selectChanges;
     msm2::writeLog("WS_CAMERA_SELECT manager=0x%llx previous=0x%llx distinct_callers=%u distance=%.2f changes=%u", (unsigned long long)pick, (unsigned long long)ws_camref_this, n, pick ? bestD : 0.f, selectChanges);
     if (engagedManager.load() && engagedManager.load() != pick) restore("camera_manager_changed");
