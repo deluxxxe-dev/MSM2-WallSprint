@@ -1137,18 +1137,24 @@ DWORD WINAPI lcThread(void*){ for(;;){ Sleep(20); if(killed.load())return 0; aut
     // X = load64(load64(state+0xF0)+0xF8) - the object whose +0x5F4 is the hero gravity block - at X+0x460 (byte, contact
     // flag), X+0x440/+0x444 (floats, compared with thresholds before a landing effect call with X+0x424) and X+0x2BC+0x188/
     // +0x1A4. Log X+0x420..+0x47F on every change (words that are positions excluded by range), with air time and state.
-    { auto g=gbFound.load(); static std::uint32_t lx[24]{}; static bool xi=false; std::uint32_t cx[24];
-      if(g>0x5F4&&msm2::readMemory(g-0x5F4+0x420,cx,sizeof cx)){ static unsigned xl=0;
-        // M21z-r9 (log 20261129-011116): words 11-13 (X+0x44C/+0x450 small floats, +0x454 frame counter) change every
-        // frame and used up the 600-line budget before the first jump. They are ignored; logging only within 2.5 s of an
-        // air start or during a hold.
-        std::uint32_t cm[24],lm[24]; std::memcpy(cm,cx,sizeof cm); std::memcpy(lm,lx,sizeof lm); for(int k=11;k<=13;++k){cm[k]=0;lm[k]=0;}
-        // M21aa-r2 (log 20261129-012305): gbHoldA is set for the whole WS, so the budget was spent before the B jumps.
-        // Only while the game is in its air state 0xB44F0A0; budget 900.
-        bool inWin=gHeroClassStateRva.load()==0xB44F0A0;
-        if(xi&&inWin&&std::memcmp(cm,lm,sizeof cm)!=0&&xl<900){++xl; char t[24*9+1]{}; int len=0; for(int i=0;i<24;++i)len+=std::snprintf(t+len,sizeof t-len,"%s%08x",i?",":"",cx[i]);
-          msm2::writeLog("WS_LAND_CHECK event=x420 since_air_ms=%lld state=0x%llx hold=%u words=%s read_only=1",am?(long long)(now-am):-1LL,(unsigned long long)gHeroClassStateRva.load(),unsigned(gbHoldA.load()),t);}
-        std::memcpy(lx,cx,sizeof cx);xi=true;} }
+    // M21ad (log 20261129-014346): the face air end is spot-dependent (same spot +-10 ms, spots 77-741 ms after our landing,
+    // 26 spots in 13 logs) and the component holds a ground probe along our gravity (X+0x190/+0x19C starts 0.9/1.3 m off the
+    // face, X+0x1B4/+0x1C0 hits on the face) whose origin drifts world-down from the hero (X+0x2C0 = -0.10 at hold +60 ms,
+    // -0.21 at +400 ms). Log every changed word of X+0x000..+0x5EF (except the per-frame X+0x44C/+0x450/+0x454) on each
+    // 20 ms tick of the game's air state and one tick after it, street jumps included; the first tick lists all non-zero words.
+    { auto g=gbFound.load(); static std::uint32_t lw[0x17C]; static bool li=false, wasAir=false; static std::uint64_t base=0; static unsigned xl=0;
+      std::uint32_t cw[0x17C]; bool air=gHeroClassStateRva.load()==0xB44F0A0;
+      if(g>0x5F4&&am&&(air||wasAir)&&msm2::readMemory(g-0x5F4,cw,sizeof cw)){
+        if(base!=am){ base=am; li=false; }
+        static char t[3900]; int len=0; unsigned nchg=0;
+        for(int i=0;i<0x17C;++i){ int o=i*4; if(o==0x44C||o==0x450||o==0x454)continue;
+          if(li ? cw[i]==lw[i] : cw[i]==0)continue;
+          if(len<int(sizeof t)-16){ len+=std::snprintf(t+len,sizeof t-len,"%s%03x:%08x",nchg?",":"",o,cw[i]); ++nchg; } }
+        auto lm=lc::x000Ms.load(); long long landMs=(lm&&lm>=am)?(long long)(now-lm):-1LL;
+        if(nchg&&xl<1500){ ++xl; msm2::writeLog("WS_LAND_CHECK event=xd since_air_ms=%lld since_land_ms=%lld air=%u base=%u n=%u w=%s read_only=1",
+            (long long)(now-am),landMs,unsigned(air),unsigned(!li),nchg,t); }
+        std::memcpy(lw,cw,sizeof cw); li=true; }
+      wasAir=air; }
     // M21ac (log 20261129-013518): in running-up jumps X+0x438 was 0 (our writes held) in 3 of 5 and the game still stayed
     // airborne 721-734 ms, so another condition blocks B. Capture the whole component X+0x000..+0x5EF at hold +60 ms
     // (standing vs running jumps are compared offline), once per hold.

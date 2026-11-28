@@ -243,3 +243,7 @@ print("PASS: M21ab no steering for straight face jumps")
 # M21ac: read-only capture of the whole gravity component X+0x000..0x5EF at hold +60 ms and +400 ms (still airborne).
 assert 'WS_LAND_CHECK event=x000 hold_ms=%u' in code and 'now>=hs+400&&now<hs+800&&gHeroClassStateRva.load()==0xB44F0A0' in code and 'lc::x000Ms.store(GetTickCount64());' in code
 print("PASS: M21ac component snapshot for standing vs running face jumps (log only)")
+
+# M21ad: per-tick changed-word log of the gravity component during the game's air state (read-only).
+assert 'WS_LAND_CHECK event=xd since_air_ms=%lld since_land_ms=%lld' in code and 'if(o==0x44C||o==0x450||o==0x454)continue;' in code and 'xl<1500' in code
+print("PASS: M21ad component change log during the air state (log only)")
