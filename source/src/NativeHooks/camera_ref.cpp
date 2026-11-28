@@ -1143,8 +1143,10 @@ DWORD WINAPI lcThread(void*){ for(;;){ Sleep(20); if(killed.load())return 0; aut
         // frame and used up the 600-line budget before the first jump. They are ignored; logging only within 2.5 s of an
         // air start or during a hold.
         std::uint32_t cm[24],lm[24]; std::memcpy(cm,cx,sizeof cm); std::memcpy(lm,lx,sizeof lm); for(int k=11;k<=13;++k){cm[k]=0;lm[k]=0;}
-        bool inWin=(am&&now-am<2500)||gbHoldA.load();
-        if(xi&&inWin&&std::memcmp(cm,lm,sizeof cm)!=0&&xl<600){++xl; char t[24*9+1]{}; int len=0; for(int i=0;i<24;++i)len+=std::snprintf(t+len,sizeof t-len,"%s%08x",i?",":"",cx[i]);
+        // M21aa-r2 (log 20261129-012305): gbHoldA is set for the whole WS, so the budget was spent before the B jumps.
+        // Only while the game is in its air state 0xB44F0A0; budget 900.
+        bool inWin=gHeroClassStateRva.load()==0xB44F0A0;
+        if(xi&&inWin&&std::memcmp(cm,lm,sizeof cm)!=0&&xl<900){++xl; char t[24*9+1]{}; int len=0; for(int i=0;i<24;++i)len+=std::snprintf(t+len,sizeof t-len,"%s%08x",i?",":"",cx[i]);
           msm2::writeLog("WS_LAND_CHECK event=x420 since_air_ms=%lld state=0x%llx hold=%u words=%s read_only=1",am?(long long)(now-am):-1LL,(unsigned long long)gHeroClassStateRva.load(),unsigned(gbHoldA.load()),t);}
         std::memcpy(lx,cx,sizeof cx);xi=true;} }
     auto hm=lc::holdMs.load(); if(hm&&now-hm>=300){ lc::holdMs.store(0); std::lock_guard<std::mutex> g(lc::mu); static std::uint32_t w[0xC00]; static unsigned wl=0;
@@ -2081,7 +2083,7 @@ void stateReport(const char* reason){
       reason,row,j[0],j[1],j[2],j[3],w[0],w[1],w[2],w[3],nj[0],nj[1],nj[2],nj[3],nw[0],nw[1],nw[2],nw[3]);
   }
 }
-struct GfLocal { CameraFaceMap cameraMap{};bool cameraLiveUsed{};int cameraCandidate{-1};const char* cameraReason{"not_checked"};double cameraCheckTime{-1}; FaceAirFacing airFacing{};FaceWalkoff walkoff{};FaceLocomotionDown locoDown{};FaceContactProbe probe{};double fallIgnoreUntil{}; FaceTakeoffHistory takeoffHistory{}; FaceFacingProbe facing{}; unsigned stopTraceId{};StopTraceBudget stopTrace{};bool stopReleaseBlocked{};StopDeceleration stopDecel{};StopRotation stopRotation{};StopEpisode stopEpisode{};bool stopHop{};StopHopArc hopArc{};StopStandProbe standProbe{}; double stopHopTakeoff{}; HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; bool landHold{}; float landP[3]{}; double landHoldStart{}, landAirEnd{}; float jumpRestD{}; } gfL;
+struct GfLocal { CameraFaceMap cameraMap{};bool cameraLiveUsed{};int cameraCandidate{-1};const char* cameraReason{"not_checked"};double cameraCheckTime{-1}; FaceAirFacing airFacing{};FaceWalkoff walkoff{};FaceLocomotionDown locoDown{};FaceContactProbe probe{};double fallIgnoreUntil{}; FaceTakeoffHistory takeoffHistory{}; FaceFacingProbe facing{}; unsigned stopTraceId{};StopTraceBudget stopTrace{};bool stopReleaseBlocked{};StopDeceleration stopDecel{};StopRotation stopRotation{};StopEpisode stopEpisode{};bool stopHop{};StopHopArc hopArc{};StopStandProbe standProbe{}; double stopHopTakeoff{}; HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; bool landHold{}; float landP[3]{}; double landHoldStart{}, landAirEnd{}; float jumpRestD{}; unsigned laFrames{},laWrites{},laFlagBlocked{},laHeightBlocked{}; float laMaxOld{},laLastH{},laLast43c{}; std::uint8_t laLastFlag{}; } gfL;
 void gfLogPlane(const char* event) {
   msm2::writeLog("WS_GRAVITY_FORCE_PLANE event=%s point=%.3f,%.3f,%.3f source=%s",
     event, gfP0[0].load(), gfP0[1].load(), gfP0[2].load(), gfPlaneFromWall.load() ? "wall_point_0x338" : "ws_position_minus_0.5n");
@@ -2688,12 +2690,16 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
         // On the face both read "grounded" at our landing (height 0, flag 0) but X+0x438 stays 0.031 and decays; the game
         // left the air state only when it reached ~0.0085 (494 ms). Experiment: hold X+0x438 at 0 while our hold waits.
         if(ws::drive::wsFaceLandAssist.load()&&gbAddr>0x5F4){ std::uintptr_t xa=gbAddr-0x5F4+0x438; MEMORY_BASIC_INFORMATION mb{};
-          float hgt=1.f; std::uint8_t fl=2; msm2::readMemory(gbAddr-0x5F4+0x440,&hgt,4); msm2::readMemory(gbAddr-0x5F4+0x45C,&fl,1);
-          if(fl==0&&hgt<0.05f&&VirtualQuery(reinterpret_cast<void*>(xa),&mb,sizeof mb)&&(mb.Protect&0xff)==PAGE_READWRITE){ static unsigned wl=0; float old=0;
-            msm2::readMemory(xa,&old,4); *reinterpret_cast<volatile float*>(xa)=0.f; if(wl++<40)msm2::writeLog("WS_FACE_LAND_ASSIST event=write t=%.3f old=%.4f height=%.4f",tn-gfL.landHoldStart,old,hgt); } }
+          float hgt=1.f; std::uint8_t fl=2; float x43c=0; msm2::readMemory(gbAddr-0x5F4+0x440,&hgt,4); msm2::readMemory(gbAddr-0x5F4+0x45C,&fl,1); msm2::readMemory(gbAddr-0x5F4+0x43C,&x43c,4);
+          gfL.laFrames++; if(fl!=0)gfL.laFlagBlocked++; if(hgt>=0.05f)gfL.laHeightBlocked++;
+          if(fl==0&&hgt<0.05f&&VirtualQuery(reinterpret_cast<void*>(xa),&mb,sizeof mb)&&(mb.Protect&0xff)==PAGE_READWRITE){ float old=0;
+            msm2::readMemory(xa,&old,4); *reinterpret_cast<volatile float*>(xa)=0.f; gfL.laWrites++; if(std::fabs(old)>std::fabs(gfL.laMaxOld))gfL.laMaxOld=old; }
+          gfL.laLastH=hgt; gfL.laLastFlag=fl; gfL.laLast43c=x43c; }
         static double lastG=0; if(tn-lastG>=0.1){lastG=tn;faceJumpGravityLog("hold",tn-gfL.landHoldStart);}}
       else{if(!gfL.landAirEnd){gfL.landAirEnd=tn;gfL.fallIgnoreUntil=tn+0.5;
-          msm2::writeLog("WS_FACE_JUMP_HOLD event=game_air_end air_after_landing_ms=%.0f state=0x%llx capped=%u",(tn-gfL.landHoldStart)*1000.0,(unsigned long long)gHeroClassStateRva.load(),unsigned(gameAir));
+          msm2::writeLog("WS_FACE_JUMP_HOLD event=game_air_end air_after_landing_ms=%.0f state=0x%llx capped=%u assist_frames=%u writes=%u flag_blocked=%u height_blocked=%u max_old_438=%.4f last_height=%.4f last_flag=%u last_43c=%.4f",(tn-gfL.landHoldStart)*1000.0,(unsigned long long)gHeroClassStateRva.load(),unsigned(gameAir),
+            gfL.laFrames,gfL.laWrites,gfL.laFlagBlocked,gfL.laHeightBlocked,gfL.laMaxOld,gfL.laLastH,unsigned(gfL.laLastFlag),gfL.laLast43c);
+          gfL.laFrames=gfL.laWrites=gfL.laFlagBlocked=gfL.laHeightBlocked=0;gfL.laMaxOld=0;
           faceJumpGravityLog("game_air_end",tn-gfL.landHoldStart);}
         if(tn-gfL.landAirEnd<0.5){if(q[1]<gfL.pLast[1])q[1]=gfL.pLast[1];}
         else{gfL.landHold=false;msm2::writeLog("WS_FACE_JUMP_HOLD event=end state=0x%llx",(unsigned long long)gHeroClassStateRva.load());}}}
