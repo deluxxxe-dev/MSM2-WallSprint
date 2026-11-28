@@ -164,6 +164,11 @@ bool liveCamera(std::uintptr_t m, const msm2::Snapshot& hero, float& distance) {
 }
 extern std::atomic<bool> gbHoldA;
 void selectCamera(const msm2::Snapshot& hero, std::uint64_t now) {
+  // M21s (log 20261128-210055): after a reload the previous manager (from before the reload) still passed the live check
+  // and was engaged again for 0.2 s before the new caller replaced it. A new hero drops the previous manager.
+  static std::uintptr_t selHero = 0;
+  if (hero.hero && hero.hero != selHero) { selHero = hero.hero;
+    if (ws_camref_this) { if (engagedManager.load()) restore("hero_changed"); ws_camref_this = 0; } }
   std::uintptr_t seen[9]{}; unsigned n = 0;
   auto add = [&](std::uintptr_t m) { if (!m) return; for (unsigned i = 0; i < n; ++i) if (seen[i] == m) return; seen[n++] = m; };
   for (auto m : ws_camref_ring) { add(m); }

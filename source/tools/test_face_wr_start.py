@@ -193,3 +193,8 @@ assert 'gbRead2(hero, 0x80, 0x328), b = gbRead2(hero, 0x68, 0x298)' in code and 
 sc=code.split('void selectCamera(const msm2::Snapshot& hero, std::uint64_t now) {',1)[1].split('\n}',1)[0]
 assert 'if (!pick && gbHoldA.load() && ws_camref_raw' in sc and sc.index('pick = ws_camref_raw;') < sc.index('if (pick != ws_camref_this)')
 print("PASS: M21q agreeing direct block paths after a reload, WS camera on the only caller during a hold")
+
+# M21s: a new hero drops the previous camera manager before any engagement.
+sc=code.split('void selectCamera(const msm2::Snapshot& hero, std::uint64_t now) {',1)[1].split('\n}',1)[0]
+assert sc.index('restore("hero_changed"); ws_camref_this = 0;') < sc.index('bool curOk')
+print("PASS: M21s camera manager dropped on hero change")
