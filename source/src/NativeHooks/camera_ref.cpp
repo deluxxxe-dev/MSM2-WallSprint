@@ -3690,15 +3690,20 @@ void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
       for (int i = 0; i < 32; ++i) { std::uint64_t r = q[i] >= image && q[i] - image < imageSize ? q[i] - image : 0; len += std::snprintf(list + len, sizeof list - len, "%s%llx", i ? "," : "", (unsigned long long)r); }
       writeLog("WS_AIR_VT desc=0x%llx qwords_rva=%s read_only=1", (unsigned long long)d, list);
       if (d != 0xB44F0A0) continue;
-      unsigned dumped = 0;
-      for (int i = 0; i < 32 && dumped < 16; ++i) { if (q[i] < image || q[i] - image >= imageSize) continue; DWORD64 fb = 0; auto* fe = RtlLookupFunctionEntry(q[i], &fb, nullptr);
-        if (!fe || fb != image) continue;
-        ++dumped;
-        std::uintptr_t b = image + fe->BeginAddress, e = image + fe->EndAddress; if (e <= b || e - b > 4096) e = b + 4096;
-        writeLog("WS_AIR_CODE slot=%d rva=0x%llx begin=0x%lx end=0x%lx size=%llu", i, (unsigned long long)(q[i] - image), (unsigned long)fe->BeginAddress, (unsigned long)fe->EndAddress, (unsigned long long)(e - b));
-        for (std::uintptr_t a2 = b; a2 < e; a2 += 64) { unsigned char buf[64]{}; std::size_t n = std::min<std::uintptr_t>(64, e - a2); if (!readMemory(a2, buf, n)) break;
-          char hex[129]{}; for (std::size_t k = 0; k < n; ++k) std::snprintf(hex + 2 * k, 3, "%02x", buf[k]);
-          writeLog("WS_AIR_CODE_BYTES begin=0x%lx off=0x%llx hex=%s", (unsigned long)fe->BeginAddress, (unsigned long long)(a2 - b), hex); } } } }
+      // M21z-r6 (log 20261129-005553): descriptor qwords 0/3 are short constructor-like stubs; qword 12 (RVA 0x5461F08 for the
+      // air state) points into read-only data: read it as the state class vtable and capture each slot (fixed 0x600 bytes
+      // from the entry, the pdata entries were split fragments).
+      if (q[12] < image || q[12] - image + 40 * 8 > imageSize) continue;
+      std::uintptr_t vt[40]{}; if (!readMemory(q[12], vt, sizeof vt)) continue;
+      { char vl[40 * 12 + 1]{}; int vlen = 0;
+        for (int i = 0; i < 40; ++i) { std::uint64_t r = vt[i] >= image && vt[i] - image < imageSize ? vt[i] - image : 0; vlen += std::snprintf(vl + vlen, sizeof vl - vlen, "%s%llx", i ? "," : "", (unsigned long long)r); }
+        writeLog("WS_AIR_VT class_vt=0x%llx slots_rva=%s read_only=1", (unsigned long long)(q[12] - image), vl); }
+      for (int i = 0; i < 40; ++i) { if (vt[i] < image || vt[i] - image + 0x600 > imageSize) continue;
+        std::uintptr_t b = vt[i], e = b + 0x600;
+        writeLog("WS_AIR_CODE slot=%d rva=0x%llx size=1536", i, (unsigned long long)(b - image));
+        for (std::uintptr_t a2 = b; a2 < e; a2 += 64) { unsigned char buf[64]{}; if (!readMemory(a2, buf, 64)) break;
+          char hex[129]{}; for (std::size_t k = 0; k < 64; ++k) std::snprintf(hex + 2 * k, 3, "%02x", buf[k]);
+          writeLog("WS_AIR_CODE_BYTES begin=0x%llx off=0x%llx hex=%s", (unsigned long long)(b - image), (unsigned long long)(a2 - b), hex); } } } }
   // M20b: one-time read-only capture around the WR Init/Entry call sites seen while standing on a face
   // (WS_FACE_WR_START caller_rva 0x367e6af / 0x367e6ce, log 20261126-122944): the caller's bounds and the code before the
   // calls, for offline analysis of the WR start decision. Log only; derived findings go to analysis/.
