@@ -180,3 +180,9 @@ assert 'DWORD WINAPI gbChainFind(void* arg) {' in code and code.count('CreateThr
 fc=code.split('DWORD WINAPI gbChainFind(void* arg) {',1)[1].split('\nbool velReadable',1)[0]
 assert 'writeMemory' not in fc and 'hits < 30' in fc and 'read_only=1' in fc
 print("PASS: M21o read-only gravity block chain scan at hero identification")
+
+# M21p: the established hero+0x80 -> +0x378 -> gbChain path is tried first on every tick while no block is known.
+assert 'bool gbFastPath(std::uintptr_t hero, std::uintptr_t& g)' in code and 'msm2::readMemory(t + 0x378, &u, 8)' in code
+gd=code.split('void gbDiscover(const msm2::Snapshot& hero, std::uint64_t now) {',1)[1].split('\n}',1)[0]
+assert gd.index('gbFastPath(hero.hero, g)') < gd.index('if (now - gbLastScan < 1000)') and '!gbActive && !gbFound.load() && !sgHeroByUp.load()' in gd
+print("PASS: M21p fast hero gravity block path before the slow scan")

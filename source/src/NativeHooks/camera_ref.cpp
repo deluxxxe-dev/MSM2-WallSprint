@@ -3215,8 +3215,18 @@ DWORD WINAPI gbSearch(void*) {
   }
   return 0;
 }
+// M21p (log 20261128-194655, test 4): after a reload the full scan below took > 10 s (it finished only after the setter
+// identified the block at the first WR exit), so the first wall contact took the vanilla WR (float). In every log where
+// the scan found the hero block it was via hero+0x80 -> +0x378 -> gbChain, and it matched WS_SET_GRAVITY_HERO_ID each
+// time it was checked (OBSERVED-CORRELATION, analysis/M21P_FIRST_ENTRY_20261128.md). Try that path first, on every
+// worker tick while no block is known; the vanilla-matrix check in gbChain stays the acceptance gate.
+bool gbFastPath(std::uintptr_t hero, std::uintptr_t& g) { std::uintptr_t t = 0, u = 0;
+  return hero && msm2::readMemory(hero + 0x80, &t, 8) && velReadable(t) && msm2::readMemory(t + 0x378, &u, 8) && velReadable(u) && gbChain(u, g); }
 void gbDiscover(const msm2::Snapshot& hero, std::uint64_t now) {
   if (gbHero.load() != hero.hero || gbTransform.load() != hero.transform) { gbHero.store(hero.hero); gbTransform.store(hero.transform); if (!gbActive) { gbFound.store(0); sgHeroByUp.store(0); sgHeroBlock.store(0); } }
+  if (!gbActive && !gbFound.load() && !sgHeroByUp.load()) { std::uintptr_t g = 0;
+    if (gbFastPath(hero.hero, g)) { gbFound.store(g); sgHeroBlock.store(g); gbLastScan = 0;
+      static unsigned fastLogs = 0; if (fastLogs++ < 20) msm2::writeLog("WS_GRAVITY_BLOCK found root=hero slot=0x80 slot2=0x378 level=2 fast=1 g=0x%llx", (unsigned long long)g); } }
   if (!gbThread.exchange(true)) { if (HANDLE h = CreateThread(nullptr, 0, gbSearch, nullptr, 0, nullptr)) { SetThreadPriority(h, THREAD_PRIORITY_LOWEST); CloseHandle(h); } }
   if (now - gbLastScan < 1000) { gbAddr = gbFound.load(); return; }
   gbLastScan = now;
