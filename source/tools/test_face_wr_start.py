@@ -198,3 +198,11 @@ print("PASS: M21q agreeing direct block paths after a reload, WS camera on the o
 sc=code.split('void selectCamera(const msm2::Snapshot& hero, std::uint64_t now) {',1)[1].split('\n}',1)[0]
 assert sc.index('restore("hero_changed"); ws_camref_this = 0;') < sc.index('bool curOk')
 print("PASS: M21s camera manager dropped on hero change")
+
+# M21t: face-jump landing hold while the game is still in its air state (INI WALLSPRINT_WS_FACE_JUMP_HOLD, shipped 1).
+assert 'if(ws::drive::wsFaceJumpHold.load()&&gHeroStateRva.load()==0xB44F0A0){gfL.landHold=true;' in code
+assert 'if(gameAir&&!gfL.landAirEnd&&tn-gfL.landHoldStart<0.8){std::memcpy(q,gfL.landP,12);' in code
+assert ini.getint('WallSprint','WALLSPRINT_WS_FACE_JUMP_HOLD')==1 and 'L"WALLSPRINT_WS_FACE_JUMP_HOLD",0,' in tel
+bw=(root/'tools/build_windows.sh').read_text()
+assert 'wait "$pid" || fail=1' in bw and bw.index('wait "$pid"') < bw.index('"$gpp" -shared')
+print("PASS: M21t face-jump landing hold, parallel compile with failure propagation")

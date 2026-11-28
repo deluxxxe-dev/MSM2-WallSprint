@@ -9,38 +9,42 @@ mkdir -p build/windows
 bash tools/setup_runtime_decoder.sh
 common=(-std=c++17 -O2 -g -ffunction-sections -fdata-sections -DWINVER=0x0601 -D_WIN32_WINNT=0x0601 -DLOGLEVEL=0 -DNOMINMAX -Iinclude -Ivendor/minhook/src/hde -Itools/compat -isystem vendor/SM2ScriptTemplate -Wall -Wextra -Werror)
 gcc="$toolchain_root/usr/bin/x86_64-w64-mingw32-gcc-posix"
+# Update-WS speed (owner 2026-11-28): compile the objects in parallel (at most nproc jobs), then link once.
+jobs_max=$(nproc 2>/dev/null || echo 4); pids=()
+bg(){ while (( $(jobs -rp | wc -l) >= jobs_max )); do sleep 0.05; done; "$@" & pids+=($!); }
 for source in buffer hook trampoline; do
- "$gcc" -O2 -g -DNOMINMAX -Itools/compat -Ivendor/minhook/include -c "vendor/minhook/src/$source.c" -o "build/windows/minhook_$source.o"
+ bg "$gcc" -O2 -g -DNOMINMAX -Itools/compat -Ivendor/minhook/include -c "vendor/minhook/src/$source.c" -o "build/windows/minhook_$source.o"
 done
-"$gcc" -O2 -g -c vendor/minhook/src/hde/hde64.c -o build/windows/minhook_hde64.o
-"$gcc" -c -g src/msm2/hook_thunks.S -o build/windows/hook_thunks.o
-"$gpp" "${common[@]}" -Ivendor/minhook/include -c src/msm2/hook_capture.cpp -o build/windows/hook_capture.o
-"$gpp" "${common[@]}" -Ivendor/minhook/include -c src/msm2/wallrun_hooks.cpp -o build/windows/wallrun_hooks.o
-"$gcc" -c -g src/msm2/request_presence.S -o build/windows/request_presence_asm.o
-"$gpp" "${common[@]}" -Ivendor/minhook/include -c src/msm2/request_presence.cpp -o build/windows/request_presence.o
-"$gpp" "${common[@]}" -c src/msm2/update_bridge.cpp -o build/windows/update_bridge.o
-"$gcc" -c -g src/msm2/orientation_source_thunk.S -o build/windows/orientation_source_thunk.o
-"$gpp" "${common[@]}" -Ivendor/minhook/include -c src/msm2/orientation_source.cpp -o build/windows/orientation_source.o
-"$gcc" -c -g src/NativeHooks/reset_copy_thunk.S -o build/windows/reset_copy_thunk.o
-"$gcc" -c -g src/NativeHooks/camera_ref_thunk.S -o build/windows/camera_ref_thunk.o
-"$gpp" "${common[@]}" -Ibuild/deps/capstone-5.0.6/include -c src/NativeHooks/compact_map_proof.cpp -o build/windows/compact_map_proof.o
-"$gpp" "${common[@]}" -Ibuild/deps/capstone-5.0.6/include -c src/NativeHooks/path_a_position_proof.cpp -o build/windows/path_a_position_proof.o
-"$gpp" "${common[@]}" -Ibuild/deps/capstone-5.0.6/include -c src/NativeHooks/movement_lineage.cpp -o build/windows/movement_lineage.o
-"$gpp" "${common[@]}" -Ibuild/deps/capstone-5.0.6/include -c src/NativeHooks/rdx_source_contract.cpp -o build/windows/rdx_source_contract.o
-"$gcc" -c -g src/NativeHooks/writer_entry_thunk.S -o build/windows/writer_entry_thunk.o
-"$gpp" "${common[@]}" -Ivendor/minhook/include -Ibuild/deps/capstone-5.0.6/include -c src/NativeHooks/writer_entry_snapshot.cpp -o build/windows/writer_entry_snapshot.o
-"$gpp" "${common[@]}" -Ivendor/minhook/include -c src/NativeHooks/reset_copy_source.cpp -o build/windows/reset_copy_source.o
-"$gpp" "${common[@]}" -Ivendor/minhook/include -c src/NativeHooks/camera_ref.cpp -o build/windows/camera_ref.o
-"$gpp" "${common[@]}" -c src/msm2/orientation_trace.cpp -o build/windows/orientation_trace.o
-"$gpp" "${common[@]}" -c src/NativeHooks/source_lifecycle.cpp -o build/windows/source_lifecycle.o
-"$gpp" "${common[@]}" -c src/NativeHooks/immediate_reset_trace.cpp -o build/windows/immediate_reset_trace.o
-"$gpp" "${common[@]}" -c src/NativeHooks/path_b_layout.cpp -o build/windows/path_b_layout.o
-"$gpp" "${common[@]}" -c src/NativeHooks/native_source_override.cpp -o build/windows/native_source_override.o
-"$gpp" "${common[@]}" -c src/GameInterop/stack_source.cpp -o build/windows/stack_source.o
-"$gpp" "${common[@]}" -c src/msm2/actor_writer.cpp -o build/windows/actor_writer.o
-"$gpp" "${common[@]}" -c src/msm2/sdk_bridge.cpp -o build/windows/sdk_bridge.o
-"$gpp" "${common[@]}" -c src/msm2/public_transform.cpp -o build/windows/public_transform.o
-"$gpp" "${common[@]}" -c src/msm2/orientation_log.cpp -o build/windows/orientation_log.o
-"$gpp" "${common[@]}" -c src/msm2/telemetry.cpp -o build/windows/telemetry.o
-"$clang_bin" --target=x86_64-w64-windows-gnu --sysroot="$toolchain_root/usr/x86_64-w64-mingw32" -O2 -g -fms-extensions -Wall -Wextra -Werror -c src/msm2/guard.c -o build/windows/guard.o
+bg "$gcc" -O2 -g -c vendor/minhook/src/hde/hde64.c -o build/windows/minhook_hde64.o
+bg "$gcc" -c -g src/msm2/hook_thunks.S -o build/windows/hook_thunks.o
+bg "$gpp" "${common[@]}" -Ivendor/minhook/include -c src/msm2/hook_capture.cpp -o build/windows/hook_capture.o
+bg "$gpp" "${common[@]}" -Ivendor/minhook/include -c src/msm2/wallrun_hooks.cpp -o build/windows/wallrun_hooks.o
+bg "$gcc" -c -g src/msm2/request_presence.S -o build/windows/request_presence_asm.o
+bg "$gpp" "${common[@]}" -Ivendor/minhook/include -c src/msm2/request_presence.cpp -o build/windows/request_presence.o
+bg "$gpp" "${common[@]}" -c src/msm2/update_bridge.cpp -o build/windows/update_bridge.o
+bg "$gcc" -c -g src/msm2/orientation_source_thunk.S -o build/windows/orientation_source_thunk.o
+bg "$gpp" "${common[@]}" -Ivendor/minhook/include -c src/msm2/orientation_source.cpp -o build/windows/orientation_source.o
+bg "$gcc" -c -g src/NativeHooks/reset_copy_thunk.S -o build/windows/reset_copy_thunk.o
+bg "$gcc" -c -g src/NativeHooks/camera_ref_thunk.S -o build/windows/camera_ref_thunk.o
+bg "$gpp" "${common[@]}" -Ibuild/deps/capstone-5.0.6/include -c src/NativeHooks/compact_map_proof.cpp -o build/windows/compact_map_proof.o
+bg "$gpp" "${common[@]}" -Ibuild/deps/capstone-5.0.6/include -c src/NativeHooks/path_a_position_proof.cpp -o build/windows/path_a_position_proof.o
+bg "$gpp" "${common[@]}" -Ibuild/deps/capstone-5.0.6/include -c src/NativeHooks/movement_lineage.cpp -o build/windows/movement_lineage.o
+bg "$gpp" "${common[@]}" -Ibuild/deps/capstone-5.0.6/include -c src/NativeHooks/rdx_source_contract.cpp -o build/windows/rdx_source_contract.o
+bg "$gcc" -c -g src/NativeHooks/writer_entry_thunk.S -o build/windows/writer_entry_thunk.o
+bg "$gpp" "${common[@]}" -Ivendor/minhook/include -Ibuild/deps/capstone-5.0.6/include -c src/NativeHooks/writer_entry_snapshot.cpp -o build/windows/writer_entry_snapshot.o
+bg "$gpp" "${common[@]}" -Ivendor/minhook/include -c src/NativeHooks/reset_copy_source.cpp -o build/windows/reset_copy_source.o
+bg "$gpp" "${common[@]}" -Ivendor/minhook/include -c src/NativeHooks/camera_ref.cpp -o build/windows/camera_ref.o
+bg "$gpp" "${common[@]}" -c src/msm2/orientation_trace.cpp -o build/windows/orientation_trace.o
+bg "$gpp" "${common[@]}" -c src/NativeHooks/source_lifecycle.cpp -o build/windows/source_lifecycle.o
+bg "$gpp" "${common[@]}" -c src/NativeHooks/immediate_reset_trace.cpp -o build/windows/immediate_reset_trace.o
+bg "$gpp" "${common[@]}" -c src/NativeHooks/path_b_layout.cpp -o build/windows/path_b_layout.o
+bg "$gpp" "${common[@]}" -c src/NativeHooks/native_source_override.cpp -o build/windows/native_source_override.o
+bg "$gpp" "${common[@]}" -c src/GameInterop/stack_source.cpp -o build/windows/stack_source.o
+bg "$gpp" "${common[@]}" -c src/msm2/actor_writer.cpp -o build/windows/actor_writer.o
+bg "$gpp" "${common[@]}" -c src/msm2/sdk_bridge.cpp -o build/windows/sdk_bridge.o
+bg "$gpp" "${common[@]}" -c src/msm2/public_transform.cpp -o build/windows/public_transform.o
+bg "$gpp" "${common[@]}" -c src/msm2/orientation_log.cpp -o build/windows/orientation_log.o
+bg "$gpp" "${common[@]}" -c src/msm2/telemetry.cpp -o build/windows/telemetry.o
+bg "$clang_bin" --target=x86_64-w64-windows-gnu --sysroot="$toolchain_root/usr/x86_64-w64-mingw32" -O2 -g -fms-extensions -Wall -Wextra -Werror -c src/msm2/guard.c -o build/windows/guard.o
+fail=0; for pid in "${pids[@]}"; do wait "$pid" || fail=1; done; (( fail == 0 )) || { echo "WS ERROR: compile failed" >&2; exit 1; }
 "$gpp" -shared -static -static-libgcc -static-libstdc++ -o build/windows/WallSprint.dll build/windows/sdk_bridge.o build/windows/telemetry.o build/windows/guard.o build/windows/public_transform.o build/windows/orientation_log.o build/windows/request_presence.o build/windows/request_presence_asm.o build/windows/hook_capture.o build/windows/hook_thunks.o build/windows/wallrun_hooks.o build/windows/actor_writer.o build/windows/orientation_trace.o build/windows/orientation_source.o build/windows/orientation_source_thunk.o build/windows/reset_copy_source.o build/windows/compact_map_proof.o build/windows/path_a_position_proof.o build/windows/movement_lineage.o build/windows/rdx_source_contract.o build/windows/writer_entry_snapshot.o build/windows/writer_entry_thunk.o build/windows/reset_copy_thunk.o build/windows/camera_ref.o build/windows/camera_ref_thunk.o build/windows/source_lifecycle.o build/windows/native_source_override.o build/windows/path_b_layout.o build/windows/immediate_reset_trace.o build/windows/stack_source.o build/windows/update_bridge.o build/windows/minhook_buffer.o build/windows/minhook_hook.o build/windows/minhook_trampoline.o build/windows/minhook_hde64.o build/deps/capstone-5.0.6/capstone.lib -lbcrypt -lversion -luser32 -Wl,--exclude-all-symbols,--gc-sections,--dynamicbase,--nxcompat

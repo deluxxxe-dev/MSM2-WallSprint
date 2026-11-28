@@ -113,3 +113,4 @@ e195454c710828fdb1ea343719dc79f4e98cd5c8 2026-11-28 build+test.sh+package PASS (
 13b84fe7a1b34e5f86e0a804c460a355b157c068 2026-11-28 build+test.sh+package PASS (M21q reload block path + first-entry camera; smoke/hooks not run: no Wine)
 49f57228f365bc55ffc2611b60c95e0c73f8a8e8 2026-11-28 build+test.sh+package PASS (M21r first-entry camera; smoke/hooks not run: no Wine)
 dc7688b0447749a571214c4fb535ab872182b645 2026-11-28 build+test.sh+package PASS (M21s camera manager reset on hero change; smoke/hooks not run: no Wine)
+1612a4b7abe6fbfb430a6de0c00cf3310402dd30 2026-11-28 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21t face-jump landing hold, parallel compile; HEAD:source; by Claude Code)
