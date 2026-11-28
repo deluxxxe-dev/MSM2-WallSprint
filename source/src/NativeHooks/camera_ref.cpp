@@ -1095,6 +1095,34 @@ bool gbChain(std::uintptr_t b, std::uintptr_t& g) { std::uintptr_t p1 = 0, p2 = 
   g = p2 + 0x5F4; float f[9]; return msm2::readMemory(g, f, sizeof f) && gbIsVanilla(f); }
 std::atomic<std::uintptr_t> gbHero{0}, gbTransform{0}, gbFound{0}; std::atomic<bool> gbThread{false};
 bool velReadable(std::uintptr_t p);
+// M21z read-only diagnostic: what changes in the hero actor (0x2000 bytes) and its traversal machine (0x1000 bytes) when
+// the game ends its air state 0xB44F0A0. A = 0.25 s into the air, E = at the transition. Candidates: dwords that are 0
+// in A and a small positive float in E (a "grounded" timer) or that flip 0 <-> 1 (a flag). After a face-jump landing the
+// same offsets are logged 0.3 s into our hold (W). Street jumps give the reference set (logged up to 12 jumps).
+namespace lc { std::atomic<std::uintptr_t> machine{0}; std::atomic<std::uint64_t> airMs{0}; std::atomic<bool> haveA{false};
+  std::uint32_t a[0x800+0x400], e[0x800+0x400]; std::mutex mu; std::uint16_t cand[64]; unsigned nc=0; unsigned jumps=0;
+  std::atomic<std::uint64_t> holdMs{0}; }
+bool lcSnap(std::uint32_t* out){ auto h=gbHero.load(); auto m=lc::machine.load(); if(!h||!m)return false;
+  return msm2::readMemory(h,out,0x2000)&&msm2::readMemory(m,out+0x800,0x1000); }
+void lcAirStart(std::uintptr_t machine){ lc::machine.store(machine); lc::haveA.store(false); lc::airMs.store(GetTickCount64()); }
+bool lcTimerLike(std::uint32_t x){ float f; std::memcpy(&f,&x,4); return std::isfinite(f)&&f>1e-4f&&f<3.f; }
+void lcAirEnd(std::uintptr_t to){ if(!lc::haveA.load()||lc::jumps>=12)return; std::lock_guard<std::mutex> g(lc::mu);
+  if(!lcSnap(lc::e))return;
+  ++lc::jumps; unsigned n=0; char t[1200]; int len=0;
+  for(unsigned i=0;i<0xC00&&n<40;++i){ std::uint32_t A=lc::a[i],E=lc::e[i]; if(A==E)continue;
+    bool timer=A==0&&lcTimerLike(E), flag=(A==0&&E==1)||(A==1&&E==0)||((A^E)==0x1u&&A<0x100&&E<0x100);
+    if(!timer&&!flag)continue;
+    if(n<64)lc::cand[n]=std::uint16_t(i);
+    ++n;
+    float fe; std::memcpy(&fe,&E,4); if(len<int(sizeof t)-40)len+=std::snprintf(t+len,sizeof t-len,"%s%s+0x%x:%08x>%08x(%.3f)",len?";":"",i<0x800?"h":"m",(i<0x800?i:i-0x800)*4,A,E,fe); }
+  lc::nc=n<64?n:64; lc::haveA.store(false);
+  msm2::writeLog("WS_LAND_CHECK event=street_air_end to=0x%llx air_ms=%llu candidates=%u list=%s read_only=1",(unsigned long long)to,(unsigned long long)(GetTickCount64()-lc::airMs.load()),n,len?t:"none"); }
+DWORD WINAPI lcThread(void*){ for(;;){ Sleep(20); if(killed.load())return 0; auto now=GetTickCount64();
+    auto am=lc::airMs.load(); if(am&&!lc::haveA.load()&&now-am>=250&&now-am<400&&gHeroClassStateRva.load()==0xB44F0A0){ std::lock_guard<std::mutex> g(lc::mu); if(lcSnap(lc::a))lc::haveA.store(true); }
+    auto hm=lc::holdMs.load(); if(hm&&now-hm>=300){ lc::holdMs.store(0); std::lock_guard<std::mutex> g(lc::mu); static std::uint32_t w[0xC00]; static unsigned wl=0;
+      if(wl<30&&lc::nc&&lcSnap(w)){ ++wl; char t[900]; int len=0; for(unsigned k=0;k<lc::nc;++k){ unsigned i=lc::cand[k]; float f; std::memcpy(&f,&w[i],4);
+          if(len<int(sizeof t)-40)len+=std::snprintf(t+len,sizeof t-len,"%s%s+0x%x:%08x(%.3f)",len?";":"",i<0x800?"h":"m",(i<0x800?i:i-0x800)*4,w[i],f); }
+        msm2::writeLog("WS_LAND_CHECK event=face_hold_0.3s state=0x%llx values=%s read_only=1",(unsigned long long)gHeroClassStateRva.load(),t); } } } }
 DWORD WINAPI gbChainFind(void* arg) {
   std::uintptr_t block = reinterpret_cast<std::uintptr_t>(arg);
   std::uintptr_t roots[3] = {gbHero.load(), gbTransform.load(), gHeroMachine.load()}; const char* names[3] = {"hero", "transform", "machine"};
@@ -2590,7 +2618,9 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     // while its own gravity was still carrying the hero 0.22 m further onto the real surface over ~0.4 s; on the flat
     // facade (A-1) our landing put the hero on the surface at once and the game stayed airborne 0.72-0.74 s (5/5).
     // Experiment: end the arc 0.25 m above the takeoff rest height and let the game's own fall finish the landing.
-    float landAt = ws::drive::wsFaceJumpHold.load() && !gfL.stopHop ? gfL.jumpRestD + 0.25f : 0.f;
+    // M21z: the 0.25 m experiment (log 20261129-001745) did not help: the game's own position never moved toward the face
+    // during the hold (air end 301 ms into ground locomotion, or still airborne at the 0.8 s cap). Back to the plane.
+    float landAt = 0.f;
     if (dq < landAt && !(ws::drive::wsFaceJumpHold.load() && !gfL.stopHop)) for (int i = 0; i < 3; ++i) q[i] -= dq * n0[i];
     else if (dq < landAt) for (int i = 0; i < 3; ++i) q[i] += (landAt - dq) * n0[i];
     if (gfL.stopHop ? gfL.faceAirT>=0.35f : (gfL.faceAirT > 0.1f && dq < landAt + 0.02f && vn <= 0.f)) {
@@ -2604,7 +2634,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
       {std::uintptr_t cs=gHeroClassStateRva.load(),hs=gHeroStateRva.load();
         if(ws::drive::wsFaceJumpHold.load()&&!gfL.stopHop&&(cs==0xB44F0A0||hs==0xB44F0A0)){gfL.landHold=true;std::memcpy(gfL.landP,q,12);gfL.landHoldStart=qpcSec(now);gfL.landAirEnd=0;}
         static unsigned holdLogs=0; if(holdLogs++<60)msm2::writeLog("WS_FACE_JUMP_HOLD event=%s class_state=0x%llx hero_state=0x%llx",gfL.landHold&&!gfL.landAirEnd ? "start":"not_started",(unsigned long long)cs,(unsigned long long)hs);
-        faceJumpGravityLog("landing",0.0);}
+        faceJumpGravityLog("landing",0.0); if(gfL.landHold)lc::holdMs.store(GetTickCount64());}
       faceFacingLog("landing",true);if(!stopFacingRun.load())airFacingEnd("face_landing");faceJumpTrace("landing",q,n0,qpcSec(now),true); gfLogPlane("FACE_JUMP_LANDED"); msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_LANDED t=%.2f", gfL.faceAirT); }
     if (gfL.faceAirT > 6.f) { airFacingEnd("air_timeout"); gfFaceLandingTime.store(qpcSec(now));faceJumpTrace("timeout",q,n0,qpcSec(now),true); gfL.faceAir = false; for (float& c : gfL.vg) c = 0.f; msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_TIMEOUT"); }
   } else
@@ -3087,7 +3117,8 @@ std::uint64_t wrRequestDetour(std::uintptr_t machine, std::uintptr_t rdx, std::u
     std::uintptr_t now70 = *reinterpret_cast<const std::uintptr_t*>(machine + 0x70);
     // M21u: state of the hero-class machine (the source of WS_FACE_STATE_CHANGE); the owner-filtered gHeroStateRva did not
     // show the air state at the face-jump landing in log 20261128-225853 (no WS_FACE_JUMP_HOLD event in 23 jumps).
-    if (now70 != before) gHeroClassStateRva.store(wrRequestRva(now70));
+    if (now70 != before) { std::uintptr_t nr = wrRequestRva(now70), br = wrRequestRva(before); gHeroClassStateRva.store(nr);
+      if (nr == 0xB44F0A0) lcAirStart(machine); else if (br == 0xB44F0A0) lcAirEnd(nr); }
     if (now70 != before && scLogs.fetch_add(1) < 400) { std::uintptr_t bv = 0, av = 0; if (before) msm2::readMemory(before, &bv, 8); if (now70) msm2::readMemory(now70, &av, 8);
       unsigned st = gfWalkoffActive.load() ? 1u : stopHopRun.load() ? 3u : gfFaceAirNow.load() ? 2u : gfPinnedNow.load() ? 0u : 4u;
       msm2::writeLog("WS_FACE_STATE_CHANGE from=0x%llx from_vt=0x%llx to=0x%llx to_vt=0x%llx hold=%u face_state=%s lb=%u stick=%.2f,%.2f rt=%.2f read_only=1",
@@ -3320,7 +3351,8 @@ void gbDiscover(const msm2::Snapshot& hero, std::uint64_t now) {
       else if (missSince && now - missSince > 2000) { missSince = 0; std::uintptr_t t = 0; msm2::readMemory(hero.hero + 0x80, &t, 8);
         msm2::writeLog("WS_GRAVITY_BLOCK fast_miss hero=0x%llx h80=0x%llx u378=0x%llx p328=0x%llx p298=0x%llx read_only=1", (unsigned long long)hero.hero, (unsigned long long)t,
           (unsigned long long)gbRead2(hero.hero, 0x80, 0x378), (unsigned long long)gbRead2(hero.hero, 0x80, 0x328), (unsigned long long)gbRead2(hero.hero, 0x68, 0x298)); } } }
-  if (!gbThread.exchange(true)) { if (HANDLE h = CreateThread(nullptr, 0, gbSearch, nullptr, 0, nullptr)) { SetThreadPriority(h, THREAD_PRIORITY_LOWEST); CloseHandle(h); } }
+  if (!gbThread.exchange(true)) { if (HANDLE h = CreateThread(nullptr, 0, gbSearch, nullptr, 0, nullptr)) { SetThreadPriority(h, THREAD_PRIORITY_LOWEST); CloseHandle(h); }
+    if (HANDLE h2 = CreateThread(nullptr, 0, lcThread, nullptr, 0, nullptr)) { SetThreadPriority(h2, THREAD_PRIORITY_BELOW_NORMAL); CloseHandle(h2); } }
   if (now - gbLastScan < 1000) { gbAddr = gbFound.load(); return; }
   gbLastScan = now;
   // M10k: the game itself sets other up vectors for the hero block (M10j: bursts of calls), so a found block stays until
