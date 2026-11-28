@@ -156,3 +156,14 @@ ej=code.split('bool entryJumpRefuse(std::uintptr_t requested) {',1)[1].split('\n
 assert 'r != 0xB454950 && r != kLedgeStateRva' in ej and code.count('entryJumpRefuse(requested)')==4
 assert code.count('geEntryJumpUntilMs.store(0)')==2 and 'geEntryJumpUntilMs.store(GetTickCount64() + 1000);' in code
 print("PASS: M21l crawl-state WR allowed in holds, bounded game-only A in crawl idle, no game jump during a ground entry")
+
+# M21m: hero-owned machine only; WR in the crawl family in a hold -> game-only A (<= 3 per hold, 1 s apart), WR allowed
+# only after that; no entry while the game is in its sprint jump (<= 1.2 s); the Update-WS helper closes Overstrike first.
+assert 'bool isHero = heroMachine && ownerP && ownerP == gbHero.load();' in code and 'if (isHero) { std::uintptr_t cur =' in code
+assert 'if (presses >= 3) crawlWr = true;' in code and 'gcInjectUntilMs.store(tick + 60);' in code
+assert 'event=deferred reason=game_jump' in code and 'if (ms - since < 1200)' in code
+cmd=(root/'tools/windows/Update-WS.cmd').read_text()
+assert cmd.index('close-overstrike-for-update.ps1') < cmd.index('update --workspace') and (root/'tools/windows/close-overstrike-for-update.ps1').is_file()
+ps=(root/'tools/windows/close-overstrike-for-update.ps1').read_text()
+assert "Join-Path $game 'Overstrike\\Overstrike.exe'" in ps and 'OrdinalIgnoreCase' in ps and 'Spider-Man2' not in ps
+print("PASS: M21m hero-only state, A instead of WR in the crawl, entry deferred during the game jump, Overstrike closed before update")

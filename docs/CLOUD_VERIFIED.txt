@@ -106,3 +106,4 @@ c92ddb3b72ac775935ebe6eac831cc814f34a667 2026-11-26 build+test.sh+package PASS; 
 f737ea3efc281ea6e33d88f17cfbbaf8c8b98b49 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21j; HEAD:source; by Claude Code)
 43e5e9652acd84364ce7b27aff8d59e6a1d936f1 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21k baseline restore; HEAD:source; by Claude Code)
 a74b2f4f42fad450924244336cd09997049ae10f 2026-11-26 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21l; HEAD:source; by Claude Code)
+11b25152c055e196c89e46bbe5c0d14c8cec23b2 2026-11-28 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21m; HEAD:source; by Claude Code)

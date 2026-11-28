@@ -330,7 +330,9 @@ class Manager:
   source=independent_clone(workspace/'_source',self.remote,allow_legacy_archives=True)
   branch=expected_branch(source,expected)
   with update_ownership(game):
+   print('WS: checking the game and Overstrike processes',flush=True)
    self.system.stop(game)
+   print('WS: pulling the source',flush=True)
    tracked=set(git(source,'ls-files','-z').split('\0'))
    retired_probes.retire(workspace,game,tracked)
    prepare_source_checkout(source)
@@ -353,6 +355,7 @@ class Manager:
     self.system.cloud_verified=bool(re.fullmatch(r'[0-9a-f]{40}',tree)) and listed.is_file() and any(l.split()[:1]==[tree] for l in listed.read_text(encoding='utf-8').splitlines())
    except Exception:self.system.cloud_verified=False
    print('WS: cloud-verified source tree -> local smoke/hooks skipped' if self.system.cloud_verified else 'WS: full local validation (source tree not in docs/CLOUD_VERIFIED.txt)')
+   print('WS: building and validating (this takes a few minutes)',flush=True)
    payload,manifest=self.system.build(source,build)
    require(payload.parent.resolve()==build.resolve(),'Build artifact escaped WS staging directory')
    require(payload.name=='MSM2-WS-'+label+'.script.disabled','Artifact is not the authoritative version')
@@ -387,6 +390,7 @@ class Manager:
     else:(workspace/'Update-WS.cmd').write_bytes(before)
     raise
   # Deployment is committed and OS ownership released before checked launch.
+  print('WS: deployed '+target+'; starting Overstrike',flush=True)
   try:self.system.launch(game)
   except Exception as ex:raise WorkspaceError('WS deployment committed; manager launch failed separately: '+str(ex)) from ex
   print('WS update complete: '+target+'; select ordinary mods + SF + WS, then Install mods -> Run modded game.')
