@@ -112,7 +112,7 @@ print("PASS: M21g fast-travel/hero-change reset and read-only face state-change 
 lw=code.split('bool ledgeWrap(std::uintptr_t requested) {',1)[1].split('\n}',1)[0]
 assert 'if (!edgeState || !wgiLbDown.load() || !ws::drive::wsEdgeWrap' in lw and 'if (!gfEdgeValid.load() || !gfOn.load()) return false;' in lw
 assert code.count('ledgeWrap(requested) || holdRefuse(requested))')==4 and 'kLedgeStateRva = 0xB45E2B0' in code
-assert 'bool inWallState = curRva == 0xB465FB0 || curRva == 0xB4519A0 || curRva == kWrStateRva;' in code and '(geArmedNow.load() && !inWallState)' in code
+assert 'bool inWallState = curRva == 0xB465FB0 || curRva == kWrStateRva;' in code and '(geArmedNow.load() && !inWallState)' in code
 print("PASS: M21h ledge-state wrap with LB and no entry from a running vanilla wall state")
 
 # M21i: jump/air/ledge refused for 1.5 s after a wrap request, crawl states refused while WS is armed or a hold runs
@@ -143,9 +143,9 @@ print("PASS: M21k post-M21c experiments gated by INI switches, all shipped OFF")
 
 # M21l: no WR veto in a hold while the game is in its crawl/wall family (freeze fix); crawl idle in a hold gives the game
 # alone a bounded 60 ms A press; the sprint jump / ledge take-off are refused during a ground entry; INI default 0, shipped 1.
-for k in ['WALLSPRINT_WS_CRAWL_WR','WALLSPRINT_WS_CRAWL_STAND','WALLSPRINT_WS_ENTRY_NO_JUMP']:
+for k,v in [('WALLSPRINT_WS_CRAWL_WR',1),('WALLSPRINT_WS_CRAWL_STAND',0),('WALLSPRINT_WS_ENTRY_NO_JUMP',1)]:
     assert 'L"'+k+'",0,' in tel, k
-    assert ini.getint('WallSprint',k)==1, k
+    assert ini.getint('WallSprint',k)==v, k
 assert 'bool veto = faceWrVetoEligible(machine) && *slotE30 == 0 && !crawlWr;' in code
 assert 'stRva == 0xB465FB0 || stRva == 0xB463E40 || stRva == 0xB463C10 || stRva == 0xB4635E0 || stRva == 0xB465AB0 || stRva == 0xB4633E0' in code
 assert 'if (GetTickCount64() < gcInjectUntilMs.load(std::memory_order_relaxed) && !killed.load()) r->buttons |= 0x4u;' in code
@@ -161,9 +161,16 @@ print("PASS: M21l crawl-state WR allowed in holds, bounded game-only A in crawl 
 # only after that; no entry while the game is in its sprint jump (<= 1.2 s); the Update-WS helper closes Overstrike first.
 assert 'bool isHero = heroMachine && ownerP && ownerP == gbHero.load();' in code and 'if (isHero) { std::uintptr_t cur =' in code
 assert 'if (presses >= 3) crawlWr = true;' in code and 'gcInjectUntilMs.store(tick + 60);' in code
-assert 'event=deferred reason=game_jump' in code and 'if (ms - since < 1200)' in code
+assert 'event=deferred reason=game_jump' not in code
 cmd=(root/'tools/windows/Update-WS.cmd').read_text()
 assert cmd.index('close-overstrike-for-update.ps1') < cmd.index('update --workspace') and (root/'tools/windows/close-overstrike-for-update.ps1').is_file()
 ps=(root/'tools/windows/close-overstrike-for-update.ps1').read_text()
 assert "Join-Path $game 'Overstrike\\Overstrike.exe'" in ps and 'OrdinalIgnoreCase' in ps and 'Spider-Man2' not in ps
 print("PASS: M21m hero-only state, A instead of WR in the crawl, entry deferred during the game jump, Overstrike closed before update")
+
+# M21n: standing idle 0xB4519A0 no longer blocks the entry; the swing entry gives the game RT = 0 while it is still in the
+# swing 0xB454950 (<= 1.2 s), after every MOD read of RT; the automatic crawl-idle A is shipped OFF (owner: unnatural).
+wgi=code.split('HRESULT STDMETHODCALLTYPE wgiReadDetour(',1)[1].split('\nHRESULT STDMETHODCALLTYPE wgiVibDetour',1)[0]
+assert wgi.index('r->rt = 0;') > wgi.index('wgiRt.store(r->rt')
+assert 'geRtMaskUntilMs.store(GetTickCount64() + 1200);' in code
+print("PASS: M21n standing idle entry, swing ended by a short RT release, crawl auto-A off")

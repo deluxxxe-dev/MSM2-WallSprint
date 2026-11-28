@@ -664,7 +664,7 @@ std::atomic<std::uint64_t> wgiBTaps{0},wgiBDownMs{0};std::atomic<bool> wgiBDown{
 std::atomic<bool> wgiLbDown{false};constexpr std::uint64_t kBTapMs=300;
 // M21l: game-only A press (the MOD's own A reading happens before it) and the hero machine's current state.
 std::atomic<std::uint64_t> gcInjectUntilMs{0};std::atomic<std::uintptr_t> gHeroStateRva{0},gDetourStateRva{0};std::atomic<std::uint64_t> gHeroStateMs{0};
-std::atomic<std::uint64_t> geEntryJumpUntilMs{0};std::atomic<unsigned> geEntryJumpLogs{0},gcCrawlWrLogs{0};
+std::atomic<std::uint64_t> geEntryJumpUntilMs{0},geRtMaskUntilMs{0};std::atomic<unsigned> geEntryJumpLogs{0},gcCrawlWrLogs{0};
 WgiVibration wgiLastVib{-1, -1, -1, -1};
 // M8j (2026-11-07): WS charge jump, controller only. M8i VERIFIED the game reads the pad through WGI
 // GetCurrentReading (~77/s, A seen with 0 ms delay). While WS is active an A press is hidden from the game; on release
@@ -838,6 +838,10 @@ HRESULT STDMETHODCALLTYPE wgiReadDetour(void* self, WgiReading* r) {
       else { if (m2 < 0.0625) sawNeutral = true; if (sawNeutral && m2 > 0.16) { ws::drive::stickMask.store(false); sawNeutral = false; } else { r->lx = 0; r->ly = 0; } } }
     // M21l crawl stand: a 60 ms A press given to the game only (after every MOD read of this reading).
     if (GetTickCount64() < gcInjectUntilMs.load(std::memory_order_relaxed) && !killed.load()) r->buttons |= 0x4u;
+    // M21n swing entry: while the game is still in its swing 0xB454950 right after a wall entry, it gets RT = 0 (the swing
+    // ends like the vanilla WR start ends it); the MOD read RT above.
+    if (GetTickCount64() < geRtMaskUntilMs.load(std::memory_order_relaxed) && !killed.load()) {
+      if (gHeroStateRva.load(std::memory_order_relaxed) == 0xB454950) r->rt = 0; else geRtMaskUntilMs.store(0); }
   }
   return hr;
 }
@@ -2857,14 +2861,8 @@ bool wrEntryCallback(std::uintptr_t owner, std::uintptr_t, std::uintptr_t reques
   auto ms = GetTickCount64();
   if (ms < geVetoUntilMs.load()) { wrVetoFired = true; return false; }
   if (!geArmedNow.load() || !context) return allow;
-  // M21m (log 173843 08:41:22.452-26.267, video 2): the entry started while the game was in its sprint jump 0xB454950;
-  // pinned on the face the game stayed in the jump for 2.8 s (air pose, "floating") before it landed. While the game is in
-  // the sprint jump / ledge take-off / its follow-up 0xB45CBB0, the WR is refused without an entry (the hero meets the
-  // wall and falls, and the next WR request starts the entry from the air state); at most 1.2 s per jump.
-  { std::uintptr_t st = gDetourStateRva.load();
-    if (ws::drive::wsEntryNoJump.load(std::memory_order_relaxed) && (st == 0xB454950 || st == kLedgeStateRva || st == 0xB45CBB0)) {
-      static std::uint64_t since = 0; if (!since || ms - since > 3000) since = ms;
-      if (ms - since < 1200) { wrVetoFired = true; if (geEntryJumpLogs.fetch_add(1) < 40) msm2::writeLog("WS_GROUND_ENTRY event=deferred reason=game_jump state=0x%llx", (unsigned long long)st); return false; } } }
+  // M21n: the M21m deferral is removed: 0xB454950 is the web swing (RT held), not a sprint jump; the swing entry now ends
+  // the swing by giving the game RT = 0 for a moment (below).
   float pn[6]; if (!msm2::readMemory(context + 0x2C, pn, sizeof pn)) return allow;
   float nl = std::sqrt(pn[3] * pn[3] + pn[4] * pn[4] + pn[5] * pn[5]);
   bool ok = std::isfinite(nl) && nl > 0.95f && nl < 1.05f && std::fabs(pn[4]) < 0.3f && std::isfinite(pn[0] + pn[1] + pn[2]);
@@ -2965,7 +2963,9 @@ std::uint64_t wrRequestDetour(std::uintptr_t machine, std::uintptr_t rdx, std::u
   // WR 0xB467FD0) the game re-requested WR; the entry vetoed it and rotated the gravity while the game stayed in its wall
   // state, and the hero got stuck. A new entry is not started from these states (the WR -> WS path handles them).
   std::uintptr_t curRva = wrRequestRva(before);
-  bool inWallState = curRva == 0xB465FB0 || curRva == 0xB4519A0 || curRva == kWrStateRva;
+  // M21n (log 20261128-175726): 0xB4519A0 is also the game's ordinary standing idle on the street; with it in this list a
+  // run started from standing near a wall went to the vanilla WR (old WR-based WS, floating) instead of the entry.
+  bool inWallState = curRva == 0xB465FB0 || curRva == kWrStateRva;
   bool entryCb = !veto && !sameFace && *slotE30 == 0 && heroMachine && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && ((geArmedNow.load() && !inWallState) || GetTickCount64() < geVetoUntilMs.load());
   bool holdCb = !veto && !entryCb && !sameFace && !crawlWr && *slotE30 == 0 && heroMachine && ws::drive::wsGroundEntry.load(std::memory_order_relaxed) && (ws::drive::wsEdgeWrap.load(std::memory_order_relaxed) || ws::drive::wsWrExitAssist.load(std::memory_order_relaxed)) && (gbHoldA.load() || GetTickCount64() - geLedgeWrapMs.load() < 1500);
   bool observe = !veto && !entryCb && !sameFace && !holdCb && *slotE30 == 0 && wrCtxLogs.load(std::memory_order_relaxed) < 12 && heroMachine;
@@ -3347,6 +3347,8 @@ void m10GravityTest(const msm2::Snapshot& hero, const ws::diag::Motion& motion, 
         sgSubBlock.store(gbAddr); sgSubActive.store(true); sgAirPhase.store(false); gbAirCam.store(false); gbHoldA.store(true); gbActive = true;
         gbState = 4; gbBlendStart = now; gbAPresses = wgiBTaps.load();
         geEntryJumpUntilMs.store(GetTickCount64() + 1000);   // M21l: rotation (0.33 s) + first 0.6 s of the hold
+        if (ws::drive::wsEntryNoJump.load() && gHeroStateRva.load() == 0xB454950) { geRtMaskUntilMs.store(GetTickCount64() + 1200);
+          msm2::writeLog("WS_GROUND_ENTRY event=swing_end rt_mask_ms=1200"); }
         msm2::writeLog("WS_GROUND_ENTRY event=start test=%u n=%.3f,%.3f,%.3f from=%.3f,%.3f,%.3f source=%s standoff=%.3f vy=%.2f", gbTests, gbN[0], gbN[1], gbN[2], from[0], from[1], from[2], transfer ? "face_transfer" : "ground_or_air", gbPlaneStandoff, vOk ? vy : 0.f);
       } } }
   if (gbState == 4) {
