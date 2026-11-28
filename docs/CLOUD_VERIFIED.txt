@@ -120,3 +120,4 @@ afcae2cd0130731f4aa866d8030cea924c321241 2026-11-28 build+test.sh+package PASS; 
 b67c4359d23ac3367ed7b3a4d292c7a0a2310289 2026-11-28 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21v takeoff speed cap, face-jump gravity log; HEAD:source; by Claude Code)
 7c30519da0efc4261c3e0db5d7256f1c706653fc 2026-11-28 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21w landing above surface, no model takeoff; HEAD:source; by Claude Code)
 556596f929f4d3eae28993bca63216198bbfb6f3 2026-11-28 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21x standing jump direction fix, arc to plane; HEAD:source; by Claude Code)
+389f0ed617132d7327d82b08cce6a4e7c769b29f 2026-11-28 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21y land 0.25 m above experiment; HEAD:source; by Claude Code)

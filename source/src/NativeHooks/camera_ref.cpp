@@ -2586,7 +2586,11 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     // the takeoff rest height and the hold lets the game's own step bring the hero down.
     // M21x (log 1 of 14:45): the game itself moved the hero the last 8 cm onto the surface within 0.1 s and still stayed
     // airborne 0.68 s (10/10 jumps): a small fall is not the landing condition (REJECTED). The arc ends at the plane again.
-    float landAt = 0.f;
+    // M21y (log 20261129-000210): on a stepped facade (A-2) the game ended its air state 0.07 s after our landing (5/5)
+    // while its own gravity was still carrying the hero 0.22 m further onto the real surface over ~0.4 s; on the flat
+    // facade (A-1) our landing put the hero on the surface at once and the game stayed airborne 0.72-0.74 s (5/5).
+    // Experiment: end the arc 0.25 m above the takeoff rest height and let the game's own fall finish the landing.
+    float landAt = ws::drive::wsFaceJumpHold.load() && !gfL.stopHop ? gfL.jumpRestD + 0.25f : 0.f;
     if (dq < landAt && !(ws::drive::wsFaceJumpHold.load() && !gfL.stopHop)) for (int i = 0; i < 3; ++i) q[i] -= dq * n0[i];
     else if (dq < landAt) for (int i = 0; i < 3; ++i) q[i] += (landAt - dq) * n0[i];
     if (gfL.stopHop ? gfL.faceAirT>=0.35f : (gfL.faceAirT > 0.1f && dq < landAt + 0.02f && vn <= 0.f)) {
@@ -2617,7 +2621,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
         // than 5 cm below the takeoff rest height)
         float dl=(gfL.landP[0]-p0[0])*n0[0]+(gfL.landP[1]-p0[1])*n0[1]+(gfL.landP[2]-p0[2])*n0[2];
         float dg=(p[0]-p0[0])*n0[0]+(p[1]-p0[1])*n0[1]+(p[2]-p0[2])*n0[2];
-        float du=std::fmin(dl,std::fmax(dg,gfL.jumpRestD-0.05f));
+        float du=std::fmin(dl,std::fmax(dg,gfL.jumpRestD-0.30f));
         for(int i=0;i<3;++i)q[i]=gfL.landP[i]+(du-dl)*n0[i];
         gfFaceMaskUntil.store(GetTickCount64()+60);gfL.fallIgnoreUntil=tn+0.5;
         static double lastG=0; if(tn-lastG>=0.1){lastG=tn;faceJumpGravityLog("hold",tn-gfL.landHoldStart);}}

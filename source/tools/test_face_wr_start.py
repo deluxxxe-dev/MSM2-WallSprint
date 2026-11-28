@@ -218,6 +218,6 @@ assert 'writeMemory' not in gl and 'read_only=1' in gl
 print("PASS: M21v takeoff speed cap, face-jump gravity diagnostic")
 
 # M21w: arc ends 8 cm above the takeoff rest height; the hold accepts the game's own step toward the surface; no model takeoff.
-assert 'float landAt = 0.f;' in code and 'std::strcmp(gfL.airSource,"none_model_off")!=0' in code
-assert 'float du=std::fmin(dl,std::fmax(dg,gfL.jumpRestD-0.05f));' in code and 'gfL.airSource="none_model_off";' in code
+assert 'gfL.jumpRestD + 0.25f : 0.f;' in code and 'std::strcmp(gfL.airSource,"none_model_off")!=0' in code
+assert 'float du=std::fmin(dl,std::fmax(dg,gfL.jumpRestD-0.30f));' in code and 'gfL.airSource="none_model_off";' in code
 print("PASS: M21w landing above the surface for the game's own landing, no model takeoff direction")
