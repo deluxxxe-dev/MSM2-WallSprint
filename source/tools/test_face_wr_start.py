@@ -186,3 +186,10 @@ assert 'bool gbFastPath(std::uintptr_t hero, std::uintptr_t& g)' in code and 'ms
 gd=code.split('void gbDiscover(const msm2::Snapshot& hero, std::uint64_t now) {',1)[1].split('\n}',1)[0]
 assert gd.index('gbFastPath(hero.hero, g)') < gd.index('if (now - gbLastScan < 1000)') and '!gbActive && !gbFound.load() && !sgHeroByUp.load()' in gd
 print("PASS: M21p fast hero gravity block path before the slow scan")
+
+# M21q: second fast path (two agreeing direct paths) with a fast_miss diagnostic; WS camera on the single caller in a hold.
+assert 'bool gbFastPath2(std::uintptr_t hero, std::uintptr_t& g)' in code and 'if (!a || a != b) return false;' in code
+assert 'gbRead2(hero, 0x80, 0x328), b = gbRead2(hero, 0x68, 0x298)' in code and 'WS_GRAVITY_BLOCK fast_miss' in code
+sc=code.split('void selectCamera(const msm2::Snapshot& hero, std::uint64_t now) {',1)[1].split('\n}',1)[0]
+assert 'if (!pick && n == 1 && gbHoldA.load())' in sc and sc.index('n == 1 && gbHoldA') < sc.index('if (pick != ws_camref_this)')
+print("PASS: M21q agreeing direct block paths after a reload, WS camera on the only caller during a hold")

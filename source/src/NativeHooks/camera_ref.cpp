@@ -174,6 +174,11 @@ void selectCamera(const msm2::Snapshot& hero, std::uint64_t now) {
   // M10z-r8 (log 20261109-025529): after a face jump the camera was > 30 m from the hero, no manager counted as live and
   // the WS camera was dropped for 9 s. During a gravity hold the current manager is kept.
   if (!pick && ws_camref_this && gbHoldA.load()) pick = ws_camref_this;
+  // M21q (log 20261128-200809): after a load or a fast travel the only caller's +0xD54 position stayed > 30 m away until
+  // the hero was in the air, so the first ground entry ran without the WS camera (no camera roll). During a gravity hold
+  // the single recent caller is accepted on a unit forward alone.
+  if (!pick && n == 1 && gbHoldA.load()) { float v[3]{}; if (seen[0] <= UINTPTR_MAX - 0x1000 && msm2::readMemory(seen[0] + 0xD34, v, sizeof v)) {
+    float fl = v[0] * v[0] + v[1] * v[1] + v[2] * v[2]; if (std::isfinite(fl) && fl > 0.9f && fl < 1.1f) { pick = seen[0]; bestD = -1.f; } } }
   if (pick != ws_camref_this) { ++selectChanges;
     msm2::writeLog("WS_CAMERA_SELECT manager=0x%llx previous=0x%llx distinct_callers=%u distance=%.2f changes=%u", (unsigned long long)pick, (unsigned long long)ws_camref_this, n, pick ? bestD : 0.f, selectChanges);
     if (engagedManager.load() && engagedManager.load() != pick) restore("camera_manager_changed");
@@ -3222,11 +3227,32 @@ DWORD WINAPI gbSearch(void*) {
 // worker tick while no block is known; the vanilla-matrix check in gbChain stays the acceptance gate.
 bool gbFastPath(std::uintptr_t hero, std::uintptr_t& g) { std::uintptr_t t = 0, u = 0;
   return hero && msm2::readMemory(hero + 0x80, &t, 8) && velReadable(t) && msm2::readMemory(t + 0x378, &u, 8) && velReadable(u) && gbChain(u, g); }
+// M21q (log 20261128-200809, test 4): after a reload the path above failed again, while the M21o chain scan found, in both
+// reload logs (20261128-194655 and -200809), [[hero+0x80]+0x328] == [[hero+0x68]+0x298] == block-0x5F4 (VERIFIED-RUNTIME,
+// 2 of 2 samples). Accepted only when both independent paths agree and the block holds a finite unit up row.
+std::uintptr_t gbRead2(std::uintptr_t b, unsigned o1, unsigned o2) { std::uintptr_t t = 0, u = 0;
+  if (!b || !msm2::readMemory(b + o1, &t, 8) || !velReadable(t) || !msm2::readMemory(t + o2, &u, 8) || !velReadable(u)) return 0;
+  return u; }
+bool gbFastPath2(std::uintptr_t hero, std::uintptr_t& g) { auto a = gbRead2(hero, 0x80, 0x328), b = gbRead2(hero, 0x68, 0x298);
+  if (!a || a != b) return false;
+  float f[9];
+  if (!msm2::readMemory(a + 0x5F4, f, sizeof f)) return false;
+  for (float x : f) if (!std::isfinite(x)) return false;
+  float l = f[3] * f[3] + f[4] * f[4] + f[5] * f[5];
+  if (l < 0.9f || l > 1.1f) return false;
+  g = a + 0x5F4;
+  return true; }
 void gbDiscover(const msm2::Snapshot& hero, std::uint64_t now) {
   if (gbHero.load() != hero.hero || gbTransform.load() != hero.transform) { gbHero.store(hero.hero); gbTransform.store(hero.transform); if (!gbActive) { gbFound.store(0); sgHeroByUp.store(0); sgHeroBlock.store(0); } }
-  if (!gbActive && !gbFound.load() && !sgHeroByUp.load()) { std::uintptr_t g = 0;
+  if (!gbActive && !gbFound.load() && !sgHeroByUp.load()) { std::uintptr_t g = 0; static std::uintptr_t missHero = 0; static std::uint64_t missSince = 0;
     if (gbFastPath(hero.hero, g)) { gbFound.store(g); sgHeroBlock.store(g); gbLastScan = 0;
-      static unsigned fastLogs = 0; if (fastLogs++ < 20) msm2::writeLog("WS_GRAVITY_BLOCK found root=hero slot=0x80 slot2=0x378 level=2 fast=1 g=0x%llx", (unsigned long long)g); } }
+      static unsigned fastLogs = 0; if (fastLogs++ < 20) msm2::writeLog("WS_GRAVITY_BLOCK found root=hero slot=0x80 slot2=0x378 level=2 fast=1 g=0x%llx", (unsigned long long)g); }
+    else if (gbFastPath2(hero.hero, g)) { gbFound.store(g); sgHeroBlock.store(g); gbLastScan = 0;
+      static unsigned fastLogs2 = 0; if (fastLogs2++ < 20) msm2::writeLog("WS_GRAVITY_BLOCK found root=hero paths=0x80/0x328,0x68/0x298 fast=2 g=0x%llx", (unsigned long long)g); }
+    else if (hero.hero) { if (missHero != hero.hero) { missHero = hero.hero; missSince = now; }
+      else if (missSince && now - missSince > 2000) { missSince = 0; std::uintptr_t t = 0; msm2::readMemory(hero.hero + 0x80, &t, 8);
+        msm2::writeLog("WS_GRAVITY_BLOCK fast_miss hero=0x%llx h80=0x%llx u378=0x%llx p328=0x%llx p298=0x%llx read_only=1", (unsigned long long)hero.hero, (unsigned long long)t,
+          (unsigned long long)gbRead2(hero.hero, 0x80, 0x378), (unsigned long long)gbRead2(hero.hero, 0x80, 0x328), (unsigned long long)gbRead2(hero.hero, 0x68, 0x298)); } } }
   if (!gbThread.exchange(true)) { if (HANDLE h = CreateThread(nullptr, 0, gbSearch, nullptr, 0, nullptr)) { SetThreadPriority(h, THREAD_PRIORITY_LOWEST); CloseHandle(h); } }
   if (now - gbLastScan < 1000) { gbAddr = gbFound.load(); return; }
   gbLastScan = now;
