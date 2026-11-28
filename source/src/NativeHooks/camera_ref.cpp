@@ -2025,7 +2025,7 @@ void stateReport(const char* reason){
       reason,row,j[0],j[1],j[2],j[3],w[0],w[1],w[2],w[3],nj[0],nj[1],nj[2],nj[3],nw[0],nw[1],nw[2],nw[3]);
   }
 }
-struct GfLocal { CameraFaceMap cameraMap{};bool cameraLiveUsed{};int cameraCandidate{-1};const char* cameraReason{"not_checked"};double cameraCheckTime{-1}; FaceAirFacing airFacing{};FaceWalkoff walkoff{};FaceLocomotionDown locoDown{};FaceContactProbe probe{};double fallIgnoreUntil{}; FaceTakeoffHistory takeoffHistory{}; FaceFacingProbe facing{}; unsigned stopTraceId{};StopTraceBudget stopTrace{};bool stopReleaseBlocked{};StopDeceleration stopDecel{};StopRotation stopRotation{};StopEpisode stopEpisode{};bool stopHop{};StopHopArc hopArc{};StopStandProbe standProbe{}; double stopHopTakeoff{}; HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; bool landHold{}; float landP[3]{}; double landHoldStart{}, landAirEnd{}; } gfL;
+struct GfLocal { CameraFaceMap cameraMap{};bool cameraLiveUsed{};int cameraCandidate{-1};const char* cameraReason{"not_checked"};double cameraCheckTime{-1}; FaceAirFacing airFacing{};FaceWalkoff walkoff{};FaceLocomotionDown locoDown{};FaceContactProbe probe{};double fallIgnoreUntil{}; FaceTakeoffHistory takeoffHistory{}; FaceFacingProbe facing{}; unsigned stopTraceId{};StopTraceBudget stopTrace{};bool stopReleaseBlocked{};StopDeceleration stopDecel{};StopRotation stopRotation{};StopEpisode stopEpisode{};bool stopHop{};StopHopArc hopArc{};StopStandProbe standProbe{}; double stopHopTakeoff{}; HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; bool landHold{}; float landP[3]{}; double landHoldStart{}, landAirEnd{}; float jumpRestD{}; } gfL;
 void gfLogPlane(const char* event) {
   msm2::writeLog("WS_GRAVITY_FORCE_PLANE event=%s point=%.3f,%.3f,%.3f source=%s",
     event, gfP0[0].load(), gfP0[1].load(), gfP0[2].load(), gfPlaneFromWall.load() ? "wall_point_0x338" : "ws_position_minus_0.5n");
@@ -2523,6 +2523,10 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   if (gfL.pinned && !gfL.faceAir && !sbBlendQpc.load(std::memory_order_relaxed) && wgiPresses.load(std::memory_order_relaxed) != gfL.pinPresses) {
     gfL.stop.active=false;gfL.cameraLiveUsed=false;gfL.cameraReason="takeoff_frozen";
     gfL.airSource=gfL.walk.takeoff(qpcSec(now),wgiLx.load(),wgiLy.load(),n0,gfL.airVel);
+    // M21w (logs 1/2 of 20261128 14:31-14:34, ids 9-10): a takeoff from standing used the learned stick mapping ("model")
+    // and flew toward the ground while the stick pointed to the roof. Without a recent walk the jump goes straight out.
+    if(ws::drive::wsFaceJumpHold.load()&&gfL.airSource[0]=='m'){for(float& c:gfL.airVel)c=0.f;gfL.airSource="none_model_off";}
+    { const float* tp=mvA ? mvA : p; float d=(tp[0]-p0[0])*n0[0]+(tp[1]-p0[1])*n0[1]+(tp[2]-p0[2])*n0[2]; gfL.jumpRestD=std::fmax(-0.1f,std::fmin(0.1f,d)); }
     gfL.takeoffHistory.freeze(gfL.airMapping,gfL.walk,qpcSec(now),gfL.airSource,wgiLx.load(),wgiLy.load(),n0,gfL.airVel);
     if(gfL.airSource[0]!='w' && gfL.airMapping.mappingSource[0]=='w') {
       float direction[3]{};bool mapped=gfL.airMapping.direction(wgiLx.load(),wgiLy.load(),n0,direction);
@@ -2574,8 +2578,14 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     if(gfL.stopHop)gfL.stopDecel.integrate(q,gfL.pLast,double(gfL.faceAirT-dt),airDt);
     float dq = (q[0] - p0[0]) * n0[0] + (q[1] - p0[1]) * n0[1] + (q[2] - p0[2]) * n0[2];
     float vn = gfL.vg[0] * n0[0] + gfL.vg[1] * n0[1] + gfL.vg[2] * n0[2];
-    if (dq < 0.f) for (int i = 0; i < 3; ++i) q[i] -= dq * n0[i];
-    if (gfL.stopHop ? gfL.faceAirT>=0.35f : (gfL.faceAirT > 0.1f && dq < 0.02f && vn <= 0.f)) {
+    // M21w (logs 1/2 14:31-14:34): the game ended its air state 0.1 s after our landing only when its own gravity moved the
+    // hero the last ~6 cm onto the surface (log 2: plane 6 cm above the surface); where our plane was at/below the surface
+    // the hero touched it at once, the game never fell and stayed airborne for ~0.7 s (log 1). Our arc now ends 8 cm above
+    // the takeoff rest height and the hold lets the game's own step bring the hero down.
+    float landAt = ws::drive::wsFaceJumpHold.load() && !gfL.stopHop ? gfL.jumpRestD + 0.08f : 0.f;
+    if (dq < landAt && !(ws::drive::wsFaceJumpHold.load() && !gfL.stopHop)) for (int i = 0; i < 3; ++i) q[i] -= dq * n0[i];
+    else if (dq < landAt) for (int i = 0; i < 3; ++i) q[i] += (landAt - dq) * n0[i];
+    if (gfL.stopHop ? gfL.faceAirT>=0.35f : (gfL.faceAirT > 0.1f && dq < landAt + 0.02f && vn <= 0.f)) {
       airFacingStep();
       if(gfL.stopHop){float landingD=facePlaneDistance(q,p0,n0);for(int i=0;i<3;++i)q[i]-=landingD*n0[i];} gfFaceLandingTime.store(qpcSec(now));gfL.fallIgnoreUntil=qpcSec(now)+0.5;gfL.faceAir = false; gfL.pinT = 0.f; gfL.fallGuard.resetMotion(); for (float& c : gfL.vg) c = 0.f; for (float& c : gfL.dash) c = 0.f;
       if(gfL.stopHop) { gfL.stopEpisode.landing=qpcSec(now);gfL.stopRotation.landing=qpcSec(now);gfL.stop.landed(qpcSec(now));gfL.stopHop=false;stopHopRun.store(false);gfL.standProbe.begin(qpcSec(now));
@@ -2598,7 +2608,14 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     // gets a neutral stick (no air control); for 0.5 s after the game's air state ends, world-down steps are undone and
     // the walk-off release is held back. Cap 0.8 s of game air.
     if(gfL.landHold){double tn=qpcSec(now);bool gameAir=gHeroClassStateRva.load()==0xB44F0A0;
-      if(gameAir&&!gfL.landAirEnd&&tn-gfL.landHoldStart<0.8){std::memcpy(q,gfL.landP,12);gfFaceMaskUntil.store(GetTickCount64()+60);gfL.fallIgnoreUntil=tn+0.5;
+      if(gameAir&&!gfL.landAirEnd&&tn-gfL.landHoldStart<0.8){
+        // in-plane: the landing point; along the normal: the game's own step toward the surface (never away, never more
+        // than 5 cm below the takeoff rest height)
+        float dl=(gfL.landP[0]-p0[0])*n0[0]+(gfL.landP[1]-p0[1])*n0[1]+(gfL.landP[2]-p0[2])*n0[2];
+        float dg=(p[0]-p0[0])*n0[0]+(p[1]-p0[1])*n0[1]+(p[2]-p0[2])*n0[2];
+        float du=std::fmin(dl,std::fmax(dg,gfL.jumpRestD-0.05f));
+        for(int i=0;i<3;++i)q[i]=gfL.landP[i]+(du-dl)*n0[i];
+        gfFaceMaskUntil.store(GetTickCount64()+60);gfL.fallIgnoreUntil=tn+0.5;
         static double lastG=0; if(tn-lastG>=0.1){lastG=tn;faceJumpGravityLog("hold",tn-gfL.landHoldStart);}}
       else{if(!gfL.landAirEnd){gfL.landAirEnd=tn;gfL.fallIgnoreUntil=tn+0.5;
           msm2::writeLog("WS_FACE_JUMP_HOLD event=game_air_end air_after_landing_ms=%.0f state=0x%llx capped=%u",(tn-gfL.landHoldStart)*1000.0,(unsigned long long)gHeroClassStateRva.load(),unsigned(gameAir));

@@ -201,7 +201,7 @@ print("PASS: M21s camera manager dropped on hero change")
 
 # M21t: face-jump landing hold while the game is still in its air state (INI WALLSPRINT_WS_FACE_JUMP_HOLD, shipped 1).
 assert 'if(ws::drive::wsFaceJumpHold.load()&&!gfL.stopHop&&(cs==0xB44F0A0||hs==0xB44F0A0)){gfL.landHold=true;' in code and 'if (now70 != before) gHeroClassStateRva.store(wrRequestRva(now70));' in code
-assert 'if(gameAir&&!gfL.landAirEnd&&tn-gfL.landHoldStart<0.8){std::memcpy(q,gfL.landP,12);' in code
+assert 'if(gameAir&&!gfL.landAirEnd&&tn-gfL.landHoldStart<0.8){' in code
 assert ini.getint('WallSprint','WALLSPRINT_WS_FACE_JUMP_HOLD')==1 and 'L"WALLSPRINT_WS_FACE_JUMP_HOLD",0,' in tel
 bw=(root/'tools/build_windows.sh').read_text()
 assert 'wait "$pid" || fail=1' in bw and bw.index('wait "$pid"') < bw.index('"$gpp" -shared')
@@ -216,3 +216,8 @@ assert 'speed=std::fmin(speed,15.f);' in code and code.count('faceJumpGravityLog
 gl=code.split('void faceJumpGravityLog(const char* event,double t) {',1)[1].split('\n}',1)[0]
 assert 'writeMemory' not in gl and 'read_only=1' in gl
 print("PASS: M21v takeoff speed cap, face-jump gravity diagnostic")
+
+# M21w: arc ends 8 cm above the takeoff rest height; the hold accepts the game's own step toward the surface; no model takeoff.
+assert 'float landAt = ws::drive::wsFaceJumpHold.load() && !gfL.stopHop ? gfL.jumpRestD + 0.08f : 0.f;' in code
+assert 'float du=std::fmin(dl,std::fmax(dg,gfL.jumpRestD-0.05f));' in code and 'gfL.airSource="none_model_off";' in code
+print("PASS: M21w landing above the surface for the game's own landing, no model takeoff direction")
