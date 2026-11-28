@@ -1100,25 +1100,30 @@ bool velReadable(std::uintptr_t p);
 // in A and a small positive float in E (a "grounded" timer) or that flip 0 <-> 1 (a flag). After a face-jump landing the
 // same offsets are logged 0.3 s into our hold (W). Street jumps give the reference set (logged up to 12 jumps).
 namespace lc { std::atomic<std::uintptr_t> machine{0}; std::atomic<std::uint64_t> airMs{0}; std::atomic<bool> haveA{false};
-  std::uint32_t a[0x800+0x400], e[0x800+0x400]; std::mutex mu; std::uint16_t cand[64]; unsigned nc=0; unsigned jumps=0;
+  std::uint32_t a[0x800+0x400], e[0x800+0x400], pre[0x800+0x400]; std::atomic<bool> havePre{false}; std::uint64_t preMs{}; std::mutex mu; std::uint16_t cand[64]; unsigned nc=0; unsigned jumps=0;
   std::atomic<std::uint64_t> holdMs{0}; }
 bool lcSnap(std::uint32_t* out){ auto h=gbHero.load(); auto m=lc::machine.load(); if(!h||!m)return false;
   return msm2::readMemory(h,out,0x2000)&&msm2::readMemory(m,out+0x800,0x1000); }
-void lcAirStart(std::uintptr_t machine){ lc::machine.store(machine); lc::haveA.store(false); lc::airMs.store(GetTickCount64()); }
+void lcAirStart(std::uintptr_t machine){ lc::machine.store(machine); lc::haveA.store(false); lc::havePre.store(false); lc::airMs.store(GetTickCount64()); }
 bool lcTimerLike(std::uint32_t x){ float f; std::memcpy(&f,&x,4); return std::isfinite(f)&&f>1e-4f&&f<3.f; }
 void lcAirEnd(std::uintptr_t to){ if(!lc::haveA.load()||lc::jumps>=12)return; std::lock_guard<std::mutex> g(lc::mu);
-  if(!lcSnap(lc::e))return;
-  ++lc::jumps; unsigned n=0; char t[1200]; int len=0;
+  // M21z-r2 (log 20261129-002638): A vs the transition itself only showed effects of the landing (h+0x970 0xd->0xc,
+  // m+0xcfc 0->1 at every street and face landing). The condition must already be true just BEFORE the transition: A vs
+  // the last snapshot taken <= 20 ms before it. Face jumps (gbHoldA) are logged but do not replace the street set.
+  bool face=gbHoldA.load(); if(!lc::havePre.load())return;
+  std::memcpy(lc::e,lc::pre,sizeof lc::e);
+  ++lc::jumps; unsigned n=0; char t[1200]; int len=0; std::uint16_t local[64]; unsigned keep=0;
   for(unsigned i=0;i<0xC00&&n<40;++i){ std::uint32_t A=lc::a[i],E=lc::e[i]; if(A==E)continue;
     bool timer=A==0&&lcTimerLike(E), flag=(A==0&&E==1)||(A==1&&E==0)||((A^E)==0x1u&&A<0x100&&E<0x100);
     if(!timer&&!flag)continue;
-    if(n<64)lc::cand[n]=std::uint16_t(i);
+    if(keep<64)local[keep++]=std::uint16_t(i);
     ++n;
     float fe; std::memcpy(&fe,&E,4); if(len<int(sizeof t)-40)len+=std::snprintf(t+len,sizeof t-len,"%s%s+0x%x:%08x>%08x(%.3f)",len?";":"",i<0x800?"h":"m",(i<0x800?i:i-0x800)*4,A,E,fe); }
-  lc::nc=n<64?n:64; lc::haveA.store(false);
-  msm2::writeLog("WS_LAND_CHECK event=street_air_end to=0x%llx air_ms=%llu candidates=%u list=%s read_only=1",(unsigned long long)to,(unsigned long long)(GetTickCount64()-lc::airMs.load()),n,len?t:"none"); }
+  if(!face){std::memcpy(lc::cand,local,sizeof local);lc::nc=keep;} lc::haveA.store(false);
+  msm2::writeLog("WS_LAND_CHECK event=%s to=0x%llx air_ms=%llu pre_age_ms=%llu candidates=%u list=%s read_only=1",face ? "face_pre_air_end":"street_pre_air_end",(unsigned long long)to,(unsigned long long)(GetTickCount64()-lc::airMs.load()),(unsigned long long)(GetTickCount64()-lc::preMs),n,len?t:"none"); }
 DWORD WINAPI lcThread(void*){ for(;;){ Sleep(20); if(killed.load())return 0; auto now=GetTickCount64();
     auto am=lc::airMs.load(); if(am&&!lc::haveA.load()&&now-am>=250&&now-am<400&&gHeroClassStateRva.load()==0xB44F0A0){ std::lock_guard<std::mutex> g(lc::mu); if(lcSnap(lc::a))lc::haveA.store(true); }
+    if(am&&lc::haveA.load()&&now-am>=300&&gHeroClassStateRva.load()==0xB44F0A0){ std::lock_guard<std::mutex> g(lc::mu); if(gHeroClassStateRva.load()==0xB44F0A0&&lcSnap(lc::pre)){lc::havePre.store(true);lc::preMs=GetTickCount64();} }
     auto hm=lc::holdMs.load(); if(hm&&now-hm>=300){ lc::holdMs.store(0); std::lock_guard<std::mutex> g(lc::mu); static std::uint32_t w[0xC00]; static unsigned wl=0;
       if(wl<30&&lc::nc&&lcSnap(w)){ ++wl; char t[900]; int len=0; for(unsigned k=0;k<lc::nc;++k){ unsigned i=lc::cand[k]; float f; std::memcpy(&f,&w[i],4);
           if(len<int(sizeof t)-40)len+=std::snprintf(t+len,sizeof t-len,"%s%s+0x%x:%08x(%.3f)",len?";":"",i<0x800?"h":"m",(i<0x800?i:i-0x800)*4,w[i],f); }

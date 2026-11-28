@@ -122,3 +122,4 @@ b67c4359d23ac3367ed7b3a4d292c7a0a2310289 2026-11-28 build+test.sh+package PASS; 
 556596f929f4d3eae28993bca63216198bbfb6f3 2026-11-28 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21x standing jump direction fix, arc to plane; HEAD:source; by Claude Code)
 389f0ed617132d7327d82b08cce6a4e7c769b29f 2026-11-28 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21y land 0.25 m above experiment; HEAD:source; by Claude Code)
 5336636a8a45101d09b352108112c8fbbc1f08b5 2026-11-29 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21z landing-check diff diagnostic; HEAD:source; by Claude Code)
+a3fe199ef136897adebbb57f59acd6a6c48e5df5 2026-11-29 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21z-r2 pre-transition landing diff; HEAD:source; by Claude Code)

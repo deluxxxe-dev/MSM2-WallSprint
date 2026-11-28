@@ -1475,3 +1475,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-28: M21x (Claude Code, analysis/M21T_FACE_JUMP_20261128.md): small-fall landing hypothesis rejected; fixed the mapping fallback that undid the straight standing jump; next test compares sheer facade vs ledge for the landing lag.
 - 2026-11-28: M21y (Claude Code, analysis/M21T_FACE_JUMP_20261128.md): lag depends on the site (stepped facade fast, flat slow); experiment: arc ends 0.25 m above the rest height so the game's own fall finishes the landing.
 - 2026-11-29: M21z (Claude Code, analysis/M21T_FACE_JUMP_20261128.md): 0.25 m experiment rejected (game never moves the hero on a flat face); arc back to plane; read-only landing-check diff diagnostic (street vs face).
+- 2026-11-29: M21z-r2 (Claude Code): landing-check diff now uses the snapshot just before the game's air end (conditions, not effects).
