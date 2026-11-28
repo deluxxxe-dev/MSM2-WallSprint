@@ -224,7 +224,7 @@ print("PASS: M21w landing above the surface for the game's own landing, no model
 
 # M21z: read-only landing-check diff diagnostic (hero 0x2000 + machine 0x1000 at air start+0.25 s vs air end; face hold +0.3 s).
 lc=code.split('namespace lc {',1)[1].split('DWORD WINAPI gbChainFind',1)[0]
-assert 'writeMemory' not in lc and lc.count('read_only=1')==5 and 'lcAirEnd(nr)' in code and 'lc::holdMs.store(GetTickCount64())' in code
+assert 'writeMemory' not in lc and lc.count('read_only=1')==6 and 'lcAirEnd(nr)' in code and 'lc::holdMs.store(GetTickCount64())' in code
 print("PASS: M21z landing-check diff diagnostic is read-only")
 
 # M21z-r4: one-time read-only capture of the air state vtable (0x12E0CD0) slots and bodies.
@@ -247,3 +247,7 @@ print("PASS: M21ac component snapshot for standing vs running face jumps (log on
 # M21ad: per-tick changed-word log of the gravity component during the game's air state (read-only).
 assert 'WS_LAND_CHECK event=xd since_air_ms=%lld since_land_ms=%lld' in code and 'if(o==0x44C||o==0x450||o==0x454)continue;' in code and 'xl<1500' in code
 print("PASS: M21ad component change log during the air state (log only)")
+
+# M21ae: hero/machine snapshots at fixed air times for the game's own air velocity (read-only).
+assert 'WS_LAND_CHECK event=hm since_air_ms=%lld since_land_ms=%lld' in code and 'static const unsigned at[3]={450,650,990};' in code
+print("PASS: M21ae hero/machine air-time snapshots (log only)")

@@ -1155,6 +1155,19 @@ DWORD WINAPI lcThread(void*){ for(;;){ Sleep(20); if(killed.load())return 0; aut
             (long long)(now-am),landMs,unsigned(air),unsigned(!li),nchg,t); }
         std::memcpy(lw,cw,sizeof cw); li=true; }
       wasAir=air; }
+    // M21ae (log 20261129-015453): in every face hold X+0x2BC..+0x2C4 (copies at +0x2C8/+0x2D4) is a world-down vector that
+    // grows linearly from -0.10 to -0.33 over ~0.7 s and drops to 0 at the air end, like a per-frame displacement of a fall
+    // under world gravity, while our writes keep the hero still. The air end came early only at low spots (A-2, 0.9 m above
+    // the sidewalk: 166-179 ms) and at the ~1.3 s timeout on high spots (A-1, A-3, most B). To find the game's own air
+    // velocity, dump hero+0x0..0x1FFF and machine+0x0..0xFFF at 450, 650 and 990 ms after every air start (street jumps too).
+    { static std::uint64_t doneAm[3]{}; static const unsigned at[3]={450,650,990}; static unsigned dl=0;
+      for(int k=0;k<3;++k) if(am&&doneAm[k]!=am&&now>=am+at[k]&&now<am+at[k]+200){ doneAm[k]=am;
+        static std::uint32_t sw[0xC00]; bool okh=false; { std::lock_guard<std::mutex> g(lc::mu); okh=lcSnap(sw); }
+        if(okh&&dl<400){ auto lm=lc::x000Ms.load(); long long landMs=(lm&&lm>=am)?(long long)(now-lm):-1LL;
+          for(int part=0;part<8&&dl<400;++part){ ++dl; static char t[400*9+1]; int len=0; int b=part*384, e=std::min(b+384,0xC00);
+            for(int i=b;i<e;++i)len+=std::snprintf(t+len,sizeof t-len,"%s%08x",i>b?",":"",sw[i]);
+            msm2::writeLog("WS_LAND_CHECK event=hm since_air_ms=%lld since_land_ms=%lld state=0x%llx part=%d first=%s+0x%x words=%s read_only=1",
+              (long long)(now-am),landMs,(unsigned long long)gHeroClassStateRva.load(),part,b<0x800?"h":"m",(b<0x800?b:b-0x800)*4,t); } } } }
     // M21ac (log 20261129-013518): in running-up jumps X+0x438 was 0 (our writes held) in 3 of 5 and the game still stayed
     // airborne 721-734 ms, so another condition blocks B. Capture the whole component X+0x000..+0x5EF at hold +60 ms
     // (standing vs running jumps are compared offline), once per hold.
