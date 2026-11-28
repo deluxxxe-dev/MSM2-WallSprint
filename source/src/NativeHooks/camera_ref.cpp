@@ -1149,6 +1149,13 @@ DWORD WINAPI lcThread(void*){ for(;;){ Sleep(20); if(killed.load())return 0; aut
         if(xi&&inWin&&std::memcmp(cm,lm,sizeof cm)!=0&&xl<900){++xl; char t[24*9+1]{}; int len=0; for(int i=0;i<24;++i)len+=std::snprintf(t+len,sizeof t-len,"%s%08x",i?",":"",cx[i]);
           msm2::writeLog("WS_LAND_CHECK event=x420 since_air_ms=%lld state=0x%llx hold=%u words=%s read_only=1",am?(long long)(now-am):-1LL,(unsigned long long)gHeroClassStateRva.load(),unsigned(gbHoldA.load()),t);}
         std::memcpy(lx,cx,sizeof cx);xi=true;} }
+    // M21ab: X+0x438 is recomputed every frame in running jumps (writes of 0 did not stick; it decays 0.064 -> 0.013 and
+    // the game lands at ~0.012). Find its source: X+0x300..+0x43F at hold +0.10 s and +0.35 s.
+    { auto hs=lc::holdMs.load(); static std::uint64_t doneA=0,doneB=0; auto g=gbFound.load();
+      if(hs&&g>0x5F4){ for(int k=0;k<2;++k){ std::uint64_t at=hs+(k?350:100); std::uint64_t& done=k?doneB:doneA;
+          if(done!=hs&&now>=at){ done=hs; static unsigned dl=0; if(dl++<24){ std::uint32_t xw[0x50]; if(msm2::readMemory(g-0x5F4+0x300,xw,sizeof xw)){
+              char t[0x50*9+1]{}; int len=0; for(int i=0;i<0x50;++i)len+=std::snprintf(t+len,sizeof t-len,"%s%08x",i?",":"",xw[i]);
+              msm2::writeLog("WS_LAND_CHECK event=x300 hold_ms=%d state=0x%llx words=%s read_only=1",k?350:100,(unsigned long long)gHeroClassStateRva.load(),t);} } } } } }
     auto hm=lc::holdMs.load(); if(hm&&now-hm>=300){ lc::holdMs.store(0); std::lock_guard<std::mutex> g(lc::mu); static std::uint32_t w[0xC00]; static unsigned wl=0;
       if(wl<30&&lc::nc&&lcSnap(w)){ ++wl; char t[900]; int len=0; for(unsigned k=0;k<lc::nc;++k){ unsigned i=lc::cand[k]; float f; std::memcpy(&f,&w[i],4);
           if(len<int(sizeof t)-40)len+=std::snprintf(t+len,sizeof t-len,"%s%s+0x%x:%08x(%.3f)",len?";":"",i<0x800?"h":"m",(i<0x800?i:i-0x800)*4,w[i],f); }
@@ -2083,7 +2090,7 @@ void stateReport(const char* reason){
       reason,row,j[0],j[1],j[2],j[3],w[0],w[1],w[2],w[3],nj[0],nj[1],nj[2],nj[3],nw[0],nw[1],nw[2],nw[3]);
   }
 }
-struct GfLocal { CameraFaceMap cameraMap{};bool cameraLiveUsed{};int cameraCandidate{-1};const char* cameraReason{"not_checked"};double cameraCheckTime{-1}; FaceAirFacing airFacing{};FaceWalkoff walkoff{};FaceLocomotionDown locoDown{};FaceContactProbe probe{};double fallIgnoreUntil{}; FaceTakeoffHistory takeoffHistory{}; FaceFacingProbe facing{}; unsigned stopTraceId{};StopTraceBudget stopTrace{};bool stopReleaseBlocked{};StopDeceleration stopDecel{};StopRotation stopRotation{};StopEpisode stopEpisode{};bool stopHop{};StopHopArc hopArc{};StopStandProbe standProbe{}; double stopHopTakeoff{}; HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; bool landHold{}; float landP[3]{}; double landHoldStart{}, landAirEnd{}; float jumpRestD{}; unsigned laFrames{},laWrites{},laFlagBlocked{},laHeightBlocked{}; float laMaxOld{},laLastH{},laLast43c{}; std::uint8_t laLastFlag{}; } gfL;
+struct GfLocal { CameraFaceMap cameraMap{};bool cameraLiveUsed{};int cameraCandidate{-1};const char* cameraReason{"not_checked"};double cameraCheckTime{-1}; FaceAirFacing airFacing{};FaceWalkoff walkoff{};FaceLocomotionDown locoDown{};FaceContactProbe probe{};double fallIgnoreUntil{}; FaceTakeoffHistory takeoffHistory{}; FaceFacingProbe facing{}; unsigned stopTraceId{};StopTraceBudget stopTrace{};bool stopReleaseBlocked{};StopDeceleration stopDecel{};StopRotation stopRotation{};StopEpisode stopEpisode{};bool stopHop{};StopHopArc hopArc{};StopStandProbe standProbe{}; double stopHopTakeoff{}; HeroFrameClock frameClock{}; FaceAirMapping airMapping{}; FaceJumpTrace jumpTrace{}; FaceStopControl stop{}; FacePlaneFollow follow{}; FaceReapproach reapproach{}; FacePlaneHistory planeHistory{}; bool stopPushFrame{}; FaceFallGuard fallGuard{}; std::int64_t callLast{}; FaceWalkModel walk{}; FaceWalkFrame walkFrame{}; const char* airSource{"none"}; unsigned gen{~0u}; bool init{}; std::int64_t last{}; float pLast[3]{}, vy{}, vg[3]{}, vh[2]{}, t{}, pinT{}, pushT{}, faceJumpT{-1.f}, dash[3]{}, faceAirT{}, lastCorr[3]{}, frameDt{}, moveDir[3]{}, moveDirT{9.f}, moveVel[3]{}, airVel[3]{}; std::int64_t moveQpc{}; bool faceAir{}; unsigned holdLogs{}, dashSeen{}, zipSeen{}; bool left{}, model{}, launched{}, pinned{}; unsigned frames{}, pinPresses{}; std::int64_t stepQpc{}; float vyEma{}; bool landHold{}; float landP[3]{}; double landHoldStart{}, landAirEnd{}; float jumpRestD{}; bool airNoSteer{}; unsigned laFrames{},laWrites{},laFlagBlocked{},laHeightBlocked{}; float laMaxOld{},laLastH{},laLast43c{}; std::uint8_t laLastFlag{}; } gfL;
 void gfLogPlane(const char* event) {
   msm2::writeLog("WS_GRAVITY_FORCE_PLANE event=%s point=%.3f,%.3f,%.3f source=%s",
     event, gfP0[0].load(), gfP0[1].load(), gfP0[2].load(), gfPlaneFromWall.load() ? "wall_point_0x338" : "ws_position_minus_0.5n");
@@ -2584,6 +2591,9 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     // M21w (logs 1/2 of 20261128 14:31-14:34, ids 9-10): a takeoff from standing used the learned stick mapping ("model")
     // and flew toward the ground while the stick pointed to the roof. Without a recent walk the jump goes straight out.
     if(ws::drive::wsFaceJumpHold.load()&&gfL.airSource[0]=='m'){for(float& c:gfL.airVel)c=0.f;gfL.airSource="none_model_off";}
+    // M21ab (log 20261129-012930): those straight jumps still went 3.3 m toward the ground: the air steering started a
+    // 5 m/s velocity in the (wrong) learned stick direction from zero. A jump without a walk velocity is not steered.
+    gfL.airNoSteer=ws::drive::wsFaceJumpHold.load()&&gfL.airSource[0]=='n';
     { const float* tp=mvA ? mvA : p; float d=(tp[0]-p0[0])*n0[0]+(tp[1]-p0[1])*n0[1]+(tp[2]-p0[2])*n0[2]; gfL.jumpRestD=std::fmax(-0.1f,std::fmin(0.1f,d)); }
     gfL.takeoffHistory.freeze(gfL.airMapping,gfL.walk,qpcSec(now),gfL.airSource,wgiLx.load(),wgiLy.load(),n0,gfL.airVel);
     // M21x (log 2 of 14:49-14:50): the M21w "no model takeoff" was undone here, the mapping refilled the velocity and the
@@ -2632,7 +2642,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     float airDt=gfL.stopHop ? std::fmax(0.f,std::fmin(dt,0.35f-gfL.faceAirT)) : dt;
     gfL.faceAirT += dt;
     float st[3]{}; bool mapped=!gfL.stopHop && faceAirDir(n0, st);
-    if (mapped && !takeoffFrame) { gfL.airSource=gfL.cameraLiveUsed ? "camera_live":"model"; steerFaceVelocity(gfL.airVel,st,dt,n0); }
+    if (mapped && !takeoffFrame && !gfL.airNoSteer) { gfL.airSource=gfL.cameraLiveUsed ? "camera_live":"model"; steerFaceVelocity(gfL.airVel,st,dt,n0); }
     faceZipImpulse(n0,now);
     faceAirStep(q,gfL.pLast,gfL.vg,n0,gfL.airVel,gfL.dash,gfL.stopHop ? gfL.hopArc.gravity : kGfG,airDt);
     if(gfL.stopHop)gfL.stopDecel.integrate(q,gfL.pLast,double(gfL.faceAirT-dt),airDt);

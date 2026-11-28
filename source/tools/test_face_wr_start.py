@@ -224,7 +224,7 @@ print("PASS: M21w landing above the surface for the game's own landing, no model
 
 # M21z: read-only landing-check diff diagnostic (hero 0x2000 + machine 0x1000 at air start+0.25 s vs air end; face hold +0.3 s).
 lc=code.split('namespace lc {',1)[1].split('DWORD WINAPI gbChainFind',1)[0]
-assert 'writeMemory' not in lc and lc.count('read_only=1')==4 and 'lcAirEnd(nr)' in code and 'lc::holdMs.store(GetTickCount64())' in code
+assert 'writeMemory' not in lc and lc.count('read_only=1')==5 and 'lcAirEnd(nr)' in code and 'lc::holdMs.store(GetTickCount64())' in code
 print("PASS: M21z landing-check diff diagnostic is read-only")
 
 # M21z-r4: one-time read-only capture of the air state vtable (0x12E0CD0) slots and bodies.
@@ -235,3 +235,7 @@ print("PASS: M21z-r4 air state vtable capture (log only)")
 assert 'if(ws::drive::wsFaceLandAssist.load()&&gbAddr>0x5F4){' in code and 'fl==0&&hgt<0.05f' in code and '(mb.Protect&0xff)==PAGE_READWRITE' in code
 assert ini.getint('WallSprint','WALLSPRINT_WS_FACE_LAND_ASSIST')==1 and 'L"WALLSPRINT_WS_FACE_LAND_ASSIST",0,' in tel
 print("PASS: M21aa face landing assist is bounded to the landing hold")
+
+# M21ab: no air steering for a face jump that took off without a walk velocity.
+assert 'if (mapped && !takeoffFrame && !gfL.airNoSteer)' in code and "gfL.airNoSteer=ws::drive::wsFaceJumpHold.load()&&gfL.airSource[0]=='n';" in code
+print("PASS: M21ab no steering for straight face jumps")
