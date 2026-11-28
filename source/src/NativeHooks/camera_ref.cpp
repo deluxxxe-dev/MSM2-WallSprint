@@ -1124,6 +1124,15 @@ void lcAirEnd(std::uintptr_t to){ if(!lc::haveA.load()||lc::jumps>=12)return; st
 DWORD WINAPI lcThread(void*){ for(;;){ Sleep(20); if(killed.load())return 0; auto now=GetTickCount64();
     auto am=lc::airMs.load(); if(am&&!lc::haveA.load()&&now-am>=250&&now-am<400&&gHeroClassStateRva.load()==0xB44F0A0){ std::lock_guard<std::mutex> g(lc::mu); if(lcSnap(lc::a))lc::haveA.store(true); }
     if(am&&lc::haveA.load()&&now-am>=300&&gHeroClassStateRva.load()==0xB44F0A0){ std::lock_guard<std::mutex> g(lc::mu); if(gHeroClassStateRva.load()==0xB44F0A0&&lcSnap(lc::pre)){lc::havePre.store(true);lc::preMs=GetTickCount64();} }
+    // M21z-r3 (log 20261129-003829): the only pre-transition candidate is h+0x970 (0xd in the air -> 0xc <= 16 ms before
+    // every street landing), but on the face it is already 0xc 0.3 s into our hold and the game lands ~0.2 s later
+    // (face air 1.09-1.11 s vs street 0.72-0.74 s). Log every change of h+0x960..+0x97f with the time since air start.
+    { static std::uint32_t last[8]{}; static bool init=false; auto h=gbHero.load(); std::uint32_t cur[8];
+      if(h&&msm2::readMemory(h+0x960,cur,sizeof cur)){ static unsigned logs=0;
+        if(init&&std::memcmp(cur,last,sizeof cur)!=0&&logs<300){++logs;
+          msm2::writeLog("WS_LAND_CHECK event=h960 since_air_ms=%lld state=0x%llx hold=%u words=%08x,%08x,%08x,%08x,%08x,%08x,%08x,%08x read_only=1",
+            am?(long long)(now-am):-1LL,(unsigned long long)gHeroClassStateRva.load(),unsigned(gbHoldA.load()),cur[0],cur[1],cur[2],cur[3],cur[4],cur[5],cur[6],cur[7]);}
+        std::memcpy(last,cur,sizeof cur);init=true;} }
     auto hm=lc::holdMs.load(); if(hm&&now-hm>=300){ lc::holdMs.store(0); std::lock_guard<std::mutex> g(lc::mu); static std::uint32_t w[0xC00]; static unsigned wl=0;
       if(wl<30&&lc::nc&&lcSnap(w)){ ++wl; char t[900]; int len=0; for(unsigned k=0;k<lc::nc;++k){ unsigned i=lc::cand[k]; float f; std::memcpy(&f,&w[i],4);
           if(len<int(sizeof t)-40)len+=std::snprintf(t+len,sizeof t-len,"%s%s+0x%x:%08x(%.3f)",len?";":"",i<0x800?"h":"m",(i<0x800?i:i-0x800)*4,w[i],f); }

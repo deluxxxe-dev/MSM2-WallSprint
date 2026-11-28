@@ -1476,3 +1476,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-28: M21y (Claude Code, analysis/M21T_FACE_JUMP_20261128.md): lag depends on the site (stepped facade fast, flat slow); experiment: arc ends 0.25 m above the rest height so the game's own fall finishes the landing.
 - 2026-11-29: M21z (Claude Code, analysis/M21T_FACE_JUMP_20261128.md): 0.25 m experiment rejected (game never moves the hero on a flat face); arc back to plane; read-only landing-check diff diagnostic (street vs face).
 - 2026-11-29: M21z-r2 (Claude Code): landing-check diff now uses the snapshot just before the game's air end (conditions, not effects).
+- 2026-11-29: M21z-r3 (Claude Code): face air ends ~1.1 s after its start (street ~0.73 s), h+0x970 flips before landing on the street but is already set early on the face; logging h+0x960..0x97f changes with timing.
