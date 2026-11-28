@@ -3693,14 +3693,17 @@ void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
       // M21z-r6 (log 20261129-005553): descriptor qwords 0/3 are short constructor-like stubs; qword 12 (RVA 0x5461F08 for the
       // air state) points into read-only data: read it as the state class vtable and capture each slot (fixed 0x600 bytes
       // from the entry, the pdata entries were split fragments).
-      if (q[12] < image || q[12] - image + 40 * 8 > imageSize) continue;
-      std::uintptr_t vt[40]{}; if (!readMemory(q[12], vt, sizeof vt)) continue;
-      { char vl[40 * 12 + 1]{}; int vlen = 0;
-        for (int i = 0; i < 40; ++i) { std::uint64_t r = vt[i] >= image && vt[i] - image < imageSize ? vt[i] - image : 0; vlen += std::snprintf(vl + vlen, sizeof vl - vlen, "%s%llx", i ? "," : "", (unsigned long long)r); }
+      // M21z-r7 (log 20261129-010104): q[12]+31*8 holds the RTTI locator (0x8FEA6B8) and q[12]+32*8 (RVA 0x5462000) starts
+      // the class vtable (slot 0 init, slots 1-2 -> 0x29BD400, slot 6 = deleting destructor of a 0x498-byte object).
+      // Capture vtable slots 7..86 (0x400 bytes each); slots 0-6 were captured in r6.
+      if (q[12] < image || q[12] - image + 120 * 8 > imageSize) continue;
+      std::uintptr_t vt[80]{}; if (!readMemory(q[12] + (32 + 7) * 8, vt, sizeof vt)) continue;
+      { char vl[80 * 12 + 1]{}; int vlen = 0;
+        for (int i = 0; i < 80; ++i) { std::uint64_t r = vt[i] >= image && vt[i] - image < imageSize ? vt[i] - image : 0; vlen += std::snprintf(vl + vlen, sizeof vl - vlen, "%s%llx", i ? "," : "", (unsigned long long)r); }
         writeLog("WS_AIR_VT class_vt=0x%llx slots_rva=%s read_only=1", (unsigned long long)(q[12] - image), vl); }
-      for (int i = 0; i < 40; ++i) { if (vt[i] < image || vt[i] - image + 0x600 > imageSize) continue;
-        std::uintptr_t b = vt[i], e = b + 0x600;
-        writeLog("WS_AIR_CODE slot=%d rva=0x%llx size=1536", i, (unsigned long long)(b - image));
+      for (int i = 0; i < 80; ++i) { if (vt[i] < image || vt[i] - image + 0x400 > imageSize) continue;
+        std::uintptr_t b = vt[i], e = b + 0x400;
+        writeLog("WS_AIR_CODE vslot=%d rva=0x%llx size=1024", i + 7, (unsigned long long)(b - image));
         for (std::uintptr_t a2 = b; a2 < e; a2 += 64) { unsigned char buf[64]{}; if (!readMemory(a2, buf, 64)) break;
           char hex[129]{}; for (std::size_t k = 0; k < 64; ++k) std::snprintf(hex + 2 * k, 3, "%02x", buf[k]);
           writeLog("WS_AIR_CODE_BYTES begin=0x%llx off=0x%llx hex=%s", (unsigned long long)(b - image), (unsigned long long)(a2 - b), hex); } } } }
