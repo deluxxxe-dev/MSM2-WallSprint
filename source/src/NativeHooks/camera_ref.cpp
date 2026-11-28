@@ -664,7 +664,7 @@ std::atomic<std::uint64_t> wgiBTaps{0},wgiBDownMs{0};std::atomic<bool> wgiBDown{
 std::atomic<bool> wgiLbDown{false};constexpr std::uint64_t kBTapMs=300;
 // M21l: game-only A press (the MOD's own A reading happens before it) and the hero machine's current state.
 std::atomic<std::uint64_t> gcInjectUntilMs{0};std::atomic<std::uintptr_t> gHeroStateRva{0},gDetourStateRva{0};std::atomic<std::uint64_t> gHeroStateMs{0};
-std::atomic<std::uint64_t> geEntryJumpUntilMs{0},geRtMaskUntilMs{0};std::atomic<unsigned> geEntryJumpLogs{0},gcCrawlWrLogs{0};
+std::atomic<std::uint64_t> geEntryJumpUntilMs{0},geRtMaskUntilMs{0};std::atomic<std::uintptr_t> gHeroMachine{0};std::atomic<unsigned> geEntryJumpLogs{0},gcCrawlWrLogs{0};
 WgiVibration wgiLastVib{-1, -1, -1, -1};
 // M8j (2026-11-07): WS charge jump, controller only. M8i VERIFIED the game reads the pad through WGI
 // GetCurrentReading (~77/s, A seen with 0 ms delay). While WS is active an A press is hidden from the game; on release
@@ -947,6 +947,10 @@ struct VelStat { std::uint32_t hits{}; float ex[3]{}; std::uint8_t trials{}; flo
 std::unordered_map<std::uint64_t, VelStat> velStats;
 struct VelRegion { std::uintptr_t addr; std::uint32_t size; std::uint64_t key; };
 std::vector<VelRegion> velRegions; std::uint64_t velBuilt{}, velLastLog{}, velSamples{}; unsigned velLogs{};
+// M21o read-only diagnostic (log 20261128-192854): after a load the hero gravity block is known only after the first WR
+// exit (`WS_SET_GRAVITY_HERO_ID`), so the first run into a wall after loading takes the vanilla WR (old WS, floating).
+// When the block is identified, look once per hero for pointers to it (or to the object holding it, up to 0x800 before)
+// from the hero, its Transform and its traversal machine, two levels deep, to find a fixed chain for an early lookup.
 bool velReadable(std::uintptr_t p) {
   if (p < 0x10000 || p > 0x7FFFFFFFFFFFull || (p & 7)) return false;
   MEMORY_BASIC_INFORMATION m{}; return VirtualQuery(reinterpret_cast<void*>(p), &m, sizeof m) && m.State == MEM_COMMIT && m.Type == MEM_PRIVATE &&
@@ -1080,6 +1084,24 @@ bool gbChain(std::uintptr_t b, std::uintptr_t& g) { std::uintptr_t p1 = 0, p2 = 
   if (!msm2::readMemory(b + 0xF0, &p1, 8) || !velReadable(p1) || !msm2::readMemory(p1 + 0xF8, &p2, 8) || !velReadable(p2)) return false;
   g = p2 + 0x5F4; float f[9]; return msm2::readMemory(g, f, sizeof f) && gbIsVanilla(f); }
 std::atomic<std::uintptr_t> gbHero{0}, gbTransform{0}, gbFound{0}; std::atomic<bool> gbThread{false};
+bool velReadable(std::uintptr_t p);
+DWORD WINAPI gbChainFind(void* arg) {
+  std::uintptr_t block = reinterpret_cast<std::uintptr_t>(arg);
+  std::uintptr_t roots[3] = {gbHero.load(), gbTransform.load(), gHeroMachine.load()}; const char* names[3] = {"hero", "transform", "machine"};
+  static std::uintptr_t q1[0x400], q2[0x100]; unsigned hits = 0, reads = 0;
+  for (int r = 0; r < 3 && hits < 30 && !killed.load(); ++r) { if (!roots[r] || !msm2::readMemory(roots[r], q1, sizeof q1)) continue;
+    for (unsigned i = 0; i < 0x400 && hits < 30; ++i) {
+      auto v = q1[i];
+      if (v <= block && block - v <= 0x800) { ++hits; msm2::writeLog("WS_GRAVITY_CHAIN root=%s off1=0x%x delta=0x%llx level=1 read_only=1", names[r], i * 8, (unsigned long long)(block - v)); continue; }
+      if (!velReadable(v)) continue;
+      if ((++reads & 63) == 0) Sleep(1);
+      if (!msm2::readMemory(v, q2, sizeof q2)) continue;
+      for (unsigned j = 0; j < 0x100 && hits < 30; ++j) { auto u = q2[j];
+        if (u <= block && block - u <= 0x800) { ++hits; msm2::writeLog("WS_GRAVITY_CHAIN root=%s off1=0x%x off2=0x%x delta=0x%llx level=2 read_only=1", names[r], i * 8, j * 8, (unsigned long long)(block - u)); } } } }
+  msm2::writeLog("WS_GRAVITY_CHAIN event=done block=0x%llx hits=%u reads=%u roots=0x%llx,0x%llx,0x%llx read_only=1", (unsigned long long)block, hits, reads,
+    (unsigned long long)roots[0], (unsigned long long)roots[1], (unsigned long long)roots[2]);
+  return 0;
+}
 // M10e (2026-11-07): observe the game's SetGravityVector (RVA 0x35132A0, no .pdata; accepted 79-byte identity
 // sha256 7aaa6fef...31aa, analysis/MOTION_GRAVITY_OWNER_RESOLUTION_20261031.md). Pass-through: the original runs first
 // with untouched registers; afterwards RCX (the gravity block) and the 9 floats it now holds are recorded. Distinct
@@ -2940,7 +2962,7 @@ std::uint64_t wrRequestDetour(std::uintptr_t machine, std::uintptr_t rdx, std::u
   // M21m: only the hero's own machine (owner = hero): another machine of the same class reset the crawl timer (log 173843).
   std::uintptr_t ownerP = *reinterpret_cast<const std::uintptr_t*>(machine + 0x10);
   bool isHero = heroMachine && ownerP && ownerP == gbHero.load();
-  if (isHero) gDetourStateRva.store(stRva);
+  if (isHero) { gDetourStateRva.store(stRva); gHeroMachine.store(machine); }
   bool crawlFamily = stRva == 0xB465FB0 || stRva == 0xB463E40 || stRva == 0xB463C10 || stRva == 0xB4635E0 || stRva == 0xB465AB0 || stRva == 0xB4633E0;
   // M21m (log 20261128-173843 08:41:00.7-01.16, owner "S from the crawl floats"): letting the game's WR start from the
   // crawl gave the old WR-based WS (upright, off the wall). In the crawl family a WR request in a hold is refused and the
@@ -3104,7 +3126,9 @@ std::uintptr_t sgDetour(std::uintptr_t rcx, std::uintptr_t rdx, std::uintptr_t r
   // (|y| < 0.9; only a character on a wall/ceiling, i.e. the crawling hero) becomes the hero block for the session.
   if (rcx && !doSub) { float in[3]{}; if (msm2::readMemory(rdx, in, sizeof in) && std::isfinite(in[1]) && std::fabs(in[1]) < 0.9f) {
       if (!sgHeroByUp.load()) { sgHeroByUp.store(rcx); sgHeroBlock.store(rcx); gbFound.store(rcx);
-        msm2::writeLog("WS_SET_GRAVITY_HERO_ID block=0x%llx game_up=%.3f,%.3f,%.3f (first non-vertical up)", (unsigned long long)rcx, in[0], in[1], in[2]); }
+        msm2::writeLog("WS_SET_GRAVITY_HERO_ID block=0x%llx game_up=%.3f,%.3f,%.3f (first non-vertical up)", (unsigned long long)rcx, in[0], in[1], in[2]);
+        static std::uintptr_t chainHero = 0; if (chainHero != gbHero.load()) { chainHero = gbHero.load();
+          if (HANDLE h = CreateThread(nullptr, 0, gbChainFind, reinterpret_cast<void*>(rcx), 0, nullptr)) { SetThreadPriority(h, THREAD_PRIORITY_LOWEST); CloseHandle(h); } } }
       else if (rcx != sgHeroByUp.load() && sgOtherLogs.fetch_add(1) < 20) msm2::writeLog("WS_SET_GRAVITY_OTHER_NONVERTICAL block=0x%llx up=%.3f,%.3f,%.3f", (unsigned long long)rcx, in[0], in[1], in[2]); } }
   if (rcx && rcx == sgHeroBlock.load(std::memory_order_relaxed) && sgHeroLogs.load() < 80) { float in[3]{}; if (msm2::readMemory(rdx, in, sizeof in)) {
       static float last[3] = {9, 9, 9}; if (std::fabs(in[0] - last[0]) + std::fabs(in[1] - last[1]) + std::fabs(in[2] - last[2]) > 0.02f || doSub) { last[0] = in[0]; last[1] = in[1]; last[2] = in[2];

@@ -174,3 +174,9 @@ wgi=code.split('HRESULT STDMETHODCALLTYPE wgiReadDetour(',1)[1].split('\nHRESULT
 assert wgi.index('r->rt = 0;') > wgi.index('wgiRt.store(r->rt')
 assert 'geRtMaskUntilMs.store(GetTickCount64() + 1200);' in code
 print("PASS: M21n standing idle entry, swing ended by a short RT release, crawl auto-A off")
+
+# M21o: read-only chain scan once per hero when the setter identifies the hero gravity block.
+assert 'DWORD WINAPI gbChainFind(void* arg) {' in code and code.count('CreateThread(nullptr, 0, gbChainFind,')==1
+fc=code.split('DWORD WINAPI gbChainFind(void* arg) {',1)[1].split('\nbool velReadable',1)[0]
+assert 'writeMemory' not in fc and 'hits < 30' in fc and 'read_only=1' in fc
+print("PASS: M21o read-only gravity block chain scan at hero identification")

@@ -15,6 +15,9 @@ Owner requirements:
 - WS reaching the edge of a face, without a jump/fall, wraps naturally around onto the adjacent face (convex corner);
   ground -> wall is the concave version of the same transfer. Wall -> face at another angle is the same problem, so the
   ground entry may be implemented together with corner transfer.
+- Owner 2026-11-28 (reference behaviour for the corner wrap): the successful M21n ground -> wall entry (video
+  2-Success, log 20261128-192854 entry 2: run at the wall, gravity and body turn onto the face and the run continues
+  standing, no WR pose, no float, no hop) is the target look for every face switch, including wrapping round a corner.
 - Stop from WS = the game's own sprint stop (no crawl, no hop). The changed gravity is kept in the air until a new WS or B
   (falls go along it).
 
