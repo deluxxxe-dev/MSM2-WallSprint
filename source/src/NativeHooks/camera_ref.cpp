@@ -1101,7 +1101,7 @@ bool velReadable(std::uintptr_t p);
 // same offsets are logged 0.3 s into our hold (W). Street jumps give the reference set (logged up to 12 jumps).
 namespace lc { std::atomic<std::uintptr_t> machine{0}; std::atomic<std::uint64_t> airMs{0}; std::atomic<bool> haveA{false};
   std::uint32_t a[0x800+0x400], e[0x800+0x400], pre[0x800+0x400]; std::atomic<bool> havePre{false}; std::uint64_t preMs{}; std::mutex mu; std::uint16_t cand[64]; unsigned nc=0; unsigned jumps=0;
-  std::atomic<std::uint64_t> holdMs{0}; }
+  std::atomic<std::uint64_t> holdMs{0}, x000Ms{0}; }
 bool lcSnap(std::uint32_t* out){ auto h=gbHero.load(); auto m=lc::machine.load(); if(!h||!m)return false;
   return msm2::readMemory(h,out,0x2000)&&msm2::readMemory(m,out+0x800,0x1000); }
 void lcAirStart(std::uintptr_t machine){ lc::machine.store(machine); lc::haveA.store(false); lc::havePre.store(false); lc::airMs.store(GetTickCount64()); }
@@ -1149,13 +1149,15 @@ DWORD WINAPI lcThread(void*){ for(;;){ Sleep(20); if(killed.load())return 0; aut
         if(xi&&inWin&&std::memcmp(cm,lm,sizeof cm)!=0&&xl<900){++xl; char t[24*9+1]{}; int len=0; for(int i=0;i<24;++i)len+=std::snprintf(t+len,sizeof t-len,"%s%08x",i?",":"",cx[i]);
           msm2::writeLog("WS_LAND_CHECK event=x420 since_air_ms=%lld state=0x%llx hold=%u words=%s read_only=1",am?(long long)(now-am):-1LL,(unsigned long long)gHeroClassStateRva.load(),unsigned(gbHoldA.load()),t);}
         std::memcpy(lx,cx,sizeof cx);xi=true;} }
-    // M21ab: X+0x438 is recomputed every frame in running jumps (writes of 0 did not stick; it decays 0.064 -> 0.013 and
-    // the game lands at ~0.012). Find its source: X+0x300..+0x43F at hold +0.10 s and +0.35 s.
-    { auto hs=lc::holdMs.load(); static std::uint64_t doneA=0,doneB=0; auto g=gbFound.load();
-      if(hs&&g>0x5F4){ for(int k=0;k<2;++k){ std::uint64_t at=hs+(k?350:100); std::uint64_t& done=k?doneB:doneA;
-          if(done!=hs&&now>=at){ done=hs; static unsigned dl=0; if(dl++<24){ std::uint32_t xw[0x50]; if(msm2::readMemory(g-0x5F4+0x300,xw,sizeof xw)){
-              char t[0x50*9+1]{}; int len=0; for(int i=0;i<0x50;++i)len+=std::snprintf(t+len,sizeof t-len,"%s%08x",i?",":"",xw[i]);
-              msm2::writeLog("WS_LAND_CHECK event=x300 hold_ms=%d state=0x%llx words=%s read_only=1",k?350:100,(unsigned long long)gHeroClassStateRva.load(),t);} } } } } }
+    // M21ac (log 20261129-013518): in running-up jumps X+0x438 was 0 (our writes held) in 3 of 5 and the game still stayed
+    // airborne 721-734 ms, so another condition blocks B. Capture the whole component X+0x000..+0x5EF at hold +60 ms
+    // (standing vs running jumps are compared offline), once per hold.
+    { auto hs=lc::x000Ms.load(); static std::uint64_t done60=0, done400=0; auto g=gbFound.load(); unsigned at=0;
+      if(hs&&g>0x5F4&&done60!=hs&&now>=hs+60){ done60=hs; at=60; }
+      else if(hs&&g>0x5F4&&done400!=hs&&now>=hs+400&&now<hs+800&&gHeroClassStateRva.load()==0xB44F0A0){ done400=hs; at=400; }
+      if(at){ static unsigned dl=0; if(dl++<32){ static std::uint32_t xw[0x17C];
+          if(msm2::readMemory(g-0x5F4,xw,sizeof xw)){ static char t[0x17C*9+1]; int len=0; for(int i=0;i<0x17C;++i)len+=std::snprintf(t+len,sizeof t-len,"%s%08x",i?",":"",xw[i]);
+            msm2::writeLog("WS_LAND_CHECK event=x000 hold_ms=%u state=0x%llx stick=%.2f,%.2f words=%s read_only=1",at,(unsigned long long)gHeroClassStateRva.load(),wgiLx.load(),wgiLy.load(),t);} } } }
     auto hm=lc::holdMs.load(); if(hm&&now-hm>=300){ lc::holdMs.store(0); std::lock_guard<std::mutex> g(lc::mu); static std::uint32_t w[0xC00]; static unsigned wl=0;
       if(wl<30&&lc::nc&&lcSnap(w)){ ++wl; char t[900]; int len=0; for(unsigned k=0;k<lc::nc;++k){ unsigned i=lc::cand[k]; float f; std::memcpy(&f,&w[i],4);
           if(len<int(sizeof t)-40)len+=std::snprintf(t+len,sizeof t-len,"%s%s+0x%x:%08x(%.3f)",len?";":"",i<0x800?"h":"m",(i<0x800?i:i-0x800)*4,w[i],f); }
@@ -2674,7 +2676,7 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
       {std::uintptr_t cs=gHeroClassStateRva.load(),hs=gHeroStateRva.load();
         if(ws::drive::wsFaceJumpHold.load()&&!gfL.stopHop&&(cs==0xB44F0A0||hs==0xB44F0A0)){gfL.landHold=true;std::memcpy(gfL.landP,q,12);gfL.landHoldStart=qpcSec(now);gfL.landAirEnd=0;}
         static unsigned holdLogs=0; if(holdLogs++<60)msm2::writeLog("WS_FACE_JUMP_HOLD event=%s class_state=0x%llx hero_state=0x%llx",gfL.landHold&&!gfL.landAirEnd ? "start":"not_started",(unsigned long long)cs,(unsigned long long)hs);
-        faceJumpGravityLog("landing",0.0); if(gfL.landHold)lc::holdMs.store(GetTickCount64());}
+        faceJumpGravityLog("landing",0.0); if(gfL.landHold){lc::holdMs.store(GetTickCount64()); lc::x000Ms.store(GetTickCount64());}}
       faceFacingLog("landing",true);if(!stopFacingRun.load())airFacingEnd("face_landing");faceJumpTrace("landing",q,n0,qpcSec(now),true); gfLogPlane("FACE_JUMP_LANDED"); msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_LANDED t=%.2f", gfL.faceAirT); }
     if (gfL.faceAirT > 6.f) { airFacingEnd("air_timeout"); gfFaceLandingTime.store(qpcSec(now));faceJumpTrace("timeout",q,n0,qpcSec(now),true); gfL.faceAir = false; for (float& c : gfL.vg) c = 0.f; msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_TIMEOUT"); }
   } else

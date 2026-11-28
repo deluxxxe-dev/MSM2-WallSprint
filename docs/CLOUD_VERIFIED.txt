@@ -133,3 +133,4 @@ a3fe199ef136897adebbb57f59acd6a6c48e5df5 2026-11-29 build+test.sh+package PASS; 
 66f498a12700b8e1d09ee2aaf79a487bf12c6edd 2026-11-29 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21aa face landing assist; HEAD:source; by Claude Code)
 c87cf762fecc901cd970a6121301bd3f312f20a3 2026-11-29 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21aa-r2 assist summary; HEAD:source; by Claude Code)
 dd0ad6f98a648cb92adc8222c2484b302ecc82bd 2026-11-29 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21ab no steer from zero, x300 log; HEAD:source; by Claude Code)
+ed1b0dcf4ec52df457e0909521811541e18feb4d  M21ac 2026-11-29 smoke/hooks UNAVAILABLE (wine)

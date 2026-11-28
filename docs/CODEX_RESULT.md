@@ -1482,3 +1482,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-29: M21aa (Claude Code, analysis/M21T_FACE_JUMP_20261128.md): gravity component contact fields identified (height X+0x440, airborne flag X+0x45C, blocking X+0x438 on the face); bounded landing assist writes X+0x438=0 during the hold (INI, shipped 1).
 - 2026-11-29: M21aa-r2 (Claude Code): landing assist fixes the standing face jump lag (77-92 ms); running-up jump still lags; per-hold assist summary added.
 - 2026-11-29: M21ab (Claude Code): straight face jumps no longer steered by the wrong learned mapping; X+0x300..0x43F captured during the hold to find the source of X+0x438 in running jumps.
+- 2026-11-29: M21ac (Claude Code): running-up face jumps stay airborne ~0.7 s even with X+0x438 = 0; read-only snapshot of the whole gravity component (X+0x000..0x5EF) at landing-hold +60 ms and +400 ms to find the other blocker. Package unchanged name (v0.1c48).

@@ -239,3 +239,7 @@ print("PASS: M21aa face landing assist is bounded to the landing hold")
 # M21ab: no air steering for a face jump that took off without a walk velocity.
 assert 'if (mapped && !takeoffFrame && !gfL.airNoSteer)' in code and "gfL.airNoSteer=ws::drive::wsFaceJumpHold.load()&&gfL.airSource[0]=='n';" in code
 print("PASS: M21ab no steering for straight face jumps")
+
+# M21ac: read-only capture of the whole gravity component X+0x000..0x5EF at hold +60 ms and +400 ms (still airborne).
+assert 'WS_LAND_CHECK event=x000 hold_ms=%u' in code and 'now>=hs+400&&now<hs+800&&gHeroClassStateRva.load()==0xB44F0A0' in code and 'lc::x000Ms.store(GetTickCount64());' in code
+print("PASS: M21ac component snapshot for standing vs running face jumps (log only)")
