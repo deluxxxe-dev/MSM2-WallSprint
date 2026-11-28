@@ -3681,16 +3681,21 @@ void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
   // flag was found in the hero actor / traversal machine. One-time read-only capture of the air state's vtable slots and
   // their function bodies (pdata bounds, <= 4 KiB each) to locate its landing check offline (Scripted Flight's strings
   // name a native "goodGround -> TransitionLand" path; that MOD's code/offsets are not used). Log only.
-  { const std::uintptr_t vts[] = {0x12E0CD0, 0x1368190, 0x12D4920};
-    for (auto vt : vts) { if (vt + 32 * 8 > imageSize) continue; std::uintptr_t slot[32]{}; if (!readMemory(image + vt, slot, sizeof slot)) continue;
+  // M21z-r5 (log 20261129-004843): 0x12E0CD0 is not a vtable (its "slots" were code bytes, all outside the image): the
+  // state descriptor's first qword points to code. Capture the descriptors (0xB44F0A0 air, 0xB459DD0 landing,
+  // 0xB44E0B0 ground) as qwords, and the bodies of every in-image pointer of the air descriptor (<= 16 functions).
+  { const std::uintptr_t descs[] = {0xB44F0A0, 0xB459DD0, 0xB44E0B0};
+    for (auto d : descs) { if (d + 0x100 > imageSize) continue; std::uintptr_t q[32]{}; if (!readMemory(image + d, q, sizeof q)) continue;
       char list[32 * 12 + 1]{}; int len = 0;
-      for (int i = 0; i < 32; ++i) { std::uint64_t r = slot[i] >= image && slot[i] - image < imageSize ? slot[i] - image : 0; len += std::snprintf(list + len, sizeof list - len, "%s%llx", i ? "," : "", (unsigned long long)r); }
-      writeLog("WS_AIR_VT vt=0x%llx slots=%s read_only=1", (unsigned long long)vt, list);
-      if (vt != 0x12E0CD0) continue;
-      for (int i = 0; i < 32; ++i) { if (slot[i] < image || slot[i] - image >= imageSize) continue; DWORD64 fb = 0; auto* fe = RtlLookupFunctionEntry(slot[i], &fb, nullptr);
-        if (!fe || fb != image) { writeLog("WS_AIR_CODE slot=%d rva=0x%llx pdata=0", i, (unsigned long long)(slot[i] - image)); continue; }
+      for (int i = 0; i < 32; ++i) { std::uint64_t r = q[i] >= image && q[i] - image < imageSize ? q[i] - image : 0; len += std::snprintf(list + len, sizeof list - len, "%s%llx", i ? "," : "", (unsigned long long)r); }
+      writeLog("WS_AIR_VT desc=0x%llx qwords_rva=%s read_only=1", (unsigned long long)d, list);
+      if (d != 0xB44F0A0) continue;
+      unsigned dumped = 0;
+      for (int i = 0; i < 32 && dumped < 16; ++i) { if (q[i] < image || q[i] - image >= imageSize) continue; DWORD64 fb = 0; auto* fe = RtlLookupFunctionEntry(q[i], &fb, nullptr);
+        if (!fe || fb != image) continue;
+        ++dumped;
         std::uintptr_t b = image + fe->BeginAddress, e = image + fe->EndAddress; if (e <= b || e - b > 4096) e = b + 4096;
-        writeLog("WS_AIR_CODE slot=%d begin=0x%lx end=0x%lx size=%llu", i, (unsigned long)fe->BeginAddress, (unsigned long)fe->EndAddress, (unsigned long long)(e - b));
+        writeLog("WS_AIR_CODE slot=%d rva=0x%llx begin=0x%lx end=0x%lx size=%llu", i, (unsigned long long)(q[i] - image), (unsigned long)fe->BeginAddress, (unsigned long)fe->EndAddress, (unsigned long long)(e - b));
         for (std::uintptr_t a2 = b; a2 < e; a2 += 64) { unsigned char buf[64]{}; std::size_t n = std::min<std::uintptr_t>(64, e - a2); if (!readMemory(a2, buf, n)) break;
           char hex[129]{}; for (std::size_t k = 0; k < n; ++k) std::snprintf(hex + 2 * k, 3, "%02x", buf[k]);
           writeLog("WS_AIR_CODE_BYTES begin=0x%lx off=0x%llx hex=%s", (unsigned long)fe->BeginAddress, (unsigned long long)(a2 - b), hex); } } } }

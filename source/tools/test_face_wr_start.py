@@ -228,5 +228,5 @@ assert 'writeMemory' not in lc and lc.count('read_only=1')==3 and 'lcAirEnd(nr)'
 print("PASS: M21z landing-check diff diagnostic is read-only")
 
 # M21z-r4: one-time read-only capture of the air state vtable (0x12E0CD0) slots and bodies.
-assert 'const std::uintptr_t vts[] = {0x12E0CD0, 0x1368190, 0x12D4920};' in code and 'WS_AIR_CODE_BYTES' in code
+assert 'const std::uintptr_t descs[] = {0xB44F0A0, 0xB459DD0, 0xB44E0B0};' in code and 'WS_AIR_CODE_BYTES' in code
 print("PASS: M21z-r4 air state vtable capture (log only)")
