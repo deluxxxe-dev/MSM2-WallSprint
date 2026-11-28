@@ -224,7 +224,7 @@ print("PASS: M21w landing above the surface for the game's own landing, no model
 
 # M21z: read-only landing-check diff diagnostic (hero 0x2000 + machine 0x1000 at air start+0.25 s vs air end; face hold +0.3 s).
 lc=code.split('namespace lc {',1)[1].split('DWORD WINAPI gbChainFind',1)[0]
-assert 'writeMemory' not in lc and lc.count('read_only=1')==3 and 'lcAirEnd(nr)' in code and 'lc::holdMs.store(GetTickCount64())' in code
+assert 'writeMemory' not in lc and lc.count('read_only=1')==4 and 'lcAirEnd(nr)' in code and 'lc::holdMs.store(GetTickCount64())' in code
 print("PASS: M21z landing-check diff diagnostic is read-only")
 
 # M21z-r4: one-time read-only capture of the air state vtable (0x12E0CD0) slots and bodies.

@@ -1133,6 +1133,15 @@ DWORD WINAPI lcThread(void*){ for(;;){ Sleep(20); if(killed.load())return 0; aut
           msm2::writeLog("WS_LAND_CHECK event=h960 since_air_ms=%lld state=0x%llx hold=%u words=%08x,%08x,%08x,%08x,%08x,%08x,%08x,%08x read_only=1",
             am?(long long)(now-am):-1LL,(unsigned long long)gHeroClassStateRva.load(),unsigned(gbHoldA.load()),cur[0],cur[1],cur[2],cur[3],cur[4],cur[5],cur[6],cur[7]);}
         std::memcpy(last,cur,sizeof cur);init=true;} }
+    // M21z-r8 (log 20261129-010601, VERIFIED-STATIC from the captured air-state vtable): air-state methods read the component
+    // X = load64(load64(state+0xF0)+0xF8) - the object whose +0x5F4 is the hero gravity block - at X+0x460 (byte, contact
+    // flag), X+0x440/+0x444 (floats, compared with thresholds before a landing effect call with X+0x424) and X+0x2BC+0x188/
+    // +0x1A4. Log X+0x420..+0x47F on every change (words that are positions excluded by range), with air time and state.
+    { auto g=gbFound.load(); static std::uint32_t lx[24]{}; static bool xi=false; std::uint32_t cx[24];
+      if(g>0x5F4&&msm2::readMemory(g-0x5F4+0x420,cx,sizeof cx)){ static unsigned xl=0;
+        if(xi&&std::memcmp(cx,lx,sizeof cx)!=0&&xl<600){++xl; char t[24*9+1]{}; int len=0; for(int i=0;i<24;++i)len+=std::snprintf(t+len,sizeof t-len,"%s%08x",i?",":"",cx[i]);
+          msm2::writeLog("WS_LAND_CHECK event=x420 since_air_ms=%lld state=0x%llx hold=%u words=%s read_only=1",am?(long long)(now-am):-1LL,(unsigned long long)gHeroClassStateRva.load(),unsigned(gbHoldA.load()),t);}
+        std::memcpy(lx,cx,sizeof cx);xi=true;} }
     auto hm=lc::holdMs.load(); if(hm&&now-hm>=300){ lc::holdMs.store(0); std::lock_guard<std::mutex> g(lc::mu); static std::uint32_t w[0xC00]; static unsigned wl=0;
       if(wl<30&&lc::nc&&lcSnap(w)){ ++wl; char t[900]; int len=0; for(unsigned k=0;k<lc::nc;++k){ unsigned i=lc::cand[k]; float f; std::memcpy(&f,&w[i],4);
           if(len<int(sizeof t)-40)len+=std::snprintf(t+len,sizeof t-len,"%s%s+0x%x:%08x(%.3f)",len?";":"",i<0x800?"h":"m",(i<0x800?i:i-0x800)*4,w[i],f); }
@@ -3701,7 +3710,8 @@ void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
       { char vl[80 * 12 + 1]{}; int vlen = 0;
         for (int i = 0; i < 80; ++i) { std::uint64_t r = vt[i] >= image && vt[i] - image < imageSize ? vt[i] - image : 0; vlen += std::snprintf(vl + vlen, sizeof vl - vlen, "%s%llx", i ? "," : "", (unsigned long long)r); }
         writeLog("WS_AIR_VT class_vt=0x%llx slots_rva=%s read_only=1", (unsigned long long)(q[12] - image), vl); }
-      for (int i = 0; i < 80; ++i) { if (vt[i] < image || vt[i] - image + 0x400 > imageSize) continue;
+      // M21z-r8: bodies captured in log 20261129-010601; the slot list stays, the 80 KB of bytes are no longer logged.
+      for (int i = 0; i < 0; ++i) { if (vt[i] < image || vt[i] - image + 0x400 > imageSize) continue;
         std::uintptr_t b = vt[i], e = b + 0x400;
         writeLog("WS_AIR_CODE vslot=%d rva=0x%llx size=1024", i + 7, (unsigned long long)(b - image));
         for (std::uintptr_t a2 = b; a2 < e; a2 += 64) { unsigned char buf[64]{}; if (!readMemory(a2, buf, 64)) break;
