@@ -2528,7 +2528,9 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     if(ws::drive::wsFaceJumpHold.load()&&gfL.airSource[0]=='m'){for(float& c:gfL.airVel)c=0.f;gfL.airSource="none_model_off";}
     { const float* tp=mvA ? mvA : p; float d=(tp[0]-p0[0])*n0[0]+(tp[1]-p0[1])*n0[1]+(tp[2]-p0[2])*n0[2]; gfL.jumpRestD=std::fmax(-0.1f,std::fmin(0.1f,d)); }
     gfL.takeoffHistory.freeze(gfL.airMapping,gfL.walk,qpcSec(now),gfL.airSource,wgiLx.load(),wgiLy.load(),n0,gfL.airVel);
-    if(gfL.airSource[0]!='w' && gfL.airMapping.mappingSource[0]=='w') {
+    // M21x (log 2 of 14:49-14:50): the M21w "no model takeoff" was undone here, the mapping refilled the velocity and the
+    // roofward stick flew 3.3 m toward the ground (14 jumps). Not for "none_model_off".
+    if(gfL.airSource[0]!='w' && std::strcmp(gfL.airSource,"none_model_off")!=0 && gfL.airMapping.mappingSource[0]=='w') {
       float direction[3]{};bool mapped=gfL.airMapping.direction(wgiLx.load(),wgiLy.load(),n0,direction);
       float speed=std::fmax(5.f,gfL.walk.meanSpeed(qpcSec(now)));
       for(int i=0;i<3;++i)gfL.airVel[i]=mapped ? direction[i]*speed : 0.f;
@@ -2582,7 +2584,9 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     // hero the last ~6 cm onto the surface (log 2: plane 6 cm above the surface); where our plane was at/below the surface
     // the hero touched it at once, the game never fell and stayed airborne for ~0.7 s (log 1). Our arc now ends 8 cm above
     // the takeoff rest height and the hold lets the game's own step bring the hero down.
-    float landAt = ws::drive::wsFaceJumpHold.load() && !gfL.stopHop ? gfL.jumpRestD + 0.08f : 0.f;
+    // M21x (log 1 of 14:45): the game itself moved the hero the last 8 cm onto the surface within 0.1 s and still stayed
+    // airborne 0.68 s (10/10 jumps): a small fall is not the landing condition (REJECTED). The arc ends at the plane again.
+    float landAt = 0.f;
     if (dq < landAt && !(ws::drive::wsFaceJumpHold.load() && !gfL.stopHop)) for (int i = 0; i < 3; ++i) q[i] -= dq * n0[i];
     else if (dq < landAt) for (int i = 0; i < 3; ++i) q[i] += (landAt - dq) * n0[i];
     if (gfL.stopHop ? gfL.faceAirT>=0.35f : (gfL.faceAirT > 0.1f && dq < landAt + 0.02f && vn <= 0.f)) {
