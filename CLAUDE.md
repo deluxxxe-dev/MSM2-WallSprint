@@ -52,6 +52,9 @@ The updater cannot see a cloud task's unpublished commits. Therefore:
 5. The local updater refuses a dirty `_source` checkout. Do not instruct the user to erase or reset local changes merely to make a pull work. Ask for a narrow preservation/diagnosis if it reports dirty worktree.
 
 ## Finish response
+Owner rule 2026-11-28: before the test steps in NEED, always state briefly (1) the fixes this build is expected to
+bring and (2) the problems that remain unsolved in it.
+
 ```text
 STATUS: success / partial / blocked
 CHANGED:
