@@ -49,7 +49,8 @@ inline std::atomic<bool> wsFaceRelevel{false};   // re-level the face normal fro
 // M21l (log 20261126-195525): fixes for the restored baseline.
 inline std::atomic<bool> wsCrawlWr{false};       // allow WR in a hold while the game is in its crawl/wall states (no freeze)
 inline std::atomic<bool> wsCrawlStand{false};    // in a hold, crawl idle -> one short game-only A press (stand up)
-inline std::atomic<bool> wsFaceJumpHold{false};  // M21t: keep the hero on the face after a face-jump landing while the game is still airborne
+inline std::atomic<bool> wsFaceJumpHold{false};
+inline std::atomic<bool> wsFaceLandAssist{false};  // M21aa: clear the gravity component's X+0x438 during the landing hold  // M21t: keep the hero on the face after a face-jump landing while the game is still airborne
 inline std::atomic<bool> wsEntryNoJump{false};   // refuse the game's sprint jump / ledge take-off during a wall entry
 // M16 face-air/fall-only bounded Transform row experiment, code default OFF.
 inline std::atomic<bool> wsFaceAirFacing{false};

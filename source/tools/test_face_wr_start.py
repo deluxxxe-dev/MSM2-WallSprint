@@ -230,3 +230,8 @@ print("PASS: M21z landing-check diff diagnostic is read-only")
 # M21z-r4: one-time read-only capture of the air state vtable (0x12E0CD0) slots and bodies.
 assert 'const std::uintptr_t descs[] = {0xB44F0A0, 0xB459DD0, 0xB44E0B0};' in code and 'WS_AIR_CODE_BYTES' in code
 print("PASS: M21z-r4 air state vtable capture (log only)")
+
+# M21aa: bounded landing assist (INI WALLSPRINT_WS_FACE_LAND_ASSIST, code default 0, shipped 1): X+0x438 held at 0 only in the hold.
+assert 'if(ws::drive::wsFaceLandAssist.load()&&gbAddr>0x5F4){' in code and 'fl==0&&hgt<0.05f' in code and '(mb.Protect&0xff)==PAGE_READWRITE' in code
+assert ini.getint('WallSprint','WALLSPRINT_WS_FACE_LAND_ASSIST')==1 and 'L"WALLSPRINT_WS_FACE_LAND_ASSIST",0,' in tel
+print("PASS: M21aa face landing assist is bounded to the landing hold")

@@ -1479,3 +1479,4 @@ If both counters are zero with complete coverage, the c47 correlated negative pu
 - 2026-11-29: M21z-r3 (Claude Code): face air ends ~1.1 s after its start (street ~0.73 s), h+0x970 flips before landing on the street but is already set early on the face; logging h+0x960..0x97f changes with timing.
 - 2026-11-29: M21z-r4 (Claude Code): h+0x970 rejected (fixed-time air phase); one-time capture of the air state vtable code for offline landing-check analysis.
 - 2026-11-29: M21z-r8 (Claude Code): air-state vtable analysed; contact fields in the gravity component X (X+0x460, +0x440/+0x444); logging X+0x420..0x47F street vs face.
+- 2026-11-29: M21aa (Claude Code, analysis/M21T_FACE_JUMP_20261128.md): gravity component contact fields identified (height X+0x440, airborne flag X+0x45C, blocking X+0x438 on the face); bounded landing assist writes X+0x438=0 during the hold (INI, shipped 1).

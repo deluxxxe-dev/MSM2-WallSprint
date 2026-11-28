@@ -116,6 +116,8 @@ Settings settings(){
  ws::drive::wsCrawlStand.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_CRAWL_STAND",0,path.c_str())==1);
  ws::drive::wsEntryNoJump.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_ENTRY_NO_JUMP",0,path.c_str())==1);
  ws::drive::wsFaceJumpHold.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_FACE_JUMP_HOLD",0,path.c_str())==1);
+ ws::drive::wsFaceLandAssist.store(GetPrivateProfileIntW(L"WallSprint",L"WALLSPRINT_WS_FACE_LAND_ASSIST",0,path.c_str())==1);
+ msm2::writeLog("WS_FACE_LAND_ASSIST_CONFIG enabled=%u key=WALLSPRINT_WS_FACE_LAND_ASSIST default=0",unsigned(ws::drive::wsFaceLandAssist.load()));
  msm2::writeLog("WS_FACE_JUMP_HOLD_CONFIG enabled=%u key=WALLSPRINT_WS_FACE_JUMP_HOLD default=0",unsigned(ws::drive::wsFaceJumpHold.load()));
  msm2::writeLog("WS_BASELINE_FIXES crawl_wr=%u crawl_stand=%u entry_no_jump=%u keys=WALLSPRINT_WS_CRAWL_WR,WALLSPRINT_WS_CRAWL_STAND,WALLSPRINT_WS_ENTRY_NO_JUMP default=0",
    unsigned(ws::drive::wsCrawlWr.load()),unsigned(ws::drive::wsCrawlStand.load()),unsigned(ws::drive::wsEntryNoJump.load()));

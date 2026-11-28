@@ -2682,6 +2682,15 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
         float du=std::fmin(dl,std::fmax(dg,gfL.jumpRestD-0.30f));
         for(int i=0;i<3;++i)q[i]=gfL.landP[i]+(du-dl)*n0[i];
         gfFaceMaskUntil.store(GetTickCount64()+60);gfL.fallIgnoreUntil=tn+0.5;
+        // M21aa (log 20261129-011730, VERIFIED-RUNTIME): in the gravity component X (block - 0x5F4) the game keeps the
+        // height above the ground (X+0x440, measured along the face gravity) and an airborne flag (X+0x45C: 2 in the air,
+        // 0 on the ground). On the street it leaves the air state ~4 ms after height ~0.07 / flag 0, with X+0x438 = 0.
+        // On the face both read "grounded" at our landing (height 0, flag 0) but X+0x438 stays 0.031 and decays; the game
+        // left the air state only when it reached ~0.0085 (494 ms). Experiment: hold X+0x438 at 0 while our hold waits.
+        if(ws::drive::wsFaceLandAssist.load()&&gbAddr>0x5F4){ std::uintptr_t xa=gbAddr-0x5F4+0x438; MEMORY_BASIC_INFORMATION mb{};
+          float hgt=1.f; std::uint8_t fl=2; msm2::readMemory(gbAddr-0x5F4+0x440,&hgt,4); msm2::readMemory(gbAddr-0x5F4+0x45C,&fl,1);
+          if(fl==0&&hgt<0.05f&&VirtualQuery(reinterpret_cast<void*>(xa),&mb,sizeof mb)&&(mb.Protect&0xff)==PAGE_READWRITE){ static unsigned wl=0; float old=0;
+            msm2::readMemory(xa,&old,4); *reinterpret_cast<volatile float*>(xa)=0.f; if(wl++<40)msm2::writeLog("WS_FACE_LAND_ASSIST event=write t=%.3f old=%.4f height=%.4f",tn-gfL.landHoldStart,old,hgt); } }
         static double lastG=0; if(tn-lastG>=0.1){lastG=tn;faceJumpGravityLog("hold",tn-gfL.landHoldStart);}}
       else{if(!gfL.landAirEnd){gfL.landAirEnd=tn;gfL.fallIgnoreUntil=tn+0.5;
           msm2::writeLog("WS_FACE_JUMP_HOLD event=game_air_end air_after_landing_ms=%.0f state=0x%llx capped=%u",(tn-gfL.landHoldStart)*1000.0,(unsigned long long)gHeroClassStateRva.load(),unsigned(gameAir));
