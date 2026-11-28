@@ -200,9 +200,13 @@ assert sc.index('restore("hero_changed"); ws_camref_this = 0;') < sc.index('bool
 print("PASS: M21s camera manager dropped on hero change")
 
 # M21t: face-jump landing hold while the game is still in its air state (INI WALLSPRINT_WS_FACE_JUMP_HOLD, shipped 1).
-assert 'if(ws::drive::wsFaceJumpHold.load()&&gHeroStateRva.load()==0xB44F0A0){gfL.landHold=true;' in code
+assert 'if(ws::drive::wsFaceJumpHold.load()&&!gfL.stopHop&&(cs==0xB44F0A0||hs==0xB44F0A0)){gfL.landHold=true;' in code and 'if (now70 != before) gHeroClassStateRva.store(wrRequestRva(now70));' in code
 assert 'if(gameAir&&!gfL.landAirEnd&&tn-gfL.landHoldStart<0.8){std::memcpy(q,gfL.landP,12);' in code
 assert ini.getint('WallSprint','WALLSPRINT_WS_FACE_JUMP_HOLD')==1 and 'L"WALLSPRINT_WS_FACE_JUMP_HOLD",0,' in tel
 bw=(root/'tools/build_windows.sh').read_text()
 assert 'wait "$pid" || fail=1' in bw and bw.index('wait "$pid"') < bw.index('"$gpp" -shared')
 print("PASS: M21t face-jump landing hold, parallel compile with failure propagation")
+
+# M21u: standing face jump keeps the facing read at the press instead of the stale last walk direction.
+assert 'airFacingBegin(!still ? gfL.airVel : useFwd ? keep : gfL.moveVel,n0);' in code
+print("PASS: M21u hero-class state for the landing hold, standing jump keeps its facing")

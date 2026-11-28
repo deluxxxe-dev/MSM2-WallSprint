@@ -673,7 +673,7 @@ std::atomic<std::uint64_t> wgiBTaps{0},wgiBDownMs{0};std::atomic<bool> wgiBDown{
 // M21e (owner 2026-11-26): LB (WGI LeftShoulder 0x400) replaces B as the edge-wrap button.
 std::atomic<bool> wgiLbDown{false};constexpr std::uint64_t kBTapMs=300;
 // M21l: game-only A press (the MOD's own A reading happens before it) and the hero machine's current state.
-std::atomic<std::uint64_t> gcInjectUntilMs{0};std::atomic<std::uintptr_t> gHeroStateRva{0},gDetourStateRva{0};std::atomic<std::uint64_t> gHeroStateMs{0};
+std::atomic<std::uint64_t> gcInjectUntilMs{0};std::atomic<std::uintptr_t> gHeroStateRva{0},gDetourStateRva{0},gHeroClassStateRva{0};std::atomic<std::uint64_t> gHeroStateMs{0};
 std::atomic<std::uint64_t> geEntryJumpUntilMs{0},geRtMaskUntilMs{0};std::atomic<std::uintptr_t> gHeroMachine{0};std::atomic<unsigned> geEntryJumpLogs{0},gcCrawlWrLogs{0};
 WgiVibration wgiLastVib{-1, -1, -1, -1};
 // M8j (2026-11-07): WS charge jump, controller only. M8i VERIFIED the game reads the pad through WGI
@@ -1673,7 +1673,7 @@ struct FaceFacingProbe {
 };
 // M14_FACING_END
 std::atomic<unsigned> gfFacingLogs{0},gfFacingPressId{0},gfFacingPressGen{0},gfFacingWalkGen{0},gfFacingWalkSeq{0};
-std::atomic<float> gfFacingWalk[3]{},gfFacingPressUp{0},gfFacingPressSide{0};
+std::atomic<float> gfFacingWalk[3]{},gfFacingPressUp{0},gfFacingPressSide{0},gfFacingFwdUp{0},gfFacingFwdSide{0};std::atomic<bool> gfFacingFwdValid{false};
 // M16_AIR_FACING_BEGIN: verified row layout, owned math; no native access here.
 struct FaceAirFacing {
   bool active{},checked{},previousWrite{};int sign{1};unsigned holdWrites{},writes{},overwritten{};float maxDev{},forward[3]{},up[3]{};
@@ -2206,6 +2206,7 @@ void faceFacingPress(float sx,float sy) {
   if(!walkValid)for(float& x:walking)x=0;
   bool valid=false;facingComponents(walking,f,w,valid);
   gfFacingPressUp.store(w[0]);gfFacingPressSide.store(w[1]);gfFacingPressGen.store(gfGen.load());
+  gfFacingFwdUp.store(f[0]);gfFacingFwdSide.store(f[1]);gfFacingFwdValid.store(valid);
   unsigned id=gfFacingPressId.fetch_add(1,std::memory_order_release)+1;
   if(gfFacingLogs.fetch_add(1)<40) msm2::writeLog("WS_FACE_JUMP_FACING event=press id=%u forward_read=%u forward_up=%.3f forward_side=%.3f walk_read=%u walking_up=%.3f walking_side=%.3f stick=%.2f,%.2f peak_delta_n=0 peak_time_s=0 source=transform_0x20 phase=WGI_press",
     id,unsigned(valid),f[0],f[1],unsigned(walkValid),w[0],w[1],sx,sy);
@@ -2519,7 +2520,13 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
       for(int i=0;i<3;++i)gfL.airVel[i]=mapped ? direction[i]*speed : 0.f;
     }
     unsigned facingId=gfFacingPressGen.load()==gfL.gen ? gfFacingPressId.load(std::memory_order_acquire) : 0;
-    airFacingBegin(std::hypot(gfL.airVel[0],gfL.airVel[1],gfL.airVel[2])>0.1f ? gfL.airVel : gfL.moveVel,n0);
+    // M21u (owner, log 20261128-225853 ids 1-3): a standing jump facing the roof turned the hero sideways: with no takeoff
+    // velocity the facing came from the last walk velocity (12.8 s old, sideways). A standing jump keeps the facing it has.
+    { float keep[3]{}; float fu=gfFacingFwdUp.load(),fs=gfFacingFwdSide.load(),up3[3],side3[3];
+      bool still=std::hypot(gfL.airVel[0],gfL.airVel[1],gfL.airVel[2])<=0.1f;
+      bool useFwd=still&&gfFacingFwdValid.load()&&std::hypot(fu,fs)>0.3f&&faceBasis(n0,up3,side3);
+      if(useFwd)for(int i=0;i<3;++i)keep[i]=up3[i]*fu+side3[i]*fs;
+      airFacingBegin(!still ? gfL.airVel : useFwd ? keep : gfL.moveVel,n0); }
     gfL.facing.begin(facingId,qpcSec(now),mvA ? mvA : p,gfFacingPressUp.load(),gfFacingPressSide.load());
     { float v = std::sqrt(2.f * kGfG * 1.8f); for (int i = 0; i < 3; ++i) gfL.vg[i] = n0[i] * v; for (float& c : gfL.dash) c = 0.f; }
     { float v[3]; for(int i=0;i<3;++i) v[i]=gfL.airVel[i]+gfL.vg[i];
@@ -2566,8 +2573,9 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
       gfFaceMaskLatched.store(false);gfFaceMaskUntil.store(GetTickCount64()+100);
       // M21t (log 20261128-224113): after this landing the game stayed in its air state 0xB44F0A0 for ~0.30 s (6/6 jumps)
       // and moved the hero world-down (B: 1.6 m slide in 0.2 s, then a growing fall until the walk-off release).
-      if(ws::drive::wsFaceJumpHold.load()&&gHeroStateRva.load()==0xB44F0A0){gfL.landHold=true;std::memcpy(gfL.landP,q,12);gfL.landHoldStart=qpcSec(now);gfL.landAirEnd=0;
-        msm2::writeLog("WS_FACE_JUMP_HOLD event=start game_state=0xb44f0a0 read_only=0");}
+      {std::uintptr_t cs=gHeroClassStateRva.load(),hs=gHeroStateRva.load();
+        if(ws::drive::wsFaceJumpHold.load()&&!gfL.stopHop&&(cs==0xB44F0A0||hs==0xB44F0A0)){gfL.landHold=true;std::memcpy(gfL.landP,q,12);gfL.landHoldStart=qpcSec(now);gfL.landAirEnd=0;}
+        static unsigned holdLogs=0; if(holdLogs++<60)msm2::writeLog("WS_FACE_JUMP_HOLD event=%s class_state=0x%llx hero_state=0x%llx",gfL.landHold&&!gfL.landAirEnd ? "start":"not_started",(unsigned long long)cs,(unsigned long long)hs);}
       faceFacingLog("landing",true);if(!stopFacingRun.load())airFacingEnd("face_landing");faceJumpTrace("landing",q,n0,qpcSec(now),true); gfLogPlane("FACE_JUMP_LANDED"); msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_LANDED t=%.2f", gfL.faceAirT); }
     if (gfL.faceAirT > 6.f) { airFacingEnd("air_timeout"); gfFaceLandingTime.store(qpcSec(now));faceJumpTrace("timeout",q,n0,qpcSec(now),true); gfL.faceAir = false; for (float& c : gfL.vg) c = 0.f; msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_TIMEOUT"); }
   } else
@@ -2578,12 +2586,12 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     // M21t: while the game is still airborne after our face-jump landing, the hero stays at the landing point and the game
     // gets a neutral stick (no air control); for 0.5 s after the game's air state ends, world-down steps are undone and
     // the walk-off release is held back. Cap 0.8 s of game air.
-    if(gfL.landHold){double tn=qpcSec(now);bool gameAir=gHeroStateRva.load()==0xB44F0A0;
+    if(gfL.landHold){double tn=qpcSec(now);bool gameAir=gHeroClassStateRva.load()==0xB44F0A0;
       if(gameAir&&!gfL.landAirEnd&&tn-gfL.landHoldStart<0.8){std::memcpy(q,gfL.landP,12);gfFaceMaskUntil.store(GetTickCount64()+60);gfL.fallIgnoreUntil=tn+0.5;}
       else{if(!gfL.landAirEnd){gfL.landAirEnd=tn;gfL.fallIgnoreUntil=tn+0.5;
-          msm2::writeLog("WS_FACE_JUMP_HOLD event=game_air_end air_after_landing_ms=%.0f state=0x%llx capped=%u",(tn-gfL.landHoldStart)*1000.0,(unsigned long long)gHeroStateRva.load(),unsigned(gameAir));}
+          msm2::writeLog("WS_FACE_JUMP_HOLD event=game_air_end air_after_landing_ms=%.0f state=0x%llx capped=%u",(tn-gfL.landHoldStart)*1000.0,(unsigned long long)gHeroClassStateRva.load(),unsigned(gameAir));}
         if(tn-gfL.landAirEnd<0.5){if(q[1]<gfL.pLast[1])q[1]=gfL.pLast[1];}
-        else{gfL.landHold=false;msm2::writeLog("WS_FACE_JUMP_HOLD event=end state=0x%llx",(unsigned long long)gHeroStateRva.load());}}}
+        else{gfL.landHold=false;msm2::writeLog("WS_FACE_JUMP_HOLD event=end state=0x%llx",(unsigned long long)gHeroClassStateRva.load());}}}
     float dq = (q[0] - p0[0]) * n0[0] + (q[1] - p0[1]) * n0[1] + (q[2] - p0[2]) * n0[2];
     // M10z-r13: no 0.6 m cap (game-native face jump)
     float want = dq < -0.05f ? -0.05f : dq > 40.f ? 40.f : dq; for (int i = 0; i < 3; ++i) q[i] += (want - dq) * n0[i];
@@ -3039,6 +3047,9 @@ std::uint64_t wrRequestDetour(std::uintptr_t machine, std::uintptr_t rdx, std::u
   // Also outside holds (vanilla wall crawl around corners is the reference the owner proposed), capped per session.
   if (heroMachine) { static std::atomic<unsigned> scLogs{0};
     std::uintptr_t now70 = *reinterpret_cast<const std::uintptr_t*>(machine + 0x70);
+    // M21u: state of the hero-class machine (the source of WS_FACE_STATE_CHANGE); the owner-filtered gHeroStateRva did not
+    // show the air state at the face-jump landing in log 20261128-225853 (no WS_FACE_JUMP_HOLD event in 23 jumps).
+    if (now70 != before) gHeroClassStateRva.store(wrRequestRva(now70));
     if (now70 != before && scLogs.fetch_add(1) < 400) { std::uintptr_t bv = 0, av = 0; if (before) msm2::readMemory(before, &bv, 8); if (now70) msm2::readMemory(now70, &av, 8);
       unsigned st = gfWalkoffActive.load() ? 1u : stopHopRun.load() ? 3u : gfFaceAirNow.load() ? 2u : gfPinnedNow.load() ? 0u : 4u;
       msm2::writeLog("WS_FACE_STATE_CHANGE from=0x%llx from_vt=0x%llx to=0x%llx to_vt=0x%llx hold=%u face_state=%s lb=%u stick=%.2f,%.2f rt=%.2f read_only=1",
