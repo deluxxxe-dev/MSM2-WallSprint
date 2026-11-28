@@ -3676,6 +3676,24 @@ void configure(bool verified, std::uintptr_t image, std::size_t imageSize) {
         char hex[65]{}; for (std::size_t i = 0; i < n; ++i) std::snprintf(hex + 2 * i, 3, "%02x", buf[i]);
         writeLog("WS_CODE_DUMP_BYTES begin=0x%lx off=0x%llx hex=%s", (unsigned long)fe->BeginAddress, (unsigned long long)(a - b), hex); } } }
   if (0x367E5B0 < imageSize) { if (HANDLE h = CreateThread(nullptr, 0, wrCallerScan, reinterpret_cast<void*>(image), 0, nullptr)) CloseHandle(h); }
+  // M21z-r4 (logs 20261129-002638/-003829/-004320): the game's air state 0xB44F0A0 (vtable RVA 0x12E0CD0) ends ~0.73 s
+  // after its start on the street but only after ~1.1-1.3 s on a flat face, independent of our landing; no settable
+  // flag was found in the hero actor / traversal machine. One-time read-only capture of the air state's vtable slots and
+  // their function bodies (pdata bounds, <= 4 KiB each) to locate its landing check offline (Scripted Flight's strings
+  // name a native "goodGround -> TransitionLand" path; that MOD's code/offsets are not used). Log only.
+  { const std::uintptr_t vts[] = {0x12E0CD0, 0x1368190, 0x12D4920};
+    for (auto vt : vts) { if (vt + 32 * 8 > imageSize) continue; std::uintptr_t slot[32]{}; if (!readMemory(image + vt, slot, sizeof slot)) continue;
+      char list[32 * 12 + 1]{}; int len = 0;
+      for (int i = 0; i < 32; ++i) { std::uint64_t r = slot[i] >= image && slot[i] - image < imageSize ? slot[i] - image : 0; len += std::snprintf(list + len, sizeof list - len, "%s%llx", i ? "," : "", (unsigned long long)r); }
+      writeLog("WS_AIR_VT vt=0x%llx slots=%s read_only=1", (unsigned long long)vt, list);
+      if (vt != 0x12E0CD0) continue;
+      for (int i = 0; i < 32; ++i) { if (slot[i] < image || slot[i] - image >= imageSize) continue; DWORD64 fb = 0; auto* fe = RtlLookupFunctionEntry(slot[i], &fb, nullptr);
+        if (!fe || fb != image) { writeLog("WS_AIR_CODE slot=%d rva=0x%llx pdata=0", i, (unsigned long long)(slot[i] - image)); continue; }
+        std::uintptr_t b = image + fe->BeginAddress, e = image + fe->EndAddress; if (e <= b || e - b > 4096) e = b + 4096;
+        writeLog("WS_AIR_CODE slot=%d begin=0x%lx end=0x%lx size=%llu", i, (unsigned long)fe->BeginAddress, (unsigned long)fe->EndAddress, (unsigned long long)(e - b));
+        for (std::uintptr_t a2 = b; a2 < e; a2 += 64) { unsigned char buf[64]{}; std::size_t n = std::min<std::uintptr_t>(64, e - a2); if (!readMemory(a2, buf, n)) break;
+          char hex[129]{}; for (std::size_t k = 0; k < n; ++k) std::snprintf(hex + 2 * k, 3, "%02x", buf[k]);
+          writeLog("WS_AIR_CODE_BYTES begin=0x%lx off=0x%llx hex=%s", (unsigned long)fe->BeginAddress, (unsigned long long)(a2 - b), hex); } } } }
   // M20b: one-time read-only capture around the WR Init/Entry call sites seen while standing on a face
   // (WS_FACE_WR_START caller_rva 0x367e6af / 0x367e6ce, log 20261126-122944): the caller's bounds and the code before the
   // calls, for offline analysis of the WR start decision. Log only; derived findings go to analysis/.

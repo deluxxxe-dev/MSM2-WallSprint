@@ -124,3 +124,4 @@ b67c4359d23ac3367ed7b3a4d292c7a0a2310289 2026-11-28 build+test.sh+package PASS; 
 5336636a8a45101d09b352108112c8fbbc1f08b5 2026-11-29 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21z landing-check diff diagnostic; HEAD:source; by Claude Code)
 a3fe199ef136897adebbb57f59acd6a6c48e5df5 2026-11-29 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21z-r2 pre-transition landing diff; HEAD:source; by Claude Code)
 0397bfb16f2b1644ea40c28b8c8f22c4706d2c7d 2026-11-29 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21z-r3 h+0x960 timeline; HEAD:source; by Claude Code)
+16e2944e0164efff9c18ff9fb8e1b957481d4c57 2026-11-29 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21z-r4 air vtable capture; HEAD:source; by Claude Code)

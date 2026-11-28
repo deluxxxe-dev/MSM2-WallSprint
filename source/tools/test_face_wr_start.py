@@ -226,3 +226,7 @@ print("PASS: M21w landing above the surface for the game's own landing, no model
 lc=code.split('namespace lc {',1)[1].split('DWORD WINAPI gbChainFind',1)[0]
 assert 'writeMemory' not in lc and lc.count('read_only=1')==3 and 'lcAirEnd(nr)' in code and 'lc::holdMs.store(GetTickCount64())' in code
 print("PASS: M21z landing-check diff diagnostic is read-only")
+
+# M21z-r4: one-time read-only capture of the air state vtable (0x12E0CD0) slots and bodies.
+assert 'const std::uintptr_t vts[] = {0x12E0CD0, 0x1368190, 0x12D4920};' in code and 'WS_AIR_CODE_BYTES' in code
+print("PASS: M21z-r4 air state vtable capture (log only)")
