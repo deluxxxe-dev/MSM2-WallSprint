@@ -657,3 +657,11 @@ git remote -v
 
 ## Cloud-verified fast update (owner decision 2026-11-06)
 `Update-WS.cmd` reads `docs/CLOUD_VERIFIED.txt`. If the pulled `HEAD:source` tree is listed, the WSL build skips the local `smoke_windows.sh` and `test_hooks_windows.sh` suites, which the cloud session already ran on that exact tree. Build, `test.sh` and packaging always run locally. A tree is listed only after every suite passed in the cloud. Unlisted trees get the full local validation.
+
+Owner decision 2026-11-28 (supersedes "only after every suite passed in the cloud" for ordinary development): the cloud
+has no Wine, so smoke/hooks cannot run there. A tree whose build, `test.sh` and packaging passed in the cloud may still
+be listed, with the note `smoke/hooks UNAVAILABLE (wine)`, so the local update stays fast. Do **not** list the tree (so
+`Update-WS.cmd` runs smoke/hooks locally) when the change touches hook installation or removal (MinHook targets,
+thunks, RVAs/AOBs/hashes, trampolines, `.S` files, admission/guard code) or when the build is a public/Nexus release.
+Risk accepted by the owner: a hook-level fault in an ordinary listed tree shows only in the game (WS fails closed or the
+game crashes); then run smoke/hooks locally on that tree before further changes.

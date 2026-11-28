@@ -1,6 +1,8 @@
 # Source trees (git rev-parse HEAD:source) on which the cloud session ran build_windows.sh, test.sh, smoke_windows.sh,
 # test_hooks_windows.sh and package.py with every suite passing. Update-WS skips only the local smoke/hooks suites
 # for a listed tree (owner decision 2026-11-06); build, portable tests and packaging always run locally.
+# Owner decision 2026-11-28: trees with build+test.sh+package PASS and `smoke/hooks UNAVAILABLE (wine)` may be listed
+# for ordinary changes; never list a tree that changes hook installation or a public release (docs/DEVELOPMENT_MANUAL.md).
 # Format: <tree-sha> <date> <note>
 261c554503a9aa11c256b23fa21ca4cd0db1cd0d 2026-11-06 build+test.sh+smoke+hooks+package PASS (M6w camera angle hold + fast-update tooling)
 dfd7e04ec6f653e46deb364fac18273c96b63477 2026-11-06 build+test.sh+smoke+hooks+package PASS (M7a mouse look + settings prep)
