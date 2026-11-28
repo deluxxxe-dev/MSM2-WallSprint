@@ -1259,6 +1259,9 @@ struct FaceWalkModel {
     float length=std::hypot(out[0],out[1],out[2]);
     float speed=meanSpeed(now); if(!(speed>0.f)) speed=source[0]=='w' ? length : 5.f;
     if(std::hypot(sx,sy)>0.5f) speed=std::fmax(5.f,speed);
+    // M21v (log 20261128-231300 14:15:12.081): a 24.4 m/s walk sample (a fall step) launched the face jump 16 m along
+    // the face. The takeoff carries at most 15 m/s in the plane.
+    speed=std::fmin(speed,15.f);
     for(int i=0;i<3;++i) out[i]*=speed/length;
     return source;
   }
@@ -2288,6 +2291,13 @@ bool faceFallContact(const float* actual,const float* desired,float* out,std::in
   msm2::writeLog("WS_FACE_FALL event=land reason=%s t=%.3f v_u=0 v_plane=0 plane_d=0 original_plane_d=%.4f game_push_u=%.4f probe_used_m=%.4f",contact==1 ? "contact_abort":"contact",qpcSec(now)-gfL.probe.start,distance,along,gfL.probe.used);
   gfLogPlane(contact==1 ? "contact_abort_original_plane":"contact_before_penetration");return true;
 }
+// M21v read-only: the hero gravity up row and whether the setter substitution is active, at our face-jump landing and
+// while the landing hold waits for the game (the game left its air state after 0.06-0.09 s in some jumps and after
+// 0.6-0.74 s in most; HYPOTHESIS: the game's landing check follows the gravity it sees at that moment).
+void faceJumpGravityLog(const char* event,double t) { static unsigned n=0; if(n>=200)return; ++n; float u[3]{};
+  bool ok=gbAddr&&gbAddr<=UINTPTR_MAX-24&&msm2::readMemory(gbAddr+12,u,12);
+  msm2::writeLog("WS_FACE_JUMP_GRAVITY event=%s t=%.3f up=%.3f,%.3f,%.3f read=%u sub_active=%u air_phase=%u hold_a=%u class_state=0x%llx read_only=1",event,t,u[0],u[1],u[2],unsigned(ok),
+    unsigned(sgSubActive.load()),unsigned(sgAirPhase.load()),unsigned(gbHoldA.load()),(unsigned long long)gHeroClassStateRva.load()); }
 void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
   auto tr = gfTransform.load(std::memory_order_relaxed);
   if (!gfOn.load(std::memory_order_relaxed) && sbBlendQpc.load(std::memory_order_relaxed) && !mvB) {   // M10z-r11: orientation only
@@ -2575,7 +2585,8 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
       // and moved the hero world-down (B: 1.6 m slide in 0.2 s, then a growing fall until the walk-off release).
       {std::uintptr_t cs=gHeroClassStateRva.load(),hs=gHeroStateRva.load();
         if(ws::drive::wsFaceJumpHold.load()&&!gfL.stopHop&&(cs==0xB44F0A0||hs==0xB44F0A0)){gfL.landHold=true;std::memcpy(gfL.landP,q,12);gfL.landHoldStart=qpcSec(now);gfL.landAirEnd=0;}
-        static unsigned holdLogs=0; if(holdLogs++<60)msm2::writeLog("WS_FACE_JUMP_HOLD event=%s class_state=0x%llx hero_state=0x%llx",gfL.landHold&&!gfL.landAirEnd ? "start":"not_started",(unsigned long long)cs,(unsigned long long)hs);}
+        static unsigned holdLogs=0; if(holdLogs++<60)msm2::writeLog("WS_FACE_JUMP_HOLD event=%s class_state=0x%llx hero_state=0x%llx",gfL.landHold&&!gfL.landAirEnd ? "start":"not_started",(unsigned long long)cs,(unsigned long long)hs);
+        faceJumpGravityLog("landing",0.0);}
       faceFacingLog("landing",true);if(!stopFacingRun.load())airFacingEnd("face_landing");faceJumpTrace("landing",q,n0,qpcSec(now),true); gfLogPlane("FACE_JUMP_LANDED"); msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_LANDED t=%.2f", gfL.faceAirT); }
     if (gfL.faceAirT > 6.f) { airFacingEnd("air_timeout"); gfFaceLandingTime.store(qpcSec(now));faceJumpTrace("timeout",q,n0,qpcSec(now),true); gfL.faceAir = false; for (float& c : gfL.vg) c = 0.f; msm2::writeLog("WS_GRAVITY_FORCE_FACE_JUMP_TIMEOUT"); }
   } else
@@ -2587,9 +2598,11 @@ void gfStep(const float* mvA = nullptr, float* mvB = nullptr) {
     // gets a neutral stick (no air control); for 0.5 s after the game's air state ends, world-down steps are undone and
     // the walk-off release is held back. Cap 0.8 s of game air.
     if(gfL.landHold){double tn=qpcSec(now);bool gameAir=gHeroClassStateRva.load()==0xB44F0A0;
-      if(gameAir&&!gfL.landAirEnd&&tn-gfL.landHoldStart<0.8){std::memcpy(q,gfL.landP,12);gfFaceMaskUntil.store(GetTickCount64()+60);gfL.fallIgnoreUntil=tn+0.5;}
+      if(gameAir&&!gfL.landAirEnd&&tn-gfL.landHoldStart<0.8){std::memcpy(q,gfL.landP,12);gfFaceMaskUntil.store(GetTickCount64()+60);gfL.fallIgnoreUntil=tn+0.5;
+        static double lastG=0; if(tn-lastG>=0.1){lastG=tn;faceJumpGravityLog("hold",tn-gfL.landHoldStart);}}
       else{if(!gfL.landAirEnd){gfL.landAirEnd=tn;gfL.fallIgnoreUntil=tn+0.5;
-          msm2::writeLog("WS_FACE_JUMP_HOLD event=game_air_end air_after_landing_ms=%.0f state=0x%llx capped=%u",(tn-gfL.landHoldStart)*1000.0,(unsigned long long)gHeroClassStateRva.load(),unsigned(gameAir));}
+          msm2::writeLog("WS_FACE_JUMP_HOLD event=game_air_end air_after_landing_ms=%.0f state=0x%llx capped=%u",(tn-gfL.landHoldStart)*1000.0,(unsigned long long)gHeroClassStateRva.load(),unsigned(gameAir));
+          faceJumpGravityLog("game_air_end",tn-gfL.landHoldStart);}
         if(tn-gfL.landAirEnd<0.5){if(q[1]<gfL.pLast[1])q[1]=gfL.pLast[1];}
         else{gfL.landHold=false;msm2::writeLog("WS_FACE_JUMP_HOLD event=end state=0x%llx",(unsigned long long)gHeroClassStateRva.load());}}}
     float dq = (q[0] - p0[0]) * n0[0] + (q[1] - p0[1]) * n0[1] + (q[2] - p0[2]) * n0[2];

@@ -210,3 +210,9 @@ print("PASS: M21t face-jump landing hold, parallel compile with failure propagat
 # M21u: standing face jump keeps the facing read at the press instead of the stale last walk direction.
 assert 'airFacingBegin(!still ? gfL.airVel : useFwd ? keep : gfL.moveVel,n0);' in code
 print("PASS: M21u hero-class state for the landing hold, standing jump keeps its facing")
+
+# M21v: takeoff speed cap 15 m/s; read-only gravity log at face-jump landing / hold / game air end.
+assert 'speed=std::fmin(speed,15.f);' in code and code.count('faceJumpGravityLog("')==3
+gl=code.split('void faceJumpGravityLog(const char* event,double t) {',1)[1].split('\n}',1)[0]
+assert 'writeMemory' not in gl and 'read_only=1' in gl
+print("PASS: M21v takeoff speed cap, face-jump gravity diagnostic")
