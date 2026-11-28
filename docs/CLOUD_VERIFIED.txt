@@ -129,3 +129,4 @@ a3fe199ef136897adebbb57f59acd6a6c48e5df5 2026-11-29 build+test.sh+package PASS; 
 77f2fd6ba0f79d3e0a6c75e087a9b1d85fc6c71e 2026-11-29 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21z-r6 air class vtable capture; HEAD:source; by Claude Code)
 3c53448297716f746a4aad1fab7827d7c5f7c178 2026-11-29 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21z-r7 air vtable slots 7-86; HEAD:source; by Claude Code)
 80fcdc11cf32202b6ea021fe717ba2c106fc743b 2026-11-29 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21z-r8 contact fields log; HEAD:source; by Claude Code)
+9086154b1b2cd9b9b40cbdb7aae092501ccdf53b 2026-11-29 build+test.sh+package PASS; smoke/hooks UNAVAILABLE (wine) (M21z-r9 contact log filter; HEAD:source; by Claude Code)

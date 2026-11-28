@@ -1139,7 +1139,12 @@ DWORD WINAPI lcThread(void*){ for(;;){ Sleep(20); if(killed.load())return 0; aut
     // +0x1A4. Log X+0x420..+0x47F on every change (words that are positions excluded by range), with air time and state.
     { auto g=gbFound.load(); static std::uint32_t lx[24]{}; static bool xi=false; std::uint32_t cx[24];
       if(g>0x5F4&&msm2::readMemory(g-0x5F4+0x420,cx,sizeof cx)){ static unsigned xl=0;
-        if(xi&&std::memcmp(cx,lx,sizeof cx)!=0&&xl<600){++xl; char t[24*9+1]{}; int len=0; for(int i=0;i<24;++i)len+=std::snprintf(t+len,sizeof t-len,"%s%08x",i?",":"",cx[i]);
+        // M21z-r9 (log 20261129-011116): words 11-13 (X+0x44C/+0x450 small floats, +0x454 frame counter) change every
+        // frame and used up the 600-line budget before the first jump. They are ignored; logging only within 2.5 s of an
+        // air start or during a hold.
+        std::uint32_t cm[24],lm[24]; std::memcpy(cm,cx,sizeof cm); std::memcpy(lm,lx,sizeof lm); for(int k=11;k<=13;++k){cm[k]=0;lm[k]=0;}
+        bool inWin=(am&&now-am<2500)||gbHoldA.load();
+        if(xi&&inWin&&std::memcmp(cm,lm,sizeof cm)!=0&&xl<600){++xl; char t[24*9+1]{}; int len=0; for(int i=0;i<24;++i)len+=std::snprintf(t+len,sizeof t-len,"%s%08x",i?",":"",cx[i]);
           msm2::writeLog("WS_LAND_CHECK event=x420 since_air_ms=%lld state=0x%llx hold=%u words=%s read_only=1",am?(long long)(now-am):-1LL,(unsigned long long)gHeroClassStateRva.load(),unsigned(gbHoldA.load()),t);}
         std::memcpy(lx,cx,sizeof cx);xi=true;} }
     auto hm=lc::holdMs.load(); if(hm&&now-hm>=300){ lc::holdMs.store(0); std::lock_guard<std::mutex> g(lc::mu); static std::uint32_t w[0xC00]; static unsigned wl=0;
